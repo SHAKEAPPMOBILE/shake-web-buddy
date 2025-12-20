@@ -80,6 +80,24 @@ export function useActivityJoins(city: string) {
     }
 
     toast.success("You've joined the activity!");
+    
+    // Send SMS notifications to other users in the same activity (fire and forget)
+    const userName = user.user_metadata?.name || user.email?.split('@')[0] || "Someone";
+    supabase.functions.invoke('send-sms-notification', {
+      body: {
+        activityType,
+        city,
+        joinerName: userName,
+        joinerUserId: user.id,
+      }
+    }).then(({ error }) => {
+      if (error) {
+        console.error("Failed to send SMS notifications:", error);
+      } else {
+        console.log("SMS notifications sent");
+      }
+    });
+    
     await fetchActiveJoins();
     setIsLoading(false);
     return { success: true, isNewJoin: true }; // New join, show animation
