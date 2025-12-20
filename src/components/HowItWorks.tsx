@@ -13,7 +13,7 @@ export function HowItWorks() {
     },
     {
       icon: <Search className="w-8 h-8" />,
-      title: "Browse Activities",
+      title: "Find Activities",
       description: "Explore activities happening near you based on your interests.",
       color: "from-shake-teal to-secondary",
       isAvatar: false,
@@ -67,11 +67,11 @@ export function HowItWorks() {
                 </div>
                 
                 {/* Icon */}
-                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center text-primary-foreground mb-6 shadow-lg group-hover:scale-110 transition-transform ${step.isAvatar ? 'p-0 overflow-hidden' : ''}`}>
+                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center text-primary-foreground mb-6 shadow-lg group-hover:scale-110 transition-transform`}>
                   {step.isAvatar ? (
-                    <div className="flex -space-x-3 w-full h-full items-center justify-center">
-                      <img src={avatar3} alt="" className="w-10 h-10 rounded-full border-2 border-background" />
-                      <img src={avatar4} alt="" className="w-10 h-10 rounded-full border-2 border-background" />
+                    <div className="flex -space-x-2">
+                      <img src={avatar3} alt="" className="w-8 h-8 rounded-full" />
+                      <img src={avatar4} alt="" className="w-8 h-8 rounded-full" />
                     </div>
                   ) : step.icon}
                 </div>
