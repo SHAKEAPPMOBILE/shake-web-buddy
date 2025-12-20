@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Zap, Users, Shield } from "lucide-react";
+import { Zap, Shield } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
@@ -90,14 +90,7 @@ export function HeroSection() {
               className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-tight animate-fade-up"
               style={{ animationDelay: "100ms" }}
             >
-              meet new{" "}
-              <span className="inline-flex items-center gap-1">
-                people
-                <span className="inline-flex -space-x-3 ml-2">
-                  <img src={avatar1} alt="" className="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-background" />
-                  <img src={avatar2} alt="" className="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-background" />
-                </span>
-              </span>.
+              meet new people.
               <br />
               <span className="text-gradient">SHAKE up your life.</span>
             </h1>
@@ -160,9 +153,10 @@ export function HeroSection() {
         </div>
       </div>
       <div className="absolute top-40 right-20 animate-float" style={{ animationDelay: "1s" }}>
-        <div className="w-12 h-12 rounded-xl bg-shake-teal/20 backdrop-blur flex items-center justify-center">
-          <Users className="w-6 h-6 text-shake-teal" />
-        </div>
+        <img src={avatar1} alt="" className="w-14 h-14 rounded-full border-2 border-background shadow-lg" />
+      </div>
+      <div className="absolute top-60 right-32 animate-float" style={{ animationDelay: "1.5s" }}>
+        <img src={avatar2} alt="" className="w-12 h-12 rounded-full border-2 border-background shadow-lg" />
       </div>
       <div className="absolute bottom-40 right-10 animate-float" style={{ animationDelay: "2s" }}>
         <div className="w-12 h-12 rounded-xl bg-shake-purple/20 backdrop-blur flex items-center justify-center">
