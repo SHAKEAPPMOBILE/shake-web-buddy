@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Crown, Check, MapPin, Globe } from "lucide-react";
 import {
@@ -23,8 +23,26 @@ interface PremiumDialogProps {
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [checkoutEmail, setCheckoutEmail] = useState("");
+  const [savedBillingEmail, setSavedBillingEmail] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Load saved billing email from profile when dialog opens
+  useEffect(() => {
+    if (open && user) {
+      supabase
+        .from("profiles")
+        .select("billing_email")
+        .eq("user_id", user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.billing_email) {
+            setSavedBillingEmail(data.billing_email);
+            setCheckoutEmail(data.billing_email);
+          }
+        });
+    }
+  }, [open, user]);
 
   const needsEmail = !!user && !user.email;
   const emailToUse = useMemo(() => {
@@ -53,6 +71,14 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
     setIsLoading(true);
     try {
+      // Save billing email to profile if user entered one
+      if (needsEmail && emailToUse && emailToUse !== savedBillingEmail) {
+        await supabase
+          .from("profiles")
+          .update({ billing_email: emailToUse })
+          .eq("user_id", user.id);
+      }
+
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: needsEmail ? { email: emailToUse } : undefined,
       });
