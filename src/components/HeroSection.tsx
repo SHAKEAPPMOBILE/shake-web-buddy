@@ -90,11 +90,11 @@ export function HeroSection() {
           >
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-display font-bold text-foreground">10K+</div>
-              <div className="text-sm text-muted-foreground">Active Users</div>
+              <div className="text-sm text-muted-foreground">Users</div>
             </div>
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-display font-bold text-foreground">500+</div>
-              <div className="text-sm text-muted-foreground">Events Monthly</div>
+              <div className="text-sm text-muted-foreground">Meetups Done</div>
             </div>
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-display font-bold text-foreground">50+</div>

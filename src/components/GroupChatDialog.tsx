@@ -18,24 +18,59 @@ const activityDetails: Record<string, { title: string; time: string; location: s
   hike: { title: "Morning Trail 🥾", time: "Saturday, 8:00 AM", location: "Mountain View Park" },
 };
 
-const mockMessages = [
-  { id: 1, user: "Sarah", avatar: "👩‍🦰", message: "Hey everyone! So excited for this!", time: "10:32 AM" },
-  { id: 2, user: "Mike", avatar: "👨", message: "Same here! Anyone know the exact meeting spot?", time: "10:35 AM" },
-  { id: 3, user: "Emma", avatar: "👩", message: "I think we should meet at the entrance. I'll be wearing a red jacket!", time: "10:38 AM" },
-  { id: 4, user: "Alex", avatar: "🧑", message: "Perfect! See you all there 🙌", time: "10:40 AM" },
-];
+const activityAttendees: Record<string, { name: string; avatar: string }[]> = {
+  lunch: [
+    { name: "Sarah", avatar: "👩‍🦰" },
+    { name: "Tom", avatar: "👨‍🦱" },
+    { name: "You", avatar: "😊" },
+  ],
+  dinner: [
+    { name: "Mike", avatar: "👨" },
+    { name: "Emma", avatar: "👩" },
+    { name: "Carlos", avatar: "🧔" },
+    { name: "You", avatar: "😊" },
+  ],
+  drinks: [
+    { name: "Alex", avatar: "🧑" },
+    { name: "Lisa", avatar: "👱‍♀️" },
+    { name: "You", avatar: "😊" },
+  ],
+  hike: [
+    { name: "Emma", avatar: "👩" },
+    { name: "Jake", avatar: "🧑‍🦲" },
+    { name: "Nina", avatar: "👩‍🦳" },
+    { name: "Sam", avatar: "🧒" },
+    { name: "You", avatar: "😊" },
+  ],
+};
 
-const attendees = [
-  { name: "Sarah", avatar: "👩‍🦰" },
-  { name: "Mike", avatar: "👨" },
-  { name: "Emma", avatar: "👩" },
-  { name: "Alex", avatar: "🧑" },
-  { name: "You", avatar: "😊" },
-];
+const activityMessages: Record<string, { id: number; user: string; avatar: string; message: string; time: string }[]> = {
+  lunch: [
+    { id: 1, user: "Sarah", avatar: "👩‍🦰", message: "Can't wait for brunch! 🥐", time: "10:32 AM" },
+    { id: 2, user: "Tom", avatar: "👨‍🦱", message: "Same! I heard they have great pancakes", time: "10:35 AM" },
+  ],
+  dinner: [
+    { id: 1, user: "Mike", avatar: "👨", message: "Italian food is the best! 🍝", time: "5:30 PM" },
+    { id: 2, user: "Emma", avatar: "👩", message: "I'm bringing my appetite!", time: "5:45 PM" },
+    { id: 3, user: "Carlos", avatar: "🧔", message: "Let's try the tiramisu", time: "6:00 PM" },
+  ],
+  drinks: [
+    { id: 1, user: "Alex", avatar: "🧑", message: "First round on me! 🍻", time: "5:00 PM" },
+    { id: 2, user: "Lisa", avatar: "👱‍♀️", message: "Yay! See you there!", time: "5:15 PM" },
+  ],
+  hike: [
+    { id: 1, user: "Emma", avatar: "👩", message: "Don't forget sunscreen! ☀️", time: "7:30 AM" },
+    { id: 2, user: "Jake", avatar: "🧑‍🦲", message: "I'll bring extra water", time: "7:35 AM" },
+    { id: 3, user: "Nina", avatar: "👩‍🦳", message: "Weather looks perfect!", time: "7:40 AM" },
+    { id: 4, user: "Sam", avatar: "🧒", message: "Let's do this! 🥾", time: "7:45 AM" },
+  ],
+};
 
 export function GroupChatDialog({ open, onOpenChange, activityType, onBack }: GroupChatDialogProps) {
   const [message, setMessage] = useState("");
   const details = activityDetails[activityType] || activityDetails.lunch;
+  const attendees = activityAttendees[activityType] || activityAttendees.lunch;
+  const messages = activityMessages[activityType] || activityMessages.lunch;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,7 +108,7 @@ export function GroupChatDialog({ open, onOpenChange, activityType, onBack }: Gr
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {mockMessages.map((msg) => (
+          {messages.map((msg) => (
             <div key={msg.id} className="flex gap-3">
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0">
                 {msg.avatar}
