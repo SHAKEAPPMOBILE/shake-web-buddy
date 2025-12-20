@@ -92,7 +92,7 @@ export function HeroSection() {
               className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-tight animate-fade-up"
               style={{ animationDelay: "100ms" }}
             >
-              meet new people.
+              Meet new people.
               <br />
               <span className="text-gradient">SHAKE up your life.</span>
             </h1>
