@@ -17,7 +17,7 @@ export function HowItWorks() {
     {
       icon: <Calendar className="w-8 h-8" />,
       title: "Join an Activity",
-      description: "Reserve your place with a small fee. Events happen with 3+ attendees.",
+      description: "Join activities with other shakers.",
       color: "from-shake-purple to-accent",
     },
     {
