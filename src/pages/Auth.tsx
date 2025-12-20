@@ -55,11 +55,41 @@ export default function Auth() {
     return cleaned;
   };
 
+  const validatePhoneNumber = (phone: string): { isValid: boolean; error?: string } => {
+    const cleaned = phone.replace(/[^\d+]/g, '');
+    
+    // Check if empty
+    if (!cleaned || cleaned === '+') {
+      return { isValid: false, error: "Please enter your phone number" };
+    }
+    
+    // Check minimum length (country code + at least 6 digits)
+    const digitsOnly = cleaned.replace(/\D/g, '');
+    if (digitsOnly.length < 7) {
+      return { isValid: false, error: "Phone number is too short" };
+    }
+    
+    // Check maximum length (max 15 digits per E.164 standard)
+    if (digitsOnly.length > 15) {
+      return { isValid: false, error: "Phone number is too long" };
+    }
+    
+    // Basic format check - should have country code and number
+    const phoneRegex = /^\+?[1-9]\d{6,14}$/;
+    if (!phoneRegex.test(cleaned)) {
+      return { isValid: false, error: "Please enter a valid phone number with country code (e.g., +1 234 567 8900)" };
+    }
+    
+    return { isValid: true };
+  };
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!phoneNumber.trim()) {
-      toast.error("Please enter your phone number");
+    // Validate phone number
+    const validation = validatePhoneNumber(phoneNumber);
+    if (!validation.isValid) {
+      toast.error(validation.error);
       return;
     }
 
