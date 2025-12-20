@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Apple, Play, Smartphone } from "lucide-react";
+import { Apple, Play } from "lucide-react";
 
 export function CTASection() {
   return (
@@ -23,21 +23,24 @@ export function CTASection() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Button variant="default" size="lg" className="w-full sm:w-auto gap-3">
-              <Apple className="w-5 h-5" />
-              App Store
-            </Button>
-            <Button variant="outline" size="lg" className="w-full sm:w-auto gap-3">
-              <Play className="w-5 h-5" />
-              Google Play
-            </Button>
-          </div>
-
-          <div className="pt-8">
-            <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-              <Smartphone className="w-4 h-4" />
-              <span>Free to download • No credit card required</span>
-            </div>
+            <a href="#hero" className="w-full sm:w-auto">
+              <div className="relative">
+                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Soon</span>
+                <Button variant="default" size="lg" className="w-full gap-3 opacity-50 cursor-not-allowed" disabled>
+                  <Apple className="w-5 h-5" />
+                  App Store
+                </Button>
+              </div>
+            </a>
+            <a href="#hero" className="w-full sm:w-auto">
+              <div className="relative">
+                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Soon</span>
+                <Button variant="outline" size="lg" className="w-full gap-3 opacity-50 cursor-not-allowed" disabled>
+                  <Play className="w-5 h-5" />
+                  Google Play
+                </Button>
+              </div>
+            </a>
           </div>
         </div>
       </div>

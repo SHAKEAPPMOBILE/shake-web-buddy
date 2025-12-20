@@ -10,13 +10,13 @@ export function HowItWorks() {
     },
     {
       icon: <Search className="w-8 h-8" />,
-      title: "Browse Events",
+      title: "Browse Activities",
       description: "Explore activities happening near you based on your interests.",
       color: "from-shake-teal to-secondary",
     },
     {
       icon: <Calendar className="w-8 h-8" />,
-      title: "Book Your Spot",
+      title: "Join an Activity",
       description: "Reserve your place with a small fee. Events happen with 3+ attendees.",
       color: "from-shake-purple to-accent",
     },
