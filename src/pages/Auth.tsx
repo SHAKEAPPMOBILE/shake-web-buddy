@@ -59,38 +59,8 @@ export default function Auth() {
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
       
-      if (isLogin) {
-        const { error } = await signInWithPhone(formattedPhone);
-        if (error) {
-          toast.error(error.message);
-        } else {
-          toast.success("Verification code sent!");
-          setStep('otp');
-        }
-      } else {
-        // For signup, first collect name
-        setStep('name');
-      }
-    } catch (error) {
-      toast.error("An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignupWithName = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!name.trim()) {
-      toast.error("Please enter your name");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const formattedPhone = formatPhoneNumber(phoneNumber);
-      const { error } = await signUpWithPhone(formattedPhone, name);
+      // For both login and signup, send OTP first
+      const { error } = await signInWithPhone(formattedPhone);
       if (error) {
         toast.error(error.message);
       } else {
@@ -102,6 +72,19 @@ export default function Auth() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name.trim()) {
+      toast.error("Please enter your name");
+      return;
+    }
+
+    // Profile is already created via trigger, just navigate home
+    toast.success("Profile saved!");
+    navigate("/");
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -120,8 +103,14 @@ export default function Auth() {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success(isLogin ? "Welcome back!" : "Account created!");
-        navigate("/");
+        if (isLogin) {
+          toast.success("Welcome back!");
+          navigate("/");
+        } else {
+          // For signup, go to profile configuration
+          toast.success("Phone verified! Now set up your profile.");
+          setStep('name');
+        }
       }
     } catch (error) {
       toast.error("An unexpected error occurred");
@@ -132,10 +121,11 @@ export default function Auth() {
 
   const handleBack = () => {
     if (step === 'otp') {
-      setStep(isLogin ? 'phone' : 'name');
+      setStep('phone');
       setOtpCode("");
     } else if (step === 'name') {
-      setStep('phone');
+      // For signup, after OTP verification, don't allow going back
+      navigate("/");
     } else {
       navigate("/");
     }
@@ -214,9 +204,9 @@ export default function Auth() {
             </form>
           )}
 
-          {/* Name Form (Signup only) */}
+          {/* Name Form (Signup only - after OTP verification) */}
           {step === 'name' && (
-            <form onSubmit={handleSignupWithName} className="space-y-4">
+            <form onSubmit={handleSaveProfile} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Your Name</Label>
                 <div className="relative">
@@ -266,7 +256,7 @@ export default function Auth() {
                 size="lg"
                 disabled={isLoading}
               >
-                {isLoading ? "Sending..." : "Continue"}
+                {isLoading ? "Saving..." : "Complete Setup"}
               </Button>
             </form>
           )}
@@ -292,12 +282,14 @@ export default function Auth() {
                 </InputOTP>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setOtpCode("");
-                    isLogin 
-                      ? signInWithPhone(formatPhoneNumber(phoneNumber))
-                      : signUpWithPhone(formatPhoneNumber(phoneNumber), name);
-                    toast.success("New code sent!");
+                    const { error } = await signInWithPhone(formatPhoneNumber(phoneNumber));
+                    if (error) {
+                      toast.error(error.message);
+                    } else {
+                      toast.success("New code sent!");
+                    }
                   }}
                   className="text-sm text-primary hover:underline"
                 >
