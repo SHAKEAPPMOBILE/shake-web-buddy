@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +19,19 @@ export default function Auth() {
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
   const { signUpWithPhone, signInWithPhone, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCountdown]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,6 +74,7 @@ export default function Auth() {
         toast.error(error.message);
       } else {
         toast.success("Verification code sent!");
+        setResendCountdown(60);
         setStep('otp');
       }
     } catch (error) {
@@ -282,6 +292,7 @@ export default function Auth() {
                 </InputOTP>
                 <button
                   type="button"
+                  disabled={resendCountdown > 0}
                   onClick={async () => {
                     setOtpCode("");
                     const { error } = await signInWithPhone(formatPhoneNumber(phoneNumber));
@@ -289,11 +300,14 @@ export default function Auth() {
                       toast.error(error.message);
                     } else {
                       toast.success("New code sent!");
+                      setResendCountdown(60);
                     }
                   }}
-                  className="text-sm text-primary hover:underline"
+                  className={`text-sm ${resendCountdown > 0 ? 'text-muted-foreground cursor-not-allowed' : 'text-primary hover:underline'}`}
                 >
-                  Didn't receive a code? Resend
+                  {resendCountdown > 0 
+                    ? `Resend code in ${resendCountdown}s` 
+                    : "Didn't receive a code? Resend"}
                 </button>
               </div>
 
