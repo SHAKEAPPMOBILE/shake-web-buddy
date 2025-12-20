@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Smartphone, Zap, Users, Shield } from "lucide-react";
+import { Zap, Users, Shield } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 
@@ -67,13 +67,27 @@ export function HeroSection() {
               people in your city and turn strangers into friends.
             </p>
 
-            {/* Luma note */}
-            <p 
-              className="text-sm text-muted-foreground/70 animate-fade-up"
+            {/* Stats */}
+            <div 
+              className="grid grid-cols-3 gap-8 animate-fade-up"
               style={{ animationDelay: "250ms" }}
             >
-              Previously we operated on Luma, now we have our own page
-            </p>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-display font-bold text-foreground">10K+</div>
+                <div className="text-sm text-muted-foreground">Users</div>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground/70 mb-1">
+                  Previously we operated on Luma, now we have our own page
+                </p>
+                <div className="text-3xl md:text-4xl font-display font-bold text-foreground">500+</div>
+                <div className="text-sm text-muted-foreground">Meetups Done</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-display font-bold text-foreground">50+</div>
+                <div className="text-sm text-muted-foreground">Cities</div>
+              </div>
+            </div>
 
             {/* CTA Button */}
             <div 
@@ -86,29 +100,10 @@ export function HeroSection() {
                 onClick={handleShake}
                 className={isShaking ? "animate-shake" : ""}
               >
-                <Smartphone className="w-5 h-5 text-shake-yellow" />
+                <span className="text-shake-green text-xl">🤝</span>
                 Let's Shake!
               </Button>
             </div>
-
-          {/* Stats */}
-          <div 
-            className="grid grid-cols-3 gap-8 pt-12 animate-fade-up"
-            style={{ animationDelay: "400ms" }}
-          >
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-display font-bold text-foreground">10K+</div>
-              <div className="text-sm text-muted-foreground">Users</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-display font-bold text-foreground">500+</div>
-              <div className="text-sm text-muted-foreground">Meetups Done</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-display font-bold text-foreground">50+</div>
-              <div className="text-sm text-muted-foreground">Cities</div>
-            </div>
-          </div>
         </div>
       </div>
 
