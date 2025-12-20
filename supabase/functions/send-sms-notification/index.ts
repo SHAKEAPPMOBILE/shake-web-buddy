@@ -6,11 +6,58 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Valid activity types for validation
+const VALID_ACTIVITY_TYPES = ['lunch', 'dinner', 'drinks', 'hike'] as const;
+
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface SMSRequest {
   activityType: string;
   city: string;
   joinerName: string;
   joinerUserId: string;
+}
+
+function validateRequest(data: unknown): { valid: true; data: SMSRequest } | { valid: false; error: string } {
+  if (!data || typeof data !== 'object') {
+    return { valid: false, error: "Invalid request body" };
+  }
+
+  const { activityType, city, joinerName, joinerUserId } = data as Record<string, unknown>;
+
+  // Validate activityType
+  if (typeof activityType !== 'string' || !VALID_ACTIVITY_TYPES.includes(activityType as typeof VALID_ACTIVITY_TYPES[number])) {
+    return { valid: false, error: `Invalid activityType. Must be one of: ${VALID_ACTIVITY_TYPES.join(', ')}` };
+  }
+
+  // Validate city
+  if (typeof city !== 'string' || city.length < 1 || city.length > 100) {
+    return { valid: false, error: "City must be a string between 1 and 100 characters" };
+  }
+
+  // Validate joinerName (sanitize for SMS content)
+  if (typeof joinerName !== 'string' || joinerName.length < 1 || joinerName.length > 100) {
+    return { valid: false, error: "Joiner name must be a string between 1 and 100 characters" };
+  }
+
+  // Validate joinerUserId as UUID
+  if (typeof joinerUserId !== 'string' || !UUID_REGEX.test(joinerUserId)) {
+    return { valid: false, error: "Invalid joinerUserId format" };
+  }
+
+  // Sanitize joinerName to prevent SMS injection (remove special characters that could affect SMS)
+  const sanitizedJoinerName = joinerName.replace(/[^\w\s-]/g, '').substring(0, 50);
+
+  return {
+    valid: true,
+    data: {
+      activityType,
+      city: city.substring(0, 100),
+      joinerName: sanitizedJoinerName,
+      joinerUserId,
+    }
+  };
 }
 
 serve(async (req) => {
@@ -20,13 +67,57 @@ serve(async (req) => {
   }
 
   try {
-    const { activityType, city, joinerName, joinerUserId }: SMSRequest = await req.json();
-    
-    console.log("SMS notification request:", { activityType, city, joinerName, joinerUserId });
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Authentication check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("No authorization header provided");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error("Authentication failed:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Authenticated user:", user.id);
+
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validation = validateRequest(rawBody);
+
+    if (!validation.valid) {
+      console.error("Validation error:", validation.error);
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { activityType, city, joinerName, joinerUserId } = validation.data;
+
+    // Verify the authenticated user matches the joinerUserId
+    if (user.id !== joinerUserId) {
+      console.error("User ID mismatch: authenticated user", user.id, "vs joiner", joinerUserId);
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("SMS notification request validated:", { activityType, city, joinerName, joinerUserId });
 
     // Get all users who joined the same activity today (excluding the current joiner)
     const { data: activeJoins, error: joinsError } = await supabase

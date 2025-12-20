@@ -6,19 +6,20 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logoShake from "@/assets/logo_shake_original_color.png";
-import { ArrowLeft, Mail, Lock, Phone, User } from "lucide-react";
+import { ArrowLeft, Phone, User } from "lucide-react";
 import { AvatarPicker } from "@/components/AvatarPicker";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 export default function Auth() {
+  const [step, setStep] = useState<'phone' | 'otp' | 'name'>('phone');
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [name, setName] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signUpWithPhone, signInWithPhone, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,52 +35,108 @@ export default function Auth() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const formatPhoneNumber = (phone: string): string => {
+    // Remove all non-digit characters except +
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    // Ensure it starts with +
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+1' + cleaned; // Default to US
+    }
+    return cleaned;
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!phoneNumber.trim()) {
+      toast.error("Please enter your phone number");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error } = await signInWithPhone(formattedPhone);
         if (error) {
-          if (error.message.includes("Invalid login credentials")) {
-            toast.error("Invalid email or password");
-          } else {
-            toast.error(error.message);
-          }
+          toast.error(error.message);
         } else {
-          toast.success("Welcome back!");
-          navigate("/");
+          toast.success("Verification code sent!");
+          setStep('otp');
         }
       } else {
-        // Validate required fields for signup
-        if (!name.trim()) {
-          toast.error("Name is required");
-          setIsLoading(false);
-          return;
-        }
-        if (!phoneNumber.trim()) {
-          toast.error("Phone number is required for notifications");
-          setIsLoading(false);
-          return;
-        }
-
-        const { error } = await signUp(email, password, phoneNumber, name);
-        if (error) {
-          if (error.message.includes("already registered")) {
-            toast.error("This email is already registered. Try signing in instead.");
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success("Account created! You're now signed in.");
-          navigate("/");
-        }
+        // For signup, first collect name
+        setStep('name');
       }
     } catch (error) {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSignupWithName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name.trim()) {
+      toast.error("Please enter your name");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const { error } = await signUpWithPhone(formattedPhone, name);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Verification code sent!");
+        setStep('otp');
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (otpCode.length !== 6) {
+      toast.error("Please enter the 6-digit code");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const { error } = await verifyOtp(formattedPhone, otpCode);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success(isLogin ? "Welcome back!" : "Account created!");
+        navigate("/");
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (step === 'otp') {
+      setStep(isLogin ? 'phone' : 'name');
+      setOtpCode("");
+    } else if (step === 'name') {
+      setStep('phone');
+    } else {
+      navigate("/");
     }
   };
 
@@ -92,7 +149,7 @@ export default function Auth() {
 
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4">
         <button
-          onClick={() => navigate("/")}
+          onClick={handleBack}
           className="absolute top-4 left-4 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -104,129 +161,164 @@ export default function Auth() {
           <div className="flex flex-col items-center gap-4">
             <img src={logoShake} alt="Shake Social" className="h-20" />
             <h1 className="text-2xl font-display font-bold text-foreground">
-              {isLogin ? "Welcome back" : "Create your account"}
+              {step === 'otp' 
+                ? "Enter verification code" 
+                : step === 'name'
+                ? "What's your name?"
+                : isLogin 
+                  ? "Welcome back" 
+                  : "Create your account"}
             </h1>
             <p className="text-muted-foreground text-center">
-              {isLogin
-                ? "Sign in to continue to Shake Social"
-                : "Join Shake Social and start meeting new people"}
+              {step === 'otp'
+                ? `We sent a code to ${phoneNumber}`
+                : step === 'name'
+                ? "This is how others will see you"
+                : isLogin
+                  ? "Sign in with your phone number"
+                  : "Join Shake Social with your phone number"}
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  minLength={6}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Name, Phone, and Avatar fields - only shown during signup */}
-            {!isLogin && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Your name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+1 234 567 8900"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    We'll notify you when someone joins your activity!
-                  </p>
-                </div>
-
-                {/* Avatar Picker */}
-                <div className="space-y-2 pt-2">
-                  <Label>Profile Picture</Label>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <AvatarPicker
-                    selectedAvatar={selectedAvatar}
-                    onSelectAvatar={setSelectedAvatar}
-                    onUploadClick={() => fileInputRef.current?.click()}
-                    customAvatarPreview={customAvatarPreview}
+          {/* Phone Number Form */}
+          {step === 'phone' && (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 234 567 8900"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="pl-10"
+                    required
                   />
                 </div>
-              </>
-            )}
+                <p className="text-xs text-muted-foreground">
+                  We'll send you a verification code
+                </p>
+              </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
-              size="lg"
-              disabled={isLoading}
-            >
-              {isLoading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? "Sending..." : "Send Code"}
+              </Button>
+            </form>
+          )}
 
-          {/* Toggle */}
-          <p className="text-center text-sm text-muted-foreground">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary hover:underline font-medium"
-            >
-              {isLogin ? "Sign up" : "Sign in"}
-            </button>
-          </p>
+          {/* Name Form (Signup only) */}
+          {step === 'name' && (
+            <form onSubmit={handleSignupWithName} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Your Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Enter your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Avatar Picker */}
+              <div className="space-y-2 pt-2">
+                <Label>Profile Picture (optional)</Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <AvatarPicker
+                  selectedAvatar={selectedAvatar}
+                  onSelectAvatar={setSelectedAvatar}
+                  onUploadClick={() => fileInputRef.current?.click()}
+                  customAvatarPreview={customAvatarPreview}
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? "Sending..." : "Continue"}
+              </Button>
+            </form>
+          )}
+
+          {/* OTP Verification Form */}
+          {step === 'otp' && (
+            <form onSubmit={handleVerifyOtp} className="space-y-6">
+              <div className="flex flex-col items-center space-y-4">
+                <Label htmlFor="otp">Verification Code</Label>
+                <InputOTP
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(value) => setOtpCode(value)}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOtpCode("");
+                    isLogin 
+                      ? signInWithPhone(formatPhoneNumber(phoneNumber))
+                      : signUpWithPhone(formatPhoneNumber(phoneNumber), name);
+                    toast.success("New code sent!");
+                  }}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Didn't receive a code? Resend
+                </button>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                size="lg"
+                disabled={isLoading || otpCode.length !== 6}
+              >
+                {isLoading ? "Verifying..." : "Verify & Continue"}
+              </Button>
+            </form>
+          )}
+
+          {/* Toggle - only show on phone step */}
+          {step === 'phone' && (
+            <p className="text-center text-sm text-muted-foreground">
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-primary hover:underline font-medium"
+              >
+                {isLogin ? "Sign up" : "Sign in"}
+              </button>
+            </p>
+          )}
         </div>
       </div>
     </div>
