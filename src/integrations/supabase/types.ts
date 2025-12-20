@@ -68,6 +68,33 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_read_status: {
+        Row: {
+          activity_type: string
+          city: string
+          created_at: string
+          id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          city: string
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          city?: string
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
