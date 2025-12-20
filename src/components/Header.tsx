@@ -1,18 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, Crown } from "lucide-react";
+import { Menu, X, LogOut, Crown, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoShake from "@/assets/logo_shake_original_color.png";
 import { CitySelector } from "./CitySelector";
 import { PremiumDialog } from "./PremiumDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, isPremium, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch user avatar
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      if (!user) {
+        setAvatarUrl(null);
+        return;
+      }
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
+    };
+    
+    fetchAvatar();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -46,6 +70,16 @@ export function Header() {
                         Premium
                       </span>
                     )}
+                    <button
+                      onClick={() => navigate("/profile")}
+                      className="w-9 h-9 rounded-full bg-muted border border-border overflow-hidden flex items-center justify-center hover:border-primary transition-colors"
+                    >
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </button>
                     <Button variant="ghost" size="sm" onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-1" />
                       Sign Out
@@ -96,10 +130,25 @@ export function Header() {
             </div>
             <div className="pt-4 border-t border-border flex gap-4">
               {user ? (
-                <Button variant="ghost" size="sm" className="flex-1" onClick={handleSignOut}>
-                  <LogOut className="w-4 h-4 mr-1" />
-                  Sign Out
-                </Button>
+                <>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate("/profile");
+                    }}
+                    className="w-10 h-10 rounded-full bg-muted border border-border overflow-hidden flex items-center justify-center"
+                  >
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </button>
+                  <Button variant="ghost" size="sm" className="flex-1" onClick={handleSignOut}>
+                    <LogOut className="w-4 h-4 mr-1" />
+                    Sign Out
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button variant="ghost" size="sm" className="flex-1" onClick={() => navigate("/auth")}>
