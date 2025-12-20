@@ -237,7 +237,7 @@ export default function Auth() {
                 ? "This is how others will see you"
                 : isLogin
                   ? "Sign in with your phone number"
-                  : "Join Shake Social with your phone number"}
+                  : "Create your account just with your phone number"}
             </p>
           </div>
 
