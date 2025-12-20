@@ -26,22 +26,34 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header provided");
+
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
-    
-    if (!user?.email) {
+
+    let email = user?.email ?? null;
+
+    if (!email) {
+      const body = await req.json().catch(() => ({}));
+      if (typeof body?.email === "string") {
+        email = body.email.trim();
+      }
+    }
+
+    if (!email) {
       throw new Error("User not authenticated or email not available");
     }
-    logStep("User authenticated", { userId: user.id, email: user.email });
+
+    logStep("User authenticated", { userId: user?.id, email });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
 
     // Check if customer exists
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
@@ -49,10 +61,10 @@ serve(async (req) => {
     }
 
     const origin = req.headers.get("origin") || "http://localhost:5173";
-    
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
+      customer_email: customerId ? undefined : email,
       line_items: [
         {
           price: "price_1SgTvzE15hgUkq5HMquX4R07",

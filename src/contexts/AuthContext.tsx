@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
 
   const checkSubscription = async () => {
-    if (!session) {
+    if (!session?.user?.email) {
       setIsPremium(false);
       setSubscriptionEnd(null);
       return;

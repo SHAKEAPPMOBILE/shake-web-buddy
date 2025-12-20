@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Crown, Check, MapPin, Globe } from "lucide-react";
 import {
@@ -9,6 +9,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -20,8 +22,15 @@ interface PremiumDialogProps {
 
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [checkoutEmail, setCheckoutEmail] = useState("");
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const needsEmail = !!user && !user.email;
+  const emailToUse = useMemo(() => {
+    if (user?.email) return user.email;
+    return checkoutEmail.trim();
+  }, [user?.email, checkoutEmail]);
 
   const features = [
     { icon: Globe, text: "Access to 100+ cities worldwide" },
@@ -37,10 +46,17 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       return;
     }
 
+    if (needsEmail && !emailToUse) {
+      toast.error("Please enter an email to continue");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-checkout");
-      
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: needsEmail ? { email: emailToUse } : undefined,
+      });
+
       if (error) {
         throw error;
       }
@@ -86,20 +102,35 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           ))}
         </div>
 
+        {needsEmail && (
+          <div className="space-y-2">
+            <Label htmlFor="checkoutEmail">Email for receipt</Label>
+            <Input
+              id="checkoutEmail"
+              type="email"
+              placeholder="you@example.com"
+              value={checkoutEmail}
+              onChange={(e) => setCheckoutEmail(e.target.value)}
+              className="bg-background"
+            />
+            <p className="text-xs text-muted-foreground">
+              Your account uses phone login, so we need an email for billing.
+            </p>
+          </div>
+        )}
+
         <div className="text-center py-4">
           <div className="text-4xl font-display font-bold text-foreground">
             $5<span className="text-lg font-normal text-muted-foreground">/month</span>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Cancel anytime
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">Cancel anytime</p>
         </div>
 
         <Button
           onClick={handleSubscribe}
           className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
           size="lg"
-          disabled={isLoading}
+          disabled={isLoading || (needsEmail && !emailToUse)}
         >
           <Crown className="w-4 h-4 mr-2" />
           {isLoading ? "Loading..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
