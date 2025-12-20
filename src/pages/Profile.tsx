@@ -123,6 +123,7 @@ export default function Profile() {
       if (error) throw error;
 
       toast.success("Profile updated!");
+      navigate("/");
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
