@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Shaking animation for clock */
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
+  20%, 40%, 60%, 80% { transform: rotate(10deg); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out infinite;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
 
 @layer base {

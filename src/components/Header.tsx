@@ -26,9 +26,9 @@ export function Header() {
             {/* Empty spacer for left side */}
             <div className="flex-1" />
 
-            {/* Centered Logo - Made bigger */}
-            <div className="flex items-center justify-center">
-              <img src={logoShake} alt="Shake Social" className="h-20 md:h-28" />
+            {/* Centered Logo - Made bigger with padding to prevent cutoff */}
+            <div className="flex items-center justify-center pt-2">
+              <img src={logoShake} alt="Shake Social" className="h-20 md:h-28 object-contain" />
             </div>
 
             {/* Right side buttons */}

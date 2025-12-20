@@ -1,14 +1,26 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Zap, Users, Shield } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
+import { ShakingClockAnimation } from "./ShakingClockAnimation";
+import { useActivityJoins } from "@/hooks/useActivityJoins";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+// Default city - in a real app this would come from user selection
+const DEFAULT_CITY = "New York";
 
 export function HeroSection() {
   const [isShaking, setIsShaking] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
+  const [showClockAnimation, setShowClockAnimation] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { joinActivity, getActivityJoinCount } = useActivityJoins(DEFAULT_CITY);
 
   const handleShake = () => {
     setIsShaking(true);
@@ -18,11 +30,29 @@ export function HeroSection() {
     }, 600);
   };
 
-  const handleSelectActivity = (activity: string) => {
+  const handleSelectActivity = async (activity: string) => {
+    if (!user) {
+      toast.error("Please sign in to join an activity");
+      setShowActivityDialog(false);
+      navigate("/auth");
+      return;
+    }
+
     setSelectedActivity(activity);
     setShowActivityDialog(false);
-    setShowChatDialog(true);
+    
+    // Join the activity
+    const success = await joinActivity(activity);
+    if (success) {
+      // Show the clock animation
+      setShowClockAnimation(true);
+    }
   };
+
+  const handleClockAnimationComplete = useCallback(() => {
+    setShowClockAnimation(false);
+    setShowChatDialog(true);
+  }, []);
 
   const handleBackToActivities = () => {
     setShowChatDialog(false);
@@ -131,6 +161,13 @@ export function HeroSection() {
         open={showActivityDialog}
         onOpenChange={setShowActivityDialog}
         onSelectActivity={handleSelectActivity}
+        city={DEFAULT_CITY}
+      />
+
+      <ShakingClockAnimation
+        open={showClockAnimation}
+        onOpenChange={setShowClockAnimation}
+        onComplete={handleClockAnimationComplete}
       />
 
       <GroupChatDialog
@@ -138,6 +175,7 @@ export function HeroSection() {
         onOpenChange={setShowChatDialog}
         activityType={selectedActivity}
         onBack={handleBackToActivities}
+        attendeeCount={getActivityJoinCount(selectedActivity)}
       />
     </>
   );

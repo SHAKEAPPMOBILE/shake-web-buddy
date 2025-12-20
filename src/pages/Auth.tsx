@@ -6,12 +6,13 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logoShake from "@/assets/logo_shake_original_color.png";
-import { ArrowLeft, Mail, Lock } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Phone } from "lucide-react";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -34,7 +35,14 @@ export default function Auth() {
           navigate("/");
         }
       } else {
-        const { error } = await signUp(email, password);
+        // Validate phone number for signup
+        if (!phoneNumber.trim()) {
+          toast.error("Phone number is required for notifications");
+          setIsLoading(false);
+          return;
+        }
+
+        const { error } = await signUp(email, password, phoneNumber);
         if (error) {
           if (error.message.includes("already registered")) {
             toast.error("This email is already registered. Try signing in instead.");
@@ -117,6 +125,28 @@ export default function Auth() {
                 />
               </div>
             </div>
+
+            {/* Phone number field - only shown during signup */}
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 234 567 8900"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  We'll notify you when someone joins your activity!
+                </p>
+              </div>
+            )}
 
             <Button
               type="submit"
