@@ -63,8 +63,16 @@ export function HeroSection() {
               className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-up"
               style={{ animationDelay: "200ms" }}
             >
-              Join group activities like hikes, dinners, and drinks. Connect with like-minded 
+              Join group activities like lunch, dinner, drinks and a hike. Connect with like-minded 
               people in your city and turn strangers into friends.
+            </p>
+
+            {/* Luma note */}
+            <p 
+              className="text-sm text-muted-foreground/70 animate-fade-up"
+              style={{ animationDelay: "250ms" }}
+            >
+              Previously we operated on Luma, now we have our own page
             </p>
 
             {/* CTA Button */}
@@ -78,7 +86,7 @@ export function HeroSection() {
                 onClick={handleShake}
                 className={isShaking ? "animate-shake" : ""}
               >
-                <Smartphone className="w-5 h-5" />
+                <Smartphone className="w-5 h-5 text-shake-yellow" />
                 Let's Shake!
               </Button>
             </div>
