@@ -111,10 +111,6 @@ export function HeroSection() {
               people in your city and turn strangers into friends.
             </p>
 
-            {/* Luma note */}
-            <p className="text-xs text-muted-foreground/70 animate-fade-up" style={{ animationDelay: "250ms" }}>
-              Previously, we operated on Luma, now here.
-            </p>
 
             {/* Stats */}
             <div 
@@ -150,6 +146,14 @@ export function HeroSection() {
                 Let's Shake!
               </Button>
             </div>
+
+            {/* Luma note - positioned between Let's Shake and How It Works */}
+            <p 
+              className="text-sm text-muted-foreground/70 animate-fade-up mt-16 md:mt-24"
+              style={{ animationDelay: "350ms" }}
+            >
+              Previously, we operated on Luma, now here.
+            </p>
         </div>
       </div>
 
