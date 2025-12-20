@@ -28,7 +28,7 @@ export function Header() {
 
             {/* Centered Logo - Made bigger */}
             <div className="flex items-center justify-center">
-              <img src={logoShake} alt="Shake Social" className="h-16 md:h-20" />
+              <img src={logoShake} alt="Shake Social" className="h-20 md:h-28" />
             </div>
 
             {/* Right side buttons */}
