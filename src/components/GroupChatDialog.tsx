@@ -1,11 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { ArrowLeft, Send, Users, User } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { toast } from "sonner";
 
 interface GroupChatDialogProps {
@@ -54,6 +55,13 @@ export function GroupChatDialog({
   const [currentTime, setCurrentTime] = useState(new Date());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  
+  // Get unique user IDs from messages for profile fetching
+  const userIds = useMemo(() => {
+    return [...new Set(messages.map((msg) => msg.user_id))];
+  }, [messages]);
+  
+  const { profiles } = useUserProfiles(userIds);
 
   // Update time every minute
   useEffect(() => {
@@ -212,18 +220,32 @@ export function GroupChatDialog({
           ) : (
             messages.map((msg) => {
               const isOwnMessage = msg.user_id === user?.id;
+              const profile = profiles[msg.user_id];
+              const displayName = isOwnMessage 
+                ? 'You' 
+                : profile?.name || 'Shaker';
+              const avatarUrl = profile?.avatar_url;
+              
               return (
                 <div 
                   key={msg.id} 
                   className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0">
-                    {isOwnMessage ? '😊' : '👤'}
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0 overflow-hidden border border-border">
+                    {avatarUrl ? (
+                      <img 
+                        src={avatarUrl} 
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-muted-foreground" />
+                    )}
                   </div>
                   <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
                     <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
                       <span className="font-semibold text-sm">
-                        {isOwnMessage ? 'You' : 'Shaker'}
+                        {displayName}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(msg.created_at), 'h:mm a')}
