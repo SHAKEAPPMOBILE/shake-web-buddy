@@ -98,9 +98,12 @@ export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
       >
         {!isPremium && (
           <>
-            <DropdownMenuLabel className="flex items-center gap-2 text-shake-yellow">
+            <DropdownMenuLabel 
+              className="flex items-center gap-2 text-shake-yellow cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => onUpgradeClick?.()}
+            >
               <Crown className="w-4 h-4" />
-              Upgrade for $5/month to select any city
+              Upgrade to select any city
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
           </>
