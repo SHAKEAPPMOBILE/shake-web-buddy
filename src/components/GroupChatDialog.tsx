@@ -12,6 +12,7 @@ import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
+import { AudioWaveform } from "@/components/AudioWaveform";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -303,7 +304,7 @@ export function GroupChatDialog({
                         : 'bg-muted'
                     }`}>
                       {msg.audio_url ? (
-                        <audio src={msg.audio_url} controls className="h-8 max-w-[200px]" />
+                        <AudioWaveform audioUrl={msg.audio_url} isCompact />
                       ) : (
                         <span>{msg.message}</span>
                       )}

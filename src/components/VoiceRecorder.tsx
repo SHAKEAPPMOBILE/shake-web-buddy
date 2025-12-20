@@ -1,9 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Loader2, Play, X } from "lucide-react";
+import { Mic, Square, Loader2, Send, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { AudioWaveform } from "./AudioWaveform";
+import { cn } from "@/lib/utils";
 
 interface VoiceRecorderProps {
   onVoiceNoteSent: (audioUrl: string) => void;
@@ -17,9 +19,30 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
   const [isUploading, setIsUploading] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [liveWaveform, setLiveWaveform] = useState<number[]>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      if (durationIntervalRef.current) {
+        clearInterval(durationIntervalRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
 
   const startRecording = async () => {
     if (!user) {
@@ -29,6 +52,14 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Set up audio context for live visualization
+      audioContextRef.current = new AudioContext();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 64;
+      source.connect(analyserRef.current);
+      
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -44,10 +75,51 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
         stream.getTracks().forEach((track) => track.stop());
+        
+        // Stop animation
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+        if (durationIntervalRef.current) {
+          clearInterval(durationIntervalRef.current);
+        }
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+          audioContextRef.current = null;
+        }
       };
 
       mediaRecorder.start();
       setIsRecording(true);
+      setRecordingDuration(0);
+      setLiveWaveform([]);
+
+      // Start duration timer
+      durationIntervalRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+
+      // Start live waveform visualization
+      const updateWaveform = () => {
+        if (!analyserRef.current) return;
+        
+        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+        analyserRef.current.getByteFrequencyData(dataArray);
+        
+        // Take a sample of the frequency data
+        const samples = 12;
+        const step = Math.floor(dataArray.length / samples);
+        const waveformSample: number[] = [];
+        
+        for (let i = 0; i < samples; i++) {
+          waveformSample.push(dataArray[i * step] / 255);
+        }
+        
+        setLiveWaveform(waveformSample);
+        animationRef.current = requestAnimationFrame(updateWaveform);
+      };
+      
+      updateWaveform();
     } catch (error) {
       console.error("Error starting recording:", error);
       toast.error("Could not access microphone");
@@ -64,6 +136,8 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
   const cancelRecording = () => {
     setAudioBlob(null);
     setAudioUrl(null);
+    setRecordingDuration(0);
+    setLiveWaveform([]);
   };
 
   const sendVoiceNote = async () => {
@@ -106,6 +180,7 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
       onVoiceNoteSent(urlData.publicUrl);
       setAudioBlob(null);
       setAudioUrl(null);
+      setRecordingDuration(0);
       toast.success("Voice note sent!");
     } catch (error) {
       console.error("Error sending voice note:", error);
@@ -115,16 +190,23 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
     }
   };
 
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Show recorded audio preview with waveform
   if (audioBlob && audioUrl) {
     return (
-      <div className="flex items-center gap-2">
-        <audio src={audioUrl} controls className="h-8 max-w-[140px]" />
+      <div className="flex items-center gap-2 flex-1 bg-muted/50 rounded-lg px-3 py-2">
+        <AudioWaveform audioUrl={audioUrl} isCompact className="flex-1" />
         <Button
           variant="ghost"
           size="icon"
           onClick={cancelRecording}
           disabled={isUploading}
-          className="h-8 w-8"
+          className="h-8 w-8 shrink-0"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -133,9 +215,51 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
           size="icon"
           onClick={sendVoiceNote}
           disabled={isUploading}
-          className="h-8 w-8"
+          className="h-8 w-8 shrink-0"
         >
-          {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+          {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+        </Button>
+      </div>
+    );
+  }
+
+  // Show recording in progress with live waveform
+  if (isRecording) {
+    return (
+      <div className="flex items-center gap-2 flex-1 bg-destructive/10 rounded-lg px-3 py-2">
+        <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+        <span className="text-sm font-medium text-destructive">
+          {formatDuration(recordingDuration)}
+        </span>
+        
+        {/* Live waveform */}
+        <div className="flex items-center gap-[2px] h-6 flex-1">
+          {liveWaveform.map((value, index) => (
+            <div
+              key={index}
+              className="w-[3px] rounded-full bg-destructive transition-all duration-75"
+              style={{
+                height: `${Math.max(value * 100, 15)}%`,
+              }}
+            />
+          ))}
+          {liveWaveform.length === 0 && (
+            Array.from({ length: 12 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-[3px] h-2 rounded-full bg-destructive/50"
+              />
+            ))
+          )}
+        </div>
+        
+        <Button
+          variant="destructive"
+          size="icon"
+          onClick={stopRecording}
+          className="h-8 w-8 shrink-0"
+        >
+          <Square className="w-4 h-4" />
         </Button>
       </div>
     );
@@ -143,13 +267,13 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
 
   return (
     <Button
-      variant={isRecording ? "destructive" : "ghost"}
+      variant="ghost"
       size="icon"
-      onClick={isRecording ? stopRecording : startRecording}
+      onClick={startRecording}
       disabled={disabled}
       className="shrink-0"
     >
-      {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+      <Mic className="w-4 h-4" />
     </Button>
   );
 }
