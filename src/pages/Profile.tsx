@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Camera, ArrowLeft, Loader2, User } from "lucide-react";
+import { triggerConfettiWaterfall } from "@/lib/confetti";
 
 export default function Profile() {
   const { user, isLoading: authLoading } = useAuth();
@@ -99,6 +100,7 @@ export default function Profile() {
 
       setAvatarUrl(newAvatarUrl);
       toast.success("Profile picture updated!");
+      triggerConfettiWaterfall();
     } catch (error) {
       console.error("Error uploading avatar:", error);
       toast.error("Failed to upload profile picture");
