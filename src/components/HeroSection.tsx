@@ -113,7 +113,7 @@ export function HeroSection() {
 
             {/* Luma note */}
             <p className="text-xs text-muted-foreground/70 animate-fade-up" style={{ animationDelay: "250ms" }}>
-              Previously we operated on Luma, now we have our own page
+              Previously, we operated on Luma, now here.
             </p>
 
             {/* Stats */}
