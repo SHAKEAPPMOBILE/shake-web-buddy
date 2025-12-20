@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SHAKE_CITIES, REGIONS, City } from "@/data/cities";
+import { SHAKE_CITIES, REGIONS, City, findClosestCity } from "@/data/cities";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 
@@ -20,7 +20,7 @@ interface CitySelectorProps {
 export function CitySelector({ isPremium = false, onUpgradeClick }: CitySelectorProps) {
   const [selectedCity, setSelectedCity] = useState<string>("Detecting...");
   const [isLoading, setIsLoading] = useState(true);
-  const [detectedCity, setDetectedCity] = useState<string | null>(null);
+  const [detectedCity, setDetectedCity] = useState<City | null>(null);
 
   useEffect(() => {
     detectLocation();
@@ -31,45 +31,30 @@ export function CitySelector({ isPremium = false, onUpgradeClick }: CitySelector
     
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            // Use reverse geocoding to get city name
-            const response = await fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`
-            );
-            const data = await response.json();
-            const cityName = data.city || data.locality || "Unknown Location";
-            
-            // Check if detected city is in our list
-            const matchedCity = SHAKE_CITIES.find(
-              city => city.name.toLowerCase() === cityName.toLowerCase()
-            );
-            
-            if (matchedCity) {
-              setDetectedCity(matchedCity.name);
-              setSelectedCity(matchedCity.name);
-            } else {
-              // Find closest city or use detected name
-              setDetectedCity(cityName);
-              setSelectedCity(cityName);
-            }
-          } catch (error) {
-            setDetectedCity("Los Angeles");
-            setSelectedCity("Los Angeles");
-          }
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          // Find the closest city from our list
+          const closestCity = findClosestCity(latitude, longitude);
+          
+          setDetectedCity(closestCity);
+          setSelectedCity(closestCity.name);
           setIsLoading(false);
         },
         (error) => {
           console.log("Geolocation error:", error);
-          setDetectedCity("Los Angeles");
-          setSelectedCity("Los Angeles");
+          // Default to first city in list
+          const defaultCity = SHAKE_CITIES[0];
+          setDetectedCity(defaultCity);
+          setSelectedCity(defaultCity.name);
           setIsLoading(false);
         },
-        { timeout: 5000 }
+        { timeout: 10000, enableHighAccuracy: true }
       );
     } else {
-      setDetectedCity("Los Angeles");
-      setSelectedCity("Los Angeles");
+      const defaultCity = SHAKE_CITIES[0];
+      setDetectedCity(defaultCity);
+      setSelectedCity(defaultCity.name);
       setIsLoading(false);
     }
   };
@@ -123,14 +108,14 @@ export function CitySelector({ isPremium = false, onUpgradeClick }: CitySelector
           {detectedCity && (
             <>
               <DropdownMenuLabel className="text-xs text-muted-foreground">
-                Your Location
+                Your Location (Closest City)
               </DropdownMenuLabel>
               <DropdownMenuItem 
-                onClick={() => setSelectedCity(detectedCity)}
+                onClick={() => setSelectedCity(detectedCity.name)}
                 className="cursor-pointer"
               >
                 <MapPin className="w-4 h-4 mr-2 text-primary" />
-                {detectedCity}
+                {detectedCity.name}, {detectedCity.country}
                 <span className="ml-auto text-xs text-muted-foreground">Free</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
