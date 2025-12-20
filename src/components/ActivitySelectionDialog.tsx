@@ -83,7 +83,8 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
             setApi={setApi}
             opts={{
               align: "center",
-              loop: false,
+              loop: true,
+              containScroll: false,
             }}
             className="w-full"
           >
@@ -95,7 +96,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                 return (
                   <CarouselItem 
                     key={activity.id} 
-                    className="pl-2 md:pl-4 basis-1/3 flex justify-center"
+                    className="pl-2 md:pl-4 basis-1/3 flex justify-center min-w-0"
                   >
                     <button
                       onClick={() => {
