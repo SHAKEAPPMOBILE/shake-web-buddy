@@ -69,8 +69,28 @@ export function Header() {
       <header className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-28 md:h-36">
-            {/* Left side - Chat shortcut */}
+            {/* Left side - Mobile Menu Button */}
             <div className="flex-1 flex items-center">
+              <button
+                className="md:hidden p-2"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                {isMenuOpen ? (
+                  <X className="w-6 h-6 text-foreground" />
+                ) : (
+                  <Menu className="w-6 h-6 text-foreground" />
+                )}
+              </button>
+            </div>
+
+            {/* Centered Logo */}
+            <div className="flex items-center justify-center">
+              <img src={logoShake} alt="Shake Social" className="h-20 md:h-28 object-contain" />
+            </div>
+
+            {/* Right side buttons */}
+            <div className="flex-1 flex justify-end items-center gap-2">
+              {/* Chat shortcut - visible when user has active chat */}
               {user && activeChat && (
                 <button
                   onClick={handleOpenChat}
@@ -83,15 +103,7 @@ export function Header() {
                   )}
                 </button>
               )}
-            </div>
 
-            {/* Centered Logo */}
-            <div className="flex items-center justify-center">
-              <img src={logoShake} alt="Shake Social" className="h-20 md:h-28 object-contain" />
-            </div>
-
-            {/* Right side buttons */}
-            <div className="flex-1 flex justify-end">
               <div className="hidden md:flex items-center gap-4">
                 <CitySelector 
                   isPremium={isPremium} 
@@ -135,18 +147,6 @@ export function Header() {
                   </>
                 )}
               </div>
-
-              {/* Mobile Menu Button */}
-              <button
-                className="md:hidden p-2"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                {isMenuOpen ? (
-                  <X className="w-6 h-6 text-foreground" />
-                ) : (
-                  <Menu className="w-6 h-6 text-foreground" />
-                )}
-              </button>
             </div>
           </div>
         </div>
@@ -163,20 +163,23 @@ export function Header() {
                 onUpgradeClick={() => setShowPremiumDialog(true)} 
               />
             </div>
-            {/* Chat shortcut for mobile */}
+            {/* Chat shortcut for mobile - in menu */}
             {user && activeChat && (
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  handleOpenChat();
-                }}
-                className="relative p-2 rounded-full hover:bg-muted/50 transition-colors"
-              >
-                <MessageCircle className="w-6 h-6 text-foreground" />
-                {activeChat.hasUnread && (
-                  <span className="absolute top-1 right-1 w-3 h-3 bg-destructive rounded-full border-2 border-background" />
-                )}
-              </button>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleOpenChat();
+                  }}
+                  className="relative p-2 rounded-full hover:bg-muted/50 transition-colors flex items-center gap-2"
+                >
+                  <MessageCircle className="w-6 h-6 text-foreground" />
+                  <span className="text-sm">Open Chat</span>
+                  {activeChat.hasUnread && (
+                    <span className="w-3 h-3 bg-destructive rounded-full" />
+                  )}
+                </button>
+              </div>
             )}
             <div className="pt-4 border-t border-border flex gap-4 flex-1">
               {user ? (

@@ -8,6 +8,7 @@ import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { triggerConfettiWaterfall } from "@/lib/confetti";
 import avatar1 from "@/assets/avatar-1.png";
 import avatar2 from "@/assets/avatar-2.png";
 
@@ -47,7 +48,8 @@ export function HeroSection() {
     const result = await joinActivity(activity);
     if (result.success) {
       if (result.isNewJoin) {
-        // Show the clock animation only for new joins
+        // Show the clock animation and confetti for new joins
+        triggerConfettiWaterfall();
         setShowClockAnimation(true);
       } else {
         // Already joined today, go straight to chat
