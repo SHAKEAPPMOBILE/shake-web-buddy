@@ -8,8 +8,9 @@ interface AuthContextType {
   isLoading: boolean;
   isPremium: boolean;
   subscriptionEnd: string | null;
-  signUp: (email: string, password: string, phoneNumber?: string, name?: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUpWithPhone: (phone: string, name: string) => Promise<{ error: Error | null }>;
+  verifyOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
+  signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   checkSubscription: () => Promise<void>;
 }
@@ -90,15 +91,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [session]);
 
-  const signUp = async (email: string, password: string, phoneNumber?: string, name?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
+  const signUpWithPhone = async (phone: string, name: string) => {
+    // Send OTP to phone number for signup
+    const { error } = await supabase.auth.signInWithOtp({
+      phone,
       options: {
-        emailRedirectTo: redirectUrl,
         data: {
-          phone_number: phoneNumber,
+          phone_number: phone,
           name: name,
         },
       },
@@ -106,10 +105,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+  const signInWithPhone = async (phone: string) => {
+    // Send OTP to phone number for login
+    const { error } = await supabase.auth.signInWithOtp({
+      phone,
+    });
+    return { error: error as Error | null };
+  };
+
+  const verifyOtp = async (phone: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      phone,
+      token,
+      type: 'sms',
     });
     return { error: error as Error | null };
   };
@@ -128,8 +136,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isPremium,
         subscriptionEnd,
-        signUp,
-        signIn,
+        signUpWithPhone,
+        signInWithPhone,
+        verifyOtp,
         signOut,
         checkSubscription,
       }}
