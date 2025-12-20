@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { playNotificationSound } from "@/lib/notification-sound";
 
 interface ActiveChat {
   activityType: string;
@@ -136,6 +137,7 @@ export function useActiveChat(city: string = "New York") {
             setActiveChat((prev) =>
               prev ? { ...prev, hasUnread: true, unreadCount: prev.unreadCount + 1 } : null
             );
+            playNotificationSound();
           }
         }
       )

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { toast } from "sonner";
+import { playNotificationSound } from "@/lib/notification-sound";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -111,6 +112,10 @@ export function GroupChatDialog({
           const newMessage = payload.new as Message;
           if (newMessage.activity_type === activityType && newMessage.city === city) {
             setMessages(prev => [...prev, newMessage]);
+            // Play notification sound for messages from others
+            if (newMessage.user_id !== user?.id) {
+              playNotificationSound();
+            }
           }
         }
       )
