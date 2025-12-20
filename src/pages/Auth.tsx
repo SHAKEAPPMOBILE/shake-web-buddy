@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logoShake from "@/assets/logo_shake_original_color.png";
 import { ArrowLeft, Mail, Lock, Phone, User } from "lucide-react";
+import { AvatarPicker } from "@/components/AvatarPicker";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,9 +15,24 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+  const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCustomAvatarPreview(reader.result as string);
+        setSelectedAvatar("custom");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +148,7 @@ export default function Auth() {
               </div>
             </div>
 
-            {/* Name and Phone fields - only shown during signup */}
+            {/* Name, Phone, and Avatar fields - only shown during signup */}
             {!isLogin && (
               <>
                 <div className="space-y-2">
@@ -168,6 +184,24 @@ export default function Auth() {
                   <p className="text-xs text-muted-foreground">
                     We'll notify you when someone joins your activity!
                   </p>
+                </div>
+
+                {/* Avatar Picker */}
+                <div className="space-y-2 pt-2">
+                  <Label>Profile Picture</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <AvatarPicker
+                    selectedAvatar={selectedAvatar}
+                    onSelectAvatar={setSelectedAvatar}
+                    onUploadClick={() => fileInputRef.current?.click()}
+                    customAvatarPreview={customAvatarPreview}
+                  />
                 </div>
               </>
             )}

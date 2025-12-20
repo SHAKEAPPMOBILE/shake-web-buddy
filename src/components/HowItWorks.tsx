@@ -1,4 +1,6 @@
-import { UserPlus, Search, Calendar, Users } from "lucide-react";
+import { UserPlus, Search, Calendar } from "lucide-react";
+import avatar3 from "@/assets/avatar-3.png";
+import avatar4 from "@/assets/avatar-4.png";
 
 export function HowItWorks() {
   const steps = [
@@ -7,24 +9,28 @@ export function HowItWorks() {
       title: "Sign Up",
       description: "Create your account with email or social login in seconds.",
       color: "from-primary to-shake-coral",
+      isAvatar: false,
     },
     {
       icon: <Search className="w-8 h-8" />,
       title: "Browse Activities",
       description: "Explore activities happening near you based on your interests.",
       color: "from-shake-teal to-secondary",
+      isAvatar: false,
     },
     {
       icon: <Calendar className="w-8 h-8" />,
       title: "Join an Activity",
       description: "Join activities with other shakers.",
       color: "from-shake-purple to-accent",
+      isAvatar: false,
     },
     {
-      icon: <Users className="w-8 h-8" />,
+      icon: null,
       title: "Meet & Connect",
       description: "Show up, meet amazing people, and make lasting connections.",
       color: "from-shake-yellow to-shake-green",
+      isAvatar: true,
     },
   ];
 
@@ -61,8 +67,13 @@ export function HowItWorks() {
                 </div>
                 
                 {/* Icon */}
-                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center text-primary-foreground mb-6 shadow-lg group-hover:scale-110 transition-transform`}>
-                  {step.icon}
+                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center text-primary-foreground mb-6 shadow-lg group-hover:scale-110 transition-transform ${step.isAvatar ? 'p-0 overflow-hidden' : ''}`}>
+                  {step.isAvatar ? (
+                    <div className="flex -space-x-3 w-full h-full items-center justify-center">
+                      <img src={avatar3} alt="" className="w-10 h-10 rounded-full border-2 border-background" />
+                      <img src={avatar4} alt="" className="w-10 h-10 rounded-full border-2 border-background" />
+                    </div>
+                  ) : step.icon}
                 </div>
                 
                 <h3 className="text-xl font-display font-bold text-foreground mb-2">
