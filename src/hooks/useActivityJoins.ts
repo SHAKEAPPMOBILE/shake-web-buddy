@@ -103,6 +103,35 @@ export function useActivityJoins(city: string) {
     return { success: true, isNewJoin: true }; // New join, show animation
   };
 
+  // Leave/cancel an activity
+  const leaveActivity = async (activityType: string): Promise<boolean> => {
+    if (!user) {
+      toast.error("Please sign in to leave an activity");
+      return false;
+    }
+
+    setIsLoading(true);
+
+    const { error } = await supabase
+      .from("activity_joins")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("activity_type", activityType)
+      .eq("city", city);
+
+    if (error) {
+      console.error("Error leaving activity:", error);
+      toast.error("Failed to leave activity");
+      setIsLoading(false);
+      return false;
+    }
+
+    toast.success("You've left the activity");
+    await fetchActiveJoins();
+    setIsLoading(false);
+    return true;
+  };
+
   // Get count of users who joined a specific activity today
   const getActivityJoinCount = (activityType: string): number => {
     return activeJoins.filter(join => join.activity_type === activityType).length;
@@ -150,6 +179,7 @@ export function useActivityJoins(city: string) {
     activeJoins,
     isLoading,
     joinActivity,
+    leaveActivity,
     getActivityJoinCount,
     hasUserJoined,
     fetchActiveJoins,

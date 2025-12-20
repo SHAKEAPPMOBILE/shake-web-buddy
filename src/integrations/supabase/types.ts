@@ -44,6 +44,7 @@ export type Database = {
       activity_messages: {
         Row: {
           activity_type: string
+          audio_url: string | null
           city: string
           created_at: string
           id: string
@@ -52,6 +53,7 @@ export type Database = {
         }
         Insert: {
           activity_type: string
+          audio_url?: string | null
           city: string
           created_at?: string
           id?: string
@@ -60,6 +62,7 @@ export type Database = {
         }
         Update: {
           activity_type?: string
+          audio_url?: string | null
           city?: string
           created_at?: string
           id?: string
@@ -75,6 +78,7 @@ export type Database = {
           created_at: string
           id: string
           last_read_at: string
+          muted: boolean
           user_id: string
         }
         Insert: {
@@ -83,6 +87,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_read_at?: string
+          muted?: boolean
           user_id: string
         }
         Update: {
@@ -91,6 +96,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_read_at?: string
+          muted?: boolean
           user_id?: string
         }
         Relationships: []
