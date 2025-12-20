@@ -1,7 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Utensils, Wine, Beer, Mountain } from "lucide-react";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
+import iconLunch from "@/assets/icon-lunch.png";
+import iconDinner from "@/assets/icon-dinner.png";
+import iconDrinks from "@/assets/icon-drinks.png";
+import iconHike from "@/assets/icon-hike.png";
 
 interface ActivitySelectionDialogProps {
   open: boolean;
@@ -11,10 +14,10 @@ interface ActivitySelectionDialogProps {
 }
 
 const activities = [
-  { id: "lunch", label: "Lunch", icon: Utensils, color: "bg-shake-coral/20 text-shake-coral hover:bg-shake-coral/30" },
-  { id: "dinner", label: "Dinner", icon: Wine, color: "bg-shake-purple/20 text-shake-purple hover:bg-shake-purple/30" },
-  { id: "drinks", label: "Drinks", icon: Beer, color: "bg-shake-teal/20 text-shake-teal hover:bg-shake-teal/30" },
-  { id: "hike", label: "Hike", icon: Mountain, color: "bg-shake-green/20 text-shake-green hover:bg-shake-green/30" },
+  { id: "lunch", label: "Lunch", icon: iconLunch, color: "bg-shake-yellow/20 hover:bg-shake-yellow/30 border-shake-yellow/30" },
+  { id: "dinner", label: "Dinner", icon: iconDinner, color: "bg-muted/50 hover:bg-muted/70 border-muted-foreground/20" },
+  { id: "drinks", label: "Drinks", icon: iconDrinks, color: "bg-shake-coral/20 hover:bg-shake-coral/30 border-shake-coral/30" },
+  { id: "hike", label: "Hike", icon: iconHike, color: "bg-shake-coral/20 hover:bg-shake-coral/30 border-shake-coral/30" },
 ];
 
 export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, city }: ActivitySelectionDialogProps) {
@@ -37,10 +40,10 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
               <button
                 key={activity.id}
                 onClick={() => onSelectActivity(activity.id)}
-                className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all duration-300 ${activity.color} hover:scale-105 relative`}
+                className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all duration-300 border ${activity.color} hover:scale-105 relative`}
               >
-                <activity.icon className="w-10 h-10" />
-                <span className="font-semibold text-lg">{activity.label}</span>
+                <img src={activity.icon} alt={activity.label} className="w-16 h-16 object-contain" />
+                <span className="font-semibold text-lg text-foreground">{activity.label}</span>
                 {joinCount > 0 && (
                   <span className="absolute top-2 right-2 bg-shake-yellow text-background text-xs font-bold px-2 py-0.5 rounded-full">
                     {joinCount} today
