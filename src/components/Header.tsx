@@ -7,6 +7,7 @@ import logoShake from "@/assets/logo_shake_original_color.png";
 import { CitySelector } from "./CitySelector";
 import { PremiumDialog } from "./PremiumDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
+import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveChat } from "@/hooks/useActiveChat";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
@@ -18,11 +19,12 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
+  const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, isPremium, signOut } = useAuth();
   const navigate = useNavigate();
-  const { activeChat, markAsRead } = useActiveChat(DEFAULT_CITY);
-  const { getActivityJoinCount } = useActivityJoins(DEFAULT_CITY);
+  const { activeChat, markAsRead, refreshActiveChat } = useActiveChat(DEFAULT_CITY);
+  const { joinActivity, getActivityJoinCount } = useActivityJoins(DEFAULT_CITY);
 
   // Fetch user avatar
   useEffect(() => {
@@ -62,6 +64,18 @@ export function Header() {
     if (!open && activeChat) {
       markAsRead(activeChat.activityType, activeChat.city);
     }
+  };
+
+  const handleBackToActivities = () => {
+    setShowChatDialog(false);
+    setShowActivityDialog(true);
+  };
+
+  const handleSelectActivity = async (activity: string) => {
+    setShowActivityDialog(false);
+    await joinActivity(activity);
+    await refreshActiveChat();
+    setShowChatDialog(true);
   };
 
   return (
@@ -226,12 +240,19 @@ export function Header() {
         onOpenChange={setShowPremiumDialog}
       />
 
+      <ActivitySelectionDialog
+        open={showActivityDialog}
+        onOpenChange={setShowActivityDialog}
+        onSelectActivity={handleSelectActivity}
+        city={DEFAULT_CITY}
+      />
+
       {activeChat && (
         <GroupChatDialog
           open={showChatDialog}
           onOpenChange={handleChatClose}
           activityType={activeChat.activityType}
-          onBack={() => setShowChatDialog(false)}
+          onBack={handleBackToActivities}
           attendeeCount={getActivityJoinCount(activeChat.activityType)}
           city={activeChat.city}
         />
