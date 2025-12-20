@@ -6,9 +6,16 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logoShake from "@/assets/logo_shake_original_color.png";
-import { ArrowLeft, Phone, User } from "lucide-react";
+import { ArrowLeft, ChevronDown, Phone, User } from "lucide-react";
 import { AvatarPicker } from "@/components/AvatarPicker";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { countryCodes, CountryCode } from "@/data/countryCodes";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Auth() {
   const [step, setStep] = useState<'phone' | 'otp' | 'name'>('phone');
@@ -20,6 +27,11 @@ export default function Auth() {
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(
+    countryCodes.find(c => c.code === "PT") || countryCodes[0]
+  );
+  const [countrySearchOpen, setCountrySearchOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
   const { signUpWithPhone, signInWithPhone, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,38 +58,34 @@ export default function Auth() {
   };
 
   const formatPhoneNumber = (phone: string): string => {
-    // Remove all non-digit characters except +
-    let cleaned = phone.replace(/[^\d+]/g, '');
-    // Ensure it starts with +
-    if (!cleaned.startsWith('+')) {
-      cleaned = '+1' + cleaned; // Default to US
-    }
-    return cleaned;
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    // Combine with selected country dial code
+    return selectedCountry.dialCode + cleaned;
   };
 
+  const filteredCountries = countryCodes.filter(country =>
+    country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+    country.dialCode.includes(countrySearch) ||
+    country.code.toLowerCase().includes(countrySearch.toLowerCase())
+  );
+
   const validatePhoneNumber = (phone: string): { isValid: boolean; error?: string } => {
-    const cleaned = phone.replace(/[^\d+]/g, '');
+    const cleaned = phone.replace(/\D/g, '');
     
     // Check if empty
-    if (!cleaned || cleaned === '+') {
+    if (!cleaned) {
       return { isValid: false, error: "Please enter your phone number" };
     }
     
-    // Check minimum length (country code + at least 6 digits)
-    const digitsOnly = cleaned.replace(/\D/g, '');
-    if (digitsOnly.length < 7) {
+    // Check minimum length (at least 6 digits for the number itself)
+    if (cleaned.length < 6) {
       return { isValid: false, error: "Phone number is too short" };
     }
     
-    // Check maximum length (max 15 digits per E.164 standard)
-    if (digitsOnly.length > 15) {
+    // Check maximum length (max 15 digits per E.164 standard, minus country code)
+    if (cleaned.length > 12) {
       return { isValid: false, error: "Phone number is too long" };
-    }
-    
-    // Basic format check - should have country code and number
-    const phoneRegex = /^\+?[1-9]\d{6,14}$/;
-    if (!phoneRegex.test(cleaned)) {
-      return { isValid: false, error: "Please enter a valid phone number with country code (e.g., +1 234 567 8900)" };
     }
     
     return { isValid: true };
@@ -216,20 +224,73 @@ export default function Auth() {
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+1 234 567 8900"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
+                <div className="flex gap-2">
+                  {/* Country Code Selector */}
+                  <Popover open={countrySearchOpen} onOpenChange={setCountrySearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={countrySearchOpen}
+                        className="w-[120px] justify-between px-3"
+                      >
+                        <span className="flex items-center gap-1">
+                          <span className="text-lg">{selectedCountry.flag}</span>
+                          <span className="text-sm">{selectedCountry.dialCode}</span>
+                        </span>
+                        <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[280px] p-0" align="start">
+                      <div className="p-2 border-b">
+                        <Input
+                          placeholder="Search country..."
+                          value={countrySearch}
+                          onChange={(e) => setCountrySearch(e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <ScrollArea className="h-[200px]">
+                        <div className="p-1">
+                          {filteredCountries.map((country) => (
+                            <button
+                              key={country.code}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCountry(country);
+                                setCountrySearchOpen(false);
+                                setCountrySearch("");
+                              }}
+                              className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-accent ${
+                                selectedCountry.code === country.code ? "bg-accent" : ""
+                              }`}
+                            >
+                              <span className="text-lg">{country.flag}</span>
+                              <span className="flex-1 text-left">{country.name}</span>
+                              <span className="text-muted-foreground">{country.dialCode}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  {/* Phone Number Input */}
+                  <div className="relative flex-1">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="123 456 789"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value.replace(/[^\d\s]/g, ''))}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  We'll send you a verification code
+                  We'll send you a verification code via SMS
                 </p>
               </div>
 
