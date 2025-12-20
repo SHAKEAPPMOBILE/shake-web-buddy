@@ -42,8 +42,8 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                 onClick={() => onSelectActivity(activity.id)}
                 className="flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:scale-105 relative group"
               >
-                <div className={`w-24 h-24 rounded-full ${activity.color} flex items-center justify-center transition-all duration-300`}>
-                  <img src={activity.icon} alt={activity.label} className="w-16 h-16 object-contain" />
+                <div className={`w-24 h-24 rounded-full ${activity.color} flex items-center justify-center transition-all duration-300 overflow-hidden`}>
+                  <img src={activity.icon} alt={activity.label} className="w-16 h-16 object-cover rounded-full" />
                 </div>
                 <span className="font-semibold text-lg text-foreground">{activity.label}</span>
                 {joinCount > 0 && (
