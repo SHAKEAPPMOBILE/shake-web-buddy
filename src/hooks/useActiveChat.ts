@@ -6,6 +6,7 @@ interface ActiveChat {
   activityType: string;
   city: string;
   hasUnread: boolean;
+  unreadCount: number;
 }
 
 export function useActiveChat(city: string = "New York") {
@@ -62,10 +63,12 @@ export function useActiveChat(city: string = "New York") {
         .gt("created_at", lastReadAt)
         .neq("user_id", user.id);
 
+      const count = unreadCount || 0;
       setActiveChat({
         activityType: mostRecentJoin.activity_type,
         city: mostRecentJoin.city,
-        hasUnread: (unreadCount || 0) > 0,
+        hasUnread: count > 0,
+        unreadCount: count,
       });
     } catch (error) {
       console.error("Error checking active chat:", error);
@@ -98,7 +101,7 @@ export function useActiveChat(city: string = "New York") {
 
       // Update local state
       setActiveChat((prev) =>
-        prev ? { ...prev, hasUnread: false } : null
+        prev ? { ...prev, hasUnread: false, unreadCount: 0 } : null
       );
     } catch (error) {
       console.error("Error marking as read:", error);
@@ -131,7 +134,7 @@ export function useActiveChat(city: string = "New York") {
             newMessage.user_id !== user.id
           ) {
             setActiveChat((prev) =>
-              prev ? { ...prev, hasUnread: true } : null
+              prev ? { ...prev, hasUnread: true, unreadCount: prev.unreadCount + 1 } : null
             );
           }
         }
