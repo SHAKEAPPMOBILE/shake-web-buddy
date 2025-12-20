@@ -28,7 +28,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
         <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-display">What are you in the mood for?</DialogTitle>
+          <DialogTitle className="text-center text-2xl font-display">What's calling you today?</DialogTitle>
           <p className="text-center text-sm text-muted-foreground mt-2">
             Your choice is recorded for 24 hours. You'll be notified when others join!
           </p>
