@@ -116,7 +116,18 @@
   }
 
   .glass {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50;
+    @apply backdrop-blur-xl border border-border/50;
+    background: linear-gradient(to right, rgba(15, 15, 20, 0.85), rgba(15, 15, 20, 0.85)), 
+                url('/images/banner-background.png');
+    background-size: cover;
+    background-position: center;
+  }
+
+  .banner-bg {
+    background: linear-gradient(to right, rgba(15, 15, 20, 0.7), rgba(15, 15, 20, 0.7)), 
+                url('/images/banner-background.png');
+    background-size: cover;
+    background-position: center;
   }
 
   .glow-primary {

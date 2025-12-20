@@ -4,7 +4,7 @@ import logoShake from "@/assets/logo_shake_original_color.png";
 
 export function Footer() {
   return (
-    <footer className="py-16 border-t border-border">
+    <footer className="py-16 border-t border-border banner-bg">
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center gap-8 mb-12">
           {/* Brand */}
