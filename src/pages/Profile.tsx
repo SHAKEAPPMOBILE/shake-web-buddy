@@ -17,6 +17,7 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [name, setName] = useState("");
+  const [billingEmail, setBillingEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -36,7 +37,7 @@ export default function Profile() {
       
       const { data, error } = await supabase
         .from("profiles")
-        .select("name, avatar_url")
+        .select("name, avatar_url, billing_email")
         .eq("user_id", user.id)
         .single();
 
@@ -45,6 +46,7 @@ export default function Profile() {
       } else if (data) {
         setName(data.name || "");
         setAvatarUrl(data.avatar_url);
+        setBillingEmail(data.billing_email || "");
       }
       setIsLoading(false);
     };
@@ -117,7 +119,7 @@ export default function Profile() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ name })
+        .update({ name, billing_email: billingEmail || null })
         .eq("user_id", user.id);
 
       if (error) throw error;
@@ -216,6 +218,22 @@ export default function Profile() {
                 placeholder="Enter your name"
                 className="bg-muted/50"
               />
+            </div>
+
+            {/* Billing Email Section */}
+            <div className="space-y-2">
+              <Label htmlFor="billingEmail">Billing Email</Label>
+              <Input
+                id="billingEmail"
+                type="email"
+                value={billingEmail}
+                onChange={(e) => setBillingEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="bg-muted/50"
+              />
+              <p className="text-xs text-muted-foreground">
+                Used for subscription receipts and invoices
+              </p>
             </div>
 
             {/* Phone (read-only) */}
