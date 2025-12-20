@@ -32,11 +32,33 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
+  const [selectingId, setSelectingId] = useState<string | null>(null);
+
+  // Haptic feedback helper
+  const triggerHaptic = useCallback((type: 'light' | 'medium' | 'heavy' = 'medium') => {
+    if ('vibrate' in navigator) {
+      const duration = type === 'light' ? 10 : type === 'medium' ? 20 : 30;
+      navigator.vibrate(duration);
+    }
+  }, []);
 
   const onSelect = useCallback(() => {
     if (!api) return;
     setCurrentIndex(api.selectedScrollSnap());
-  }, [api]);
+    triggerHaptic('light');
+  }, [api, triggerHaptic]);
+
+  // Handle activity selection with animation
+  const handleSelectActivity = useCallback((activityId: string) => {
+    triggerHaptic('heavy');
+    setSelectingId(activityId);
+    
+    // Small delay for animation before closing
+    setTimeout(() => {
+      onSelectActivity(activityId);
+      setSelectingId(null);
+    }, 200);
+  }, [onSelectActivity, triggerHaptic]);
 
   // Set up the carousel API callback
   useEffect(() => {
@@ -78,8 +100,9 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                     <button
                       onClick={() => {
                         if (isCenter) {
-                          onSelectActivity(activity.id);
+                          handleSelectActivity(activity.id);
                         } else {
+                          triggerHaptic('light');
                           api?.scrollTo(index);
                         }
                       }}
@@ -90,6 +113,8 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                           rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden
                           ${activity.color}
                           ${isCenter ? 'w-24 h-24 scale-100' : 'w-16 h-16 scale-90 opacity-60'}
+                          ${selectingId === activity.id ? 'animate-pulse scale-110 ring-4 ring-primary/50' : ''}
+                          ${isCenter && !selectingId ? 'active:scale-95' : ''}
                         `}
                       >
                         <img 
@@ -102,6 +127,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                         className={`
                           font-semibold text-foreground transition-all duration-300
                           ${isCenter ? 'opacity-100 text-lg' : 'opacity-0 text-sm h-0'}
+                          ${selectingId === activity.id ? 'text-primary font-bold' : ''}
                         `}
                       >
                         {activity.label}
