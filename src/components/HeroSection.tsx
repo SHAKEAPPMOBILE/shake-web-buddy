@@ -81,7 +81,7 @@ export function HeroSection() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card/50 border border-border/50 backdrop-blur-sm animate-fade-up">
               <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
               <span className="text-sm text-muted-foreground">
-                Real connections, real experiences
+                Real connections, real life.
               </span>
             </div>
 
