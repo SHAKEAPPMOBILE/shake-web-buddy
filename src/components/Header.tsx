@@ -22,13 +22,13 @@ export function Header() {
     <>
       <header className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-28 md:h-36">
             {/* Empty spacer for left side */}
             <div className="flex-1" />
 
-            {/* Centered Logo - Made bigger with padding to prevent cutoff */}
-            <div className="flex items-center justify-center pt-4">
-              <img src={logoShake} alt="Shake Social" className="h-20 md:h-32 object-contain" />
+            {/* Centered Logo */}
+            <div className="flex items-center justify-center">
+              <img src={logoShake} alt="Shake Social" className="h-20 md:h-28 object-contain" />
             </div>
 
             {/* Right side buttons */}
@@ -84,7 +84,7 @@ export function Header() {
 
         {/* Mobile Menu */}
         <div className={cn(
-          "md:hidden absolute top-20 left-0 right-0 bg-card border-b border-border transition-all duration-300",
+          "md:hidden absolute top-28 md:top-36 left-0 right-0 bg-card border-b border-border transition-all duration-300",
           isMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
         )}>
           <div className="container mx-auto px-4 py-4 space-y-4">
