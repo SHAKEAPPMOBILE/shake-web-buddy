@@ -37,6 +37,28 @@ export default function Auth() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-detect user's country on mount
+  useEffect(() => {
+    const detectCountry = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        if (data.country_code) {
+          const detectedCountry = countryCodes.find(
+            c => c.code === data.country_code
+          );
+          if (detectedCountry) {
+            setSelectedCountry(detectedCountry);
+          }
+        }
+      } catch (error) {
+        // Silently fail, keep default country
+        console.log('Could not detect country, using default');
+      }
+    };
+    detectCountry();
+  }, []);
+
   // Countdown timer effect
   useEffect(() => {
     if (resendCountdown > 0) {
