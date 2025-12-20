@@ -22,25 +22,21 @@ export function CTASection() {
             Your next adventure is just a shake away.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <a href="#hero" className="w-full sm:w-auto">
-              <div className="relative">
-                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Soon</span>
-                <Button variant="default" size="lg" className="w-full gap-3 opacity-50 cursor-not-allowed" disabled>
-                  <Apple className="w-5 h-5" />
-                  App Store
-                </Button>
-              </div>
-            </a>
-            <a href="#hero" className="w-full sm:w-auto">
-              <div className="relative">
-                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Soon</span>
-                <Button variant="outline" size="lg" className="w-full gap-3 opacity-50 cursor-not-allowed" disabled>
-                  <Play className="w-5 h-5" />
-                  Google Play
-                </Button>
-              </div>
-            </a>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
+            <div className="w-full sm:w-auto">
+              <Button variant="default" size="lg" className="w-full gap-3 opacity-50 cursor-not-allowed" disabled>
+                <Apple className="w-5 h-5" />
+                <span>App Store</span>
+                <span className="text-xs bg-background/20 px-2 py-0.5 rounded-full ml-1">Soon</span>
+              </Button>
+            </div>
+            <div className="w-full sm:w-auto">
+              <Button variant="outline" size="lg" className="w-full gap-3 opacity-50 cursor-not-allowed" disabled>
+                <Play className="w-5 h-5" />
+                <span>Google Play</span>
+                <span className="text-xs bg-muted px-2 py-0.5 rounded-full ml-1">Soon</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

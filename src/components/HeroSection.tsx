@@ -8,6 +8,8 @@ import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import avatar1 from "@/assets/avatar-1.png";
+import avatar2 from "@/assets/avatar-2.png";
 
 // Default city - in a real app this would come from user selection
 const DEFAULT_CITY = "New York";
@@ -88,7 +90,14 @@ export function HeroSection() {
               className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-tight animate-fade-up"
               style={{ animationDelay: "100ms" }}
             >
-              meet new people.
+              meet new{" "}
+              <span className="inline-flex items-center gap-1">
+                people
+                <span className="inline-flex -space-x-3 ml-2">
+                  <img src={avatar1} alt="" className="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-background" />
+                  <img src={avatar2} alt="" className="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-background" />
+                </span>
+              </span>.
               <br />
               <span className="text-gradient">SHAKE up your life.</span>
             </h1>
