@@ -2,8 +2,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, Users } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -11,6 +14,16 @@ interface GroupChatDialogProps {
   activityType: string;
   onBack: () => void;
   attendeeCount?: number;
+  city?: string;
+}
+
+interface Message {
+  id: string;
+  user_id: string;
+  activity_type: string;
+  city: string;
+  message: string;
+  created_at: string;
 }
 
 const activityTitles: Record<string, string> = {
@@ -27,9 +40,20 @@ const activityLocations: Record<string, string> = {
   hike: "TBD - Vote in chat!",
 };
 
-export function GroupChatDialog({ open, onOpenChange, activityType, onBack, attendeeCount = 0 }: GroupChatDialogProps) {
+export function GroupChatDialog({ 
+  open, 
+  onOpenChange, 
+  activityType, 
+  onBack, 
+  attendeeCount = 0,
+  city = "New York"
+}: GroupChatDialogProps) {
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isSending, setIsSending] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   // Update time every minute
   useEffect(() => {
@@ -38,6 +62,97 @@ export function GroupChatDialog({ open, onOpenChange, activityType, onBack, atte
     }, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  // Fetch messages when dialog opens
+  useEffect(() => {
+    if (!open || !activityType) return;
+
+    const fetchMessages = async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { data, error } = await supabase
+        .from("activity_messages")
+        .select("*")
+        .eq("activity_type", activityType)
+        .eq("city", city)
+        .gte("created_at", today.toISOString())
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching messages:", error);
+        return;
+      }
+
+      setMessages(data || []);
+    };
+
+    fetchMessages();
+
+    // Subscribe to new messages
+    const channel = supabase
+      .channel('activity-messages-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'activity_messages',
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          if (newMessage.activity_type === activityType && newMessage.city === city) {
+            setMessages(prev => [...prev, newMessage]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [open, activityType, city]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !user) {
+      if (!user) {
+        toast.error("Please sign in to send messages");
+      }
+      return;
+    }
+
+    setIsSending(true);
+
+    const { error } = await supabase
+      .from("activity_messages")
+      .insert({
+        user_id: user.id,
+        activity_type: activityType,
+        city: city,
+        message: message.trim(),
+      });
+
+    if (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+    } else {
+      setMessage("");
+    }
+
+    setIsSending(false);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   const title = activityTitles[activityType] || activityTitles.lunch;
   const location = activityLocations[activityType] || activityLocations.lunch;
@@ -85,14 +200,48 @@ export function GroupChatDialog({ open, onOpenChange, activityType, onBack, atte
           </div>
         )}
 
-        {/* Messages placeholder */}
+        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <div className="flex items-center justify-center h-full text-muted-foreground/50">
-            <p className="text-center text-sm">
-              Chat with others who joined this activity!<br />
-              Messages will appear here.
-            </p>
-          </div>
+          {messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-muted-foreground/50">
+              <p className="text-center text-sm">
+                Start the conversation!<br />
+                Messages from today will appear here.
+              </p>
+            </div>
+          ) : (
+            messages.map((msg) => {
+              const isOwnMessage = msg.user_id === user?.id;
+              return (
+                <div 
+                  key={msg.id} 
+                  className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                >
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0">
+                    {isOwnMessage ? '😊' : '👤'}
+                  </div>
+                  <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
+                    <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
+                      <span className="font-semibold text-sm">
+                        {isOwnMessage ? 'You' : 'Shaker'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(msg.created_at), 'h:mm a')}
+                      </span>
+                    </div>
+                    <p className={`text-sm text-foreground/90 mt-1 p-2 rounded-lg inline-block ${
+                      isOwnMessage 
+                        ? 'bg-shake-yellow/20 text-foreground' 
+                        : 'bg-muted'
+                    }`}>
+                      {msg.message}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
@@ -102,9 +251,16 @@ export function GroupChatDialog({ open, onOpenChange, activityType, onBack, atte
               placeholder="Type a message..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="flex-1 bg-muted/50 border-border/50"
+              disabled={isSending}
             />
-            <Button variant="shake" size="icon">
+            <Button 
+              variant="shake" 
+              size="icon" 
+              onClick={handleSendMessage}
+              disabled={isSending || !message.trim()}
+            >
               <Send className="w-4 h-4" />
             </Button>
           </div>

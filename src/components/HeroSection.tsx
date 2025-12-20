@@ -42,10 +42,15 @@ export function HeroSection() {
     setShowActivityDialog(false);
     
     // Join the activity
-    const success = await joinActivity(activity);
-    if (success) {
-      // Show the clock animation
-      setShowClockAnimation(true);
+    const result = await joinActivity(activity);
+    if (result.success) {
+      if (result.isNewJoin) {
+        // Show the clock animation only for new joins
+        setShowClockAnimation(true);
+      } else {
+        // Already joined today, go straight to chat
+        setShowChatDialog(true);
+      }
     }
   };
 
@@ -176,6 +181,7 @@ export function HeroSection() {
         activityType={selectedActivity}
         onBack={handleBackToActivities}
         attendeeCount={getActivityJoinCount(selectedActivity)}
+        city={DEFAULT_CITY}
       />
     </>
   );

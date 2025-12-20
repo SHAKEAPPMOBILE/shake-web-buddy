@@ -6,12 +6,13 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logoShake from "@/assets/logo_shake_original_color.png";
-import { ArrowLeft, Mail, Lock, Phone } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Phone, User } from "lucide-react";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
@@ -35,14 +36,19 @@ export default function Auth() {
           navigate("/");
         }
       } else {
-        // Validate phone number for signup
+        // Validate required fields for signup
+        if (!name.trim()) {
+          toast.error("Name is required");
+          setIsLoading(false);
+          return;
+        }
         if (!phoneNumber.trim()) {
           toast.error("Phone number is required for notifications");
           setIsLoading(false);
           return;
         }
 
-        const { error } = await signUp(email, password, phoneNumber);
+        const { error } = await signUp(email, password, phoneNumber, name);
         if (error) {
           if (error.message.includes("already registered")) {
             toast.error("This email is already registered. Try signing in instead.");
@@ -126,26 +132,44 @@ export default function Auth() {
               </div>
             </div>
 
-            {/* Phone number field - only shown during signup */}
+            {/* Name and Phone fields - only shown during signup */}
             {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+1 234 567 8900"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Your name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  We'll notify you when someone joins your activity!
-                </p>
-              </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+1 234 567 8900"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    We'll notify you when someone joins your activity!
+                  </p>
+                </div>
+              </>
             )}
 
             <Button

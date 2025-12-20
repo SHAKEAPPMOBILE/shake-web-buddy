@@ -41,10 +41,38 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_messages: {
+        Row: {
+          activity_type: string
+          city: string
+          created_at: string
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          city: string
+          created_at?: string
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          city?: string
+          created_at?: string
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           id: string
+          name: string | null
           phone_number: string | null
           updated_at: string
           user_id: string
@@ -52,6 +80,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          name?: string | null
           phone_number?: string | null
           updated_at?: string
           user_id: string
@@ -59,6 +88,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          name?: string | null
           phone_number?: string | null
           updated_at?: string
           user_id?: string
