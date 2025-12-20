@@ -53,7 +53,7 @@ export function AvatarPicker({
           className={cn(
             "relative w-14 h-14 rounded-full border-2 transition-all overflow-hidden",
             customAvatarPreview && selectedAvatar === "custom"
-              ? "border-primary ring-2 ring-primary/20"
+              ? "border-shake-green ring-2 ring-shake-green/20"
               : "border-border hover:border-primary/50"
           )}
           title="Upload from library"
@@ -62,8 +62,8 @@ export function AvatarPicker({
             <>
               <img src={customAvatarPreview} alt="Custom avatar" className="w-full h-full object-cover" />
               {selectedAvatar === "custom" && (
-                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                  <Check className="w-5 h-5 text-primary" />
+                <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center">
+                  <Check className="w-5 h-5 text-shake-green" />
                 </div>
               )}
             </>
@@ -83,14 +83,14 @@ export function AvatarPicker({
             className={cn(
               "relative w-14 h-14 rounded-full border-2 transition-all overflow-hidden",
               selectedAvatar === avatar.id
-                ? "border-primary ring-2 ring-primary/20"
+                ? "border-shake-green ring-2 ring-shake-green/20"
                 : "border-border hover:border-primary/50"
             )}
           >
             <img src={avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
             {selectedAvatar === avatar.id && (
-              <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                <Check className="w-5 h-5 text-primary" />
+              <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center">
+                <Check className="w-5 h-5 text-shake-green" />
               </div>
             )}
           </button>
