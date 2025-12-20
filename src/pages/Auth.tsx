@@ -22,6 +22,7 @@ export default function Auth() {
   const { signUpWithPhone, signInWithPhone, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -242,10 +243,19 @@ export default function Auth() {
                   onChange={handleFileChange}
                   className="hidden"
                 />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="user"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
                 <AvatarPicker
                   selectedAvatar={selectedAvatar}
                   onSelectAvatar={setSelectedAvatar}
                   onUploadClick={() => fileInputRef.current?.click()}
+                  onCameraClick={() => cameraInputRef.current?.click()}
                   customAvatarPreview={customAvatarPreview}
                 />
               </div>
