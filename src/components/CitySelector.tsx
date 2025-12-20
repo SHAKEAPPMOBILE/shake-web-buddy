@@ -86,7 +86,7 @@ export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
         {isLoading ? (
           <Loader2 className="w-4 h-4 text-primary animate-spin" />
         ) : (
-          <MapPin className="w-4 h-4 text-primary" />
+          <MapPin className="w-4 h-4 text-shake-teal" />
         )}
         <span>{selectedCity}</span>
         <ChevronDown className="w-3 h-3" />
@@ -116,7 +116,7 @@ export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
                 onClick={() => setSelectedCity(detectedCity.name)}
                 className="cursor-pointer"
               >
-                <MapPin className="w-4 h-4 mr-2 text-primary" />
+                <MapPin className="w-4 h-4 mr-2 text-shake-teal" />
                 {detectedCity.name}, {detectedCity.country}
                 <span className="ml-auto text-xs text-muted-foreground">Free</span>
               </DropdownMenuItem>
