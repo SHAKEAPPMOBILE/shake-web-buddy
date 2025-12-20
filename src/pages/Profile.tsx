@@ -8,11 +8,11 @@ import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, Loader2, User } from "lucide-react";
+import { Camera, ArrowLeft, Loader2, User, Crown, CreditCard } from "lucide-react";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 
 export default function Profile() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, isPremium, subscriptionEnd } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -22,6 +22,7 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isOpeningPortal, setIsOpeningPortal] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -131,6 +132,24 @@ export default function Profile() {
       toast.error("Failed to update profile");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setIsOpeningPortal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error) {
+      console.error("Error opening customer portal:", error);
+      toast.error("Failed to open subscription management. Make sure you have an active subscription.");
+    } finally {
+      setIsOpeningPortal(false);
     }
   };
 
@@ -250,6 +269,39 @@ export default function Profile() {
                 Phone number cannot be changed
               </p>
             </div>
+
+            {/* Subscription Section */}
+            {isPremium && (
+              <div className="space-y-3 p-4 rounded-xl bg-shake-yellow/10 border border-shake-yellow/30">
+                <div className="flex items-center gap-2">
+                  <Crown className="w-5 h-5 text-shake-yellow" />
+                  <span className="font-semibold text-foreground">Premium Member</span>
+                </div>
+                {subscriptionEnd && (
+                  <p className="text-sm text-muted-foreground">
+                    Renews on {new Date(subscriptionEnd).toLocaleDateString()}
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleManageSubscription}
+                  disabled={isOpeningPortal}
+                >
+                  {isOpeningPortal ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Opening...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Manage Subscription
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
 
             {/* Save Button */}
             <Button
