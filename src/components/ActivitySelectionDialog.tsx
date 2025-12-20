@@ -1,6 +1,13 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState, useCallback, useEffect } from "react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselApi,
+} from "@/components/ui/carousel";
 import iconLunch from "@/assets/icon-lunch.png";
 import iconDinner from "@/assets/icon-dinner.png";
 import iconDrinks from "@/assets/icon-drinks.png";
@@ -23,6 +30,22 @@ const activities = [
 export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, city }: ActivitySelectionDialogProps) {
   const { getActivityJoinCount } = useActivityJoins(city);
   const { user } = useAuth();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [api, setApi] = useState<CarouselApi>();
+
+  const onSelect = useCallback(() => {
+    if (!api) return;
+    setCurrentIndex(api.selectedScrollSnap());
+  }, [api]);
+
+  // Set up the carousel API callback
+  useEffect(() => {
+    if (!api) return;
+    api.on("select", onSelect);
+    return () => {
+      api.off("select", onSelect);
+    };
+  }, [api, onSelect]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -30,30 +53,83 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-display">What's calling you today?</DialogTitle>
           <p className="text-center text-sm text-muted-foreground mt-2">
-            Your choice is recorded for 24 hours. You'll be notified when others join!
+            Swipe to choose. Your choice is recorded for 24 hours!
           </p>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-4 py-6">
-          {activities.map((activity) => {
-            const joinCount = getActivityJoinCount(activity.id);
-            return (
+        <div className="py-6">
+          <Carousel
+            setApi={setApi}
+            opts={{
+              align: "center",
+              loop: false,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {activities.map((activity, index) => {
+                const joinCount = getActivityJoinCount(activity.id);
+                const isCenter = currentIndex === index;
+                
+                return (
+                  <CarouselItem 
+                    key={activity.id} 
+                    className="pl-2 md:pl-4 basis-1/3 flex justify-center"
+                  >
+                    <button
+                      onClick={() => {
+                        if (isCenter) {
+                          onSelectActivity(activity.id);
+                        } else {
+                          api?.scrollTo(index);
+                        }
+                      }}
+                      className="flex flex-col items-center justify-center gap-2 transition-all duration-300 relative group"
+                    >
+                      <div 
+                        className={`
+                          rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden
+                          ${activity.color}
+                          ${isCenter ? 'w-24 h-24 scale-100' : 'w-16 h-16 scale-90 opacity-60'}
+                        `}
+                      >
+                        <img 
+                          src={activity.icon} 
+                          alt={activity.label} 
+                          className={`object-cover rounded-full transition-all duration-300 ${isCenter ? 'w-16 h-16' : 'w-10 h-10'}`} 
+                        />
+                      </div>
+                      <span 
+                        className={`
+                          font-semibold text-foreground transition-all duration-300
+                          ${isCenter ? 'opacity-100 text-lg' : 'opacity-0 text-sm h-0'}
+                        `}
+                      >
+                        {activity.label}
+                      </span>
+                      {joinCount > 0 && isCenter && (
+                        <span className="absolute -top-1 -right-1 bg-shake-yellow text-background text-xs font-bold px-2 py-0.5 rounded-full animate-fade-in">
+                          {joinCount} today
+                        </span>
+                      )}
+                    </button>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+          </Carousel>
+          
+          {/* Dots indicator */}
+          <div className="flex justify-center gap-2 mt-4">
+            {activities.map((_, index) => (
               <button
-                key={activity.id}
-                onClick={() => onSelectActivity(activity.id)}
-                className="flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:scale-105 relative group"
-              >
-                <div className={`w-24 h-24 rounded-full ${activity.color} flex items-center justify-center transition-all duration-300 overflow-hidden`}>
-                  <img src={activity.icon} alt={activity.label} className="w-16 h-16 object-cover rounded-full" />
-                </div>
-                <span className="font-semibold text-lg text-foreground">{activity.label}</span>
-                {joinCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-shake-yellow text-background text-xs font-bold px-2 py-0.5 rounded-full">
-                    {joinCount} today
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                key={index}
+                onClick={() => api?.scrollTo(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  currentIndex === index ? 'bg-primary w-4' : 'bg-muted-foreground/30'
+                }`}
+              />
+            ))}
+          </div>
         </div>
         {!user && (
           <p className="text-center text-xs text-muted-foreground/70">
