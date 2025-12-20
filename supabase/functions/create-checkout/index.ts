@@ -72,7 +72,7 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${origin}/?subscription=success`,
+      success_url: `${origin}/subscription-success`,
       cancel_url: `${origin}/?subscription=canceled`,
     });
 
