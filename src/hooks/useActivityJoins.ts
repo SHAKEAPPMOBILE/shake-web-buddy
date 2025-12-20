@@ -33,11 +33,11 @@ export function useActivityJoins(city: string) {
     setActiveJoins(data || []);
   };
 
-  // Join an activity
-  const joinActivity = async (activityType: string): Promise<boolean> => {
+  // Join an activity - returns { success: boolean, isNewJoin: boolean }
+  const joinActivity = async (activityType: string): Promise<{ success: boolean; isNewJoin: boolean }> => {
     if (!user) {
       toast.error("Please sign in to join an activity");
-      return false;
+      return { success: false, isNewJoin: false };
     }
 
     setIsLoading(true);
@@ -54,13 +54,13 @@ export function useActivityJoins(city: string) {
     if (checkError) {
       console.error("Error checking existing joins:", checkError);
       setIsLoading(false);
-      return false;
+      return { success: false, isNewJoin: false };
     }
 
     if (existingJoins && existingJoins.length > 0) {
       toast.info("You've already joined this activity today!");
       setIsLoading(false);
-      return true; // Still return true to show the chat
+      return { success: true, isNewJoin: false }; // Already joined, no animation
     }
 
     // Insert new join
@@ -76,13 +76,13 @@ export function useActivityJoins(city: string) {
       console.error("Error joining activity:", insertError);
       toast.error("Failed to join activity");
       setIsLoading(false);
-      return false;
+      return { success: false, isNewJoin: false };
     }
 
     toast.success("You've joined the activity!");
     await fetchActiveJoins();
     setIsLoading(false);
-    return true;
+    return { success: true, isNewJoin: true }; // New join, show animation
   };
 
   // Get count of users who joined a specific activity today
