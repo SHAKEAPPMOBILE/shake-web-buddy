@@ -151,17 +151,22 @@ export function useActivityJoins(city: string) {
 
     fetchActiveJoins();
 
+    // Use a unique channel name per city to avoid cross-city notifications
+    const channelName = `activity-joins-${city.replace(/\s+/g, '-').toLowerCase()}`;
+    
     const channel = supabase
-      .channel('activity-joins-channel')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'activity_joins',
+          filter: `city=eq.${city}`,
         },
         (payload) => {
           const newJoin = payload.new as ActivityJoin;
+          // Double-check city match and exclude own joins
           if (newJoin.city === city && newJoin.user_id !== user?.id) {
             toast.info(`Someone just joined ${newJoin.activity_type}! 🎉`);
             fetchActiveJoins();
