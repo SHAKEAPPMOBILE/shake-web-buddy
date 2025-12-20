@@ -1,20 +1,28 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, Crown, User } from "lucide-react";
+import { Menu, X, LogOut, Crown, User, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoShake from "@/assets/logo_shake_original_color.png";
 import { CitySelector } from "./CitySelector";
 import { PremiumDialog } from "./PremiumDialog";
+import { GroupChatDialog } from "./GroupChatDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActiveChat } from "@/hooks/useActiveChat";
+import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { supabase } from "@/integrations/supabase/client";
+
+const DEFAULT_CITY = "New York";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [showChatDialog, setShowChatDialog] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, isPremium, signOut } = useAuth();
   const navigate = useNavigate();
+  const { activeChat, markAsRead } = useActiveChat(DEFAULT_CITY);
+  const { getActivityJoinCount } = useActivityJoins(DEFAULT_CITY);
 
   // Fetch user avatar
   useEffect(() => {
@@ -42,13 +50,40 @@ export function Header() {
     await signOut();
   };
 
+  const handleOpenChat = () => {
+    if (activeChat) {
+      markAsRead(activeChat.activityType, activeChat.city);
+      setShowChatDialog(true);
+    }
+  };
+
+  const handleChatClose = (open: boolean) => {
+    setShowChatDialog(open);
+    if (!open && activeChat) {
+      markAsRead(activeChat.activityType, activeChat.city);
+    }
+  };
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-28 md:h-36">
-            {/* Empty spacer for left side */}
-            <div className="flex-1" />
+            {/* Left side - Chat shortcut */}
+            <div className="flex-1 flex items-center">
+              {user && activeChat && (
+                <button
+                  onClick={handleOpenChat}
+                  className="relative p-2 rounded-full hover:bg-muted/50 transition-colors"
+                  title="Open chat"
+                >
+                  <MessageCircle className="w-6 h-6 text-foreground" />
+                  {activeChat.hasUnread && (
+                    <span className="absolute top-1 right-1 w-3 h-3 bg-destructive rounded-full border-2 border-background" />
+                  )}
+                </button>
+              )}
+            </div>
 
             {/* Centered Logo */}
             <div className="flex items-center justify-center">
@@ -128,7 +163,22 @@ export function Header() {
                 onUpgradeClick={() => setShowPremiumDialog(true)} 
               />
             </div>
-            <div className="pt-4 border-t border-border flex gap-4">
+            {/* Chat shortcut for mobile */}
+            {user && activeChat && (
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  handleOpenChat();
+                }}
+                className="relative p-2 rounded-full hover:bg-muted/50 transition-colors"
+              >
+                <MessageCircle className="w-6 h-6 text-foreground" />
+                {activeChat.hasUnread && (
+                  <span className="absolute top-1 right-1 w-3 h-3 bg-destructive rounded-full border-2 border-background" />
+                )}
+              </button>
+            )}
+            <div className="pt-4 border-t border-border flex gap-4 flex-1">
               {user ? (
                 <>
                   <button
@@ -172,6 +222,17 @@ export function Header() {
         open={showPremiumDialog} 
         onOpenChange={setShowPremiumDialog}
       />
+
+      {activeChat && (
+        <GroupChatDialog
+          open={showChatDialog}
+          onOpenChange={handleChatClose}
+          activityType={activeChat.activityType}
+          onBack={() => setShowChatDialog(false)}
+          attendeeCount={getActivityJoinCount(activeChat.activityType)}
+          city={activeChat.city}
+        />
+      )}
     </>
   );
 }
