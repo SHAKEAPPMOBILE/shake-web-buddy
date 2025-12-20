@@ -26,6 +26,11 @@ export function HeroSection() {
   const { joinActivity, getActivityJoinCount } = useActivityJoins(DEFAULT_CITY);
 
   const handleShake = () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    
     setIsShaking(true);
     setTimeout(() => {
       setIsShaking(false);
