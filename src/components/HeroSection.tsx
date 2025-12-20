@@ -67,19 +67,21 @@ export function HeroSection() {
               people in your city and turn strangers into friends.
             </p>
 
+            {/* Luma note */}
+            <p className="text-xs text-muted-foreground/70 animate-fade-up" style={{ animationDelay: "250ms" }}>
+              Previously we operated on Luma, now we have our own page
+            </p>
+
             {/* Stats */}
             <div 
               className="grid grid-cols-3 gap-8 animate-fade-up"
-              style={{ animationDelay: "250ms" }}
+              style={{ animationDelay: "280ms" }}
             >
               <div className="text-center">
                 <div className="text-3xl md:text-4xl font-display font-bold text-foreground">10K+</div>
                 <div className="text-sm text-muted-foreground">Users</div>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground/70 mb-1">
-                  Previously we operated on Luma, now we have our own page
-                </p>
                 <div className="text-3xl md:text-4xl font-display font-bold text-foreground">500+</div>
                 <div className="text-sm text-muted-foreground">Meetups Done</div>
               </div>
