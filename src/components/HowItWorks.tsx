@@ -35,7 +35,7 @@ export function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 relative overflow-hidden">
+    <section id="how-it-works" className="py-24 mt-16 md:mt-24 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-card/30 to-transparent" />
       
       <div className="container mx-auto px-4 relative z-10">
