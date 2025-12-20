@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Crown, Check, MapPin, Globe } from "lucide-react";
 import {
   Dialog,
@@ -7,23 +9,52 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PremiumDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubscribe: () => void;
 }
 
-export function PremiumDialog({ open, onOpenChange, onSubscribe }: PremiumDialogProps) {
+export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const features = [
     { icon: Globe, text: "Access to 100+ cities worldwide" },
     { icon: MapPin, text: "Join activities in any city" },
     { icon: Crown, text: "Premium badge on your profile" },
   ];
 
-  const handleSubscribe = () => {
-    // TODO: Integrate with Stripe for actual payment
-    onSubscribe();
+  const handleSubscribe = async () => {
+    if (!user) {
+      onOpenChange(false);
+      navigate("/auth");
+      toast.info("Please sign in to subscribe");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout");
+      
+      if (error) {
+        throw error;
+      }
+
+      if (data?.url) {
+        window.open(data.url, "_blank");
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error("Error creating checkout:", error);
+      toast.error("Failed to start checkout. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -68,9 +99,10 @@ export function PremiumDialog({ open, onOpenChange, onSubscribe }: PremiumDialog
           onClick={handleSubscribe}
           className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
           size="lg"
+          disabled={isLoading}
         >
           <Crown className="w-4 h-4 mr-2" />
-          Subscribe Now
+          {isLoading ? "Loading..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
         </Button>
 
         <p className="text-xs text-center text-muted-foreground">

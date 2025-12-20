@@ -1,15 +1,22 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoShake from "@/assets/logo_shake_original_color.png";
 import { CitySelector } from "./CitySelector";
 import { PremiumDialog } from "./PremiumDialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isPremium, setIsPremium] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const { user, isPremium, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <>
@@ -31,12 +38,33 @@ export function Header() {
                   isPremium={isPremium} 
                   onUpgradeClick={() => setShowPremiumDialog(true)} 
                 />
-                <Button variant="ghost" size="sm">
-                  Sign In
-                </Button>
-                <Button size="sm" className="bg-shake-yellow text-background hover:bg-shake-yellow/90">
-                  Get Started
-                </Button>
+                {user ? (
+                  <>
+                    {isPremium && (
+                      <span className="flex items-center gap-1 text-xs text-shake-yellow">
+                        <Crown className="w-3 h-3" />
+                        Premium
+                      </span>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                      <LogOut className="w-4 h-4 mr-1" />
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
+                      Sign In
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                      onClick={() => navigate("/auth")}
+                    >
+                      Get Started
+                    </Button>
+                  </>
+                )}
               </div>
 
               {/* Mobile Menu Button */}
@@ -67,12 +95,25 @@ export function Header() {
               />
             </div>
             <div className="pt-4 border-t border-border flex gap-4">
-              <Button variant="ghost" size="sm" className="flex-1">
-                Sign In
-              </Button>
-              <Button size="sm" className="flex-1 bg-shake-yellow text-background hover:bg-shake-yellow/90">
-                Get Started
-              </Button>
+              {user ? (
+                <Button variant="ghost" size="sm" className="flex-1" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-1" />
+                  Sign Out
+                </Button>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" className="flex-1" onClick={() => navigate("/auth")}>
+                    Sign In
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="flex-1 bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                    onClick={() => navigate("/auth")}
+                  >
+                    Get Started
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -81,10 +122,6 @@ export function Header() {
       <PremiumDialog 
         open={showPremiumDialog} 
         onOpenChange={setShowPremiumDialog}
-        onSubscribe={() => {
-          setIsPremium(true);
-          setShowPremiumDialog(false);
-        }}
       />
     </>
   );

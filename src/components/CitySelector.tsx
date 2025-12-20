@@ -11,13 +11,15 @@ import {
 import { SHAKE_CITIES, REGIONS, City, findClosestCity } from "@/data/cities";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CitySelectorProps {
   isPremium?: boolean;
   onUpgradeClick?: () => void;
 }
 
-export function CitySelector({ isPremium = false, onUpgradeClick }: CitySelectorProps) {
+export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
+  const { isPremium } = useAuth();
   const [selectedCity, setSelectedCity] = useState<string>("Detecting...");
   const [isLoading, setIsLoading] = useState(true);
   const [detectedCity, setDetectedCity] = useState<City | null>(null);
