@@ -1,20 +1,24 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
+import { useActivityMute } from "@/hooks/useActivityMute";
+import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 
 interface GroupChatDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   activityType: string;
   onBack: () => void;
+  onLeaveActivity?: () => void;
   attendeeCount?: number;
   city?: string;
 }
@@ -25,6 +29,7 @@ interface Message {
   activity_type: string;
   city: string;
   message: string;
+  audio_url?: string | null;
   created_at: string;
 }
 
@@ -47,6 +52,7 @@ export function GroupChatDialog({
   onOpenChange, 
   activityType, 
   onBack, 
+  onLeaveActivity,
   attendeeCount = 0,
   city = "New York"
 }: GroupChatDialogProps) {
@@ -56,6 +62,8 @@ export function GroupChatDialog({
   const [currentTime, setCurrentTime] = useState(new Date());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const { isMuted, toggleMute } = useActivityMute(city, activityType);
+  const { leaveActivity } = useActivityJoins(city);
   
   // Get unique user IDs from messages for profile fetching
   const userIds = useMemo(() => {
@@ -112,8 +120,8 @@ export function GroupChatDialog({
           const newMessage = payload.new as Message;
           if (newMessage.activity_type === activityType && newMessage.city === city) {
             setMessages(prev => [...prev, newMessage]);
-            // Play notification sound for messages from others
-            if (newMessage.user_id !== user?.id) {
+            // Play notification sound for messages from others (if not muted)
+            if (newMessage.user_id !== user?.id && !isMuted) {
               playNotificationSound();
             }
           }
@@ -124,7 +132,7 @@ export function GroupChatDialog({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [open, activityType, city]);
+  }, [open, activityType, city, isMuted]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -167,6 +175,21 @@ export function GroupChatDialog({
     }
   };
 
+  const handleLeaveActivity = async () => {
+    const success = await leaveActivity(activityType);
+    if (success) {
+      onLeaveActivity?.();
+      onOpenChange(false);
+    }
+  };
+
+  const handleMuteToggle = async () => {
+    const success = await toggleMute();
+    if (success) {
+      toast.success(isMuted ? "Notifications unmuted" : "Notifications muted");
+    }
+  };
+
   const title = activityTitles[activityType] || activityTitles.lunch;
   const location = activityLocations[activityType] || activityLocations.lunch;
   const formattedDate = format(currentTime, "EEEE, MMMM d");
@@ -195,6 +218,24 @@ export function GroupChatDialog({
                 <span className="text-sm">{attendeeCount}</span>
               </div>
             )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleMuteToggle}
+              className="shrink-0"
+              title={isMuted ? "Unmute notifications" : "Mute notifications"}
+            >
+              {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLeaveActivity}
+              className="shrink-0 text-destructive hover:text-destructive"
+              title="Leave activity"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
         </DialogHeader>
 
@@ -256,13 +297,17 @@ export function GroupChatDialog({
                         {format(new Date(msg.created_at), 'h:mm a')}
                       </span>
                     </div>
-                    <p className={`text-sm text-foreground/90 mt-1 p-2 rounded-lg inline-block ${
+                    <div className={`text-sm text-foreground/90 mt-1 p-2 rounded-lg inline-block ${
                       isOwnMessage 
                         ? 'bg-shake-yellow/20 text-foreground' 
                         : 'bg-muted'
                     }`}>
-                      {msg.message}
-                    </p>
+                      {msg.audio_url ? (
+                        <audio src={msg.audio_url} controls className="h-8 max-w-[200px]" />
+                      ) : (
+                        <span>{msg.message}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -273,7 +318,13 @@ export function GroupChatDialog({
 
         {/* Input */}
         <div className="p-4 border-t border-border/50">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <VoiceRecorder 
+              onVoiceNoteSent={() => {}} 
+              disabled={isSending}
+              city={city}
+              activityType={activityType}
+            />
             <Input
               placeholder="Type a message..."
               value={message}
