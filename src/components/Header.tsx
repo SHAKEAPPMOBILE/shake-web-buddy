@@ -9,11 +9,10 @@ import { PremiumDialog } from "./PremiumDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCity } from "@/contexts/CityContext";
 import { useActiveChat } from "@/hooks/useActiveChat";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { supabase } from "@/integrations/supabase/client";
-
-const DEFAULT_CITY = "New York";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -22,9 +21,10 @@ export function Header() {
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, isPremium, signOut } = useAuth();
+  const { selectedCity } = useCity();
   const navigate = useNavigate();
-  const { activeChat, markAsRead, refreshActiveChat } = useActiveChat(DEFAULT_CITY);
-  const { joinActivity, getActivityJoinCount } = useActivityJoins(DEFAULT_CITY);
+  const { activeChat, markAsRead, refreshActiveChat } = useActiveChat(selectedCity);
+  const { joinActivity, getActivityJoinCount } = useActivityJoins(selectedCity);
 
   // Fetch user avatar
   useEffect(() => {
@@ -251,7 +251,7 @@ export function Header() {
         open={showActivityDialog}
         onOpenChange={setShowActivityDialog}
         onSelectActivity={handleSelectActivity}
-        city={DEFAULT_CITY}
+        city={selectedCity}
       />
 
       {activeChat && (
