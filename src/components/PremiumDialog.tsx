@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Crown, Check, MapPin, Globe } from "lucide-react";
+import { Crown, Check, MapPin, Globe, User } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +54,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     { icon: Globe, text: "Access to 100+ cities worldwide" },
     { icon: MapPin, text: "Join activities in any city" },
     { icon: Crown, text: "Premium badge on your profile" },
+    { icon: User, text: "See other users' profiles" },
   ];
 
   const handleSubscribe = async () => {
