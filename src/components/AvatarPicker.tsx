@@ -2,10 +2,6 @@ import avatar1 from "@/assets/avatar-1.png";
 import avatar2 from "@/assets/avatar-2.png";
 import avatar3 from "@/assets/avatar-3.png";
 import avatar4 from "@/assets/avatar-4.png";
-import polaroidFriends from "@/assets/polaroid-friends.png";
-import polaroidActivities from "@/assets/polaroid-activities.png";
-import hikerIllustration from "@/assets/hiker-illustration.png";
-import barManAndCook from "@/assets/bar-man-and-cook.png";
 import { Camera, Check, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,10 +10,6 @@ export const avatarOptions = [
   { id: "avatar-2", src: avatar2 },
   { id: "avatar-3", src: avatar3 },
   { id: "avatar-4", src: avatar4 },
-  { id: "avatar-5", src: polaroidFriends },
-  { id: "avatar-6", src: polaroidActivities },
-  { id: "avatar-7", src: hikerIllustration },
-  { id: "avatar-8", src: barManAndCook },
 ];
 
 interface AvatarPickerProps {
