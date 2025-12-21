@@ -103,9 +103,48 @@ export function GlobalParticipantsSection() {
   useEffect(() => {
     fetchTodaysParticipants();
 
-    // Refresh every 30 seconds
+    // Subscribe to real-time updates on profiles table
+    const profilesChannel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+        },
+        () => {
+          // Refresh when any profile changes
+          fetchTodaysParticipants();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to real-time updates on activity_joins table
+    const joinsChannel = supabase
+      .channel('activity-joins-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'activity_joins',
+        },
+        () => {
+          // Refresh when any join happens
+          fetchTodaysParticipants();
+        }
+      )
+      .subscribe();
+
+    // Also refresh every 30 seconds as backup
     const interval = setInterval(fetchTodaysParticipants, 30000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(joinsChannel);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleParticipantClick = (participant: Participant) => {
