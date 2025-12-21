@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
+import { FlagsCarousel } from "@/components/FlagsCarousel";
 import { PolaroidGallery } from "@/components/PolaroidGallery";
 import { HowItWorks } from "@/components/HowItWorks";
 import { CTASection } from "@/components/CTASection";
@@ -12,6 +13,7 @@ const Index = () => {
       
       <main>
         <HeroSection />
+        <FlagsCarousel />
         <PolaroidGallery />
         <HowItWorks />
         <CTASection />

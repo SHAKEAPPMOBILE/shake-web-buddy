@@ -4,7 +4,7 @@ import polaroidDrinks from "@/assets/polaroid-drinks.jpg";
 
 export function PolaroidGallery() {
   return (
-    <section className="py-16 md:py-24 bg-background relative overflow-hidden">
+    <section className="pt-12 md:pt-16 pb-16 md:pb-24 bg-background relative overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
           {/* First Polaroid - Activities - far left (smaller) */}
