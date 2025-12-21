@@ -60,19 +60,20 @@ export function ParticipantsListDialog({
         return;
       }
 
-      const userIds = joins.map((j) => j.user_id);
+      // Get unique user IDs only
+      const uniqueUserIds = [...new Set(joins.map((j) => j.user_id))];
 
       // Fetch profiles for these users
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, name, avatar_url")
-        .in("user_id", userIds);
+        .in("user_id", uniqueUserIds);
 
       if (profilesError) {
         console.error("Error fetching profiles:", profilesError);
       }
 
-      const participantsList: Participant[] = userIds.map((userId) => {
+      const participantsList: Participant[] = uniqueUserIds.map((userId) => {
         const profile = profiles?.find((p) => p.user_id === userId);
         return {
           user_id: userId,
