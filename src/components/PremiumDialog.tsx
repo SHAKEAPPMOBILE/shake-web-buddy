@@ -55,7 +55,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const features = [
     { icon: Globe, text: "Access to 100+ cities worldwide" },
     { icon: MapPin, text: "Join activities in any city" },
-    { icon: Crown, text: "Premium badge on your profile" },
     { icon: User, text: "See other users' profiles" },
   ];
 
@@ -106,31 +105,31 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card border-border">
-        <DialogHeader>
-          <div className="flex items-center justify-center mb-4">
+      <DialogContent className="sm:max-w-md bg-card border-border max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-2">
+          <div className="flex items-center justify-center mb-2">
             <img 
               src={shakeCoin} 
               alt="SHAKE Coin" 
-              className="w-16 h-16 object-contain animate-float transition-all duration-300 hover:drop-shadow-[0_0_15px_hsl(var(--shake-yellow))] cursor-pointer"
+              className="w-12 h-12 object-contain animate-float transition-all duration-300 hover:drop-shadow-[0_0_15px_hsl(var(--shake-yellow))] cursor-pointer"
             />
           </div>
-          <DialogTitle className="text-center text-2xl font-display">
+          <DialogTitle className="text-center text-xl font-display">
             Upgrade to Premium
           </DialogTitle>
-          <DialogDescription className="text-center text-muted-foreground">
-            Unlock the ability to explore and join activities in any city
+          <DialogDescription className="text-center text-muted-foreground text-sm">
+            Explore and join activities in any city
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-2 py-2">
           {features.map((feature, index) => (
-            <div key={index} className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <feature.icon className="w-4 h-4 text-primary" />
+            <div key={index} className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <feature.icon className="w-3.5 h-3.5 text-primary" />
               </div>
-              <span className="text-foreground">{feature.text}</span>
-              <Check className="w-4 h-4 text-shake-green ml-auto" />
+              <span className="text-foreground text-sm">{feature.text}</span>
+              <Check className="w-3.5 h-3.5 text-shake-green ml-auto shrink-0" />
             </div>
           ))}
         </div>
@@ -157,11 +156,11 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           </div>
         )}
 
-        <div className="text-center py-4">
-          <div className="text-4xl font-display font-bold text-foreground">
-            $5<span className="text-lg font-normal text-muted-foreground">/month</span>
+        <div className="text-center py-2">
+          <div className="text-3xl font-display font-bold text-foreground">
+            $5<span className="text-base font-normal text-muted-foreground">/month</span>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">Cancel anytime</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Cancel anytime</p>
         </div>
 
         <Button
