@@ -266,7 +266,7 @@ export default function Profile() {
 
             {/* Billing Email Section */}
             <div className="space-y-2">
-              <Label htmlFor="billingEmail">Billing Email</Label>
+              <Label htmlFor="billingEmail">Email</Label>
               <Input
                 id="billingEmail"
                 type="email"
