@@ -6,15 +6,13 @@ import { GroupChatDialog } from "./GroupChatDialog";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCity } from "@/contexts/CityContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import avatar1 from "@/assets/avatar-1.png";
 import avatar2 from "@/assets/avatar-2.png";
 import { GlobalParticipantsSection } from "./GlobalParticipantsSection";
-
-// Default city - in a real app this would come from user selection
-const DEFAULT_CITY = "New York";
 
 export function HeroSection() {
   const [isShaking, setIsShaking] = useState(false);
@@ -23,8 +21,9 @@ export function HeroSection() {
   const [showClockAnimation, setShowClockAnimation] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
   const { user } = useAuth();
+  const { selectedCity } = useCity();
   const navigate = useNavigate();
-  const { joinActivity, getActivityJoinCount } = useActivityJoins(DEFAULT_CITY);
+  const { joinActivity, getActivityJoinCount } = useActivityJoins(selectedCity);
 
   const handleShake = () => {
     if (!user) {
@@ -188,7 +187,7 @@ export function HeroSection() {
         open={showActivityDialog}
         onOpenChange={setShowActivityDialog}
         onSelectActivity={handleSelectActivity}
-        city={DEFAULT_CITY}
+        city={selectedCity}
       />
 
       <ShakingClockAnimation
@@ -203,7 +202,7 @@ export function HeroSection() {
         activityType={selectedActivity}
         onBack={handleBackToActivities}
         attendeeCount={getActivityJoinCount(selectedActivity)}
-        city={DEFAULT_CITY}
+        city={selectedCity}
       />
     </>
   );
