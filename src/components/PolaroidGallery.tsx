@@ -11,12 +11,12 @@ export function PolaroidGallery() {
             className="relative transform -rotate-3 hover:rotate-0 transition-transform duration-300 animate-fade-up"
             style={{ animationDelay: "100ms" }}
           >
-            <div className="bg-white p-3 pb-12 shadow-2xl rounded-sm overflow-visible">
-              <div className="w-64 h-80 md:w-72 md:h-96 overflow-visible">
+            <div className="bg-white p-3 pb-12 shadow-2xl rounded-sm">
+              <div className="w-64 h-80 md:w-72 md:h-96 overflow-hidden">
                 <img 
                   src={polaroidFriends} 
                   alt="Friends having fun together" 
-                  className="w-auto h-full object-cover object-top -ml-6"
+                  className="w-full h-full object-cover object-top"
                 />
               </div>
             </div>
