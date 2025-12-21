@@ -25,6 +25,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [checkoutEmail, setCheckoutEmail] = useState("");
   const [savedBillingEmail, setSavedBillingEmail] = useState<string | null>(null);
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -144,9 +145,11 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
                 placeholder="you@example.com"
                 value={checkoutEmail}
                 onChange={(e) => setCheckoutEmail(e.target.value)}
+                onFocus={() => setIsEmailFocused(true)}
+                onBlur={() => setIsEmailFocused(false)}
                 className="bg-background pr-10"
               />
-              <Crown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-shake-yellow" />
+              <Crown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-shake-yellow ${isEmailFocused ? 'animate-shake' : ''}`} />
             </div>
             <p className="text-xs text-muted-foreground">
               Your account uses phone login, so we need an email for billing.
