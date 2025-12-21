@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Loader2, Globe } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Loader2, Globe, MapPin } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +17,7 @@ import { AudioWaveform } from "@/components/AudioWaveform";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
-import { getActivityLocation } from "@/data/venues";
+import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -251,6 +251,7 @@ export function GroupChatDialog({
 
   const title = activityTitles[activityType] || activityTitles.lunch;
   const location = getActivityLocation(activityType, city);
+  const mapsUrl = getVenueMapsUrl(activityType, city);
   const formattedDate = format(currentTime, "EEEE, MMMM d");
   const formattedTime = format(currentTime, "h:mm a");
 
@@ -269,7 +270,19 @@ export function GroupChatDialog({
             <div className="flex-1">
               <DialogTitle className="text-lg font-display">{title}</DialogTitle>
               <p className="text-sm text-muted-foreground">{formattedDate} • {formattedTime}</p>
-              <p className="text-xs text-muted-foreground/70">{location}</p>
+              {mapsUrl ? (
+                <a 
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-shake-yellow hover:text-shake-yellow/80 transition-colors flex items-center gap-1 group"
+                >
+                  <MapPin className="w-3 h-3" />
+                  <span className="group-hover:underline">{location}</span>
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground/70">{location}</p>
+              )}
             </div>
             {showAttendees && (
               <button 
