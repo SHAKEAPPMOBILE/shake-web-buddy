@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Calendar, MapPin } from "lucide-react";
+import { User, Calendar, MapPin, Instagram, Linkedin, Twitter } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -19,6 +19,12 @@ interface ActivityJoin {
   joined_at: string;
 }
 
+interface SocialLinks {
+  instagram_url: string | null;
+  linkedin_url: string | null;
+  twitter_url: string | null;
+}
+
 const activityEmojis: Record<string, string> = {
   lunch: "🍽️",
   dinner: "🍝",
@@ -34,36 +40,56 @@ export function UserProfileDialog({
   avatarUrl 
 }: UserProfileDialogProps) {
   const [activityHistory, setActivityHistory] = useState<ActivityJoin[]>([]);
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({ instagram_url: null, linkedin_url: null, twitter_url: null });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!open || !userId) return;
 
-    const fetchActivityHistory = async () => {
+    const fetchUserData = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        // Fetch activity history
+        const { data: activityData, error: activityError } = await supabase
           .from("activity_joins")
           .select("id, activity_type, city, joined_at")
           .eq("user_id", userId)
           .order("joined_at", { ascending: false })
           .limit(10);
 
-        if (error) {
-          console.error("Error fetching activity history:", error);
-          return;
+        if (activityError) {
+          console.error("Error fetching activity history:", activityError);
+        } else {
+          setActivityHistory(activityData || []);
         }
 
-        setActivityHistory(data || []);
+        // Fetch social links from profile
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("instagram_url, linkedin_url, twitter_url")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+        } else if (profileData) {
+          setSocialLinks({
+            instagram_url: profileData.instagram_url,
+            linkedin_url: profileData.linkedin_url,
+            twitter_url: profileData.twitter_url,
+          });
+        }
       } catch (error) {
-        console.error("Error fetching activity history:", error);
+        console.error("Error fetching user data:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchActivityHistory();
+    fetchUserData();
   }, [open, userId]);
+
+  const hasSocialLinks = socialLinks.instagram_url || socialLinks.linkedin_url || socialLinks.twitter_url;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -94,6 +120,41 @@ export function UserProfileDialog({
             <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
               <MapPin className="w-3.5 h-3.5" />
               <span>{activityHistory[0].city}</span>
+            </div>
+          )}
+          {/* Social Links */}
+          {hasSocialLinks && (
+            <div className="flex items-center justify-center gap-3 mt-3">
+              {socialLinks.instagram_url && (
+                <a
+                  href={socialLinks.instagram_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center hover:scale-110 transition-transform"
+                >
+                  <Instagram className="w-4 h-4 text-white" />
+                </a>
+              )}
+              {socialLinks.linkedin_url && (
+                <a
+                  href={socialLinks.linkedin_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center hover:scale-110 transition-transform"
+                >
+                  <Linkedin className="w-4 h-4 text-white" />
+                </a>
+              )}
+              {socialLinks.twitter_url && (
+                <a
+                  href={socialLinks.twitter_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center hover:scale-110 transition-transform"
+                >
+                  <Twitter className="w-4 h-4 text-white" />
+                </a>
+              )}
             </div>
           )}
         </div>
