@@ -111,7 +111,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
             <img 
               src={shakeCoin} 
               alt="SHAKE Coin" 
-              className="w-12 h-12 object-contain animate-float transition-all duration-300 hover:drop-shadow-[0_0_15px_hsl(var(--shake-yellow))] cursor-pointer"
+              className="w-12 h-12 object-contain transition-all duration-300 hover:drop-shadow-[0_0_15px_hsl(var(--shake-yellow))] cursor-pointer"
             />
           </div>
           <DialogTitle className="text-center text-xl font-display">
