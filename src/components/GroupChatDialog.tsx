@@ -451,15 +451,11 @@ export function GroupChatDialog({
                         className={`font-semibold text-sm ${!isOwnMessage ? 'hover:underline cursor-pointer' : ''}`}
                         onClick={() => {
                           if (!isOwnMessage) {
-                            if (isPremium) {
-                              setSelectedUserProfile({
-                                userId: msg.user_id,
-                                userName: profile?.name || null,
-                                avatarUrl: profile?.avatar_url || null,
-                              });
-                            } else {
-                              setShowPremiumDialog(true);
-                            }
+                            setSelectedUserProfile({
+                              userId: msg.user_id,
+                              userName: profile?.name || null,
+                              avatarUrl: profile?.avatar_url || null,
+                            });
                           }
                         }}
                         disabled={isOwnMessage}

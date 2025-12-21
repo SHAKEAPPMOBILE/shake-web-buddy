@@ -95,12 +95,7 @@ export function ParticipantsListDialog({
 
   const handleParticipantClick = (participant: Participant) => {
     if (participant.user_id === user?.id) return;
-    
-    if (isPremium) {
-      onViewProfile(participant.user_id, participant.name, participant.avatar_url);
-    } else {
-      setShowPremiumDialog(true);
-    }
+    onViewProfile(participant.user_id, participant.name, participant.avatar_url);
   };
 
   const handleUnlockClick = () => {
