@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Loader2, Globe, MapPin } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Loader2, Globe, MapPin, Trash2 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,7 +118,7 @@ export function GroupChatDialog({
 
     fetchMessages();
 
-    // Subscribe to new messages
+    // Subscribe to message changes (insert and delete)
     const channel = supabase
       .channel('activity-messages-channel')
       .on(
@@ -136,6 +136,20 @@ export function GroupChatDialog({
             if (newMessage.user_id !== user?.id && !isMuted) {
               playNotificationSound();
             }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'activity_messages',
+        },
+        (payload) => {
+          const deletedMessage = payload.old as Message;
+          if (deletedMessage.activity_type === activityType && deletedMessage.city === city) {
+            setMessages(prev => prev.filter(msg => msg.id !== deletedMessage.id));
           }
         }
       )
@@ -225,6 +239,20 @@ export function GroupChatDialog({
     }
 
     setIsSending(false);
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    const { error } = await supabase
+      .from("activity_messages")
+      .delete()
+      .eq("id", messageId);
+
+    if (error) {
+      console.error("Error deleting message:", error);
+      toast.error("Failed to delete message");
+    } else {
+      toast.success("Message deleted");
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -365,7 +393,7 @@ export function GroupChatDialog({
               return (
                 <div 
                   key={msg.id} 
-                  className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${!user ? 'blur-sm select-none pointer-events-none' : ''}`}
+                  className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${!user ? 'blur-sm select-none pointer-events-none' : ''}`}
                 >
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0 overflow-hidden border border-border">
                     {avatarUrl ? (
@@ -403,15 +431,26 @@ export function GroupChatDialog({
                         {format(new Date(msg.created_at), 'h:mm a')}
                       </span>
                     </div>
-                    <div className={`text-sm text-foreground/90 mt-1 p-2 rounded-lg inline-block ${
-                      isOwnMessage 
-                        ? 'bg-shake-yellow/20 text-foreground' 
-                        : 'bg-muted'
-                    }`}>
-                      {msg.audio_url ? (
-                        <AudioWaveform audioUrl={msg.audio_url} isCompact />
-                      ) : (
-                        <span>{msg.message}</span>
+                    <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                      <div className={`text-sm text-foreground/90 mt-1 p-2 rounded-lg inline-block ${
+                        isOwnMessage 
+                          ? 'bg-shake-yellow/20 text-foreground' 
+                          : 'bg-muted'
+                      }`}>
+                        {msg.audio_url ? (
+                          <AudioWaveform audioUrl={msg.audio_url} isCompact />
+                        ) : (
+                          <span>{msg.message}</span>
+                        )}
+                      </div>
+                      {isOwnMessage && (
+                        <button
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all"
+                          title="Delete message"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
                       )}
                     </div>
                   </div>
