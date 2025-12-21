@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +61,7 @@ export function GroupChatDialog({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
@@ -141,6 +142,53 @@ export function GroupChatDialog({
   }, [messages]);
 
   const handleSendMessage = async () => {
+    // Handle audio message
+    if (pendingAudio) {
+      if (!user) {
+        toast.error("Please sign in to send messages");
+        return;
+      }
+      
+      setIsSending(true);
+      try {
+        const fileName = `${user.id}/${Date.now()}.webm`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("voice-notes")
+          .upload(fileName, pendingAudio.blob, {
+            contentType: "audio/webm",
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from("voice-notes")
+          .getPublicUrl(fileName);
+
+        const { error: messageError } = await supabase
+          .from("activity_messages")
+          .insert({
+            user_id: user.id,
+            activity_type: activityType,
+            city: city,
+            message: "🎤 Voice note",
+            audio_url: urlData.publicUrl,
+          });
+
+        if (messageError) throw messageError;
+        
+        setPendingAudio(null);
+        toast.success("Voice note sent!");
+      } catch (error) {
+        console.error("Error sending voice note:", error);
+        toast.error("Failed to send voice note");
+      } finally {
+        setIsSending(false);
+      }
+      return;
+    }
+
+    // Handle text message
     if (!message.trim() || !user) {
       if (!user) {
         toast.error("Please sign in to send messages");
@@ -321,26 +369,27 @@ export function GroupChatDialog({
         <div className="p-4 border-t border-border/50">
           <div className="flex items-center gap-2">
             <VoiceRecorder 
-              onVoiceNoteSent={() => {}} 
-              disabled={isSending}
-              city={city}
-              activityType={activityType}
-            />
-            <Input
-              placeholder="Type a message..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="flex-1 bg-muted/50 border-border/50"
+              onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
+              onAudioClear={() => setPendingAudio(null)}
               disabled={isSending}
             />
+            {!pendingAudio && (
+              <Input
+                placeholder="Type a message..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="flex-1 bg-muted/50 border-border/50"
+                disabled={isSending}
+              />
+            )}
             <Button 
               variant="shake" 
               size="icon" 
               onClick={handleSendMessage}
-              disabled={isSending || !message.trim()}
+              disabled={isSending || (!message.trim() && !pendingAudio)}
             >
-              <Send className="w-4 h-4" />
+              {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </Button>
           </div>
         </div>
