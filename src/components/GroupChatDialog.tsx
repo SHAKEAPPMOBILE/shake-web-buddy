@@ -15,6 +15,7 @@ import { playNotificationSound } from "@/lib/notification-sound";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { PremiumDialog } from "@/components/PremiumDialog";
+import { UserProfileDialog } from "@/components/UserProfileDialog";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -65,6 +66,11 @@ export function GroupChatDialog({
   const [currentTime, setCurrentTime] = useState(new Date());
   const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<{
+    userId: string;
+    userName: string | null;
+    avatarUrl: string | null;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user, isPremium } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
@@ -360,7 +366,11 @@ export function GroupChatDialog({
                         onClick={() => {
                           if (!isOwnMessage) {
                             if (isPremium) {
-                              toast.info("Profile view coming soon!");
+                              setSelectedUserProfile({
+                                userId: msg.user_id,
+                                userName: profile?.name || null,
+                                avatarUrl: profile?.avatar_url || null,
+                              });
                             } else {
                               setShowPremiumDialog(true);
                             }
@@ -424,6 +434,15 @@ export function GroupChatDialog({
 
         {/* Premium Dialog */}
         <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+        {/* User Profile Dialog */}
+        <UserProfileDialog 
+          open={!!selectedUserProfile} 
+          onOpenChange={(open) => !open && setSelectedUserProfile(null)}
+          userId={selectedUserProfile?.userId || ""}
+          userName={selectedUserProfile?.userName || null}
+          avatarUrl={selectedUserProfile?.avatarUrl || null}
+        />
       </DialogContent>
     </Dialog>
   );
