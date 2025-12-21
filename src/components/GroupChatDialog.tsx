@@ -337,18 +337,19 @@ export function GroupChatDialog({
             <div className="flex-1">
               <DialogTitle className="text-lg font-display">{title}</DialogTitle>
               <p className="text-sm text-muted-foreground">{formattedDate} • {formattedTime}</p>
+              <p className="text-lg font-display text-foreground mt-1">Suggested venue</p>
               {mapsUrl ? (
                 <a 
                   href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-shake-yellow hover:text-shake-yellow/80 transition-colors flex items-center gap-1 group"
+                  className="text-sm text-shake-yellow hover:text-shake-yellow/80 transition-colors flex items-center gap-1 group"
                 >
                   <MapPin className="w-3 h-3" />
                   <span className="group-hover:underline">{location}</span>
                 </a>
               ) : (
-                <p className="text-xs text-muted-foreground/70">{location}</p>
+                <p className="text-sm text-muted-foreground/70">{location}</p>
               )}
             </div>
             {showAttendees && (
