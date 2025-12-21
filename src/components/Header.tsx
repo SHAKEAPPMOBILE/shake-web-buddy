@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, Crown, User, MessageSquareText } from "lucide-react";
+import { Menu, X, LogOut, Crown, User, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoShake from "@/assets/logo_shake_original_color.png";
 import { CitySelector } from "./CitySelector";
@@ -124,7 +124,7 @@ export function Header() {
                   className="relative flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/50 transition-colors"
                   title="My Activities"
                 >
-                  <MessageSquareText className="w-5 h-5 text-foreground" />
+                  <MessageSquare className="w-5 h-5 text-foreground" />
                   <span className="text-sm font-medium text-foreground">Chat</span>
                   {activeChat && activeChat.unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-destructive rounded-full border-2 border-background flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
@@ -203,7 +203,7 @@ export function Header() {
                   }}
                   className="relative p-2 rounded-full hover:bg-muted/50 transition-colors flex items-center gap-2"
                 >
-                  <MessageSquareText className="w-5 h-5 text-foreground" />
+                  <MessageSquare className="w-5 h-5 text-foreground" />
                   <span className="text-sm font-medium">Chat</span>
                   {activeChat && activeChat.unreadCount > 0 && (
                     <span className="min-w-5 h-5 px-1 bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">

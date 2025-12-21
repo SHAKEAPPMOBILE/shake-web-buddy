@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, MapPin, MessageCircle, Users } from "lucide-react";
+import { Calendar, MapPin, MessageSquare, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -99,7 +99,7 @@ export function MyActivitiesDialog({
       <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-display flex items-center justify-center gap-2">
-            <MessageCircle className="w-5 h-5" />
+            <MessageSquare className="w-5 h-5" />
             My Activities
           </DialogTitle>
         </DialogHeader>
@@ -148,7 +148,7 @@ export function MyActivitiesDialog({
                     </p>
                   </div>
 
-                  <MessageCircle className="w-5 h-5 text-primary shrink-0" />
+                  <MessageSquare className="w-5 h-5 text-primary shrink-0" />
                 </button>
               ))}
             </div>
