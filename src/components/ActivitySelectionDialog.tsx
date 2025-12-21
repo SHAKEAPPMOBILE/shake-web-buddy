@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useCallback, useEffect, useMemo } from "react";
@@ -134,15 +135,24 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
         
         {/* Favorite quick access */}
         {favoriteActivityDetails && (
-          <button
-            onClick={handleSelectFavorite}
-            className="flex items-center justify-center gap-2 mx-auto px-4 py-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 transition-all duration-200 group"
-          >
-            <Star className="w-4 h-4 text-shake-yellow fill-shake-yellow" />
-            <span className="text-sm font-medium text-foreground">
-              Quick pick: {favoriteActivityDetails.label}
-            </span>
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleSelectFavorite}
+                  className="flex items-center justify-center gap-2 mx-auto px-4 py-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 hover:scale-105 transition-all duration-200 group animate-[pulse_2s_ease-in-out_infinite] hover:animate-none shadow-[0_0_12px_rgba(255,215,0,0.3)]"
+                >
+                  <Star className="w-4 h-4 text-shake-yellow fill-shake-yellow group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium text-foreground">
+                    Quick pick: {favoriteActivityDetails.label}
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-card border-border">
+                <p>Tap to instantly join your favorite activity!</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
         <div className="py-6">
           <Carousel
