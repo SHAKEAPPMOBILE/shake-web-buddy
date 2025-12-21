@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioWaveform } from "@/components/AudioWaveform";
+import bgBarManCook from "@/assets/bar-man-and-cook.png";
+import bgHiker from "@/assets/hiker-illustration.png";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -46,6 +48,13 @@ const activityLocations: Record<string, string> = {
   dinner: "TBD - Vote in chat!",
   drinks: "TBD - Vote in chat!",
   hike: "TBD - Vote in chat!",
+};
+
+const activityBackgrounds: Record<string, string> = {
+  lunch: bgBarManCook,
+  dinner: bgBarManCook,
+  drinks: bgBarManCook,
+  hike: bgHiker,
 };
 
 export function GroupChatDialog({ 
@@ -193,6 +202,7 @@ export function GroupChatDialog({
 
   const title = activityTitles[activityType] || activityTitles.lunch;
   const location = activityLocations[activityType] || activityLocations.lunch;
+  const backgroundImage = activityBackgrounds[activityType] || activityBackgrounds.lunch;
   const formattedDate = format(currentTime, "EEEE, MMMM d");
   const formattedTime = format(currentTime, "h:mm a");
 
@@ -201,7 +211,17 @@ export function GroupChatDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg h-[600px] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-border/50">
+      <DialogContent className="sm:max-w-lg h-[600px] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-border/50 overflow-hidden relative">
+        {/* Background image */}
+        <div 
+          className="absolute inset-0 opacity-10 pointer-events-none"
+          style={{
+            backgroundImage: `url(${backgroundImage})`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
         {/* Header */}
         <DialogHeader className="p-4 border-b border-border/50">
           <div className="flex items-center gap-3">
