@@ -148,8 +148,6 @@ export function GlobalParticipantsSection() {
   }, []);
 
   const handleParticipantClick = (participant: Participant) => {
-    if (participant.user_id === user?.id) return;
-
     setSelectedUser({
       userId: participant.user_id,
       userName: participant.name,
@@ -236,12 +234,7 @@ export function GlobalParticipantsSection() {
                     <button
                       key={participant.user_id}
                       onClick={() => handleParticipantClick(participant)}
-                      disabled={isCurrentUser}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                        isCurrentUser
-                          ? "bg-muted/50 cursor-default"
-                          : "hover:bg-muted/50 cursor-pointer"
-                      }`}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50 cursor-pointer"
                     >
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
                         {participant.avatar_url ? (
@@ -317,12 +310,7 @@ export function GlobalParticipantsSection() {
                         <button
                           key={participant.user_id}
                           onClick={() => handleParticipantClick(participant)}
-                          disabled={isCurrentUser}
-                          className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                            isCurrentUser
-                              ? "bg-muted/50 cursor-default"
-                              : "hover:bg-muted/50 cursor-pointer"
-                          }`}
+                          className="w-full flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50 cursor-pointer"
                         >
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
                             {participant.avatar_url ? (
@@ -340,6 +328,9 @@ export function GlobalParticipantsSection() {
                               {isCurrentUser ? "You" : participant.name || "Shaker"}
                             </p>
                           </div>
+                          {isCurrentUser && (
+                            <span className="text-xs text-muted-foreground">(You)</span>
+                          )}
                         </button>
                       );
                     })}
