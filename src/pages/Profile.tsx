@@ -9,7 +9,8 @@ import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, Loader2, User, Crown, CreditCard, Bell, Trash2 } from "lucide-react";
+import { Camera, ArrowLeft, Loader2, User, Crown, CreditCard, Bell, Trash2, Phone } from "lucide-react";
+import { countryCodes } from "@/data/countryCodes";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,8 @@ export default function Profile() {
   
   const [name, setName] = useState("");
   const [billingEmail, setBillingEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [countryCode, setCountryCode] = useState("+1");
   const [smsNotificationsEnabled, setSmsNotificationsEnabled] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +40,9 @@ export default function Profile() {
   const [isUploading, setIsUploading] = useState(false);
   const [isOpeningPortal, setIsOpeningPortal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Check if user signed up with phone (has phone in auth.users)
+  const isPhoneUser = !!user?.phone;
 
   // Redirect if not logged in
   useEffect(() => {
@@ -64,10 +70,10 @@ export default function Profile() {
         setAvatarUrl(publicData.avatar_url);
       }
 
-      // Fetch private profile data (billing_email, sms_notifications_enabled)
+      // Fetch private profile data (billing_email, sms_notifications_enabled, phone_number)
       const { data: privateData, error: privateError } = await supabase
         .from("profiles_private")
-        .select("billing_email, sms_notifications_enabled")
+        .select("billing_email, sms_notifications_enabled, phone_number")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -76,6 +82,17 @@ export default function Profile() {
       } else if (privateData) {
         setBillingEmail(privateData.billing_email || "");
         setSmsNotificationsEnabled(privateData.sms_notifications_enabled ?? true);
+        
+        // Parse phone number if it exists (for email users who added a phone)
+        if (privateData.phone_number && !user.phone) {
+          const foundCode = countryCodes.find(c => privateData.phone_number?.startsWith(c.code));
+          if (foundCode) {
+            setCountryCode(foundCode.code);
+            setPhoneNumber(privateData.phone_number.replace(foundCode.code, ""));
+          } else {
+            setPhoneNumber(privateData.phone_number);
+          }
+        }
       }
 
       setIsLoading(false);
@@ -158,14 +175,26 @@ export default function Profile() {
 
       if (publicError) throw publicError;
 
-      // Update private profile (billing_email, sms_notifications_enabled)
+      // Update private profile (billing_email, sms_notifications_enabled, phone_number for email users)
+      const privateUpdate: {
+        user_id: string;
+        billing_email: string | null;
+        sms_notifications_enabled: boolean;
+        phone_number?: string | null;
+      } = { 
+        user_id: user.id,
+        billing_email: billingEmail || null,
+        sms_notifications_enabled: smsNotificationsEnabled
+      };
+
+      // Only update phone_number for email users (phone users have it in auth.users)
+      if (!isPhoneUser) {
+        privateUpdate.phone_number = phoneNumber ? `${countryCode}${phoneNumber}` : null;
+      }
+
       const { error: privateError } = await supabase
         .from("profiles_private")
-        .upsert({ 
-          user_id: user.id,
-          billing_email: billingEmail || null,
-          sms_notifications_enabled: smsNotificationsEnabled
-        }, { onConflict: 'user_id' });
+        .upsert(privateUpdate, { onConflict: 'user_id' });
 
       if (privateError) throw privateError;
 
@@ -317,19 +346,53 @@ export default function Profile() {
               </p>
             </div>
 
-            {/* Phone (read-only) */}
+            {/* Phone Number Section */}
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="text"
-                value={user?.phone || "Not set"}
-                disabled
-                className="bg-muted/30 text-muted-foreground"
-              />
-              <p className="text-xs text-muted-foreground">
-                Phone number cannot be changed
-              </p>
+              <Label htmlFor="phone" className="flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                Phone Number
+              </Label>
+              {isPhoneUser ? (
+                <>
+                  <Input
+                    id="phone"
+                    type="text"
+                    value={user?.phone || "Not set"}
+                    disabled
+                    className="bg-muted/30 text-muted-foreground"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Phone number cannot be changed (used for login)
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <select
+                      value={countryCode}
+                      onChange={(e) => setCountryCode(e.target.value)}
+                      className="w-24 h-10 rounded-md border border-input bg-muted/50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      {countryCodes.map((country) => (
+                        <option key={country.code} value={country.code}>
+                          {country.code}
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                      placeholder="912345678"
+                      className="bg-muted/50 flex-1"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Add your phone to receive SMS notifications about activities
+                  </p>
+                </>
+              )}
             </div>
 
             {/* SMS Notifications Toggle */}
