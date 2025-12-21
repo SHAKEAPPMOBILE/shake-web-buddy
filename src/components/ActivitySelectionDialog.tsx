@@ -30,7 +30,7 @@ const activities = [
 export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, city }: ActivitySelectionDialogProps) {
   const { getActivityJoinCount } = useActivityJoins(city);
   const { user } = useAuth();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(1); // Start with dinner (index 1)
   const [api, setApi] = useState<CarouselApi>();
   const [selectingId, setSelectingId] = useState<string | null>(null);
 
@@ -60,9 +60,14 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     }, 200);
   }, [onSelectActivity, triggerHaptic]);
 
-  // Set up the carousel API callback
+  // Set up the carousel API callback and scroll to dinner on open
   useEffect(() => {
     if (!api) return;
+    
+    // Scroll to dinner (index 1) when dialog opens
+    api.scrollTo(1, false);
+    setCurrentIndex(1);
+    
     api.on("select", onSelect);
     return () => {
       api.off("select", onSelect);
