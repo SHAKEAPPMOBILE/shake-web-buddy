@@ -139,9 +139,9 @@ export default function Auth() {
           .maybeSingle();
         
         if (existingProfile) {
-          toast.error("An account with this phone number already exists. Please sign in instead.");
-          setIsLoading(false);
-          return;
+          toast.info("You already have an account! Switching to sign in...");
+          setIsLogin(true);
+          // Continue with login flow - don't return, just proceed
         }
       }
       
