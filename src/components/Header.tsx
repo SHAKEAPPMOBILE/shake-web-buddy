@@ -98,9 +98,12 @@ export function Header() {
             </div>
 
             {/* Centered Logo */}
-            <div className="flex items-center justify-center">
+            <button 
+              onClick={() => navigate("/")}
+              className="flex items-center justify-center"
+            >
               <img src={logoShake} alt="Shake Social" className="h-20 md:h-28 object-contain" />
-            </div>
+            </button>
 
             {/* Right side buttons */}
             <div className="flex-1 flex justify-end items-center gap-2">
