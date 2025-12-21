@@ -148,7 +148,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
                 onBlur={() => setIsEmailFocused(false)}
                 className="bg-background pr-10"
               />
-              <Crown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-shake-yellow ${isEmailFocused ? 'animate-shake' : ''}`} />
+              <Crown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-shake-yellow" />
             </div>
             <p className="text-xs text-muted-foreground">
               Your account uses phone login, so we need an email for billing.
