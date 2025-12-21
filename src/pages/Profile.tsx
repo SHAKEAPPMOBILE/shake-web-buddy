@@ -9,7 +9,7 @@ import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, Loader2, User, Crown, CreditCard, Bell, Trash2, Phone } from "lucide-react";
+import { Camera, ArrowLeft, Loader2, User, Crown, CreditCard, Bell, Trash2, Phone, Instagram, Linkedin, Twitter } from "lucide-react";
 import { countryCodes } from "@/data/countryCodes";
 import {
   AlertDialog,
@@ -35,6 +35,9 @@ export default function Profile() {
   const [countryCode, setCountryCode] = useState("+1");
   const [smsNotificationsEnabled, setSmsNotificationsEnabled] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [twitterUrl, setTwitterUrl] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -59,7 +62,7 @@ export default function Profile() {
       // Fetch public profile data
       const { data: publicData, error: publicError } = await supabase
         .from("profiles")
-        .select("name, avatar_url")
+        .select("name, avatar_url, instagram_url, linkedin_url, twitter_url")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -68,6 +71,9 @@ export default function Profile() {
       } else if (publicData) {
         setName(publicData.name || "");
         setAvatarUrl(publicData.avatar_url);
+        setInstagramUrl(publicData.instagram_url || "");
+        setLinkedinUrl(publicData.linkedin_url || "");
+        setTwitterUrl(publicData.twitter_url || "");
       }
 
       // Fetch private profile data (billing_email, sms_notifications_enabled, phone_number)
@@ -164,13 +170,16 @@ export default function Profile() {
     setIsSaving(true);
 
     try {
-      // Upsert public profile (name, avatar_url)
+      // Upsert public profile (name, avatar_url, social links)
       const { error: publicError } = await supabase
         .from("profiles")
         .upsert({ 
           user_id: user.id,
           name,
-          avatar_url: avatarUrl 
+          avatar_url: avatarUrl,
+          instagram_url: instagramUrl || null,
+          linkedin_url: linkedinUrl || null,
+          twitter_url: twitterUrl || null
         }, { onConflict: 'user_id' });
 
       if (publicError) throw publicError;
@@ -393,6 +402,50 @@ export default function Profile() {
                   </p>
                 </>
               )}
+            </div>
+
+            {/* Social Media Links */}
+            <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border">
+              <h3 className="font-medium text-sm text-foreground">Social Links</h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Instagram className="w-5 h-5 text-pink-500 shrink-0" />
+                  <Input
+                    type="url"
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    placeholder="https://instagram.com/username"
+                    className="bg-background/50"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Linkedin className="w-5 h-5 text-blue-600 shrink-0" />
+                  <Input
+                    type="url"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    placeholder="https://linkedin.com/in/username"
+                    className="bg-background/50"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Twitter className="w-5 h-5 text-sky-500 shrink-0" />
+                  <Input
+                    type="url"
+                    value={twitterUrl}
+                    onChange={(e) => setTwitterUrl(e.target.value)}
+                    placeholder="https://x.com/username"
+                    className="bg-background/50"
+                  />
+                </div>
+              </div>
+              
+              <p className="text-xs text-muted-foreground">
+                Add your social profiles so others can connect with you
+              </p>
             </div>
 
             {/* SMS Notifications Toggle */}
