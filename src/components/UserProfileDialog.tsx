@@ -74,7 +74,7 @@ export function UserProfileDialog({
 
         {/* Avatar and Name */}
         <div className="flex flex-col items-center py-4">
-          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border">
+          <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-4 border-border shadow-lg">
             {avatarUrl ? (
               <img 
                 src={avatarUrl} 
@@ -82,12 +82,20 @@ export function UserProfileDialog({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <User className="w-10 h-10 text-muted-foreground" />
+              <User className="w-12 h-12 text-muted-foreground" />
             )}
           </div>
-          <h3 className="mt-3 text-lg font-semibold text-foreground">
+          <h3 className="mt-4 text-xl font-semibold text-foreground">
             {userName || "Shaker"}
           </h3>
+          
+          {/* Location from most recent activity */}
+          {activityHistory.length > 0 && (
+            <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>{activityHistory[0].city}</span>
+            </div>
+          )}
         </div>
 
         {/* Activity History */}

@@ -150,16 +150,12 @@ export function GlobalParticipantsSection() {
   const handleParticipantClick = (participant: Participant) => {
     if (participant.user_id === user?.id) return;
 
-    if (isPremium) {
-      setSelectedUser({
-        userId: participant.user_id,
-        userName: participant.name,
-        avatarUrl: participant.avatar_url,
-      });
-      setShowProfileDialog(true);
-    } else {
-      setShowPremiumDialog(true);
-    }
+    setSelectedUser({
+      userId: participant.user_id,
+      userName: participant.name,
+      avatarUrl: participant.avatar_url,
+    });
+    setShowProfileDialog(true);
   };
 
   const handleUnlockClick = () => {
