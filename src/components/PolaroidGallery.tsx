@@ -16,7 +16,7 @@ export function PolaroidGallery() {
                 <img 
                   src={polaroidFriends} 
                   alt="Friends having fun together" 
-                  className="w-full h-full object-cover object-top"
+                  className="w-full h-full object-cover object-bottom"
                 />
               </div>
             </div>
