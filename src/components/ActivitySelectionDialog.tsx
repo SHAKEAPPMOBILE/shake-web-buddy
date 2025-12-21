@@ -53,6 +53,9 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     triggerHaptic('heavy');
     setSelectingId(activityId);
     
+    // Save last selected activity to localStorage
+    localStorage.setItem('lastSelectedActivity', activityId);
+    
     // Small delay for animation before closing
     setTimeout(() => {
       onSelectActivity(activityId);
@@ -60,13 +63,19 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     }, 200);
   }, [onSelectActivity, triggerHaptic]);
 
-  // Set up the carousel API callback and scroll to dinner on open
+  // Set up the carousel API callback and scroll to last selected activity on open
   useEffect(() => {
     if (!api) return;
     
-    // Scroll to dinner (index 1) when dialog opens
-    api.scrollTo(1, false);
-    setCurrentIndex(1);
+    // Get last selected activity from localStorage, default to dinner (index 1)
+    const lastActivity = localStorage.getItem('lastSelectedActivity');
+    const defaultIndex = lastActivity 
+      ? activities.findIndex(a => a.id === lastActivity)
+      : 1; // Default to dinner
+    const startIndex = defaultIndex >= 0 ? defaultIndex : 1;
+    
+    api.scrollTo(startIndex, false);
+    setCurrentIndex(startIndex);
     
     api.on("select", onSelect);
     return () => {
