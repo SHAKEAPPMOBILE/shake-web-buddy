@@ -8,7 +8,7 @@ export function PolaroidGallery() {
         <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
           {/* First Polaroid - tilted left */}
           <div 
-            className="relative transform -rotate-3 hover:rotate-0 transition-transform duration-300 animate-fade-up"
+            className="relative transform -rotate-6 hover:-rotate-3 transition-transform duration-300 animate-fade-up"
             style={{ animationDelay: "100ms" }}
           >
             <div className="bg-white p-3 pb-12 shadow-2xl rounded-sm">
@@ -26,7 +26,7 @@ export function PolaroidGallery() {
 
           {/* Second Polaroid - tilted right */}
           <div 
-            className="relative transform rotate-3 hover:rotate-0 transition-transform duration-300 animate-fade-up"
+            className="relative transform rotate-6 hover:rotate-3 transition-transform duration-300 animate-fade-up"
             style={{ animationDelay: "200ms" }}
           >
             <div className="bg-white p-3 pb-12 shadow-2xl rounded-sm">
