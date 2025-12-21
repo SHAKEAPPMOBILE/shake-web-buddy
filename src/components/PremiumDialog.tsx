@@ -106,17 +106,13 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card border-border">
-        <DialogHeader className="relative">
-          {/* SHAKE Coin floating decoration */}
-          <img 
-            src={shakeCoin} 
-            alt="SHAKE Coin" 
-            className="absolute -top-6 -right-6 w-20 h-20 animate-pulse"
-          />
+        <DialogHeader>
           <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-shake-yellow/20 flex items-center justify-center">
-              <Crown className="w-8 h-8 text-shake-yellow" />
-            </div>
+            <img 
+              src={shakeCoin} 
+              alt="SHAKE Coin" 
+              className="w-16 h-16 object-contain"
+            />
           </div>
           <DialogTitle className="text-center text-2xl font-display">
             Upgrade to Premium
