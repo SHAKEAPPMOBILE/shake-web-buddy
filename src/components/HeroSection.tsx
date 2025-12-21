@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import avatar1 from "@/assets/avatar-1.png";
 import avatar2 from "@/assets/avatar-2.png";
+import { GlobalParticipantsSection } from "./GlobalParticipantsSection";
 
 // Default city - in a real app this would come from user selection
 const DEFAULT_CITY = "New York";
@@ -111,6 +112,13 @@ export function HeroSection() {
               people in your city and turn strangers into friends.
             </p>
 
+            {/* Global participants count */}
+            <div 
+              className="flex justify-center animate-fade-up"
+              style={{ animationDelay: "250ms" }}
+            >
+              <GlobalParticipantsSection />
+            </div>
 
             {/* Stats */}
             <div 
