@@ -132,9 +132,14 @@ export function useActivityJoins(city: string) {
     return true;
   };
 
-  // Get count of users who joined a specific activity today
+  // Get count of unique users who joined a specific activity today
   const getActivityJoinCount = (activityType: string): number => {
-    return activeJoins.filter(join => join.activity_type === activityType).length;
+    const uniqueUsers = new Set(
+      activeJoins
+        .filter(join => join.activity_type === activityType)
+        .map(join => join.user_id)
+    );
+    return uniqueUsers.size;
   };
 
   // Check if current user has joined a specific activity
