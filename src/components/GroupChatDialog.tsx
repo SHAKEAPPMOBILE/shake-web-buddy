@@ -19,6 +19,7 @@ import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
 import barManAndCook from "@/assets/bar-man-and-cook.png";
+import hikerIllustration from "@/assets/hiker-illustration.png";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -382,6 +383,15 @@ export function GroupChatDialog({
                   <img 
                     src={barManAndCook} 
                     alt="Bar man and cook" 
+                    className="w-32 h-32 object-contain"
+                  />
+                </div>
+              )}
+              {activityType === 'hike' && (
+                <div className="bg-white p-2 pb-8 shadow-lg -rotate-2 mb-4">
+                  <img 
+                    src={hikerIllustration} 
+                    alt="Hiker" 
                     className="w-32 h-32 object-contain"
                   />
                 </div>
