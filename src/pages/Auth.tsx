@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoShake from "@/assets/logo_shake_original_color.png";
 import { ArrowLeft, ChevronDown, Phone, User } from "lucide-react";
@@ -152,9 +153,59 @@ export default function Auth() {
       return;
     }
 
-    // Profile is already created via trigger, just navigate home
-    toast.success("Profile saved!");
-    navigate("/");
+    setIsLoading(true);
+
+    try {
+      // Get the current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (!currentUser) {
+        toast.error("User not found");
+        return;
+      }
+
+      // Update profile with name and avatar
+      const updateData: { name: string; avatar_url?: string } = { 
+        name: name.trim() 
+      };
+
+      // If a preset avatar is selected, use that URL
+      if (selectedAvatar && selectedAvatar !== "custom") {
+        updateData.avatar_url = selectedAvatar;
+      } else if (selectedAvatar === "custom" && customAvatarPreview) {
+        // Upload custom avatar
+        const response = await fetch(customAvatarPreview);
+        const blob = await response.blob();
+        const fileExt = 'jpg';
+        const filePath = `${currentUser.id}/avatar.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, blob, { upsert: true });
+
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from("avatars")
+            .getPublicUrl(filePath);
+          updateData.avatar_url = urlData.publicUrl;
+        }
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update(updateData)
+        .eq("user_id", currentUser.id);
+
+      if (error) throw error;
+
+      toast.success("Profile saved!");
+      navigate("/");
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error("Failed to save profile");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -173,13 +224,26 @@ export default function Auth() {
       if (error) {
         toast.error(error.message);
       } else {
-        if (isLogin) {
-          toast.success("Welcome back!");
-          navigate("/");
+        // Check if user has completed their profile
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        
+        if (currentUser) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("name")
+            .eq("user_id", currentUser.id)
+            .single();
+
+          // If profile has no name, this is a new user - show profile setup
+          if (!profile?.name) {
+            toast.success("Phone verified! Now set up your profile.");
+            setStep('name');
+          } else {
+            toast.success("Welcome back!");
+            navigate("/");
+          }
         } else {
-          // For signup, go to profile configuration
-          toast.success("Phone verified! Now set up your profile.");
-          setStep('name');
+          navigate("/");
         }
       }
     } catch (error) {
