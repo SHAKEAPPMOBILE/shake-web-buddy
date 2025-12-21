@@ -282,6 +282,37 @@ export default function Auth() {
         </button>
 
         <div className="w-full max-w-md space-y-8">
+          {/* Progress Indicator - only show during signup flow */}
+          {!isLogin && (step === 'phone' || step === 'otp' || step === 'name') && (
+            <div className="flex items-center justify-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                  step === 'name' 
+                    ? 'bg-shake-yellow/20 text-shake-yellow' 
+                    : 'bg-shake-yellow text-background'
+                }`}>
+                  {step === 'name' ? '✓' : '1'}
+                </div>
+                <span className={`text-sm ${step === 'name' ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
+                  Verify Phone
+                </span>
+              </div>
+              <div className="w-8 h-px bg-border" />
+              <div className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                  step === 'name' 
+                    ? 'bg-shake-yellow text-background' 
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  2
+                </div>
+                <span className={`text-sm ${step === 'name' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                  Profile
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Logo */}
           <div className="flex flex-col items-center gap-4">
             <img src={logoShake} alt="Shake Social" className="h-20" />
