@@ -121,17 +121,9 @@ export function HeroSection() {
 
             {/* Stats */}
             <div 
-              className="grid grid-cols-3 gap-8 animate-fade-up mt-8"
+              className="flex justify-center animate-fade-up mt-8"
               style={{ animationDelay: "280ms" }}
             >
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-display font-bold text-foreground">10K+</div>
-                <div className="text-sm text-muted-foreground">Users</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-display font-bold text-foreground">500+</div>
-                <div className="text-sm text-muted-foreground">Meetups Done</div>
-              </div>
               <div className="text-center">
                 <div className="text-3xl md:text-4xl font-display font-bold text-foreground">50+</div>
                 <div className="text-sm text-muted-foreground">Cities</div>
