@@ -28,11 +28,11 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Load saved billing email from profile when dialog opens
+  // Load saved billing email from private profile when dialog opens
   useEffect(() => {
     if (open && user) {
       supabase
-        .from("profiles")
+        .from("profiles_private")
         .select("billing_email")
         .eq("user_id", user.id)
         .single()
@@ -73,12 +73,14 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
     setIsLoading(true);
     try {
-      // Save billing email to profile if user entered one
+      // Save billing email to private profile if user entered one
       if (needsEmail && emailToUse && emailToUse !== savedBillingEmail) {
         await supabase
-          .from("profiles")
-          .update({ billing_email: emailToUse })
-          .eq("user_id", user.id);
+          .from("profiles_private")
+          .upsert({ 
+            user_id: user.id,
+            billing_email: emailToUse 
+          }, { onConflict: 'user_id' });
       }
 
       const { data, error } = await supabase.functions.invoke("create-checkout", {

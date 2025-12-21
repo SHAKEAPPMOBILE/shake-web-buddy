@@ -36,19 +36,33 @@ export default function Profile() {
     const fetchProfile = async () => {
       if (!user) return;
       
-      const { data, error } = await supabase
+      // Fetch public profile data
+      const { data: publicData, error: publicError } = await supabase
         .from("profiles")
-        .select("name, avatar_url, billing_email")
+        .select("name, avatar_url")
         .eq("user_id", user.id)
         .single();
 
-      if (error) {
-        console.error("Error fetching profile:", error);
-      } else if (data) {
-        setName(data.name || "");
-        setAvatarUrl(data.avatar_url);
-        setBillingEmail(data.billing_email || "");
+      if (publicError) {
+        console.error("Error fetching public profile:", publicError);
+      } else if (publicData) {
+        setName(publicData.name || "");
+        setAvatarUrl(publicData.avatar_url);
       }
+
+      // Fetch private profile data (billing_email)
+      const { data: privateData, error: privateError } = await supabase
+        .from("profiles_private")
+        .select("billing_email")
+        .eq("user_id", user.id)
+        .single();
+
+      if (privateError && privateError.code !== 'PGRST116') {
+        console.error("Error fetching private profile:", privateError);
+      } else if (privateData) {
+        setBillingEmail(privateData.billing_email || "");
+      }
+
       setIsLoading(false);
     };
 
@@ -118,12 +132,23 @@ export default function Profile() {
     setIsSaving(true);
 
     try {
-      const { error } = await supabase
+      // Update public profile (name)
+      const { error: publicError } = await supabase
         .from("profiles")
-        .update({ name, billing_email: billingEmail || null })
+        .update({ name })
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (publicError) throw publicError;
+
+      // Update private profile (billing_email)
+      const { error: privateError } = await supabase
+        .from("profiles_private")
+        .upsert({ 
+          user_id: user.id,
+          billing_email: billingEmail || null 
+        }, { onConflict: 'user_id' });
+
+      if (privateError) throw privateError;
 
       toast.success("Profile updated!");
       navigate("/");

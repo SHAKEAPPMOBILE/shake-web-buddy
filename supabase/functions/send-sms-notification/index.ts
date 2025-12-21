@@ -144,19 +144,36 @@ serve(async (req) => {
     const userIds = [...new Set(activeJoins.map(join => join.user_id))];
     console.log("Users to notify:", userIds);
 
-    // Get phone numbers from profiles
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("user_id, phone_number, name")
+    // Get phone numbers from profiles_private (service role has full access)
+    const { data: privateProfiles, error: privateProfilesError } = await supabase
+      .from("profiles_private")
+      .select("user_id, phone_number")
       .in("user_id", userIds);
 
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-      throw profilesError;
+    if (privateProfilesError) {
+      console.error("Error fetching private profiles:", privateProfilesError);
+      throw privateProfilesError;
     }
 
-    // Filter profiles with valid phone numbers
-    const profilesWithPhone = profiles?.filter(p => p.phone_number && p.phone_number.trim() !== "") || [];
+    // Get names from public profiles
+    const { data: publicProfiles, error: publicProfilesError } = await supabase
+      .from("profiles")
+      .select("user_id, name")
+      .in("user_id", userIds);
+
+    if (publicProfilesError) {
+      console.error("Error fetching public profiles:", publicProfilesError);
+      throw publicProfilesError;
+    }
+
+    // Combine phone numbers with names
+    const nameMap = new Map(publicProfiles?.map(p => [p.user_id, p.name]) || []);
+    const profilesWithPhone = privateProfiles?.filter(p => p.phone_number && p.phone_number.trim() !== "").map(p => ({
+      user_id: p.user_id,
+      phone_number: p.phone_number,
+      name: nameMap.get(p.user_id) || null
+    })) || [];
+    
     console.log("Profiles with phone numbers:", profilesWithPhone.length);
 
     if (profilesWithPhone.length === 0) {
