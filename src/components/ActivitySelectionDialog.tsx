@@ -1,13 +1,14 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselApi,
 } from "@/components/ui/carousel";
+import { Star } from "lucide-react";
 import iconLunch from "@/assets/icon-lunch.png";
 import iconDinner from "@/assets/icon-dinner.png";
 import iconDrinks from "@/assets/icon-drinks.png";
@@ -27,12 +28,39 @@ const activities = [
   { id: "hike", label: "Hike", icon: iconHike, color: "bg-shake-green/20 hover:bg-shake-green/30" },
 ];
 
+// Get smart default activity based on local time and day
+function getTimeBasedDefaultActivity(): string {
+  const now = new Date();
+  const hours = now.getHours();
+  const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+  const isWeekend = day === 0 || day === 6;
+
+  // Weekend logic: show hike until 2pm
+  if (isWeekend && hours < 14) {
+    return "hike";
+  }
+
+  // Time-based logic
+  if (hours >= 21) {
+    return "drinks"; // After 9pm
+  } else if (hours >= 14) {
+    return "dinner"; // After 2pm
+  } else {
+    return "lunch"; // Before 12pm (and before 2pm)
+  }
+}
+
 export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, city }: ActivitySelectionDialogProps) {
   const { getActivityJoinCount } = useActivityJoins(city);
   const { user } = useAuth();
-  const [currentIndex, setCurrentIndex] = useState(1); // Start with dinner (index 1)
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
   const [selectingId, setSelectingId] = useState<string | null>(null);
+  
+  // Get favorite activity from localStorage
+  const favoriteActivity = useMemo(() => {
+    return localStorage.getItem('favoriteActivity');
+  }, [open]); // Re-check when dialog opens
 
   // Haptic feedback helper
   const triggerHaptic = useCallback((type: 'light' | 'medium' | 'heavy' = 'medium') => {
@@ -53,8 +81,8 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     triggerHaptic('heavy');
     setSelectingId(activityId);
     
-    // Save last selected activity to localStorage
-    localStorage.setItem('lastSelectedActivity', activityId);
+    // Save as favorite activity
+    localStorage.setItem('favoriteActivity', activityId);
     
     // Small delay for animation before closing
     setTimeout(() => {
@@ -63,15 +91,20 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     }, 200);
   }, [onSelectActivity, triggerHaptic]);
 
-  // Set up the carousel API callback and scroll to last selected activity on open
+  // Quick select favorite activity
+  const handleSelectFavorite = useCallback(() => {
+    if (favoriteActivity) {
+      handleSelectActivity(favoriteActivity);
+    }
+  }, [favoriteActivity, handleSelectActivity]);
+
+  // Set up the carousel API callback and scroll to time-based default on open
   useEffect(() => {
     if (!api) return;
     
-    // Get last selected activity from localStorage, default to dinner (index 1)
-    const lastActivity = localStorage.getItem('lastSelectedActivity');
-    const defaultIndex = lastActivity 
-      ? activities.findIndex(a => a.id === lastActivity)
-      : 1; // Default to dinner
+    // Get time-based default activity
+    const defaultActivity = getTimeBasedDefaultActivity();
+    const defaultIndex = activities.findIndex(a => a.id === defaultActivity);
     const startIndex = defaultIndex >= 0 ? defaultIndex : 1;
     
     api.scrollTo(startIndex, false);
@@ -83,6 +116,12 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     };
   }, [api, onSelect]);
 
+  // Get favorite activity details for the star button
+  const favoriteActivityDetails = useMemo(() => {
+    if (!favoriteActivity) return null;
+    return activities.find(a => a.id === favoriteActivity);
+  }, [favoriteActivity]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
@@ -92,6 +131,19 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
             Swipe to choose. Your choice is recorded for 24 hours!
           </p>
         </DialogHeader>
+        
+        {/* Favorite quick access */}
+        {favoriteActivityDetails && (
+          <button
+            onClick={handleSelectFavorite}
+            className="flex items-center justify-center gap-2 mx-auto px-4 py-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 transition-all duration-200 group"
+          >
+            <Star className="w-4 h-4 text-shake-yellow fill-shake-yellow" />
+            <span className="text-sm font-medium text-foreground">
+              Quick pick: {favoriteActivityDetails.label}
+            </span>
+          </button>
+        )}
         <div className="py-6">
           <Carousel
             setApi={setApi}
