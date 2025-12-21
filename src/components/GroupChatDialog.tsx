@@ -51,23 +51,31 @@ const activityTitles: Record<string, string> = {
 const chatSuggestions: Record<string, string[]> = {
   lunch: [
     "Hi everyone, who's up for lunch today?",
-    "What time works best for everyone?",
-    "Any dietary restrictions I should know about?",
+    "What time works best?",
+    "Where should we meet?",
+    "I'm running late!",
+    "On my way! 🏃",
   ],
   dinner: [
     "Hey! Anyone free for dinner tonight?",
     "What cuisine are we feeling?",
     "Should we make a reservation?",
+    "I'm running late!",
+    "Where should we meet?",
   ],
   drinks: [
     "Who's ready for happy hour? 🍻",
     "What time are we meeting up?",
     "Any bar suggestions?",
+    "I'm running late!",
+    "On my way! 🏃",
   ],
   hike: [
     "Morning everyone! Ready to hit the trail?",
-    "What's everyone's fitness level?",
-    "Don't forget to bring water!",
+    "Where's the meeting point?",
+    "What should I bring?",
+    "I'm running late!",
+    "On my way! 🏃",
   ],
 };
 
