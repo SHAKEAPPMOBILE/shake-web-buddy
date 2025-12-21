@@ -143,10 +143,10 @@ serve(async (req) => {
     const userIds = [...new Set(activeJoins.map(join => join.user_id))];
     console.log("Users to notify:", userIds);
 
-    // Get phone numbers from profiles_private (service role has full access)
+    // Get phone numbers and notification preferences from profiles_private (service role has full access)
     const { data: privateProfiles, error: privateProfilesError } = await supabase
       .from("profiles_private")
-      .select("user_id, phone_number")
+      .select("user_id, phone_number, sms_notifications_enabled")
       .in("user_id", userIds);
 
     if (privateProfilesError) {
@@ -165,18 +165,22 @@ serve(async (req) => {
       throw publicProfilesError;
     }
 
-    // Combine phone numbers with names
+    // Combine phone numbers with names, respecting notification preferences
     const nameMap = new Map(publicProfiles?.map(p => [p.user_id, p.name]) || []);
-    const profilesWithPhone = privateProfiles?.filter(p => p.phone_number && p.phone_number.trim() !== "").map(p => ({
+    const profilesWithPhone = privateProfiles?.filter(p => 
+      p.phone_number && 
+      p.phone_number.trim() !== "" && 
+      p.sms_notifications_enabled !== false // Only include users who haven't opted out
+    ).map(p => ({
       user_id: p.user_id,
       phone_number: p.phone_number,
       name: nameMap.get(p.user_id) || null
     })) || [];
     
-    console.log("Profiles with phone numbers:", profilesWithPhone.length);
+    console.log("Profiles with phone numbers and notifications enabled:", profilesWithPhone.length);
 
     if (profilesWithPhone.length === 0) {
-      console.log("No users with phone numbers to notify");
+      console.log("No users with phone numbers to notify (or all opted out)");
       return new Response(JSON.stringify({ success: true, notified: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

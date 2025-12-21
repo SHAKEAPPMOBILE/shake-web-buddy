@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, Loader2, User, Crown, CreditCard } from "lucide-react";
+import { Camera, ArrowLeft, Loader2, User, Crown, CreditCard, Bell } from "lucide-react";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 
 export default function Profile() {
@@ -18,6 +19,7 @@ export default function Profile() {
   
   const [name, setName] = useState("");
   const [billingEmail, setBillingEmail] = useState("");
+  const [smsNotificationsEnabled, setSmsNotificationsEnabled] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -50,10 +52,10 @@ export default function Profile() {
         setAvatarUrl(publicData.avatar_url);
       }
 
-      // Fetch private profile data (billing_email)
+      // Fetch private profile data (billing_email, sms_notifications_enabled)
       const { data: privateData, error: privateError } = await supabase
         .from("profiles_private")
-        .select("billing_email")
+        .select("billing_email, sms_notifications_enabled")
         .eq("user_id", user.id)
         .single();
 
@@ -61,6 +63,7 @@ export default function Profile() {
         console.error("Error fetching private profile:", privateError);
       } else if (privateData) {
         setBillingEmail(privateData.billing_email || "");
+        setSmsNotificationsEnabled(privateData.sms_notifications_enabled ?? true);
       }
 
       setIsLoading(false);
@@ -140,12 +143,13 @@ export default function Profile() {
 
       if (publicError) throw publicError;
 
-      // Update private profile (billing_email)
+      // Update private profile (billing_email, sms_notifications_enabled)
       const { error: privateError } = await supabase
         .from("profiles_private")
         .upsert({ 
           user_id: user.id,
-          billing_email: billingEmail || null 
+          billing_email: billingEmail || null,
+          sms_notifications_enabled: smsNotificationsEnabled
         }, { onConflict: 'user_id' });
 
       if (privateError) throw privateError;
@@ -293,6 +297,28 @@ export default function Profile() {
               <p className="text-xs text-muted-foreground">
                 Phone number cannot be changed
               </p>
+            </div>
+
+            {/* SMS Notifications Toggle */}
+            <div className="space-y-3 p-4 rounded-xl bg-muted/30 border border-border">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Bell className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <Label htmlFor="sms-notifications" className="font-medium cursor-pointer">
+                      SMS Notifications
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Get notified when someone joins an activity in your city
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="sms-notifications"
+                  checked={smsNotificationsEnabled}
+                  onCheckedChange={setSmsNotificationsEnabled}
+                />
+              </div>
             </div>
 
             {/* Subscription Section */}

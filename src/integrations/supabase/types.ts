@@ -134,6 +134,7 @@ export type Database = {
           created_at: string
           id: string
           phone_number: string | null
+          sms_notifications_enabled: boolean
           updated_at: string
           user_id: string
         }
@@ -142,6 +143,7 @@ export type Database = {
           created_at?: string
           id?: string
           phone_number?: string | null
+          sms_notifications_enabled?: boolean
           updated_at?: string
           user_id: string
         }
@@ -150,6 +152,7 @@ export type Database = {
           created_at?: string
           id?: string
           phone_number?: string | null
+          sms_notifications_enabled?: boolean
           updated_at?: string
           user_id?: string
         }
