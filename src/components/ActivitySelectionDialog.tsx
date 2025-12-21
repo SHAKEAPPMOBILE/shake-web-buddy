@@ -15,6 +15,7 @@ import iconDinner from "@/assets/icon-dinner.png";
 import iconDrinks from "@/assets/icon-drinks.png";
 import iconHike from "@/assets/icon-hike.png";
 import bgBarManCook from "@/assets/bar-man-and-cook.png";
+import bgHiker from "@/assets/hiker-illustration.png";
 
 interface ActivitySelectionDialogProps {
   open: boolean;
@@ -27,7 +28,7 @@ const activities = [
   { id: "lunch", label: "Lunch", icon: iconLunch, color: "bg-shake-coral/20 hover:bg-shake-coral/30", bgImage: bgBarManCook },
   { id: "dinner", label: "Dinner", icon: iconDinner, color: "bg-shake-purple/20 hover:bg-shake-purple/30", bgImage: bgBarManCook },
   { id: "drinks", label: "Drinks", icon: iconDrinks, color: "bg-shake-teal/20 hover:bg-shake-teal/30", bgImage: bgBarManCook },
-  { id: "hike", label: "Hike", icon: iconHike, color: "bg-shake-green/20 hover:bg-shake-green/30", bgImage: null },
+  { id: "hike", label: "Hike", icon: iconHike, color: "bg-shake-green/20 hover:bg-shake-green/30", bgImage: bgHiker },
 ];
 
 // Get smart default activity based on local time and day
