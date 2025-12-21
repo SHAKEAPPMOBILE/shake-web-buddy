@@ -17,6 +17,7 @@ import { AudioWaveform } from "@/components/AudioWaveform";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
+import { getActivityLocation } from "@/data/venues";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -45,12 +46,9 @@ const activityTitles: Record<string, string> = {
   hike: "Hike 🥾",
 };
 
-const activityLocations: Record<string, string> = {
-  lunch: "TBD - Vote in chat!",
-  dinner: "TBD - Vote in chat!",
-  drinks: "TBD - Vote in chat!",
-  hike: "TBD - Vote in chat!",
-};
+// Location is now dynamic based on activity type and city
+// Lunch/Dinner: Show venue from venues.ts
+// Drinks/Hike: Show "TBD - Vote in chat!"
 
 export function GroupChatDialog({ 
   open, 
@@ -252,7 +250,7 @@ export function GroupChatDialog({
   };
 
   const title = activityTitles[activityType] || activityTitles.lunch;
-  const location = activityLocations[activityType] || activityLocations.lunch;
+  const location = getActivityLocation(activityType, city);
   const formattedDate = format(currentTime, "EEEE, MMMM d");
   const formattedTime = format(currentTime, "h:mm a");
 
