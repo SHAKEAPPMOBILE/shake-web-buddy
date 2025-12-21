@@ -55,7 +55,7 @@ export default function Profile() {
         .from("profiles")
         .select("name, avatar_url")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (publicError) {
         console.error("Error fetching public profile:", publicError);
@@ -69,7 +69,7 @@ export default function Profile() {
         .from("profiles_private")
         .select("billing_email, sms_notifications_enabled")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (privateError && privateError.code !== 'PGRST116') {
         console.error("Error fetching private profile:", privateError);
@@ -147,11 +147,14 @@ export default function Profile() {
     setIsSaving(true);
 
     try {
-      // Update public profile (name)
+      // Upsert public profile (name, avatar_url)
       const { error: publicError } = await supabase
         .from("profiles")
-        .update({ name })
-        .eq("user_id", user.id);
+        .upsert({ 
+          user_id: user.id,
+          name,
+          avatar_url: avatarUrl 
+        }, { onConflict: 'user_id' });
 
       if (publicError) throw publicError;
 

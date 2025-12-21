@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoShake from "@/assets/logo_shake_original_color.png";
 import { ArrowLeft, ChevronDown, Phone, User } from "lucide-react";
-import { AvatarPicker } from "@/components/AvatarPicker";
+import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { countryCodes, CountryCode } from "@/data/countryCodes";
 import {
@@ -17,6 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { triggerConfettiWaterfall } from "@/lib/confetti";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -185,14 +186,15 @@ export default function Auth() {
         return;
       }
 
-      // Update profile with name and avatar
-      const updateData: { name: string; avatar_url?: string } = { 
-        name: name.trim() 
-      };
+      // Build profile data with name and avatar
+      let avatarUrl: string | undefined;
 
-      // If a preset avatar is selected, use that URL
+      // If a preset avatar is selected, get the actual image source
       if (selectedAvatar && selectedAvatar !== "custom") {
-        updateData.avatar_url = selectedAvatar;
+        const presetAvatar = avatarOptions.find(a => a.id === selectedAvatar);
+        if (presetAvatar) {
+          avatarUrl = presetAvatar.src;
+        }
       } else if (selectedAvatar === "custom" && customAvatarPreview) {
         // Upload custom avatar
         const response = await fetch(customAvatarPreview);
@@ -208,18 +210,25 @@ export default function Auth() {
           const { data: urlData } = supabase.storage
             .from("avatars")
             .getPublicUrl(filePath);
-          updateData.avatar_url = urlData.publicUrl;
+          avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
         }
       }
 
+      // Use upsert to handle both new and existing profiles
       const { error } = await supabase
         .from("profiles")
-        .update(updateData)
-        .eq("user_id", currentUser.id);
+        .upsert({
+          user_id: currentUser.id,
+          name: name.trim(),
+          avatar_url: avatarUrl
+        }, { onConflict: 'user_id' });
 
       if (error) throw error;
 
-      toast.success("Profile saved!");
+      // Trigger confetti celebration!
+      triggerConfettiWaterfall();
+      
+      toast.success("Welcome to Shake! 🎉");
       navigate("/");
     } catch (error) {
       console.error("Error saving profile:", error);
