@@ -146,11 +146,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
                 onChange={(e) => setCheckoutEmail(e.target.value)}
                 className="bg-background pr-10"
               />
-              <img 
-                src={shakeCoin} 
-                alt="" 
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5"
-              />
+              <Crown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-shake-yellow" />
             </div>
             <p className="text-xs text-muted-foreground">
               Your account uses phone login, so we need an email for billing.
