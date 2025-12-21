@@ -304,7 +304,15 @@ export function GroupChatDialog({
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
+          {!user && messages.length > 0 && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+              <div className="text-center p-4">
+                <p className="font-semibold text-foreground mb-2">Sign in to view messages</p>
+                <p className="text-sm text-muted-foreground">Join the conversation by signing in</p>
+              </div>
+            </div>
+          )}
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-muted-foreground/50">
               <p className="text-center text-sm">
@@ -324,7 +332,7 @@ export function GroupChatDialog({
               return (
                 <div 
                   key={msg.id} 
-                  className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                  className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${!user ? 'blur-sm select-none pointer-events-none' : ''}`}
                 >
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0 overflow-hidden border border-border">
                     {avatarUrl ? (
