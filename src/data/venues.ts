@@ -166,3 +166,22 @@ export function getActivityLocation(activityType: string, city: string): string 
   // Drinks and hike always show vote message
   return "TBD - Vote in chat!";
 }
+
+/**
+ * Get a Google Maps URL for the venue
+ * Returns null if no venue is available for the activity/city
+ */
+export function getVenueMapsUrl(activityType: string, city: string): string | null {
+  if (activityType !== "lunch" && activityType !== "dinner") {
+    return null;
+  }
+  
+  const venue = CITY_VENUES[city];
+  if (!venue) {
+    return null;
+  }
+  
+  // Create Google Maps search URL with venue name and address
+  const query = encodeURIComponent(`${venue.name}, ${venue.address}`);
+  return `https://www.google.com/maps/search/?api=1&query=${query}`;
+}
