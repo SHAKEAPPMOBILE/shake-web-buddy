@@ -350,9 +350,9 @@ export default function Auth() {
               {step === 'otp' 
                 ? "Enter verification code" 
                 : step === 'name'
-                ? "What's your name?"
+                ? "Let's create your profile."
                 : isLogin 
-                  ? "Welcome back" 
+                  ? "Welcome back"
                   : "Create your account"}
             </h1>
             <p className="text-muted-foreground text-center">
