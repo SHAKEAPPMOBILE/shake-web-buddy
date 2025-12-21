@@ -20,7 +20,7 @@ export function Header() {
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const { user, isPremium, signOut } = useAuth();
+  const { user, isPremium, signOut, isLoading } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
   const { activeChat, markAsRead, refreshActiveChat } = useActiveChat(selectedCity);
@@ -128,7 +128,7 @@ export function Header() {
                   isPremium={isPremium} 
                   onUpgradeClick={() => setShowPremiumDialog(true)} 
                 />
-                {user ? (
+                {!isLoading && user ? (
                   <>
                     {isPremium && (
                       <span className="flex items-center gap-1 text-xs text-shake-yellow">
@@ -151,7 +151,7 @@ export function Header() {
                       Sign Out
                     </Button>
                   </>
-                ) : (
+                ) : !isLoading ? (
                   <>
                     <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
                       Sign In
@@ -164,7 +164,7 @@ export function Header() {
                       Get Started
                     </Button>
                   </>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
@@ -203,7 +203,7 @@ export function Header() {
               </div>
             )}
             <div className="pt-4 border-t border-border flex gap-4 flex-1">
-              {user ? (
+              {!isLoading && user ? (
                 <>
                   <button
                     onClick={() => {
@@ -223,7 +223,7 @@ export function Header() {
                     Sign Out
                   </Button>
                 </>
-              ) : (
+              ) : !isLoading ? (
                 <>
                   <Button variant="ghost" size="sm" className="flex-1" onClick={() => navigate("/auth")}>
                     Sign In
@@ -236,7 +236,7 @@ export function Header() {
                     Get Started
                   </Button>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
