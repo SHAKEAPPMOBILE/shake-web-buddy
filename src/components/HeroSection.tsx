@@ -122,7 +122,7 @@ export function HeroSection() {
 
             {/* Stats */}
             <div 
-              className="grid grid-cols-3 gap-8 animate-fade-up"
+              className="grid grid-cols-3 gap-8 animate-fade-up mt-8"
               style={{ animationDelay: "280ms" }}
             >
               <div className="text-center">
