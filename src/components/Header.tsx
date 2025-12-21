@@ -9,6 +9,7 @@ import { PremiumDialog } from "./PremiumDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { MyActivitiesDialog } from "./MyActivitiesDialog";
+import { GreetingsIndicator } from "./GreetingsIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useActiveChat } from "@/hooks/useActiveChat";
@@ -117,6 +118,9 @@ export function Header() {
 
             {/* Right side buttons */}
             <div className="flex-1 flex justify-end items-center gap-2">
+              {/* Greetings indicator - visible for all logged-in users */}
+              {user && <GreetingsIndicator />}
+
               {/* Chat shortcut - visible for all logged-in users */}
               {user && (
                 <button
