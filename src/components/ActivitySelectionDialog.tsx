@@ -135,16 +135,16 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
           </p>
         </DialogHeader>
         
-        {/* Favorite quick access */}
-        {favoriteActivityDetails && (
-          <button
-            onClick={handleSelectFavorite}
-            className="flex items-center justify-center mx-auto p-3 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 hover:scale-105 transition-all duration-200 group animate-[pulse_1s_ease-in-out_3] hover:animate-none shadow-[0_0_12px_rgba(255,215,0,0.3)]"
-          >
-            <Star className="w-5 h-5 text-shake-yellow fill-shake-yellow group-hover:scale-110 transition-transform" />
-          </button>
-        )}
-        <div className="py-6">
+        <div className="py-6 relative">
+          {/* Favorite quick access - positioned in top right */}
+          {favoriteActivityDetails && (
+            <button
+              onClick={handleSelectFavorite}
+              className="absolute top-0 right-0 z-10 p-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 hover:scale-105 transition-all duration-200 group animate-[pulse_1s_ease-in-out_3] hover:animate-none shadow-[0_0_12px_rgba(255,215,0,0.3)]"
+            >
+              <Star className="w-4 h-4 text-shake-yellow fill-shake-yellow group-hover:scale-110 transition-transform" />
+            </button>
+          )}
           <Carousel
             setApi={setApi}
             opts={{
