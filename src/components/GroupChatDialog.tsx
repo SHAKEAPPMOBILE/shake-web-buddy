@@ -48,6 +48,29 @@ const activityTitles: Record<string, string> = {
   hike: "Hike 🥾",
 };
 
+const chatSuggestions: Record<string, string[]> = {
+  lunch: [
+    "Hi everyone, who's up for lunch today?",
+    "What time works best for everyone?",
+    "Any dietary restrictions I should know about?",
+  ],
+  dinner: [
+    "Hey! Anyone free for dinner tonight?",
+    "What cuisine are we feeling?",
+    "Should we make a reservation?",
+  ],
+  drinks: [
+    "Who's ready for happy hour? 🍻",
+    "What time are we meeting up?",
+    "Any bar suggestions?",
+  ],
+  hike: [
+    "Morning everyone! Ready to hit the trail?",
+    "What's everyone's fitness level?",
+    "Don't forget to bring water!",
+  ],
+};
+
 // Location is now dynamic based on activity type and city
 // Lunch/Dinner: Show venue from venues.ts
 // Drinks/Hike: Show "TBD - Vote in chat!"
@@ -480,6 +503,21 @@ export function GroupChatDialog({
           )}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Chat Suggestions */}
+        {messages.length === 0 && user && (
+          <div className="px-4 pb-2 flex gap-2 flex-wrap">
+            {(chatSuggestions[activityType] || chatSuggestions.lunch).map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => setMessage(suggestion)}
+                className="text-xs px-3 py-1.5 rounded-full bg-shake-yellow/10 text-shake-yellow hover:bg-shake-yellow/20 transition-colors border border-shake-yellow/20"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Input */}
         <div className="p-4 border-t border-border/50">
