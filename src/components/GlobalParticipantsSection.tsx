@@ -103,13 +103,13 @@ export function GlobalParticipantsSection() {
   useEffect(() => {
     fetchTodaysParticipants();
 
-    // Subscribe to real-time updates on profiles table
+    // Subscribe to real-time updates on profiles table (only new profiles)
     const profilesChannel = supabase
       .channel('profiles-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'profiles',
         },
