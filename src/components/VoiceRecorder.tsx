@@ -1,22 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Loader2, Send, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Mic, Square, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { AudioWaveform } from "./AudioWaveform";
-import { cn } from "@/lib/utils";
 
 interface VoiceRecorderProps {
-  onVoiceNoteSent: (audioUrl: string) => void;
+  onAudioReady?: (blob: Blob, url: string) => void;
+  onAudioClear?: () => void;
   disabled?: boolean;
-  city: string;
-  activityType: string;
 }
 
-export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }: VoiceRecorderProps) {
+export function VoiceRecorder({ onAudioReady, onAudioClear, disabled }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -72,8 +68,10 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const url = URL.createObjectURL(blob);
         setAudioBlob(blob);
-        setAudioUrl(URL.createObjectURL(blob));
+        setAudioUrl(url);
+        onAudioReady?.(blob, url);
         stream.getTracks().forEach((track) => track.stop());
         
         // Stop animation
@@ -138,56 +136,7 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
     setAudioUrl(null);
     setRecordingDuration(0);
     setLiveWaveform([]);
-  };
-
-  const sendVoiceNote = async () => {
-    if (!audioBlob || !user) return;
-
-    setIsUploading(true);
-
-    try {
-      const fileName = `${user.id}/${Date.now()}.webm`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from("voice-notes")
-        .upload(fileName, audioBlob, {
-          contentType: "audio/webm",
-        });
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from("voice-notes")
-        .getPublicUrl(fileName);
-
-      // Send message with audio URL
-      const { error: messageError } = await supabase
-        .from("activity_messages")
-        .insert({
-          user_id: user.id,
-          activity_type: activityType,
-          city: city,
-          message: "🎤 Voice note",
-          audio_url: urlData.publicUrl,
-        });
-
-      if (messageError) {
-        throw messageError;
-      }
-
-      onVoiceNoteSent(urlData.publicUrl);
-      setAudioBlob(null);
-      setAudioUrl(null);
-      setRecordingDuration(0);
-      toast.success("Voice note sent!");
-    } catch (error) {
-      console.error("Error sending voice note:", error);
-      toast.error("Failed to send voice note");
-    } finally {
-      setIsUploading(false);
-    }
+    onAudioClear?.();
   };
 
   const formatDuration = (seconds: number) => {
@@ -196,7 +145,7 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Show recorded audio preview with waveform
+  // Show recorded audio preview with waveform (no send button - parent handles sending)
   if (audioBlob && audioUrl) {
     return (
       <div className="flex items-center gap-2 flex-1 bg-muted/50 rounded-lg px-3 py-2">
@@ -205,19 +154,9 @@ export function VoiceRecorder({ onVoiceNoteSent, disabled, city, activityType }:
           variant="ghost"
           size="icon"
           onClick={cancelRecording}
-          disabled={isUploading}
           className="h-8 w-8 shrink-0"
         >
           <X className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="shake"
-          size="icon"
-          onClick={sendVoiceNote}
-          disabled={isUploading}
-          className="h-8 w-8 shrink-0"
-        >
-          {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </Button>
       </div>
     );
