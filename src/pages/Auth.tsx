@@ -476,6 +476,17 @@ export default function Auth() {
               >
                 {isLoading ? "Saving..." : "Complete Setup"}
               </Button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  toast.success("Welcome! You can complete your profile anytime.");
+                  navigate("/");
+                }}
+                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Skip for now
+              </button>
             </form>
           )}
 
