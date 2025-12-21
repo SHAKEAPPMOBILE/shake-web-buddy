@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Users, User } from "lucide-react";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { SayHiButton } from "@/components/SayHiButton";
+import { PrivateChatDialog } from "@/components/PrivateChatDialog";
 import { Button } from "@/components/ui/button";
 import { Crown } from "lucide-react";
 import {
@@ -30,6 +32,12 @@ export function GlobalParticipantsSection() {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{
+    userId: string;
+    userName: string | null;
+    avatarUrl: string | null;
+  } | null>(null);
+  const [showChatDialog, setShowChatDialog] = useState(false);
+  const [chatUser, setChatUser] = useState<{
     userId: string;
     userName: string | null;
     avatarUrl: string | null;
@@ -160,6 +168,15 @@ export function GlobalParticipantsSection() {
     setShowPremiumDialog(true);
   };
 
+  const handleMatchFromList = (participant: Participant) => {
+    setChatUser({
+      userId: participant.user_id,
+      userName: participant.name,
+      avatarUrl: participant.avatar_url,
+    });
+    setShowChatDialog(true);
+  };
+
   const visibleParticipants = participants.slice(0, FREE_VISIBLE_COUNT);
   const blurredParticipants = participants.slice(FREE_VISIBLE_COUNT);
   const hasMoreParticipants = blurredParticipants.length > 0;
@@ -231,12 +248,14 @@ export function GlobalParticipantsSection() {
                 {visibleParticipants.map((participant) => {
                   const isCurrentUser = participant.user_id === user?.id;
                   return (
-                    <button
+                    <div
                       key={participant.user_id}
-                      onClick={() => handleParticipantClick(participant)}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50 cursor-pointer"
+                      className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50"
                     >
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
+                      <button
+                        onClick={() => handleParticipantClick(participant)}
+                        className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border hover:border-primary transition-colors"
+                      >
                         {participant.avatar_url ? (
                           <img
                             src={participant.avatar_url}
@@ -246,16 +265,26 @@ export function GlobalParticipantsSection() {
                         ) : (
                           <User className="w-5 h-5 text-muted-foreground" />
                         )}
-                      </div>
-                      <div className="flex-1 text-left">
+                      </button>
+                      <button
+                        onClick={() => handleParticipantClick(participant)}
+                        className="flex-1 text-left"
+                      >
                         <p className="font-medium text-sm">
                           {isCurrentUser ? "You" : participant.name || "Shaker"}
                         </p>
-                      </div>
-                      {isCurrentUser && (
+                      </button>
+                      {isCurrentUser ? (
                         <span className="text-xs text-muted-foreground">(You)</span>
+                      ) : (
+                        <SayHiButton
+                          targetUserId={participant.user_id}
+                          targetUserName={participant.name}
+                          size="sm"
+                          onMatch={() => handleMatchFromList(participant)}
+                        />
                       )}
-                    </button>
+                    </div>
                   );
                 })}
 
@@ -307,12 +336,14 @@ export function GlobalParticipantsSection() {
                     {blurredParticipants.map((participant) => {
                       const isCurrentUser = participant.user_id === user?.id;
                       return (
-                        <button
+                        <div
                           key={participant.user_id}
-                          onClick={() => handleParticipantClick(participant)}
-                          className="w-full flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50 cursor-pointer"
+                          className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50"
                         >
-                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
+                          <button
+                            onClick={() => handleParticipantClick(participant)}
+                            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border hover:border-primary transition-colors"
+                          >
                             {participant.avatar_url ? (
                               <img
                                 src={participant.avatar_url}
@@ -322,16 +353,26 @@ export function GlobalParticipantsSection() {
                             ) : (
                               <User className="w-5 h-5 text-muted-foreground" />
                             )}
-                          </div>
-                          <div className="flex-1 text-left">
+                          </button>
+                          <button
+                            onClick={() => handleParticipantClick(participant)}
+                            className="flex-1 text-left"
+                          >
                             <p className="font-medium text-sm">
                               {isCurrentUser ? "You" : participant.name || "Shaker"}
                             </p>
-                          </div>
-                          {isCurrentUser && (
+                          </button>
+                          {isCurrentUser ? (
                             <span className="text-xs text-muted-foreground">(You)</span>
+                          ) : (
+                            <SayHiButton
+                              targetUserId={participant.user_id}
+                              targetUserName={participant.name}
+                              size="sm"
+                              onMatch={() => handleMatchFromList(participant)}
+                            />
                           )}
-                        </button>
+                        </div>
                       );
                     })}
                   </>
@@ -351,6 +392,16 @@ export function GlobalParticipantsSection() {
           userId={selectedUser.userId}
           userName={selectedUser.userName}
           avatarUrl={selectedUser.avatarUrl}
+        />
+      )}
+
+      {chatUser && (
+        <PrivateChatDialog
+          open={showChatDialog}
+          onOpenChange={setShowChatDialog}
+          otherUserId={chatUser.userId}
+          otherUserName={chatUser.userName}
+          otherUserAvatar={chatUser.avatarUrl}
         />
       )}
     </>
