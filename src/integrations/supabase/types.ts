@@ -104,30 +104,51 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
-          billing_email: string | null
           created_at: string
           id: string
           name: string | null
-          phone_number: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
-          billing_email?: string | null
           created_at?: string
           id?: string
           name?: string | null
-          phone_number?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
-          billing_email?: string | null
           created_at?: string
           id?: string
           name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles_private: {
+        Row: {
+          billing_email: string | null
+          created_at: string
+          id: string
+          phone_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_email?: string | null
+          created_at?: string
+          id?: string
+          phone_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_email?: string | null
+          created_at?: string
+          id?: string
           phone_number?: string | null
           updated_at?: string
           user_id?: string
