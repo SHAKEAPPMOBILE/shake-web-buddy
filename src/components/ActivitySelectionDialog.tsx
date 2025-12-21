@@ -14,6 +14,7 @@ import iconLunch from "@/assets/icon-lunch.png";
 import iconDinner from "@/assets/icon-dinner.png";
 import iconDrinks from "@/assets/icon-drinks.png";
 import iconHike from "@/assets/icon-hike.png";
+import bgBarManCook from "@/assets/bar-man-and-cook.png";
 
 interface ActivitySelectionDialogProps {
   open: boolean;
@@ -23,10 +24,10 @@ interface ActivitySelectionDialogProps {
 }
 
 const activities = [
-  { id: "lunch", label: "Lunch", icon: iconLunch, color: "bg-shake-coral/20 hover:bg-shake-coral/30" },
-  { id: "dinner", label: "Dinner", icon: iconDinner, color: "bg-shake-purple/20 hover:bg-shake-purple/30" },
-  { id: "drinks", label: "Drinks", icon: iconDrinks, color: "bg-shake-teal/20 hover:bg-shake-teal/30" },
-  { id: "hike", label: "Hike", icon: iconHike, color: "bg-shake-green/20 hover:bg-shake-green/30" },
+  { id: "lunch", label: "Lunch", icon: iconLunch, color: "bg-shake-coral/20 hover:bg-shake-coral/30", bgImage: bgBarManCook },
+  { id: "dinner", label: "Dinner", icon: iconDinner, color: "bg-shake-purple/20 hover:bg-shake-purple/30", bgImage: bgBarManCook },
+  { id: "drinks", label: "Drinks", icon: iconDrinks, color: "bg-shake-teal/20 hover:bg-shake-teal/30", bgImage: bgBarManCook },
+  { id: "hike", label: "Hike", icon: iconHike, color: "bg-shake-green/20 hover:bg-shake-green/30", bgImage: null },
 ];
 
 // Get smart default activity based on local time and day
@@ -187,17 +188,24 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                     >
                       <div 
                         className={`
-                          rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden
+                          rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden relative
                           ${activity.color}
                           ${isCenter ? 'w-24 h-24 scale-100' : 'w-16 h-16 scale-90 opacity-60'}
                           ${selectingId === activity.id ? 'animate-pulse scale-110 ring-4 ring-primary/50' : ''}
                           ${isCenter && !selectingId ? 'active:scale-95' : ''}
                         `}
                       >
+                        {activity.bgImage && (
+                          <img 
+                            src={activity.bgImage} 
+                            alt="" 
+                            className="absolute inset-0 w-full h-full object-cover opacity-30"
+                          />
+                        )}
                         <img 
                           src={activity.icon} 
                           alt={activity.label} 
-                          className={`object-cover rounded-full transition-all duration-300 ${isCenter ? 'w-16 h-16' : 'w-10 h-10'}`} 
+                          className={`object-cover rounded-full transition-all duration-300 relative z-10 ${isCenter ? 'w-16 h-16' : 'w-10 h-10'}`}
                         />
                       </div>
                       <span 
