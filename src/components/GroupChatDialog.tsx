@@ -18,6 +18,7 @@ import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
+import barManAndCook from "@/assets/bar-man-and-cook.png";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -375,7 +376,16 @@ export function GroupChatDialog({
             </div>
           )}
           {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground/50">
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50">
+              {(activityType === 'lunch' || activityType === 'dinner' || activityType === 'drinks') && (
+                <div className="bg-white p-2 pb-8 shadow-lg rotate-2 mb-4">
+                  <img 
+                    src={barManAndCook} 
+                    alt="Bar man and cook" 
+                    className="w-32 h-32 object-contain"
+                  />
+                </div>
+              )}
               <p className="text-center text-sm">
                 Start the conversation!<br />
                 Messages from today will appear here.
