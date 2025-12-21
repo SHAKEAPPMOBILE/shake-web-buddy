@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,8 +19,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Auth() {
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState<'phone' | 'otp' | 'name'>('phone');
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(() => searchParams.get('mode') !== 'signup');
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [name, setName] = useState("");
@@ -128,6 +129,21 @@ export default function Auth() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
+      
+      // For signup, check if phone number already exists
+      if (!isLogin) {
+        const { data: existingProfile } = await supabase
+          .from("profiles_private")
+          .select("phone_number")
+          .eq("phone_number", formattedPhone)
+          .maybeSingle();
+        
+        if (existingProfile) {
+          toast.error("An account with this phone number already exists. Please sign in instead.");
+          setIsLoading(false);
+          return;
+        }
+      }
       
       // For both login and signup, send OTP first
       const { error } = await signInWithPhone(formattedPhone);

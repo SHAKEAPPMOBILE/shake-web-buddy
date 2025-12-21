@@ -159,7 +159,7 @@ export function Header() {
                     <Button 
                       size="sm" 
                       className="bg-shake-yellow text-background hover:bg-shake-yellow/90"
-                      onClick={() => navigate("/auth")}
+                      onClick={() => navigate("/auth?mode=signup")}
                     >
                       Get Started
                     </Button>
@@ -231,7 +231,7 @@ export function Header() {
                   <Button 
                     size="sm" 
                     className="flex-1 bg-shake-yellow text-background hover:bg-shake-yellow/90"
-                    onClick={() => navigate("/auth")}
+                    onClick={() => navigate("/auth?mode=signup")}
                   >
                     Get Started
                   </Button>
