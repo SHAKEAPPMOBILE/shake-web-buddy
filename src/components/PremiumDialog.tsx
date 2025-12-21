@@ -141,14 +141,21 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         {needsEmail && (
           <div className="space-y-2">
             <Label htmlFor="checkoutEmail">Email for receipt</Label>
-            <Input
-              id="checkoutEmail"
-              type="email"
-              placeholder="you@example.com"
-              value={checkoutEmail}
-              onChange={(e) => setCheckoutEmail(e.target.value)}
-              className="bg-background"
-            />
+            <div className="relative">
+              <Input
+                id="checkoutEmail"
+                type="email"
+                placeholder="you@example.com"
+                value={checkoutEmail}
+                onChange={(e) => setCheckoutEmail(e.target.value)}
+                className="bg-background pr-10"
+              />
+              <img 
+                src={shakeCoin} 
+                alt="" 
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5"
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               Your account uses phone login, so we need an email for billing.
             </p>
