@@ -16,6 +16,7 @@ import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -66,6 +67,7 @@ export function GroupChatDialog({
   const [currentTime, setCurrentTime] = useState(new Date());
   const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [showParticipantsList, setShowParticipantsList] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
     userId: string;
     userName: string | null;
@@ -272,10 +274,13 @@ export function GroupChatDialog({
               <p className="text-xs text-muted-foreground/70">{location}</p>
             </div>
             {showAttendees && (
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <button 
+                onClick={() => setShowParticipantsList(true)}
+                className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Users className="w-4 h-4" />
                 <span className="text-sm">{attendeeCount}</span>
-              </div>
+              </button>
             )}
             <Button 
               variant="ghost" 
@@ -300,11 +305,14 @@ export function GroupChatDialog({
 
         {/* Attendees section - only shown if people joined today */}
         {showAttendees ? (
-          <div className="px-4 py-3 border-b border-border/50">
-            <p className="text-sm text-muted-foreground">
+          <button 
+            onClick={() => setShowParticipantsList(true)}
+            className="w-full px-4 py-3 border-b border-border/50 text-left hover:bg-muted/30 transition-colors"
+          >
+            <p className="text-sm text-muted-foreground hover:text-foreground">
               {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined today
             </p>
-          </div>
+          </button>
         ) : (
           <div className="px-4 py-3 border-b border-border/50">
             <p className="text-sm text-muted-foreground/70">
@@ -442,6 +450,18 @@ export function GroupChatDialog({
           userId={selectedUserProfile?.userId || ""}
           userName={selectedUserProfile?.userName || null}
           avatarUrl={selectedUserProfile?.avatarUrl || null}
+        />
+
+        {/* Participants List Dialog */}
+        <ParticipantsListDialog
+          open={showParticipantsList}
+          onOpenChange={setShowParticipantsList}
+          activityType={activityType}
+          city={city}
+          onViewProfile={(userId, userName, avatarUrl) => {
+            setShowParticipantsList(false);
+            setSelectedUserProfile({ userId, userName, avatarUrl });
+          }}
         />
       </DialogContent>
     </Dialog>
