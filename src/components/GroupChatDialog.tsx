@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioWaveform } from "@/components/AudioWaveform";
+import { PremiumDialog } from "@/components/PremiumDialog";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -63,8 +64,9 @@ export function GroupChatDialog({
   const [isSending, setIsSending] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
   const { leaveActivity } = useActivityJoins(city);
   const { onlineCount } = useOnlinePresence();
@@ -353,9 +355,21 @@ export function GroupChatDialog({
                   </div>
                   <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
                     <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
-                      <span className="font-semibold text-sm">
+                      <button 
+                        className={`font-semibold text-sm ${!isOwnMessage ? 'hover:underline cursor-pointer' : ''}`}
+                        onClick={() => {
+                          if (!isOwnMessage) {
+                            if (isPremium) {
+                              toast.info("Profile view coming soon!");
+                            } else {
+                              setShowPremiumDialog(true);
+                            }
+                          }
+                        }}
+                        disabled={isOwnMessage}
+                      >
                         {displayName}
-                      </span>
+                      </button>
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(msg.created_at), 'h:mm a')}
                       </span>
@@ -407,6 +421,9 @@ export function GroupChatDialog({
             </Button>
           </div>
         </div>
+
+        {/* Premium Dialog */}
+        <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
       </DialogContent>
     </Dialog>
   );
