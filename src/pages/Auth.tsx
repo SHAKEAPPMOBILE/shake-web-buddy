@@ -169,6 +169,11 @@ export default function Auth() {
       return;
     }
 
+    if (!selectedAvatar) {
+      toast.error("Please choose a profile picture or avatar");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -442,7 +447,6 @@ export default function Auth() {
           {step === 'name' && (
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Your Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -459,7 +463,7 @@ export default function Auth() {
 
               {/* Avatar Picker */}
               <div className="space-y-2 pt-2">
-                <Label>Profile Picture (optional)</Label>
+                <Label>Profile Picture <span className="text-destructive">*</span></Label>
                 <input
                   ref={fileInputRef}
                   type="file"
