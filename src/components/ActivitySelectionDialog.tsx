@@ -142,7 +142,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
               <TooltipTrigger asChild>
                 <button
                   onClick={handleSelectFavorite}
-                  className="flex items-center justify-center gap-2 mx-auto px-4 py-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 hover:scale-105 transition-all duration-200 group animate-[pulse_2s_ease-in-out_infinite] hover:animate-none shadow-[0_0_12px_rgba(255,215,0,0.3)]"
+                  className="flex items-center justify-center gap-2 mx-auto px-4 py-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 hover:scale-105 transition-all duration-200 group animate-[pulse_1s_ease-in-out_3] hover:animate-none shadow-[0_0_12px_rgba(255,215,0,0.3)]"
                 >
                   <Star className="w-4 h-4 text-shake-yellow fill-shake-yellow group-hover:scale-110 transition-transform" />
                   <span className="text-sm font-medium text-foreground">
