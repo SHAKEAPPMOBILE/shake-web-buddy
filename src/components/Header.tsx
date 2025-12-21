@@ -38,7 +38,7 @@ export function Header() {
         .from("profiles")
         .select("avatar_url")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
       
       if (data?.avatar_url) {
         setAvatarUrl(data.avatar_url);
