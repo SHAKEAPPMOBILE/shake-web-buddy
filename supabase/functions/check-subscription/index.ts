@@ -48,9 +48,37 @@ serve(async (req) => {
       }
     }
 
-    if (!email) throw new Error("User not authenticated or email not available");
+    if (!user?.id) throw new Error("User not authenticated");
 
-    logStep("User authenticated", { userId: user?.id, email });
+    logStep("User authenticated", { userId: user.id, email });
+
+    // Check for manual premium override first
+    const { data: privateProfile } = await supabaseClient
+      .from("profiles_private")
+      .select("premium_override")
+      .eq("user_id", user.id)
+      .single();
+
+    if (privateProfile?.premium_override) {
+      logStep("Premium override active for user");
+      return new Response(JSON.stringify({
+        subscribed: true,
+        subscription_end: null,
+        is_override: true
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // If no email available, user is not subscribed via Stripe
+    if (!email) {
+      logStep("No email available for Stripe check");
+      return new Response(JSON.stringify({ subscribed: false }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email, limit: 1 });
@@ -77,7 +105,6 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      // Safely handle the subscription end date
       if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
         subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       }
