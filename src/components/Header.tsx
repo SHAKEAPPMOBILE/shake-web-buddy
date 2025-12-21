@@ -8,6 +8,7 @@ import { CitySelector } from "./CitySelector";
 import { PremiumDialog } from "./PremiumDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
+import { MyActivitiesDialog } from "./MyActivitiesDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useActiveChat } from "@/hooks/useActiveChat";
@@ -19,6 +20,8 @@ export function Header() {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
+  const [showMyActivitiesDialog, setShowMyActivitiesDialog] = useState(false);
+  const [selectedChatActivity, setSelectedChatActivity] = useState<{ activityType: string; city: string } | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, isPremium, signOut, isLoading } = useAuth();
   const { selectedCity } = useCity();
@@ -53,28 +56,35 @@ export function Header() {
   };
 
   const handleOpenChat = () => {
-    if (activeChat) {
-      markAsRead(activeChat.activityType, activeChat.city);
-      setShowChatDialog(true);
-    }
+    // If user has an active chat, open the activities list
+    // so they can choose which chat to enter
+    setShowMyActivitiesDialog(true);
+  };
+
+  const handleSelectActivityFromList = (activityType: string, city: string) => {
+    setShowMyActivitiesDialog(false);
+    setSelectedChatActivity({ activityType, city });
+    markAsRead(activityType, city);
+    setShowChatDialog(true);
   };
 
   const handleChatClose = (open: boolean) => {
     setShowChatDialog(open);
-    if (!open && activeChat) {
-      markAsRead(activeChat.activityType, activeChat.city);
+    if (!open && selectedChatActivity) {
+      markAsRead(selectedChatActivity.activityType, selectedChatActivity.city);
     }
   };
 
   const handleBackToActivities = () => {
     setShowChatDialog(false);
-    setShowActivityDialog(true);
+    setShowMyActivitiesDialog(true);
   };
 
   const handleSelectActivity = async (activity: string) => {
     setShowActivityDialog(false);
     await joinActivity(activity);
     await refreshActiveChat();
+    setSelectedChatActivity({ activityType: activity, city: selectedCity });
     setShowChatDialog(true);
   };
 
@@ -107,15 +117,15 @@ export function Header() {
 
             {/* Right side buttons */}
             <div className="flex-1 flex justify-end items-center gap-2">
-              {/* Chat shortcut - visible when user has active chat */}
-              {user && activeChat && (
+              {/* Chat shortcut - visible for all logged-in users */}
+              {user && (
                 <button
                   onClick={handleOpenChat}
                   className="relative p-2 rounded-full hover:bg-muted/50 transition-colors"
-                  title="Open chat"
+                  title="My Activities"
                 >
                   <MessageCircle className="w-6 h-6 text-foreground" />
-                  {activeChat.unreadCount > 0 && (
+                  {activeChat && activeChat.unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-destructive rounded-full border-2 border-background flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
                       {activeChat.unreadCount > 99 ? "99+" : activeChat.unreadCount}
                     </span>
@@ -183,7 +193,7 @@ export function Header() {
               />
             </div>
             {/* Chat shortcut for mobile - in menu */}
-            {user && activeChat && (
+            {user && (
               <div className="flex justify-center">
                 <button
                   onClick={() => {
@@ -193,8 +203,8 @@ export function Header() {
                   className="relative p-2 rounded-full hover:bg-muted/50 transition-colors flex items-center gap-2"
                 >
                   <MessageCircle className="w-6 h-6 text-foreground" />
-                  <span className="text-sm">Open Chat</span>
-                  {activeChat.unreadCount > 0 && (
+                  <span className="text-sm">My Activities</span>
+                  {activeChat && activeChat.unreadCount > 0 && (
                     <span className="min-w-5 h-5 px-1 bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
                       {activeChat.unreadCount > 99 ? "99+" : activeChat.unreadCount}
                     </span>
@@ -254,14 +264,20 @@ export function Header() {
         city={selectedCity}
       />
 
-      {activeChat && (
+      <MyActivitiesDialog
+        open={showMyActivitiesDialog}
+        onOpenChange={setShowMyActivitiesDialog}
+        onSelectActivity={handleSelectActivityFromList}
+      />
+
+      {selectedChatActivity && (
         <GroupChatDialog
           open={showChatDialog}
           onOpenChange={handleChatClose}
-          activityType={activeChat.activityType}
+          activityType={selectedChatActivity.activityType}
           onBack={handleBackToActivities}
-          attendeeCount={getActivityJoinCount(activeChat.activityType)}
-          city={activeChat.city}
+          attendeeCount={getActivityJoinCount(selectedChatActivity.activityType)}
+          city={selectedChatActivity.city}
         />
       )}
     </>
