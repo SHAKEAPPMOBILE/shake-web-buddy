@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Loader2, Globe } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useActivityMute } from "@/hooks/useActivityMute";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
+import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
@@ -66,6 +67,7 @@ export function GroupChatDialog({
   const { user } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
   const { leaveActivity } = useActivityJoins(city);
+  const { onlineCount } = useOnlinePresence();
   
   // Get unique user IDs from messages for profile fetching
   const userIds = useMemo(() => {
@@ -308,6 +310,10 @@ export function GroupChatDialog({
           {!user && messages.length > 0 && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
               <div className="text-center p-4">
+                <div className="flex items-center justify-center gap-2 text-shake-yellow mb-3">
+                  <Globe className="w-4 h-4" />
+                  <span className="text-sm font-medium">{onlineCount} {onlineCount === 1 ? 'person' : 'people'} online worldwide</span>
+                </div>
                 <p className="font-semibold text-foreground mb-2">Sign in to view messages</p>
                 <p className="text-sm text-muted-foreground">Join the conversation by signing in</p>
               </div>
