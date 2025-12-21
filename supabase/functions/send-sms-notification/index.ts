@@ -119,11 +119,10 @@ serve(async (req) => {
 
     console.log("SMS notification request validated:", { activityType, city, joinerName, joinerUserId });
 
-    // Get all users who joined the same activity today (excluding the current joiner)
+    // Get all users who joined ANY activity in the same city (excluding the current joiner)
     const { data: activeJoins, error: joinsError } = await supabase
       .from("activity_joins")
       .select("user_id")
-      .eq("activity_type", activityType)
       .eq("city", city)
       .gt("expires_at", new Date().toISOString())
       .neq("user_id", joinerUserId);
