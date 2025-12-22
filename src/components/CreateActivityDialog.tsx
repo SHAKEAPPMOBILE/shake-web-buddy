@@ -69,13 +69,13 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
             <Plus className="w-6 h-6" />
-            Create Activity
+            Propose a Plan
           </DialogTitle>
           <p className="text-center text-sm text-muted-foreground mt-2">
             {canCreate ? (
-              <>You have <span className="font-bold text-primary">{remainingActivities}</span> activities left this month</>
+              <>You have <span className="font-bold text-primary">{remainingActivities}</span> plans left this month</>
             ) : (
-              <span className="text-destructive">You've used all 3 activities this month</span>
+              <span className="text-destructive">You have used all 3 plans this month</span>
             )}
           </p>
         </DialogHeader>
