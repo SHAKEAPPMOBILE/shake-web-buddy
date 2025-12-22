@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, Users, User, Trash2, Loader2 } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +14,7 @@ import { AudioWaveform } from "@/components/AudioWaveform";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface PlanGroupChatDialogProps {
   open: boolean;
@@ -58,6 +59,22 @@ export function PlanGroupChatDialog({
   } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const { showNotification } = usePushNotifications();
+  const isWindowFocused = useRef(true);
+
+  // Track window focus
+  useEffect(() => {
+    const handleFocus = () => { isWindowFocused.current = true; };
+    const handleBlur = () => { isWindowFocused.current = false; };
+    
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("blur", handleBlur);
+    
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, []);
 
   // Get unique user IDs from messages for profile fetching
   const userIds = useMemo(() => {
@@ -98,11 +115,34 @@ export function PlanGroupChatDialog({
           table: "plan_messages",
           filter: `activity_id=eq.${activity.id}`,
         },
-        (payload) => {
+        async (payload) => {
           const newMessage = payload.new as Message;
           setMessages((prev) => [...prev, newMessage]);
+          
           if (newMessage.user_id !== user?.id) {
             playNotificationSound();
+            
+            // Show browser notification if window is not focused
+            if (!isWindowFocused.current) {
+              // Get sender's name
+              const { data: senderProfile } = await supabase
+                .from("profiles")
+                .select("name")
+                .eq("user_id", newMessage.user_id)
+                .single();
+              
+              const senderName = senderProfile?.name || "Someone";
+              const activityLabel = getActivityLabel(activity.activity_type);
+              const truncatedMessage = newMessage.message.length > 50
+                ? newMessage.message.substring(0, 50) + "..."
+                : newMessage.message;
+              
+              showNotification({
+                title: `${senderName} in ${activityLabel}`,
+                body: truncatedMessage,
+                tag: `plan-msg-${newMessage.id}`,
+              });
+            }
           }
         }
       )

@@ -1,8 +1,8 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { List, Map, Plus, X, Users, ChevronRight } from "lucide-react";
+import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff } from "lucide-react";
 import { WorldMap } from "@/components/WorldMap";
 import { useAllActivities } from "@/hooks/useAllActivities";
 import { UserActivity } from "@/hooks/useUserActivities";
@@ -13,6 +13,8 @@ import { CreateActivityDialog } from "@/components/CreateActivityDialog";
 import { PlanGroupChatDialog } from "@/components/PlanGroupChatDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserActivities } from "@/hooks/useUserActivities";
+import { usePlanNotifications } from "@/hooks/usePushNotifications";
+import { toast } from "sonner";
 
 interface PlansMapDialogProps {
   open: boolean;
@@ -23,12 +25,46 @@ interface PlansMapDialogProps {
 export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps) {
   const { user } = useAuth();
   const { activities, isLoading } = useAllActivities();
-  const { joinActivity, hasJoinedActivity } = useUserActivities(city);
+  const { joinActivity, hasJoinedActivity, myActivities } = useUserActivities(city);
   const [showList, setShowList] = useState(true);
   const [selectedActivity, setSelectedActivity] = useState<UserActivity | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [joinedActivities, setJoinedActivities] = useState<Set<string>>(new Set());
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  // Get IDs of activities the user owns
+  const myActivityIds = useMemo(() => myActivities.map((a) => a.id), [myActivities]);
+
+  // Set up plan notifications
+  const { requestPermission } = usePlanNotifications(
+    myActivityIds,
+    (activityId, joinerName) => {
+      // Handle join notification - could update UI or refetch
+      console.log(`${joinerName} joined activity ${activityId}`);
+    },
+    (activityId, senderName, message) => {
+      // Handle message notification
+      console.log(`${senderName} sent message in ${activityId}: ${message}`);
+    }
+  );
+
+  // Check notification permission status
+  useEffect(() => {
+    if ("Notification" in window) {
+      setNotificationsEnabled(Notification.permission === "granted");
+    }
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    const granted = await requestPermission();
+    setNotificationsEnabled(granted);
+    if (granted) {
+      toast.success("Notifications enabled! You'll be notified when someone joins your plans.");
+    } else {
+      toast.error("Notifications were denied. You can enable them in your browser settings.");
+    }
+  };
 
   const handleActivityClick = async (activity: UserActivity) => {
     // Check if user has access to chat (creator or joined)
@@ -73,6 +109,23 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {user && myActivityIds.length > 0 && (
+                <Button
+                  variant={notificationsEnabled ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={handleEnableNotifications}
+                  className="gap-1"
+                >
+                  {notificationsEnabled ? (
+                    <Bell className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <BellOff className="w-4 h-4" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {notificationsEnabled ? "Notifications On" : "Enable Notifications"}
+                  </span>
+                </Button>
+              )}
               <Button
                 variant={showList ? "secondary" : "ghost"}
                 size="sm"
