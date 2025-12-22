@@ -145,9 +145,9 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
           </div>
 
           {/* Content */}
-          <div className="flex-1 flex overflow-hidden relative">
+          <div className="flex-1 flex overflow-hidden relative min-h-0">
             {/* Map */}
-            <div className={cn("flex-1 transition-all duration-300", showList && "mr-80")}>
+            <div className={cn("flex-1 h-full transition-all duration-300", showList && "mr-80")}>
               <WorldMap
                 activities={activities}
                 onActivityClick={handleActivityClick}
