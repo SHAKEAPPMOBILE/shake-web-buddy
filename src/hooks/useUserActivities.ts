@@ -20,7 +20,7 @@ export interface UserActivity {
 const MAX_ACTIVITIES_PER_MONTH = 10;
 
 export function useUserActivities(city: string) {
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [myActivities, setMyActivities] = useState<UserActivity[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -127,7 +127,8 @@ export function useUserActivities(city: string) {
       return false;
     }
 
-    if (activitiesThisMonth >= MAX_ACTIVITIES_PER_MONTH) {
+    // Premium users have unlimited activities
+    if (!isPremium && activitiesThisMonth >= MAX_ACTIVITIES_PER_MONTH) {
       toast.error(`You can only create ${MAX_ACTIVITIES_PER_MONTH} activities per month`);
       return false;
     }
@@ -385,7 +386,7 @@ export function useUserActivities(city: string) {
     myActivities,
     isLoading,
     activitiesThisMonth,
-    remainingActivities: MAX_ACTIVITIES_PER_MONTH - activitiesThisMonth,
+    remainingActivities: isPremium ? Infinity : MAX_ACTIVITIES_PER_MONTH - activitiesThisMonth,
     createActivity,
     updateActivity,
     deleteActivity,
