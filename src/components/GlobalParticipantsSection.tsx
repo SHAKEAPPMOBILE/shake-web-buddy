@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Crown } from "lucide-react";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
-import { playNotificationSound } from "@/lib/notification-sound";
+import { playNotificationSound, playWelcomeVoice } from "@/lib/notification-sound";
 import {
   Dialog,
   DialogContent,
@@ -109,9 +109,14 @@ export function GlobalParticipantsSection() {
           if (payload.new && (payload.new as any).user_id !== user?.id) {
             const newMemberName = (payload.new as any).name || "A new Shaker";
             
-            // Trigger confetti celebration and sound
+            // Trigger confetti celebration, sound, and welcome voice
             triggerConfettiWaterfall();
             playNotificationSound();
+            
+            // Play the welcome voice after a short delay
+            setTimeout(() => {
+              playWelcomeVoice();
+            }, 300);
             
             // Show welcome toast
             toast.success(

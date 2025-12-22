@@ -9,3 +9,6 @@ verify_jwt = true
 
 [functions.send-plan-sms]
 verify_jwt = true
+
+[functions.elevenlabs-welcome]
+verify_jwt = false
