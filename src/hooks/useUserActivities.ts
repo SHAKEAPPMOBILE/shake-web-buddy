@@ -216,7 +216,10 @@ export function useUserActivities(city: string) {
   };
 
   // Join an activity
-  const joinActivity = async (activityId: string, isPremium: boolean): Promise<{ success: boolean; requiresPremium?: boolean }> => {
+  const joinActivity = async (
+    activityId: string,
+    isPremium: boolean
+  ): Promise<{ success: boolean; requiresPremium?: boolean }> => {
     if (!user) {
       toast.error("Please sign in to join an activity");
       return { success: false };
@@ -249,9 +252,17 @@ export function useUserActivities(city: string) {
       return { success: false };
     }
 
-    // Check if activity is in a different city and user is not premium
+    // Cross-city join is premium. If frontend premium state is stale, double-check backend override.
     if (activity.city !== city && !isPremium) {
-      return { success: false, requiresPremium: true };
+      const { data: privateProfile } = await supabase
+        .from("profiles_private")
+        .select("premium_override")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!privateProfile?.premium_override) {
+        return { success: false, requiresPremium: true };
+      }
     }
 
     const { error } = await supabase.from("activity_joins").insert({
@@ -292,6 +303,7 @@ export function useUserActivities(city: string) {
     await fetchActivities();
     return { success: true };
   };
+
 
   // Leave an activity
   const leaveActivity = async (activityId: string): Promise<boolean> => {

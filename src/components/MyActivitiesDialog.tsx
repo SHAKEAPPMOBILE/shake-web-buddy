@@ -21,6 +21,9 @@ interface ActivityJoin {
   joined_at: string;
   expires_at: string;
   participant_count?: number;
+  // When present, this row represents a scheduled plan (creator's own plan)
+  scheduled_for?: string;
+  source?: "join" | "plan";
 }
 
 export function MyActivitiesDialog({ 
@@ -41,15 +44,17 @@ export function MyActivitiesDialog({
 
   const fetchMyActivities = async () => {
     if (!user) return;
-    
+
     setIsLoading(true);
     try {
-      // Fetch user's active activity joins
+      const nowIso = new Date().toISOString();
+
+      // 1) Fetch user's active chat joins (includes plan joins where activity_id is set)
       const { data: joins, error } = await supabase
         .from("activity_joins")
-        .select("id, activity_type, city, joined_at, expires_at")
+        .select("id, activity_type, city, joined_at, expires_at, activity_id")
         .eq("user_id", user.id)
-        .gt("expires_at", new Date().toISOString())
+        .gt("expires_at", nowIso)
         .order("joined_at", { ascending: false });
 
       if (error) {
@@ -57,24 +62,106 @@ export function MyActivitiesDialog({
         return;
       }
 
-      // Get participant counts for each activity
-      const activitiesWithCounts = await Promise.all(
-        (joins || []).map(async (join) => {
+      // 2) Fetch user's own upcoming plans (creator should see their plan chats too)
+      const { data: myPlans, error: plansError } = await supabase
+        .from("user_activities")
+        .select("id, activity_type, city, scheduled_for, created_at")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .gt("scheduled_for", nowIso)
+        .order("scheduled_for", { ascending: true });
+
+      if (plansError) {
+        console.error("Error fetching my plans:", plansError);
+      }
+
+      // Participant counts (plan joins count by activity_id; quick joins count by activity_type+city)
+      const joinItems: ActivityJoin[] = await Promise.all(
+        (joins || []).map(async (join: any) => {
+          if (join.activity_id) {
+            const { count } = await supabase
+              .from("activity_joins")
+              .select("*", { count: "exact", head: true })
+              .eq("activity_id", join.activity_id);
+
+            return {
+              id: join.id,
+              activity_type: join.activity_type,
+              city: join.city,
+              joined_at: join.joined_at,
+              expires_at: join.expires_at,
+              participant_count: (count || 0) + 1,
+              source: "join",
+            };
+          }
+
           const { count } = await supabase
             .from("activity_joins")
             .select("*", { count: "exact", head: true })
             .eq("activity_type", join.activity_type)
             .eq("city", join.city)
-            .gt("expires_at", new Date().toISOString());
+            .gt("expires_at", nowIso);
 
           return {
-            ...join,
+            id: join.id,
+            activity_type: join.activity_type,
+            city: join.city,
+            joined_at: join.joined_at,
+            expires_at: join.expires_at,
             participant_count: count || 0,
+            source: "join",
           };
         })
       );
 
-      setActivities(activitiesWithCounts);
+      const planItems: ActivityJoin[] = await Promise.all(
+        (myPlans || []).map(async (plan: any) => {
+          const { count } = await supabase
+            .from("activity_joins")
+            .select("*", { count: "exact", head: true })
+            .eq("activity_id", plan.id);
+
+          return {
+            id: `plan-${plan.id}`,
+            activity_type: plan.activity_type,
+            city: plan.city,
+            joined_at: plan.created_at,
+            // Keep plan visible until its scheduled time (so it's available in chat shortcut)
+            expires_at: plan.scheduled_for,
+            scheduled_for: plan.scheduled_for,
+            participant_count: (count || 0) + 1,
+            source: "plan",
+          };
+        })
+      );
+
+      // Deduplicate by activity_type + city, preferring plan entries over generic joins
+      const merged = [...planItems, ...joinItems];
+      const byKey = new Map<string, ActivityJoin>();
+      for (const item of merged) {
+        const key = `${item.activity_type}::${item.city}`;
+        const existing = byKey.get(key);
+        if (!existing) {
+          byKey.set(key, item);
+          continue;
+        }
+        if (existing.source !== "plan" && item.source === "plan") {
+          byKey.set(key, item);
+          continue;
+        }
+        // Otherwise keep the most recently joined
+        if (new Date(item.joined_at).getTime() > new Date(existing.joined_at).getTime()) {
+          byKey.set(key, item);
+        }
+      }
+
+      const finalList = Array.from(byKey.values()).sort((a, b) => {
+        const aTime = a.scheduled_for ? new Date(a.scheduled_for).getTime() : new Date(a.joined_at).getTime();
+        const bTime = b.scheduled_for ? new Date(b.scheduled_for).getTime() : new Date(b.joined_at).getTime();
+        return bTime - aTime;
+      });
+
+      setActivities(finalList);
     } catch (error) {
       console.error("Error fetching activities:", error);
     } finally {
@@ -191,7 +278,9 @@ export function MyActivitiesDialog({
                       {activity.city}
                     </p>
                     <p className="text-xs text-muted-foreground/70 mt-1">
-                      Joined {format(new Date(activity.joined_at), "h:mm a")}
+                      {activity.scheduled_for
+                        ? `Scheduled ${format(new Date(activity.scheduled_for), "EEE, MMM d 'at' h:mm a")}`
+                        : `Joined ${format(new Date(activity.joined_at), "h:mm a")}`}
                     </p>
                   </div>
 
