@@ -117,6 +117,18 @@ serve(async (req) => {
       logStep("No active subscription found");
     }
 
+    // Sync premium status to profiles_private for RLS policy to use
+    const { error: updateError } = await supabaseClient
+      .from("profiles_private")
+      .update({ premium_override: hasActiveSub })
+      .eq("user_id", user.id);
+    
+    if (updateError) {
+      logStep("Warning: Could not sync premium status to database", { error: updateError.message });
+    } else {
+      logStep("Premium status synced to database", { premium: hasActiveSub });
+    }
+
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       subscription_end: subscriptionEnd
