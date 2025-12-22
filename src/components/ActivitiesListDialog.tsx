@@ -161,7 +161,7 @@ export function ActivitiesListDialog({
                           </div>
                           
                           <p className="text-sm text-muted-foreground mt-1 truncate">
-                            {format(new Date(activity.scheduled_for), "EEE, MMM d 'at' h:mm a")}
+                            {format(new Date(activity.scheduled_for), "EEE, MMM d")}
                           </p>
 
                           <div className="flex items-center gap-3 mt-2">
