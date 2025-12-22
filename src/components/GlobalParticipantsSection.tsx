@@ -51,58 +51,34 @@ export function GlobalParticipantsSection() {
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
 
-    // Get unique user_ids who joined today, ordered by most recent first
-    const { data: joins, error: joinsError } = await supabase
-      .from("activity_joins")
-      .select("user_id, joined_at")
-      .gte("joined_at", todayStart.toISOString())
-      .order("joined_at", { ascending: false });
+    // Get users who signed up today (profiles created today)
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("user_id, name, avatar_url, created_at")
+      .gte("created_at", todayStart.toISOString())
+      .order("created_at", { ascending: false });
 
-    if (joinsError) {
-      console.error("Error fetching joins:", joinsError);
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
       setIsLoading(false);
       return;
     }
 
-    if (!joins || joins.length === 0) {
+    if (!profiles || profiles.length === 0) {
       setParticipants([]);
       setTotalCount(0);
       setIsLoading(false);
       return;
     }
 
-    // Get unique users (keep the most recent join per user)
-    const uniqueUsersMap = new Map<string, { user_id: string; joined_at: string }>();
-    joins.forEach((join) => {
-      if (!uniqueUsersMap.has(join.user_id)) {
-        uniqueUsersMap.set(join.user_id, join);
-      }
-    });
+    setTotalCount(profiles.length);
 
-    const uniqueUsers = Array.from(uniqueUsersMap.values());
-    setTotalCount(uniqueUsers.length);
-
-    const userIds = uniqueUsers.map((j) => j.user_id);
-
-    // Fetch profiles for these users
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("user_id, name, avatar_url")
-      .in("user_id", userIds);
-
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-    }
-
-    const participantsList: Participant[] = uniqueUsers.map((join) => {
-      const profile = profiles?.find((p) => p.user_id === join.user_id);
-      return {
-        user_id: join.user_id,
-        name: profile?.name || null,
-        avatar_url: profile?.avatar_url || null,
-        joined_at: join.joined_at,
-      };
-    });
+    const participantsList: Participant[] = profiles.map((profile) => ({
+      user_id: profile.user_id,
+      name: profile.name || null,
+      avatar_url: profile.avatar_url || null,
+      joined_at: profile.created_at,
+    }));
 
     setParticipants(participantsList);
     setIsLoading(false);
@@ -111,9 +87,9 @@ export function GlobalParticipantsSection() {
   useEffect(() => {
     fetchTodaysParticipants();
 
-    // Subscribe to real-time updates on profiles table (only new profiles)
+    // Subscribe to real-time updates on profiles table (new signups)
     const profilesChannel = supabase
-      .channel('profiles-changes')
+      .channel('profiles-signups')
       .on(
         'postgres_changes',
         {
@@ -122,24 +98,7 @@ export function GlobalParticipantsSection() {
           table: 'profiles',
         },
         () => {
-          // Refresh when any profile changes
-          fetchTodaysParticipants();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to real-time updates on activity_joins table
-    const joinsChannel = supabase
-      .channel('activity-joins-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'activity_joins',
-        },
-        () => {
-          // Refresh when any join happens
+          // Refresh when new user signs up
           fetchTodaysParticipants();
         }
       )
@@ -150,7 +109,6 @@ export function GlobalParticipantsSection() {
     
     return () => {
       supabase.removeChannel(profilesChannel);
-      supabase.removeChannel(joinsChannel);
       clearInterval(interval);
     };
   }, []);
@@ -221,7 +179,7 @@ export function GlobalParticipantsSection() {
           <Users className="w-4 h-4 text-shake-yellow" />
           <span className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">{totalCount}</span>{" "}
-            {totalCount === 1 ? "person" : "people"} joined today
+            new {totalCount === 1 ? "member" : "members"} today
           </span>
         </div>
       </button>
@@ -230,7 +188,7 @@ export function GlobalParticipantsSection() {
       <Dialog open={showListDialog} onOpenChange={setShowListDialog}>
         <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
           <DialogHeader>
-            <DialogTitle className="font-display">Today's Active Shakers</DialogTitle>
+            <DialogTitle className="font-display">New Members Today</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
