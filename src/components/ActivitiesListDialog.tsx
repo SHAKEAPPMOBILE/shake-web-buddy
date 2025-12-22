@@ -89,7 +89,7 @@ export function ActivitiesListDialog({
           <DialogHeader className="shrink-0">
             <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
               <Calendar className="w-6 h-6" />
-              Activities in {city}
+              Plans in {city}
             </DialogTitle>
           </DialogHeader>
 
@@ -101,9 +101,9 @@ export function ActivitiesListDialog({
             ) : activities.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">No upcoming activities</p>
+                <p className="text-muted-foreground">No upcoming plans</p>
                 <p className="text-sm text-muted-foreground/70 mt-1">
-                  Be the first to create one!
+                  Be the first to propose one!
                 </p>
               </div>
             ) : (
@@ -189,7 +189,7 @@ export function ActivitiesListDialog({
             )}
           </div>
 
-          {/* Create Activity Button */}
+          {/* Create Plan Button */}
           <div className="shrink-0 pt-4 border-t border-border">
             <Button
               onClick={() => {
@@ -200,7 +200,7 @@ export function ActivitiesListDialog({
               size="lg"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Create Activity
+              Propose a Plan
             </Button>
           </div>
         </DialogContent>

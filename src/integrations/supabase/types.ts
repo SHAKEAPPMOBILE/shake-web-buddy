@@ -133,6 +133,41 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_messages: {
+        Row: {
+          activity_id: string
+          audio_url: string | null
+          created_at: string
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          activity_id: string
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_messages_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "user_activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       private_messages: {
         Row: {
           audio_url: string | null

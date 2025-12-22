@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Zap, Shield } from "lucide-react";
+import { Zap, Shield, MapPin } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
+import { PlansMapDialog } from "./PlansMapDialog";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
@@ -19,6 +20,7 @@ export function HeroSection() {
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showClockAnimation, setShowClockAnimation] = useState(false);
+  const [showPlansMap, setShowPlansMap] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
   const { user } = useAuth();
   const { selectedCity } = useCity();
@@ -130,9 +132,9 @@ export function HeroSection() {
               </div>
             </div>
 
-            {/* CTA Button */}
+            {/* CTA Buttons */}
             <div 
-              className="flex items-center justify-center animate-fade-up"
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up"
               style={{ animationDelay: "300ms" }}
             >
               <Button
@@ -143,6 +145,15 @@ export function HeroSection() {
               >
                 <span className="text-shake-green text-xl">🤝</span>
                 Let's Shake!
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setShowPlansMap(true)}
+                className="gap-2"
+              >
+                <MapPin className="w-5 h-5" />
+                Explore Plans
               </Button>
             </div>
 
@@ -194,6 +205,12 @@ export function HeroSection() {
         activityType={selectedActivity}
         onBack={handleBackToActivities}
         attendeeCount={getActivityJoinCount(selectedActivity)}
+        city={selectedCity}
+      />
+
+      <PlansMapDialog
+        open={showPlansMap}
+        onOpenChange={setShowPlansMap}
         city={selectedCity}
       />
     </>
