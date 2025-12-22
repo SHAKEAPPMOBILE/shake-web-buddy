@@ -47,14 +47,19 @@ export function MyActivitiesDialog({
 
     setIsLoading(true);
     try {
-      const nowIso = new Date().toISOString();
+      const now = new Date();
+      const nowIso = now.toISOString();
+      
+      // Only show joins from the last 24 hours
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
 
-      // 1) Fetch user's active chat joins (includes plan joins where activity_id is set)
+      // 1) Fetch user's active chat joins from last 24h (includes plan joins where activity_id is set)
       const { data: joins, error } = await supabase
         .from("activity_joins")
         .select("id, activity_type, city, joined_at, expires_at, activity_id")
         .eq("user_id", user.id)
         .gt("expires_at", nowIso)
+        .gte("joined_at", twentyFourHoursAgo)
         .order("joined_at", { ascending: false });
 
       if (error) {
