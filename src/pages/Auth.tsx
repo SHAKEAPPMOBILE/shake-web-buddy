@@ -29,7 +29,7 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [usePasswordLogin, setUsePasswordLogin] = useState(false);
+  const [usePasswordLogin, setUsePasswordLogin] = useState(() => searchParams.get('mode') !== 'signup');
   const [name, setName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
