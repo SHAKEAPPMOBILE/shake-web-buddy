@@ -111,9 +111,9 @@ export function Header() {
             {/* Centered Logo */}
             <button 
               onClick={() => navigate("/")}
-              className="flex items-center justify-center"
+              className="flex flex-col items-center justify-center"
             >
-              <img src={logoShake} alt="Shake Social" className="h-20 md:h-28 object-contain" />
+              <img src={logoShake} alt="Shake Social" className="h-24 md:h-32 object-contain" />
             </button>
 
             {/* Right side buttons */}

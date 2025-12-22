@@ -74,3 +74,53 @@ export const playDingDingSound = () => {
     console.error('Error playing ding-ding sound:', error);
   }
 };
+
+// Cache for the welcome audio blob URL
+let welcomeAudioUrl: string | null = null;
+let welcomeAudioLoading = false;
+
+// Play "Let's shake it! shake it!" female voice for new member celebration
+export const playWelcomeVoice = async () => {
+  try {
+    // If already loading, skip
+    if (welcomeAudioLoading) return;
+
+    // If we have cached audio, play it
+    if (welcomeAudioUrl) {
+      const audio = new Audio(welcomeAudioUrl);
+      audio.volume = 0.7;
+      await audio.play();
+      return;
+    }
+
+    // Fetch and cache the audio
+    welcomeAudioLoading = true;
+    
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-welcome`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Welcome audio request failed: ${response.status}`);
+    }
+
+    const audioBlob = await response.blob();
+    welcomeAudioUrl = URL.createObjectURL(audioBlob);
+    
+    const audio = new Audio(welcomeAudioUrl);
+    audio.volume = 0.7;
+    await audio.play();
+  } catch (error) {
+    console.error("Error playing welcome voice:", error);
+  } finally {
+    welcomeAudioLoading = false;
+  }
+};
