@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 interface MyActivitiesDialogProps {
   open: boolean;
@@ -29,6 +31,13 @@ export function MyActivitiesDialog({
   const [activities, setActivities] = useState<ActivityJoin[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+  
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => onOpenChange(false),
+    threshold: 80,
+    enabled: isMobile,
+  });
 
   useEffect(() => {
     if (!open || !user) return;
@@ -83,7 +92,15 @@ export function MyActivitiesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+      <DialogContent 
+        className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50"
+        {...(isMobile ? swipeHandlers : {})}
+      >
+        {isMobile && (
+          <div className="flex justify-center py-2 shrink-0">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-display flex items-center justify-center gap-2">
             <MessageSquare className="w-5 h-5" />

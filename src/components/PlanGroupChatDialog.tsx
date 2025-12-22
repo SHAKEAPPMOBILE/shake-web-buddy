@@ -15,6 +15,8 @@ import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 interface PlanGroupChatDialogProps {
   open: boolean;
@@ -61,6 +63,13 @@ export function PlanGroupChatDialog({
   const { user } = useAuth();
   const { showNotification } = usePushNotifications();
   const isWindowFocused = useRef(true);
+  const isMobile = useIsMobile();
+  
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => onOpenChange(false),
+    threshold: 80,
+    enabled: isMobile,
+  });
 
   // Track window focus
   useEffect(() => {
@@ -266,7 +275,15 @@ export function PlanGroupChatDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg h-[600px] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-border/50">
+      <DialogContent 
+        className="sm:max-w-lg h-[600px] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-border/50"
+        {...(isMobile ? swipeHandlers : {})}
+      >
+        {isMobile && (
+          <div className="flex justify-center py-2 shrink-0">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
         {/* Header */}
         <DialogHeader className="p-4 border-b border-border/50">
           <div className="flex items-center gap-3">

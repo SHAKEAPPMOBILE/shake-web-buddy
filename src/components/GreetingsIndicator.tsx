@@ -13,6 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SayHiButton } from "./SayHiButton";
 import { PrivateChatDialog } from "./PrivateChatDialog";
 import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 export function GreetingsIndicator() {
   const { user } = useAuth();
@@ -24,6 +26,13 @@ export function GreetingsIndicator() {
     userName: string | null;
     avatarUrl: string | null;
   } | null>(null);
+  const isMobile = useIsMobile();
+  
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => setShowDialog(false),
+    threshold: 80,
+    enabled: isMobile,
+  });
 
   if (!user) return null;
 
@@ -50,7 +59,15 @@ export function GreetingsIndicator() {
       </button>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+        <DialogContent 
+          className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50"
+          {...(isMobile ? swipeHandlers : {})}
+        >
+          {isMobile && (
+            <div className="flex justify-center py-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+          )}
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">
               <Hand className="w-5 h-5 text-shake-yellow" />

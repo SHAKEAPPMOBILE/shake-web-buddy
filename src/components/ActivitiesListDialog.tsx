@@ -18,6 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 interface ActivitiesListDialogProps {
   open: boolean;
@@ -38,6 +40,13 @@ export function ActivitiesListDialog({
   const { activities, myActivities, isLoading, joinActivity, leaveActivity, deleteActivity, hasJoinedActivity } = useUserActivities(city);
   const [joinedActivities, setJoinedActivities] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
+  
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => onOpenChange(false),
+    threshold: 80,
+    enabled: isMobile,
+  });
 
   // Check join status for all activities
   useEffect(() => {
@@ -85,7 +94,15 @@ export function ActivitiesListDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg bg-card/95 backdrop-blur-xl border-border/50 max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent 
+          className="sm:max-w-lg bg-card/95 backdrop-blur-xl border-border/50 max-h-[85vh] overflow-hidden flex flex-col"
+          {...(isMobile ? swipeHandlers : {})}
+        >
+          {isMobile && (
+            <div className="flex justify-center py-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+          )}
           <DialogHeader className="shrink-0">
             <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
               <Calendar className="w-6 h-6" />
