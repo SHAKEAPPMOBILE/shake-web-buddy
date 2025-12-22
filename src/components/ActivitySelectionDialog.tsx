@@ -8,7 +8,7 @@ import {
   CarouselItem,
   CarouselApi,
 } from "@/components/ui/carousel";
-import { Star, Check } from "lucide-react";
+import { Star, Check, Clock } from "lucide-react";
 import { ACTIVITY_TYPES, getTimeBasedDefaultActivity } from "@/data/activityTypes";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -147,14 +147,24 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     return (
       <Dialog open={open} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
-          <div className="flex flex-col items-center justify-center py-12 space-y-6">
-            <div className="w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center animate-scale-in">
-              <Check className="w-12 h-12 text-green-500" />
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <div 
+              className="animate-shake"
+              style={{
+                animation: 'shake 0.5s ease-in-out infinite'
+              }}
+            >
+              <Clock className="w-20 h-20 text-shake-yellow" />
             </div>
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-display font-bold">Plan Created!</h2>
-              <p className="text-muted-foreground">Opening map to show your plan...</p>
-            </div>
+            <h2 className="text-2xl font-display font-bold text-foreground text-center">
+              Ding Ding! 🔔
+            </h2>
+            <p className="text-lg text-muted-foreground text-center">
+              It's time to shake!
+            </p>
+            <p className="text-sm text-muted-foreground/70 text-center max-w-xs">
+              Your plan is now visible on the map. Others can join!
+            </p>
           </div>
         </DialogContent>
       </Dialog>
