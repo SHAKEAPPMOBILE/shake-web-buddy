@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       activity_joins: {
         Row: {
+          activity_id: string | null
           activity_type: string
           city: string
           expires_at: string
@@ -24,6 +25,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          activity_id?: string | null
           activity_type: string
           city: string
           expires_at?: string
@@ -32,6 +34,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          activity_id?: string | null
           activity_type?: string
           city?: string
           expires_at?: string
@@ -39,7 +42,15 @@ export type Database = {
           joined_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "activity_joins_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "user_activities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       activity_messages: {
         Row: {
@@ -216,6 +227,39 @@ export type Database = {
           phone_number?: string | null
           premium_override?: boolean
           sms_notifications_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_activities: {
+        Row: {
+          activity_type: string
+          city: string
+          created_at: string
+          id: string
+          is_active: boolean
+          scheduled_for: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          city: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          scheduled_for: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          city?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          scheduled_for?: string
           updated_at?: string
           user_id?: string
         }

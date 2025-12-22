@@ -1,5 +1,4 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useCallback, useEffect, useMemo } from "react";
@@ -10,47 +9,13 @@ import {
   CarouselApi,
 } from "@/components/ui/carousel";
 import { Star } from "lucide-react";
-import iconLunch from "@/assets/icon-lunch.png";
-import iconDinner from "@/assets/icon-dinner.png";
-import iconDrinks from "@/assets/icon-drinks.png";
-import iconHike from "@/assets/icon-hike.png";
-import bgBarManCook from "@/assets/bar-man-and-cook.png";
-import bgHiker from "@/assets/hiker-illustration.png";
+import { ACTIVITY_TYPES, getTimeBasedDefaultActivity } from "@/data/activityTypes";
 
 interface ActivitySelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectActivity: (activity: string) => void;
   city: string;
-}
-
-const activities = [
-  { id: "lunch", label: "Lunch", icon: iconLunch, color: "bg-shake-coral/20 hover:bg-shake-coral/30", bgImage: bgBarManCook },
-  { id: "dinner", label: "Dinner", icon: iconDinner, color: "bg-shake-purple/20 hover:bg-shake-purple/30", bgImage: bgBarManCook },
-  { id: "drinks", label: "Drinks", icon: iconDrinks, color: "bg-shake-teal/20 hover:bg-shake-teal/30", bgImage: bgBarManCook },
-  { id: "hike", label: "Hike", icon: iconHike, color: "bg-shake-green/20 hover:bg-shake-green/30", bgImage: bgHiker },
-];
-
-// Get smart default activity based on local time and day
-function getTimeBasedDefaultActivity(): string {
-  const now = new Date();
-  const hours = now.getHours();
-  const day = now.getDay(); // 0 = Sunday, 6 = Saturday
-  const isWeekend = day === 0 || day === 6;
-
-  // Weekend logic: show hike until 2pm
-  if (isWeekend && hours < 14) {
-    return "hike";
-  }
-
-  // Time-based logic
-  if (hours >= 21) {
-    return "drinks"; // After 9pm
-  } else if (hours >= 14) {
-    return "dinner"; // After 2pm
-  } else {
-    return "lunch"; // Before 12pm (and before 2pm)
-  }
 }
 
 export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, city }: ActivitySelectionDialogProps) {
@@ -107,7 +72,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     
     // Get time-based default activity
     const defaultActivity = getTimeBasedDefaultActivity();
-    const defaultIndex = activities.findIndex(a => a.id === defaultActivity);
+    const defaultIndex = ACTIVITY_TYPES.findIndex(a => a.id === defaultActivity);
     const startIndex = defaultIndex >= 0 ? defaultIndex : 1;
     
     api.scrollTo(startIndex, false);
@@ -122,7 +87,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   // Get favorite activity details for the star button
   const favoriteActivityDetails = useMemo(() => {
     if (!favoriteActivity) return null;
-    return activities.find(a => a.id === favoriteActivity);
+    return ACTIVITY_TYPES.find(a => a.id === favoriteActivity);
   }, [favoriteActivity]);
 
   return (
@@ -155,7 +120,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
             className="w-full"
           >
             <CarouselContent className="-ml-2 md:-ml-4">
-              {activities.map((activity, index) => {
+              {ACTIVITY_TYPES.map((activity, index) => {
                 const joinCount = getActivityJoinCount(activity.id);
                 const isCenter = currentIndex === index;
                 
@@ -191,11 +156,17 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                             className="absolute inset-0 w-full h-full object-cover opacity-30"
                           />
                         )}
-                        <img 
-                          src={activity.icon} 
-                          alt={activity.label} 
-                          className={`object-cover rounded-full transition-all duration-300 relative z-10 ${isCenter ? 'w-16 h-16' : 'w-10 h-10'}`}
-                        />
+                        {activity.icon ? (
+                          <img 
+                            src={activity.icon} 
+                            alt={activity.label} 
+                            className={`object-cover rounded-full transition-all duration-300 relative z-10 ${isCenter ? 'w-16 h-16' : 'w-10 h-10'}`}
+                          />
+                        ) : (
+                          <span className={`transition-all duration-300 relative z-10 ${isCenter ? 'text-4xl' : 'text-2xl'}`}>
+                            {activity.emoji}
+                          </span>
+                        )}
                       </div>
                       <span 
                         className={`
@@ -220,7 +191,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
           
           {/* Dots indicator */}
           <div className="flex justify-center gap-2 mt-4">
-            {activities.map((_, index) => (
+            {ACTIVITY_TYPES.map((_, index) => (
               <button
                 key={index}
                 onClick={() => api?.scrollTo(index)}
