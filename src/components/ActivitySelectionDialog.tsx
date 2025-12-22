@@ -100,12 +100,12 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
           </p>
         </DialogHeader>
         
-        <div className="py-6 relative">
+        <div className="py-6 relative overflow-hidden">
           {/* Favorite quick access - positioned in top right */}
           {favoriteActivityDetails && (
             <button
               onClick={handleSelectFavorite}
-              className="absolute top-0 right-0 z-10 p-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 hover:scale-105 transition-all duration-200 group animate-[pulse_1s_ease-in-out_3] hover:animate-none shadow-[0_0_12px_rgba(255,215,0,0.3)]"
+              className="absolute top-0 right-2 z-10 p-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 hover:scale-105 transition-all duration-200 group animate-[pulse_1s_ease-in-out_3] hover:animate-none shadow-[0_0_12px_rgba(255,215,0,0.3)]"
             >
               <Star className="w-4 h-4 text-shake-yellow fill-shake-yellow group-hover:scale-110 transition-transform" />
             </button>
@@ -117,7 +117,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
               loop: true,
               containScroll: false,
             }}
-            className="w-full"
+            className="w-full overflow-hidden"
           >
             <CarouselContent className="-ml-2 md:-ml-4">
               {ACTIVITY_TYPES.map((activity, index) => {
@@ -138,50 +138,52 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                           api?.scrollTo(index);
                         }
                       }}
-                      className="flex flex-col items-center justify-center gap-2 transition-all duration-300 relative group"
+                      className="flex flex-col items-center justify-center gap-2 transition-all duration-300 relative group py-2"
                     >
-                      <div 
-                        className={`
-                          rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden relative
-                          ${activity.color}
-                          ${isCenter ? 'w-24 h-24 scale-100' : 'w-16 h-16 scale-90 opacity-60'}
-                          ${selectingId === activity.id ? 'animate-pulse scale-110 ring-4 ring-primary/50' : ''}
-                          ${isCenter && !selectingId ? 'active:scale-95' : ''}
-                        `}
-                      >
-                        {activity.bgImage && (
-                          <img 
-                            src={activity.bgImage} 
-                            alt="" 
-                            className="absolute inset-0 w-full h-full object-cover opacity-30"
-                          />
-                        )}
-                        {activity.icon ? (
-                          <img 
-                            src={activity.icon} 
-                            alt={activity.label} 
-                            className={`object-cover rounded-full transition-all duration-300 relative z-10 ${isCenter ? 'w-16 h-16' : 'w-10 h-10'}`}
-                          />
-                        ) : (
-                          <span className={`transition-all duration-300 relative z-10 ${isCenter ? 'text-4xl' : 'text-2xl'}`}>
-                            {activity.emoji}
+                      <div className="relative">
+                        <div 
+                          className={`
+                            rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden relative
+                            ${activity.color}
+                            ${isCenter ? 'w-24 h-24 scale-100' : 'w-16 h-16 scale-90 opacity-60'}
+                            ${selectingId === activity.id ? 'animate-pulse scale-110 ring-4 ring-primary/50' : ''}
+                            ${isCenter && !selectingId ? 'active:scale-95' : ''}
+                          `}
+                        >
+                          {activity.bgImage && (
+                            <img 
+                              src={activity.bgImage} 
+                              alt="" 
+                              className="absolute inset-0 w-full h-full object-cover opacity-30"
+                            />
+                          )}
+                          {activity.icon ? (
+                            <img 
+                              src={activity.icon} 
+                              alt={activity.label} 
+                              className={`object-cover rounded-full transition-all duration-300 relative z-10 ${isCenter ? 'w-16 h-16' : 'w-10 h-10'}`}
+                            />
+                          ) : (
+                            <span className={`transition-all duration-300 relative z-10 ${isCenter ? 'text-4xl' : 'text-2xl'}`}>
+                              {activity.emoji}
+                            </span>
+                          )}
+                        </div>
+                        {joinCount > 0 && isCenter && (
+                          <span className="absolute -top-1 right-0 bg-shake-yellow text-background text-xs font-bold px-1.5 py-0.5 rounded-full animate-fade-in whitespace-nowrap">
+                            {joinCount}
                           </span>
                         )}
                       </div>
                       <span 
                         className={`
-                          font-semibold text-foreground transition-all duration-300
-                          ${isCenter ? 'opacity-100 text-lg' : 'opacity-0 text-sm h-0'}
+                          font-semibold text-foreground transition-all duration-300 truncate max-w-[80px]
+                          ${isCenter ? 'opacity-100 text-base' : 'opacity-0 text-sm h-0'}
                           ${selectingId === activity.id ? 'text-primary font-bold' : ''}
                         `}
                       >
                         {activity.label}
                       </span>
-                      {joinCount > 0 && isCenter && (
-                        <span className="absolute -top-1 -right-1 bg-shake-yellow text-background text-xs font-bold px-2 py-0.5 rounded-full animate-fade-in">
-                          {joinCount} today
-                        </span>
-                      )}
                     </button>
                   </CarouselItem>
                 );
