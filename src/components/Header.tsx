@@ -113,12 +113,15 @@ export function Header() {
               onClick={() => navigate("/")}
               className="flex flex-col items-center justify-center"
             >
-              {/* Full logo with icon and "shake" - only clip the grey "social" */}
-              <div className="h-[5.5rem] md:h-[7.25rem] overflow-hidden">
+              {/* Logo icon only - clip below the icon */}
+              <div className="h-12 md:h-16 overflow-hidden">
                 <img src={logoShake} alt="Shake Social" className="h-24 md:h-32 object-contain object-top" />
               </div>
-              {/* White "social" text */}
-              <span className="text-foreground text-[9px] md:text-[11px] font-medium tracking-[0.2em] uppercase -mt-0.5">
+              {/* White text below logo icon */}
+              <span className="text-foreground text-xl md:text-2xl font-display font-bold tracking-wide lowercase -mt-0.5">
+                shake
+              </span>
+              <span className="text-foreground text-[9px] md:text-[11px] font-medium tracking-[0.2em] uppercase mt-0.5">
                 social
               </span>
             </button>
