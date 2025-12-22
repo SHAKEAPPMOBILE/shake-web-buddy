@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, User } from "lucide-react";
+import { Users, User, Sparkles } from "lucide-react";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { SayHiButton } from "@/components/SayHiButton";
 import { PrivateChatDialog } from "@/components/PrivateChatDialog";
 import { Button } from "@/components/ui/button";
 import { Crown } from "lucide-react";
+import { toast } from "sonner";
+import { triggerConfettiWaterfall } from "@/lib/confetti";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +45,7 @@ export function GlobalParticipantsSection() {
     avatarUrl: string | null;
   } | null>(null);
   const { user, isPremium } = useAuth();
+  const isInitialLoad = useRef(true);
 
   const fetchTodaysParticipants = async () => {
     setIsLoading(true);
@@ -97,12 +100,39 @@ export function GlobalParticipantsSection() {
           schema: 'public',
           table: 'profiles',
         },
-        () => {
-          // Refresh when new user signs up
+        (payload) => {
+          // Skip celebration on initial load
+          if (isInitialLoad.current) return;
+          
+          // Don't celebrate for the current user's own signup
+          if (payload.new && (payload.new as any).user_id !== user?.id) {
+            const newMemberName = (payload.new as any).name || "A new Shaker";
+            
+            // Trigger confetti celebration
+            triggerConfettiWaterfall();
+            
+            // Show welcome toast
+            toast.success(
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-shake-yellow" />
+                <span><strong>{newMemberName}</strong> just joined!</span>
+              </div>,
+              {
+                duration: 4000,
+              }
+            );
+          }
+          
+          // Refresh the list
           fetchTodaysParticipants();
         }
       )
       .subscribe();
+
+    // Mark initial load as complete after first fetch
+    setTimeout(() => {
+      isInitialLoad.current = false;
+    }, 2000);
 
     // Also refresh every 30 seconds as backup
     const interval = setInterval(fetchTodaysParticipants, 30000);
@@ -111,7 +141,7 @@ export function GlobalParticipantsSection() {
       supabase.removeChannel(profilesChannel);
       clearInterval(interval);
     };
-  }, []);
+  }, [user?.id]);
 
   const handleParticipantClick = (participant: Participant) => {
     setSelectedUser({
