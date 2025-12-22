@@ -4,7 +4,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { SHAKE_CITIES, City } from "@/data/cities";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { getActivityEmoji, getActivityColor } from "@/data/activityTypes";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { LocateFixed } from "lucide-react";
 
 // Set Mapbox token
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN || "";
@@ -192,12 +193,38 @@ export function WorldMap({
     );
   }
 
+  const handleCenterOnCity = () => {
+    if (!map.current || !initialCity) return;
+    
+    const city = SHAKE_CITIES.find((c) => c.name === initialCity);
+    if (!city) return;
+
+    map.current.flyTo({
+      center: [city.lng, city.lat],
+      zoom: 10,
+      duration: 1500,
+    });
+  };
+
   return (
     <div className="relative w-full h-full min-h-[300px]">
       <div 
         ref={mapContainer} 
         className="absolute inset-0 rounded-xl overflow-hidden"
       />
+      
+      {/* Center on city button */}
+      {mapLoaded && initialCity && (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleCenterOnCity}
+          className="absolute bottom-4 left-4 z-10 gap-1.5 shadow-lg"
+        >
+          <LocateFixed className="w-4 h-4" />
+          Center on {initialCity}
+        </Button>
+      )}
       
       {/* Loading overlay */}
       {!mapLoaded && (
