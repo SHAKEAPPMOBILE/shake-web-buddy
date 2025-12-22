@@ -39,52 +39,79 @@ export function MyActivitiesDialog({
     enabled: isMobile,
   });
 
+  const fetchMyActivities = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      // Fetch user's active activity joins
+      const { data: joins, error } = await supabase
+        .from("activity_joins")
+        .select("id, activity_type, city, joined_at, expires_at")
+        .eq("user_id", user.id)
+        .gt("expires_at", new Date().toISOString())
+        .order("joined_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching activities:", error);
+        return;
+      }
+
+      // Get participant counts for each activity
+      const activitiesWithCounts = await Promise.all(
+        (joins || []).map(async (join) => {
+          const { count } = await supabase
+            .from("activity_joins")
+            .select("*", { count: "exact", head: true })
+            .eq("activity_type", join.activity_type)
+            .eq("city", join.city)
+            .gt("expires_at", new Date().toISOString());
+
+          return {
+            ...join,
+            participant_count: count || 0,
+          };
+        })
+      );
+
+      setActivities(activitiesWithCounts);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch on open
   useEffect(() => {
     if (!open || !user) return;
-
-    const fetchMyActivities = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch user's active activity joins
-        const { data: joins, error } = await supabase
-          .from("activity_joins")
-          .select("id, activity_type, city, joined_at, expires_at")
-          .eq("user_id", user.id)
-          .gt("expires_at", new Date().toISOString())
-          .order("joined_at", { ascending: false });
-
-        if (error) {
-          console.error("Error fetching activities:", error);
-          return;
-        }
-
-        // Get participant counts for each activity
-        const activitiesWithCounts = await Promise.all(
-          (joins || []).map(async (join) => {
-            const { count } = await supabase
-              .from("activity_joins")
-              .select("*", { count: "exact", head: true })
-              .eq("activity_type", join.activity_type)
-              .eq("city", join.city)
-              .gt("expires_at", new Date().toISOString());
-
-            return {
-              ...join,
-              participant_count: count || 0,
-            };
-          })
-        );
-
-        setActivities(activitiesWithCounts);
-      } catch (error) {
-        console.error("Error fetching activities:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchMyActivities();
   }, [open, user]);
+
+  // Real-time subscription for activity joins
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`my-activities-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "activity_joins",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchMyActivities();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const handleActivityClick = (activity: ActivityJoin) => {
     onSelectActivity(activity.activity_type, activity.city);

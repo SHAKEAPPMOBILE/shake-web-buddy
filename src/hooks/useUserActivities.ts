@@ -267,6 +267,27 @@ export function useUserActivities(city: string) {
       return { success: false };
     }
 
+    // Get user's name for SMS notification
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("user_id", user.id)
+      .single();
+
+    // Send SMS notification to activity creator
+    try {
+      await supabase.functions.invoke("send-plan-sms", {
+        body: {
+          notificationType: "plan_join",
+          activityId: activityId,
+          senderName: profile?.name || "Someone",
+        },
+      });
+    } catch (smsError) {
+      console.error("Failed to send SMS notification:", smsError);
+      // Don't fail the join if SMS fails
+    }
+
     toast.success("You've joined the activity!");
     await fetchActivities();
     return { success: true };
