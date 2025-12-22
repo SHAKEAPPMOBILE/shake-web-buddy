@@ -8,22 +8,29 @@ import {
   CarouselItem,
   CarouselApi,
 } from "@/components/ui/carousel";
-import { Star } from "lucide-react";
+import { Star, Check } from "lucide-react";
 import { ACTIVITY_TYPES, getTimeBasedDefaultActivity } from "@/data/activityTypes";
+import { useUserActivities } from "@/hooks/useUserActivities";
+import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { toast } from "sonner";
 
 interface ActivitySelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectActivity: (activity: string) => void;
+  onPlanCreated?: (activityId: string) => void;
   city: string;
 }
 
-export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, city }: ActivitySelectionDialogProps) {
+export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, onPlanCreated, city }: ActivitySelectionDialogProps) {
   const { getActivityJoinCount } = useActivityJoins(city);
   const { user } = useAuth();
+  const { createActivity } = useUserActivities(city);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
   const [selectingId, setSelectingId] = useState<string | null>(null);
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   
   // Get favorite activity from localStorage
   const favoriteActivity = useMemo(() => {
@@ -44,20 +51,56 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     triggerHaptic('light');
   }, [api, triggerHaptic]);
 
-  // Handle activity selection with animation
-  const handleSelectActivity = useCallback((activityId: string) => {
+  // Handle activity selection - creates a plan
+  const handleSelectActivity = useCallback(async (activityId: string) => {
+    if (!user) {
+      onSelectActivity(activityId);
+      return;
+    }
+
     triggerHaptic('heavy');
     setSelectingId(activityId);
+    setIsCreatingPlan(true);
     
     // Save as favorite activity
     localStorage.setItem('favoriteActivity', activityId);
     
-    // Small delay for animation before closing
-    setTimeout(() => {
-      onSelectActivity(activityId);
+    // Create the plan with scheduled time (2 hours from now)
+    const scheduledFor = new Date();
+    scheduledFor.setHours(scheduledFor.getHours() + 2);
+    
+    const success = await createActivity(activityId, scheduledFor);
+    
+    if (success) {
+      // Show success state
+      setShowSuccess(true);
+      
+      // Trigger confetti waterfall
+      triggerConfettiWaterfall();
+      
+      // Show toast
+      toast.success("Plan created! 🎉", {
+        description: "Your plan is now visible on the map",
+        icon: <Check className="w-4 h-4" />,
+      });
+      
+      // Close after a delay and open map
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSelectingId(null);
+        setIsCreatingPlan(false);
+        onOpenChange(false);
+        
+        // Notify parent to show map with the plan
+        if (onPlanCreated) {
+          onPlanCreated(activityId);
+        }
+      }, 1500);
+    } else {
       setSelectingId(null);
-    }, 200);
-  }, [onSelectActivity, triggerHaptic]);
+      setIsCreatingPlan(false);
+    }
+  }, [user, onSelectActivity, triggerHaptic, createActivity, onOpenChange, onPlanCreated]);
 
   // Quick select favorite activity
   const handleSelectFavorite = useCallback(() => {
@@ -90,22 +133,42 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     return ACTIVITY_TYPES.find(a => a.id === favoriteActivity);
   }, [favoriteActivity]);
 
+  // Success celebration view
+  if (showSuccess) {
+    return (
+      <Dialog open={open} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+          <div className="flex flex-col items-center justify-center py-12 space-y-6">
+            <div className="w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center animate-scale-in">
+              <Check className="w-12 h-12 text-green-500" />
+            </div>
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-display font-bold">Plan Created!</h2>
+              <p className="text-muted-foreground">Opening map to show your plan...</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={isCreatingPlan ? () => {} : onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-display">What's calling you today?</DialogTitle>
           <p className="text-center text-sm text-muted-foreground mt-2">
-            Swipe to choose. Your choice is recorded for 24 hours!
+            {user ? "Tap to create your plan!" : "Swipe to choose. Sign in to create plans!"}
           </p>
         </DialogHeader>
         
         <div className="py-6 relative overflow-hidden">
           {/* Favorite quick access - positioned in top right */}
-          {favoriteActivityDetails && (
+          {favoriteActivityDetails && user && (
             <button
               onClick={handleSelectFavorite}
-              className="absolute top-0 right-2 z-10 p-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 hover:scale-105 transition-all duration-200 group animate-[pulse_1s_ease-in-out_3] hover:animate-none shadow-[0_0_12px_rgba(255,215,0,0.3)]"
+              disabled={isCreatingPlan}
+              className="absolute top-0 right-2 z-10 p-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 hover:scale-105 transition-all duration-200 group animate-[pulse_1s_ease-in-out_3] hover:animate-none shadow-[0_0_12px_rgba(255,215,0,0.3)] disabled:opacity-50"
             >
               <Star className="w-4 h-4 text-shake-yellow fill-shake-yellow group-hover:scale-110 transition-transform" />
             </button>
@@ -130,6 +193,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                     className="pl-2 md:pl-4 basis-1/3 flex justify-center min-w-0"
                   >
                     <button
+                      disabled={isCreatingPlan}
                       onClick={() => {
                         if (isCenter) {
                           handleSelectActivity(activity.id);
@@ -138,7 +202,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                           api?.scrollTo(index);
                         }
                       }}
-                      className="flex flex-col items-center justify-center gap-2 transition-all duration-300 relative group py-2"
+                      className="flex flex-col items-center justify-center gap-2 transition-all duration-300 relative group py-2 disabled:opacity-50"
                     >
                       <div className="relative">
                         <div 
@@ -197,7 +261,8 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
               <button
                 key={index}
                 onClick={() => api?.scrollTo(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                disabled={isCreatingPlan}
+                className={`w-2 h-2 rounded-full transition-all duration-300 disabled:opacity-50 ${
                   currentIndex === index ? 'bg-primary w-4' : 'bg-muted-foreground/30'
                 }`}
               />
@@ -206,7 +271,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
         </div>
         {!user && (
           <p className="text-center text-xs text-muted-foreground/70">
-            Sign in to join activities and get notified!
+            Sign in to create plans and meet others!
           </p>
         )}
       </DialogContent>

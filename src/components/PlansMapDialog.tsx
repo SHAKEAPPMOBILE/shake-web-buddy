@@ -95,17 +95,12 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
           <div className="flex-1 flex overflow-hidden relative">
             {/* Map */}
             <div className={cn("flex-1 transition-all duration-300", showList && "mr-80")}>
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : (
-                <WorldMap
-                  activities={activities}
-                  onActivityClick={handleActivityClick}
-                  selectedActivityId={selectedActivity?.id}
-                />
-              )}
+              <WorldMap
+                activities={activities}
+                onActivityClick={handleActivityClick}
+                selectedActivityId={selectedActivity?.id}
+                initialCity={city}
+              />
             </div>
 
             {/* List overlay */}
