@@ -296,13 +296,13 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-background flex flex-col overflow-hidden fixed inset-0">
       {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent pointer-events-none" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 w-full max-w-full">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 w-full overflow-y-auto">
         <button
           onClick={handleBack}
           className="absolute top-4 left-4 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
