@@ -20,8 +20,8 @@ export function HowItWorks() {
     },
     {
       icon: <Calendar className="w-8 h-8" />,
-      title: "Join an Activity",
-      description: "Join activities with other shakers.",
+      title: "Join or Create an Activity",
+      description: "Join or create plans for activities with other shakers.",
       color: "from-shake-purple to-accent",
       isAvatar: false,
     },
