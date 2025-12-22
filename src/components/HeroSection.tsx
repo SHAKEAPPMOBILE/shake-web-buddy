@@ -65,6 +65,13 @@ export function HeroSection() {
     }
   };
 
+  // Called when a plan is created via ActivitySelectionDialog
+  const handlePlanCreated = useCallback((activityType: string) => {
+    setSelectedActivity(activityType);
+    // Open the plans map to show the new plan
+    setShowPlansMap(true);
+  }, []);
+
   const handleClockAnimationComplete = useCallback(() => {
     setShowClockAnimation(false);
     setShowChatDialog(true);
@@ -190,6 +197,7 @@ export function HeroSection() {
         open={showActivityDialog}
         onOpenChange={setShowActivityDialog}
         onSelectActivity={handleSelectActivity}
+        onPlanCreated={handlePlanCreated}
         city={selectedCity}
       />
 

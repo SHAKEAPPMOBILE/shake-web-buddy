@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useMemo } from "react";
-import { SHAKE_CITIES, City } from "@/data/cities";
+import { SHAKE_CITIES, City, findClosestCity } from "@/data/cities";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { getActivityEmoji, getActivityColor } from "@/data/activityTypes";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ interface WorldMapProps {
   onActivityClick: (activity: UserActivity) => void;
   onCityClick?: (city: City) => void;
   selectedActivityId?: string | null;
+  initialCity?: string;
 }
 
 // Simple equirectangular projection
@@ -18,7 +19,7 @@ const projectCoords = (lat: number, lng: number, width: number, height: number) 
   return { x, y };
 };
 
-export function WorldMap({ activities, onActivityClick, onCityClick, selectedActivityId }: WorldMapProps) {
+export function WorldMap({ activities, onActivityClick, onCityClick, selectedActivityId, initialCity }: WorldMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
   const [zoom, setZoom] = useState(1);
@@ -26,6 +27,8 @@ export function WorldMap({ activities, onActivityClick, onCityClick, selectedAct
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredActivity, setHoveredActivity] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const hasInitialized = useRef(false);
 
   // Resize observer
   useEffect(() => {
@@ -41,6 +44,52 @@ export function WorldMap({ activities, onActivityClick, onCityClick, selectedAct
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
+
+  // Get user's geolocation and center map
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    
+    // If we have an initial city, use that
+    if (initialCity) {
+      const city = SHAKE_CITIES.find(c => c.name === initialCity);
+      if (city) {
+        setUserLocation({ lat: city.lat, lng: city.lng });
+        // Calculate pan to center on city
+        const { x, y } = projectCoords(city.lat, city.lng, dimensions.width, dimensions.height);
+        setPan({
+          x: dimensions.width / 2 - x,
+          y: dimensions.height / 2 - y,
+        });
+        setZoom(2);
+        hasInitialized.current = true;
+        return;
+      }
+    }
+
+    // Try to get user's location
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          
+          // Center map on user's location
+          const { x, y } = projectCoords(latitude, longitude, dimensions.width, dimensions.height);
+          setPan({
+            x: dimensions.width / 2 - x,
+            y: dimensions.height / 2 - y,
+          });
+          setZoom(2);
+          hasInitialized.current = true;
+        },
+        () => {
+          // Fallback: center on a default location if geolocation fails
+          hasInitialized.current = true;
+        },
+        { timeout: 5000, enableHighAccuracy: false }
+      );
+    }
+  }, [initialCity, dimensions.width, dimensions.height]);
 
   // Group activities by city
   const activitiesByCity = useMemo(() => {
@@ -234,12 +283,28 @@ export function WorldMap({ activities, onActivityClick, onCityClick, selectedAct
         </button>
       </div>
 
-      {/* Empty state */}
+      {/* User location marker */}
+      {userLocation && (
+        <div
+          className="absolute transform -translate-x-1/2 -translate-y-1/2 z-5"
+          style={{
+            left: (projectCoords(userLocation.lat, userLocation.lng, dimensions.width, dimensions.height).x + pan.x) * zoom,
+            top: (projectCoords(userLocation.lat, userLocation.lng, dimensions.width, dimensions.height).y + pan.y) * zoom,
+          }}
+        >
+          <div className="relative">
+            <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse" />
+            <div className="absolute inset-0 w-4 h-4 bg-blue-500/30 rounded-full animate-ping" />
+          </div>
+        </div>
+      )}
+
+      {/* Empty state - show message but keep map visible */}
       {activities.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center p-6 bg-card/80 backdrop-blur-sm rounded-xl border border-border">
-            <p className="text-lg font-semibold text-foreground mb-1">No plans yet</p>
-            <p className="text-sm text-muted-foreground">Be the first to create a plan!</p>
+        <div className="absolute bottom-4 left-4 z-20">
+          <div className="px-4 py-2 bg-card/90 backdrop-blur-sm rounded-lg border border-border shadow-lg">
+            <p className="text-sm font-medium text-foreground">No plans yet</p>
+            <p className="text-xs text-muted-foreground">Be the first to create one!</p>
           </div>
         </div>
       )}
