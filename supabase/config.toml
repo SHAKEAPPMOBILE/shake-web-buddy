@@ -1,5 +1,9 @@
 project_id = "tgodytoqakzycabncfpo"
 
+[auth]
+# JWT expiry set to 7 days (604800 seconds)
+jwt_expiry = 604800
+
 [functions.send-sms-notification]
 verify_jwt = true
 
