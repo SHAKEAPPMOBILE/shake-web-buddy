@@ -99,12 +99,12 @@ export function Header() {
               {/* Colorful S icon only - clipped to hide text */}
               <button 
                 onClick={() => navigate("/")}
-                className="hidden md:block h-20 w-20 overflow-hidden"
+                className="hidden md:block h-14 w-14 overflow-hidden"
               >
                 <img 
                   src={logoShake} 
                   alt="Shake Social" 
-                  className="h-40 object-contain object-top" 
+                  className="h-28 object-contain object-top" 
                 />
               </button>
               
