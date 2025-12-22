@@ -112,77 +112,78 @@ export function ActivitiesListDialog({
                   const isOwner = isMyActivity(activity);
                   const hasJoined = joinedActivities.has(activity.id);
 
-                  return (
-                    <button
-                      key={activity.id}
-                      onClick={() => onSelectActivity(activity)}
-                      className="w-full flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left group"
-                    >
-                      <div className={cn(
-                        "w-14 h-14 rounded-xl flex items-center justify-center text-2xl shrink-0",
-                        getActivityColor(activity.activity_type)
-                      )}>
-                        {getActivityEmoji(activity.activity_type)}
-                      </div>
+                    return (
+                      <button
+                        key={activity.id}
+                        onClick={() => onSelectActivity(activity)}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left group overflow-hidden"
+                      >
+                        <div className={cn(
+                          "w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0",
+                          getActivityColor(activity.activity_type)
+                        )}>
+                          {getActivityEmoji(activity.activity_type)}
+                        </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-foreground">
-                            {getActivityLabel(activity.activity_type)}
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-foreground truncate">
+                              {getActivityLabel(activity.activity_type)}
+                            </p>
+                            {isOwner && (
+                              <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full whitespace-nowrap">
+                                Yours
+                              </span>
+                            )}
+                          </div>
+                          
+                          <p className="text-sm text-muted-foreground mt-1 truncate">
+                            {format(new Date(activity.scheduled_for), "EEE, MMM d 'at' h:mm a")}
                           </p>
-                          {isOwner && (
-                            <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
-                              Your activity
-                            </span>
+
+                          <div className="flex items-center gap-3 mt-2">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
+                              <Avatar className="w-4 h-4 shrink-0">
+                                <AvatarImage src={activity.creator_avatar || ""} />
+                                <AvatarFallback className="text-[8px]">
+                                  {activity.creator_name?.charAt(0) || "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="truncate">{activity.creator_name}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                              <Users className="w-3 h-3" />
+                              <span>{activity.participant_count}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 flex items-center gap-1">
+                          {isOwner ? (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirmId(activity.id);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant={hasJoined ? "secondary" : "default"}
+                              className="h-8 px-3 text-xs"
+                              onClick={(e) => handleJoinToggle(activity, e)}
+                            >
+                              {hasJoined ? "Joined" : "Join"}
+                            </Button>
                           )}
                         </div>
-                        
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {format(new Date(activity.scheduled_for), "EEE, MMM d 'at' h:mm a")}
-                        </p>
-
-                        <div className="flex items-center gap-3 mt-2">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Avatar className="w-4 h-4">
-                              <AvatarImage src={activity.creator_avatar || ""} />
-                              <AvatarFallback className="text-[8px]">
-                                {activity.creator_name?.charAt(0) || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{activity.creator_name}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Users className="w-3 h-3" />
-                            <span>{activity.participant_count} going</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 flex items-center gap-2">
-                        {isOwner ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteConfirmId(activity.id);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant={hasJoined ? "secondary" : "default"}
-                            onClick={(e) => handleJoinToggle(activity, e)}
-                          >
-                            {hasJoined ? "Joined" : "Join"}
-                          </Button>
-                        )}
-                      </div>
-                    </button>
-                  );
+                      </button>
+                    );
                 })}
               </div>
             )}
