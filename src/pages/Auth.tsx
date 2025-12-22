@@ -260,6 +260,16 @@ export default function Auth() {
 
       if (error) throw error;
 
+      // Save date of birth to profiles_private
+      const { error: privateError } = await supabase
+        .from("profiles_private")
+        .update({ date_of_birth: dateOfBirth })
+        .eq("user_id", currentUser.id);
+
+      if (privateError) {
+        console.error("Error saving date of birth:", privateError);
+      }
+
       // Trigger confetti celebration!
       triggerConfettiWaterfall();
       

@@ -30,6 +30,17 @@ interface SocialLinks {
   twitter_url: string | null;
 }
 
+const calculateAge = (birthDate: string): number => {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 const activityEmojis: Record<string, string> = {
   lunch: "🍽️",
   dinner: "🍝",
@@ -46,6 +57,7 @@ export function UserProfileDialog({
 }: UserProfileDialogProps) {
   const [activityHistory, setActivityHistory] = useState<ActivityJoin[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({ instagram_url: null, linkedin_url: null, twitter_url: null });
+  const [userAge, setUserAge] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const { isMatched } = useGreetings();
@@ -92,6 +104,21 @@ export function UserProfileDialog({
             linkedin_url: profileData.linkedin_url,
             twitter_url: profileData.twitter_url,
           });
+        }
+
+        // Fetch date of birth from profiles_private (only works if current user is viewing their own profile or via public age)
+        // For now, we fetch it using service role or a function - but since profiles_private is RLS protected,
+        // we'll need to expose age differently. Let's add the age to the public profile calculation
+        const { data: privateData } = await supabase
+          .from("profiles_private")
+          .select("date_of_birth")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (privateData?.date_of_birth) {
+          setUserAge(calculateAge(privateData.date_of_birth));
+        } else {
+          setUserAge(null);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -140,7 +167,7 @@ export function UserProfileDialog({
               )}
             </div>
             <h3 className="mt-4 text-xl font-semibold text-foreground">
-              {userName || "Shaker"}
+              {userName || "Shaker"}{userAge ? `, ${userAge}` : ''}
             </h3>
             
             {/* Location from most recent activity */}
