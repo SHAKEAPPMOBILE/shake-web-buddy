@@ -19,6 +19,30 @@ export function CityProvider({ children }: { children: ReactNode }) {
     detectLocation();
   }, []);
 
+  const fallbackToIpGeolocation = async () => {
+    try {
+      const response = await fetch("https://ipapi.co/json/");
+      const data = await response.json();
+      
+      if (data.latitude && data.longitude) {
+        const closestCity = findClosestCity(data.latitude, data.longitude);
+        setDetectedCity(closestCity);
+        setSelectedCity(closestCity.name);
+      } else {
+        // Final fallback to first city
+        const defaultCity = SHAKE_CITIES[0];
+        setDetectedCity(defaultCity);
+        setSelectedCity(defaultCity.name);
+      }
+    } catch (error) {
+      console.log("IP geolocation error:", error);
+      const defaultCity = SHAKE_CITIES[0];
+      setDetectedCity(defaultCity);
+      setSelectedCity(defaultCity.name);
+    }
+    setIsLoading(false);
+  };
+
   const detectLocation = () => {
     setIsLoading(true);
     
@@ -32,21 +56,15 @@ export function CityProvider({ children }: { children: ReactNode }) {
           setSelectedCity(closestCity.name);
           setIsLoading(false);
         },
-        (error) => {
-          console.log("Geolocation error:", error);
-          // Default to first city in list
-          const defaultCity = SHAKE_CITIES[0];
-          setDetectedCity(defaultCity);
-          setSelectedCity(defaultCity.name);
-          setIsLoading(false);
+        () => {
+          // Browser geolocation denied/failed - fallback to IP geolocation
+          fallbackToIpGeolocation();
         },
         { timeout: 10000, enableHighAccuracy: true }
       );
     } else {
-      const defaultCity = SHAKE_CITIES[0];
-      setDetectedCity(defaultCity);
-      setSelectedCity(defaultCity.name);
-      setIsLoading(false);
+      // No browser geolocation support - fallback to IP geolocation
+      fallbackToIpGeolocation();
     }
   };
 
