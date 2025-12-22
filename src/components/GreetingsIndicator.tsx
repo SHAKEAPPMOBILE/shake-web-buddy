@@ -36,19 +36,18 @@ export function GreetingsIndicator() {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
+      <button
         onClick={() => setShowDialog(true)}
-        className="relative"
+        className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl hover:bg-muted/50 transition-colors"
       >
-        <Hand className="w-5 h-5" />
+        <Hand className="w-5 h-5 text-foreground" />
+        <span className="text-[10px] font-medium text-foreground">Hi's</span>
         {totalNotifications > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-shake-yellow text-shake-dark text-xs font-bold flex items-center justify-center animate-pulse">
+          <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-shake-yellow text-shake-dark rounded-full border-2 border-background flex items-center justify-center text-[10px] font-bold animate-pulse">
             {totalNotifications}
           </span>
         )}
-      </Button>
+      </button>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
