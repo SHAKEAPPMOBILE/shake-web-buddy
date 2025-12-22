@@ -25,7 +25,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
 
   const checkSubscription = async () => {
-    if (!session?.user?.email) {
+    // Check if user is authenticated (phone auth users don't have email)
+    if (!session?.user?.id) {
       setIsPremium(false);
       setSubscriptionEnd(null);
       return;
