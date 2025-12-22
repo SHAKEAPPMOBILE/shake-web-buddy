@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState, useMemo } from "react";
-import { format, setHours, setMinutes, addHours } from "date-fns";
-import { CalendarIcon, Clock, Plus } from "lucide-react";
+import { format, setHours, setMinutes } from "date-fns";
+import { CalendarIcon, Clock, Plus, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
+import { PremiumDialog } from "@/components/PremiumDialog";
 
 interface CreateActivityDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<{ hours: number; minutes: number } | null>(null);
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   
   const canCreate = remainingActivities > 0;
   
@@ -75,7 +77,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             {canCreate ? (
               <>You have <span className="font-bold text-primary">{remainingActivities}</span> plans left this month</>
             ) : (
-              <span className="text-destructive">You have used all 3 plans this month</span>
+              <span className="text-destructive">You have used all 5 plans this month</span>
             )}
           </p>
         </DialogHeader>
@@ -85,8 +87,23 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             <p className="text-muted-foreground">Please sign in to create activities</p>
           </div>
         ) : !canCreate ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">You can create more activities next month</p>
+          <div className="text-center py-8 space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-shake-yellow/10 flex items-center justify-center">
+              <Crown className="w-8 h-8 text-shake-yellow" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">You've used all 5 free plans this month</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Upgrade to Premium for unlimited plans
+              </p>
+            </div>
+            <Button 
+              onClick={() => setShowPremiumDialog(true)}
+              className="bg-shake-yellow text-background hover:bg-shake-yellow/90"
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              Upgrade to Premium
+            </Button>
           </div>
         ) : (
           <div className="space-y-6 py-4">
@@ -202,6 +219,8 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
           </div>
         )}
       </DialogContent>
+
+      <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     </Dialog>
   );
 }
