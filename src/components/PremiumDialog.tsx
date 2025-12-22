@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Crown, Check, MapPin, Globe, User } from "lucide-react";
+import { Check, MapPin, Globe, User } from "lucide-react";
 import shakeCoin from "@/assets/shake-coin.png";
 import {
   Dialog,
@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { SuperHumanIcon } from "./SuperHumanIcon";
 
 interface PremiumDialogProps {
   open: boolean;
@@ -165,7 +166,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
                 onBlur={() => setIsEmailFocused(false)}
                 className="bg-background pr-10"
               />
-              <Crown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-shake-yellow" />
+              <SuperHumanIcon size={20} className="absolute right-3 top-1/2 -translate-y-1/2" />
             </div>
             <p className="text-xs text-muted-foreground">
               Your account uses phone login, so we need an email for billing.
@@ -186,7 +187,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           size="lg"
           disabled={isLoading || (needsEmail && !emailToUse)}
         >
-          <Crown className="w-4 h-4 mr-2" />
+          <SuperHumanIcon size={16} className="mr-2" />
           {isLoading ? "Loading..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
         </Button>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, Crown, User, MessageSquare } from "lucide-react";
+import { Menu, X, LogOut, User, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoShake from "@/assets/shake-logo-new.png";
 import { CitySelector } from "./CitySelector";
@@ -10,6 +10,7 @@ import { GroupChatDialog } from "./GroupChatDialog";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { MyActivitiesDialog } from "./MyActivitiesDialog";
 import { GreetingsIndicator } from "./GreetingsIndicator";
+import { SuperHumanIcon } from "./SuperHumanIcon";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useActiveChat } from "@/hooks/useActiveChat";
@@ -164,7 +165,7 @@ export function Header() {
                   <>
                     {isPremium && (
                       <span className="flex items-center gap-1 text-xs text-shake-yellow">
-                        <Crown className="w-3 h-3" />
+                        <SuperHumanIcon size={14} />
                         Super-Human
                       </span>
                     )}

@@ -7,7 +7,7 @@ import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { SayHiButton } from "@/components/SayHiButton";
 import { PrivateChatDialog } from "@/components/PrivateChatDialog";
 import { Button } from "@/components/ui/button";
-import { Crown } from "lucide-react";
+import { SuperHumanIcon } from "./SuperHumanIcon";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { playNotificationSound, playWelcomeVoice } from "@/lib/notification-sound";
@@ -318,7 +318,7 @@ export function GlobalParticipantsSection() {
                         onClick={handleUnlockClick}
                         className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg"
                       >
-                        <Crown className="w-4 h-4 mr-2" />
+                        <SuperHumanIcon size={16} className="mr-2" />
                         Unlock {blurredParticipants.length} more
                       </Button>
                     </div>

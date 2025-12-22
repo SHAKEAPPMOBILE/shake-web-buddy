@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, Crown, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { SuperHumanIcon } from "@/components/SuperHumanIcon";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ export default function SubscriptionSuccess() {
 
         <div className="bg-card border border-border rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-center gap-2">
-            <Crown className="w-5 h-5 text-shake-yellow" />
+            <SuperHumanIcon size={20} />
             <span className="font-semibold text-foreground">Super-Human</span>
           </div>
 

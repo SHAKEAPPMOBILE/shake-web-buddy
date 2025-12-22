@@ -4,7 +4,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState, useEffect } from "react";
 import { format, startOfDay, isSameDay } from "date-fns";
-import { CalendarIcon, Plus, Crown, MessageCircle } from "lucide-react";
+import { CalendarIcon, Plus, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { useUserActivities, UserActivity } from "@/hooks/useUserActivities";
@@ -13,6 +13,7 @@ import { PremiumDialog } from "@/components/PremiumDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { PlanGroupChatDialog } from "@/components/PlanGroupChatDialog";
+import { SuperHumanIcon } from "./SuperHumanIcon";
 
 interface CreateActivityDialogProps {
   open: boolean;
@@ -158,7 +159,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
         ) : !canCreate ? (
           <div className="text-center py-8 space-y-4">
             <div className="w-16 h-16 mx-auto rounded-full bg-shake-yellow/10 flex items-center justify-center">
-              <Crown className="w-8 h-8 text-shake-yellow" />
+              <SuperHumanIcon size={32} />
             </div>
             <div>
               <p className="font-semibold text-foreground">You've used all 10 free plans this month</p>
@@ -170,7 +171,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               onClick={() => setShowPremiumDialog(true)}
               className="bg-shake-yellow text-background hover:bg-shake-yellow/90"
             >
-              <Crown className="w-4 h-4 mr-2" />
+              <SuperHumanIcon size={16} className="mr-2" />
               Become a Super-Human
             </Button>
           </div>

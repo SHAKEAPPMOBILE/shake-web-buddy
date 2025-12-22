@@ -1,4 +1,4 @@
-import { MapPin, Crown, ChevronDown, Loader2 } from "lucide-react";
+import { MapPin, ChevronDown, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
+import { SuperHumanIcon } from "./SuperHumanIcon";
 
 interface CitySelectorProps {
   isPremium?: boolean;
@@ -51,7 +52,7 @@ export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
         )}
         <span>{selectedCity}</span>
         <ChevronDown className="w-3 h-3" />
-        {!isPremium && <Crown className="w-3 h-3 text-shake-yellow" />}
+        {!isPremium && <SuperHumanIcon size={14} />}
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         className="w-64 bg-card border border-border z-50"
@@ -63,7 +64,7 @@ export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
               className="flex items-center gap-2 text-shake-yellow cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => onUpgradeClick?.()}
             >
-              <Crown className="w-4 h-4" />
+              <SuperHumanIcon size={16} />
               Become a Super-Human to select any city
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -101,7 +102,7 @@ export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
                 >
                   {city.name}, {city.country}
                   {!isPremium && (
-                    <Crown className="w-3 h-3 ml-auto text-shake-yellow" />
+                    <SuperHumanIcon size={14} className="ml-auto" />
                   )}
                 </DropdownMenuItem>
               ))}
