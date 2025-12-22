@@ -102,14 +102,25 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
         <DialogContent className="sm:max-w-4xl h-[80vh] max-h-[90vh] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-border/50 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border/50 shrink-0">
-            <div className="min-w-0">
-              <h2 className="text-lg sm:text-xl font-display font-bold flex items-center gap-2">
-                <Map className="w-5 h-5 shrink-0" />
-                <span className="truncate">Explore Plans</span>
-              </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                {activities.length} {activities.length === 1 ? "plan" : "plans"} worldwide
-              </p>
+            <div className="flex items-center gap-2 min-w-0">
+              {/* Mobile close button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="sm:hidden h-8 w-8 shrink-0"
+                onClick={() => onOpenChange(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+              <div className="min-w-0">
+                <h2 className="text-lg sm:text-xl font-display font-bold flex items-center gap-2">
+                  <Map className="w-5 h-5 shrink-0" />
+                  <span className="truncate">Explore Plans</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {activities.length} {activities.length === 1 ? "plan" : "plans"} worldwide
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               {user && myActivityIds.length > 0 && (
