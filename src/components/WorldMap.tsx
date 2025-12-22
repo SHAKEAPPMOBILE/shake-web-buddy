@@ -7,8 +7,8 @@ import { getActivityEmoji, getActivityColor } from "@/data/activityTypes";
 import { Button } from "@/components/ui/button";
 import { LocateFixed } from "lucide-react";
 
-// Set Mapbox token
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN || "";
+// Mapbox public token (publishable key - safe for frontend)
+const MAPBOX_TOKEN = "pk.eyJ1IjoibGVvbmVsbWVuZXNlcyIsImEiOiJjbWpoOHdmMTgwb2EzM2Rxdmh5ODRmZ29rIn0.b8ghz8NdmX7Tqr56BM6kfg";
 
 interface WorldMapProps {
   activities: UserActivity[];
