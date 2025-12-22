@@ -17,6 +17,7 @@ import { usePlanNotifications } from "@/hooks/usePushNotifications";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { PremiumDialog } from "@/components/PremiumDialog";
 
 interface PlansMapDialogProps {
   open: boolean;
@@ -25,7 +26,7 @@ interface PlansMapDialogProps {
 }
 
 export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps) {
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const { activities, isLoading } = useAllActivities();
   const { joinActivity, hasJoinedActivity, myActivities } = useUserActivities(city);
   const isMobile = useIsMobile();
@@ -36,6 +37,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [joinedActivities, setJoinedActivities] = useState<Set<string>>(new Set());
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
 
   // Swipe to close on mobile
   const swipeHandlers = useSwipeToClose({
@@ -96,8 +98,12 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
   };
 
   const handleJoin = async (activity: UserActivity) => {
-    const success = await joinActivity(activity.id);
-    if (success) {
+    const result = await joinActivity(activity.id, isPremium);
+    if (result.requiresPremium) {
+      setShowPremiumDialog(true);
+      return;
+    }
+    if (result.success) {
       setJoinedActivities((prev) => new Set([...prev, activity.id]));
       setSelectedActivity(activity);
       setShowChatDialog(true);
@@ -442,6 +448,8 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
           }}
         />
       )}
+
+      <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     </>
   );
 }

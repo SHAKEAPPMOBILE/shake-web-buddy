@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { PremiumDialog } from "@/components/PremiumDialog";
 
 interface ActivitiesListDialogProps {
   open: boolean;
@@ -36,10 +37,11 @@ export function ActivitiesListDialog({
   onCreateActivity,
   onSelectActivity,
 }: ActivitiesListDialogProps) {
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const { activities, myActivities, isLoading, joinActivity, leaveActivity, deleteActivity, hasJoinedActivity } = useUserActivities(city);
   const [joinedActivities, setJoinedActivities] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const isMobile = useIsMobile();
   
   const swipeHandlers = useSwipeToClose({
@@ -76,8 +78,12 @@ export function ActivitiesListDialog({
         return next;
       });
     } else {
-      const success = await joinActivity(activity.id);
-      if (success) {
+      const result = await joinActivity(activity.id, isPremium);
+      if (result.requiresPremium) {
+        setShowPremiumDialog(true);
+        return;
+      }
+      if (result.success) {
         setJoinedActivities(prev => new Set([...prev, activity.id]));
       }
     }
@@ -240,6 +246,8 @@ export function ActivitiesListDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     </>
   );
 }
