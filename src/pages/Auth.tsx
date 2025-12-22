@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoShake from "@/assets/logo_shake_original_color.png";
-import { ArrowLeft, ChevronDown, Phone, User } from "lucide-react";
+import { ArrowLeft, ChevronDown, Phone, User, Instagram, Linkedin, Twitter, Calendar } from "lucide-react";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { countryCodes, CountryCode } from "@/data/countryCodes";
@@ -26,6 +26,10 @@ export default function Auth() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [name, setName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [twitterUrl, setTwitterUrl] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +43,23 @@ export default function Auth() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const calculateAge = (birthDate: string): number => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const getMaxDate = (): string => {
+    const today = new Date();
+    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    return maxDate.toISOString().split('T')[0];
+  };
 
   // Auto-detect user's country on mount
   useEffect(() => {
@@ -170,6 +191,17 @@ export default function Auth() {
       return;
     }
 
+    if (!dateOfBirth) {
+      toast.error("Please enter your date of birth");
+      return;
+    }
+
+    const age = calculateAge(dateOfBirth);
+    if (age < 18) {
+      toast.error("You must be 18 or older to use Shake");
+      return;
+    }
+
     if (!selectedAvatar) {
       toast.error("Please choose a profile picture or avatar");
       return;
@@ -220,7 +252,10 @@ export default function Auth() {
         .upsert({
           user_id: currentUser.id,
           name: name.trim(),
-          avatar_url: avatarUrl
+          avatar_url: avatarUrl,
+          instagram_url: instagramUrl.trim() || null,
+          linkedin_url: linkedinUrl.trim() || null,
+          twitter_url: twitterUrl.trim() || null
         }, { onConflict: 'user_id' });
 
       if (error) throw error;
@@ -456,6 +491,7 @@ export default function Auth() {
           {step === 'name' && (
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -466,6 +502,59 @@ export default function Auth() {
                     onChange={(e) => setName(e.target.value)}
                     className="pl-10"
                     required
+                  />
+                </div>
+              </div>
+
+              {/* Date of Birth */}
+              <div className="space-y-2">
+                <Label htmlFor="dob">Date of Birth <span className="text-destructive">*</span></Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="dob"
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    max={getMaxDate()}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">You must be 18 or older to join</p>
+              </div>
+
+              {/* Social Links (Optional) */}
+              <div className="space-y-3">
+                <Label className="text-muted-foreground">Social Links (optional)</Label>
+                <div className="relative">
+                  <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="url"
+                    placeholder="Instagram URL"
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="relative">
+                  <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="url"
+                    placeholder="LinkedIn URL"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="relative">
+                  <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="url"
+                    placeholder="X (Twitter) URL"
+                    value={twitterUrl}
+                    onChange={(e) => setTwitterUrl(e.target.value)}
+                    className="pl-10"
                   />
                 </div>
               </div>
@@ -505,17 +594,6 @@ export default function Auth() {
               >
                 {isLoading ? "Saving..." : "Complete Setup"}
               </Button>
-              
-              <button
-                type="button"
-                onClick={() => {
-                  toast.success("Welcome! You can complete your profile anytime.");
-                  navigate("/");
-                }}
-                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Skip for now
-              </button>
             </form>
           )}
 
