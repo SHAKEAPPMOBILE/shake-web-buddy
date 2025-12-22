@@ -2,3 +2,6 @@ project_id = "tgodytoqakzycabncfpo"
 
 [functions.send-sms-notification]
 verify_jwt = true
+
+[functions.send-plan-sms]
+verify_jwt = true

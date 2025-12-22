@@ -12,6 +12,38 @@ interface NotificationOptions {
   onClick?: () => void;
 }
 
+// Send SMS notification via edge function
+async function sendSMSNotification(
+  notificationType: 'plan_join' | 'plan_message',
+  activityId: string,
+  senderName?: string,
+  messagePreview?: string
+) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    console.log("Sending SMS notification:", { notificationType, activityId, senderName });
+
+    const { error } = await supabase.functions.invoke("send-plan-sms", {
+      body: {
+        notificationType,
+        activityId,
+        senderName,
+        messagePreview,
+      },
+    });
+
+    if (error) {
+      console.error("Error sending SMS notification:", error);
+    } else {
+      console.log("SMS notification sent successfully");
+    }
+  } catch (error) {
+    console.error("Failed to send SMS notification:", error);
+  }
+}
+
 export function usePushNotifications() {
   const { user } = useAuth();
   const notificationPermission = useRef<NotificationPermission>("default");
@@ -163,6 +195,9 @@ export function usePlanNotifications(
             tag: `join-${join.id}`,
           });
 
+          // Send SMS notification to plan owner
+          sendSMSNotification('plan_join', join.activity_id, joinerName);
+
           onJoinNotification?.(join.activity_id, joinerName);
         }
       )
@@ -208,6 +243,9 @@ export function usePlanNotifications(
             body: truncatedMessage,
             tag: `msg-${message.id}`,
           });
+
+          // Send SMS notification to plan owner
+          sendSMSNotification('plan_message', message.activity_id, senderName, truncatedMessage);
 
           onMessageNotification?.(message.activity_id, senderName, message.message);
         }
