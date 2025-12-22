@@ -39,8 +39,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Verify session is still valid before calling
-      const { data: { session: freshSession } } = await supabase.auth.getSession();
-      if (!freshSession?.access_token) {
+      const { data: { session: freshSession }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !freshSession?.access_token) {
         console.log("No valid session for subscription check");
         setIsPremium(false);
         setSubscriptionEnd(null);
@@ -48,21 +49,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const { data, error } = await supabase.functions.invoke("check-subscription");
+      
       if (error) {
-        // Don't treat auth errors as fatal - just set not premium
-        if (error.message?.includes("Auth session missing")) {
-          console.log("Session expired, skipping subscription check");
+        // Handle auth-related errors silently - user just isn't premium
+        const errorMessage = error.message || JSON.stringify(error);
+        if (
+          errorMessage.includes("Auth session missing") ||
+          errorMessage.includes("session_not_found") ||
+          errorMessage.includes("401") ||
+          errorMessage.includes("403") ||
+          errorMessage.includes("Authentication")
+        ) {
+          console.log("Session invalid for subscription check, treating as non-premium");
           setIsPremium(false);
           setSubscriptionEnd(null);
           return;
         }
         console.error("Error checking subscription:", error);
+        // Don't throw, just treat as not premium
+        setIsPremium(false);
+        setSubscriptionEnd(null);
         return;
       }
-      setIsPremium(data.subscribed || false);
-      setSubscriptionEnd(data.subscription_end || null);
-    } catch (error) {
-      console.error("Error checking subscription:", error);
+      
+      setIsPremium(data?.subscribed || false);
+      setSubscriptionEnd(data?.subscription_end || null);
+    } catch (error: any) {
+      // Catch any unexpected errors and fail gracefully
+      console.log("Subscription check failed, treating as non-premium:", error?.message || error);
+      setIsPremium(false);
+      setSubscriptionEnd(null);
     }
   };
 
