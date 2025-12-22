@@ -94,8 +94,16 @@ export function Header() {
       <header className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-28 md:h-36">
-            {/* Left side - Mobile Menu Button */}
-            <div className="flex-1 flex items-center">
+            {/* Left side - Logo and Mobile Menu */}
+            <div className="flex-1 flex items-center gap-2">
+              {/* Original logo on the left */}
+              <button 
+                onClick={() => navigate("/")}
+                className="hidden md:block"
+              >
+                <img src={logoShake} alt="Shake Social" className="h-16 object-contain" />
+              </button>
+              
               <button
                 className="md:hidden p-2"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -108,20 +116,15 @@ export function Header() {
               </button>
             </div>
 
-            {/* Centered Logo */}
+            {/* Centered white text logo */}
             <button 
               onClick={() => navigate("/")}
               className="flex flex-col items-center justify-center"
             >
-              {/* Full colorful icon */}
-              <div className="h-14 md:h-[4.5rem] overflow-hidden">
-                <img src={logoShake} alt="Shake Social" className="h-28 md:h-36 object-contain object-top" />
-              </div>
-              {/* White text below logo icon - tightly spaced */}
-              <span className="text-foreground text-xl md:text-2xl font-display font-bold tracking-wide lowercase -mt-1">
+              <span className="text-foreground text-2xl md:text-3xl font-display font-bold tracking-wide lowercase">
                 shake
               </span>
-              <span className="text-foreground text-[9px] md:text-[11px] font-medium tracking-[0.2em] uppercase -mt-0.5">
+              <span className="text-foreground text-[10px] md:text-xs font-medium tracking-[0.2em] uppercase -mt-1">
                 social
               </span>
             </button>
