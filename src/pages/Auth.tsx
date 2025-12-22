@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoShake from "@/assets/logo_shake_original_color.png";
-import { ArrowLeft, ChevronDown, Phone, User, Instagram, Linkedin, Twitter, Calendar } from "lucide-react";
+import { ArrowLeft, ChevronDown, Phone, User, Instagram, Linkedin, Twitter, Calendar, Lock, Eye, EyeOff } from "lucide-react";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { countryCodes, CountryCode } from "@/data/countryCodes";
@@ -21,10 +21,15 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
-  const [step, setStep] = useState<'phone' | 'otp' | 'name'>('phone');
+  const [step, setStep] = useState<'phone' | 'otp' | 'name' | 'password' | 'forgot' | 'reset'>('phone');
   const [isLogin, setIsLogin] = useState(() => searchParams.get('mode') !== 'signup');
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [usePasswordLogin, setUsePasswordLogin] = useState(false);
   const [name, setName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
@@ -39,7 +44,7 @@ export default function Auth() {
   );
   const [countrySearchOpen, setCountrySearchOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
-  const { signUpWithPhone, signInWithPhone, verifyOtp } = useAuth();
+  const { signUpWithPhone, signInWithPhone, signInWithPassword, updatePassword, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -163,11 +168,13 @@ export default function Auth() {
         if (existingProfile) {
           toast.info("You already have an account! Switching to sign in...");
           setIsLogin(true);
-          // Continue with login flow - don't return, just proceed
+          setUsePasswordLogin(true);
+          setIsLoading(false);
+          return;
         }
       }
       
-      // For both login and signup, send OTP first
+      // Send OTP
       const { error } = await signInWithPhone(formattedPhone);
       if (error) {
         toast.error(error.message);
@@ -175,6 +182,126 @@ export default function Auth() {
         toast.success("Verification code sent!");
         setResendCountdown(60);
         setStep('otp');
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const validation = validatePhoneNumber(phoneNumber);
+    if (!validation.isValid) {
+      toast.error(validation.error);
+      return;
+    }
+
+    if (!password) {
+      toast.error("Please enter your password");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const { error } = await signInWithPassword(formattedPhone, password);
+      
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          toast.error("Invalid phone number or password");
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.success("Welcome back!");
+        navigate("/");
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const validation = validatePhoneNumber(phoneNumber);
+    if (!validation.isValid) {
+      toast.error("Please enter your phone number first");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const { error } = await signInWithPhone(formattedPhone);
+      
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Verification code sent to reset your password!");
+        setResendCountdown(60);
+        setStep('forgot');
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyForPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (otpCode.length !== 6) {
+      toast.error("Please enter the 6-digit code");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const { error } = await verifyOtp(formattedPhone, otpCode);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Phone verified! Now set your new password.");
+        setStep('reset');
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!password || password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await updatePassword(password);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Password updated! You're now logged in.");
+        navigate("/");
       }
     } catch (error) {
       toast.error("An unexpected error occurred");
@@ -309,10 +436,10 @@ export default function Auth() {
             .eq("user_id", currentUser.id)
             .single();
 
-          // If profile has no name, this is a new user - show profile setup
+          // If profile has no name, this is a new user - show password setup then profile
           if (!profile?.name) {
-            toast.success("Phone verified! Now set up your profile.");
-            setStep('name');
+            toast.success("Phone verified! Now set a password.");
+            setStep('password');
           } else {
             toast.success("Welcome back!");
             navigate("/");
@@ -328,12 +455,52 @@ export default function Auth() {
     }
   };
 
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!password || password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await updatePassword(password);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Password set! Now complete your profile.");
+        setStep('name');
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleBack = () => {
     if (step === 'otp') {
       setStep('phone');
       setOtpCode("");
+    } else if (step === 'forgot') {
+      setStep('phone');
+      setOtpCode("");
+    } else if (step === 'reset') {
+      setStep('phone');
+      setPassword("");
+      setConfirmPassword("");
+    } else if (step === 'password') {
+      // After OTP verification, don't allow going back
+      navigate("/");
     } else if (step === 'name') {
-      // For signup, after OTP verification, don't allow going back
+      // For signup, after password set, don't allow going back
       navigate("/");
     } else {
       navigate("/");
@@ -358,30 +525,45 @@ export default function Auth() {
 
         <div className="w-full max-w-md space-y-8 px-2">
           {/* Progress Indicator - only show during signup flow */}
-          {!isLogin && (step === 'phone' || step === 'otp' || step === 'name') && (
-            <div className="flex items-center justify-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                  step === 'name' 
+          {!isLogin && (step === 'phone' || step === 'otp' || step === 'password' || step === 'name') && (
+            <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center gap-1">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                  step === 'password' || step === 'name'
                     ? 'bg-shake-yellow/20 text-shake-yellow' 
                     : 'bg-shake-yellow text-background'
                 }`}>
-                  {step === 'name' ? '✓' : '1'}
+                  {step === 'password' || step === 'name' ? '✓' : '1'}
                 </div>
-                <span className={`text-sm ${step === 'name' ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
-                  Verify Phone
+                <span className={`text-xs ${step === 'password' || step === 'name' ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
+                  Phone
                 </span>
               </div>
-              <div className="w-8 h-px bg-border" />
-              <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+              <div className="w-4 h-px bg-border" />
+              <div className="flex items-center gap-1">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                  step === 'name'
+                    ? 'bg-shake-yellow/20 text-shake-yellow' 
+                    : step === 'password'
+                    ? 'bg-shake-yellow text-background'
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {step === 'name' ? '✓' : '2'}
+                </div>
+                <span className={`text-xs ${step === 'password' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                  Password
+                </span>
+              </div>
+              <div className="w-4 h-px bg-border" />
+              <div className="flex items-center gap-1">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
                   step === 'name' 
                     ? 'bg-shake-yellow text-background' 
                     : 'bg-muted text-muted-foreground'
                 }`}>
-                  2
+                  3
                 </div>
-                <span className={`text-sm ${step === 'name' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                <span className={`text-xs ${step === 'name' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                   Profile
                 </span>
               </div>
@@ -394,8 +576,14 @@ export default function Auth() {
             <h1 className="text-2xl font-display font-bold text-foreground">
               {step === 'otp' 
                 ? "Enter verification code" 
+                : step === 'password'
+                ? "Set your password"
                 : step === 'name'
                 ? "Let's create your profile."
+                : step === 'forgot'
+                ? "Reset your password"
+                : step === 'reset'
+                ? "Create new password"
                 : isLogin 
                   ? "Welcome back"
                   : "Create your account"}
@@ -403,16 +591,22 @@ export default function Auth() {
             <p className="text-muted-foreground text-center">
               {step === 'otp'
                 ? `We sent a code to ${phoneNumber}`
+                : step === 'password'
+                ? "You'll use this to sign in next time"
                 : step === 'name'
                 ? "This is how others will see you"
+                : step === 'forgot'
+                ? `We sent a code to ${phoneNumber}`
+                : step === 'reset'
+                ? "Enter your new password"
                 : isLogin
-                  ? "Sign in with your phone number"
-                  : "Create your account just with your phone number"}
+                  ? (usePasswordLogin ? "Sign in with your password" : "Sign in with your phone number")
+                  : "Create your account with your phone number"}
             </p>
           </div>
 
-          {/* Phone Number Form */}
-          {step === 'phone' && (
+          {/* Phone Number Form - for signup or login with OTP */}
+          {step === 'phone' && !usePasswordLogin && (
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
@@ -493,6 +687,318 @@ export default function Auth() {
                 disabled={isLoading}
               >
                 {isLoading ? "Sending..." : "Send Code"}
+              </Button>
+
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={() => setUsePasswordLogin(true)}
+                  className="w-full text-sm text-primary hover:underline"
+                >
+                  Sign in with password instead
+                </button>
+              )}
+            </form>
+          )}
+
+          {/* Password Login Form */}
+          {step === 'phone' && usePasswordLogin && (
+            <form onSubmit={handlePasswordLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone-password">Phone Number</Label>
+                <div className="flex gap-2">
+                  {/* Country Code Selector */}
+                  <Popover open={countrySearchOpen} onOpenChange={setCountrySearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={countrySearchOpen}
+                        className="w-[120px] justify-between px-3"
+                      >
+                        <span className="flex items-center gap-1">
+                          <span className="text-lg">{selectedCountry.flag}</span>
+                          <span className="text-sm">{selectedCountry.dialCode}</span>
+                        </span>
+                        <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[280px] p-0" align="start">
+                      <div className="p-2 border-b">
+                        <Input
+                          placeholder="Search country..."
+                          value={countrySearch}
+                          onChange={(e) => setCountrySearch(e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <ScrollArea className="h-[200px]">
+                        <div className="p-1">
+                          {filteredCountries.map((country) => (
+                            <button
+                              key={country.code}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCountry(country);
+                                setCountrySearchOpen(false);
+                                setCountrySearch("");
+                              }}
+                              className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-accent ${
+                                selectedCountry.code === country.code ? "bg-accent" : ""
+                              }`}
+                            >
+                              <span className="text-lg">{country.flag}</span>
+                              <span className="flex-1 text-left">{country.name}</span>
+                              <span className="text-muted-foreground">{country.dialCode}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  {/* Phone Number Input */}
+                  <div className="relative flex-1">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="phone-password"
+                      type="tel"
+                      placeholder="123 456 789"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value.replace(/[^\d\s]/g, ''))}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="login-password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing in..." : "Sign In"}
+              </Button>
+
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-sm text-muted-foreground hover:text-primary"
+                  disabled={isLoading}
+                >
+                  Forgot password?
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsePasswordLogin(false);
+                    setPassword("");
+                  }}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Sign in with SMS code instead
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Password Setup Form (after OTP verification during signup) */}
+          {step === 'password' && (
+            <form onSubmit={handleSetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="new-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a password (min. 6 characters)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? "Setting password..." : "Set Password & Continue"}
+              </Button>
+            </form>
+          )}
+
+          {/* Forgot Password OTP Verification */}
+          {step === 'forgot' && (
+            <form onSubmit={handleVerifyForPasswordReset} className="space-y-6">
+              <div className="flex flex-col items-center space-y-4">
+                <Label htmlFor="otp-forgot">Verification Code</Label>
+                <InputOTP
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(value) => setOtpCode(value)}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+                <button
+                  type="button"
+                  disabled={resendCountdown > 0}
+                  onClick={async () => {
+                    setOtpCode("");
+                    const { error } = await signInWithPhone(formatPhoneNumber(phoneNumber));
+                    if (error) {
+                      toast.error(error.message);
+                    } else {
+                      toast.success("New code sent!");
+                      setResendCountdown(60);
+                    }
+                  }}
+                  className={`text-sm ${resendCountdown > 0 ? 'text-muted-foreground cursor-not-allowed' : 'text-primary hover:underline'}`}
+                >
+                  {resendCountdown > 0 
+                    ? `Resend code in ${resendCountdown}s` 
+                    : "Didn't receive a code? Resend"}
+                </button>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                size="lg"
+                disabled={isLoading || otpCode.length !== 6}
+              >
+                {isLoading ? "Verifying..." : "Verify & Reset Password"}
+              </Button>
+            </form>
+          )}
+
+          {/* Reset Password Form (after forgot password OTP verification) */}
+          {step === 'reset' && (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-password">New Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="reset-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a new password (min. 6 characters)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reset-confirm-password">Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="reset-confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? "Updating..." : "Update Password"}
               </Button>
             </form>
           )}
