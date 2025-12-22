@@ -592,7 +592,7 @@ export default function Profile() {
               <div className="space-y-3 p-4 rounded-xl bg-shake-yellow/10 border border-shake-yellow/30">
                 <div className="flex items-center gap-2">
                   <Crown className="w-5 h-5 text-shake-yellow" />
-                  <span className="font-semibold text-foreground">Premium Member</span>
+                  <span className="font-semibold text-foreground">Super-Human</span>
                 </div>
                 {subscriptionEnd && (
                   <p className="text-sm text-muted-foreground">

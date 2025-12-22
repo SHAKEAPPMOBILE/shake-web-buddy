@@ -165,7 +165,7 @@ export function Header() {
                     {isPremium && (
                       <span className="flex items-center gap-1 text-xs text-shake-yellow">
                         <Crown className="w-3 h-3" />
-                        Premium
+                        Super-Human
                       </span>
                     )}
                     <button

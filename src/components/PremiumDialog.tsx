@@ -132,7 +132,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
             />
           </div>
           <DialogTitle className="text-center text-xl font-display">
-            Upgrade to Premium
+            Become a Super-Human
           </DialogTitle>
           <DialogDescription className="text-center text-muted-foreground text-sm">
             Explore and join activities in any city

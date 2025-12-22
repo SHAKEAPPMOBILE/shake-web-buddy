@@ -24,8 +24,8 @@ export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
 
   const handleCitySelect = (cityName: string) => {
     if (!isPremium) {
-      toast.error("Premium feature", {
-        description: "Upgrade to Premium to select any city worldwide!",
+      toast.error("Super-Human feature", {
+        description: "Become a Super-Human to select any city worldwide!",
         action: {
           label: "Upgrade",
           onClick: () => onUpgradeClick?.(),
@@ -64,7 +64,7 @@ export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
               onClick={() => onUpgradeClick?.()}
             >
               <Crown className="w-4 h-4" />
-              Upgrade to select any city
+              Become a Super-Human to select any city
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
           </>

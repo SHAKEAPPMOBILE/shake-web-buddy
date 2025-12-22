@@ -142,7 +142,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
           </DialogTitle>
           <p className="text-center text-sm text-muted-foreground mt-2">
             {isPremium ? (
-              <span className="text-shake-yellow">Unlimited plans with Premium ✨</span>
+              <span className="text-shake-yellow">Unlimited plans as a Super-Human ✨</span>
             ) : canCreate ? (
               <>You have <span className="font-bold text-primary">{remainingActivities}</span> plans left this month</>
             ) : (
@@ -163,7 +163,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             <div>
               <p className="font-semibold text-foreground">You've used all 10 free plans this month</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Upgrade to Premium for unlimited plans
+                Become a Super-Human for unlimited plans
               </p>
             </div>
             <Button 
@@ -171,7 +171,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               className="bg-shake-yellow text-background hover:bg-shake-yellow/90"
             >
               <Crown className="w-4 h-4 mr-2" />
-              Upgrade to Premium
+              Become a Super-Human
             </Button>
           </div>
         ) : (
