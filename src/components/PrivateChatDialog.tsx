@@ -12,6 +12,8 @@ import { Send, User, Loader2 } from "lucide-react";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 interface PrivateChatDialogProps {
   open: boolean;
@@ -35,6 +37,13 @@ export function PrivateChatDialog({
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => onOpenChange(false),
+    threshold: 80,
+    enabled: isMobile,
+  });
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -65,7 +74,15 @@ export function PrivateChatDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50 flex flex-col max-h-[80vh]">
+      <DialogContent 
+        className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50 flex flex-col max-h-[80vh]"
+        {...(isMobile ? swipeHandlers : {})}
+      >
+        {isMobile && (
+          <div className="flex justify-center py-2 shrink-0">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
         <DialogHeader className="border-b border-border/50 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">

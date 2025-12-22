@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 interface Participant {
   user_id: string;
@@ -31,6 +33,13 @@ export function ParticipantsListDialog({
   const [isLoading, setIsLoading] = useState(true);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const { user, isPremium } = useAuth();
+  const isMobile = useIsMobile();
+  
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => onOpenChange(false),
+    threshold: 80,
+    enabled: isMobile,
+  });
 
   const FREE_VISIBLE_COUNT = 3;
 
@@ -105,7 +114,15 @@ export function ParticipantsListDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+        <DialogContent 
+          className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50"
+          {...(isMobile ? swipeHandlers : {})}
+        >
+          {isMobile && (
+            <div className="flex justify-center py-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+          )}
           <DialogHeader>
             <DialogTitle className="font-display">Participants</DialogTitle>
           </DialogHeader>

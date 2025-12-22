@@ -10,6 +10,8 @@ import { ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel } 
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 interface CreateActivityDialogProps {
   open: boolean;
@@ -25,6 +27,13 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const isMobile = useIsMobile();
+  
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => onOpenChange(false),
+    threshold: 80,
+    enabled: isMobile,
+  });
   
   const canCreate = remainingActivities > 0;
   const today = startOfDay(new Date());
@@ -53,7 +62,15 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
       if (!open) resetForm();
       onOpenChange(open);
     }}>
-      <DialogContent className="sm:max-w-lg bg-card/95 backdrop-blur-xl border-border/50 max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="sm:max-w-lg bg-card/95 backdrop-blur-xl border-border/50 max-h-[90vh] overflow-y-auto"
+        {...(isMobile ? swipeHandlers : {})}
+      >
+        {isMobile && (
+          <div className="flex justify-center py-2 shrink-0">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
             <Plus className="w-6 h-6" />

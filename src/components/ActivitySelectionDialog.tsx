@@ -13,6 +13,8 @@ import { ACTIVITY_TYPES, getTimeBasedDefaultActivity } from "@/data/activityType
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 interface ActivitySelectionDialogProps {
   open: boolean;
@@ -31,6 +33,13 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   const [selectingId, setSelectingId] = useState<string | null>(null);
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const isMobile = useIsMobile();
+  
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => onOpenChange(false),
+    threshold: 80,
+    enabled: isMobile && !isCreatingPlan,
+  });
   
   // Get favorite activity from localStorage
   const favoriteActivity = useMemo(() => {
@@ -154,7 +163,15 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
 
   return (
     <Dialog open={open} onOpenChange={isCreatingPlan ? () => {} : onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+      <DialogContent 
+        className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50"
+        {...(isMobile && !isCreatingPlan ? swipeHandlers : {})}
+      >
+        {isMobile && (
+          <div className="flex justify-center py-2 shrink-0">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-display">What's calling you today?</DialogTitle>
           <p className="text-center text-sm text-muted-foreground mt-2">

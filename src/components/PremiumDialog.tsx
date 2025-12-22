@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 interface PremiumDialogProps {
   open: boolean;
@@ -28,6 +30,13 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => onOpenChange(false),
+    threshold: 80,
+    enabled: isMobile,
+  });
 
   // Load saved billing email from private profile when dialog opens
   useEffect(() => {
@@ -105,7 +114,15 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card border-border max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="sm:max-w-md bg-card border-border max-h-[90vh] overflow-y-auto"
+        {...(isMobile ? swipeHandlers : {})}
+      >
+        {isMobile && (
+          <div className="flex justify-center py-2 shrink-0">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
         <DialogHeader className="pb-2">
           <div className="flex items-center justify-center mb-2">
             <img 

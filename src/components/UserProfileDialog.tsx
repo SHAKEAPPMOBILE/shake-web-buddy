@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import { SayHiButton } from "./SayHiButton";
 import { PrivateChatDialog } from "./PrivateChatDialog";
 import { useGreetings } from "@/hooks/useGreetings";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 interface UserProfileDialogProps {
   open: boolean;
@@ -47,6 +49,13 @@ export function UserProfileDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const { isMatched } = useGreetings();
+  const isMobile = useIsMobile();
+  
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => onOpenChange(false),
+    threshold: 80,
+    enabled: isMobile,
+  });
 
   useEffect(() => {
     if (!open || !userId) return;
@@ -104,7 +113,15 @@ export function UserProfileDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-sm bg-card/95 backdrop-blur-xl border-border/50">
+        <DialogContent 
+          className="sm:max-w-sm bg-card/95 backdrop-blur-xl border-border/50"
+          {...(isMobile ? swipeHandlers : {})}
+        >
+          {isMobile && (
+            <div className="flex justify-center py-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+          )}
           <DialogHeader>
             <DialogTitle className="text-center text-xl font-display">User Profile</DialogTitle>
           </DialogHeader>
