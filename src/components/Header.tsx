@@ -125,11 +125,11 @@ export function Header() {
               {user && (
                 <button
                   onClick={handleOpenChat}
-                  className="relative flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-muted/50 transition-colors"
+                  className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl hover:bg-muted/50 transition-colors"
                   title="My Activities"
                 >
                   <MessageSquare className="w-5 h-5 text-foreground" />
-                  <span className="text-sm font-medium text-foreground">Chat</span>
+                  <span className="text-[10px] font-medium text-foreground">Chat</span>
                   {activeChat && activeChat.unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-destructive rounded-full border-2 border-background flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
                       {activeChat.unreadCount > 99 ? "99+" : activeChat.unreadCount}
@@ -205,12 +205,12 @@ export function Header() {
                     setIsMenuOpen(false);
                     handleOpenChat();
                   }}
-                  className="relative p-2 rounded-full hover:bg-muted/50 transition-colors flex items-center gap-2"
+                  className="relative p-2 rounded-xl hover:bg-muted/50 transition-colors flex flex-col items-center gap-0.5"
                 >
                   <MessageSquare className="w-5 h-5 text-foreground" />
-                  <span className="text-sm font-medium">Chat</span>
+                  <span className="text-[10px] font-medium">Chat</span>
                   {activeChat && activeChat.unreadCount > 0 && (
-                    <span className="min-w-5 h-5 px-1 bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
                       {activeChat.unreadCount > 99 ? "99+" : activeChat.unreadCount}
                     </span>
                   )}
