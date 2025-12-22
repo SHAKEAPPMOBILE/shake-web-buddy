@@ -1,12 +1,13 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { User, Crown, Lock } from "lucide-react";
+import { User, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { SuperHumanIcon } from "./SuperHumanIcon";
 
 interface Participant {
   user_id: string;
@@ -210,7 +211,7 @@ export function ParticipantsListDialog({
                         onClick={handleUnlockClick}
                         className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg"
                       >
-                        <Crown className="w-4 h-4 mr-2" />
+                        <SuperHumanIcon size={16} className="mr-2" />
                         Unlock {blurredParticipants.length} more
                       </Button>
                     </div>

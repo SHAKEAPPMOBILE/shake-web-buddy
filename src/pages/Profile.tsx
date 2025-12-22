@@ -9,7 +9,7 @@ import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, Loader2, User, Crown, CreditCard, Bell, Trash2, Phone, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff } from "lucide-react";
+import { Camera, ArrowLeft, Loader2, User, CreditCard, Bell, Trash2, Phone, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff } from "lucide-react";
 import { countryCodes } from "@/data/countryCodes";
 import {
   AlertDialog,
@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { SuperHumanIcon } from "@/components/SuperHumanIcon";
 
 export default function Profile() {
   const { user, isLoading: authLoading, isPremium, subscriptionEnd, signOut, updatePassword } = useAuth();
@@ -591,7 +592,7 @@ export default function Profile() {
             {isPremium && (
               <div className="space-y-3 p-4 rounded-xl bg-shake-yellow/10 border border-shake-yellow/30">
                 <div className="flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-shake-yellow" />
+                  <SuperHumanIcon size={20} />
                   <span className="font-semibold text-foreground">Super-Human</span>
                 </div>
                 {subscriptionEnd && (
