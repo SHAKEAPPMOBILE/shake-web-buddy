@@ -308,6 +308,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_age: { Args: { target_user_id: string }; Returns: number }
       users_matched: {
         Args: { user1: string; user2: string }
         Returns: boolean

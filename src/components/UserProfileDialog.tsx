@@ -106,17 +106,12 @@ export function UserProfileDialog({
           });
         }
 
-        // Fetch date of birth from profiles_private (only works if current user is viewing their own profile or via public age)
-        // For now, we fetch it using service role or a function - but since profiles_private is RLS protected,
-        // we'll need to expose age differently. Let's add the age to the public profile calculation
-        const { data: privateData } = await supabase
-          .from("profiles_private")
-          .select("date_of_birth")
-          .eq("user_id", userId)
-          .maybeSingle();
+        // Fetch user age using the secure RPC function
+        const { data: ageData } = await supabase
+          .rpc("get_user_age", { target_user_id: userId });
 
-        if (privateData?.date_of_birth) {
-          setUserAge(calculateAge(privateData.date_of_birth));
+        if (ageData) {
+          setUserAge(ageData);
         } else {
           setUserAge(null);
         }
