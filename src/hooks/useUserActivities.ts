@@ -216,10 +216,10 @@ export function useUserActivities(city: string) {
   };
 
   // Join an activity
-  const joinActivity = async (activityId: string): Promise<boolean> => {
+  const joinActivity = async (activityId: string, isPremium: boolean): Promise<{ success: boolean; requiresPremium?: boolean }> => {
     if (!user) {
       toast.error("Please sign in to join an activity");
-      return false;
+      return { success: false };
     }
 
     // Check if already joined
@@ -232,7 +232,7 @@ export function useUserActivities(city: string) {
 
     if (existing) {
       toast.info("You've already joined this activity!");
-      return false;
+      return { success: false };
     }
 
     // Fetch activity details directly from database (not from local state which is city-filtered)
@@ -246,7 +246,12 @@ export function useUserActivities(city: string) {
     if (fetchError || !activity) {
       console.error("Error fetching activity:", fetchError);
       toast.error("Activity not found");
-      return false;
+      return { success: false };
+    }
+
+    // Check if activity is in a different city and user is not premium
+    if (activity.city !== city && !isPremium) {
+      return { success: false, requiresPremium: true };
     }
 
     const { error } = await supabase.from("activity_joins").insert({
@@ -259,12 +264,12 @@ export function useUserActivities(city: string) {
     if (error) {
       console.error("Error joining activity:", error);
       toast.error("Failed to join activity");
-      return false;
+      return { success: false };
     }
 
     toast.success("You've joined the activity!");
     await fetchActivities();
-    return true;
+    return { success: true };
   };
 
   // Leave an activity
