@@ -236,10 +236,11 @@ export function PlanGroupChatDialog({
 
     setIsSending(true);
 
+    const messageText = message.trim();
     const { error } = await supabase.from("plan_messages").insert({
       activity_id: activity.id,
       user_id: user.id,
-      message: message.trim(),
+      message: messageText,
     });
 
     if (error) {
@@ -247,6 +248,28 @@ export function PlanGroupChatDialog({
       toast.error("Failed to send message");
     } else {
       setMessage("");
+      
+      // Send SMS notification to plan owner (if not the owner sending)
+      if (activity.user_id !== user.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("user_id", user.id)
+          .single();
+        
+        try {
+          await supabase.functions.invoke("send-plan-sms", {
+            body: {
+              notificationType: "plan_message",
+              activityId: activity.id,
+              senderName: profile?.name || "Someone",
+              messagePreview: messageText.substring(0, 50),
+            },
+          });
+        } catch (smsError) {
+          console.error("Failed to send SMS notification:", smsError);
+        }
+      }
     }
 
     setIsSending(false);
