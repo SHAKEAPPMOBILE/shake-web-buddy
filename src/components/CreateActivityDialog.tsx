@@ -22,7 +22,7 @@ interface CreateActivityDialogProps {
 
 
 export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivityDialogProps) {
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const { createActivity, isLoading, remainingActivities, myActivities } = useUserActivities(city);
   
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -141,7 +141,9 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             Propose a Plan
           </DialogTitle>
           <p className="text-center text-sm text-muted-foreground mt-2">
-            {canCreate ? (
+            {isPremium ? (
+              <span className="text-shake-yellow">Unlimited plans with Premium ✨</span>
+            ) : canCreate ? (
               <>You have <span className="font-bold text-primary">{remainingActivities}</span> plans left this month</>
             ) : (
               <span className="text-destructive">You have used all 10 plans this month</span>
