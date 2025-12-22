@@ -9,7 +9,7 @@ import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, Loader2, User, Crown, CreditCard, Bell, Trash2, Phone, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Camera, ArrowLeft, Loader2, User, Crown, CreditCard, Bell, Trash2, Phone, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff } from "lucide-react";
 import { countryCodes } from "@/data/countryCodes";
 import {
   AlertDialog,
@@ -25,7 +25,7 @@ import {
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 
 export default function Profile() {
-  const { user, isLoading: authLoading, isPremium, subscriptionEnd, signOut } = useAuth();
+  const { user, isLoading: authLoading, isPremium, subscriptionEnd, signOut, updatePassword } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -43,6 +43,11 @@ export default function Profile() {
   const [isUploading, setIsUploading] = useState(false);
   const [isOpeningPortal, setIsOpeningPortal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   
   // Check if user signed up with phone (has phone in auth.users)
   const isPhoneUser = !!user?.phone;
@@ -250,6 +255,38 @@ export default function Profile() {
       toast.error("Failed to delete account. Please try again.");
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handlePasswordUpdate = async () => {
+    if (!newPassword) {
+      toast.error("Please enter a new password");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const { error } = await updatePassword(newPassword);
+      if (error) throw error;
+      
+      toast.success("Password updated successfully!");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      console.error("Error updating password:", error);
+      toast.error(error.message || "Failed to update password");
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -467,6 +504,86 @@ export default function Profile() {
                   checked={smsNotificationsEnabled}
                   onCheckedChange={setSmsNotificationsEnabled}
                 />
+              </div>
+            </div>
+
+            {/* Password Section */}
+            <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border">
+              <div className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-muted-foreground" />
+                <h3 className="font-medium text-sm text-foreground">
+                  {isPhoneUser ? "Set Password" : "Change Password"}
+                </h3>
+              </div>
+              
+              <p className="text-xs text-muted-foreground">
+                {isPhoneUser 
+                  ? "Set a password to log in faster without SMS verification"
+                  : "Update your account password"
+                }
+              </p>
+              
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      className="bg-background/50 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="bg-background/50 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handlePasswordUpdate}
+                  disabled={isUpdatingPassword || !newPassword || !confirmPassword}
+                >
+                  {isUpdatingPassword ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4 mr-2" />
+                      {isPhoneUser ? "Set Password" : "Update Password"}
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
 
