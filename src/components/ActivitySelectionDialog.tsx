@@ -12,6 +12,7 @@ import { Star, Check, Clock } from "lucide-react";
 import { ACTIVITY_TYPES, getTimeBasedDefaultActivity } from "@/data/activityTypes";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { playDingDingSound } from "@/lib/notification-sound";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
@@ -83,6 +84,9 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     if (success) {
       // Show success state
       setShowSuccess(true);
+      
+      // Play ding-ding sound
+      playDingDingSound();
       
       // Trigger confetti waterfall
       triggerConfettiWaterfall();
