@@ -458,7 +458,7 @@ export default function Profile() {
                       SMS Notifications
                     </Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Get notified when someone joins an activity in your city
+                      Get notified when someone joins your plans or sends messages
                     </p>
                   </div>
                 </div>
