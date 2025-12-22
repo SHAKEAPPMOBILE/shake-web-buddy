@@ -49,7 +49,7 @@ export default function SubscriptionSuccess() {
 
         <div className="space-y-2">
           <h1 className="text-3xl font-display font-bold text-foreground">
-            Welcome to Premium!
+            You're a Super-Human!
           </h1>
           <p className="text-muted-foreground">
             Your subscription is now active. Enjoy access to 100+ cities worldwide!
@@ -59,7 +59,7 @@ export default function SubscriptionSuccess() {
         <div className="bg-card border border-border rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-center gap-2">
             <Crown className="w-5 h-5 text-shake-yellow" />
-            <span className="font-semibold text-foreground">Premium Member</span>
+            <span className="font-semibold text-foreground">Super-Human</span>
           </div>
 
           {isChecking ? (
