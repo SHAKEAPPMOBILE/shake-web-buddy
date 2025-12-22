@@ -135,6 +135,28 @@ export function useUserActivities(city: string) {
 
     setIsLoading(true);
 
+    // Check for existing activity of same type on same day
+    const startOfDay = new Date(scheduledFor);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(scheduledFor);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data: existingActivity } = await supabase
+      .from("user_activities")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("activity_type", activityType)
+      .eq("is_active", true)
+      .gte("scheduled_for", startOfDay.toISOString())
+      .lte("scheduled_for", endOfDay.toISOString())
+      .maybeSingle();
+
+    if (existingActivity) {
+      toast.error("You already have this activity scheduled for this day");
+      setIsLoading(false);
+      return false;
+    }
+
     const { error } = await supabase.from("user_activities").insert({
       user_id: user.id,
       activity_type: activityType,
