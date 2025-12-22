@@ -24,9 +24,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isPremium, setIsPremium] = useState(false);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
 
-  const checkSubscription = async () => {
-    // Check if user is authenticated (phone auth users don't have email)
-    if (!session?.user?.id) {
+  const checkSubscription = async (currentSession?: Session | null) => {
+    // Use passed session or fall back to state (for external calls)
+    const activeSession = currentSession ?? session;
+    
+    // Check if user is authenticated
+    if (!activeSession?.user?.id) {
       setIsPremium(false);
       setSubscriptionEnd(null);
       return;
@@ -48,15 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         setIsLoading(false);
 
-        // Defer subscription check
-        if (session?.user) {
+        // Defer subscription check with the current session
+        if (currentSession?.user) {
           setTimeout(() => {
-            checkSubscription();
+            checkSubscription(currentSession);
           }, 0);
         } else {
           setIsPremium(false);
@@ -66,14 +69,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      setUser(existingSession?.user ?? null);
       setIsLoading(false);
 
-      if (session?.user) {
+      if (existingSession?.user) {
         setTimeout(() => {
-          checkSubscription();
+          checkSubscription(existingSession);
         }, 0);
       }
     });
@@ -86,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!session) return;
 
     const interval = setInterval(() => {
-      checkSubscription();
+      checkSubscription(session);
     }, 60000); // Every minute
 
     return () => clearInterval(interval);
