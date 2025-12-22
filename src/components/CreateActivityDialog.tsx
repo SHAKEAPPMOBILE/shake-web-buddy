@@ -2,16 +2,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useState } from "react";
-import { format, startOfDay } from "date-fns";
-import { CalendarIcon, Plus, Crown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { format, startOfDay, isSameDay } from "date-fns";
+import { CalendarIcon, Plus, Crown, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
-import { useUserActivities } from "@/hooks/useUserActivities";
+import { useUserActivities, UserActivity } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { PlanGroupChatDialog } from "@/components/PlanGroupChatDialog";
 
 interface CreateActivityDialogProps {
   open: boolean;
@@ -22,11 +23,13 @@ interface CreateActivityDialogProps {
 
 export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivityDialogProps) {
   const { user } = useAuth();
-  const { createActivity, isLoading, remainingActivities } = useUserActivities(city);
+  const { createActivity, isLoading, remainingActivities, myActivities } = useUserActivities(city);
   
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [existingActivity, setExistingActivity] = useState<UserActivity | null>(null);
+  const [showPlanChat, setShowPlanChat] = useState(false);
   const isMobile = useIsMobile();
   
   const swipeHandlers = useSwipeToClose({
@@ -40,8 +43,45 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   
   const isValid = selectedType && selectedDate && selectedDate >= today;
 
+  // Check if user already has a plan for this activity type on the selected date
+  useEffect(() => {
+    if (!selectedType || !selectedDate || !myActivities.length) {
+      setExistingActivity(null);
+      return;
+    }
+
+    const existing = myActivities.find(activity => 
+      activity.activity_type === selectedType &&
+      isSameDay(new Date(activity.scheduled_for), selectedDate)
+    );
+
+    setExistingActivity(existing || null);
+  }, [selectedType, selectedDate, myActivities]);
+
+  const handleActivityClick = (activityType: string) => {
+    setSelectedType(activityType);
+    
+    // Check if user already has this activity type for today
+    const todayActivity = myActivities.find(activity => 
+      activity.activity_type === activityType &&
+      isSameDay(new Date(activity.scheduled_for), today)
+    );
+
+    if (todayActivity) {
+      // User already has this activity for today - go straight to chat
+      setExistingActivity(todayActivity);
+      setShowPlanChat(true);
+    }
+  };
+
   const handleCreate = async () => {
     if (!isValid || !selectedDate) return;
+    
+    // Check again for existing activity
+    if (existingActivity) {
+      setShowPlanChat(true);
+      return;
+    }
     
     const success = await createActivity(selectedType!, selectedDate);
     if (success) {
@@ -55,7 +95,31 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const resetForm = () => {
     setSelectedType(null);
     setSelectedDate(undefined);
+    setExistingActivity(null);
   };
+
+  const handleBackFromChat = () => {
+    setShowPlanChat(false);
+    setExistingActivity(null);
+  };
+
+  // Show the plan group chat if there's an existing activity
+  if (showPlanChat && existingActivity) {
+    return (
+      <PlanGroupChatDialog
+        open={true}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowPlanChat(false);
+            setExistingActivity(null);
+            onOpenChange(false);
+          }
+        }}
+        activity={existingActivity}
+        onBack={handleBackFromChat}
+      />
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={(open) => {
@@ -114,24 +178,37 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             <div className="space-y-3">
               <label className="text-sm font-medium text-foreground">What type of activity?</label>
               <div className="grid grid-cols-5 gap-2">
-                {ACTIVITY_TYPES.map((activity) => (
-                  <button
-                    key={activity.id}
-                    onClick={() => setSelectedType(activity.id)}
-                    className={cn(
-                      "flex flex-col items-center justify-center p-3 rounded-xl transition-all",
-                      activity.color,
-                      selectedType === activity.id 
-                        ? "ring-2 ring-primary scale-105" 
-                        : "hover:scale-105"
-                    )}
-                  >
-                    <span className="text-2xl">{activity.emoji}</span>
-                    <span className="text-xs mt-1 font-medium truncate w-full text-center">
-                      {activity.label}
-                    </span>
-                  </button>
-                ))}
+                {ACTIVITY_TYPES.map((activity) => {
+                  // Check if user has this activity type for today
+                  const hasTodayPlan = myActivities.some(a => 
+                    a.activity_type === activity.id &&
+                    isSameDay(new Date(a.scheduled_for), today)
+                  );
+                  
+                  return (
+                    <button
+                      key={activity.id}
+                      onClick={() => handleActivityClick(activity.id)}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-3 rounded-xl transition-all relative",
+                        activity.color,
+                        selectedType === activity.id 
+                          ? "ring-2 ring-primary scale-105" 
+                          : "hover:scale-105"
+                      )}
+                    >
+                      <span className="text-2xl">{activity.emoji}</span>
+                      <span className="text-xs mt-1 font-medium truncate w-full text-center">
+                        {activity.label}
+                      </span>
+                      {hasTodayPlan && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                          <MessageCircle className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -176,8 +253,26 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               </div>
             </div>
 
-            {/* Preview */}
-            {isValid && selectedDate && (
+            {/* Preview or Existing Activity Notice */}
+            {existingActivity ? (
+              <div className="p-4 rounded-xl bg-primary/10 border border-primary/30 space-y-2">
+                <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-primary" />
+                  You already have this plan!
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className={cn("text-3xl p-2 rounded-lg", getActivityColor(existingActivity.activity_type))}>
+                    {getActivityEmoji(existingActivity.activity_type)}
+                  </span>
+                  <div>
+                    <p className="font-semibold">{getActivityLabel(existingActivity.activity_type)} in {city}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(existingActivity.scheduled_for), "EEEE, MMMM d")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : isValid && selectedDate && (
               <div className="p-4 rounded-xl bg-muted/50 space-y-2">
                 <p className="text-sm font-medium text-foreground">Preview:</p>
                 <div className="flex items-center gap-3">
@@ -194,22 +289,33 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               </div>
             )}
 
-            {/* Create Button */}
-            <Button
-              onClick={handleCreate}
-              disabled={!isValid || isLoading}
-              className="w-full"
-              size="lg"
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  Creating...
-                </span>
-              ) : (
-                "Create Activity"
-              )}
-            </Button>
+            {/* Create Button or Go to Chat Button */}
+            {existingActivity ? (
+              <Button
+                onClick={() => setShowPlanChat(true)}
+                className="w-full"
+                size="lg"
+              >
+                <MessageCircle className="w-5 h-5 mr-2" />
+                Go to Group Chat
+              </Button>
+            ) : (
+              <Button
+                onClick={handleCreate}
+                disabled={!isValid || isLoading}
+                className="w-full"
+                size="lg"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Creating...
+                  </span>
+                ) : (
+                  "Create Activity"
+                )}
+              </Button>
+            )}
           </div>
         )}
       </DialogContent>
