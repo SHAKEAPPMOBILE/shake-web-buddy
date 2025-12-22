@@ -163,7 +163,7 @@ export function WorldMap({ activities, onActivityClick, onCityClick, selectedAct
     >
       {/* World map background SVG */}
       <svg
-        className="absolute inset-0 w-full h-full opacity-20"
+        className="absolute inset-0 w-full h-full"
         viewBox="0 0 800 400"
         preserveAspectRatio="xMidYMid slice"
         style={{
@@ -171,33 +171,67 @@ export function WorldMap({ activities, onActivityClick, onCityClick, selectedAct
           transformOrigin: "center center",
         }}
       >
-        {/* Simple world outline */}
         <rect x="0" y="0" width="800" height="400" fill="transparent" />
+
+        {/* Continents (stylized silhouette for context) */}
+        <g className="text-muted-foreground" opacity={0.22}>
+          {/* North America */}
+          <path
+            d="M85 115 C95 85 140 70 175 82 C205 92 220 110 238 122 C255 132 270 138 275 155 C282 178 260 196 235 200 C210 204 196 194 174 186 C152 178 132 176 116 160 C97 142 78 137 85 115 Z"
+            fill="currentColor"
+          />
+          {/* South America */}
+          <path
+            d="M225 225 C250 214 272 228 280 250 C288 272 276 284 270 304 C264 326 250 346 232 352 C212 358 198 344 202 324 C206 304 190 292 198 272 C206 252 205 236 225 225 Z"
+            fill="currentColor"
+          />
+          {/* Europe */}
+          <path
+            d="M360 120 C374 106 404 102 420 112 C432 120 438 132 452 134 C468 136 482 132 492 142 C506 156 486 170 468 172 C446 174 438 186 420 186 C400 186 388 176 378 162 C368 148 350 136 360 120 Z"
+            fill="currentColor"
+          />
+          {/* Africa */}
+          <path
+            d="M420 205 C442 188 468 194 486 210 C506 228 518 246 512 272 C506 298 484 312 476 332 C468 352 444 360 426 350 C408 340 406 320 396 300 C386 280 378 264 388 244 C398 224 402 220 420 205 Z"
+            fill="currentColor"
+          />
+          {/* Asia */}
+          <path
+            d="M485 110 C512 84 560 84 598 98 C632 110 650 118 682 118 C712 118 730 134 728 154 C726 172 706 184 688 188 C664 194 650 184 630 176 C608 166 592 170 574 178 C554 188 534 186 520 170 C506 154 476 138 485 110 Z"
+            fill="currentColor"
+          />
+          {/* Australia */}
+          <path
+            d="M645 295 C664 278 694 280 716 292 C736 304 738 324 722 336 C706 348 684 350 664 344 C642 336 626 314 645 295 Z"
+            fill="currentColor"
+          />
+        </g>
+
         {/* Grid lines */}
-        {[...Array(19)].map((_, i) => (
-          <line
-            key={`lat-${i}`}
-            x1="0"
-            y1={i * (400 / 18)}
-            x2="800"
-            y2={i * (400 / 18)}
-            stroke="currentColor"
-            strokeWidth="0.5"
-            className="text-border"
-          />
-        ))}
-        {[...Array(37)].map((_, i) => (
-          <line
-            key={`lng-${i}`}
-            x1={i * (800 / 36)}
-            y1="0"
-            x2={i * (800 / 36)}
-            y2="400"
-            stroke="currentColor"
-            strokeWidth="0.5"
-            className="text-border"
-          />
-        ))}
+        <g className="text-border" opacity={0.35}>
+          {[...Array(19)].map((_, i) => (
+            <line
+              key={`lat-${i}`}
+              x1="0"
+              y1={i * (400 / 18)}
+              x2="800"
+              y2={i * (400 / 18)}
+              stroke="currentColor"
+              strokeWidth="0.75"
+            />
+          ))}
+          {[...Array(37)].map((_, i) => (
+            <line
+              key={`lng-${i}`}
+              x1={i * (800 / 36)}
+              y1="0"
+              x2={i * (800 / 36)}
+              y2="400"
+              stroke="currentColor"
+              strokeWidth="0.75"
+            />
+          ))}
+        </g>
       </svg>
 
       {/* Activity markers */}
