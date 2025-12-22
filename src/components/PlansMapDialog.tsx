@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff } from "lucide-react";
+import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown } from "lucide-react";
 import { WorldMap } from "@/components/WorldMap";
 import { useAllActivities } from "@/hooks/useAllActivities";
 import { UserActivity } from "@/hooks/useUserActivities";
@@ -16,6 +16,7 @@ import { useUserActivities } from "@/hooks/useUserActivities";
 import { usePlanNotifications } from "@/hooks/usePushNotifications";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
 interface PlansMapDialogProps {
   open: boolean;
@@ -35,6 +36,13 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [joinedActivities, setJoinedActivities] = useState<Set<string>>(new Set());
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  // Swipe to close on mobile
+  const swipeHandlers = useSwipeToClose({
+    onClose: () => onOpenChange(false),
+    threshold: 80,
+    enabled: isMobile,
+  });
 
   // Get IDs of activities the user owns
   const myActivityIds = useMemo(() => myActivities.map((a) => a.id), [myActivities]);
@@ -99,7 +107,17 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-4xl h-[80vh] max-h-[90vh] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-border/50 overflow-hidden">
+        <DialogContent 
+          className="sm:max-w-4xl h-[80vh] max-h-[90vh] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-border/50 overflow-hidden"
+          {...(isMobile ? swipeHandlers : {})}
+        >
+          {/* Swipe indicator for mobile */}
+          {isMobile && (
+            <div className="flex justify-center py-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+          )}
+          
           {/* Header */}
           <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border/50 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
@@ -110,7 +128,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                 className="sm:hidden h-8 w-8 shrink-0"
                 onClick={() => onOpenChange(false)}
               >
-                <X className="w-4 h-4" />
+                <ChevronDown className="w-5 h-5" />
               </Button>
               <div className="min-w-0">
                 <h2 className="text-lg sm:text-xl font-display font-bold flex items-center gap-2">
