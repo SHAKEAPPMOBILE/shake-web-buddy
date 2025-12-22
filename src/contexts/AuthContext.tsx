@@ -28,16 +28,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Use passed session or fall back to state (for external calls)
     const activeSession = currentSession ?? session;
     
-    // Check if user is authenticated
-    if (!activeSession?.user?.id) {
+    // Check if user is authenticated AND has valid access token
+    if (!activeSession?.user?.id || !activeSession?.access_token) {
       setIsPremium(false);
       setSubscriptionEnd(null);
       return;
     }
 
     try {
+      // Verify session is still valid before calling
+      const { data: { session: freshSession } } = await supabase.auth.getSession();
+      if (!freshSession?.access_token) {
+        console.log("No valid session for subscription check");
+        setIsPremium(false);
+        setSubscriptionEnd(null);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("check-subscription");
       if (error) {
+        // Don't treat auth errors as fatal - just set not premium
+        if (error.message?.includes("Auth session missing")) {
+          console.log("Session expired, skipping subscription check");
+          setIsPremium(false);
+          setSubscriptionEnd(null);
+          return;
+        }
         console.error("Error checking subscription:", error);
         return;
       }
