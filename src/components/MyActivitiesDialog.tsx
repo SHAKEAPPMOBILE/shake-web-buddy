@@ -88,25 +88,41 @@ export function MyActivitiesDialog({
     fetchMyActivities();
   }, [open, user]);
 
-  // Real-time subscription for activity joins
+  // Real-time subscription for activity joins - listen to all events for user's activities
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
-      .channel(`my-activities-${user.id}`)
+      .channel(`my-activities-realtime-${user.id}`)
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
           schema: "public",
           table: "activity_joins",
           filter: `user_id=eq.${user.id}`,
         },
         () => {
+          console.log("Activity join INSERT detected, refetching...");
           fetchMyActivities();
         }
       )
-      .subscribe();
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "activity_joins",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          console.log("Activity join DELETE detected, refetching...");
+          fetchMyActivities();
+        }
+      )
+      .subscribe((status) => {
+        console.log("My activities subscription status:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
