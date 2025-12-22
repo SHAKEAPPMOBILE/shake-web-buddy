@@ -11,6 +11,8 @@ interface AuthContextType {
   signUpWithPhone: (phone: string, name: string) => Promise<{ error: Error | null }>;
   verifyOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
   signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
+  signInWithPassword: (phone: string, password: string) => Promise<{ error: Error | null }>;
+  updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   checkSubscription: () => Promise<void>;
 }
@@ -133,6 +135,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const signInWithPassword = async (phone: string, password: string) => {
+    // Sign in with phone + password
+    const { error } = await supabase.auth.signInWithPassword({
+      phone,
+      password,
+    });
+    return { error: error as Error | null };
+  };
+
+  const updatePassword = async (password: string) => {
+    // Update user's password (used after OTP verification for password reset)
+    const { error } = await supabase.auth.updateUser({
+      password,
+    });
+    return { error: error as Error | null };
+  };
+
   const verifyOtp = async (phone: string, token: string) => {
     const { error } = await supabase.auth.verifyOtp({
       phone,
@@ -166,6 +185,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         subscriptionEnd,
         signUpWithPhone,
         signInWithPhone,
+        signInWithPassword,
+        updatePassword,
         verifyOtp,
         signOut,
         checkSubscription,
