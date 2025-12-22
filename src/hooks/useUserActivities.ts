@@ -228,16 +228,23 @@ export function useUserActivities(city: string) {
       .select("id")
       .eq("activity_id", activityId)
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       toast.info("You've already joined this activity!");
       return false;
     }
 
-    // Get activity details for the join
-    const activity = activities.find(a => a.id === activityId);
-    if (!activity) {
+    // Fetch activity details directly from database (not from local state which is city-filtered)
+    const { data: activity, error: fetchError } = await supabase
+      .from("user_activities")
+      .select("*")
+      .eq("id", activityId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (fetchError || !activity) {
+      console.error("Error fetching activity:", fetchError);
       toast.error("Activity not found");
       return false;
     }
@@ -246,7 +253,7 @@ export function useUserActivities(city: string) {
       user_id: user.id,
       activity_id: activityId,
       activity_type: activity.activity_type,
-      city: city,
+      city: activity.city,
     });
 
     if (error) {
