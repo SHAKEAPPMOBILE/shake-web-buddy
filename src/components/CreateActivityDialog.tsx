@@ -63,7 +63,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             {canCreate ? (
               <>You have <span className="font-bold text-primary">{remainingActivities}</span> plans left this month</>
             ) : (
-              <span className="text-destructive">You have used all 5 plans this month</span>
+              <span className="text-destructive">You have used all 10 plans this month</span>
             )}
           </p>
         </DialogHeader>
@@ -78,7 +78,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               <Crown className="w-8 h-8 text-shake-yellow" />
             </div>
             <div>
-              <p className="font-semibold text-foreground">You've used all 5 free plans this month</p>
+              <p className="font-semibold text-foreground">You've used all 10 free plans this month</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Upgrade to Premium for unlimited plans
               </p>
