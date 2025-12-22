@@ -94,14 +94,18 @@ export function Header() {
       <header className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-28 md:h-36">
-            {/* Left side - Logo and Mobile Menu */}
+            {/* Left side - Colorful S Logo and Mobile Menu */}
             <div className="flex-1 flex items-center gap-2">
-              {/* Original logo on the left */}
+              {/* Colorful S icon only - clipped to hide text */}
               <button 
                 onClick={() => navigate("/")}
-                className="hidden md:block"
+                className="hidden md:block h-20 w-20 overflow-hidden"
               >
-                <img src={logoShake} alt="Shake Social" className="h-16 object-contain" />
+                <img 
+                  src={logoShake} 
+                  alt="Shake Social" 
+                  className="h-40 object-contain object-top" 
+                />
               </button>
               
               <button
@@ -121,10 +125,10 @@ export function Header() {
               onClick={() => navigate("/")}
               className="flex flex-col items-center justify-center"
             >
-              <span className="text-foreground text-2xl md:text-3xl font-display font-bold tracking-wide lowercase">
+              <span className="text-foreground text-3xl md:text-4xl font-display font-bold tracking-wide lowercase">
                 shake
               </span>
-              <span className="text-foreground text-[10px] md:text-xs font-medium tracking-[0.2em] uppercase -mt-1">
+              <span className="text-foreground text-xs md:text-sm font-medium tracking-[0.2em] uppercase -mt-1">
                 social
               </span>
             </button>
