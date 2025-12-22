@@ -238,6 +238,7 @@ export type Database = {
         Row: {
           billing_email: string | null
           created_at: string
+          date_of_birth: string | null
           id: string
           phone_number: string | null
           premium_override: boolean
@@ -248,6 +249,7 @@ export type Database = {
         Insert: {
           billing_email?: string | null
           created_at?: string
+          date_of_birth?: string | null
           id?: string
           phone_number?: string | null
           premium_override?: boolean
@@ -258,6 +260,7 @@ export type Database = {
         Update: {
           billing_email?: string | null
           created_at?: string
+          date_of_birth?: string | null
           id?: string
           phone_number?: string | null
           premium_override?: boolean
