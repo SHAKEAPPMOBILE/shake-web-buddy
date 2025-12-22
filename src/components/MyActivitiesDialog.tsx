@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
+import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 
 interface MyActivitiesDialogProps {
   open: boolean;
@@ -19,20 +20,6 @@ interface ActivityJoin {
   expires_at: string;
   participant_count?: number;
 }
-
-const activityEmojis: Record<string, string> = {
-  lunch: "🍽️",
-  dinner: "🍝",
-  drinks: "🍻",
-  hike: "🥾",
-};
-
-const activityLabels: Record<string, string> = {
-  lunch: "Lunch",
-  dinner: "Dinner",
-  drinks: "Drinks",
-  hike: "Hike",
-};
 
 export function MyActivitiesDialog({ 
   open, 
@@ -126,13 +113,13 @@ export function MyActivitiesDialog({
                   className="w-full flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left"
                 >
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
-                    {activityEmojis[activity.activity_type] || "📍"}
+                    {getActivityEmoji(activity.activity_type)}
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-foreground">
-                        {activityLabels[activity.activity_type] || activity.activity_type}
+                        {getActivityLabel(activity.activity_type)}
                       </p>
                       <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1">
                         <Users className="w-3 h-3" />
