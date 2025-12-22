@@ -2,9 +2,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useState, useMemo } from "react";
-import { format, setHours, setMinutes } from "date-fns";
-import { CalendarIcon, Clock, Plus, Crown } from "lucide-react";
+import { useState } from "react";
+import { format, startOfDay } from "date-fns";
+import { CalendarIcon, Plus, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { useUserActivities } from "@/hooks/useUserActivities";
@@ -17,13 +17,6 @@ interface CreateActivityDialogProps {
   city: string;
 }
 
-const TIME_SLOTS = [
-  { label: "Morning (9:00)", hours: 9, minutes: 0 },
-  { label: "Noon (12:00)", hours: 12, minutes: 0 },
-  { label: "Afternoon (15:00)", hours: 15, minutes: 0 },
-  { label: "Evening (18:00)", hours: 18, minutes: 0 },
-  { label: "Night (21:00)", hours: 21, minutes: 0 },
-];
 
 export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivityDialogProps) {
   const { user } = useAuth();
@@ -31,27 +24,21 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<{ hours: number; minutes: number } | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   
   const canCreate = remainingActivities > 0;
+  const today = startOfDay(new Date());
   
-  const scheduledDateTime = useMemo(() => {
-    if (!selectedDate || !selectedTime) return null;
-    return setMinutes(setHours(selectedDate, selectedTime.hours), selectedTime.minutes);
-  }, [selectedDate, selectedTime]);
-
-  const isValid = selectedType && scheduledDateTime && scheduledDateTime > new Date();
+  const isValid = selectedType && selectedDate && selectedDate >= today;
 
   const handleCreate = async () => {
-    if (!isValid || !scheduledDateTime) return;
+    if (!isValid || !selectedDate) return;
     
-    const success = await createActivity(selectedType!, scheduledDateTime);
+    const success = await createActivity(selectedType!, selectedDate);
     if (success) {
       // Reset form
       setSelectedType(null);
       setSelectedDate(undefined);
-      setSelectedTime(null);
       onOpenChange(false);
     }
   };
@@ -59,7 +46,6 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const resetForm = () => {
     setSelectedType(null);
     setSelectedDate(undefined);
-    setSelectedTime(null);
   };
 
   return (
@@ -135,55 +121,46 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             {/* Date Selection */}
             <div className="space-y-3">
               <label className="text-sm font-medium text-foreground">When?</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Time Selection */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground">What time?</label>
-              <div className="grid grid-cols-5 gap-2">
-                {TIME_SLOTS.map((slot) => (
-                  <button
-                    key={slot.label}
-                    onClick={() => setSelectedTime({ hours: slot.hours, minutes: slot.minutes })}
-                    className={cn(
-                      "flex flex-col items-center justify-center p-2 rounded-lg transition-all border",
-                      selectedTime?.hours === slot.hours
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border hover:border-primary/50"
-                    )}
-                  >
-                    <Clock className="w-4 h-4 mb-1" />
-                    <span className="text-xs font-medium">{slot.hours}:00</span>
-                  </button>
-                ))}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedDate(today)}
+                  className={cn(
+                    "flex-shrink-0",
+                    selectedDate?.getTime() === today.getTime() && "border-primary bg-primary/10 text-primary"
+                  )}
+                >
+                  Today
+                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "flex-1 justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      disabled={(date) => date < today}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
             {/* Preview */}
-            {isValid && scheduledDateTime && (
+            {isValid && selectedDate && (
               <div className="p-4 rounded-xl bg-muted/50 space-y-2">
                 <p className="text-sm font-medium text-foreground">Preview:</p>
                 <div className="flex items-center gap-3">
@@ -193,7 +170,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   <div>
                     <p className="font-semibold">{getActivityLabel(selectedType!)} in {city}</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(scheduledDateTime, "EEEE, MMMM d 'at' h:mm a")}
+                      {format(selectedDate, "EEEE, MMMM d")}
                     </p>
                   </div>
                 </div>
