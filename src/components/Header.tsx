@@ -7,6 +7,7 @@ import logoShake from "@/assets/shake-logo-new.png";
 import { CitySelector } from "./CitySelector";
 import { PremiumDialog } from "./PremiumDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
+import { PlanGroupChatDialog } from "./PlanGroupChatDialog";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { MyActivitiesDialog } from "./MyActivitiesDialog";
 import { GreetingsIndicator } from "./GreetingsIndicator";
@@ -15,21 +16,25 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useActiveChat } from "@/hooks/useActiveChat";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
+import { useUserActivities, type UserActivity } from "@/hooks/useUserActivities";
 import { supabase } from "@/integrations/supabase/client";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
+  const [showPlanChatDialog, setShowPlanChatDialog] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showMyActivitiesDialog, setShowMyActivitiesDialog] = useState(false);
   const [selectedChatActivity, setSelectedChatActivity] = useState<{ activityType: string; city: string } | null>(null);
+  const [selectedPlanActivity, setSelectedPlanActivity] = useState<UserActivity | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, isPremium, signOut, isLoading } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
   const { activeChat, markAsRead, refreshActiveChat } = useActiveChat(selectedCity);
   const { joinActivity, getActivityJoinCount } = useActivityJoins(selectedCity);
+  const { fetchActivities: refetchCityPlans } = useUserActivities(selectedCity);
 
   // Fetch user avatar
   useEffect(() => {
@@ -63,10 +68,37 @@ export function Header() {
     setShowMyActivitiesDialog(true);
   };
 
-  const handleSelectActivityFromList = (activityType: string, city: string) => {
+  const handleSelectActivityFromList = async (selection: { activityType: string; city: string; activityId?: string }) => {
     setShowMyActivitiesDialog(false);
-    setSelectedChatActivity({ activityType, city });
-    markAsRead(activityType, city);
+
+    // If this item is tied to a specific plan, open the plan chat (plan_messages)
+    if (selection.activityId) {
+      const { data: plan, error } = await supabase
+        .from("user_activities")
+        .select("*")
+        .eq("id", selection.activityId)
+        .maybeSingle();
+
+      if (error || !plan) {
+        console.error("Failed to load plan for chat:", error);
+        // Fall back to generic chat so user isn't blocked
+        setSelectedChatActivity({ activityType: selection.activityType, city: selection.city });
+        markAsRead(selection.activityType, selection.city);
+        setShowChatDialog(true);
+        return;
+      }
+
+      // Ensure freshest list data (creator_name/participant_count will be hydrated elsewhere)
+      await refetchCityPlans();
+
+      setSelectedPlanActivity(plan as unknown as UserActivity);
+      setShowPlanChatDialog(true);
+      return;
+    }
+
+    // Otherwise open the generic activity chat (activity_messages)
+    setSelectedChatActivity({ activityType: selection.activityType, city: selection.city });
+    markAsRead(selection.activityType, selection.city);
     setShowChatDialog(true);
   };
 
@@ -77,8 +109,17 @@ export function Header() {
     }
   };
 
+  const handlePlanChatClose = (open: boolean) => {
+    setShowPlanChatDialog(open);
+    if (!open) {
+      setSelectedPlanActivity(null);
+    }
+  };
+
   const handleBackToActivities = () => {
     setShowChatDialog(false);
+    setShowPlanChatDialog(false);
+    setSelectedPlanActivity(null);
     setShowMyActivitiesDialog(true);
   };
 
@@ -301,6 +342,15 @@ export function Header() {
           onBack={handleBackToActivities}
           attendeeCount={getActivityJoinCount(selectedChatActivity.activityType)}
           city={selectedChatActivity.city}
+        />
+      )}
+
+      {selectedPlanActivity && (
+        <PlanGroupChatDialog
+          open={showPlanChatDialog}
+          onOpenChange={handlePlanChatClose}
+          activity={selectedPlanActivity}
+          onBack={handleBackToActivities}
         />
       )}
     </>

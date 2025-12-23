@@ -11,7 +11,12 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 interface MyActivitiesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectActivity: (activityType: string, city: string) => void;
+  onSelectActivity: (selection: {
+    activityType: string;
+    city: string;
+    /** Present when this entry is a scheduled plan (or a join to a specific plan) */
+    activityId?: string;
+  }) => void;
 }
 
 interface ActivityJoin {
@@ -21,6 +26,7 @@ interface ActivityJoin {
   joined_at: string;
   expires_at: string;
   participant_count?: number;
+  activity_id?: string | null;
   // When present, this row represents a scheduled plan (creator's own plan)
   scheduled_for?: string;
   source?: "join" | "plan";
@@ -100,6 +106,7 @@ export function MyActivitiesDialog({
               joined_at: join.joined_at,
               expires_at: join.expires_at,
               participant_count: (count || 0) + 1,
+              activity_id: join.activity_id,
               source: "join",
             };
           }
@@ -118,6 +125,7 @@ export function MyActivitiesDialog({
             joined_at: join.joined_at,
             expires_at: join.expires_at,
             participant_count: count || 0,
+            activity_id: join.activity_id,
             source: "join",
           };
         })
@@ -138,6 +146,7 @@ export function MyActivitiesDialog({
             // Keep plan visible until its scheduled time (so it's available in chat shortcut)
             expires_at: plan.scheduled_for,
             scheduled_for: plan.scheduled_for,
+            activity_id: plan.id,
             participant_count: (count || 0) + 1,
             source: "plan",
           };
@@ -226,7 +235,11 @@ export function MyActivitiesDialog({
   }, [user]);
 
   const handleActivityClick = (activity: ActivityJoin) => {
-    onSelectActivity(activity.activity_type, activity.city);
+    onSelectActivity({
+      activityType: activity.activity_type,
+      city: activity.city,
+      activityId: activity.activity_id || undefined,
+    });
   };
 
   return (
