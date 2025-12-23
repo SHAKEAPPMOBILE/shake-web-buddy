@@ -120,7 +120,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
           {/* Custom close button - white and positioned to avoid overlap */}
           <button
             onClick={() => onOpenChange(false)}
-            className="absolute right-3 top-3 z-50 rounded-sm p-1 text-white bg-black/50 hover:bg-black/70 transition-colors hidden sm:flex"
+            className="absolute right-3 top-3 z-50 rounded-sm p-1 text-white bg-black/50 hover:bg-black/70 transition-colors flex items-center justify-center"
           >
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
