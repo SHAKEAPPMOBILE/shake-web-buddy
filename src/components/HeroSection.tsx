@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Zap, Shield, MapPin } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
@@ -22,6 +22,8 @@ export function HeroSection() {
   const [showClockAnimation, setShowClockAnimation] = useState(false);
   const [showPlansMap, setShowPlansMap] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
+  const [phoneInitialShake, setPhoneInitialShake] = useState(true);
+  const [phoneHovered, setPhoneHovered] = useState(false);
   const { user } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
@@ -82,6 +84,16 @@ export function HeroSection() {
     setShowActivityDialog(true);
   };
 
+  // Stop initial phone shake after 7 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPhoneInitialShake(false);
+    }, 7000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isPhoneShaking = phoneInitialShake || phoneHovered;
+
   return (
     <>
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-28 md:pt-36">
@@ -116,23 +128,27 @@ export function HeroSection() {
               className="relative flex justify-center animate-fade-up py-8 md:py-12"
               style={{ animationDelay: "150ms" }}
             >
-              <div className="relative">
+              <div 
+                className="relative cursor-pointer"
+                onMouseEnter={() => setPhoneHovered(true)}
+                onMouseLeave={() => setPhoneHovered(false)}
+              >
                 {/* Motion lines - left side */}
-                <div className="absolute -left-10 md:-left-14 top-1/2 -translate-y-1/2 flex flex-col gap-3">
-                  <div className="w-8 h-1 bg-primary/70 rounded-full animate-pulse" style={{ animationDelay: "0ms" }} />
-                  <div className="w-12 h-1 bg-shake-coral/60 rounded-full animate-pulse" style={{ animationDelay: "100ms" }} />
-                  <div className="w-6 h-1 bg-accent/60 rounded-full animate-pulse" style={{ animationDelay: "200ms" }} />
+                <div className={`absolute -left-10 md:-left-14 top-1/2 -translate-y-1/2 flex flex-col gap-3 transition-opacity duration-300 ${isPhoneShaking ? 'opacity-100' : 'opacity-30'}`}>
+                  <div className={`w-8 h-1 bg-primary/70 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "0ms" }} />
+                  <div className={`w-12 h-1 bg-shake-coral/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "100ms" }} />
+                  <div className={`w-6 h-1 bg-accent/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "200ms" }} />
                 </div>
                 
                 {/* Motion lines - right side */}
-                <div className="absolute -right-10 md:-right-14 top-1/2 -translate-y-1/2 flex flex-col gap-3">
-                  <div className="w-6 h-1 bg-accent/60 rounded-full animate-pulse" style={{ animationDelay: "50ms" }} />
-                  <div className="w-12 h-1 bg-shake-coral/60 rounded-full animate-pulse" style={{ animationDelay: "150ms" }} />
-                  <div className="w-8 h-1 bg-primary/70 rounded-full animate-pulse" style={{ animationDelay: "250ms" }} />
+                <div className={`absolute -right-10 md:-right-14 top-1/2 -translate-y-1/2 flex flex-col gap-3 transition-opacity duration-300 ${isPhoneShaking ? 'opacity-100' : 'opacity-30'}`}>
+                  <div className={`w-6 h-1 bg-accent/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "50ms" }} />
+                  <div className={`w-12 h-1 bg-shake-coral/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "150ms" }} />
+                  <div className={`w-8 h-1 bg-primary/70 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "250ms" }} />
                 </div>
 
                 {/* Phone body */}
-                <div className="relative w-20 h-36 md:w-24 md:h-44 bg-gradient-to-b from-card to-card/80 rounded-3xl border-2 border-border shadow-2xl animate-shake">
+                <div className={`relative w-20 h-36 md:w-24 md:h-44 bg-gradient-to-b from-card to-card/80 rounded-3xl border-2 border-border shadow-2xl transition-transform ${isPhoneShaking ? 'animate-shake' : ''}`}>
                   {/* Phone screen */}
                   <div className="absolute inset-2 bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 rounded-2xl flex items-center justify-center">
                     <span className="text-3xl md:text-4xl">🤝</span>
