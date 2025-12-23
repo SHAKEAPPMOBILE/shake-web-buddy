@@ -68,12 +68,16 @@ export function MyActivitiesDialog({
       }
 
       // 2) Fetch user's own upcoming plans (creator should see their plan chats too)
+      // Show plans scheduled for today or in the future
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+      
       const { data: myPlans, error: plansError } = await supabase
         .from("user_activities")
         .select("id, activity_type, city, scheduled_for, created_at")
         .eq("user_id", user.id)
         .eq("is_active", true)
-        .gt("scheduled_for", nowIso)
+        .gte("scheduled_for", startOfToday.toISOString())
         .order("scheduled_for", { ascending: true });
 
       if (plansError) {
@@ -282,11 +286,11 @@ export function MyActivitiesDialog({
                       <MapPin className="w-3 h-3" />
                       {activity.city}
                     </p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
-                      {activity.scheduled_for
-                        ? `Scheduled ${format(new Date(activity.scheduled_for), "EEE, MMM d 'at' h:mm a")}`
-                        : `Joined ${format(new Date(activity.joined_at), "h:mm a")}`}
-                    </p>
+                    {activity.scheduled_for && (
+                      <p className="text-xs text-muted-foreground/70 mt-1">
+                        {format(new Date(activity.scheduled_for), "EEE, MMM d 'at' h:mm a")}
+                      </p>
+                    )}
                   </div>
 
                   <MessageSquare className="w-5 h-5 text-primary shrink-0" />

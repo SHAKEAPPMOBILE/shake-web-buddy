@@ -30,13 +30,16 @@ export function useUserActivities(city: string) {
   const fetchActivities = useCallback(async () => {
     if (!city) return;
 
-    const now = new Date().toISOString();
+    // Show activities scheduled for today or in the future
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    
     const { data, error } = await supabase
       .from("user_activities")
       .select("*")
       .eq("city", city)
       .eq("is_active", true)
-      .gt("scheduled_for", now)
+      .gte("scheduled_for", startOfToday.toISOString())
       .order("scheduled_for", { ascending: true });
 
     if (error) {
