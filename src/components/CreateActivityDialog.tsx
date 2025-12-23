@@ -14,6 +14,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { PlanGroupChatDialog } from "@/components/PlanGroupChatDialog";
 import { SuperHumanIcon } from "./SuperHumanIcon";
+import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { toast } from "sonner";
 
 interface CreateActivityDialogProps {
   open: boolean;
@@ -44,6 +46,11 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   
   const isValid = selectedType && selectedDate && selectedDate >= today;
 
+  // Default to "Today" when opening the dialog
+  useEffect(() => {
+    if (open && !selectedDate) setSelectedDate(today);
+  }, [open]);
+
   // Check if user already has a plan for this activity type on the selected date
   useEffect(() => {
     if (!selectedType || !selectedDate || !myActivities.length) {
@@ -61,7 +68,12 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
 
   const handleActivityClick = (activityType: string) => {
     setSelectedType(activityType);
-    
+
+    // Default to "Today" as soon as an activity is picked
+    if (!selectedDate) {
+      setSelectedDate(today);
+    }
+
     // Check if user already has this activity type for today
     const todayActivity = myActivities.find(activity => 
       activity.activity_type === activityType &&
@@ -77,25 +89,30 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
 
   const handleCreate = async () => {
     if (!isValid || !selectedDate) return;
-    
+
     // Check again for existing activity
     if (existingActivity) {
       setShowPlanChat(true);
       return;
     }
-    
+
     const success = await createActivity(selectedType!, selectedDate);
     if (success) {
+      triggerConfettiWaterfall();
+      toast.success("Plan created!", {
+        description: "Your plan is now visible in Explore Plans",
+      });
+
       // Reset form
       setSelectedType(null);
-      setSelectedDate(undefined);
+      setSelectedDate(today);
       onOpenChange(false);
     }
   };
 
   const resetForm = () => {
     setSelectedType(null);
-    setSelectedDate(undefined);
+    setSelectedDate(today);
     setExistingActivity(null);
   };
 
