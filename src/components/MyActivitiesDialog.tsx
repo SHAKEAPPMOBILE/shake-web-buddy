@@ -279,7 +279,10 @@ export function MyActivitiesDialog({
                 <button
                   key={activity.id}
                   onClick={() => handleActivityClick(activity)}
-                  className="w-full flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-[hsl(270,30%,20%)/0.7] to-[hsl(250,25%,15%)/0.6] hover:from-[hsl(270,35%,25%)/0.8] hover:to-[hsl(250,30%,20%)/0.7] transition-all text-left"
+                  className="w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left hover:opacity-90"
+                  style={{
+                    background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+                  }}
                 >
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
                     {getActivityEmoji(activity.activity_type)}

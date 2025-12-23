@@ -241,9 +241,14 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                               className={cn(
                                 "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
                                 selectedActivity?.id === activity.id
-                                  ? "bg-gradient-to-r from-[hsl(270,50%,25%)/0.9] to-[hsl(250,40%,20%)/0.8] border border-primary/30"
-                                  : "bg-gradient-to-r from-[hsl(270,30%,20%)/0.7] to-[hsl(250,25%,15%)/0.6] hover:from-[hsl(270,35%,25%)/0.8] hover:to-[hsl(250,30%,20%)/0.7]"
+                                  ? "border border-primary/30"
+                                  : ""
                               )}
+                              style={{
+                                background: selectedActivity?.id === activity.id
+                                  ? "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))"
+                                  : "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+                              }}
                             >
                               <div
                                 className={cn(
@@ -328,9 +333,14 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                             className={cn(
                               "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
                               selectedActivity?.id === activity.id
-                                ? "bg-gradient-to-r from-[hsl(270,50%,25%)/0.9] to-[hsl(250,40%,20%)/0.8] border border-primary/30"
-                                : "bg-gradient-to-r from-[hsl(270,30%,20%)/0.7] to-[hsl(250,25%,15%)/0.6] hover:from-[hsl(270,35%,25%)/0.8] hover:to-[hsl(250,30%,20%)/0.7]"
+                                ? "border border-primary/30"
+                                : ""
                             )}
+                            style={{
+                              background: selectedActivity?.id === activity.id
+                                ? "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))"
+                                : "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+                            }}
                           >
                             <div
                               className={cn(
