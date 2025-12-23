@@ -48,6 +48,16 @@ export function GlobalParticipantsSection() {
   const { user, isPremium } = useAuth();
   const isInitialLoad = useRef(true);
 
+  // Fisher-Yates shuffle for randomization
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   const fetchRecentParticipants = async () => {
     setIsLoading(true);
 
@@ -72,14 +82,29 @@ export function GlobalParticipantsSection() {
 
     setTotalCount(profiles.length);
 
-    const participantsList: Participant[] = profiles.map((profile) => ({
+    const allParticipants: Participant[] = profiles.map((profile) => ({
       user_id: profile.user_id,
       name: profile.name || null,
       avatar_url: profile.avatar_url || null,
       joined_at: profile.created_at,
     }));
 
-    setParticipants(participantsList);
+    // Separate users with and without profile pictures
+    const withAvatar = allParticipants.filter(p => p.avatar_url);
+    const withoutAvatar = allParticipants.filter(p => !p.avatar_url);
+
+    // Shuffle both groups for variety
+    const shuffledWithAvatar = shuffleArray(withAvatar);
+    const shuffledWithoutAvatar = shuffleArray(withoutAvatar);
+
+    // Take first 5 with avatars, then fill with the rest
+    const prioritizedList = [
+      ...shuffledWithAvatar.slice(0, 5),
+      ...shuffledWithAvatar.slice(5),
+      ...shuffledWithoutAvatar,
+    ];
+
+    setParticipants(prioritizedList);
     setIsLoading(false);
   };
 
