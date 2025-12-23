@@ -197,7 +197,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
               <Button
                 size="sm"
                 onClick={() => setShowCreateDialog(true)}
-                className="px-2 sm:px-3"
+                className="px-2 sm:px-3 bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90"
               >
                 <Plus className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Create Plan</span>

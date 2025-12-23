@@ -83,9 +83,9 @@ export function PrivateChatDialog({
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
         )}
-        <DialogHeader className="border-b border-border/50 pb-4">
+        <DialogHeader className="border-b border-black/10 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-black/20 shadow-sm">
               {otherUserAvatar ? (
                 <img
                   src={otherUserAvatar}
@@ -93,10 +93,10 @@ export function PrivateChatDialog({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User className="w-5 h-5 text-muted-foreground" />
+                <User className="w-5 h-5 text-black/60" />
               )}
             </div>
-            <DialogTitle className="font-display text-lg">
+            <DialogTitle className="font-display text-lg text-black">
               {otherUserName || "Shaker"}
             </DialogTitle>
           </div>
@@ -159,7 +159,7 @@ export function PrivateChatDialog({
               type="submit"
               size="icon"
               disabled={!newMessage.trim() || isSending}
-              className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90"
+              className="bg-shake-green text-white hover:bg-shake-green/90"
             >
               {isSending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
