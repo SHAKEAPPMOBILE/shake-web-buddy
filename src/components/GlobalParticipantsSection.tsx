@@ -48,18 +48,13 @@ export function GlobalParticipantsSection() {
   const { user, isPremium } = useAuth();
   const isInitialLoad = useRef(true);
 
-  const fetchTodaysParticipants = async () => {
+  const fetchRecentParticipants = async () => {
     setIsLoading(true);
 
-    // Get today's start (midnight UTC)
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-
-    // Get users who signed up today (profiles created today)
+    // Get all users who signed up (ordered by most recent)
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("user_id, name, avatar_url, created_at")
-      .gte("created_at", todayStart.toISOString())
       .order("created_at", { ascending: false });
 
     if (profilesError) {
@@ -89,7 +84,7 @@ export function GlobalParticipantsSection() {
   };
 
   useEffect(() => {
-    fetchTodaysParticipants();
+    fetchRecentParticipants();
 
     // Subscribe to real-time updates on profiles table (new signups)
     const profilesChannel = supabase
@@ -131,7 +126,7 @@ export function GlobalParticipantsSection() {
           }
           
           // Refresh the list
-          fetchTodaysParticipants();
+          fetchRecentParticipants();
         }
       )
       .subscribe();
@@ -142,7 +137,7 @@ export function GlobalParticipantsSection() {
     }, 2000);
 
     // Also refresh every 30 seconds as backup
-    const interval = setInterval(fetchTodaysParticipants, 30000);
+    const interval = setInterval(fetchRecentParticipants, 30000);
     
     return () => {
       supabase.removeChannel(profilesChannel);
@@ -216,7 +211,7 @@ export function GlobalParticipantsSection() {
           <Users className="w-4 h-4 text-shake-yellow" />
           <span className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">{totalCount}</span>{" "}
-            new {totalCount === 1 ? "member" : "members"} today
+            {totalCount === 1 ? "Shaker" : "Shakers"}
           </span>
         </div>
       </button>
@@ -225,7 +220,7 @@ export function GlobalParticipantsSection() {
       <Dialog open={showListDialog} onOpenChange={setShowListDialog}>
         <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
           <DialogHeader>
-            <DialogTitle className="font-display">New Members Today</DialogTitle>
+            <DialogTitle className="font-display">Shakers who joined recently</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -235,7 +230,7 @@ export function GlobalParticipantsSection() {
               </div>
             ) : participants.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No one has joined today yet. Be the first!
+                No Shakers yet. Be the first!
               </p>
             ) : (
               <>

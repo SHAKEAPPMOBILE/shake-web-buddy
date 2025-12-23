@@ -274,7 +274,7 @@ export function MyActivitiesDialog({
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[320px] overflow-y-auto">
               {activities.map((activity) => (
                 <button
                   key={activity.id}
