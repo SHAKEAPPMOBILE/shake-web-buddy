@@ -321,7 +321,7 @@ export function PlanGroupChatDialog({
                 <span className="truncate">{getActivityLabel(activity.activity_type)}</span>
               </DialogTitle>
               <p className="text-sm text-muted-foreground truncate">
-                {activity.city} • {format(new Date(activity.scheduled_for), "EEE, MMM d 'at' h:mm a")}
+                {activity.city} • {format(new Date(activity.scheduled_for), "EEE, MMM d")}
               </p>
               <button
                 className="text-xs text-muted-foreground/70 mt-0.5 hover:underline cursor-pointer text-left"

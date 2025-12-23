@@ -301,7 +301,7 @@ export function MyActivitiesDialog({
                     </p>
                     {activity.scheduled_for && (
                       <p className="text-xs text-muted-foreground/70 mt-1">
-                        {format(new Date(activity.scheduled_for), "EEE, MMM d 'at' h:mm a")}
+                        {format(new Date(activity.scheduled_for), "EEE, MMM d")}
                       </p>
                     )}
                   </div>
