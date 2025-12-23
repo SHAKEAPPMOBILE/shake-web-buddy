@@ -111,6 +111,38 @@ export function HeroSection() {
               <span className="text-gradient">SHAKE up your life.</span>
             </h1>
 
+            {/* Shaking Phone Illustration */}
+            <div 
+              className="relative flex justify-center animate-fade-up"
+              style={{ animationDelay: "150ms" }}
+            >
+              <div className="relative">
+                {/* Motion lines - left side */}
+                <div className="absolute -left-8 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+                  <div className="w-6 h-0.5 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: "0ms" }} />
+                  <div className="w-8 h-0.5 bg-shake-coral/50 rounded-full animate-pulse" style={{ animationDelay: "100ms" }} />
+                  <div className="w-5 h-0.5 bg-accent/50 rounded-full animate-pulse" style={{ animationDelay: "200ms" }} />
+                </div>
+                
+                {/* Motion lines - right side */}
+                <div className="absolute -right-8 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+                  <div className="w-5 h-0.5 bg-accent/50 rounded-full animate-pulse" style={{ animationDelay: "50ms" }} />
+                  <div className="w-8 h-0.5 bg-shake-coral/50 rounded-full animate-pulse" style={{ animationDelay: "150ms" }} />
+                  <div className="w-6 h-0.5 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: "250ms" }} />
+                </div>
+
+                {/* Phone body */}
+                <div className="relative w-16 h-28 md:w-20 md:h-36 bg-gradient-to-b from-card to-card/80 rounded-2xl border-2 border-border shadow-xl animate-shake">
+                  {/* Phone screen */}
+                  <div className="absolute inset-2 bg-gradient-to-br from-primary/20 via-accent/10 to-shake-coral/20 rounded-xl flex items-center justify-center">
+                    <span className="text-2xl md:text-3xl">🤝</span>
+                  </div>
+                  {/* Phone notch */}
+                  <div className="absolute top-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-border rounded-full" />
+                </div>
+              </div>
+            </div>
+
             {/* Subheading */}
             <p 
               className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-up"
