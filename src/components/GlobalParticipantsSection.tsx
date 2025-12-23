@@ -212,8 +212,14 @@ export function GlobalParticipantsSection() {
   const blurredParticipants = participants.slice(FREE_VISIBLE_COUNT);
   const hasMoreParticipants = blurredParticipants.length > 0;
 
-  // Preview avatars for the badge - ONLY show users with profile pictures (up to 5)
-  const previewAvatars = participants.filter(p => p.avatar_url).slice(0, 5);
+  // Preview avatars for the badge - show 5 DIFFERENT users with profile pictures
+  const previewAvatars = Array.from(
+    new Map(
+      participants
+        .filter((p) => Boolean(p.avatar_url))
+        .map((p) => [p.user_id, p] as const)
+    ).values()
+  ).slice(0, 5);
 
   if (totalCount === 0 && !isLoading) {
     return null;
