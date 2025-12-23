@@ -114,17 +114,9 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
-          className="sm:max-w-4xl h-[80vh] max-h-[90vh] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-border/50 overflow-hidden [&>button]:hidden"
+          className="sm:max-w-4xl h-[80vh] max-h-[90vh] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-border/50 overflow-hidden [&>button.dialog-close]:text-white [&>button.dialog-close]:bg-black/50 [&>button.dialog-close]:hover:bg-black/70 [&>button.dialog-close]:flex"
           {...(isMobile ? swipeHandlers : {})}
         >
-          {/* Custom close button - white and positioned to avoid overlap */}
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute right-3 top-3 z-50 rounded-sm p-1 text-white bg-black/50 hover:bg-black/70 transition-colors flex items-center justify-center"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </button>
           {/* Swipe indicator for mobile */}
           {isMobile && (
             <div className="flex justify-center py-2 shrink-0">

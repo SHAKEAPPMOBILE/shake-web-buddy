@@ -144,9 +144,9 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
       if (!open) resetForm();
       onOpenChange(open);
     }}>
-      <DialogContent 
-        className="sm:max-w-lg bg-card/95 backdrop-blur-xl border-border/50 max-h-[90vh] overflow-y-auto"
-        {...(isMobile ? swipeHandlers : {})}
+        <DialogContent 
+          className="sm:max-w-lg bg-card/95 backdrop-blur-xl border-border/50 max-h-[90vh] overflow-y-auto [&>button.dialog-close]:text-white [&>button.dialog-close]:bg-black/50 [&>button.dialog-close]:hover:bg-black/70"
+          {...(isMobile ? swipeHandlers : {})}
       >
         {isMobile && (
           <div className="flex justify-center py-2 shrink-0">
