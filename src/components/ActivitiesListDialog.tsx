@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { Calendar, MapPin, Plus, Trash2, Users } from "lucide-react";
 import { useUserActivities, UserActivity } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
-import { getActivityEmoji, getActivityLabel, getActivityColor } from "@/data/activityTypes";
+import { getActivityEmoji, getActivityLabel, getActivityColor, ACTIVITY_TYPES } from "@/data/activityTypes";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -144,11 +144,15 @@ export function ActivitiesListDialog({
                           background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
                         }}
                       >
-                        <div className={cn(
-                          "w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0",
-                          getActivityColor(activity.activity_type)
-                        )}>
-                          {getActivityEmoji(activity.activity_type)}
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 bg-white shadow-md">
+                          {(() => {
+                            const activityData = ACTIVITY_TYPES.find(a => a.id === activity.activity_type);
+                            return activityData?.icon ? (
+                              <img src={activityData.icon} alt={activityData.label} className="w-8 h-8 object-contain" />
+                            ) : (
+                              <span>{getActivityEmoji(activity.activity_type)}</span>
+                            );
+                          })()}
                         </div>
 
                         <div className="flex-1 min-w-0 overflow-hidden">

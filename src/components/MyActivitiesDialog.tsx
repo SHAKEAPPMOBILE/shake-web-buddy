@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
-import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
+import { getActivityEmoji, getActivityLabel, ACTIVITY_TYPES } from "@/data/activityTypes";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 
@@ -284,8 +284,15 @@ export function MyActivitiesDialog({
                     background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
                   }}
                 >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
-                    {getActivityEmoji(activity.activity_type)}
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-2xl shadow-md">
+                    {(() => {
+                      const activityData = ACTIVITY_TYPES.find(a => a.id === activity.activity_type);
+                      return activityData?.icon ? (
+                        <img src={activityData.icon} alt={activityData.label} className="w-8 h-8 object-contain" />
+                      ) : (
+                        <span>{getActivityEmoji(activity.activity_type)}</span>
+                      );
+                    })()}
                   </div>
                   
                   <div className="flex-1 min-w-0">

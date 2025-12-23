@@ -236,27 +236,20 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                       className="flex flex-col items-center justify-center gap-2 transition-all duration-300 relative group py-2 disabled:opacity-50"
                     >
                       <div className="relative">
+                        {/* White circular background for all icons */}
                         <div 
                           className={`
-                            rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden relative
-                            ${activity.color}
-                            ${isCenter ? 'w-24 h-24 scale-100' : 'w-16 h-16 scale-90 opacity-60'}
+                            rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden relative bg-white
+                            ${isCenter ? 'w-24 h-24 scale-100 ring-4 ring-foreground/20' : 'w-16 h-16 scale-90 opacity-80'}
                             ${selectingId === activity.id ? 'animate-pulse scale-110 ring-4 ring-primary/50' : ''}
-                            ${isCenter && !selectingId ? 'active:scale-95' : ''}
+                            ${isCenter && !selectingId ? 'active:scale-95 shadow-lg' : 'shadow-md'}
                           `}
                         >
-                          {activity.bgImage && (
-                            <img 
-                              src={activity.bgImage} 
-                              alt="" 
-                              className="absolute inset-0 w-full h-full object-cover opacity-30"
-                            />
-                          )}
                           {activity.icon ? (
                             <img 
                               src={activity.icon} 
                               alt={activity.label} 
-                              className={`object-cover rounded-full transition-all duration-300 relative z-10 ${isCenter ? 'w-16 h-16' : 'w-10 h-10'}`}
+                              className={`object-contain transition-all duration-300 relative z-10 ${isCenter ? 'w-14 h-14' : 'w-9 h-9'}`}
                             />
                           ) : (
                             <span className={`transition-all duration-300 relative z-10 ${isCenter ? 'text-4xl' : 'text-2xl'}`}>
