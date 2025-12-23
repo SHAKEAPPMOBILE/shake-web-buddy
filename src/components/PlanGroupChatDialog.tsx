@@ -310,21 +310,21 @@ export function PlanGroupChatDialog({
           </div>
         )}
         {/* Header */}
-        <DialogHeader className="p-4 border-b border-border/50">
+        <DialogHeader className="p-4 border-b border-black/10">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
+            <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-lg font-display flex items-center gap-2">
+              <DialogTitle className="text-lg font-display flex items-center gap-2 text-black">
                 <span>{getActivityEmoji(activity.activity_type)}</span>
                 <span className="truncate">{getActivityLabel(activity.activity_type)}</span>
               </DialogTitle>
-              <p className="text-sm text-muted-foreground truncate">
+              <p className="text-sm text-black/60 truncate">
                 {activity.city} • {format(new Date(activity.scheduled_for), "EEE, MMM d")}
               </p>
               <button
-                className="text-xs text-muted-foreground/70 mt-0.5 hover:underline cursor-pointer text-left"
+                className="text-xs text-black/50 mt-0.5 hover:underline cursor-pointer text-left"
                 onClick={() => {
                   setSelectedUserProfile({
                     userId: activity.user_id,
@@ -337,7 +337,7 @@ export function PlanGroupChatDialog({
               </button>
             </div>
             <button
-              className="flex items-center gap-1 text-muted-foreground shrink-0 hover:text-foreground transition-colors"
+              className="flex items-center gap-1 text-black/70 shrink-0 hover:text-black transition-colors"
               onClick={() => setShowParticipantsDialog(true)}
             >
               <Users className="w-4 h-4" />
@@ -458,7 +458,7 @@ export function PlanGroupChatDialog({
               <Button variant="ghost" size="icon" onClick={() => setPendingAudio(null)}>
                 <Trash2 className="w-4 h-4" />
               </Button>
-              <Button onClick={handleSendMessage} disabled={isSending} className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90">
+              <Button onClick={handleSendMessage} disabled={isSending} className="bg-shake-green text-white hover:bg-shake-green/90">
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
@@ -477,7 +477,7 @@ export function PlanGroupChatDialog({
                 disabled={!user}
                 className="flex-1"
               />
-              <Button onClick={handleSendMessage} disabled={!message.trim() || isSending || !user} className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90">
+              <Button onClick={handleSendMessage} disabled={!message.trim() || isSending || !user} className="bg-shake-green text-white hover:bg-shake-green/90">
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>

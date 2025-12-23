@@ -346,33 +346,33 @@ export function GroupChatDialog({
           </div>
         )}
         {/* Header */}
-        <DialogHeader className="p-4 border-b border-border/50">
+        <DialogHeader className="p-4 border-b border-black/10">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
+            <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex-1">
-              <DialogTitle className="text-lg font-display">{title}</DialogTitle>
-              <p className="text-sm text-muted-foreground">{formattedDate} • {formattedTime}</p>
-              <p className="text-lg font-display text-foreground mt-1">Suggested venue</p>
+              <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
+              <p className="text-sm text-black/60">{formattedDate} • {formattedTime}</p>
+              <p className="text-lg font-display text-black mt-1">Suggested venue</p>
               {mapsUrl ? (
                 <a 
                   href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-shake-yellow hover:text-shake-yellow/80 transition-colors flex items-center gap-1 group"
+                  className="text-sm text-shake-green hover:text-shake-green/80 transition-colors flex items-center gap-1 group"
                 >
                   <MapPin className="w-3 h-3" />
                   <span className="group-hover:underline">{location}</span>
                 </a>
               ) : (
-                <p className="text-sm text-muted-foreground/70">{location}</p>
+                <p className="text-sm text-black/50">{location}</p>
               )}
             </div>
             {showAttendees && (
               <button 
                 onClick={() => setShowParticipantsList(true)}
-                className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 text-black/70 hover:text-black transition-colors"
               >
                 <Users className="w-4 h-4" />
                 <span className="text-sm">{attendeeCount}</span>
@@ -382,7 +382,7 @@ export function GroupChatDialog({
               variant="ghost" 
               size="icon" 
               onClick={handleMuteToggle}
-              className="shrink-0"
+              className="shrink-0 text-black/70 hover:text-black hover:bg-black/10"
               title={isMuted ? "Unmute notifications" : "Mute notifications"}
             >
               {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
@@ -391,7 +391,7 @@ export function GroupChatDialog({
               variant="ghost" 
               size="icon" 
               onClick={handleLeaveActivity}
-              className="shrink-0 text-destructive hover:text-destructive"
+              className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
               title="Leave activity"
             >
               <LogOut className="w-4 h-4" />
