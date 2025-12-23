@@ -7,7 +7,7 @@ export function HowItWorks() {
     {
       icon: <UserPlus className="w-8 h-8" />,
       title: "Sign Up",
-      description: "Create your account with email or social login in seconds.",
+      description: "Create your account with your phone number.",
       color: "from-primary to-shake-coral",
       isAvatar: false,
     },
