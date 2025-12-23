@@ -84,11 +84,11 @@ export function HeroSection() {
     setShowActivityDialog(true);
   };
 
-  // Stop initial phone shake after 7 seconds
+  // Stop initial phone shake after 5 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setPhoneInitialShake(false);
-    }, 7000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, []);
 
