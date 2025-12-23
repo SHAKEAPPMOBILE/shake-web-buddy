@@ -239,10 +239,10 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                               key={activity.id}
                               onClick={() => handleActivityClick(activity)}
                               className={cn(
-                                "w-full flex items-center gap-2 p-3 rounded-lg text-left transition-colors",
+                                "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
                                 selectedActivity?.id === activity.id
-                                  ? "bg-primary/10 border border-primary/30"
-                                  : "bg-muted/50 hover:bg-muted"
+                                  ? "bg-gradient-to-r from-[hsl(270,50%,25%)/0.9] to-[hsl(250,40%,20%)/0.8] border border-primary/30"
+                                  : "bg-gradient-to-r from-[hsl(270,30%,20%)/0.7] to-[hsl(250,25%,15%)/0.6] hover:from-[hsl(270,35%,25%)/0.8] hover:to-[hsl(250,30%,20%)/0.7]"
                               )}
                             >
                               <div
@@ -255,7 +255,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1">
-                                  <p className="font-medium text-sm truncate">
+                                  <p className="font-medium text-sm truncate text-white">
                                     {getActivityLabel(activity.activity_type)}
                                   </p>
                                   {isOwner && (
@@ -264,19 +264,16 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {activity.city}
-                                </p>
-                                <p className="text-xs text-muted-foreground/70">
-                                  {format(new Date(activity.scheduled_for), "MMM d, h:mm a")}
+                                <p className="text-xs text-white/70 truncate">
+                                  Scheduled for {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
                                 </p>
                               </div>
                               <div className="flex flex-col items-end gap-1 shrink-0">
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1 text-xs text-white/70">
                                   <Users className="w-3 h-3" />
                                   <span>{activity.participant_count}</span>
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+                                <ChevronRight className="w-4 h-4 text-white/50" />
                               </div>
                             </button>
                           );
@@ -329,10 +326,10 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                             key={activity.id}
                             onClick={() => handleActivityClick(activity)}
                             className={cn(
-                              "w-full flex items-center gap-2 p-2 rounded-lg text-left transition-colors",
+                              "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
                               selectedActivity?.id === activity.id
-                                ? "bg-primary/10 border border-primary/30"
-                                : "bg-muted/50 hover:bg-muted"
+                                ? "bg-gradient-to-r from-[hsl(270,50%,25%)/0.9] to-[hsl(250,40%,20%)/0.8] border border-primary/30"
+                                : "bg-gradient-to-r from-[hsl(270,30%,20%)/0.7] to-[hsl(250,25%,15%)/0.6] hover:from-[hsl(270,35%,25%)/0.8] hover:to-[hsl(250,30%,20%)/0.7]"
                             )}
                           >
                             <div
@@ -345,7 +342,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1">
-                                <p className="font-medium text-sm truncate">
+                                <p className="font-medium text-sm truncate text-white">
                                   {getActivityLabel(activity.activity_type)}
                                 </p>
                                 {isOwner && (
@@ -354,19 +351,16 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {activity.city}
-                              </p>
-                              <p className="text-xs text-muted-foreground/70">
-                                {format(new Date(activity.scheduled_for), "MMM d, h:mm a")}
+                              <p className="text-xs text-white/70">
+                                Scheduled for {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
                               </p>
                             </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1 text-xs text-white/70">
                                 <Users className="w-3 h-3" />
                                 <span>{activity.participant_count}</span>
                               </div>
-                              <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+                              <ChevronRight className="w-4 h-4 text-white/50" />
                             </div>
                           </button>
                         );
