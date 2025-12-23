@@ -75,7 +75,7 @@ export function PrivateChatDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50 flex flex-col max-h-[80vh]"
+        className="sm:max-w-md bg-[hsl(50,40%,92%)] backdrop-blur-xl border-border/50 flex flex-col max-h-[80vh]"
         {...(isMobile ? swipeHandlers : {})}
       >
         {isMobile && (
