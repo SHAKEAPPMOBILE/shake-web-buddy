@@ -381,7 +381,7 @@ export function PlanGroupChatDialog({
                   <div className={`flex-1 max-w-[70%] ${isOwnMessage ? "text-right" : ""}`}>
                     <div className={`flex items-baseline gap-2 ${isOwnMessage ? "justify-end" : ""}`}>
                       <button
-                        className={`font-semibold text-sm ${!isOwnMessage ? "hover:underline cursor-pointer" : ""}`}
+                        className={`font-semibold text-sm text-black ${!isOwnMessage ? "hover:underline cursor-pointer" : ""}`}
                         onClick={() => {
                           if (!isOwnMessage) {
                             setSelectedUserProfile({
@@ -401,10 +401,10 @@ export function PlanGroupChatDialog({
                     </div>
                     <div className={`flex items-center gap-1 ${isOwnMessage ? "flex-row-reverse" : ""}`}>
                       <div
-                        className={`text-sm text-foreground/90 mt-1 p-2 rounded-lg inline-block ${
+                        className={`text-sm mt-1 p-2 rounded-lg inline-block ${
                           isOwnMessage
-                            ? "bg-primary/20 text-foreground"
-                            : "bg-muted"
+                            ? "bg-black text-white"
+                            : "bg-blue-500 text-white"
                         }`}
                       >
                         {msg.audio_url ? (

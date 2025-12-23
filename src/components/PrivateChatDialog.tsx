@@ -125,14 +125,14 @@ export function PrivateChatDialog({
                     <div
                       className={`max-w-[80%] px-3 py-2 rounded-2xl ${
                         isMe
-                          ? "bg-shake-yellow text-shake-dark rounded-br-sm"
-                          : "bg-muted text-foreground rounded-bl-sm"
+                          ? "bg-black text-white rounded-br-sm"
+                          : "bg-blue-500 text-white rounded-bl-sm"
                       }`}
                     >
                       <p className="text-sm break-words">{msg.message}</p>
                       <p
                         className={`text-[10px] mt-1 ${
-                          isMe ? "text-shake-dark/60" : "text-muted-foreground"
+                          isMe ? "text-white/60" : "text-white/60"
                         }`}
                       >
                         {format(new Date(msg.created_at), "HH:mm")}
