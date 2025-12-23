@@ -301,7 +301,7 @@ export function PlanGroupChatDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-lg h-[600px] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-border/50"
+        className="sm:max-w-lg h-[600px] flex flex-col p-0 bg-[hsl(50,40%,92%)] backdrop-blur-xl border-border/50"
         {...(isMobile ? swipeHandlers : {})}
       >
         {isMobile && (
@@ -458,7 +458,7 @@ export function PlanGroupChatDialog({
               <Button variant="ghost" size="icon" onClick={() => setPendingAudio(null)}>
                 <Trash2 className="w-4 h-4" />
               </Button>
-              <Button onClick={handleSendMessage} disabled={isSending}>
+              <Button onClick={handleSendMessage} disabled={isSending} className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90">
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
@@ -477,7 +477,7 @@ export function PlanGroupChatDialog({
                 disabled={!user}
                 className="flex-1"
               />
-              <Button onClick={handleSendMessage} disabled={!message.trim() || isSending || !user}>
+              <Button onClick={handleSendMessage} disabled={!message.trim() || isSending || !user} className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90">
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
