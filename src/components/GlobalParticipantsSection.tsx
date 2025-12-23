@@ -48,11 +48,27 @@ export function GlobalParticipantsSection() {
   const { user, isPremium } = useAuth();
   const isInitialLoad = useRef(true);
 
-  // Fisher-Yates shuffle for randomization
-  const shuffleArray = <T,>(array: T[]): T[] => {
+  // Seeded random for consistent shuffling (changes twice per week)
+  const getWeekSeed = (): number => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const weekNumber = Math.floor((now.getTime() - new Date(year, 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+    const halfWeek = now.getDay() >= 3 ? 1 : 0; // Changes on Wednesday
+    return year * 1000 + weekNumber * 2 + halfWeek;
+  };
+
+  // Seeded shuffle - same seed produces same order
+  const seededShuffle = <T,>(array: T[], seed: number): T[] => {
     const shuffled = [...array];
+    let currentSeed = seed;
+    
+    const random = () => {
+      currentSeed = (currentSeed * 9301 + 49297) % 233280;
+      return currentSeed / 233280;
+    };
+
     for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;
@@ -93,14 +109,14 @@ export function GlobalParticipantsSection() {
     const withAvatar = allParticipants.filter(p => p.avatar_url);
     const withoutAvatar = allParticipants.filter(p => !p.avatar_url);
 
-    // Shuffle both groups for variety
-    const shuffledWithAvatar = shuffleArray(withAvatar);
-    const shuffledWithoutAvatar = shuffleArray(withoutAvatar);
+    // Use week-based seed for consistent ordering (changes twice per week)
+    const seed = getWeekSeed();
+    const shuffledWithAvatar = seededShuffle(withAvatar, seed);
+    const shuffledWithoutAvatar = seededShuffle(withoutAvatar, seed + 1);
 
-    // Take first 5 with avatars, then fill with the rest
+    // Prioritize users with avatars first
     const prioritizedList = [
-      ...shuffledWithAvatar.slice(0, 5),
-      ...shuffledWithAvatar.slice(5),
+      ...shuffledWithAvatar,
       ...shuffledWithoutAvatar,
     ];
 
@@ -196,8 +212,8 @@ export function GlobalParticipantsSection() {
   const blurredParticipants = participants.slice(FREE_VISIBLE_COUNT);
   const hasMoreParticipants = blurredParticipants.length > 0;
 
-  // Preview avatars for the badge (show up to 5)
-  const previewAvatars = participants.slice(0, 5);
+  // Preview avatars for the badge - ONLY show users with profile pictures (up to 5)
+  const previewAvatars = participants.filter(p => p.avatar_url).slice(0, 5);
 
   if (totalCount === 0 && !isLoading) {
     return null;
