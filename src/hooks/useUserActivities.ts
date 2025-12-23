@@ -178,7 +178,6 @@ export function useUserActivities(city: string) {
       return false;
     }
 
-    toast.success("Activity created!");
     await Promise.all([fetchActivities(), fetchMyActivities(), fetchMonthlyCount()]);
     setIsLoading(false);
     return true;
