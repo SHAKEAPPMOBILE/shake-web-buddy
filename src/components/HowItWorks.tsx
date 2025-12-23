@@ -49,42 +49,52 @@ export function HowItWorks() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {steps.map((step, index) => (
-            <div
-              key={step.title}
-              className="relative animate-fade-up"
-              style={{ animationDelay: `${index * 150}ms` }}
-            >
-              {/* Connector line */}
-              {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-12 left-1/2 w-full h-px bg-gradient-to-r from-border via-primary/30 to-border" />
-              )}
-              
-              <div className="relative bg-card rounded-2xl p-8 border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-xl group">
-                {/* Step number */}
-                <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-sm font-bold text-muted-foreground group-hover:border-primary group-hover:text-primary transition-colors">
-                  {index + 1}
-                </div>
+          {steps.map((step, index) => {
+            // Vibrant card background gradients
+            const cardGradients = [
+              "bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500",
+              "bg-gradient-to-br from-emerald-500 via-green-500 to-teal-500",
+              "bg-gradient-to-br from-orange-500 via-red-400 to-rose-500",
+              "bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-500",
+            ];
+            
+            return (
+              <div
+                key={step.title}
+                className="relative animate-fade-up"
+                style={{ animationDelay: `${index * 150}ms` }}
+              >
+                {/* Connector line */}
+                {index < steps.length - 1 && (
+                  <div className="hidden lg:block absolute top-12 left-1/2 w-full h-px bg-gradient-to-r from-white/20 via-white/40 to-white/20" />
+                )}
                 
-                {/* Icon */}
-                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center text-primary-foreground mb-6 shadow-lg group-hover:scale-110 transition-transform`}>
-                  {step.isAvatar ? (
-                    <div className="flex -space-x-2">
-                      <img src={avatar3} alt="" className="w-8 h-8 rounded-full" />
-                      <img src={avatar4} alt="" className="w-8 h-8 rounded-full" />
-                    </div>
-                  ) : step.icon}
+                <div className={`relative ${cardGradients[index]} rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] group`}>
+                  {/* Step number */}
+                  <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center text-sm font-bold text-white group-hover:bg-white/30 transition-colors">
+                    {index + 1}
+                  </div>
+                  
+                  {/* Icon */}
+                  <div className="w-16 h-16 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                    {step.isAvatar ? (
+                      <div className="flex -space-x-2">
+                        <img src={avatar3} alt="" className="w-8 h-8 rounded-full border-2 border-white/50" />
+                        <img src={avatar4} alt="" className="w-8 h-8 rounded-full border-2 border-white/50" />
+                      </div>
+                    ) : step.icon}
+                  </div>
+                  
+                  <h3 className="text-xl font-display font-bold text-white mb-2">
+                    {step.title}
+                  </h3>
+                  <p className="text-white/80">
+                    {step.description}
+                  </p>
                 </div>
-                
-                <h3 className="text-xl font-display font-bold text-foreground mb-2">
-                  {step.title}
-                </h3>
-                <p className="text-muted-foreground">
-                  {step.description}
-                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
