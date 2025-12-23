@@ -301,7 +301,7 @@ export function PlanGroupChatDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-lg h-[600px] flex flex-col p-0 bg-[hsl(50,40%,92%)] backdrop-blur-xl border-border/50"
+        className="sm:max-w-lg h-[600px] flex flex-col p-0 bg-[hsl(50,40%,92%)] backdrop-blur-xl border-border/50 [&>button.dialog-close]:text-black"
         {...(isMobile ? swipeHandlers : {})}
       >
         {isMobile && (
