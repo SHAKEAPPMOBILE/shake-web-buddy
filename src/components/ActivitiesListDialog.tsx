@@ -139,7 +139,7 @@ export function ActivitiesListDialog({
                       <button
                         key={activity.id}
                         onClick={() => onSelectActivity(activity)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left group overflow-hidden"
+                        className="w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-[hsl(270,30%,20%)/0.7] to-[hsl(250,25%,15%)/0.6] hover:from-[hsl(270,35%,25%)/0.8] hover:to-[hsl(250,30%,20%)/0.7] transition-all text-left group overflow-hidden"
                       >
                         <div className={cn(
                           "w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0",
@@ -150,7 +150,7 @@ export function ActivitiesListDialog({
 
                         <div className="flex-1 min-w-0 overflow-hidden">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-semibold text-foreground truncate">
+                            <p className="font-semibold text-white truncate">
                               {getActivityLabel(activity.activity_type)}
                             </p>
                             {isOwner && (
@@ -160,12 +160,12 @@ export function ActivitiesListDialog({
                             )}
                           </div>
                           
-                          <p className="text-sm text-muted-foreground mt-1 truncate">
-                            {format(new Date(activity.scheduled_for), "EEE, MMM d")}
+                          <p className="text-sm text-white/70 mt-1 truncate">
+                            Scheduled for {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
                           </p>
 
                           <div className="flex items-center gap-3 mt-2">
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
+                            <div className="flex items-center gap-1 text-xs text-white/60 min-w-0">
                               <Avatar className="w-4 h-4 shrink-0">
                                 <AvatarImage src={activity.creator_avatar || ""} />
                                 <AvatarFallback className="text-[8px]">
@@ -174,7 +174,7 @@ export function ActivitiesListDialog({
                               </Avatar>
                               <span className="truncate">{activity.creator_name}</span>
                             </div>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                            <div className="flex items-center gap-1 text-xs text-white/60 shrink-0">
                               <Users className="w-3 h-3" />
                               <span>{activity.participant_count}</span>
                             </div>

@@ -279,7 +279,7 @@ export function MyActivitiesDialog({
                 <button
                   key={activity.id}
                   onClick={() => handleActivityClick(activity)}
-                  className="w-full flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left"
+                  className="w-full flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-[hsl(270,30%,20%)/0.7] to-[hsl(250,25%,15%)/0.6] hover:from-[hsl(270,35%,25%)/0.8] hover:to-[hsl(250,30%,20%)/0.7] transition-all text-left"
                 >
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
                     {getActivityEmoji(activity.activity_type)}
@@ -287,7 +287,7 @@ export function MyActivitiesDialog({
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold text-foreground">
+                      <p className="font-semibold text-white">
                         {getActivityLabel(activity.activity_type)}
                       </p>
                       <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1">
@@ -295,13 +295,13 @@ export function MyActivitiesDialog({
                         {activity.participant_count}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <p className="text-sm text-white/70 flex items-center gap-1 mt-0.5">
                       <MapPin className="w-3 h-3" />
                       {activity.city}
                     </p>
                     {activity.scheduled_for && (
-                      <p className="text-xs text-muted-foreground/70 mt-1">
-                        {format(new Date(activity.scheduled_for), "EEE, MMM d")}
+                      <p className="text-xs text-white/60 mt-1">
+                        Scheduled for {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
                       </p>
                     )}
                   </div>
