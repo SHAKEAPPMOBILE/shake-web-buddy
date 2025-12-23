@@ -27,7 +27,7 @@ interface PlansMapDialogProps {
 
 export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps) {
   const { user, isPremium } = useAuth();
-  const { activities, isLoading } = useAllActivities();
+  const { activities, isLoading, refetch: refetchActivities } = useAllActivities();
   const { joinActivity, hasJoinedActivity, myActivities } = useUserActivities(city);
   const isMobile = useIsMobile();
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
@@ -429,7 +429,13 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
       {/* Create Activity Dialog */}
       <CreateActivityDialog
         open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
+        onOpenChange={(open) => {
+          setShowCreateDialog(open);
+          // Refetch activities when dialog closes (activity may have been created)
+          if (!open) {
+            refetchActivities();
+          }
+        }}
         city={city}
       />
 

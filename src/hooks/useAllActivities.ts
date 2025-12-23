@@ -57,6 +57,7 @@ export function useAllActivities() {
 
   // Subscribe to realtime updates
   useEffect(() => {
+    // Initial fetch
     fetchActivities();
 
     const channel = supabase
@@ -68,7 +69,8 @@ export function useAllActivities() {
           schema: "public",
           table: "user_activities",
         },
-        () => {
+        (payload) => {
+          console.log("Realtime user_activities change:", payload);
           fetchActivities();
         }
       )
@@ -79,11 +81,14 @@ export function useAllActivities() {
           schema: "public",
           table: "activity_joins",
         },
-        () => {
+        (payload) => {
+          console.log("Realtime activity_joins change:", payload);
           fetchActivities();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("All activities channel status:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
