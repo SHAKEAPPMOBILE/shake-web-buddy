@@ -12,6 +12,7 @@ import { playNotificationSound } from "@/lib/notification-sound";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -59,6 +60,7 @@ export function PlanGroupChatDialog({
     userName: string | null;
     avatarUrl: string | null;
   } | null>(null);
+  const [showParticipantsDialog, setShowParticipantsDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { showNotification } = usePushNotifications();
@@ -321,14 +323,26 @@ export function PlanGroupChatDialog({
               <p className="text-sm text-muted-foreground truncate">
                 {activity.city} • {format(new Date(activity.scheduled_for), "EEE, MMM d 'at' h:mm a")}
               </p>
-              <p className="text-xs text-muted-foreground/70 mt-0.5">
+              <button
+                className="text-xs text-muted-foreground/70 mt-0.5 hover:underline cursor-pointer text-left"
+                onClick={() => {
+                  setSelectedUserProfile({
+                    userId: activity.user_id,
+                    userName: activity.creator_name || null,
+                    avatarUrl: activity.creator_avatar || null,
+                  });
+                }}
+              >
                 By {activity.creator_name}
-              </p>
+              </button>
             </div>
-            <div className="flex items-center gap-1 text-muted-foreground shrink-0">
+            <button
+              className="flex items-center gap-1 text-muted-foreground shrink-0 hover:text-foreground transition-colors"
+              onClick={() => setShowParticipantsDialog(true)}
+            >
               <Users className="w-4 h-4" />
               <span className="text-sm">{activity.participant_count}</span>
-            </div>
+            </button>
           </div>
         </DialogHeader>
 
@@ -481,6 +495,17 @@ export function PlanGroupChatDialog({
           avatarUrl={selectedUserProfile.avatarUrl}
         />
       )}
+
+      {/* Participants List Dialog */}
+      <PlanParticipantsDialog
+        open={showParticipantsDialog}
+        onOpenChange={setShowParticipantsDialog}
+        activity={activity}
+        onViewProfile={(userId, userName, avatarUrl) => {
+          setShowParticipantsDialog(false);
+          setSelectedUserProfile({ userId, userName, avatarUrl });
+        }}
+      />
     </Dialog>
   );
 }
