@@ -130,6 +130,7 @@ export function HeroSection() {
             >
               <div 
                 className="relative cursor-pointer"
+                onClick={handleShake}
                 onMouseEnter={() => setPhoneHovered(true)}
                 onMouseLeave={() => setPhoneHovered(false)}
               >
