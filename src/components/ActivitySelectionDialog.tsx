@@ -1,14 +1,14 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselApi,
 } from "@/components/ui/carousel";
-import { Star, Check, Clock } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 import { ACTIVITY_TYPES, getTimeBasedDefaultActivity } from "@/data/activityTypes";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -36,16 +36,35 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   const [showSuccess, setShowSuccess] = useState(false);
   const isMobile = useIsMobile();
   
+  // Rotating text for "Meet new..." phrases
+  const meetPhrases = useMemo(() => [
+    "Meet new people",
+    "Meet new friends",
+    "Meet a new buddy",
+    "Meet a new business partner",
+    "Meet a new love"
+  ], []);
+  const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+  const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  useEffect(() => {
+    if (open) {
+      phraseIntervalRef.current = setInterval(() => {
+        setCurrentPhraseIndex(prev => (prev + 1) % meetPhrases.length);
+      }, 2500);
+    }
+    return () => {
+      if (phraseIntervalRef.current) {
+        clearInterval(phraseIntervalRef.current);
+      }
+    };
+  }, [open, meetPhrases.length]);
+  
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
     threshold: 80,
     enabled: isMobile && !isCreatingPlan,
   });
-  
-  // Get favorite activity from localStorage
-  const favoriteActivity = useMemo(() => {
-    return localStorage.getItem('favoriteActivity');
-  }, [open]); // Re-check when dialog opens
 
   // Haptic feedback helper
   const triggerHaptic = useCallback((type: 'light' | 'medium' | 'heavy' = 'medium') => {
@@ -115,12 +134,6 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     }
   }, [user, onSelectActivity, triggerHaptic, createActivity, onOpenChange, onPlanCreated]);
 
-  // Quick select favorite activity
-  const handleSelectFavorite = useCallback(() => {
-    if (favoriteActivity) {
-      handleSelectActivity(favoriteActivity);
-    }
-  }, [favoriteActivity, handleSelectActivity]);
 
   // Set up the carousel API callback and scroll to time-based default on open
   useEffect(() => {
@@ -140,11 +153,6 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     };
   }, [api, onSelect]);
 
-  // Get favorite activity details for the star button
-  const favoriteActivityDetails = useMemo(() => {
-    if (!favoriteActivity) return null;
-    return ACTIVITY_TYPES.find(a => a.id === favoriteActivity);
-  }, [favoriteActivity]);
 
   // Success celebration view
   if (showSuccess) {
@@ -191,19 +199,12 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
           <p className="text-center text-sm text-muted-foreground mt-2">
             {user ? "Tap to create your plan!" : "Swipe to choose. Sign in to create plans!"}
           </p>
+          <p className="text-center text-base font-medium text-primary mt-3 h-6 transition-opacity duration-500">
+            {meetPhrases[currentPhraseIndex]}
+          </p>
         </DialogHeader>
         
         <div className="py-6 relative overflow-hidden">
-          {/* Favorite quick access - positioned in top right */}
-          {favoriteActivityDetails && user && (
-            <button
-              onClick={handleSelectFavorite}
-              disabled={isCreatingPlan}
-              className="absolute top-0 right-2 z-10 p-2 rounded-full bg-shake-yellow/20 hover:bg-shake-yellow/30 hover:scale-105 transition-all duration-200 group animate-[pulse_1s_ease-in-out_3] hover:animate-none shadow-[0_0_12px_rgba(255,215,0,0.3)] disabled:opacity-50"
-            >
-              <Star className="w-4 h-4 text-shake-yellow fill-shake-yellow group-hover:scale-110 transition-transform" />
-            </button>
-          )}
           <Carousel
             setApi={setApi}
             opts={{
