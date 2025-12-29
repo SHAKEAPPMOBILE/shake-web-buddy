@@ -145,9 +145,9 @@ export function HeroSection() {
               <span className="text-gradient">SHAKE up your life.</span>
             </h1>
 
-            {/* Shaking Phone Illustration */}
+            {/* Shaking Phone Illustration with Explore Plans */}
             <div 
-              className="relative flex flex-col items-center animate-fade-up py-8 md:py-12"
+              className="relative flex items-center justify-center gap-6 animate-fade-up py-8 md:py-12"
               style={{ animationDelay: "150ms" }}
             >
               <div 
@@ -184,8 +184,8 @@ export function HeroSection() {
                 </div>
               </div>
 
-              {/* Explore Plans Icon - Right side of phone, near bottom */}
-              <div className="hidden md:flex flex-col items-center gap-2 absolute -right-2 bottom-2">
+              {/* Explore Plans Icon - Right side of phone */}
+              <div className="hidden md:flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={() => setShowPlansMap(true)}>
                   <MapPin className="w-6 h-6 text-primary" />
                 </div>
