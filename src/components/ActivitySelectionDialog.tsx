@@ -214,8 +214,8 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                         <div 
                           className={`
                             rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden relative bg-white
-                            ${isCenter ? 'w-24 h-24 scale-100 ring-4 ring-foreground/20' : 'w-16 h-16 scale-90 opacity-80'}
-                            ${selectingId === activity.id ? 'animate-pulse scale-110 ring-4 ring-primary/50' : ''}
+                            ${isCenter ? 'w-24 h-24 scale-100' : 'w-16 h-16 scale-90 opacity-80'}
+                            ${selectingId === activity.id ? 'animate-pulse scale-110' : ''}
                             ${isCenter && !selectingId ? 'active:scale-95 shadow-lg' : 'shadow-md'}
                           `}
                         >
