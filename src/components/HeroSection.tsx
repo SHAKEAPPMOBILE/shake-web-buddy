@@ -173,18 +173,19 @@ export function HeroSection() {
                 {/* Phone body */}
                 <div className={`relative w-20 h-36 md:w-24 md:h-44 bg-gradient-to-b from-card to-card/80 rounded-3xl border-2 border-border shadow-2xl transition-transform ${isPhoneShaking ? 'animate-shake' : ''}`}>
                   {/* Phone screen with Let's Shake circle */}
-                  <div className="absolute inset-2 bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 rounded-2xl flex items-center justify-center">
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-shake-green/30 border-2 border-shake-green/50 flex items-center justify-center">
-                      <span className="text-2xl md:text-3xl">🤝</span>
+                  <div className="absolute inset-2 bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 rounded-2xl flex flex-col items-center justify-center gap-1">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-shake-green/30 border-2 border-shake-green/50 flex items-center justify-center">
+                      <span className="text-xl md:text-2xl">🤝</span>
                     </div>
+                    <span className="text-[8px] md:text-[10px] font-semibold text-foreground/80">Let's Shake</span>
                   </div>
                   {/* Phone notch */}
                   <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-border rounded-full" />
                 </div>
               </div>
 
-              {/* Explore Plans Icon - Below phone */}
-              <div className="flex flex-col items-center gap-2 mt-6">
+              {/* Explore Plans Icon - Right side of phone */}
+              <div className="hidden md:flex flex-col items-center gap-2 absolute right-0 top-1/2 -translate-y-1/2 translate-x-20 lg:translate-x-24">
                 <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={() => setShowPlansMap(true)}>
                   <MapPin className="w-6 h-6 text-primary" />
                 </div>
