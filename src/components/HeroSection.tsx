@@ -14,7 +14,6 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 import avatar1 from "@/assets/avatar-1.png";
 import avatar2 from "@/assets/avatar-2.png";
 import { GlobalParticipantsSection } from "./GlobalParticipantsSection";
-
 export function HeroSection() {
   const [isShaking, setIsShaking] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
@@ -24,22 +23,22 @@ export function HeroSection() {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [phoneInitialShake, setPhoneInitialShake] = useState(true);
   const [phoneHovered, setPhoneHovered] = useState(false);
-  const { user } = useAuth();
-  const { selectedCity } = useCity();
+  const {
+    user
+  } = useAuth();
+  const {
+    selectedCity
+  } = useCity();
   const navigate = useNavigate();
-  const { joinActivity, getActivityJoinCount } = useActivityJoins(selectedCity);
+  const {
+    joinActivity,
+    getActivityJoinCount
+  } = useActivityJoins(selectedCity);
 
   // Rotating text for "Meet new..." phrases
-  const meetPhrases = useMemo(() => [
-    "Meet new people.",
-    "Meet new friends.",
-    "Meet a new buddy.",
-    "Meet a partner.",
-    "Meet a new love."
-  ], []);
+  const meetPhrases = useMemo(() => ["Meet new people.", "Meet new friends.", "Meet a new buddy.", "Meet a partner.", "Meet a new love."], []);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
   useEffect(() => {
     phraseIntervalRef.current = setInterval(() => {
       setCurrentPhraseIndex(prev => (prev + 1) % meetPhrases.length);
@@ -50,20 +49,17 @@ export function HeroSection() {
       }
     };
   }, [meetPhrases.length]);
-
   const handleShake = () => {
     if (!user) {
       navigate("/auth");
       return;
     }
-    
     setIsShaking(true);
     setTimeout(() => {
       setIsShaking(false);
       setShowActivityDialog(true);
     }, 600);
   };
-
   const handleSelectActivity = async (activity: string) => {
     if (!user) {
       toast.error("Please sign in to join an activity");
@@ -71,10 +67,9 @@ export function HeroSection() {
       navigate("/auth");
       return;
     }
-
     setSelectedActivity(activity);
     setShowActivityDialog(false);
-    
+
     // Join the activity
     const result = await joinActivity(activity);
     if (result.success) {
@@ -95,12 +90,10 @@ export function HeroSection() {
     // Open the plans map to show the new plan
     setShowPlansMap(true);
   }, []);
-
   const handleClockAnimationComplete = useCallback(() => {
     setShowClockAnimation(false);
     setShowChatDialog(true);
   }, []);
-
   const handleBackToActivities = () => {
     setShowChatDialog(false);
     setShowActivityDialog(true);
@@ -113,11 +106,8 @@ export function HeroSection() {
     }, 5000);
     return () => clearTimeout(timer);
   }, []);
-
   const isPhoneShaking = phoneInitialShake || phoneHovered;
-
-  return (
-    <>
+  return <>
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-28 md:pt-36">
         {/* Background gradient effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent" />
@@ -136,38 +126,43 @@ export function HeroSection() {
             </div>
 
             {/* Main heading */}
-            <h1 
-              className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-tight animate-fade-up"
-              style={{ animationDelay: "100ms" }}
-            >
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-tight animate-fade-up" style={{
+            animationDelay: "100ms"
+          }}>
               <span className="transition-opacity duration-500">{meetPhrases[currentPhraseIndex]}</span>
               <br />
               <span className="text-gradient">SHAKE up your life.</span>
             </h1>
 
             {/* Shaking Phone Illustration with Explore Plans */}
-            <div 
-              className="relative flex items-center justify-center animate-fade-up py-8 md:py-12"
-              style={{ animationDelay: "150ms" }}
-            >
-              <div 
-                className="relative cursor-pointer"
-                onClick={handleShake}
-                onMouseEnter={() => setPhoneHovered(true)}
-                onMouseLeave={() => setPhoneHovered(false)}
-              >
+            <div className="relative flex items-center justify-center animate-fade-up py-8 md:py-12" style={{
+            animationDelay: "150ms"
+          }}>
+              <div className="relative cursor-pointer" onClick={handleShake} onMouseEnter={() => setPhoneHovered(true)} onMouseLeave={() => setPhoneHovered(false)}>
                 {/* Motion lines - left side */}
                 <div className={`absolute -left-10 md:-left-14 top-1/2 -translate-y-1/2 flex flex-col gap-3 transition-opacity duration-300 ${isPhoneShaking ? 'opacity-100' : 'opacity-30'}`}>
-                  <div className={`w-8 h-1 bg-primary/70 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "0ms" }} />
-                  <div className={`w-12 h-1 bg-shake-coral/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "100ms" }} />
-                  <div className={`w-6 h-1 bg-accent/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "200ms" }} />
+                  <div className={`w-8 h-1 bg-primary/70 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
+                  animationDelay: "0ms"
+                }} />
+                  <div className={`w-12 h-1 bg-shake-coral/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
+                  animationDelay: "100ms"
+                }} />
+                  <div className={`w-6 h-1 bg-accent/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
+                  animationDelay: "200ms"
+                }} />
                 </div>
                 
                 {/* Motion lines - right side */}
                 <div className={`absolute -right-10 md:-right-14 top-1/2 -translate-y-1/2 flex flex-col gap-3 transition-opacity duration-300 ${isPhoneShaking ? 'opacity-100' : 'opacity-30'}`}>
-                  <div className={`w-6 h-1 bg-accent/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "50ms" }} />
-                  <div className={`w-12 h-1 bg-shake-coral/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "150ms" }} />
-                  <div className={`w-8 h-1 bg-primary/70 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{ animationDelay: "250ms" }} />
+                  <div className={`w-6 h-1 bg-accent/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
+                  animationDelay: "50ms"
+                }} />
+                  <div className={`w-12 h-1 bg-shake-coral/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
+                  animationDelay: "150ms"
+                }} />
+                  <div className={`w-8 h-1 bg-primary/70 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
+                  animationDelay: "250ms"
+                }} />
                 </div>
 
                 {/* Phone body */}
@@ -185,7 +180,10 @@ export function HeroSection() {
 
                 {/* Explore Plans Icon - Bottom right of phone */}
                 <div className="hidden md:flex flex-col items-center gap-2 absolute -right-16 -bottom-8">
-                  <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); setShowPlansMap(true); }}>
+                  <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={e => {
+                  e.stopPropagation();
+                  setShowPlansMap(true);
+                }}>
                     <MapPin className="w-6 h-6 text-primary" />
                   </div>
                   <span className="text-xs text-muted-foreground font-medium">Explore Plans</span>
@@ -194,27 +192,24 @@ export function HeroSection() {
             </div>
 
             {/* Subheading */}
-            <p 
-              className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-up pt-4"
-              style={{ animationDelay: "200ms" }}
-            >
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-up pt-4" style={{
+            animationDelay: "200ms"
+          }}>
               Join group activities like lunch, dinner, drinks and a hike. Connect with like-minded 
               people in your city and turn strangers into friends.
             </p>
 
             {/* Global participants count */}
-            <div 
-              className="flex justify-center animate-fade-up"
-              style={{ animationDelay: "250ms" }}
-            >
+            <div className="flex justify-center animate-fade-up" style={{
+            animationDelay: "250ms"
+          }}>
               <GlobalParticipantsSection />
             </div>
 
             {/* Stats */}
-            <div 
-              className="flex justify-center animate-fade-up mt-8"
-              style={{ animationDelay: "280ms" }}
-            >
+            <div className="flex justify-center animate-fade-up mt-8" style={{
+            animationDelay: "280ms"
+          }}>
               <div className="text-center">
                 <div className="text-3xl md:text-4xl font-display font-bold text-foreground">50+</div>
                 <div className="text-sm text-muted-foreground">Cities</div>
@@ -222,87 +217,61 @@ export function HeroSection() {
             </div>
 
             {/* CTA Buttons */}
-            <div 
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up"
-              style={{ animationDelay: "300ms" }}
-            >
-              <Button
-                variant="shake"
-                size="xl"
-                onClick={handleShake}
-                className={isShaking ? "animate-shake" : ""}
-              >
+            <div style={{
+            animationDelay: "300ms"
+          }} className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up">
+              <Button variant="shake" size="xl" onClick={handleShake} className={isShaking ? "animate-shake" : ""}>
                 <span className="text-shake-green text-xl">🤝</span>
                 Let's Shake!
               </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => setShowPlansMap(true)}
-                className="gap-2"
-              >
+              <Button variant="outline" size="lg" onClick={() => setShowPlansMap(true)} className="gap-2">
                 <MapPin className="w-5 h-5" />
                 Explore Plans
               </Button>
             </div>
 
             {/* Luma note - positioned between Let's Shake and How It Works */}
-            <p 
-              className="text-sm text-muted-foreground/70 animate-fade-up mt-16 md:mt-24"
-              style={{ animationDelay: "350ms" }}
-            >
+            <p className="text-sm text-muted-foreground/70 animate-fade-up mt-16 md:mt-24" style={{
+            animationDelay: "350ms"
+          }}>
               Previously, we operated on Luma, now here.
             </p>
         </div>
       </div>
 
       {/* Floating elements */}
-      <div className="absolute bottom-20 left-10 animate-float" style={{ animationDelay: "0s" }}>
+      <div className="absolute bottom-20 left-10 animate-float" style={{
+        animationDelay: "0s"
+      }}>
         <div className="w-12 h-12 rounded-xl bg-shake-coral/20 backdrop-blur flex items-center justify-center">
           <Zap className="w-6 h-6 text-shake-coral" />
         </div>
       </div>
-      <div className="absolute top-40 right-20 animate-float" style={{ animationDelay: "1s" }}>
+      <div className="absolute top-40 right-20 animate-float" style={{
+        animationDelay: "1s"
+      }}>
         <img src={avatar1} alt="" className="w-14 h-14 rounded-full border-2 border-background shadow-lg" />
       </div>
-      <div className="absolute top-60 right-32 animate-float" style={{ animationDelay: "1.5s" }}>
+      <div className="absolute top-60 right-32 animate-float" style={{
+        animationDelay: "1.5s"
+      }}>
         <img src={avatar2} alt="" className="w-12 h-12 rounded-full border-2 border-background shadow-lg" />
       </div>
-      <div className="absolute bottom-40 right-10 animate-float" style={{ animationDelay: "2s" }}>
+      <div className="absolute bottom-40 right-10 animate-float" style={{
+        animationDelay: "2s"
+      }}>
         <div className="w-12 h-12 rounded-xl bg-shake-purple/20 backdrop-blur flex items-center justify-center">
           <Shield className="w-6 h-6 text-shake-purple" />
         </div>
       </div>
       </section>
 
-      <ActivitySelectionDialog
-        open={showActivityDialog}
-        onOpenChange={setShowActivityDialog}
-        onSelectActivity={handleSelectActivity}
-        onPlanCreated={handlePlanCreated}
-        city={selectedCity}
-      />
+      <ActivitySelectionDialog open={showActivityDialog} onOpenChange={setShowActivityDialog} onSelectActivity={handleSelectActivity} onPlanCreated={handlePlanCreated} city={selectedCity} />
 
-      <ShakingClockAnimation
-        open={showClockAnimation}
-        onOpenChange={setShowClockAnimation}
-        onComplete={handleClockAnimationComplete}
-      />
+      <ShakingClockAnimation open={showClockAnimation} onOpenChange={setShowClockAnimation} onComplete={handleClockAnimationComplete} />
 
-      <GroupChatDialog
-        open={showChatDialog}
-        onOpenChange={setShowChatDialog}
-        activityType={selectedActivity}
-        onBack={handleBackToActivities}
-        attendeeCount={getActivityJoinCount(selectedActivity)}
-        city={selectedCity}
-      />
+      <GroupChatDialog open={showChatDialog} onOpenChange={setShowChatDialog} activityType={selectedActivity} onBack={handleBackToActivities} attendeeCount={getActivityJoinCount(selectedActivity)} city={selectedCity} />
 
-      <PlansMapDialog
-        open={showPlansMap}
-        onOpenChange={setShowPlansMap}
-        city={selectedCity}
-      />
-    </>
-  );
+      <PlansMapDialog open={showPlansMap} onOpenChange={setShowPlansMap} city={selectedCity} />
+    </>;
 }
