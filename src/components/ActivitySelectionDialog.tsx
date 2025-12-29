@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Carousel,
   CarouselContent,
@@ -35,30 +35,6 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const isMobile = useIsMobile();
-  
-  // Rotating text for "Meet new..." phrases
-  const meetPhrases = useMemo(() => [
-    "Meet new people",
-    "Meet new friends",
-    "Meet a new buddy",
-    "Meet a new business partner",
-    "Meet a new love"
-  ], []);
-  const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
-  const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
-  useEffect(() => {
-    if (open) {
-      phraseIntervalRef.current = setInterval(() => {
-        setCurrentPhraseIndex(prev => (prev + 1) % meetPhrases.length);
-      }, 2500);
-    }
-    return () => {
-      if (phraseIntervalRef.current) {
-        clearInterval(phraseIntervalRef.current);
-      }
-    };
-  }, [open, meetPhrases.length]);
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -198,9 +174,6 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
           <DialogTitle className="text-center text-2xl font-display">What's calling you today?</DialogTitle>
           <p className="text-center text-sm text-muted-foreground mt-2">
             {user ? "Tap to create your plan!" : "Swipe to choose. Sign in to create plans!"}
-          </p>
-          <p className="text-center text-base font-medium text-primary mt-3 h-6 transition-opacity duration-500">
-            {meetPhrases[currentPhraseIndex]}
           </p>
         </DialogHeader>
         

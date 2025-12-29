@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Zap, Shield, MapPin } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
@@ -28,6 +28,28 @@ export function HeroSection() {
   const { selectedCity } = useCity();
   const navigate = useNavigate();
   const { joinActivity, getActivityJoinCount } = useActivityJoins(selectedCity);
+
+  // Rotating text for "Meet new..." phrases
+  const meetPhrases = useMemo(() => [
+    "Meet new people.",
+    "Meet new friends.",
+    "Meet a new buddy.",
+    "Meet a new business partner.",
+    "Meet a new love."
+  ], []);
+  const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+  const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  useEffect(() => {
+    phraseIntervalRef.current = setInterval(() => {
+      setCurrentPhraseIndex(prev => (prev + 1) % meetPhrases.length);
+    }, 2500);
+    return () => {
+      if (phraseIntervalRef.current) {
+        clearInterval(phraseIntervalRef.current);
+      }
+    };
+  }, [meetPhrases.length]);
 
   const handleShake = () => {
     if (!user) {
@@ -118,7 +140,7 @@ export function HeroSection() {
               className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-tight animate-fade-up"
               style={{ animationDelay: "100ms" }}
             >
-              Meet new people.
+              <span className="transition-opacity duration-500">{meetPhrases[currentPhraseIndex]}</span>
               <br />
               <span className="text-gradient">SHAKE up your life.</span>
             </h1>
