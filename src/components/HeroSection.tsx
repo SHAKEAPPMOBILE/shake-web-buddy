@@ -195,7 +195,7 @@ export function HeroSection() {
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-up pt-4" style={{
             animationDelay: "200ms"
           }}>
-              Join group activities like lunch, dinner, drinks and a hike. Connect with like-minded 
+              Join group activities like lunch, dinner, drinks and more. Connect with like-minded 
               people in your city and turn strangers into friends.
             </p>
 
