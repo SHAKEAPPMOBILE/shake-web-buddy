@@ -9,9 +9,13 @@ interface VoiceRecorderProps {
   onAudioReady?: (blob: Blob, url: string) => void;
   onAudioClear?: () => void;
   disabled?: boolean;
+  highlighted?: boolean;
+  maxDuration?: number;
 }
 
-export function VoiceRecorder({ onAudioReady, onAudioClear, disabled }: VoiceRecorderProps) {
+const MAX_RECORDING_DURATION = 5; // 5 seconds max
+
+export function VoiceRecorder({ onAudioReady, onAudioClear, disabled, highlighted = false, maxDuration = MAX_RECORDING_DURATION }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -92,9 +96,16 @@ export function VoiceRecorder({ onAudioReady, onAudioClear, disabled }: VoiceRec
       setRecordingDuration(0);
       setLiveWaveform([]);
 
-      // Start duration timer
+      // Start duration timer with auto-stop at max duration
       durationIntervalRef.current = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
+        setRecordingDuration(prev => {
+          const newDuration = prev + 1;
+          if (newDuration >= maxDuration) {
+            // Auto-stop when max duration reached
+            setTimeout(() => stopRecording(), 0);
+          }
+          return newDuration;
+        });
       }, 1000);
 
       // Start live waveform visualization
@@ -210,9 +221,9 @@ export function VoiceRecorder({ onAudioReady, onAudioClear, disabled }: VoiceRec
       size="icon"
       onClick={startRecording}
       disabled={disabled}
-      className="shrink-0"
+      className={`shrink-0 ${highlighted ? 'bg-shake-green text-white hover:bg-shake-green/90 shadow-lg shadow-shake-green/30' : ''}`}
     >
-      <Mic className="w-4 h-4" />
+      <Mic className={`${highlighted ? 'w-5 h-5' : 'w-4 h-4'}`} />
     </Button>
   );
 }

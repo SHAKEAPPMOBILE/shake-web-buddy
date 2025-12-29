@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Loader2, Globe, MapPin, Trash2 } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Loader2, Globe, MapPin, Trash2, Mic } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,7 @@ import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -118,6 +119,11 @@ export function GroupChatDialog({
   const { leaveActivity } = useActivityJoins(city);
   const { onlineCount } = useOnlinePresence();
   const isMobile = useIsMobile();
+  
+  const { canSendAudio, remainingAudio, incrementAudioCount, FREE_AUDIO_LIMIT } = useAudioMessageLimit({
+    conversationType: 'activity',
+    conversationId: `${city}::${activityType}`,
+  });
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -221,6 +227,12 @@ export function GroupChatDialog({
         return;
       }
       
+      if (!canSendAudio) {
+        setShowPremiumDialog(true);
+        toast.error(`You've reached the ${FREE_AUDIO_LIMIT} audio message limit. Upgrade to Super-Human for unlimited audio!`);
+        return;
+      }
+      
       setIsSending(true);
       try {
         const fileName = `${user.id}/${Date.now()}.webm`;
@@ -250,6 +262,7 @@ export function GroupChatDialog({
         if (messageError) throw messageError;
         
         setPendingAudio(null);
+        incrementAudioCount();
         toast.success("Voice note sent!");
       } catch (error) {
         console.error("Error sending voice note:", error);
@@ -265,6 +278,14 @@ export function GroupChatDialog({
       if (!user) {
         toast.error("Please sign in to send messages");
       }
+      return;
+    }
+
+    // Free users can only send suggestions
+    const suggestions = chatSuggestions[activityType] || chatSuggestions.lunch;
+    if (!isPremium && !suggestions.includes(message)) {
+      setShowPremiumDialog(true);
+      toast.error("Upgrade to Super-Human to send custom text messages!");
       return;
     }
 
@@ -529,6 +550,16 @@ export function GroupChatDialog({
           </div>
         )}
 
+        {/* Audio limit indicator for free users */}
+        {user && !isPremium && (
+          <div className="px-4 py-1 text-xs text-muted-foreground text-center">
+            <span className="flex items-center justify-center gap-1">
+              <Mic className="w-3 h-3" />
+              {remainingAudio} / {FREE_AUDIO_LIMIT} voice notes remaining
+            </span>
+          </div>
+        )}
+
         {/* Input */}
         <div className="p-4 border-t border-border/50">
           <div className="flex items-center gap-2">
@@ -536,6 +567,7 @@ export function GroupChatDialog({
               onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
               onAudioClear={() => setPendingAudio(null)}
               disabled={isSending}
+              highlighted={true}
             />
             {!pendingAudio && (
               <Input
