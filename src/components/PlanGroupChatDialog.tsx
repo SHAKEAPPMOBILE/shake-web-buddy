@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Users, User, Trash2, Loader2, Mic } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,8 @@ import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
+import { PremiumDialog } from "@/components/PremiumDialog";
 
 interface PlanGroupChatDialogProps {
   open: boolean;
@@ -62,9 +64,16 @@ export function PlanGroupChatDialog({
   } | null>(null);
   const [showParticipantsDialog, setShowParticipantsDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const { showNotification } = usePushNotifications();
   const isWindowFocused = useRef(true);
+  const isMobile = useIsMobile();
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  
+  const { canSendAudio, remainingAudio, incrementAudioCount, FREE_AUDIO_LIMIT } = useAudioMessageLimit({
+    conversationType: 'plan',
+    conversationId: activity.id,
+  });
   const isMobile = useIsMobile();
   
   const swipeHandlers = useSwipeToClose({

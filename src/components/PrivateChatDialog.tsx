@@ -8,12 +8,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, User, Loader2 } from "lucide-react";
+import { Send, User, Loader2, Mic, Lock } from "lucide-react";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
+import { AudioWaveform } from "@/components/AudioWaveform";
+import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
+import { PremiumDialog } from "@/components/PremiumDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PrivateChatDialogProps {
   open: boolean;
@@ -23,6 +29,14 @@ interface PrivateChatDialogProps {
   otherUserAvatar: string | null;
 }
 
+const chatSuggestions = [
+  "Hey! 👋",
+  "How are you?",
+  "Nice to meet you!",
+  "Let's catch up!",
+  "See you soon! 😊",
+];
+
 export function PrivateChatDialog({
   open,
   onOpenChange,
@@ -30,14 +44,21 @@ export function PrivateChatDialog({
   otherUserName,
   otherUserAvatar,
 }: PrivateChatDialogProps) {
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const { messages, isLoading, sendMessage, markAsRead } = usePrivateMessages(
     open ? otherUserId : null
   );
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  
+  const { canSendAudio, remainingAudio, incrementAudioCount, FREE_AUDIO_LIMIT } = useAudioMessageLimit({
+    conversationType: 'private',
+    conversationId: otherUserId,
+  });
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -59,9 +80,63 @@ export function PrivateChatDialog({
     }
   }, [open, markAsRead]);
 
+  const handleSendAudio = async () => {
+    if (!pendingAudio || !user) return;
+    
+    if (!canSendAudio) {
+      setShowPremiumDialog(true);
+      toast.error(`You've reached the ${FREE_AUDIO_LIMIT} audio message limit. Upgrade to Super-Human for unlimited audio!`);
+      return;
+    }
+    
+    setIsSending(true);
+    try {
+      const fileName = `${user.id}/${Date.now()}.webm`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("voice-notes")
+        .upload(fileName, pendingAudio.blob, {
+          contentType: "audio/webm",
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("voice-notes")
+        .getPublicUrl(fileName);
+
+      const { error } = await sendMessage("🎤 Voice note", urlData.publicUrl);
+      
+      if (!error) {
+        setPendingAudio(null);
+        incrementAudioCount();
+        toast.success("Voice note sent!");
+      }
+    } catch (error) {
+      console.error("Error sending voice note:", error);
+      toast.error("Failed to send voice note");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Handle audio message
+    if (pendingAudio) {
+      await handleSendAudio();
+      return;
+    }
+    
     if (!newMessage.trim() || isSending) return;
+
+    // Free users can only send suggestions
+    if (!isPremium && !chatSuggestions.includes(newMessage)) {
+      setShowPremiumDialog(true);
+      toast.error("Upgrade to Super-Human to send custom text messages!");
+      return;
+    }
 
     setIsSending(true);
     const { error } = await sendMessage(newMessage.trim());
@@ -111,7 +186,7 @@ export function PrivateChatDialog({
           ) : messages.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p className="text-sm">No messages yet.</p>
-              <p className="text-xs mt-1">Say something to start the conversation!</p>
+              <p className="text-xs mt-1">Send a voice note to start the conversation!</p>
             </div>
           ) : (
             <div className="space-y-3 px-1">
@@ -129,7 +204,11 @@ export function PrivateChatDialog({
                           : "bg-blue-500 text-white rounded-bl-sm"
                       }`}
                     >
-                      <p className="text-sm break-words">{msg.message}</p>
+                      {msg.audio_url ? (
+                        <AudioWaveform audioUrl={msg.audio_url} isCompact />
+                      ) : (
+                        <p className="text-sm break-words">{msg.message}</p>
+                      )}
                       <p
                         className={`text-[10px] mt-1 ${
                           isMe ? "text-white/60" : "text-white/60"
@@ -145,31 +224,96 @@ export function PrivateChatDialog({
           )}
         </ScrollArea>
 
-        {/* Input */}
-        <form onSubmit={handleSend} className="border-t border-border/50 pt-4">
-          <div className="flex gap-2">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1"
-              disabled={isSending}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={!newMessage.trim() || isSending}
-              className="bg-shake-green text-white hover:bg-shake-green/90"
-            >
-              {isSending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
+        {/* Quick suggestions for free users */}
+        {user && !isPremium && (
+          <div className="px-4 py-2 border-t border-border/50">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {chatSuggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => setNewMessage(suggestion)}
+                  className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 text-foreground whitespace-nowrap transition-colors shrink-0"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
           </div>
+        )}
+
+        {/* Audio limit indicator for free users */}
+        {user && !isPremium && (
+          <div className="px-4 py-1 text-xs text-muted-foreground text-center border-t border-border/50">
+            <span className="flex items-center justify-center gap-1">
+              <Mic className="w-3 h-3" />
+              {remainingAudio} / {FREE_AUDIO_LIMIT} voice notes remaining
+            </span>
+          </div>
+        )}
+
+        {/* Input */}
+        <form onSubmit={handleSend} className="border-t border-border/50 pt-4 px-4 pb-4">
+          {pendingAudio ? (
+            <div className="flex items-center gap-2">
+              <div className="flex-1 p-2 bg-muted rounded-lg">
+                <AudioWaveform audioUrl={pendingAudio.url} isCompact />
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setPendingAudio(null)}>
+                <Lock className="w-4 h-4" />
+              </Button>
+              <Button 
+                type="button"
+                onClick={handleSendAudio}
+                disabled={isSending}
+                className="bg-shake-green text-white hover:bg-shake-green/90"
+              >
+                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <VoiceRecorder
+                onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
+                onAudioClear={() => setPendingAudio(null)}
+                disabled={isSending}
+                highlighted={true}
+              />
+              {isPremium ? (
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1"
+                  disabled={isSending}
+                />
+              ) : (
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Tap a suggestion or record voice..."
+                  className="flex-1"
+                  disabled={isSending}
+                  readOnly={!chatSuggestions.includes(newMessage)}
+                />
+              )}
+              <Button
+                type="submit"
+                size="icon"
+                disabled={(!newMessage.trim() && !pendingAudio) || isSending}
+                className="bg-shake-green text-white hover:bg-shake-green/90"
+              >
+                {isSending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+          )}
         </form>
       </DialogContent>
+      
+      <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     </Dialog>
   );
 }
