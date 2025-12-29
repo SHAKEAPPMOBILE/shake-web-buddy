@@ -34,7 +34,7 @@ export function HeroSection() {
     "Meet new people.",
     "Meet new friends.",
     "Meet a new buddy.",
-    "Meet a business partner.",
+    "Meet a partner.",
     "Meet a new love."
   ], []);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
