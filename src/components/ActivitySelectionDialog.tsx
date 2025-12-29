@@ -162,7 +162,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   return (
     <Dialog open={open} onOpenChange={isCreatingPlan ? () => {} : onOpenChange}>
       <DialogContent 
-        className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50"
+        className="sm:max-w-md bg-transparent border-none shadow-none"
         {...(isMobile && !isCreatingPlan ? swipeHandlers : {})}
       >
         {isMobile && (
