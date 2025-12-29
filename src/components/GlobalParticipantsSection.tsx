@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, User, Sparkles } from "lucide-react";
+import { Eye, User, Sparkles } from "lucide-react";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { SayHiButton } from "@/components/SayHiButton";
@@ -255,7 +255,7 @@ export function GlobalParticipantsSection() {
           </div>
         )}
         <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-shake-yellow" />
+          <Eye className="w-4 h-4 text-shake-yellow" />
           <span className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">{totalCount}</span>{" "}
             {totalCount === 1 ? "Shaker" : "Shakers"}
@@ -267,7 +267,7 @@ export function GlobalParticipantsSection() {
       <Dialog open={showListDialog} onOpenChange={setShowListDialog}>
         <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
           <DialogHeader>
-            <DialogTitle className="font-display">Shakers who joined recently</DialogTitle>
+            <DialogTitle className="font-display">Shakers nearby</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
