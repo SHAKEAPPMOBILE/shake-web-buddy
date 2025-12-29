@@ -177,21 +177,18 @@ export function HeroSection() {
                   {/* Phone notch */}
                   <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-border rounded-full" />
                 </div>
-              </div>
-            </div>
 
-            {/* CTA Buttons - Below phone/polaroids */}
-            <div style={{
-            animationDelay: "180ms"
-          }} className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up">
-              <Button variant="shake" size="xl" onClick={handleShake} className={isShaking ? "animate-shake" : ""}>
-                <span className="text-shake-green text-xl">🤝</span>
-                Let's Shake!
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => setShowPlansMap(true)} className="gap-2">
-                <MapPin className="w-5 h-5" />
-                Explore Plans
-              </Button>
+                {/* Explore Plans Icon - Bottom right of phone */}
+                <div className="hidden md:flex flex-col items-center gap-2 absolute -right-16 -bottom-8">
+                  <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={e => {
+                  e.stopPropagation();
+                  setShowPlansMap(true);
+                }}>
+                    <MapPin className="w-6 h-6 text-primary" />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">Explore Plans</span>
+                </div>
+              </div>
             </div>
 
             {/* Subheading */}
