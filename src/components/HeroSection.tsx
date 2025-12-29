@@ -179,14 +179,14 @@ export function HeroSection() {
                 </div>
 
                 {/* Explore Plans Icon - Bottom right of phone */}
-                <div className="hidden md:flex flex-col items-center gap-2 absolute -right-16 -bottom-8">
-                  <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={e => {
+                <div className="flex flex-col items-center gap-1 md:gap-2 absolute -right-12 md:-right-16 -bottom-6 md:-bottom-8">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={e => {
                   e.stopPropagation();
                   setShowPlansMap(true);
                 }}>
-                    <MapPin className="w-6 h-6 text-primary" />
+                    <MapPin className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <span className="text-xs text-muted-foreground font-medium">Explore Plans</span>
+                  <span className="text-[10px] md:text-xs text-muted-foreground font-medium">Explore Plans</span>
                 </div>
               </div>
             </div>
