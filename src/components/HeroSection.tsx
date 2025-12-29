@@ -147,7 +147,7 @@ export function HeroSection() {
 
             {/* Shaking Phone Illustration with Explore Plans */}
             <div 
-              className="relative flex items-center justify-center gap-6 animate-fade-up py-8 md:py-12"
+              className="relative flex items-center justify-center animate-fade-up py-8 md:py-12"
               style={{ animationDelay: "150ms" }}
             >
               <div 
@@ -182,14 +182,14 @@ export function HeroSection() {
                   {/* Phone notch */}
                   <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-border rounded-full" />
                 </div>
-              </div>
 
-              {/* Explore Plans Icon - Right side of phone */}
-              <div className="hidden md:flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={() => setShowPlansMap(true)}>
-                  <MapPin className="w-6 h-6 text-primary" />
+                {/* Explore Plans Icon - Bottom right of phone */}
+                <div className="hidden md:flex flex-col items-center gap-2 absolute -right-16 bottom-0">
+                  <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); setShowPlansMap(true); }}>
+                    <MapPin className="w-6 h-6 text-primary" />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">Explore Plans</span>
                 </div>
-                <span className="text-xs text-muted-foreground font-medium">Explore Plans</span>
               </div>
             </div>
 
