@@ -185,7 +185,7 @@ export function HeroSection() {
               </div>
 
               {/* Explore Plans Icon - Right side of phone, near bottom */}
-              <div className="hidden md:flex flex-col items-center gap-2 absolute right-0 bottom-0 translate-x-16 lg:translate-x-20">
+              <div className="hidden md:flex flex-col items-center gap-2 absolute right-0 bottom-0 translate-x-4 lg:translate-x-6">
                 <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={() => setShowPlansMap(true)}>
                   <MapPin className="w-6 h-6 text-primary" />
                 </div>
