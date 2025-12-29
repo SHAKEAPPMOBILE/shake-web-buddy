@@ -74,7 +74,6 @@ export function PlanGroupChatDialog({
     conversationType: 'plan',
     conversationId: activity.id,
   });
-  const isMobile = useIsMobile();
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -198,6 +197,12 @@ export function PlanGroupChatDialog({
         toast.error("Please sign in to send messages");
         return;
       }
+      
+      if (!canSendAudio) {
+        setShowPremiumDialog(true);
+        toast.error(`You've reached the ${FREE_AUDIO_LIMIT} audio message limit. Upgrade to Super-Human for unlimited audio!`);
+        return;
+      }
 
       setIsSending(true);
       try {
@@ -227,6 +232,7 @@ export function PlanGroupChatDialog({
         if (messageError) throw messageError;
 
         setPendingAudio(null);
+        incrementAudioCount();
         toast.success("Voice note sent!");
       } catch (error) {
         console.error("Error sending voice note:", error);
@@ -242,6 +248,13 @@ export function PlanGroupChatDialog({
       if (!user) {
         toast.error("Please sign in to send messages");
       }
+      return;
+    }
+
+    // Free users can only send suggestions
+    if (!isPremium && !chatSuggestions.includes(message)) {
+      setShowPremiumDialog(true);
+      toast.error("Upgrade to Super-Human to send custom text messages!");
       return;
     }
 
@@ -457,6 +470,16 @@ export function PlanGroupChatDialog({
           </div>
         )}
 
+        {/* Audio limit indicator for free users */}
+        {user && !isPremium && (
+          <div className="px-4 py-1 text-xs text-muted-foreground text-center">
+            <span className="flex items-center justify-center gap-1">
+              <Mic className="w-3 h-3" />
+              {remainingAudio} / {FREE_AUDIO_LIMIT} voice notes remaining
+            </span>
+          </div>
+        )}
+
         {/* Input area */}
         <div className="p-4 border-t border-border/50">
           {pendingAudio ? (
@@ -477,16 +500,17 @@ export function PlanGroupChatDialog({
                 onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
                 onAudioClear={() => setPendingAudio(null)}
                 disabled={!user}
+                highlighted={true}
               />
               <Input
-                placeholder={user ? "Type a message..." : "Sign in to chat"}
+                placeholder={user ? (isPremium ? "Type a message..." : "Tap a suggestion or record voice...") : "Sign in to chat"}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 disabled={!user}
                 className="flex-1"
               />
-              <Button onClick={handleSendMessage} disabled={!message.trim() || isSending || !user} className="bg-shake-green text-white hover:bg-shake-green/90">
+              <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} className="bg-shake-green text-white hover:bg-shake-green/90">
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
@@ -515,6 +539,8 @@ export function PlanGroupChatDialog({
           setSelectedUserProfile({ userId, userName, avatarUrl });
         }}
       />
+      
+      <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     </Dialog>
   );
 }
