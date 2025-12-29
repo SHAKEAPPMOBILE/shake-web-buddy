@@ -145,11 +145,19 @@ export function HeroSection() {
               <span className="text-gradient">SHAKE up your life.</span>
             </h1>
 
-            {/* Shaking Phone Illustration */}
+            {/* Shaking Phone Illustration with Icons */}
             <div 
-              className="relative flex justify-center animate-fade-up py-8 md:py-12"
+              className="relative flex justify-center items-center animate-fade-up py-8 md:py-12"
               style={{ animationDelay: "150ms" }}
             >
+              {/* Explore Plans Icon - Left side */}
+              <div className="hidden md:flex flex-col items-center gap-2 mr-8 lg:mr-16">
+                <div className="w-14 h-14 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={() => setShowPlansMap(true)}>
+                  <MapPin className="w-7 h-7 text-primary" />
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">Explore Plans</span>
+              </div>
+
               <div 
                 className="relative cursor-pointer"
                 onClick={handleShake}
@@ -179,6 +187,21 @@ export function HeroSection() {
                   {/* Phone notch */}
                   <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-border rounded-full" />
                 </div>
+
+                {/* Arrow pointing down to Let's Shake button */}
+                <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                  <svg width="24" height="40" viewBox="0 0 24 40" fill="none" className="text-primary animate-bounce">
+                    <path d="M12 0V32M12 32L4 24M12 32L20 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+
+              {/* Let's Shake Icon - Right side */}
+              <div className="hidden md:flex flex-col items-center gap-2 ml-8 lg:ml-16">
+                <div className="w-14 h-14 rounded-2xl bg-shake-green/20 border border-shake-green/30 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={handleShake}>
+                  <span className="text-2xl">🤝</span>
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">Let's Shake</span>
               </div>
             </div>
 
