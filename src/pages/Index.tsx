@@ -1,27 +1,7 @@
-import { Header } from "@/components/Header";
-import { HeroSection } from "@/components/HeroSection";
-import { FlagsCarousel } from "@/components/FlagsCarousel";
-import { PolaroidGallery } from "@/components/PolaroidGallery";
-import { HowItWorks } from "@/components/HowItWorks";
-import { CTASection } from "@/components/CTASection";
-import { Footer } from "@/components/Footer";
+import { IOSAppLayout } from "@/components/IOSAppLayout";
 
 const Index = () => {
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main>
-        <HeroSection />
-        <FlagsCarousel />
-        <PolaroidGallery />
-        <HowItWorks />
-        <CTASection />
-      </main>
-
-      <Footer />
-    </div>
-  );
+  return <IOSAppLayout />;
 };
 
 export default Index;

@@ -163,3 +163,12 @@
   0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
   50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.6); }
 }
+
+/* iOS Safe Areas */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
