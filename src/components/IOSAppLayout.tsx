@@ -84,7 +84,7 @@ export function IOSAppLayout() {
 
   const handleBackToActivities = () => {
     setShowChatDialog(false);
-    setShowActivityDialog(true);
+    setShowHomeActivities(false);
   };
 
   const handleHomeActivitySelect = async (activity: string) => {
