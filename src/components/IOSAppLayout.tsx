@@ -25,6 +25,7 @@ export function IOSAppLayout() {
   const [showPlansMap, setShowPlansMap] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
+  const [showHomeActivities, setShowHomeActivities] = useState(false);
 
   const { user } = useAuth();
   const { selectedCity } = useCity();
@@ -36,7 +37,9 @@ export function IOSAppLayout() {
       navigate("/auth");
       return;
     }
-    setShowActivityDialog(true);
+    // Switch to home tab and show activities
+    setActiveTab("home");
+    setShowHomeActivities(true);
   };
 
   const handleTabChange = (tab: string) => {
@@ -44,6 +47,7 @@ export function IOSAppLayout() {
       handleShakeClick();
       return;
     }
+    setShowHomeActivities(false);
     setActiveTab(tab);
   };
 
@@ -89,13 +93,20 @@ export function IOSAppLayout() {
       navigate("/auth");
       return;
     }
+    setShowHomeActivities(false);
     await handleSelectActivity(activity);
   };
 
   const renderTab = () => {
     switch (activeTab) {
       case "home":
-        return <HomeTab onShakeClick={handleShakeClick} onSelectActivity={handleHomeActivitySelect} />;
+        return (
+          <HomeTab 
+            showActivities={showHomeActivities} 
+            onSelectActivity={handleHomeActivitySelect}
+            onCloseActivities={() => setShowHomeActivities(false)}
+          />
+        );
       case "plans":
         return <PlansTab />;
       case "chat":
@@ -103,7 +114,13 @@ export function IOSAppLayout() {
       case "profile":
         return <ProfileTab />;
       default:
-        return <HomeTab onShakeClick={handleShakeClick} onSelectActivity={handleHomeActivitySelect} />;
+        return (
+          <HomeTab 
+            showActivities={showHomeActivities} 
+            onSelectActivity={handleHomeActivitySelect}
+            onCloseActivities={() => setShowHomeActivities(false)}
+          />
+        );
     }
   };
 

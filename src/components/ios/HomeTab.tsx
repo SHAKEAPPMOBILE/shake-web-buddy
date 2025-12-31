@@ -2,18 +2,18 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
-import { Plus, X } from "lucide-react";
+import { X } from "lucide-react";
 import { ACTIVITY_TYPES } from "@/data/activityTypes";
 
 interface HomeTabProps {
-  onShakeClick: () => void;
   onSelectActivity?: (activityType: string) => void;
+  showActivities?: boolean;
+  onCloseActivities?: () => void;
 }
 
-export function HomeTab({ onShakeClick, onSelectActivity }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities }: HomeTabProps) {
   const { user } = useAuth();
   const { selectedCity } = useCity();
-  const [showActivities, setShowActivities] = useState(false);
 
   // Rotating text for "Meet new..." phrases
   const meetPhrases = useMemo(() => [
@@ -39,7 +39,7 @@ export function HomeTab({ onShakeClick, onSelectActivity }: HomeTabProps) {
   }, [meetPhrases.length]);
 
   const handleActivitySelect = (activityId: string) => {
-    setShowActivities(false);
+    onCloseActivities?.();
     onSelectActivity?.(activityId);
   };
 
@@ -62,28 +62,18 @@ export function HomeTab({ onShakeClick, onSelectActivity }: HomeTabProps) {
         </h1>
       </div>
 
-      {/* Center Area - Plus Button or Activity Selection */}
+      {/* Center Area - Handshake Icon or Activity Selection */}
       <div className="relative mb-8">
         {!showActivities ? (
-          <>
-            {/* Static Handshake Icon (not clickable) */}
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 border-2 border-primary/50 flex items-center justify-center shadow-lg mb-4">
-              <span className="text-5xl">🤝</span>
-            </div>
-            
-            {/* Blue Plus Button */}
-            <button
-              onClick={() => setShowActivities(true)}
-              className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 transition-transform active:scale-95 mx-auto"
-            >
-              <Plus className="w-7 h-7 text-primary-foreground" />
-            </button>
-          </>
+          /* Static Handshake Icon (not clickable) */
+          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 border-2 border-primary/50 flex items-center justify-center shadow-lg">
+            <span className="text-5xl">🤝</span>
+          </div>
         ) : (
           <div className="animate-fade-in">
             {/* Close Button */}
             <button
-              onClick={() => setShowActivities(false)}
+              onClick={() => onCloseActivities?.()}
               className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-muted flex items-center justify-center z-10"
             >
               <X className="w-4 h-4 text-muted-foreground" />
