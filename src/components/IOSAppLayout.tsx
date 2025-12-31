@@ -83,10 +83,19 @@ export function IOSAppLayout() {
     setShowActivityDialog(true);
   };
 
+  const handleHomeActivitySelect = async (activity: string) => {
+    if (!user) {
+      toast.error("Please sign in to join an activity");
+      navigate("/auth");
+      return;
+    }
+    await handleSelectActivity(activity);
+  };
+
   const renderTab = () => {
     switch (activeTab) {
       case "home":
-        return <HomeTab onShakeClick={handleShakeClick} />;
+        return <HomeTab onShakeClick={handleShakeClick} onSelectActivity={handleHomeActivitySelect} />;
       case "plans":
         return <PlansTab />;
       case "chat":
@@ -94,7 +103,7 @@ export function IOSAppLayout() {
       case "profile":
         return <ProfileTab />;
       default:
-        return <HomeTab onShakeClick={handleShakeClick} />;
+        return <HomeTab onShakeClick={handleShakeClick} onSelectActivity={handleHomeActivitySelect} />;
     }
   };
 
