@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ACTIVITY_TYPES, DAY_NAMES, getTodayDefaultIndex } from "@/data/activityTypes";
+import { DAY_NAMES, getTodayDefaultIndex, getOrderedActivities } from "@/data/activityTypes";
 
 interface HomeTabProps {
   onSelectActivity?: (activityType: string) => void;
@@ -39,10 +39,13 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     };
   }, [meetPhrases.length]);
 
-  // Reset to today's default when activities are shown
+  // Get ordered activities starting from today
+  const orderedActivities = useMemo(() => getOrderedActivities(), []);
+
+  // Reset to first item when activities are shown
   useEffect(() => {
     if (showActivities) {
-      setCurrentActivityIndex(getTodayDefaultIndex());
+      setCurrentActivityIndex(0);
     }
   }, [showActivities]);
 
@@ -53,17 +56,17 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
   const goToPrevious = useCallback(() => {
     setCurrentActivityIndex(prev => 
-      prev === 0 ? ACTIVITY_TYPES.length - 1 : prev - 1
+      prev === 0 ? orderedActivities.length - 1 : prev - 1
     );
-  }, []);
+  }, [orderedActivities.length]);
 
   const goToNext = useCallback(() => {
     setCurrentActivityIndex(prev => 
-      prev === ACTIVITY_TYPES.length - 1 ? 0 : prev + 1
+      prev === orderedActivities.length - 1 ? 0 : prev + 1
     );
-  }, []);
+  }, [orderedActivities.length]);
 
-  const currentActivity = ACTIVITY_TYPES[currentActivityIndex];
+  const currentActivity = orderedActivities[currentActivityIndex];
   const dayName = currentActivity?.defaultDay !== undefined 
     ? DAY_NAMES[currentActivity.defaultDay] 
     : '';
@@ -129,7 +132,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         {/* Dot Indicators */}
         {showActivities && (
           <div className="flex justify-center gap-2 mt-4">
-            {ACTIVITY_TYPES.map((_, index) => (
+            {orderedActivities.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentActivityIndex(index)}
