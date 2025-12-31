@@ -374,7 +374,7 @@ export function GroupChatDialog({
             </Button>
             <div className="flex-1">
               <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
-              <p className="text-sm text-black/60">{formattedDate} • {formattedTime}</p>
+              <p className="text-sm text-black/60">{formattedTime}</p>
               <p className="text-lg font-display text-black mt-1">Suggested venue</p>
               {mapsUrl ? (
                 <a 
@@ -542,7 +542,7 @@ export function GroupChatDialog({
               <button
                 key={index}
                 onClick={() => setMessage(suggestion)}
-                className="text-xs px-3 py-1.5 rounded-full bg-shake-yellow/10 text-shake-yellow hover:bg-shake-yellow/20 transition-colors border border-shake-yellow/20"
+                className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
               >
                 {suggestion}
               </button>
