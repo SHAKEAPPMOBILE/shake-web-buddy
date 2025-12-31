@@ -42,22 +42,19 @@ interface Message {
   created_at: string;
 }
 
-const activityTitles: Record<string, string> = {
-  lunch: "Lunch 🍽️",
-  dinner: "Dinner 🍝",
-  drinks: "Drinks 🍻",
-  hike: "Hike 🥾",
-};
+import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
+
+const defaultSuggestions = [
+  "What time works best?",
+  "Where should we meet?",
+  "Count me in!",
+  "See you there! 👋",
+  "I'm running late!",
+  "On my way! 🏃",
+];
 
 const chatSuggestions: Record<string, string[]> = {
-  lunch: [
-    "What time works best?",
-    "Where should we meet?",
-    "Count me in!",
-    "See you there! 👋",
-    "I'm running late!",
-    "On my way! 🏃",
-  ],
+  lunch: defaultSuggestions,
   dinner: [
     "What cuisine are we feeling?",
     "Should we make a reservation?",
@@ -83,6 +80,39 @@ const chatSuggestions: Record<string, string[]> = {
     "See you there! 👋",
     "I'm running late!",
     "On my way! 🏃",
+  ],
+  surf: [
+    "What's the wave forecast? 🌊",
+    "Which beach are we hitting?",
+    "Count me in!",
+    "See you there! 👋",
+    "On my way! 🏃",
+  ],
+  run: [
+    "What pace are we thinking? 🏃",
+    "Where's the starting point?",
+    "Count me in!",
+    "See you there! 👋",
+    "On my way!",
+  ],
+  "co-working": [
+    "Which cafe/space are we at? ☕",
+    "What time are we starting?",
+    "Count me in!",
+    "See you there! 👋",
+    "On my way! 💻",
+  ],
+  sunset: [
+    "Best spot for sunset views? 🌅",
+    "What time should we meet?",
+    "Count me in!",
+    "See you there! 👋",
+  ],
+  dance: [
+    "Which club are we hitting? 💃",
+    "What time does it start?",
+    "Count me in!",
+    "See you there! 👋",
   ],
 };
 
@@ -144,6 +174,11 @@ export function GroupChatDialog({
     return () => clearInterval(interval);
   }, []);
 
+  // Clear messages when activity type changes
+  useEffect(() => {
+    setMessages([]);
+  }, [activityType, city]);
+
   // Fetch messages when dialog opens
   useEffect(() => {
     if (!open || !activityType) return;
@@ -170,9 +205,10 @@ export function GroupChatDialog({
 
     fetchMessages();
 
-    // Subscribe to message changes (insert and delete)
+    // Subscribe to message changes with a unique channel name per activity/city
+    const channelName = `activity-messages-${city}-${activityType}`.replace(/\s+/g, '-').toLowerCase();
     const channel = supabase
-      .channel('activity-messages-channel')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -280,7 +316,7 @@ export function GroupChatDialog({
     }
 
     // Free users can only send suggestions
-    const suggestions = chatSuggestions[activityType] || chatSuggestions.lunch;
+    const suggestions = chatSuggestions[activityType] || defaultSuggestions;
     if (!isPremium && !suggestions.includes(message)) {
       setShowPremiumDialog(true);
       toast.error("Upgrade to Super-Human to send custom text messages!");
@@ -344,7 +380,7 @@ export function GroupChatDialog({
     }
   };
 
-  const title = activityTitles[activityType] || activityTitles.lunch;
+  const title = `${getActivityLabel(activityType)} ${getActivityEmoji(activityType)}`;
   const location = getActivityLocation(activityType, city);
   const mapsUrl = getVenueMapsUrl(activityType, city);
   const formattedDate = format(currentTime, "EEEE, MMMM d");
@@ -536,7 +572,7 @@ export function GroupChatDialog({
         {/* Chat Suggestions - show when input is empty */}
         {user && !message.trim() && (
           <div className="px-4 pb-2 flex gap-2 flex-wrap">
-            {(chatSuggestions[activityType] || chatSuggestions.lunch).map((suggestion, index) => (
+            {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
               <button
                 key={index}
                 onClick={() => setMessage(suggestion)}
