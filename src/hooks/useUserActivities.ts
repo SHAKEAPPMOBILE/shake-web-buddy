@@ -23,8 +23,9 @@ export function useUserActivities(city: string) {
   const { user, isPremium } = useAuth();
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [myActivities, setMyActivities] = useState<UserActivity[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [activitiesThisMonth, setActivitiesThisMonth] = useState(0);
+  const [hasFetched, setHasFetched] = useState(false);
 
   // Fetch all active activities for the city
   const fetchActivities = useCallback(async () => {
@@ -369,9 +370,14 @@ export function useUserActivities(city: string) {
   useEffect(() => {
     if (!city) return;
 
-    fetchActivities();
-    fetchMyActivities();
-    fetchMonthlyCount();
+    const loadData = async () => {
+      setIsLoading(true);
+      await Promise.all([fetchActivities(), fetchMyActivities(), fetchMonthlyCount()]);
+      setIsLoading(false);
+      setHasFetched(true);
+    };
+
+    loadData();
 
     const channel = supabase
       .channel(`user-activities-${city}`)
