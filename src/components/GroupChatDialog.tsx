@@ -51,7 +51,6 @@ const activityTitles: Record<string, string> = {
 
 const chatSuggestions: Record<string, string[]> = {
   lunch: [
-    "Hi everyone, who's up for lunch today?",
     "What time works best?",
     "Where should we meet?",
     "Count me in!",
@@ -60,7 +59,6 @@ const chatSuggestions: Record<string, string[]> = {
     "On my way! 🏃",
   ],
   dinner: [
-    "Hey! Anyone free for dinner tonight?",
     "What cuisine are we feeling?",
     "Should we make a reservation?",
     "Count me in!",
@@ -535,8 +533,8 @@ export function GroupChatDialog({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Chat Suggestions */}
-        {messages.length === 0 && user && (
+        {/* Chat Suggestions - only show when input is empty */}
+        {messages.length === 0 && user && !message.trim() && (
           <div className="px-4 pb-2 flex gap-2 flex-wrap">
             {(chatSuggestions[activityType] || chatSuggestions.lunch).map((suggestion, index) => (
               <button
