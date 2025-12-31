@@ -533,8 +533,8 @@ export function GroupChatDialog({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Chat Suggestions - only show when input is empty */}
-        {messages.length === 0 && user && !message.trim() && (
+        {/* Chat Suggestions - show when input is empty */}
+        {user && !message.trim() && (
           <div className="px-4 pb-2 flex gap-2 flex-wrap">
             {(chatSuggestions[activityType] || chatSuggestions.lunch).map((suggestion, index) => (
               <button
