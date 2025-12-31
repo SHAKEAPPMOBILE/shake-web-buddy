@@ -119,9 +119,23 @@ export function getTimeBasedDefaultActivity(): string {
   return "lunch";
 }
 
-// Get the index of today's default activity
+// Get the index of today's default activity (always 0 since list is reordered)
 export function getTodayDefaultIndex(): number {
-  const day = new Date().getDay();
-  const index = ACTIVITY_TYPES.findIndex(a => a.defaultDay === day);
-  return index >= 0 ? index : 0;
+  return 0;
+}
+
+// Get activities ordered starting from today, then chronologically through the week
+export function getOrderedActivities(): ActivityType[] {
+  const today = new Date().getDay();
+  
+  return [...ACTIVITY_TYPES].sort((a, b) => {
+    const dayA = a.defaultDay ?? 0;
+    const dayB = b.defaultDay ?? 0;
+    
+    // Calculate distance from today (wrapping around the week)
+    const distA = (dayA - today + 7) % 7;
+    const distB = (dayB - today + 7) % 7;
+    
+    return distA - distB;
+  });
 }
