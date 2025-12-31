@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
@@ -27,6 +27,8 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(getTodayDefaultIndex());
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
 
   useEffect(() => {
     phraseIntervalRef.current = setInterval(() => {
@@ -71,6 +73,28 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     ? DAY_NAMES[currentActivity.defaultDay] 
     : '';
 
+  // Swipe handlers
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    const diff = touchStartX.current - touchEndX.current;
+    const threshold = 50; // minimum swipe distance
+    
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        goToNext(); // Swiped left
+      } else {
+        goToPrevious(); // Swiped right
+      }
+    }
+  }, [goToNext, goToPrevious]);
+
   return (
     <div className="flex flex-col items-center justify-center h-full px-6 text-center">
       {/* Welcome Message */}
@@ -91,7 +115,12 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       </div>
 
       {/* Center Area - Circle with Handshake or Activity Carousel */}
-      <div className="relative mb-8">
+      <div 
+        className="relative mb-8"
+        onTouchStart={showActivities ? handleTouchStart : undefined}
+        onTouchMove={showActivities ? handleTouchMove : undefined}
+        onTouchEnd={showActivities ? handleTouchEnd : undefined}
+      >
         <div 
           className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105"
           onClick={() => showActivities && handleActivitySelect(currentActivity.id)}
