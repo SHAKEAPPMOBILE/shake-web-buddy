@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState, useEffect } from "react";
-import { format, startOfDay, isSameDay } from "date-fns";
+import { format, startOfDay, isSameDay, addDays } from "date-fns";
 import { CalendarIcon, Plus, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
+import { ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel, getActivityById } from "@/data/activityTypes";
 import { useUserActivities, UserActivity } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
@@ -66,24 +66,38 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
     setExistingActivity(existing || null);
   }, [selectedType, selectedDate, myActivities]);
 
+  // Calculate the next occurrence of a given day of week (0=Sun, 6=Sat)
+  const getNextOccurrence = (dayOfWeek: number): Date => {
+    const todayDayOfWeek = today.getDay();
+    let daysUntil = dayOfWeek - todayDayOfWeek;
+    if (daysUntil < 0) {
+      daysUntil += 7; // Next week
+    }
+    return addDays(today, daysUntil);
+  };
+
   const handleActivityClick = (activityType: string) => {
     setSelectedType(activityType);
 
-    // Default to "Today" as soon as an activity is picked
-    if (!selectedDate) {
+    // Auto-select the next occurrence of the activity's default day
+    const activity = getActivityById(activityType);
+    if (activity?.defaultDay !== undefined) {
+      const nextDate = getNextOccurrence(activity.defaultDay);
+      setSelectedDate(nextDate);
+      
+      // Check if user already has this activity type for that date
+      const existingPlan = myActivities.find(a => 
+        a.activity_type === activityType &&
+        isSameDay(new Date(a.scheduled_for), nextDate)
+      );
+
+      if (existingPlan) {
+        setExistingActivity(existingPlan);
+        setShowPlanChat(true);
+      }
+    } else {
+      // Fallback to today if no default day
       setSelectedDate(today);
-    }
-
-    // Check if user already has this activity type for today
-    const todayActivity = myActivities.find(activity => 
-      activity.activity_type === activityType &&
-      isSameDay(new Date(activity.scheduled_for), today)
-    );
-
-    if (todayActivity) {
-      // User already has this activity for today - go straight to chat
-      setExistingActivity(todayActivity);
-      setShowPlanChat(true);
     }
   };
 
