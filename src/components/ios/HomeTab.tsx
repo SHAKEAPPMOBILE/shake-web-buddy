@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
-import { X } from "lucide-react";
-import { ACTIVITY_TYPES } from "@/data/activityTypes";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ACTIVITY_TYPES, DAY_NAMES, getTodayDefaultIndex } from "@/data/activityTypes";
 
 interface HomeTabProps {
   onSelectActivity?: (activityType: string) => void;
@@ -25,6 +25,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   ], []);
   
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+  const [currentActivityIndex, setCurrentActivityIndex] = useState(getTodayDefaultIndex());
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -38,10 +39,34 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     };
   }, [meetPhrases.length]);
 
+  // Reset to today's default when activities are shown
+  useEffect(() => {
+    if (showActivities) {
+      setCurrentActivityIndex(getTodayDefaultIndex());
+    }
+  }, [showActivities]);
+
   const handleActivitySelect = (activityId: string) => {
     onCloseActivities?.();
     onSelectActivity?.(activityId);
   };
+
+  const goToPrevious = useCallback(() => {
+    setCurrentActivityIndex(prev => 
+      prev === 0 ? ACTIVITY_TYPES.length - 1 : prev - 1
+    );
+  }, []);
+
+  const goToNext = useCallback(() => {
+    setCurrentActivityIndex(prev => 
+      prev === ACTIVITY_TYPES.length - 1 ? 0 : prev + 1
+    );
+  }, []);
+
+  const currentActivity = ACTIVITY_TYPES[currentActivityIndex];
+  const dayName = currentActivity?.defaultDay !== undefined 
+    ? DAY_NAMES[currentActivity.defaultDay] 
+    : '';
 
   return (
     <div className="flex flex-col items-center justify-center h-full px-6 text-center">
@@ -62,36 +87,59 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         </h1>
       </div>
 
-      {/* Center Area - Handshake Icon or Activity Selection */}
+      {/* Center Area - Circle with Handshake or Activity Carousel */}
       <div className="relative mb-8">
-        {!showActivities ? (
-          /* Static Handshake Icon (not clickable) */
-          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 border-2 border-primary/50 flex items-center justify-center shadow-lg">
+        <div 
+          className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105"
+          onClick={() => showActivities && handleActivitySelect(currentActivity.id)}
+        >
+          {!showActivities ? (
             <span className="text-5xl">🤝</span>
+          ) : (
+            <span className="text-5xl animate-scale-in">{currentActivity?.emoji}</span>
+          )}
+        </div>
+
+        {/* Activity Label & Day */}
+        {showActivities && (
+          <div className="mt-4 animate-fade-in">
+            <div className="text-lg font-semibold text-foreground">{currentActivity?.label}</div>
+            <div className="text-sm text-muted-foreground">{dayName}</div>
           </div>
-        ) : (
-          <div className="animate-fade-in">
-            {/* Close Button */}
+        )}
+
+        {/* Navigation Arrows */}
+        {showActivities && (
+          <>
             <button
-              onClick={() => onCloseActivities?.()}
-              className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-muted flex items-center justify-center z-10"
+              onClick={goToPrevious}
+              className="absolute left-[-60px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center shadow-md hover:bg-muted transition-colors"
             >
-              <X className="w-4 h-4 text-muted-foreground" />
+              <ChevronLeft className="w-5 h-5 text-foreground" />
             </button>
-            
-            {/* Activity Grid */}
-            <div className="grid grid-cols-4 gap-3 p-4 bg-card/50 backdrop-blur-sm rounded-2xl border border-border">
-              {ACTIVITY_TYPES.map((activity) => (
-                <button
-                  key={activity.id}
-                  onClick={() => handleActivitySelect(activity.id)}
-                  className="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-muted/50 transition-colors active:scale-95"
-                >
-                  <span className="text-2xl">{activity.emoji}</span>
-                  <span className="text-xs text-muted-foreground">{activity.label}</span>
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={goToNext}
+              className="absolute right-[-60px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center shadow-md hover:bg-muted transition-colors"
+            >
+              <ChevronRight className="w-5 h-5 text-foreground" />
+            </button>
+          </>
+        )}
+
+        {/* Dot Indicators */}
+        {showActivities && (
+          <div className="flex justify-center gap-2 mt-4">
+            {ACTIVITY_TYPES.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentActivityIndex(index)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  index === currentActivityIndex 
+                    ? 'bg-primary w-4' 
+                    : 'bg-muted-foreground/30'
+                }`}
+              />
+            ))}
           </div>
         )}
       </div>
