@@ -49,14 +49,14 @@ export function IOSTabBar({ activeTab, onTabChange }: IOSTabBarProps) {
                 className="relative -mt-6 flex flex-col items-center"
               >
                 <div className={cn(
-                  "w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg transition-all",
+                  "w-16 h-16 rounded-full bg-[hsl(210,100%,50%)] flex items-center justify-center shadow-lg transition-all",
                   isActive && "scale-110"
                 )}>
-                  <Plus className="w-8 h-8 text-primary-foreground" />
+                  <Plus className="w-8 h-8 text-white" />
                 </div>
                 <span className={cn(
                   "text-[10px] mt-1 font-medium",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? "text-[hsl(210,100%,50%)]" : "text-muted-foreground"
                 )}>
                   {tab.label}
                 </span>
