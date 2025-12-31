@@ -58,8 +58,13 @@ export function IOSAppLayout() {
       navigate("/auth");
       return;
     }
-    setSelectedActivity(activity);
+    
+    // Close any open dialogs first
     setShowActivityDialog(false);
+    setShowChatDialog(false);
+    
+    // Set the selected activity
+    setSelectedActivity(activity);
 
     const result = await joinActivity(activity);
     if (result.success) {
@@ -67,6 +72,8 @@ export function IOSAppLayout() {
         triggerConfettiWaterfall();
         setShowClockAnimation(true);
       } else {
+        // Use the activity parameter directly to ensure correct activity is shown
+        // The state will be updated by setSelectedActivity above
         setShowChatDialog(true);
       }
     }
