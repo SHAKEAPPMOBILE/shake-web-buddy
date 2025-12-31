@@ -11,9 +11,9 @@ export function PlansTab() {
   const { activities, isLoading } = useUserActivities(selectedCity);
   const [showMap, setShowMap] = useState(false);
 
-  const getActivityIcon = (type: string) => {
+  const getActivityEmoji = (type: string) => {
     const activity = ACTIVITY_TYPES.find(a => a.id === type);
-    return activity?.icon || "📍";
+    return activity?.emoji || "📍";
   };
 
   const getActivityLabel = (type: string) => {
@@ -57,7 +57,7 @@ export function PlansTab() {
             >
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl">
-                  {getActivityIcon(plan.activity_type)}
+                  {getActivityEmoji(plan.activity_type)}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-foreground">
