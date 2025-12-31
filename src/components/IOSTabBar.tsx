@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, MapPin, MessageSquare, User, Sparkles } from "lucide-react";
+import { Home, MapPin, MessageSquare, User, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +20,7 @@ export function IOSTabBar({ activeTab, onTabChange }: IOSTabBarProps) {
   const tabs = [
     { id: "home", icon: Home, label: "Home" },
     { id: "plans", icon: MapPin, label: "Plans" },
-    { id: "shake", icon: Sparkles, label: "Shake", isCenter: true },
+    { id: "shake", icon: Plus, label: "Shake", isCenter: true },
     { id: "chat", icon: MessageSquare, label: "Chat" },
     { id: "profile", icon: User, label: "Profile" },
   ];
@@ -49,12 +49,10 @@ export function IOSTabBar({ activeTab, onTabChange }: IOSTabBarProps) {
                 className="relative -mt-6 flex flex-col items-center"
               >
                 <div className={cn(
-                  "w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all",
-                  isActive 
-                    ? "bg-gradient-to-br from-primary to-accent scale-110" 
-                    : "bg-gradient-to-br from-primary/80 to-accent/80"
+                  "w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg transition-all",
+                  isActive && "scale-110"
                 )}>
-                  <span className="text-2xl">🤝</span>
+                  <Plus className="w-8 h-8 text-primary-foreground" />
                 </div>
                 <span className={cn(
                   "text-[10px] mt-1 font-medium",
