@@ -135,7 +135,7 @@ export function Header() {
     <>
       <header className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-28 md:h-36">
+          <div className="flex items-center justify-between h-16 md:h-18">
             {/* Left side - Mobile Menu */}
             <div className="flex-1 flex items-center gap-2">
               <button
@@ -221,7 +221,7 @@ export function Header() {
 
         {/* Mobile Menu */}
         <div className={cn(
-          "md:hidden absolute top-28 md:top-36 left-0 right-0 bg-card border-b border-border transition-all duration-300",
+          "md:hidden absolute top-16 md:top-18 left-0 right-0 bg-card border-b border-border transition-all duration-300",
           isMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
         )}>
           <div className="container mx-auto px-4 py-4 space-y-4">
