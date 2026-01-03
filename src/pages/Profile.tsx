@@ -3,9 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, Loader2, User, LogOut } from "lucide-react";
+import { Camera, ArrowLeft, Loader2, User, LogOut, Save, Instagram, Linkedin, Twitter } from "lucide-react";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { SuperHumanIcon } from "@/components/SuperHumanIcon";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Profile() {
   const { user, isLoading: authLoading, isPremium, signOut } = useAuth();
@@ -13,9 +26,15 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [name, setName] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [twitterUrl, setTwitterUrl] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -29,17 +48,34 @@ export default function Profile() {
     const fetchProfile = async () => {
       if (!user) return;
       
-      const { data, error } = await supabase
+      // Fetch public profile
+      const { data: publicProfile, error: publicError } = await supabase
         .from("profiles")
-        .select("name, avatar_url")
+        .select("name, avatar_url, instagram_url, linkedin_url, twitter_url")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (error) {
-        console.error("Error fetching profile:", error);
-      } else if (data) {
-        setName(data.name || "");
-        setAvatarUrl(data.avatar_url);
+      if (publicError) {
+        console.error("Error fetching public profile:", publicError);
+      } else if (publicProfile) {
+        setName(publicProfile.name || "");
+        setAvatarUrl(publicProfile.avatar_url);
+        setInstagramUrl(publicProfile.instagram_url || "");
+        setLinkedinUrl(publicProfile.linkedin_url || "");
+        setTwitterUrl(publicProfile.twitter_url || "");
+      }
+
+      // Fetch private profile for phone number
+      const { data: privateProfile, error: privateError } = await supabase
+        .from("profiles_private")
+        .select("phone_number")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (privateError) {
+        console.error("Error fetching private profile:", privateError);
+      } else if (privateProfile) {
+        setPhoneNumber(privateProfile.phone_number || "");
       }
 
       setIsLoading(false);
@@ -100,8 +136,41 @@ export default function Profile() {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleSaveProfile = async () => {
+    if (!user) return;
+
+    setIsSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          name: name.trim(),
+          instagram_url: instagramUrl.trim() || null,
+          linkedin_url: linkedinUrl.trim() || null,
+          twitter_url: twitterUrl.trim() || null,
+        })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Profile saved!");
+      triggerConfettiWaterfall();
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error("Failed to save profile");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSignOutClick = () => {
+    setShowSignOutConfirm(true);
+  };
+
+  const handleConfirmSignOut = async () => {
     await signOut();
+    setShowSignOutConfirm(false);
     navigate("/");
   };
 
@@ -117,7 +186,7 @@ export default function Profile() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header with back button */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border safe-area-top">
-        <div className="flex items-center px-4 h-14">
+        <div className="flex items-center justify-between px-4 h-14">
           <button
             onClick={() => navigate("/")}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -125,14 +194,27 @@ export default function Profile() {
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm font-medium">Back</span>
           </button>
+          <Button
+            onClick={handleSaveProfile}
+            disabled={isSaving}
+            size="sm"
+            className="gap-2"
+          >
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            Save
+          </Button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 pt-20 pb-8 px-4">
-        <div className="max-w-md mx-auto">
+      <main className="flex-1 pt-20 pb-8 px-4 overflow-y-auto">
+        <div className="max-w-md mx-auto space-y-6">
           {/* Profile Header */}
-          <div className="flex flex-col items-center py-8">
+          <div className="flex flex-col items-center py-6">
             {/* Avatar with camera button */}
             <div className="relative mb-4">
               <div className="w-24 h-24 rounded-full bg-muted border-2 border-border overflow-hidden flex items-center justify-center">
@@ -164,25 +246,93 @@ export default function Profile() {
               />
             </div>
 
-            {/* Name */}
-            <h2 className="text-xl font-display font-bold">{name || "User"}</h2>
-            
-            {/* Email */}
-            <p className="text-sm text-muted-foreground">{user?.email}</p>
-            
             {/* Premium Badge */}
             {isPremium && (
-              <div className="flex items-center gap-1.5 mt-2 px-3 py-1 bg-shake-yellow/10 rounded-full">
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-shake-yellow/10 rounded-full">
                 <SuperHumanIcon size={14} />
                 <span className="text-sm font-medium text-shake-yellow">Super-Human</span>
               </div>
             )}
           </div>
 
+          {/* Profile Form */}
+          <div className="space-y-4">
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+              />
+            </div>
+
+            {/* Phone (read-only) */}
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                value={phoneNumber}
+                readOnly
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">Phone number cannot be changed</p>
+            </div>
+
+            {/* Social Links Section */}
+            <div className="pt-4 border-t border-border">
+              <h3 className="text-sm font-medium mb-4">Social Links</h3>
+              
+              {/* Instagram */}
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="instagram" className="flex items-center gap-2">
+                  <Instagram className="w-4 h-4" />
+                  Instagram
+                </Label>
+                <Input
+                  id="instagram"
+                  value={instagramUrl}
+                  onChange={(e) => setInstagramUrl(e.target.value)}
+                  placeholder="https://instagram.com/username"
+                />
+              </div>
+
+              {/* LinkedIn */}
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="linkedin" className="flex items-center gap-2">
+                  <Linkedin className="w-4 h-4" />
+                  LinkedIn
+                </Label>
+                <Input
+                  id="linkedin"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  placeholder="https://linkedin.com/in/username"
+                />
+              </div>
+
+              {/* Twitter */}
+              <div className="space-y-2">
+                <Label htmlFor="twitter" className="flex items-center gap-2">
+                  <Twitter className="w-4 h-4" />
+                  Twitter / X
+                </Label>
+                <Input
+                  id="twitter"
+                  value={twitterUrl}
+                  onChange={(e) => setTwitterUrl(e.target.value)}
+                  placeholder="https://twitter.com/username"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Antisocial (Sign Out) Button */}
-          <div className="mt-8">
+          <div className="pt-6 border-t border-border">
             <button
-              onClick={handleSignOut}
+              onClick={handleSignOutClick}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors"
             >
               <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -200,6 +350,24 @@ export default function Profile() {
           Made with ❤️ for social butterflies
         </p>
       </footer>
+
+      {/* Sign Out Confirmation Dialog */}
+      <AlertDialog open={showSignOutConfirm} onOpenChange={setShowSignOutConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Going antisocial? 😢</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to sign out? You'll miss all the fun activities!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay Social</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSignOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sign Out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
