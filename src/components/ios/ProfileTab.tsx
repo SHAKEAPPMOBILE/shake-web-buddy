@@ -89,7 +89,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
             <span className="text-sm font-medium text-shake-yellow">Super-Human</span>
           </div>
         )}
-        <p className="text-xs text-muted-foreground/60 mt-2">Tap to view your profile</p>
+        
       </button>
 
       {/* Menu Items */}
