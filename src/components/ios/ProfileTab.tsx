@@ -54,6 +54,9 @@ export function ProfileTab() {
   }
 
   const handleSignOut = async () => {
+    // Clear local state immediately for instant UI update
+    setAvatarUrl(null);
+    setUserName(null);
     await signOut();
   };
 
