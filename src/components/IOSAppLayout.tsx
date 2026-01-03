@@ -104,6 +104,10 @@ export function IOSAppLayout() {
     await handleSelectActivity(activity);
   };
 
+  const handleSignOut = useCallback(() => {
+    setActiveTab("home");
+  }, []);
+
   const renderTab = () => {
     switch (activeTab) {
       case "home":
@@ -119,7 +123,17 @@ export function IOSAppLayout() {
       case "chat":
         return <ChatTab />;
       case "profile":
-        return <ProfileTab />;
+        // If user is not logged in, show home tab instead
+        if (!user) {
+          return (
+            <HomeTab 
+              showActivities={showHomeActivities} 
+              onSelectActivity={handleHomeActivitySelect}
+              onCloseActivities={() => setShowHomeActivities(false)}
+            />
+          );
+        }
+        return <ProfileTab onSignOut={handleSignOut} />;
       default:
         return (
           <HomeTab 
