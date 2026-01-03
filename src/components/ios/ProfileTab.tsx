@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PremiumDialog } from "../PremiumDialog";
 import { SuperHumanIcon } from "../SuperHumanIcon";
+import { UserProfileDialog } from "../UserProfileDialog";
 import { Link } from "react-router-dom";
 import {
   AlertDialog,
@@ -28,6 +29,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [userName, setUserName] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -67,8 +69,11 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Profile Header */}
-      <div className="flex flex-col items-center px-6 py-8 border-b border-border">
+      {/* Profile Header - Clickable to view own profile */}
+      <button
+        onClick={() => setShowProfileDialog(true)}
+        className="flex flex-col items-center px-6 py-8 border-b border-border hover:bg-muted/30 transition-colors"
+      >
         <div className="w-24 h-24 rounded-full bg-muted border-2 border-border overflow-hidden flex items-center justify-center mb-4">
           {avatarUrl ? (
             <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
@@ -84,7 +89,8 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
             <span className="text-sm font-medium text-shake-yellow">Super-Human</span>
           </div>
         )}
-      </div>
+        <p className="text-xs text-muted-foreground/60 mt-2">Tap to view your profile</p>
+      </button>
 
       {/* Menu Items */}
       <div className="flex-1 px-4 py-4 space-y-2">
@@ -137,6 +143,16 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
       </div>
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+      {user && (
+        <UserProfileDialog
+          open={showProfileDialog}
+          onOpenChange={setShowProfileDialog}
+          userId={user.id}
+          userName={userName}
+          avatarUrl={avatarUrl}
+        />
+      )}
 
       <AlertDialog open={showSignOutConfirm} onOpenChange={setShowSignOutConfirm}>
         <AlertDialogContent>
