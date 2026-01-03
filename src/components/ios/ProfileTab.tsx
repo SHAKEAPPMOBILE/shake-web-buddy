@@ -115,7 +115,7 @@ export function ProfileTab() {
           <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
             <LogOut className="w-5 h-5 text-destructive" />
           </div>
-          <span className="font-medium text-destructive">Sign Out</span>
+          <span className="font-medium text-destructive">Antisocial</span>
         </button>
       </div>
 
