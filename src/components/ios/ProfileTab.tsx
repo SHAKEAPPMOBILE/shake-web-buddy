@@ -84,7 +84,13 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
         <h2 className="text-xl font-display font-bold">{userName || "User"}</h2>
         <p className="text-sm text-muted-foreground">{user.email}</p>
         {isPremium && (
-          <div className="flex items-center gap-1.5 mt-2 px-3 py-1 bg-shake-yellow/10 rounded-full">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowPremiumDialog(true);
+            }}
+            className="flex items-center gap-1.5 mt-2 px-3 py-1 bg-shake-yellow/10 rounded-full cursor-pointer hover:bg-shake-yellow/20 transition-colors"
+          >
             <SuperHumanIcon size={14} />
             <span className="text-sm font-medium text-shake-yellow">Super-Human</span>
           </div>
