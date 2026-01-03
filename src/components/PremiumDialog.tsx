@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, MapPin, Globe, User, Mic, MessageSquare } from "lucide-react";
+import { Check, MapPin, Globe, User, Mic, MessageSquare, Sparkles } from "lucide-react";
 import shakeCoin from "@/assets/shake-coin.png";
 import {
   Dialog,
@@ -63,6 +63,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   }, [user?.email, checkoutEmail]);
 
   const features = [
+    { icon: Sparkles, text: "Create your own activities" },
     { icon: Globe, text: "Access to 100+ cities worldwide" },
     { icon: MapPin, text: "Join activities in any city" },
     { icon: User, text: "See other users' profiles" },
