@@ -242,6 +242,7 @@ export type Database = {
           id: string
           phone_number: string | null
           premium_override: boolean
+          push_notifications_enabled: boolean
           sms_notifications_enabled: boolean
           updated_at: string
           user_id: string
@@ -253,6 +254,7 @@ export type Database = {
           id?: string
           phone_number?: string | null
           premium_override?: boolean
+          push_notifications_enabled?: boolean
           sms_notifications_enabled?: boolean
           updated_at?: string
           user_id: string
@@ -264,6 +266,7 @@ export type Database = {
           id?: string
           phone_number?: string | null
           premium_override?: boolean
+          push_notifications_enabled?: boolean
           sms_notifications_enabled?: boolean
           updated_at?: string
           user_id?: string

@@ -13,6 +13,7 @@ import { PremiumDialog } from "./PremiumDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
+import { usePrivateMessageNotifications } from "@/hooks/usePrivateMessageNotifications";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -31,6 +32,9 @@ export function IOSAppLayout() {
   const { selectedCity } = useCity();
   const navigate = useNavigate();
   const { joinActivity, getActivityJoinCount } = useActivityJoins(selectedCity);
+  
+  // Initialize push notifications for private messages
+  usePrivateMessageNotifications();
 
   const handleShakeClick = () => {
     if (!user) {

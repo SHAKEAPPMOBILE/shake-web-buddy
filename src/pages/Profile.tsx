@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, Loader2, User, LogOut, Save, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Camera, ArrowLeft, Loader2, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell } from "lucide-react";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { SuperHumanIcon } from "@/components/SuperHumanIcon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,7 @@ export default function Profile() {
   const [twitterUrl, setTwitterUrl] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -65,10 +67,10 @@ export default function Profile() {
         setTwitterUrl(publicProfile.twitter_url || "");
       }
 
-      // Fetch private profile for phone number
+      // Fetch private profile for phone number and push notifications
       const { data: privateProfile, error: privateError } = await supabase
         .from("profiles_private")
-        .select("phone_number")
+        .select("phone_number, push_notifications_enabled")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -76,6 +78,7 @@ export default function Profile() {
         console.error("Error fetching private profile:", privateError);
       } else if (privateProfile) {
         setPhoneNumber(privateProfile.phone_number || "");
+        setPushNotificationsEnabled(privateProfile.push_notifications_enabled ?? true);
       }
 
       setIsLoading(false);
@@ -142,7 +145,8 @@ export default function Profile() {
     setIsSaving(true);
 
     try {
-      const { error } = await supabase
+      // Update public profile
+      const { error: publicError } = await supabase
         .from("profiles")
         .update({
           name: name.trim(),
@@ -152,7 +156,17 @@ export default function Profile() {
         })
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (publicError) throw publicError;
+
+      // Update private profile for push notifications
+      const { error: privateError } = await supabase
+        .from("profiles_private")
+        .update({
+          push_notifications_enabled: pushNotificationsEnabled,
+        })
+        .eq("user_id", user.id);
+
+      if (privateError) throw privateError;
 
       toast.success("Profile saved!");
       triggerConfettiWaterfall();
@@ -324,6 +338,27 @@ export default function Profile() {
                   value={twitterUrl}
                   onChange={(e) => setTwitterUrl(e.target.value)}
                   placeholder="https://twitter.com/username"
+                />
+              </div>
+            </div>
+
+            {/* Notifications Section */}
+            <div className="pt-4 border-t border-border">
+              <h3 className="text-sm font-medium mb-4">Notifications</h3>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Bell className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Push Notifications</p>
+                    <p className="text-xs text-muted-foreground">Get notified when you receive new messages</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={pushNotificationsEnabled}
+                  onCheckedChange={setPushNotificationsEnabled}
                 />
               </div>
             </div>
