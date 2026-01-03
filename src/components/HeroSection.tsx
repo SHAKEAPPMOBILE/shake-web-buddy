@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Zap, Shield, MapPin } from "lucide-react";
+import { Zap, MapPin } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import avatar1 from "@/assets/avatar-1.png";
 import avatar2 from "@/assets/avatar-2.png";
+import shakeLogo from "@/assets/shake-logo-new.png";
 import { GlobalParticipantsSection } from "./GlobalParticipantsSection";
 export function HeroSection() {
   const [isShaking, setIsShaking] = useState(false);
@@ -116,9 +117,17 @@ export function HeroSection() {
         <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-secondary/15 rounded-full blur-3xl" />
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
+          <div className="max-w-4xl mx-auto text-center space-y-6">
+            {/* Logo with wording */}
+            <div className="flex items-center justify-center gap-3 animate-fade-up">
+              <img src={shakeLogo} alt="Shake" className="w-10 h-10 md:w-12 md:h-12" />
+              <span className="text-2xl md:text-3xl font-display font-bold text-foreground">Shake</span>
+            </div>
+
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card/50 border border-border/50 backdrop-blur-sm animate-fade-up">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card/50 border border-border/50 backdrop-blur-sm animate-fade-up" style={{
+            animationDelay: "50ms"
+          }}>
               <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
               <span className="text-sm text-muted-foreground">
                 Real connections, real life.
@@ -126,7 +135,7 @@ export function HeroSection() {
             </div>
 
             {/* Main heading */}
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-tight animate-fade-up" style={{
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold leading-tight animate-fade-up" style={{
             animationDelay: "100ms"
           }}>
               <span className="transition-opacity duration-500">{meetPhrases[currentPhraseIndex]}</span>
@@ -243,13 +252,6 @@ export function HeroSection() {
         animationDelay: "1.5s"
       }}>
         <img src={avatar2} alt="" className="w-12 h-12 rounded-full border-2 border-background shadow-lg" />
-      </div>
-      <div className="absolute bottom-40 right-10 animate-float" style={{
-        animationDelay: "2s"
-      }}>
-        <div className="w-12 h-12 rounded-xl bg-shake-purple/20 backdrop-blur flex items-center justify-center">
-          <Shield className="w-6 h-6 text-shake-purple" />
-        </div>
       </div>
       </section>
 
