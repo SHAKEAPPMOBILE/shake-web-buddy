@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut, User, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logoShake from "@/assets/shake-logo-new.png";
+
 import { CitySelector } from "./CitySelector";
 import { PremiumDialog } from "./PremiumDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
@@ -136,20 +136,8 @@ export function Header() {
       <header className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-28 md:h-36">
-            {/* Left side - Colorful S Logo and Mobile Menu */}
+            {/* Left side - Mobile Menu */}
             <div className="flex-1 flex items-center gap-2">
-              {/* Colorful S Logo */}
-              <button 
-                onClick={() => navigate("/")}
-                className="hidden md:block"
-              >
-                <img 
-                  src={logoShake} 
-                  alt="Shake Social" 
-                  className="h-20 w-auto object-contain" 
-                />
-              </button>
-              
               <button
                 className="md:hidden p-2"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
