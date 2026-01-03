@@ -150,19 +150,6 @@ export function Header() {
               </button>
             </div>
 
-            {/* Centered white text logo */}
-            <button 
-              onClick={() => navigate("/")}
-              className="flex flex-col items-center justify-center"
-            >
-              <span className="text-foreground text-3xl md:text-4xl font-display font-bold tracking-wide lowercase">
-                shake
-              </span>
-              <span className="text-foreground text-xs md:text-sm font-medium tracking-[0.2em] uppercase -mt-1">
-                social
-              </span>
-            </button>
-
             {/* Right side buttons */}
             <div className="flex-1 flex justify-end items-center gap-2">
               {/* Greetings indicator - visible for all logged-in users */}
