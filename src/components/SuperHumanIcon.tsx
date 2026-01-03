@@ -64,6 +64,40 @@ export function SuperHumanIcon({ className, size = 24 }: SuperHumanIconProps) {
         fill="hsl(var(--background))"
         opacity="0.8"
       />
+      {/* Left lens shine - top */}
+      <ellipse
+        cx="6.5"
+        cy="10"
+        rx="1.2"
+        ry="0.6"
+        fill="white"
+        opacity="0.7"
+      />
+      {/* Left lens shine - small dot */}
+      <circle
+        cx="9"
+        cy="12"
+        r="0.4"
+        fill="white"
+        opacity="0.5"
+      />
+      {/* Right lens shine - top */}
+      <ellipse
+        cx="14.5"
+        cy="10"
+        rx="1.2"
+        ry="0.6"
+        fill="white"
+        opacity="0.7"
+      />
+      {/* Right lens shine - small dot */}
+      <circle
+        cx="17"
+        cy="12"
+        r="0.4"
+        fill="white"
+        opacity="0.5"
+      />
       {/* Smile */}
       <path
         d="M9 16C9.5 17.5 14.5 17.5 15 16"
