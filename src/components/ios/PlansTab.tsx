@@ -1,14 +1,26 @@
 import { useState, useEffect, useCallback } from "react";
-import { MapPin, Calendar, Users, Plus, Crown } from "lucide-react";
+import { MapPin, Calendar, Users, Plus, Crown, Trash2 } from "lucide-react";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlansMapDialog } from "../PlansMapDialog";
 import { PremiumDialog } from "../PremiumDialog";
 import { CreateActivityDialog } from "../CreateActivityDialog";
+import { PlanGroupChatDialog } from "../PlanGroupChatDialog";
 import { format } from "date-fns";
 import { ACTIVITY_TYPES } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PlanActivity {
   id: string;
@@ -144,6 +156,9 @@ export function PlansTab() {
   const [showMap, setShowMap] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
+  const [showChatDialog, setShowChatDialog] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
 
   const getActivityEmoji = (type: string) => {
     const activity = ACTIVITY_TYPES.find(a => a.id === type);
@@ -164,6 +179,45 @@ export function PlansTab() {
       return;
     }
     setShowCreateDialog(true);
+  };
+
+  const handlePlanClick = (plan: PlanActivity) => {
+    setSelectedPlan(plan);
+    setShowChatDialog(true);
+  };
+
+  const handleDeletePlan = async () => {
+    if (!planToDelete || !user) return;
+
+    try {
+      // First delete all joins for this activity
+      await supabase
+        .from("activity_joins")
+        .delete()
+        .eq("activity_id", planToDelete.id);
+
+      // Then delete all messages
+      await supabase
+        .from("plan_messages")
+        .delete()
+        .eq("activity_id", planToDelete.id);
+
+      // Finally delete the activity itself
+      const { error } = await supabase
+        .from("user_activities")
+        .delete()
+        .eq("id", planToDelete.id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Plan deleted");
+      setPlanToDelete(null);
+      fetchPlans();
+    } catch (error) {
+      console.error("Error deleting plan:", error);
+      toast.error("Failed to delete plan");
+    }
   };
 
   return (
@@ -206,9 +260,10 @@ export function PlansTab() {
           </div>
         ) : (
           activities.map((plan) => (
-            <div
+            <button
               key={plan.id}
-              className="bg-card border border-border rounded-2xl p-4 space-y-3"
+              onClick={() => handlePlanClick(plan)}
+              className="w-full text-left bg-card border border-border rounded-2xl p-4 space-y-3 hover:bg-muted/30 transition-colors"
             >
               <div className="flex items-start gap-3">
                 {/* Creator Avatar */}
@@ -252,6 +307,19 @@ export function PlansTab() {
                     </span>
                   </div>
                 </div>
+                {/* Delete button for own plans */}
+                {plan.user_id === user?.id && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPlanToDelete(plan);
+                    }}
+                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
+                    title="Delete plan"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
               {plan.participant_count && plan.participant_count > 1 && (
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -259,7 +327,7 @@ export function PlansTab() {
                   <span>{plan.participant_count} joined</span>
                 </div>
               )}
-            </div>
+            </button>
           ))
         )}
       </div>
@@ -280,6 +348,38 @@ export function PlansTab() {
         onOpenChange={setShowCreateDialog}
         city={selectedCity}
       />
+
+      {/* Plan Chat Dialog */}
+      {selectedPlan && (
+        <PlanGroupChatDialog
+          open={showChatDialog}
+          onOpenChange={setShowChatDialog}
+          activity={{
+            ...selectedPlan,
+            created_at: selectedPlan.scheduled_for,
+            updated_at: selectedPlan.scheduled_for,
+          }}
+          onBack={() => setShowChatDialog(false)}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this plan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete your {planToDelete && getActivityLabel(planToDelete.activity_type)} plan and all its messages. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePlan} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Plan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
