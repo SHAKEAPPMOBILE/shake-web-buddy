@@ -409,20 +409,6 @@ export function GroupChatDialog({
             <div className="flex-1">
               <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
               <p className="text-sm text-black/60">{formattedTime}</p>
-              <p className="text-lg font-display text-black mt-1">Suggested venue</p>
-              {mapsUrl ? (
-                <a 
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-shake-green hover:text-shake-green/80 transition-colors flex items-center gap-1 group"
-                >
-                  <MapPin className="w-3 h-3" />
-                  <span className="group-hover:underline">{location}</span>
-                </a>
-              ) : (
-                <p className="text-sm text-black/50">{location}</p>
-              )}
             </div>
             {showAttendees && (
               <button 
