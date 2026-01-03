@@ -6,13 +6,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { PremiumDialog } from "../PremiumDialog";
 import { SuperHumanIcon } from "../SuperHumanIcon";
 import { Link } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-export function ProfileTab() {
+interface ProfileTabProps {
+  onSignOut?: () => void;
+}
+
+export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const { user, isPremium, signOut } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -33,31 +48,21 @@ export function ProfileTab() {
     fetchProfile();
   }, [user]);
 
+  // When not logged in, trigger onSignOut to go to home
   if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-          <User className="w-10 h-10 text-muted-foreground" />
-        </div>
-        <h2 className="text-xl font-display font-bold mb-2">Sign in to continue</h2>
-        <p className="text-muted-foreground mb-6">
-          Create your profile and connect with others
-        </p>
-        <button
-          onClick={() => navigate("/auth")}
-          className="px-6 py-3 bg-primary text-primary-foreground rounded-full font-medium"
-        >
-          Sign In
-        </button>
-      </div>
-    );
+    return null; // Parent will handle showing home tab
   }
 
-  const handleSignOut = async () => {
-    // Clear local state immediately for instant UI update
+  const handleSignOutClick = () => {
+    setShowSignOutConfirm(true);
+  };
+
+  const handleConfirmSignOut = async () => {
     setAvatarUrl(null);
     setUserName(null);
     await signOut();
+    setShowSignOutConfirm(false);
+    onSignOut?.();
   };
 
   return (
@@ -109,7 +114,7 @@ export function ProfileTab() {
         )}
 
         <button
-          onClick={handleSignOut}
+          onClick={handleSignOutClick}
           className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-border rounded-xl"
         >
           <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -132,6 +137,23 @@ export function ProfileTab() {
       </div>
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+      <AlertDialog open={showSignOutConfirm} onOpenChange={setShowSignOutConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Going antisocial? 😢</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to sign out? You'll miss all the fun activities!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay Social</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSignOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sign Out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
