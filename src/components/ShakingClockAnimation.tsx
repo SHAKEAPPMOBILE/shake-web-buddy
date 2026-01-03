@@ -41,9 +41,6 @@ export function ShakingClockAnimation({ open, onOpenChange, onComplete }: Shakin
         <p className="text-lg text-muted-foreground text-center mt-2">
           It's time to shake!
         </p>
-        <p className="text-sm text-muted-foreground/70 text-center mt-4 max-w-xs">
-          Your activity is recorded for 24 hours. You'll be notified when someone joins!
-        </p>
       </DialogContent>
     </Dialog>
   );
