@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import logoShake from "@/assets/logo_shake_original_color.png";
+import logoShake from "@/assets/shake-logo-new.png";
 import { ArrowLeft, ChevronDown, Phone, User, Instagram, Linkedin, Twitter, Calendar, Lock, Eye, EyeOff } from "lucide-react";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -570,9 +570,23 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Logo */}
+          {/* Logo - same style as Welcome page header */}
           <div className="flex flex-col items-center gap-4">
-            <img src={logoShake} alt="Shake Social" className="h-20" />
+            <div className="flex items-center gap-1.5">
+              <img 
+                src={logoShake} 
+                alt="Shake" 
+                className="h-6 w-auto object-contain" 
+              />
+              <div className="flex flex-col">
+                <span className="text-base font-display font-bold text-foreground lowercase leading-tight">
+                  shake
+                </span>
+                <span className="text-[7px] font-medium tracking-[0.12em] uppercase text-muted-foreground -mt-0.5">
+                  social
+                </span>
+              </div>
+            </div>
             <h1 className="text-2xl font-display font-bold text-foreground">
               {step === 'otp' 
                 ? "Enter verification code" 
