@@ -12,6 +12,7 @@ interface AuthContextType {
   verifyOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
   signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
   signInWithPassword: (phone: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   checkSubscription: () => Promise<void>;
@@ -177,6 +178,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const signInWithGoogle = async () => {
+    const redirectUrl = `${window.location.origin}/`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+      },
+    });
+    return { error: error as Error | null };
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -202,6 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUpWithPhone,
         signInWithPhone,
         signInWithPassword,
+        signInWithGoogle,
         updatePassword,
         verifyOtp,
         signOut,
