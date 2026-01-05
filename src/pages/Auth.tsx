@@ -44,7 +44,7 @@ export default function Auth() {
   );
   const [countrySearchOpen, setCountrySearchOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
-  const { signUpWithPhone, signInWithPhone, signInWithPassword, signInWithGoogle, updatePassword, verifyOtp } = useAuth();
+  const { user, signUpWithPhone, signInWithPhone, signInWithPassword, signInWithGoogle, updatePassword, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +95,58 @@ export default function Auth() {
       return () => clearTimeout(timer);
     }
   }, [resendCountdown]);
+
+  // After any sign-in (including Google), route new users into profile completion
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+
+    setTimeout(() => {
+      (async () => {
+        const [{ data: profile }, { data: profilePrivate }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("name")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("profiles_private")
+            .select("date_of_birth")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        ]);
+
+        if (cancelled) return;
+
+        const needsProfile = !profile?.name || !profilePrivate?.date_of_birth;
+
+        if (needsProfile) {
+          setIsLogin(false);
+          setUsePasswordLogin(false);
+          setStep("name");
+
+          // Prefill name from Google if available
+          setName((prev) =>
+            prev ||
+            String(
+              (user.user_metadata?.full_name ??
+                user.user_metadata?.name ??
+                "") as string
+            )
+          );
+        } else {
+          navigate("/");
+        }
+      })().catch(() => {
+        // If anything fails, don't block the user
+      });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, navigate]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -724,8 +776,8 @@ export default function Auth() {
                   const { error } = await signInWithGoogle();
                   if (error) {
                     toast.error(error.message);
-                    setIsLoading(false);
                   }
+                  setIsLoading(false);
                 }}
                 disabled={isLoading}
               >
@@ -887,8 +939,8 @@ export default function Auth() {
                   const { error } = await signInWithGoogle();
                   if (error) {
                     toast.error(error.message);
-                    setIsLoading(false);
                   }
+                  setIsLoading(false);
                 }}
                 disabled={isLoading}
               >

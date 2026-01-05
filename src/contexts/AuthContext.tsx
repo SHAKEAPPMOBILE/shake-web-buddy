@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
+import { Capacitor } from "@capacitor/core";
+import { App as CapApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
@@ -84,24 +87,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        setIsLoading(false);
+    let urlOpenListener: any = null;
 
-        // Defer subscription check with the current session
-        if (currentSession?.user) {
-          setTimeout(() => {
-            checkSubscription(currentSession);
-          }, 0);
-        } else {
-          setIsPremium(false);
-          setSubscriptionEnd(null);
+    // Native (Capacitor) OAuth: catch the deep link and exchange the code for a session
+    if (Capacitor.isNativePlatform()) {
+      CapApp.addListener("appUrlOpen", async ({ url }) => {
+        if (!url) return;
+        if (!url.startsWith("shake://auth/callback")) return;
+
+        // Close the in-app browser and finish the auth exchange
+        try {
+          await Browser.close();
+        } catch {
+          // ignore
         }
+
+        try {
+          await supabase.auth.exchangeCodeForSession(url);
+        } catch {
+          console.log("OAuth code exchange failed");
+        }
+      }).then((handle) => {
+        urlOpenListener = handle;
+      });
+    }
+
+    // Set up auth state listener FIRST
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setIsLoading(false);
+
+      // Defer subscription check with the current session
+      if (currentSession?.user) {
+        setTimeout(() => {
+          checkSubscription(currentSession);
+        }, 0);
+      } else {
+        setIsPremium(false);
+        setSubscriptionEnd(null);
       }
-    );
+    });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
@@ -116,7 +144,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      urlOpenListener?.remove();
+    };
   }, []);
 
   // Refresh subscription status periodically
@@ -179,9 +210,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    // Web: browser redirect back to current origin
+    // Native: use deep link + exchangeCodeForSession via appUrlOpen listener
+    if (Capacitor.isNativePlatform()) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: "shake://auth/callback",
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) return { error: error as Error | null };
+
+      if (data?.url) {
+        await Browser.open({ url: data.url });
+      }
+
+      return { error: null };
+    }
+
     const redirectUrl = `${window.location.origin}/`;
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
         redirectTo: redirectUrl,
       },
