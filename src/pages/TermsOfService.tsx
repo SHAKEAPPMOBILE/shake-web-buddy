@@ -1,10 +1,21 @@
 import { Footer } from "@/components/Footer";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function TermsOfService() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background">
       <main className="pt-16 pb-16">
         <div className="container mx-auto px-4 max-w-3xl">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back</span>
+          </button>
           <h1 className="font-display text-4xl font-bold text-foreground mb-2">Terms of Service</h1>
           <p className="text-muted-foreground mb-8">Last updated: September 2025</p>
           
