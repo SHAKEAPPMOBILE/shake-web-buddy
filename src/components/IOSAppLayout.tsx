@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { IOSTabBar } from "./IOSTabBar";
-import { IOSHeader } from "./IOSHeader";
 import { HomeTab } from "./ios/HomeTab";
 import { PlansTab } from "./ios/PlansTab";
 import { ChatTab } from "./ios/ChatTab";
@@ -151,10 +150,8 @@ export function IOSAppLayout() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <IOSHeader onUpgradeClick={() => setShowPremiumDialog(true)} />
-      
       {/* Main content area - fixed height, no scroll */}
-      <main className="flex-1 pt-14 pb-20 overflow-hidden">
+      <main className="flex-1 pb-20 overflow-hidden safe-area-top">
         <div className="h-full">
           {renderTab()}
         </div>
