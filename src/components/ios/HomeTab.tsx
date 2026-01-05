@@ -96,7 +96,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   }, [goToNext, goToPrevious]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+    <div className="flex flex-col items-center justify-center h-full px-6 text-center pt-16">
       {/* Welcome Message */}
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border mb-6">
