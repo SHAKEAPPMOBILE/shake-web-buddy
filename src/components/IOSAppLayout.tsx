@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { IOSTabBar } from "./IOSTabBar";
 import { HomeTab } from "./ios/HomeTab";
 import { PlansTab } from "./ios/PlansTab";
@@ -16,6 +16,7 @@ import { usePrivateMessageNotifications } from "@/hooks/usePrivateMessageNotific
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { supabase } from "@/integrations/supabase/client";
 
 export function IOSAppLayout() {
   const [activeTab, setActiveTab] = useState("home");
@@ -27,13 +28,55 @@ export function IOSAppLayout() {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [showHomeActivities, setShowHomeActivities] = useState(false);
 
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
   const { joinActivity, getActivityJoinCount } = useActivityJoins(selectedCity);
   
   // Initialize push notifications for private messages
   usePrivateMessageNotifications();
+
+  // Check if user needs to complete profile after Google OAuth
+  useEffect(() => {
+    if (isLoading || !user) return;
+
+    let cancelled = false;
+
+    const checkProfileCompletion = async () => {
+      try {
+        const [{ data: profile }, { data: profilePrivate }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("name")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("profiles_private")
+            .select("date_of_birth")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        ]);
+
+        if (cancelled) return;
+
+        const needsProfile = !profile?.name || !profilePrivate?.date_of_birth;
+
+        if (needsProfile) {
+          // Redirect to auth page to complete profile
+          navigate("/auth");
+        }
+      } catch (error) {
+        console.log("Profile check failed:", error);
+      }
+    };
+
+    // Small delay to ensure auth state is fully settled
+    setTimeout(checkProfileCompletion, 100);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, isLoading, navigate]);
 
   const handleShakeClick = () => {
     if (!user) {
