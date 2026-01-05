@@ -1,12 +1,21 @@
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function CommunityGuidelines() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <main className="pt-32 pb-16">
+      <main className="pt-8 pb-16">
         <div className="container mx-auto px-4 max-w-3xl">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back</span>
+          </button>
+
           <h1 className="font-display text-4xl font-bold text-foreground mb-8">Community Guidelines</h1>
           
           <div className="prose prose-invert max-w-none space-y-8">
@@ -84,23 +93,12 @@ export default function CommunityGuidelines() {
               </p>
             </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-foreground mb-4">Contact & Support</h2>
-              <p className="text-muted-foreground">
-                If you need help or want to report an issue:
-              </p>
-              <ul className="list-disc list-inside text-muted-foreground space-y-2">
-                <li>Use the in-app support feature</li>
-                <li>Email: <a href="mailto:contact@shakeapp.today" className="text-shake-yellow hover:underline">contact@shakeapp.today</a></li>
-              </ul>
-              <p className="text-muted-foreground mt-4">
-                We're building SHAKE together — thank you for being part of a respectful, open-minded, real-life community 💛
-              </p>
-            </section>
+            <p className="text-muted-foreground mt-8">
+              We're building SHAKE together — thank you for being part of a respectful, open-minded, real-life community 💛
+            </p>
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
