@@ -24,6 +24,9 @@ import avatarNew23 from "@/assets/avatar-new-23.png";
 import avatarNew24 from "@/assets/avatar-new-24.png";
 import avatarNew25 from "@/assets/avatar-new-25.png";
 import avatarNew26 from "@/assets/avatar-new-26.png";
+import avatarNew27 from "@/assets/avatar-new-27.png";
+import avatarNew28 from "@/assets/avatar-new-28.png";
+import avatarNew30 from "@/assets/avatar-new-30.png";
 import { Camera, Check, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +57,9 @@ export const avatarOptions = [
   { id: "avatar-24", src: avatarNew24 },
   { id: "avatar-25", src: avatarNew25 },
   { id: "avatar-26", src: avatarNew26 },
+  { id: "avatar-27", src: avatarNew27 },
+  { id: "avatar-28", src: avatarNew28 },
+  { id: "avatar-30", src: avatarNew30 },
 ];
 
 interface AvatarPickerProps {
