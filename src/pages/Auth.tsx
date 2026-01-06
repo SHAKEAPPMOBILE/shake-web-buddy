@@ -21,7 +21,7 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
-  const [step, setStep] = useState<'phone' | 'otp' | 'name' | 'password' | 'forgot' | 'reset'>('phone');
+  const [step, setStep] = useState<'phone' | 'otp' | 'name' | 'social' | 'avatar' | 'password' | 'forgot' | 'reset'>('phone');
   const [isLogin, setIsLogin] = useState(() => searchParams.get('mode') !== 'signup');
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -554,6 +554,10 @@ export default function Auth() {
     } else if (step === 'name') {
       // For signup, after password set, don't allow going back
       navigate("/");
+    } else if (step === 'social') {
+      setStep('name');
+    } else if (step === 'avatar') {
+      setStep('social');
     } else {
       navigate("/");
     }
@@ -577,30 +581,30 @@ export default function Auth() {
 
         <div className="w-full max-w-md space-y-8 px-2">
           {/* Progress Indicator - only show during signup flow */}
-          {!isLogin && (step === 'phone' || step === 'otp' || step === 'password' || step === 'name') && (
+          {!isLogin && (step === 'phone' || step === 'otp' || step === 'password' || step === 'name' || step === 'social' || step === 'avatar') && (
             <div className="flex items-center justify-center gap-2">
               <div className="flex items-center gap-1">
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  step === 'password' || step === 'name'
+                  step === 'password' || step === 'name' || step === 'social' || step === 'avatar'
                     ? 'bg-shake-yellow/20 text-shake-yellow' 
                     : 'bg-shake-yellow text-background'
                 }`}>
-                  {step === 'password' || step === 'name' ? '✓' : '1'}
+                  {step === 'password' || step === 'name' || step === 'social' || step === 'avatar' ? '✓' : '1'}
                 </div>
-                <span className={`text-xs ${step === 'password' || step === 'name' ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
+                <span className={`text-xs ${step === 'password' || step === 'name' || step === 'social' || step === 'avatar' ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
                   Phone
                 </span>
               </div>
               <div className="w-4 h-px bg-border" />
               <div className="flex items-center gap-1">
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  step === 'name'
+                  step === 'name' || step === 'social' || step === 'avatar'
                     ? 'bg-shake-yellow/20 text-shake-yellow' 
                     : step === 'password'
                     ? 'bg-shake-yellow text-background'
                     : 'bg-muted text-muted-foreground'
                 }`}>
-                  {step === 'name' ? '✓' : '2'}
+                  {step === 'name' || step === 'social' || step === 'avatar' ? '✓' : '2'}
                 </div>
                 <span className={`text-xs ${step === 'password' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                   Password
@@ -609,13 +613,13 @@ export default function Auth() {
               <div className="w-4 h-px bg-border" />
               <div className="flex items-center gap-1">
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  step === 'name' 
+                  step === 'name' || step === 'social' || step === 'avatar'
                     ? 'bg-shake-yellow text-background' 
                     : 'bg-muted text-muted-foreground'
                 }`}>
                   3
                 </div>
-                <span className={`text-xs ${step === 'name' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                <span className={`text-xs ${step === 'name' || step === 'social' || step === 'avatar' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                   Profile
                 </span>
               </div>
@@ -646,6 +650,10 @@ export default function Auth() {
                 ? "Set your password"
                 : step === 'name'
                 ? "Let's create your profile."
+                : step === 'social'
+                ? "Social Links"
+                : step === 'avatar'
+                ? "Profile Picture"
                 : step === 'forgot'
                 ? "Reset your password"
                 : step === 'reset'
@@ -661,6 +669,10 @@ export default function Auth() {
                 ? "You'll use this to sign in next time"
                 : step === 'name'
                 ? "This is how others will see you"
+                : step === 'social'
+                ? "Connect your social profiles (optional)"
+                : step === 'avatar'
+                ? "Choose how you want to appear"
                 : step === 'forgot'
                 ? `We sent a code to ${phoneNumber}`
                 : step === 'reset'
@@ -1163,9 +1175,25 @@ export default function Auth() {
             </form>
           )}
 
-          {/* Name Form (Signup only - after OTP verification) */}
+          {/* Name Form - Step 1 of profile (Signup only) */}
           {step === 'name' && (
-            <form onSubmit={handleSaveProfile} className="space-y-4">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!name.trim()) {
+                toast.error("Please enter your name");
+                return;
+              }
+              if (!dateOfBirth) {
+                toast.error("Please enter your date of birth");
+                return;
+              }
+              const age = calculateAge(dateOfBirth);
+              if (age < 18) {
+                toast.error("You must be 18 or older to use Shake");
+                return;
+              }
+              setStep('social');
+            }} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
                 <div className="relative">
@@ -1200,9 +1228,23 @@ export default function Auth() {
                 <p className="text-xs text-muted-foreground">You must be 18 or older to join</p>
               </div>
 
-              {/* Social Links (Optional) */}
-              <div className="space-y-3">
-                <Label className="text-muted-foreground">Social Links (optional)</Label>
+              <Button
+                type="submit"
+                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                size="lg"
+              >
+                Continue
+              </Button>
+            </form>
+          )}
+
+          {/* Social Links Form - Step 2 of profile */}
+          {step === 'social' && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setStep('avatar');
+            }} className="space-y-6">
+              <div className="space-y-4">
                 <div className="relative">
                   <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -1235,9 +1277,31 @@ export default function Auth() {
                 </div>
               </div>
 
-              {/* Avatar Picker */}
-              <div className="space-y-2 pt-2">
-                <Label>Profile Picture <span className="text-destructive">*</span></Label>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
+                  onClick={() => setStep('avatar')}
+                >
+                  Skip
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                  size="lg"
+                >
+                  Continue
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Avatar Picker Form - Step 3 of profile */}
+          {step === 'avatar' && (
+            <form onSubmit={handleSaveProfile} className="space-y-6">
+              <div className="space-y-2">
                 <input
                   ref={fileInputRef}
                   type="file"
