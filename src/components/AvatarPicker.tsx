@@ -7,7 +7,6 @@ import avatarNew6 from "@/assets/avatar-new-6.png";
 import avatarNew7 from "@/assets/avatar-new-7.png";
 import avatarNew8 from "@/assets/avatar-new-8.png";
 import avatarNew9 from "@/assets/avatar-new-9.png";
-import avatarNew10 from "@/assets/avatar-new-10.png";
 import avatarNew11 from "@/assets/avatar-new-11.png";
 import avatarNew12 from "@/assets/avatar-new-12.png";
 import avatarNew13 from "@/assets/avatar-new-13.png";
@@ -16,7 +15,6 @@ import avatarNew15 from "@/assets/avatar-new-15.png";
 import avatarNew16 from "@/assets/avatar-new-16.png";
 import avatarNew17 from "@/assets/avatar-new-17.png";
 import avatarNew18 from "@/assets/avatar-new-18.png";
-import avatarNew19 from "@/assets/avatar-new-19.png";
 import avatarNew20 from "@/assets/avatar-new-20.png";
 import avatarNew21 from "@/assets/avatar-new-21.png";
 import avatarNew22 from "@/assets/avatar-new-22.png";
@@ -40,7 +38,6 @@ export const avatarOptions = [
   { id: "avatar-7", src: avatarNew7 },
   { id: "avatar-8", src: avatarNew8 },
   { id: "avatar-9", src: avatarNew9 },
-  { id: "avatar-10", src: avatarNew10 },
   { id: "avatar-11", src: avatarNew11 },
   { id: "avatar-12", src: avatarNew12 },
   { id: "avatar-13", src: avatarNew13 },
@@ -49,7 +46,6 @@ export const avatarOptions = [
   { id: "avatar-16", src: avatarNew16 },
   { id: "avatar-17", src: avatarNew17 },
   { id: "avatar-18", src: avatarNew18 },
-  { id: "avatar-19", src: avatarNew19 },
   { id: "avatar-20", src: avatarNew20 },
   { id: "avatar-21", src: avatarNew21 },
   { id: "avatar-22", src: avatarNew22 },
