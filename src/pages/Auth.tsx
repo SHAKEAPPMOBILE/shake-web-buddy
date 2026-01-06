@@ -681,6 +681,12 @@ export default function Auth() {
                   ? (usePasswordLogin ? "Sign in with your password" : "Sign in with your phone number")
                   : "Create your account with your phone number"}
             </p>
+            {/* Step indicator for profile creation */}
+            {(step === 'name' || step === 'social' || step === 'avatar') && (
+              <p className="text-sm text-muted-foreground font-medium">
+                Step {step === 'name' ? '1' : step === 'social' ? '2' : '3'} of 3
+              </p>
+            )}
           </div>
 
           {/* Phone Number Form - for signup or login with OTP */}
