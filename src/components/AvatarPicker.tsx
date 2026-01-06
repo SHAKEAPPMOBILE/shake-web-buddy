@@ -18,6 +18,12 @@ import avatarNew17 from "@/assets/avatar-new-17.png";
 import avatarNew18 from "@/assets/avatar-new-18.png";
 import avatarNew19 from "@/assets/avatar-new-19.png";
 import avatarNew20 from "@/assets/avatar-new-20.png";
+import avatarNew21 from "@/assets/avatar-new-21.png";
+import avatarNew22 from "@/assets/avatar-new-22.png";
+import avatarNew23 from "@/assets/avatar-new-23.png";
+import avatarNew24 from "@/assets/avatar-new-24.png";
+import avatarNew25 from "@/assets/avatar-new-25.png";
+import avatarNew26 from "@/assets/avatar-new-26.png";
 import { Camera, Check, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +48,12 @@ export const avatarOptions = [
   { id: "avatar-18", src: avatarNew18 },
   { id: "avatar-19", src: avatarNew19 },
   { id: "avatar-20", src: avatarNew20 },
+  { id: "avatar-21", src: avatarNew21 },
+  { id: "avatar-22", src: avatarNew22 },
+  { id: "avatar-23", src: avatarNew23 },
+  { id: "avatar-24", src: avatarNew24 },
+  { id: "avatar-25", src: avatarNew25 },
+  { id: "avatar-26", src: avatarNew26 },
 ];
 
 interface AvatarPickerProps {
@@ -109,15 +121,15 @@ export function AvatarPicker({
         </button>
       </div>
 
-      {/* Preset avatars grid */}
-      <div className="grid grid-cols-5 gap-2 max-w-xs mx-auto">
+      {/* Preset avatars grid - 26 avatars in a scrollable area */}
+      <div className="grid grid-cols-5 gap-2 max-w-xs mx-auto max-h-48 overflow-y-auto pr-1">
         {avatarOptions.map((avatar) => (
           <button
             key={avatar.id}
             type="button"
             onClick={() => onSelectAvatar(avatar.id)}
             className={cn(
-              "relative w-12 h-12 rounded-full border-2 transition-all overflow-hidden",
+              "relative w-12 h-12 rounded-full border-2 transition-all overflow-hidden flex-shrink-0",
               selectedAvatar === avatar.id
                 ? "border-shake-green ring-2 ring-shake-green/20"
                 : "border-border hover:border-primary/50"
