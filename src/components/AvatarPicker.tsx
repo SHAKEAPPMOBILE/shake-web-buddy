@@ -1,15 +1,47 @@
-import avatar1 from "@/assets/avatar-1.png";
-import avatar2 from "@/assets/avatar-2.png";
-import avatar3 from "@/assets/avatar-3.png";
-import avatar4 from "@/assets/avatar-4.png";
+import avatarNew1 from "@/assets/avatar-new-1.png";
+import avatarNew2 from "@/assets/avatar-new-2.png";
+import avatarNew3 from "@/assets/avatar-new-3.png";
+import avatarNew4 from "@/assets/avatar-new-4.png";
+import avatarNew5 from "@/assets/avatar-new-5.png";
+import avatarNew6 from "@/assets/avatar-new-6.png";
+import avatarNew7 from "@/assets/avatar-new-7.png";
+import avatarNew8 from "@/assets/avatar-new-8.png";
+import avatarNew9 from "@/assets/avatar-new-9.png";
+import avatarNew10 from "@/assets/avatar-new-10.png";
+import avatarNew11 from "@/assets/avatar-new-11.png";
+import avatarNew12 from "@/assets/avatar-new-12.png";
+import avatarNew13 from "@/assets/avatar-new-13.png";
+import avatarNew14 from "@/assets/avatar-new-14.png";
+import avatarNew15 from "@/assets/avatar-new-15.png";
+import avatarNew16 from "@/assets/avatar-new-16.png";
+import avatarNew17 from "@/assets/avatar-new-17.png";
+import avatarNew18 from "@/assets/avatar-new-18.png";
+import avatarNew19 from "@/assets/avatar-new-19.png";
+import avatarNew20 from "@/assets/avatar-new-20.png";
 import { Camera, Check, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const avatarOptions = [
-  { id: "avatar-1", src: avatar1 },
-  { id: "avatar-2", src: avatar2 },
-  { id: "avatar-3", src: avatar3 },
-  { id: "avatar-4", src: avatar4 },
+  { id: "avatar-1", src: avatarNew1 },
+  { id: "avatar-2", src: avatarNew2 },
+  { id: "avatar-3", src: avatarNew3 },
+  { id: "avatar-4", src: avatarNew4 },
+  { id: "avatar-5", src: avatarNew5 },
+  { id: "avatar-6", src: avatarNew6 },
+  { id: "avatar-7", src: avatarNew7 },
+  { id: "avatar-8", src: avatarNew8 },
+  { id: "avatar-9", src: avatarNew9 },
+  { id: "avatar-10", src: avatarNew10 },
+  { id: "avatar-11", src: avatarNew11 },
+  { id: "avatar-12", src: avatarNew12 },
+  { id: "avatar-13", src: avatarNew13 },
+  { id: "avatar-14", src: avatarNew14 },
+  { id: "avatar-15", src: avatarNew15 },
+  { id: "avatar-16", src: avatarNew16 },
+  { id: "avatar-17", src: avatarNew17 },
+  { id: "avatar-18", src: avatarNew18 },
+  { id: "avatar-19", src: avatarNew19 },
+  { id: "avatar-20", src: avatarNew20 },
 ];
 
 interface AvatarPickerProps {
@@ -30,7 +62,9 @@ export function AvatarPicker({
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground text-center">Choose an avatar or upload your own</p>
-      <div className="flex items-center justify-center gap-3 flex-wrap">
+      
+      {/* Upload options */}
+      <div className="flex items-center justify-center gap-3 mb-4">
         {/* Take photo option */}
         <button
           type="button"
@@ -73,15 +107,17 @@ export function AvatarPicker({
             </div>
           )}
         </button>
+      </div>
 
-        {/* Preset avatars */}
+      {/* Preset avatars grid */}
+      <div className="grid grid-cols-5 gap-2 max-w-xs mx-auto">
         {avatarOptions.map((avatar) => (
           <button
             key={avatar.id}
             type="button"
             onClick={() => onSelectAvatar(avatar.id)}
             className={cn(
-              "relative w-14 h-14 rounded-full border-2 transition-all overflow-hidden",
+              "relative w-12 h-12 rounded-full border-2 transition-all overflow-hidden",
               selectedAvatar === avatar.id
                 ? "border-shake-green ring-2 ring-shake-green/20"
                 : "border-border hover:border-primary/50"
@@ -90,7 +126,7 @@ export function AvatarPicker({
             <img src={avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
             {selectedAvatar === avatar.id && (
               <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center">
-                <Check className="w-5 h-5 text-shake-green" />
+                <Check className="w-4 h-4 text-shake-green" />
               </div>
             )}
           </button>
