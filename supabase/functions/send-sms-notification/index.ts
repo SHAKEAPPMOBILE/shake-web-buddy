@@ -6,8 +6,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Valid activity types for validation
-const VALID_ACTIVITY_TYPES = ['lunch', 'dinner', 'drinks', 'hike'] as const;
+// Valid activity types for validation (must match src/data/activityTypes.ts)
+const VALID_ACTIVITY_TYPES = [
+  'lunch', 'dinner', 'drinks', 'hike', 'surf', 'run', 'co-working',
+  'basketball', 'tennis-padel', 'football', 'shopping', 'arts'
+] as const;
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
