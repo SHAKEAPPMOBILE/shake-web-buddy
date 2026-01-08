@@ -17,7 +17,7 @@ export interface UserActivity {
   participant_count?: number;
 }
 
-const MAX_ACTIVITIES_PER_MONTH = 10;
+const MAX_ACTIVITIES_PER_MONTH = 3;
 
 export function useUserActivities(city: string) {
   const { user, isPremium } = useAuth();

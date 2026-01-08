@@ -28,6 +28,7 @@ export const getActivityDay = (id: string): string => {
   return '';
 };
 
+// Standard activities for the carousel (original 7)
 export const ACTIVITY_TYPES: ActivityType[] = [
   { 
     id: "lunch", 
@@ -86,6 +87,10 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     color: "bg-slate-500/20 hover:bg-slate-500/30",
     defaultDay: 3 // Wednesday
   },
+];
+
+// Additional activities only for "create a plan" (with date picker)
+export const PLAN_ONLY_ACTIVITY_TYPES: ActivityType[] = [
   { 
     id: "basketball", 
     label: "Basketball", 
@@ -123,9 +128,12 @@ export const ACTIVITY_TYPES: ActivityType[] = [
   },
 ];
 
+// All activities combined (for create plan feature)
+export const ALL_ACTIVITY_TYPES: ActivityType[] = [...ACTIVITY_TYPES, ...PLAN_ONLY_ACTIVITY_TYPES];
+
 // Helper functions
 export const getActivityById = (id: string): ActivityType | undefined => {
-  return ACTIVITY_TYPES.find(a => a.id === id);
+  return ALL_ACTIVITY_TYPES.find(a => a.id === id);
 };
 
 export const getActivityEmoji = (id: string): string => {
@@ -144,7 +152,7 @@ export const getActivityColor = (id: string): string => {
 export function getTimeBasedDefaultActivity(): string {
   const day = new Date().getDay(); // 0 = Sunday, 6 = Saturday
   
-  // Find activity that matches today's day
+  // Find activity that matches today's day (from standard activities only)
   const todayActivity = ACTIVITY_TYPES.find(a => a.defaultDay === day);
   if (todayActivity) {
     return todayActivity.id;

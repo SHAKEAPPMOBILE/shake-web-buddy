@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { format, startOfDay, isSameDay, addDays } from "date-fns";
 import { CalendarIcon, Plus, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel, getActivityById } from "@/data/activityTypes";
+import { ALL_ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel, getActivityById } from "@/data/activityTypes";
 import { useUserActivities, UserActivity } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
@@ -178,7 +178,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             ) : canCreate ? (
               <>You have <span className="font-bold text-primary">{remainingActivities}</span> plans left this month</>
             ) : (
-              <span className="text-destructive">You have used all 10 plans this month</span>
+              <span className="text-destructive">You have used all 3 free plans this month</span>
             )}
           </p>
         </DialogHeader>
@@ -193,7 +193,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               <SuperHumanIcon size={32} />
             </div>
             <div>
-              <p className="font-semibold text-foreground">You've used all 10 free plans this month</p>
+              <p className="font-semibold text-foreground">You've used all 3 free plans this month</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Become a Super-Human for unlimited plans
               </p>
@@ -211,8 +211,8 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             {/* Activity Type Selection */}
             <div className="space-y-3">
               <label className="text-sm font-medium text-foreground">What type of activity?</label>
-              <div className="grid grid-cols-5 gap-2">
-                {ACTIVITY_TYPES.map((activity) => {
+              <div className="grid grid-cols-4 gap-2">
+                {ALL_ACTIVITY_TYPES.map((activity) => {
                   // Check if user has this activity type for today
                   const hasTodayPlan = myActivities.some(a => 
                     a.activity_type === activity.id &&
