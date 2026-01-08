@@ -497,7 +497,7 @@ export function PlanGroupChatDialog({
                 <Button variant="ghost" size="icon" onClick={() => setPendingAudio(null)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
-                <Button onClick={handleSendMessage} disabled={isSending} className="bg-shake-green text-white hover:bg-shake-green/90">
+                <Button onClick={handleSendMessage} disabled={isSending} variant="shake">
                   {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
@@ -520,7 +520,7 @@ export function PlanGroupChatDialog({
                   highlighted={true}
                   resetTrigger={audioResetTrigger}
                 />
-                <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} className="bg-shake-green text-white hover:bg-shake-green/90">
+                <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} variant="shake">
                   {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
