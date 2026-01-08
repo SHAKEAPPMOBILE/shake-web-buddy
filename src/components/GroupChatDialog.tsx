@@ -22,6 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -142,6 +143,7 @@ export function GroupChatDialog({
     userName: string | null;
     avatarUrl: string | null;
   } | null>(null);
+  const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user, isPremium } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
@@ -168,6 +170,45 @@ export function GroupChatDialog({
   }, [messages]);
   
   const { profiles } = useUserProfiles(userIds);
+
+  // Fetch participants when dialog opens
+  useEffect(() => {
+    if (!open) return;
+
+    const fetchParticipants = async () => {
+      const { data: joins, error: joinsError } = await supabase
+        .from("activity_joins")
+        .select("user_id")
+        .eq("activity_type", activityType)
+        .eq("city", city)
+        .gt("expires_at", new Date().toISOString());
+
+      if (joinsError || !joins?.length) {
+        setParticipants([]);
+        return;
+      }
+
+      const uniqueUserIds = [...new Set(joins.map((j) => j.user_id))];
+
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", uniqueUserIds);
+
+      const participantsList = uniqueUserIds.map((userId) => {
+        const profile = profilesData?.find((p) => p.user_id === userId);
+        return {
+          user_id: userId,
+          name: profile?.name || null,
+          avatar_url: profile?.avatar_url || null,
+        };
+      });
+
+      setParticipants(participantsList);
+    };
+
+    fetchParticipants();
+  }, [open, activityType, city]);
 
   // Update time every minute
   useEffect(() => {
@@ -443,15 +484,40 @@ export function GroupChatDialog({
           </div>
         </DialogHeader>
 
-        {/* Attendees section - only shown if people joined today */}
+        {/* Attendees section with avatars */}
         {showAttendees ? (
           <button 
             onClick={() => setShowParticipantsList(true)}
             className="w-full px-4 py-3 border-b border-border/50 text-left hover:bg-muted/30 transition-colors"
           >
-            <p className="text-sm text-muted-foreground hover:text-foreground">
-              {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined today
-            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-2 overflow-hidden">
+                {participants.slice(0, 6).map((participant) => (
+                  <div
+                    key={participant.user_id}
+                    className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-[hsl(50,40%,92%)] shrink-0"
+                  >
+                    {participant.avatar_url ? (
+                      <img
+                        src={participant.avatar_url}
+                        alt={participant.name || "User"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
+                ))}
+                {participants.length > 6 && (
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border-2 border-[hsl(50,40%,92%)] text-xs font-medium text-muted-foreground shrink-0">
+                    +{participants.length - 6}
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined today
+              </p>
+            </div>
           </button>
         ) : (
           <div className="px-4 py-3 border-b border-border/50">
