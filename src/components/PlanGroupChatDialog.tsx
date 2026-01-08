@@ -348,6 +348,9 @@ export function PlanGroupChatDialog({
                 <span>{getActivityEmoji(activity.activity_type)}</span>
                 <span className="truncate">{getActivityLabel(activity.activity_type)}</span>
               </DialogTitle>
+              {activity.note && (
+                <p className="text-sm text-black/80 italic truncate">"{activity.note}"</p>
+              )}
               <p className="text-sm text-black/60 truncate">
                 {activity.city} • {format(new Date(activity.scheduled_for), "EEE, MMM d")}
               </p>

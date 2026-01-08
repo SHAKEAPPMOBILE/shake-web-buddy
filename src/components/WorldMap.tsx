@@ -31,18 +31,23 @@ export function WorldMap({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [hoveredActivity, setHoveredActivity] = useState<string | null>(null);
 
-  // Group activities by city
-  const activitiesByCity = useMemo(() => {
-    const grouped: Record<string, UserActivity[]> = {};
-    activities.forEach((activity) => {
+  // Create activities with random offsets for positioning
+  const activitiesWithPositions = useMemo(() => {
+    return activities.map((activity, index) => {
       const city = SHAKE_CITIES.find((c) => c.name === activity.city);
-      if (city) {
-        const key = `${city.lat}-${city.lng}`;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(activity);
-      }
-    });
-    return grouped;
+      if (!city) return null;
+      
+      // Generate consistent random offset based on activity id
+      const seed = activity.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const offsetLng = ((seed % 100) - 50) * 0.001; // ~±0.05 degrees
+      const offsetLat = (((seed * 7) % 100) - 50) * 0.001;
+      
+      return {
+        activity,
+        lng: city.lng + offsetLng,
+        lat: city.lat + offsetLat,
+      };
+    }).filter(Boolean) as { activity: UserActivity; lng: number; lat: number }[];
   }, [activities]);
 
   // Initialize map
@@ -104,13 +109,9 @@ export function WorldMap({
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    // Add new markers
-    Object.entries(activitiesByCity).forEach(([key, cityActivities]) => {
-      const city = SHAKE_CITIES.find((c) => `${c.lat}-${c.lng}` === key);
-      if (!city) return;
-
-      const topActivity = cityActivities[0];
-      const isSelected = cityActivities.some((a) => a.id === selectedActivityId);
+    // Add individual markers for each activity
+    activitiesWithPositions.forEach(({ activity, lng, lat }) => {
+      const isSelected = activity.id === selectedActivityId;
 
       // Create custom marker element
       const el = document.createElement("div");
@@ -118,41 +119,37 @@ export function WorldMap({
       el.innerHTML = `
         <div class="relative flex items-center justify-center rounded-full shadow-lg cursor-pointer transition-all duration-200 hover:scale-110 ${
           isSelected ? "scale-125 ring-2 ring-primary ring-offset-2" : ""
-        } ${getActivityColor(topActivity.activity_type)}" style="width: ${Math.max(36, 28 + cityActivities.length * 4)}px; height: ${Math.max(36, 28 + cityActivities.length * 4)}px;">
-          <span class="text-lg">${getActivityEmoji(topActivity.activity_type)}</span>
-          ${
-            cityActivities.length > 1
-              ? `<span class="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">${cityActivities.length}</span>`
-              : ""
-          }
+        } ${getActivityColor(activity.activity_type)}" style="width: 40px; height: 40px;">
+          <span class="text-lg">${getActivityEmoji(activity.activity_type)}</span>
         </div>
       `;
 
       // Add click handler
       el.addEventListener("click", (e) => {
         e.stopPropagation();
-        if (cityActivities.length === 1) {
-          onActivityClick(topActivity);
-        } else if (onCityClick) {
-          onCityClick(city);
-        }
+        onActivityClick(activity);
       });
 
       // Add hover handlers
       el.addEventListener("mouseenter", () => {
-        setHoveredActivity(topActivity.id);
+        setHoveredActivity(activity.id);
       });
       el.addEventListener("mouseleave", () => {
         setHoveredActivity(null);
       });
 
+      const creatorName = activity.creator_name || "Someone";
+      const note = activity.note ? `<p class="text-xs italic mt-1">"${activity.note}"</p>` : "";
+      
       const marker = new mapboxgl.Marker({ element: el })
-        .setLngLat([city.lng, city.lat])
+        .setLngLat([lng, lat])
         .setPopup(
           new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(`
-            <div class="text-sm">
-              <p class="font-semibold">${city.name}</p>
-              <p class="text-muted-foreground">${cityActivities.length} ${cityActivities.length === 1 ? "plan" : "plans"}</p>
+            <div class="text-sm p-1">
+              <p class="font-semibold">${getActivityEmoji(activity.activity_type)} ${activity.activity_type}</p>
+              <p class="text-muted-foreground">by ${creatorName}</p>
+              ${note}
+              <p class="text-xs text-muted-foreground mt-1">${activity.city}</p>
             </div>
           `)
         )
@@ -160,7 +157,7 @@ export function WorldMap({
 
       markersRef.current.push(marker);
     });
-  }, [activitiesByCity, mapLoaded, selectedActivityId, onActivityClick, onCityClick]);
+  }, [activitiesWithPositions, mapLoaded, selectedActivityId, onActivityClick]);
 
   // Handle selected activity change - fly to it
   useEffect(() => {
