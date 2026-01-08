@@ -512,7 +512,7 @@ export function PlanGroupChatDialog({
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 disabled={!user || (!isPremium && !canSendText)}
-                className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50"
+                className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
               />
               <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} className="bg-shake-green text-white hover:bg-shake-green/90">
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
