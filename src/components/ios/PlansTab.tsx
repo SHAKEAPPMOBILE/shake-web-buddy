@@ -310,6 +310,11 @@ export function PlansTab() {
                       <span className="text-xs text-muted-foreground/70">• {plan.city}</span>
                     )}
                   </div>
+                  {plan.note && (
+                    <p className="text-xs text-muted-foreground/80 italic mt-1 line-clamp-1">
+                      "{plan.note}"
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 mt-1">
                     <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
