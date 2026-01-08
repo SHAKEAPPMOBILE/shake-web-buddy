@@ -27,6 +27,7 @@ export function IOSAppLayout() {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
   const [showHomeActivities, setShowHomeActivities] = useState(false);
+  const [isHeroShaking, setIsHeroShaking] = useState(false);
 
   const { user, isLoading } = useAuth();
   const { selectedCity } = useCity();
@@ -156,6 +157,13 @@ export function IOSAppLayout() {
     setActiveTab("home");
   }, []);
 
+  const handleTabBarShake = useCallback(() => {
+    setIsHeroShaking(true);
+    setTimeout(() => {
+      setIsHeroShaking(false);
+    }, 3000);
+  }, []);
+
   const renderTab = () => {
     switch (activeTab) {
       case "home":
@@ -164,6 +172,7 @@ export function IOSAppLayout() {
             showActivities={showHomeActivities} 
             onSelectActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
+            isShaking={isHeroShaking}
           />
         );
       case "plans":
@@ -178,6 +187,7 @@ export function IOSAppLayout() {
               showActivities={showHomeActivities} 
               onSelectActivity={handleHomeActivitySelect}
               onCloseActivities={() => setShowHomeActivities(false)}
+              isShaking={isHeroShaking}
             />
           );
         }
@@ -188,6 +198,7 @@ export function IOSAppLayout() {
             showActivities={showHomeActivities} 
             onSelectActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
+            isShaking={isHeroShaking}
           />
         );
     }
@@ -202,7 +213,7 @@ export function IOSAppLayout() {
         </div>
       </main>
 
-      <IOSTabBar activeTab={activeTab} onTabChange={handleTabChange} />
+      <IOSTabBar activeTab={activeTab} onTabChange={handleTabChange} onShakeStart={handleTabBarShake} />
 
       {/* Dialogs */}
       <ActivitySelectionDialog
