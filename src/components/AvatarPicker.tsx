@@ -123,8 +123,8 @@ export function AvatarPicker({
         </button>
       </div>
 
-      {/* Preset avatars grid - 26 avatars in a scrollable area */}
-      <div className="grid grid-cols-5 gap-2 max-w-xs mx-auto max-h-48 overflow-y-auto pr-1">
+      {/* Preset avatars grid - all avatars visible */}
+      <div className="grid grid-cols-6 gap-2 max-w-sm mx-auto">
         {avatarOptions.map((avatar) => (
           <button
             key={avatar.id}
