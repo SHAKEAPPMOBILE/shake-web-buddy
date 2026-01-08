@@ -12,6 +12,7 @@ export interface UserActivity {
   created_at: string;
   updated_at: string;
   is_active: boolean;
+  note?: string | null;
   creator_name?: string;
   creator_avatar?: string;
   participant_count?: number;
@@ -125,7 +126,8 @@ export function useUserActivities(city: string) {
   // Create a new activity
   const createActivity = async (
     activityType: string,
-    scheduledFor: Date
+    scheduledFor: Date,
+    note?: string
   ): Promise<boolean> => {
     if (!user) {
       toast.error("Please sign in to create an activity");
@@ -167,6 +169,7 @@ export function useUserActivities(city: string) {
       activity_type: activityType,
       city: city,
       scheduled_for: scheduledFor.toISOString(),
+      note: note?.trim() || null,
     });
 
     if (error) {
