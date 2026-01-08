@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, MapPin, Globe, User, Mic, MessageSquare, Sparkles } from "lucide-react";
 import shakeCoin from "@/assets/shake-coin.png";
+import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
   Dialog,
   DialogContent,
@@ -128,12 +129,13 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           </div>
         )}
         <DialogHeader className="pb-2">
-          <div className="flex items-center justify-center mb-2">
+          <div className="flex items-center justify-center gap-2 mb-2">
             <img 
-              src={shakeCoin} 
+              src={shakeCoinTransparent} 
               alt="SHAKE Coin" 
-              className="w-12 h-12 object-contain transition-all duration-300 hover:drop-shadow-[0_0_15px_hsl(var(--shake-yellow))] cursor-pointer"
+              className="w-12 h-12 object-contain"
             />
+            <SuperHumanIcon size={40} />
           </div>
           <DialogTitle className="text-center text-xl font-display">
             Become a Super-Human
