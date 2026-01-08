@@ -130,15 +130,15 @@ export function AvatarPicker({
             type="button"
             onClick={() => onSelectAvatar(avatar.id)}
             className={cn(
-              "relative w-12 h-12 rounded-full border-2 transition-all overflow-hidden flex-shrink-0",
+              "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 hover:scale-110 active:scale-95",
               selectedAvatar === avatar.id
-                ? "border-shake-green ring-2 ring-shake-green/20"
+                ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
                 : "border-border hover:border-primary/50"
             )}
           >
             <img src={avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
             {selectedAvatar === avatar.id && (
-              <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center">
+              <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
                 <Check className="w-4 h-4 text-shake-green" />
               </div>
             )}
