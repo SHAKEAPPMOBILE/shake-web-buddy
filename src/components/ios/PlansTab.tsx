@@ -227,14 +227,6 @@ export function PlansTab() {
         <h2 className="text-lg font-display font-bold">Plans in {selectedCity}</h2>
         <div className="flex items-center gap-2">
           <button
-            onClick={handleCreatePlan}
-            className="flex items-center gap-1 px-3 py-1.5 bg-shake-yellow text-background rounded-full text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Create
-            {!isPremium && <Crown className="w-3 h-3 ml-0.5" />}
-          </button>
-          <button
             onClick={() => setShowMap(true)}
             className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
           >
@@ -257,10 +249,12 @@ export function PlansTab() {
             </div>
             <p className="text-muted-foreground">No plans yet in {selectedCity}</p>
             <button
-              onClick={() => setShowCreateDialog(true)}
-              className="mt-2 w-10 h-10 rounded-full bg-shake-yellow flex items-center justify-center hover:bg-shake-yellow/90 transition-colors"
+              onClick={handleCreatePlan}
+              className="mt-3 flex items-center gap-1 px-3 py-1.5 bg-shake-yellow text-background rounded-full text-sm font-medium hover:bg-shake-yellow/90 transition-colors"
             >
-              <Plus className="w-5 h-5 text-background" />
+              <Plus className="w-4 h-4" />
+              Create
+              {!isPremium && <Crown className="w-3 h-3 ml-0.5" />}
             </button>
           </div>
         ) : (
