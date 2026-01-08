@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Camera, ArrowLeft, Loader2, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell } from "lucide-react";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SuperHumanIcon } from "@/components/SuperHumanIcon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +40,8 @@ export default function Profile() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -209,11 +213,13 @@ export default function Profile() {
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm font-medium">Back</span>
           </button>
-          <Button
+          <button
             onClick={handleSaveProfile}
             disabled={isSaving}
-            size="sm"
-            className="gap-2"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all disabled:opacity-50"
+            style={{
+              background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+            }}
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -221,7 +227,7 @@ export default function Profile() {
               <Save className="w-4 h-4" />
             )}
             Save
-          </Button>
+          </button>
         </div>
       </header>
 
@@ -241,14 +247,17 @@ export default function Profile() {
               </div>
               
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setShowAvatarPicker(true)}
                 disabled={isUploading}
-                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center hover:opacity-90 transition-all disabled:opacity-50"
+                style={{
+                  background: "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))",
+                }}
               >
                 {isUploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
                 ) : (
-                  <Camera className="w-4 h-4" />
+                  <Camera className="w-4 h-4 text-white" />
                 )}
               </button>
               
@@ -404,6 +413,33 @@ export default function Profile() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Avatar Picker Dialog */}
+      <Dialog open={showAvatarPicker} onOpenChange={setShowAvatarPicker}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">Choose your avatar</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <AvatarPicker
+              selectedAvatar={selectedAvatar}
+              onSelectAvatar={async (avatarId) => {
+                setSelectedAvatar(avatarId);
+                const avatar = avatarOptions.find(a => a.id === avatarId);
+                if (avatar) {
+                  setAvatarUrl(avatar.src);
+                  setShowAvatarPicker(false);
+                }
+              }}
+              onUploadClick={() => {
+                fileInputRef.current?.click();
+                setShowAvatarPicker(false);
+              }}
+              customAvatarPreview={avatarUrl}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
