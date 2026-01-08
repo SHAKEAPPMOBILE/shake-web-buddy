@@ -75,7 +75,6 @@ export function AvatarPicker({
 }: AvatarPickerProps) {
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground text-center">Choose an avatar or upload your own</p>
       
       {/* Upload options */}
       <div className="flex items-center justify-center gap-3 mb-4">
