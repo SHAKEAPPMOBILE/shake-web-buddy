@@ -221,17 +221,19 @@ export function ActivitiesListDialog({
 
           {/* Create Plan Button */}
           <div className="shrink-0 pt-4 border-t border-border">
-            <Button
+            <button
               onClick={() => {
                 onOpenChange(false);
                 onCreateActivity();
               }}
-              className="w-full"
-              size="lg"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white font-medium transition-all hover:opacity-90"
+              style={{
+                background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+              }}
             >
-              <Plus className="w-5 h-5 mr-2" />
+              <Plus className="w-5 h-5" />
               Propose a Plan
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
