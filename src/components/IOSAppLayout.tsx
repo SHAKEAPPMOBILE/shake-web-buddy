@@ -37,7 +37,9 @@ export function IOSAppLayout() {
   usePrivateMessageNotifications();
 
   // Check if user needs to complete profile after Google OAuth
+  // Only check if user is logged in - don't redirect logged out users
   useEffect(() => {
+    // Don't do anything if still loading or user is not logged in
     if (isLoading || !user) return;
 
     let cancelled = false;

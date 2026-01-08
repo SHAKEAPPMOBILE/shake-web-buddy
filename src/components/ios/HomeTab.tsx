@@ -4,6 +4,7 @@ import { useCity } from "@/contexts/CityContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DAY_NAMES, getTodayDefaultIndex, getOrderedActivities } from "@/data/activityTypes";
+import { useNavigate } from "react-router-dom";
 
 interface HomeTabProps {
   onSelectActivity?: (activityType: string) => void;
@@ -14,6 +15,7 @@ interface HomeTabProps {
 export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities }: HomeTabProps) {
   const { user } = useAuth();
   const { selectedCity } = useCity();
+  const navigate = useNavigate();
 
   // Rotating text for "Meet new..." phrases
   const meetPhrases = useMemo(() => [
@@ -186,6 +188,19 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         <div className="text-2xl font-display font-bold text-foreground">50+</div>
         <div className="text-sm text-muted-foreground">Cities</div>
       </div>
+
+      {/* Get Started button for logged out users */}
+      {!user && (
+        <button
+          onClick={() => navigate("/auth")}
+          className="mt-6 px-8 py-3 rounded-full text-white font-medium transition-all hover:opacity-90"
+          style={{
+            background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+          }}
+        >
+          Get Started
+        </button>
+      )}
     </div>
   );
 }
