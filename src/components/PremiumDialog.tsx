@@ -133,7 +133,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
             <img 
               src={shakeCoinTransparent} 
               alt="SHAKE Coin" 
-              className="w-12 h-12 object-contain"
+              className="w-14 h-14 object-contain"
             />
             <SuperHumanIcon size={40} />
           </div>
@@ -192,7 +192,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           size="lg"
           disabled={isLoading || (needsEmail && !emailToUse)}
         >
-          <SuperHumanIcon size={16} className="mr-2" />
           {isLoading ? "Loading..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
         </Button>
 
