@@ -230,7 +230,10 @@ export function PlansTab() {
           {activities.length > 0 && (
             <button
               onClick={handleCreatePlan}
-              className="flex items-center gap-1 px-3 py-1.5 bg-shake-yellow text-background rounded-full text-sm font-medium"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
+              style={{
+                background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+              }}
             >
               <Plus className="w-4 h-4" />
               Create
@@ -261,7 +264,10 @@ export function PlansTab() {
             <p className="text-muted-foreground">No plans yet in {selectedCity}</p>
             <button
               onClick={handleCreatePlan}
-              className="mt-3 flex items-center gap-1 px-3 py-1.5 bg-shake-yellow text-background rounded-full text-sm font-medium hover:bg-shake-yellow/90 transition-colors"
+              className="mt-3 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
+              style={{
+                background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+              }}
             >
               <Plus className="w-4 h-4" />
               Create

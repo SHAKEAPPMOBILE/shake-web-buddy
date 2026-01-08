@@ -34,7 +34,10 @@ export function ChatTab() {
         </p>
         <button
           onClick={() => navigate("/auth")}
-          className="px-6 py-3 bg-primary text-primary-foreground rounded-full font-medium"
+          className="px-6 py-3 rounded-full font-medium text-white hover:opacity-90 transition-all"
+          style={{
+            background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+          }}
         >
           Sign In
         </button>

@@ -172,13 +172,16 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                 Become a Super-Human for unlimited plans
               </p>
             </div>
-            <Button 
+            <button 
               onClick={() => setShowPremiumDialog(true)}
-              className="bg-shake-yellow text-background hover:bg-shake-yellow/90"
+              className="px-4 py-2 rounded-full font-medium text-white hover:opacity-90 transition-all flex items-center gap-2"
+              style={{
+                background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+              }}
             >
-              <SuperHumanIcon size={16} className="mr-2" />
+              <SuperHumanIcon size={16} />
               Become a Super-Human
-            </Button>
+            </button>
           </div>
         ) : (
           <div className="space-y-6 py-4">
