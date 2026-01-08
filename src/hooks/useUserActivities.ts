@@ -31,16 +31,17 @@ export function useUserActivities(city: string) {
   const fetchActivities = useCallback(async () => {
     if (!city) return;
 
-    // Show activities scheduled for today or in the future
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    // Show activities from the past week (so anyone can join for 1 week after creation)
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    oneWeekAgo.setHours(0, 0, 0, 0);
     
     const { data, error } = await supabase
       .from("user_activities")
       .select("*")
       .eq("city", city)
       .eq("is_active", true)
-      .gte("scheduled_for", startOfToday.toISOString())
+      .gte("scheduled_for", oneWeekAgo.toISOString())
       .order("scheduled_for", { ascending: true });
 
     if (error) {

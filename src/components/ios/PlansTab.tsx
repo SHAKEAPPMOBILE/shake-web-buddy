@@ -256,7 +256,12 @@ export function PlansTab() {
               <MapPin className="w-8 h-8 text-muted-foreground" />
             </div>
             <p className="text-muted-foreground">No plans yet in {selectedCity}</p>
-            <p className="text-sm text-muted-foreground/70 mt-1">Shake to create one!</p>
+            <button
+              onClick={() => setShowCreateDialog(true)}
+              className="mt-2 w-10 h-10 rounded-full bg-shake-yellow flex items-center justify-center hover:bg-shake-yellow/90 transition-colors"
+            >
+              <Plus className="w-5 h-5 text-background" />
+            </button>
           </div>
         ) : (
           activities.map((plan) => (
