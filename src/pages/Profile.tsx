@@ -9,6 +9,7 @@ import { SuperHumanIcon } from "@/components/SuperHumanIcon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
@@ -309,7 +310,7 @@ export default function Profile() {
                   id="instagram"
                   value={instagramUrl}
                   onChange={(e) => setInstagramUrl(e.target.value)}
-                  placeholder="https://instagram.com/username"
+                  placeholder="@username or full URL"
                 />
               </div>
 
@@ -337,7 +338,7 @@ export default function Profile() {
                   id="twitter"
                   value={twitterUrl}
                   onChange={(e) => setTwitterUrl(e.target.value)}
-                  placeholder="https://twitter.com/username"
+                  placeholder="@username or full URL"
                 />
               </div>
             </div>
