@@ -445,7 +445,7 @@ export function GroupChatDialog({
           </div>
         )}
         {/* Header */}
-        <DialogHeader className="p-4 border-b border-black/10">
+        <DialogHeader className="p-4 border-b border-muted-foreground/20">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
               <ArrowLeft className="w-5 h-5" />
@@ -631,7 +631,7 @@ export function GroupChatDialog({
               <button
                 key={index}
                 onClick={() => setMessage(suggestion)}
-                className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20"
               >
                 {suggestion}
               </button>
@@ -650,7 +650,7 @@ export function GroupChatDialog({
         )}
 
         {/* Input */}
-        <div className="p-4 border-t border-border/50">
+        <div className="p-4 border-t border-muted-foreground/20">
           <div className="flex items-center gap-2">
             <VoiceRecorder 
               onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
@@ -664,7 +664,7 @@ export function GroupChatDialog({
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="flex-1 bg-muted/50 border-border/50"
+                className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50"
                 disabled={isSending || (!isPremium && !canSendText)}
               />
             )}

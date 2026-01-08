@@ -336,7 +336,7 @@ export function PlanGroupChatDialog({
           </div>
         )}
         {/* Header */}
-        <DialogHeader className="p-4 border-b border-black/10">
+        <DialogHeader className="p-4 border-b border-muted-foreground/20">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
               <ArrowLeft className="w-5 h-5" />
@@ -459,13 +459,13 @@ export function PlanGroupChatDialog({
 
         {/* Quick suggestions */}
         {user && (
-          <div className="px-4 py-2 border-t border-border/50">
+          <div className="px-4 py-2 border-t border-muted-foreground/20">
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {chatSuggestions.map((suggestion) => (
                 <button
                   key={suggestion}
                   onClick={() => setMessage(suggestion)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 text-foreground whitespace-nowrap transition-colors shrink-0"
+                  className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 whitespace-nowrap transition-colors shrink-0 border border-blue-500/20"
                 >
                   {suggestion}
                 </button>
@@ -485,7 +485,7 @@ export function PlanGroupChatDialog({
         )}
 
         {/* Input area */}
-        <div className="p-4 border-t border-border/50">
+        <div className="p-4 border-t border-muted-foreground/20">
           {pendingAudio ? (
             <div className="flex items-center gap-2">
               <div className="flex-1 p-2 bg-muted rounded-lg">
@@ -512,7 +512,7 @@ export function PlanGroupChatDialog({
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 disabled={!user || (!isPremium && !canSendText)}
-                className="flex-1"
+                className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50"
               />
               <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} className="bg-shake-green text-white hover:bg-shake-green/90">
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
