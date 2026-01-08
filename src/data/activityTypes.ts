@@ -86,6 +86,41 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     color: "bg-slate-500/20 hover:bg-slate-500/30",
     defaultDay: 3 // Wednesday
   },
+  { 
+    id: "basketball", 
+    label: "Basketball", 
+    emoji: "🏀",
+    color: "bg-orange-600/20 hover:bg-orange-600/30",
+    defaultDay: 6 // Saturday
+  },
+  { 
+    id: "tennis-padel", 
+    label: "Tennis/Padel", 
+    emoji: "🎾",
+    color: "bg-yellow-500/20 hover:bg-yellow-500/30",
+    defaultDay: 6 // Saturday
+  },
+  { 
+    id: "football", 
+    label: "Football", 
+    emoji: "⚽",
+    color: "bg-green-600/20 hover:bg-green-600/30",
+    defaultDay: 6 // Saturday
+  },
+  { 
+    id: "shopping", 
+    label: "Shopping", 
+    emoji: "🛍️",
+    color: "bg-pink-500/20 hover:bg-pink-500/30",
+    defaultDay: 6 // Saturday
+  },
+  { 
+    id: "arts", 
+    label: "Arts", 
+    emoji: "🎨",
+    color: "bg-purple-500/20 hover:bg-purple-500/30",
+    defaultDay: 6 // Saturday
+  },
 ];
 
 // Helper functions
