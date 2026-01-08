@@ -1,12 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { format, startOfDay, isSameDay, addDays } from "date-fns";
-import { CalendarIcon, Plus, MessageCircle } from "lucide-react";
+import { format, startOfDay, isSameDay } from "date-fns";
+import { Plus, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ALL_ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel, getActivityById } from "@/data/activityTypes";
+import { ALL_ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { useUserActivities, UserActivity } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
@@ -29,7 +28,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const { createActivity, isLoading, remainingActivities, myActivities } = useUserActivities(city);
   
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [note, setNote] = useState("");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [existingActivity, setExistingActivity] = useState<UserActivity | null>(null);
   const [showPlanChat, setShowPlanChat] = useState(false);
@@ -44,42 +43,25 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const canCreate = remainingActivities > 0;
   const today = startOfDay(new Date());
   
-  const isValid = selectedType && selectedDate && selectedDate >= today;
+  const isValid = selectedType !== null;
 
-  // Default to "Today" when opening the dialog
+  // Check if user already has a plan for this activity type today
   useEffect(() => {
-    if (open && !selectedDate) setSelectedDate(today);
-  }, [open]);
-
-  // Check if user already has a plan for this activity type on the selected date
-  useEffect(() => {
-    if (!selectedType || !selectedDate || !myActivities.length) {
+    if (!selectedType || !myActivities.length) {
       setExistingActivity(null);
       return;
     }
 
     const existing = myActivities.find(activity => 
       activity.activity_type === selectedType &&
-      isSameDay(new Date(activity.scheduled_for), selectedDate)
+      isSameDay(new Date(activity.scheduled_for), today)
     );
 
     setExistingActivity(existing || null);
-  }, [selectedType, selectedDate, myActivities]);
-
-  // Calculate the next occurrence of a given day of week (0=Sun, 6=Sat)
-  const getNextOccurrence = (dayOfWeek: number): Date => {
-    const todayDayOfWeek = today.getDay();
-    let daysUntil = dayOfWeek - todayDayOfWeek;
-    if (daysUntil < 0) {
-      daysUntil += 7; // Next week
-    }
-    return addDays(today, daysUntil);
-  };
+  }, [selectedType, myActivities, today]);
 
   const handleActivityClick = (activityType: string) => {
     setSelectedType(activityType);
-    // Always default to today when selecting an activity
-    setSelectedDate(today);
     
     // Check if user already has this activity type for today
     const existingPlan = myActivities.find(a => 
@@ -94,7 +76,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   };
 
   const handleCreate = async () => {
-    if (!isValid || !selectedDate) return;
+    if (!isValid) return;
 
     // Check again for existing activity
     if (existingActivity) {
@@ -102,7 +84,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
       return;
     }
 
-    const success = await createActivity(selectedType!, selectedDate);
+    const success = await createActivity(selectedType!, today, note);
     if (success) {
       triggerConfettiWaterfall();
       toast.success("Plan created!", {
@@ -111,14 +93,14 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
 
       // Reset form
       setSelectedType(null);
-      setSelectedDate(today);
+      setNote("");
       onOpenChange(false);
     }
   };
 
   const resetForm = () => {
     setSelectedType(null);
-    setSelectedDate(today);
+    setNote("");
     setExistingActivity(null);
   };
 
@@ -238,46 +220,24 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               </div>
             </div>
 
-            {/* Date Selection */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground">When?</label>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedDate(today)}
-                  className={cn(
-                    "flex-shrink-0",
-                    selectedDate?.getTime() === today.getTime() && "border-primary bg-primary/10 text-primary"
-                  )}
-                >
-                  Today
-                </Button>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "flex-1 justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      disabled={(date) => date < today}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
+            {/* Note Input - only show when activity type is selected */}
+            {selectedType && !existingActivity && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">Add a note (optional)</label>
+                <div className="relative">
+                  <Input
+                    value={note}
+                    onChange={(e) => setNote(e.target.value.slice(0, 50))}
+                    placeholder="e.g., 'Looking for local recommendations!'"
+                    maxLength={50}
+                    className="pr-12"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    {note.length}/50
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Preview or Existing Activity Notice */}
             {existingActivity ? (
@@ -298,7 +258,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   </div>
                 </div>
               </div>
-            ) : isValid && selectedDate && (
+            ) : isValid && (
               <div className="p-4 rounded-xl bg-muted/50 space-y-2">
                 <p className="text-sm font-medium text-foreground">Preview:</p>
                 <div className="flex items-center gap-3">
@@ -307,9 +267,8 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   </span>
                   <div>
                     <p className="font-semibold">{getActivityLabel(selectedType!)} in {city}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {format(selectedDate, "EEEE, MMMM d")}
-                    </p>
+                    <p className="text-sm text-muted-foreground">Today</p>
+                    {note && <p className="text-sm italic text-foreground">"{note}"</p>}
                   </div>
                 </div>
               </div>
