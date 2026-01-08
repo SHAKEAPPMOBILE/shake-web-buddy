@@ -7,7 +7,7 @@ import { PremiumDialog } from "../PremiumDialog";
 import { CreateActivityDialog } from "../CreateActivityDialog";
 import { PlanGroupChatDialog } from "../PlanGroupChatDialog";
 import { format } from "date-fns";
-import { ACTIVITY_TYPES } from "@/data/activityTypes";
+import { ALL_ACTIVITY_TYPES } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ interface PlanActivity {
   city: string;
   scheduled_for: string;
   is_active: boolean;
+  note?: string | null;
   creator_name?: string;
   creator_avatar?: string;
   participant_count?: number;
@@ -161,12 +162,12 @@ export function PlansTab() {
   const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
 
   const getActivityEmoji = (type: string) => {
-    const activity = ACTIVITY_TYPES.find(a => a.id === type);
+    const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
     return activity?.emoji || "📍";
   };
 
   const getActivityLabel = (type: string) => {
-    const activity = ACTIVITY_TYPES.find(a => a.id === type);
+    const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
     return activity?.label || type;
   };
 
@@ -365,6 +366,7 @@ export function PlansTab() {
           onOpenChange={setShowChatDialog}
           activity={{
             ...selectedPlan,
+            note: selectedPlan.note,
             created_at: selectedPlan.scheduled_for,
             updated_at: selectedPlan.scheduled_for,
           }}
