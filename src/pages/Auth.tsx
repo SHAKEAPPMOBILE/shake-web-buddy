@@ -1389,6 +1389,15 @@ export default function Auth() {
               </button>
             </p>
           )}
+
+          {/* Subtle progress dots for profile creation steps */}
+          {(step === 'name' || step === 'social' || step === 'avatar') && (
+            <div className="flex items-center justify-center gap-2 pt-4">
+              <div className={`w-2 h-2 rounded-full transition-colors ${step === 'name' ? 'bg-shake-yellow' : 'bg-shake-yellow/30'}`} />
+              <div className={`w-2 h-2 rounded-full transition-colors ${step === 'social' ? 'bg-shake-yellow' : 'bg-shake-yellow/30'}`} />
+              <div className={`w-2 h-2 rounded-full transition-colors ${step === 'avatar' ? 'bg-shake-yellow' : 'bg-shake-yellow/30'}`} />
+            </div>
+          )}
           </div>
         </div>
       </div>
