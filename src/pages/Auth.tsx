@@ -662,7 +662,7 @@ export default function Auth() {
                   {step === 'social'
                     ? "Connect your social profiles (optional)"
                     : step === 'avatar'
-                    ? "Choose how you want to appear"
+                    ? "Choose an avatar or upload your own"
                     : null}
                 </p>
               </div>
