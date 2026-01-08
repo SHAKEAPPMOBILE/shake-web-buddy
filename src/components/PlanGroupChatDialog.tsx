@@ -19,6 +19,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
+import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 
 interface PlanGroupChatDialogProps {
@@ -74,6 +75,8 @@ export function PlanGroupChatDialog({
     conversationType: 'plan',
     conversationId: activity.id,
   });
+  
+  const { canSendText, addCharacters, remainingCharacters, FREE_CHARACTER_LIMIT } = useTextMessageLimit();
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -251,10 +254,10 @@ export function PlanGroupChatDialog({
       return;
     }
 
-    // Free users can only send suggestions
-    if (!isPremium && !chatSuggestions.includes(message)) {
+    // Check text character limit for free users
+    if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
-      toast.error("Upgrade to Super-Human to send custom text messages!");
+      toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
       return;
     }
 
@@ -271,6 +274,7 @@ export function PlanGroupChatDialog({
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
     } else {
+      addCharacters(messageText.length);
       setMessage("");
       
       // Send SMS notification to plan owner (if not the owner sending)
@@ -503,11 +507,11 @@ export function PlanGroupChatDialog({
                 highlighted={true}
               />
               <Input
-                placeholder={user ? (isPremium ? "Type a message..." : "Tap a suggestion or record voice...") : "Sign in to chat"}
+                placeholder={user ? (canSendText ? "Type a message..." : "Character limit reached") : "Sign in to chat"}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                disabled={!user}
+                disabled={!user || (!isPremium && !canSendText)}
                 className="flex-1"
               />
               <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} className="bg-shake-green text-white hover:bg-shake-green/90">

@@ -21,6 +21,7 @@ import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
+import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -152,6 +153,8 @@ export function GroupChatDialog({
     conversationType: 'activity',
     conversationId: `${city}::${activityType}`,
   });
+  
+  const { canSendText, addCharacters, remainingCharacters, FREE_CHARACTER_LIMIT } = useTextMessageLimit();
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -315,11 +318,10 @@ export function GroupChatDialog({
       return;
     }
 
-    // Free users can only send suggestions
-    const suggestions = chatSuggestions[activityType] || defaultSuggestions;
-    if (!isPremium && !suggestions.includes(message)) {
+    // Check text character limit for free users
+    if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
-      toast.error("Upgrade to Super-Human to send custom text messages!");
+      toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
       return;
     }
 
@@ -338,6 +340,7 @@ export function GroupChatDialog({
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
     } else {
+      addCharacters(message.trim().length);
       setMessage("");
     }
 
@@ -591,12 +594,12 @@ export function GroupChatDialog({
             />
             {!pendingAudio && (
               <Input
-                placeholder="Type a message..."
+                placeholder={canSendText ? "Type a message..." : "Character limit reached"}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 className="flex-1 bg-muted/50 border-border/50"
-                disabled={isSending}
+                disabled={isSending || (!isPremium && !canSendText)}
               />
             )}
             <Button 
