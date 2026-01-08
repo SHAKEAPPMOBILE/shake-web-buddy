@@ -665,9 +665,6 @@ export default function Auth() {
                     ? "Choose how you want to appear"
                     : null}
                 </p>
-                <p className="text-sm text-muted-foreground font-medium">
-                  Step {step === 'name' ? '1' : step === 'social' ? '2' : '3'} of 3
-                </p>
               </div>
             )}
 
