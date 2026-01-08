@@ -25,7 +25,8 @@ import avatarNew26 from "@/assets/avatar-new-26.png";
 import avatarNew27 from "@/assets/avatar-new-27.png";
 import avatarNew28 from "@/assets/avatar-new-28.png";
 import avatarNew30 from "@/assets/avatar-new-30.png";
-import { Camera, Check, Upload } from "lucide-react";
+import { Check } from "lucide-react";
+import cameraIcon from "@/assets/camera-icon.png";
 import { cn } from "@/lib/utils";
 
 export const avatarOptions = [
@@ -76,47 +77,31 @@ export function AvatarPicker({
   return (
     <div className="space-y-3">
       
-      {/* Upload options */}
-      <div className="flex items-center justify-center gap-3 mb-4">
-        {/* Take photo option */}
-        <button
-          type="button"
-          onClick={onCameraClick}
-          className={cn(
-            "relative w-14 h-14 rounded-full border-2 transition-all overflow-hidden",
-            "border-border hover:border-primary/50"
-          )}
-          title="Take a photo"
-        >
-          <div className="w-full h-full bg-muted flex items-center justify-center">
-            <Camera className="w-5 h-5 text-muted-foreground" />
-          </div>
-        </button>
-
-        {/* Upload from library option */}
+      {/* Upload option with custom camera icon */}
+      <div className="flex items-center justify-center mb-4">
         <button
           type="button"
           onClick={onUploadClick}
           className={cn(
-            "relative w-14 h-14 rounded-full border-2 transition-all overflow-hidden",
+            "relative w-20 h-20 rounded-full border-2 transition-all duration-200 overflow-hidden hover:scale-110 active:scale-95",
             customAvatarPreview && selectedAvatar === "custom"
-              ? "border-shake-green ring-2 ring-shake-green/20"
+              ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
               : "border-border hover:border-primary/50"
           )}
-          title="Upload from library"
+          title="Upload a photo"
         >
           {customAvatarPreview ? (
             <>
               <img src={customAvatarPreview} alt="Custom avatar" className="w-full h-full object-cover" />
               {selectedAvatar === "custom" && (
-                <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center">
+                <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
                   <Check className="w-5 h-5 text-shake-green" />
                 </div>
               )}
             </>
           ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center">
-              <Upload className="w-5 h-5 text-muted-foreground" />
+            <div className="w-full h-full bg-muted flex items-center justify-center p-2">
+              <img src={cameraIcon} alt="Upload photo" className="w-full h-full object-contain" />
             </div>
           )}
         </button>
