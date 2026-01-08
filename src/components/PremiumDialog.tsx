@@ -186,14 +186,16 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           <p className="text-xs text-muted-foreground mt-0.5">Cancel anytime</p>
         </div>
 
-        <Button
+        <button
           onClick={handleSubscribe}
-          className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
-          size="lg"
           disabled={isLoading || (needsEmail && !emailToUse)}
+          className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50"
+          style={{
+            background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+          }}
         >
           {isLoading ? "Loading..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
-        </Button>
+        </button>
 
         <p className="text-xs text-center text-muted-foreground">
           By subscribing, you agree to our Terms of Service

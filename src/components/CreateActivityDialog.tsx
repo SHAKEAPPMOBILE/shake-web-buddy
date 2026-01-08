@@ -293,21 +293,23 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                 Go to Group Chat
               </Button>
             ) : (
-              <Button
+              <button
                 onClick={handleCreate}
                 disabled={!isValid || isLoading}
-                className="w-full"
-                size="lg"
+                className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50"
+                style={{
+                  background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+                }}
               >
                 {isLoading ? (
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     Creating...
                   </span>
                 ) : (
                   "Create Activity"
                 )}
-              </Button>
+              </button>
             )}
           </div>
         )}
