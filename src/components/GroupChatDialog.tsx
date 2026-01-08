@@ -664,7 +664,7 @@ export function GroupChatDialog({
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50"
+                className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
                 disabled={isSending || (!isPremium && !canSendText)}
               />
             )}
