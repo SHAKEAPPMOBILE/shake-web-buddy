@@ -113,15 +113,21 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
         {!isPremium && (
           <button
             onClick={() => setShowPremiumDialog(true)}
-            className="w-full flex items-center gap-4 px-4 py-3 bg-gradient-to-r from-shake-yellow/10 to-primary/10 border border-shake-yellow/30 rounded-xl"
+            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl"
+            style={{
+              background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+            }}
           >
-            <div className="w-10 h-10 rounded-full bg-shake-yellow/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
               <Crown className="w-5 h-5 text-shake-yellow" />
             </div>
             <div className="flex-1 text-left">
-              <span className="font-medium">Upgrade to Premium</span>
-              <p className="text-xs text-muted-foreground">Unlimited messages & more</p>
+              <span className="font-medium text-white">Upgrade to Premium</span>
+              <p className="text-xs text-white/70">Unlimited messages & more</p>
             </div>
+            <span className="text-xs font-medium text-white bg-white/20 px-2 py-1 rounded-full">
+              Subscribe now
+            </span>
           </button>
         )}
 
