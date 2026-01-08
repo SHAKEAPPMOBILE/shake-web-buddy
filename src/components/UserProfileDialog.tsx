@@ -9,6 +9,7 @@ import { useGreetings } from "@/hooks/useGreetings";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
+import { getActivityEmoji } from "@/data/activityTypes";
 
 interface UserProfileDialogProps {
   open: boolean;
@@ -40,13 +41,6 @@ const calculateAge = (birthDate: string): number => {
     age--;
   }
   return age;
-};
-
-const activityEmojis: Record<string, string> = {
-  lunch: "🍽️",
-  dinner: "🍝",
-  drinks: "🍻",
-  hike: "🥾",
 };
 
 export function UserProfileDialog({ 
@@ -243,7 +237,7 @@ export function UserProfileDialog({
                     className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
                   >
                     <span className="text-lg">
-                      {activityEmojis[activity.activity_type] || "📍"}
+                      {getActivityEmoji(activity.activity_type)}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground capitalize">
