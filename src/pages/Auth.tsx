@@ -269,7 +269,7 @@ export default function Auth() {
           toast.error(error.message);
         }
       } else {
-        toast.success("Welcome back!");
+        toast.success("Welcome!");
         navigate("/");
       }
     } catch (error) {
@@ -493,7 +493,7 @@ export default function Auth() {
             toast.success("Phone verified! Now set a password.");
             setStep('password');
           } else {
-            toast.success("Welcome back!");
+            toast.success("Welcome!");
             navigate("/");
           }
         } else {
@@ -629,7 +629,7 @@ export default function Auth() {
                     : step === 'reset'
                     ? "Create new password"
                     : isLogin 
-                      ? "Welcome back"
+                      ? "Welcome"
                       : "Create your account"}
                 </h1>
                 <p className="text-muted-foreground text-center">
