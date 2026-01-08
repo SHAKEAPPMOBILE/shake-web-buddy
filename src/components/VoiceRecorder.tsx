@@ -11,11 +11,12 @@ interface VoiceRecorderProps {
   disabled?: boolean;
   highlighted?: boolean;
   maxDuration?: number;
+  resetTrigger?: number; // Increment this to reset the recorder after sending
 }
 
 const MAX_RECORDING_DURATION = 5; // 5 seconds max
 
-export function VoiceRecorder({ onAudioReady, onAudioClear, disabled, highlighted = false, maxDuration = MAX_RECORDING_DURATION }: VoiceRecorderProps) {
+export function VoiceRecorder({ onAudioReady, onAudioClear, disabled, highlighted = false, maxDuration = MAX_RECORDING_DURATION, resetTrigger }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -28,6 +29,16 @@ export function VoiceRecorder({ onAudioReady, onAudioClear, disabled, highlighte
   const animationRef = useRef<number | null>(null);
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
+
+  // Reset internal state when resetTrigger changes (after sending)
+  useEffect(() => {
+    if (resetTrigger !== undefined && resetTrigger > 0) {
+      setAudioBlob(null);
+      setAudioUrl(null);
+      setRecordingDuration(0);
+      setLiveWaveform([]);
+    }
+  }, [resetTrigger]);
 
   // Cleanup on unmount
   useEffect(() => {

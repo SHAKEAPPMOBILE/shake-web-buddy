@@ -136,6 +136,7 @@ export function GroupChatDialog({
   const [isSending, setIsSending] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
+  const [audioResetTrigger, setAudioResetTrigger] = useState(0);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showParticipantsList, setShowParticipantsList] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
@@ -340,6 +341,7 @@ export function GroupChatDialog({
         if (messageError) throw messageError;
         
         setPendingAudio(null);
+        setAudioResetTrigger(prev => prev + 1);
         incrementAudioCount();
         toast.success("Voice note sent!");
       } catch (error) {
@@ -668,6 +670,7 @@ export function GroupChatDialog({
                 onAudioClear={() => setPendingAudio(null)}
                 disabled={isSending}
                 highlighted={true}
+                resetTrigger={audioResetTrigger}
               />
               <Button 
                 variant="shake" 

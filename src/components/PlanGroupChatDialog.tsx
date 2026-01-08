@@ -58,6 +58,7 @@ export function PlanGroupChatDialog({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
+  const [audioResetTrigger, setAudioResetTrigger] = useState(0);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
     userId: string;
     userName: string | null;
@@ -235,6 +236,7 @@ export function PlanGroupChatDialog({
         if (messageError) throw messageError;
 
         setPendingAudio(null);
+        setAudioResetTrigger(prev => prev + 1);
         incrementAudioCount();
         toast.success("Voice note sent!");
       } catch (error) {
@@ -516,6 +518,7 @@ export function PlanGroupChatDialog({
                   onAudioClear={() => setPendingAudio(null)}
                   disabled={!user}
                   highlighted={true}
+                  resetTrigger={audioResetTrigger}
                 />
                 <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} className="bg-shake-green text-white hover:bg-shake-green/90">
                   {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
