@@ -269,7 +269,7 @@ export function PrivateChatDialog({
                 type="button"
                 onClick={handleSendAudio}
                 disabled={isSending}
-                className="bg-shake-green text-white hover:bg-shake-green/90"
+                variant="shake"
               >
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
@@ -293,7 +293,7 @@ export function PrivateChatDialog({
                 type="submit"
                 size="icon"
                 disabled={(!newMessage.trim() && !pendingAudio) || isSending}
-                className="bg-shake-green text-white hover:bg-shake-green/90"
+                variant="shake"
               >
                 {isSending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
