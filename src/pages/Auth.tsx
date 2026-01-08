@@ -1390,52 +1390,6 @@ export default function Auth() {
             </p>
           )}
           </div>
-
-          {/* Progress Indicator at bottom - only show during signup flow */}
-          {!isLogin && (step === 'phone' || step === 'otp' || step === 'password' || step === 'name' || step === 'social' || step === 'avatar') && (
-            <div className="flex items-center justify-center gap-2 py-6 mt-auto">
-              <div className="flex items-center gap-1">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  step === 'password' || step === 'name' || step === 'social' || step === 'avatar'
-                    ? 'bg-shake-yellow/20 text-shake-yellow' 
-                    : 'bg-shake-yellow text-background'
-                }`}>
-                  {step === 'password' || step === 'name' || step === 'social' || step === 'avatar' ? '✓' : '1'}
-                </div>
-                <span className={`text-xs ${step === 'password' || step === 'name' || step === 'social' || step === 'avatar' ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
-                  Phone
-                </span>
-              </div>
-              <div className="w-4 h-px bg-border" />
-              <div className="flex items-center gap-1">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  step === 'name' || step === 'social' || step === 'avatar'
-                    ? 'bg-shake-yellow/20 text-shake-yellow' 
-                    : step === 'password'
-                    ? 'bg-shake-yellow text-background'
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  {step === 'name' || step === 'social' || step === 'avatar' ? '✓' : '2'}
-                </div>
-                <span className={`text-xs ${step === 'password' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                  Password
-                </span>
-              </div>
-              <div className="w-4 h-px bg-border" />
-              <div className="flex items-center gap-1">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  step === 'name' || step === 'social' || step === 'avatar'
-                    ? 'bg-shake-yellow text-background' 
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  3
-                </div>
-                <span className={`text-xs ${step === 'name' || step === 'social' || step === 'avatar' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                  Profile
-                </span>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
