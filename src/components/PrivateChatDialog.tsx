@@ -17,6 +17,7 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
+import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -59,6 +60,8 @@ export function PrivateChatDialog({
     conversationType: 'private',
     conversationId: otherUserId,
   });
+  
+  const { canSendText, addCharacters, remainingCharacters, FREE_CHARACTER_LIMIT } = useTextMessageLimit();
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -131,10 +134,10 @@ export function PrivateChatDialog({
     
     if (!newMessage.trim() || isSending) return;
 
-    // Free users can only send suggestions
-    if (!isPremium && !chatSuggestions.includes(newMessage)) {
+    // Check text character limit for free users
+    if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
-      toast.error("Upgrade to Super-Human to send custom text messages!");
+      toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
       return;
     }
 
@@ -143,6 +146,7 @@ export function PrivateChatDialog({
     setIsSending(false);
 
     if (!error) {
+      addCharacters(newMessage.trim().length);
       setNewMessage("");
     }
   };
@@ -278,24 +282,13 @@ export function PrivateChatDialog({
                 disabled={isSending}
                 highlighted={true}
               />
-              {isPremium ? (
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-1"
-                  disabled={isSending}
-                />
-              ) : (
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Tap a suggestion or record voice..."
-                  className="flex-1"
-                  disabled={isSending}
-                  readOnly={!chatSuggestions.includes(newMessage)}
-                />
-              )}
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder={canSendText ? "Type a message..." : "Character limit reached"}
+                className="flex-1"
+                disabled={isSending || (!isPremium && !canSendText)}
+              />
               <Button
                 type="submit"
                 size="icon"
