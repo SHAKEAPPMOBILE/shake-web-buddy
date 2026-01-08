@@ -75,61 +75,56 @@ export function AvatarPicker({
   customAvatarPreview,
 }: AvatarPickerProps) {
   return (
-    <div className="space-y-3">
-      
-      {/* Upload option with custom camera icon */}
-      <div className="flex items-center justify-center mb-4">
-        <button
-          type="button"
-          onClick={onUploadClick}
-          className={cn(
-            "relative w-20 h-20 rounded-full border-2 transition-all duration-200 overflow-hidden hover:scale-110 active:scale-95",
-            customAvatarPreview && selectedAvatar === "custom"
-              ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
-              : "border-border hover:border-primary/50"
-          )}
-          title="Upload a photo"
-        >
-          {customAvatarPreview ? (
-            <>
-              <img src={customAvatarPreview} alt="Custom avatar" className="w-full h-full object-cover" />
-              {selectedAvatar === "custom" && (
-                <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
-                  <Check className="w-5 h-5 text-shake-green" />
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center p-2">
-              <img src={cameraIcon} alt="Upload photo" className="w-full h-full object-contain" />
-            </div>
-          )}
-        </button>
-      </div>
-
-      {/* Preset avatars grid - all avatars visible */}
-      <div className="grid grid-cols-6 gap-2 max-w-sm mx-auto">
-        {avatarOptions.map((avatar) => (
-          <button
-            key={avatar.id}
-            type="button"
-            onClick={() => onSelectAvatar(avatar.id)}
-            className={cn(
-              "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 hover:scale-110 active:scale-95",
-              selectedAvatar === avatar.id
-                ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
-                : "border-border hover:border-primary/50"
-            )}
-          >
-            <img src={avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
-            {selectedAvatar === avatar.id && (
+    <div className="grid grid-cols-6 gap-2 max-w-sm mx-auto">
+      {/* Camera/Upload button as first item in grid */}
+      <button
+        type="button"
+        onClick={onUploadClick}
+        className={cn(
+          "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden hover:scale-110 active:scale-95",
+          customAvatarPreview && selectedAvatar === "custom"
+            ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
+            : "border-border hover:border-primary/50"
+        )}
+        title="Upload a photo"
+      >
+        {customAvatarPreview ? (
+          <>
+            <img src={customAvatarPreview} alt="Custom avatar" className="w-full h-full object-cover" />
+            {selectedAvatar === "custom" && (
               <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
                 <Check className="w-4 h-4 text-shake-green" />
               </div>
             )}
-          </button>
-        ))}
-      </div>
+          </>
+        ) : (
+          <div className="w-full h-full bg-muted rounded-full flex items-center justify-center p-1">
+            <img src={cameraIcon} alt="Upload photo" className="w-full h-full object-contain" />
+          </div>
+        )}
+      </button>
+
+      {/* Preset avatars */}
+      {avatarOptions.map((avatar) => (
+        <button
+          key={avatar.id}
+          type="button"
+          onClick={() => onSelectAvatar(avatar.id)}
+          className={cn(
+            "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 hover:scale-110 active:scale-95",
+            selectedAvatar === avatar.id
+              ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
+              : "border-border hover:border-primary/50"
+          )}
+        >
+          <img src={avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
+          {selectedAvatar === avatar.id && (
+            <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
+              <Check className="w-4 h-4 text-shake-green" />
+            </div>
+          )}
+        </button>
+      ))}
     </div>
   );
 }
