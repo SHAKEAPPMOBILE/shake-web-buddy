@@ -652,12 +652,6 @@ export function GroupChatDialog({
         {/* Input */}
         <div className="p-4 border-t border-muted-foreground/20">
           <div className="flex items-center gap-2">
-            <VoiceRecorder 
-              onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
-              onAudioClear={() => setPendingAudio(null)}
-              disabled={isSending}
-              highlighted={true}
-            />
             {!pendingAudio && (
               <Input
                 placeholder={canSendText ? "Type a message..." : "Character limit reached"}
@@ -668,14 +662,22 @@ export function GroupChatDialog({
                 disabled={isSending || (!isPremium && !canSendText)}
               />
             )}
-            <Button 
-              variant="shake" 
-              size="icon" 
-              onClick={handleSendMessage}
-              disabled={isSending || (!message.trim() && !pendingAudio)}
-            >
-              {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            </Button>
+            <div className="flex flex-col gap-1">
+              <VoiceRecorder 
+                onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
+                onAudioClear={() => setPendingAudio(null)}
+                disabled={isSending}
+                highlighted={true}
+              />
+              <Button 
+                variant="shake" 
+                size="icon" 
+                onClick={handleSendMessage}
+                disabled={isSending || (!message.trim() && !pendingAudio)}
+              >
+                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
         </div>
 
