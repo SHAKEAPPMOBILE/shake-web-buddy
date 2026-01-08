@@ -579,56 +579,10 @@ export default function Auth() {
           Back
         </button>
 
-        <div className="w-full max-w-md space-y-8 px-2">
-          {/* Progress Indicator - only show during signup flow */}
-          {!isLogin && (step === 'phone' || step === 'otp' || step === 'password' || step === 'name' || step === 'social' || step === 'avatar') && (
-            <div className="flex items-center justify-center gap-2">
-              <div className="flex items-center gap-1">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  step === 'password' || step === 'name' || step === 'social' || step === 'avatar'
-                    ? 'bg-shake-yellow/20 text-shake-yellow' 
-                    : 'bg-shake-yellow text-background'
-                }`}>
-                  {step === 'password' || step === 'name' || step === 'social' || step === 'avatar' ? '✓' : '1'}
-                </div>
-                <span className={`text-xs ${step === 'password' || step === 'name' || step === 'social' || step === 'avatar' ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
-                  Phone
-                </span>
-              </div>
-              <div className="w-4 h-px bg-border" />
-              <div className="flex items-center gap-1">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  step === 'name' || step === 'social' || step === 'avatar'
-                    ? 'bg-shake-yellow/20 text-shake-yellow' 
-                    : step === 'password'
-                    ? 'bg-shake-yellow text-background'
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  {step === 'name' || step === 'social' || step === 'avatar' ? '✓' : '2'}
-                </div>
-                <span className={`text-xs ${step === 'password' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                  Password
-                </span>
-              </div>
-              <div className="w-4 h-px bg-border" />
-              <div className="flex items-center gap-1">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  step === 'name' || step === 'social' || step === 'avatar'
-                    ? 'bg-shake-yellow text-background' 
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  3
-                </div>
-                <span className={`text-xs ${step === 'name' || step === 'social' || step === 'avatar' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                  Profile
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Logo - same style as Welcome page header */}
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex items-center gap-1.5">
+        <div className="w-full max-w-md space-y-8 px-2 flex flex-col min-h-[calc(100vh-120px)]">
+          {/* Logo on top for profile steps */}
+          {(step === 'name' || step === 'social' || step === 'avatar') && (
+            <div className="flex items-center justify-center gap-1.5 pt-4">
               <img 
                 src={logoShake} 
                 alt="Shake" 
@@ -643,51 +597,79 @@ export default function Auth() {
                 </span>
               </div>
             </div>
-            <h1 className="text-2xl font-display font-bold text-foreground">
-              {step === 'otp' 
-                ? "Enter verification code" 
-                : step === 'password'
-                ? "Set your password"
-                : step === 'name'
-                ? "Let's create your profile."
-                : step === 'social'
-                ? "Social Links"
-                : step === 'avatar'
-                ? "Profile Picture"
-                : step === 'forgot'
-                ? "Reset your password"
-                : step === 'reset'
-                ? "Create new password"
-                : isLogin 
-                  ? "Welcome back"
-                  : "Create your account"}
-            </h1>
-            <p className="text-muted-foreground text-center">
-              {step === 'otp'
-                ? `We sent a code to ${phoneNumber}`
-                : step === 'password'
-                ? "You'll use this to sign in next time"
-                : step === 'name'
-                ? "This is how others will see you"
-                : step === 'social'
-                ? "Connect your social profiles (optional)"
-                : step === 'avatar'
-                ? "Choose how you want to appear"
-                : step === 'forgot'
-                ? `We sent a code to ${phoneNumber}`
-                : step === 'reset'
-                ? "Enter your new password"
-                : isLogin
-                  ? (usePasswordLogin ? "Sign in with your password" : "Sign in with your phone number")
-                  : "Create your account with your phone number"}
-            </p>
-            {/* Step indicator for profile creation */}
-            {(step === 'name' || step === 'social' || step === 'avatar') && (
-              <p className="text-sm text-muted-foreground font-medium">
-                Step {step === 'name' ? '1' : step === 'social' ? '2' : '3'} of 3
-              </p>
+          )}
+
+          {/* Main content area */}
+          <div className="flex-1">
+            {/* Logo - same style as Welcome page header (not for profile steps) */}
+            {!(step === 'name' || step === 'social' || step === 'avatar') && (
+              <div className="flex flex-col items-center gap-4 mb-8">
+                <div className="flex items-center gap-1.5">
+                  <img 
+                    src={logoShake} 
+                    alt="Shake" 
+                    className="h-6 w-auto object-contain" 
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-base font-display font-bold text-foreground lowercase leading-tight">
+                      shake
+                    </span>
+                    <span className="text-[7px] font-medium tracking-[0.12em] uppercase text-muted-foreground -mt-0.5">
+                      social
+                    </span>
+                  </div>
+                </div>
+                <h1 className="text-2xl font-display font-bold text-foreground">
+                  {step === 'otp' 
+                    ? "Enter verification code" 
+                    : step === 'password'
+                    ? "Set your password"
+                    : step === 'forgot'
+                    ? "Reset your password"
+                    : step === 'reset'
+                    ? "Create new password"
+                    : isLogin 
+                      ? "Welcome back"
+                      : "Create your account"}
+                </h1>
+                <p className="text-muted-foreground text-center">
+                  {step === 'otp'
+                    ? `We sent a code to ${phoneNumber}`
+                    : step === 'password'
+                    ? "You'll use this to sign in next time"
+                    : step === 'forgot'
+                    ? `We sent a code to ${phoneNumber}`
+                    : step === 'reset'
+                    ? "Enter your new password"
+                    : isLogin
+                      ? (usePasswordLogin ? "Sign in with your password" : "Sign in with your phone number")
+                      : "Create your account with your phone number"}
+                </p>
+              </div>
             )}
-          </div>
+
+            {/* Profile steps header */}
+            {(step === 'name' || step === 'social' || step === 'avatar') && (
+              <div className="flex flex-col items-center gap-2 mb-8">
+                <h1 className="text-2xl font-display font-bold text-foreground">
+                  {step === 'name'
+                    ? "Let's create your profile."
+                    : step === 'social'
+                    ? "Social Links"
+                    : "Profile Picture"}
+                </h1>
+                <p className="text-muted-foreground text-center">
+                  {step === 'social'
+                    ? "Connect your social profiles (optional)"
+                    : step === 'avatar'
+                    ? "Choose how you want to appear"
+                    : null}
+                </p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Step {step === 'name' ? '1' : step === 'social' ? '2' : '3'} of 3
+                </p>
+              </div>
+            )}
 
           {/* Phone Number Form - for signup or login with OTP */}
           {step === 'phone' && !usePasswordLogin && (
@@ -1406,6 +1388,53 @@ export default function Auth() {
                 {isLogin ? "Sign up" : "Sign in"}
               </button>
             </p>
+          )}
+          </div>
+
+          {/* Progress Indicator at bottom - only show during signup flow */}
+          {!isLogin && (step === 'phone' || step === 'otp' || step === 'password' || step === 'name' || step === 'social' || step === 'avatar') && (
+            <div className="flex items-center justify-center gap-2 py-6 mt-auto">
+              <div className="flex items-center gap-1">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                  step === 'password' || step === 'name' || step === 'social' || step === 'avatar'
+                    ? 'bg-shake-yellow/20 text-shake-yellow' 
+                    : 'bg-shake-yellow text-background'
+                }`}>
+                  {step === 'password' || step === 'name' || step === 'social' || step === 'avatar' ? '✓' : '1'}
+                </div>
+                <span className={`text-xs ${step === 'password' || step === 'name' || step === 'social' || step === 'avatar' ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
+                  Phone
+                </span>
+              </div>
+              <div className="w-4 h-px bg-border" />
+              <div className="flex items-center gap-1">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                  step === 'name' || step === 'social' || step === 'avatar'
+                    ? 'bg-shake-yellow/20 text-shake-yellow' 
+                    : step === 'password'
+                    ? 'bg-shake-yellow text-background'
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {step === 'name' || step === 'social' || step === 'avatar' ? '✓' : '2'}
+                </div>
+                <span className={`text-xs ${step === 'password' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                  Password
+                </span>
+              </div>
+              <div className="w-4 h-px bg-border" />
+              <div className="flex items-center gap-1">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                  step === 'name' || step === 'social' || step === 'avatar'
+                    ? 'bg-shake-yellow text-background' 
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  3
+                </div>
+                <span className={`text-xs ${step === 'name' || step === 'social' || step === 'avatar' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                  Profile
+                </span>
+              </div>
+            </div>
           )}
         </div>
       </div>
