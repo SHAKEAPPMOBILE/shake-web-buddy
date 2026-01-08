@@ -78,26 +78,18 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
 
   const handleActivityClick = (activityType: string) => {
     setSelectedType(activityType);
+    // Always default to today when selecting an activity
+    setSelectedDate(today);
+    
+    // Check if user already has this activity type for today
+    const existingPlan = myActivities.find(a => 
+      a.activity_type === activityType &&
+      isSameDay(new Date(a.scheduled_for), today)
+    );
 
-    // Auto-select the next occurrence of the activity's default day
-    const activity = getActivityById(activityType);
-    if (activity?.defaultDay !== undefined) {
-      const nextDate = getNextOccurrence(activity.defaultDay);
-      setSelectedDate(nextDate);
-      
-      // Check if user already has this activity type for that date
-      const existingPlan = myActivities.find(a => 
-        a.activity_type === activityType &&
-        isSameDay(new Date(a.scheduled_for), nextDate)
-      );
-
-      if (existingPlan) {
-        setExistingActivity(existingPlan);
-        setShowPlanChat(true);
-      }
-    } else {
-      // Fallback to today if no default day
-      setSelectedDate(today);
+    if (existingPlan) {
+      setExistingActivity(existingPlan);
+      setShowPlanChat(true);
     }
   };
 
