@@ -278,15 +278,15 @@ export function PlansTab() {
               <div className="flex items-start gap-3">
                 {/* Creator Avatar */}
                 <div className="relative">
-                  <Avatar className="w-12 h-12 border-2 border-primary/20">
+                  <div className="w-12 h-12 rounded-full border-2 border-primary/20 bg-primary/10 flex items-center justify-center text-2xl">
+                    {getActivityEmoji(plan.activity_type)}
+                  </div>
+                  <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-card">
                     <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
                       {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-sm">
-                    {getActivityEmoji(plan.activity_type)}
-                  </div>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
