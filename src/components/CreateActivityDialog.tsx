@@ -163,8 +163,13 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
           </div>
         ) : !canCreate ? (
           <div className="text-center py-8 space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-full bg-shake-yellow/10 flex items-center justify-center">
-              <SuperHumanIcon size={32} />
+            <div 
+              className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
+              style={{
+                background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+              }}
+            >
+              <SuperHumanIcon size={32} className="text-white" />
             </div>
             <div>
               <p className="font-semibold text-foreground">You've used all 3 free plans this month</p>
