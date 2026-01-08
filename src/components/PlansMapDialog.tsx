@@ -194,14 +194,16 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                   List
                 </Button>
               )}
-              <Button
-                size="sm"
+              <button
                 onClick={() => setShowCreateDialog(true)}
-                className="px-2 sm:px-3 bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90"
+                className="px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all flex items-center gap-1"
+                style={{
+                  background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+                }}
               >
                 <Plus className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Create Plan</span>
-              </Button>
+              </button>
             </div>
           </div>
 
