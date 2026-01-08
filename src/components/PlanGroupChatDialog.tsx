@@ -491,21 +491,17 @@ export function PlanGroupChatDialog({
               <div className="flex-1 p-2 bg-muted rounded-lg">
                 <AudioWaveform audioUrl={pendingAudio.url} isCompact />
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setPendingAudio(null)}>
-                <Trash2 className="w-4 h-4" />
-              </Button>
-              <Button onClick={handleSendMessage} disabled={isSending} className="bg-shake-green text-white hover:bg-shake-green/90">
-                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
+              <div className="flex flex-col gap-1">
+                <Button variant="ghost" size="icon" onClick={() => setPendingAudio(null)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+                <Button onClick={handleSendMessage} disabled={isSending} className="bg-shake-green text-white hover:bg-shake-green/90">
+                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <VoiceRecorder
-                onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
-                onAudioClear={() => setPendingAudio(null)}
-                disabled={!user}
-                highlighted={true}
-              />
               <Input
                 placeholder={user ? (canSendText ? "Type a message..." : "Character limit reached") : "Sign in to chat"}
                 value={message}
@@ -514,9 +510,17 @@ export function PlanGroupChatDialog({
                 disabled={!user || (!isPremium && !canSendText)}
                 className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
               />
-              <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} className="bg-shake-green text-white hover:bg-shake-green/90">
-                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
+              <div className="flex flex-col gap-1">
+                <VoiceRecorder
+                  onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
+                  onAudioClear={() => setPendingAudio(null)}
+                  disabled={!user}
+                  highlighted={true}
+                />
+                <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} className="bg-shake-green text-white hover:bg-shake-green/90">
+                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
           )}
         </div>
