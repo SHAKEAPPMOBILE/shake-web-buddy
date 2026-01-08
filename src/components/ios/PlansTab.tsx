@@ -273,51 +273,54 @@ export function PlansTab() {
             <button
               key={plan.id}
               onClick={() => handlePlanClick(plan)}
-              className="w-full text-left bg-card border border-border rounded-2xl p-4 space-y-3 hover:bg-muted/30 transition-colors"
+              className="w-full text-left rounded-2xl p-4 space-y-3 hover:opacity-90 transition-all"
+              style={{
+                background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+              }}
             >
               <div className="flex items-start gap-3">
-                {/* Creator Avatar */}
+                {/* Activity Icon */}
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full border-2 border-primary/20 bg-primary/10 flex items-center justify-center text-2xl">
+                  <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-2xl">
                     {getActivityEmoji(plan.activity_type)}
                   </div>
-                  <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-card">
+                  <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-white/50">
                     <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
-                    <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
+                    <AvatarFallback className="bg-white/80 text-muted-foreground text-xs font-semibold">
                       {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
                     </AvatarFallback>
                   </Avatar>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-foreground">
+                    <h3 className="font-semibold text-white">
                       {getActivityLabel(plan.activity_type)}
                     </h3>
                     {plan.isJoined && (
-                      <span className="text-xs bg-green-500/20 text-green-600 px-1.5 py-0.5 rounded-full">
+                      <span className="text-xs bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">
                         Joined
                       </span>
                     )}
                     {plan.user_id === user?.id && (
-                      <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
+                      <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
                         Your plan
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-muted-foreground">by {plan.creator_name || "Anonymous"}</span>
+                    <span className="text-xs text-white/70">by {plan.creator_name || "Anonymous"}</span>
                     {plan.city !== selectedCity && (
-                      <span className="text-xs text-muted-foreground/70">• {plan.city}</span>
+                      <span className="text-xs text-white/50">• {plan.city}</span>
                     )}
                   </div>
                   {plan.note && (
-                    <p className="text-xs text-muted-foreground/80 italic mt-1 line-clamp-1">
+                    <p className="text-xs text-white/60 italic mt-1 line-clamp-1">
                       "{plan.note}"
                     </p>
                   )}
                   <div className="flex items-center gap-2 mt-1">
-                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
+                    <Calendar className="w-3.5 h-3.5 text-white/70" />
+                    <span className="text-sm text-white/70">
                       {format(new Date(plan.scheduled_for), "MMM d, h:mm a")}
                     </span>
                   </div>
@@ -329,7 +332,7 @@ export function PlansTab() {
                       e.stopPropagation();
                       setPlanToDelete(plan);
                     }}
-                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
+                    className="p-2 text-white/70 hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
                     title="Delete plan"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -337,7 +340,7 @@ export function PlansTab() {
                 )}
               </div>
               {plan.participant_count && plan.participant_count > 1 && (
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1 text-sm text-white/70">
                   <Users className="w-3.5 h-3.5" />
                   <span>{plan.participant_count} joined</span>
                 </div>
