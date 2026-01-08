@@ -63,10 +63,10 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   }, [user?.email, checkoutEmail]);
 
   const features = [
-    { icon: Sparkles, text: "Create your own activities" },
+    { icon: Sparkles, text: "Create your own activities unlimited" },
     { icon: Globe, text: "Access to 100+ cities worldwide" },
     { icon: MapPin, text: "Join activities in any city" },
-    { icon: User, text: "See other users' profiles" },
+    { icon: User, text: "See other users' profiles unlimited" },
     { icon: Mic, text: "Unlimited voice messages" },
     { icon: MessageSquare, text: "Unlimited text messages" },
   ];
