@@ -9,9 +9,10 @@ import { useCity } from "@/contexts/CityContext";
 interface IOSTabBarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onShakeStart?: () => void;
 }
 
-export function IOSTabBar({ activeTab, onTabChange }: IOSTabBarProps) {
+export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarProps) {
   const { user, isPremium } = useAuth();
   const { selectedCity } = useCity();
   const { activeChat } = useActiveChat(selectedCity);
@@ -28,6 +29,7 @@ export function IOSTabBar({ activeTab, onTabChange }: IOSTabBarProps) {
 
   const handleShakeAnimation = () => {
     setIsShaking(true);
+    onShakeStart?.(); // Notify parent
     setTimeout(() => {
       setIsShaking(false);
     }, 3000);
@@ -60,13 +62,12 @@ export function IOSTabBar({ activeTab, onTabChange }: IOSTabBarProps) {
                 className="relative -mt-6 flex flex-col items-center"
               >
                 <div className="flex items-center gap-1">
-                  {/* Left arrow */}
-                  <ChevronLeft 
-                    className={cn(
-                      "w-5 h-5 text-[hsl(210,100%,50%)] transition-all",
-                      isShaking && "animate-bounce-left"
-                    )} 
-                  />
+                  {/* Left arrow - only visible during shake */}
+                  {isShaking && (
+                    <ChevronLeft 
+                      className="w-5 h-5 text-[hsl(210,100%,50%)] animate-bounce-left"
+                    />
+                  )}
                   
                   {/* Center circle */}
                   <div className={cn(
@@ -77,13 +78,12 @@ export function IOSTabBar({ activeTab, onTabChange }: IOSTabBarProps) {
                     <Plus className="w-8 h-8 text-white" />
                   </div>
                   
-                  {/* Right arrow */}
-                  <ChevronRight 
-                    className={cn(
-                      "w-5 h-5 text-[hsl(210,100%,50%)] transition-all",
-                      isShaking && "animate-bounce-right"
-                    )} 
-                  />
+                  {/* Right arrow - only visible during shake */}
+                  {isShaking && (
+                    <ChevronRight 
+                      className="w-5 h-5 text-[hsl(210,100%,50%)] animate-bounce-right"
+                    />
+                  )}
                 </div>
                 <span className={cn(
                   "text-[10px] mt-1 font-medium",

@@ -5,14 +5,16 @@ import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DAY_NAMES, getTodayDefaultIndex, getOrderedActivities } from "@/data/activityTypes";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface HomeTabProps {
   onSelectActivity?: (activityType: string) => void;
   showActivities?: boolean;
   onCloseActivities?: () => void;
+  isShaking?: boolean;
 }
 
-export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false }: HomeTabProps) {
   const { user } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
@@ -124,7 +126,10 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         onTouchEnd={showActivities ? handleTouchEnd : undefined}
       >
         <div 
-          className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105"
+          className={cn(
+            "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
+            isShaking && "animate-shake-center"
+          )}
           onClick={() => showActivities && handleActivitySelect(currentActivity.id)}
         >
           {!showActivities ? (
