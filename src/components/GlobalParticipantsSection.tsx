@@ -246,10 +246,13 @@ export function GlobalParticipantsSection() {
                     src={p.avatar_url}
                     alt={p.name || "User"}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
                   />
-                ) : (
-                  <User className="w-3.5 h-3.5 text-muted-foreground" />
-                )}
+                ) : null}
+                <User className={`w-3.5 h-3.5 text-muted-foreground ${p.avatar_url ? 'hidden' : ''}`} />
               </div>
             ))}
           </div>
@@ -298,10 +301,13 @@ export function GlobalParticipantsSection() {
                             src={participant.avatar_url}
                             alt={participant.name || "User"}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
                           />
-                        ) : (
-                          <User className="w-5 h-5 text-muted-foreground" />
-                        )}
+                        ) : null}
+                        <User className={`w-5 h-5 text-muted-foreground ${participant.avatar_url ? 'hidden' : ''}`} />
                       </button>
                       <button
                         onClick={() => handleParticipantClick(participant)}
@@ -340,10 +346,13 @@ export function GlobalParticipantsSection() {
                                 src={participant.avatar_url}
                                 alt={participant.name || "User"}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                }}
                               />
-                            ) : (
-                              <User className="w-5 h-5 text-muted-foreground" />
-                            )}
+                            ) : null}
+                            <User className={`w-5 h-5 text-muted-foreground ${participant.avatar_url ? 'hidden' : ''}`} />
                           </div>
                           <div className="flex-1 text-left">
                             <p className="font-medium text-sm">
@@ -386,10 +395,13 @@ export function GlobalParticipantsSection() {
                                 src={participant.avatar_url}
                                 alt={participant.name || "User"}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                }}
                               />
-                            ) : (
-                              <User className="w-5 h-5 text-muted-foreground" />
-                            )}
+                            ) : null}
+                            <User className={`w-5 h-5 text-muted-foreground ${participant.avatar_url ? 'hidden' : ''}`} />
                           </button>
                           <button
                             onClick={() => handleParticipantClick(participant)}
