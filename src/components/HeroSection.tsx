@@ -215,15 +215,6 @@ export function HeroSection() {
               <GlobalParticipantsSection />
             </div>
 
-            {/* Stats */}
-            <div className="flex justify-center animate-fade-up mt-8" style={{
-            animationDelay: "280ms"
-          }}>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-display font-bold text-foreground">50+</div>
-                <div className="text-sm text-muted-foreground">Cities</div>
-              </div>
-            </div>
 
 
             {/* Luma note - positioned between Let's Shake and How It Works */}
