@@ -189,11 +189,6 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         <GlobalParticipantsSection />
       </div>
 
-      {/* Stats */}
-      <div className="text-center mb-8">
-        <div className="text-2xl font-display font-bold text-foreground">50+</div>
-        <div className="text-sm text-muted-foreground">Cities</div>
-      </div>
 
       {/* Get Started button for logged out users */}
       {!user && (
