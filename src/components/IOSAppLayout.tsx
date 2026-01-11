@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 export function IOSAppLayout() {
   const [activeTab, setActiveTab] = useState("home");
@@ -207,13 +208,14 @@ export function IOSAppLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Main content area - fixed height, no scroll */}
-      <main className="flex-1 pb-20 overflow-hidden safe-area-top">
+      <main className={cn("flex-1 overflow-hidden safe-area-top", user && "pb-20")}>
         <div className="h-full">
           {renderTab()}
         </div>
       </main>
 
-      <IOSTabBar activeTab={activeTab} onTabChange={handleTabChange} onShakeStart={handleTabBarShake} />
+      {/* Only show navigation when user is logged in */}
+      {user && <IOSTabBar activeTab={activeTab} onTabChange={handleTabChange} onShakeStart={handleTabBarShake} />}
 
       {/* Dialogs */}
       <ActivitySelectionDialog
