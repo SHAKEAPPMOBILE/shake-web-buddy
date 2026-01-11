@@ -106,11 +106,15 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         <img 
           src={shakeLogo} 
           alt="SHAKE" 
-          className="w-32 h-32 object-contain mb-4"
+          className="w-32 h-32 object-contain mb-4 animate-fade-in opacity-0"
+          style={{ animationDelay: "0ms", animationFillMode: "forwards" }}
         />
         
         {/* SHAKE-SOCIAL text */}
-        <div className="mb-12 text-center">
+        <div 
+          className="mb-12 text-center animate-fade-in opacity-0"
+          style={{ animationDelay: "150ms", animationFillMode: "forwards" }}
+        >
           <h1 className="text-3xl font-display font-bold text-foreground tracking-wider">SHAKE</h1>
           <p className="text-lg font-display font-medium text-muted-foreground tracking-[0.3em] mt-1">SOCIAL</p>
         </div>
@@ -118,9 +122,11 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         {/* Let's Shake! button */}
         <button
           onClick={() => navigate("/auth")}
-          className="px-8 py-3 rounded-full text-white font-medium transition-all hover:opacity-90 hover:scale-105"
+          className="px-8 py-3 rounded-full text-white font-medium transition-all hover:opacity-90 hover:scale-105 animate-fade-in opacity-0"
           style={{
             background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+            animationDelay: "300ms",
+            animationFillMode: "forwards",
           }}
         >
           Let's Shake!
