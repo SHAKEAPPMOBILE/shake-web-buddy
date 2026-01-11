@@ -101,7 +101,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   // Landing page for logged out users
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
         {/* SHAKE Logo */}
         <img 
           src={shakeLogo} 
