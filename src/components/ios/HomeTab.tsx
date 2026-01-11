@@ -184,18 +184,18 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           </div>
         )}
 
-        {/* Navigation Arrows - Hidden on mobile, visible on larger screens */}
+        {/* Navigation Arrows - Side by side with circle */}
         {showActivities && (
           <>
             <button
               onClick={goToPrevious}
-              className="hidden md:flex absolute left-[-60px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card border border-border items-center justify-center shadow-md hover:bg-muted transition-colors"
+              className="flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 w-10 h-10 rounded-full bg-card border border-border items-center justify-center shadow-md hover:bg-muted transition-colors"
             >
               <ChevronLeft className="w-5 h-5 text-foreground" />
             </button>
             <button
               onClick={goToNext}
-              className="hidden md:flex absolute right-[-60px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card border border-border items-center justify-center shadow-md hover:bg-muted transition-colors"
+              className="flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-10 h-10 rounded-full bg-card border border-border items-center justify-center shadow-md hover:bg-muted transition-colors"
             >
               <ChevronRight className="w-5 h-5 text-foreground" />
             </button>
