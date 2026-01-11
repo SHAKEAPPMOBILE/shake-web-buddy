@@ -110,10 +110,10 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         />
         
         {/* SHAKE-SOCIAL text */}
-        <h1 className="text-2xl font-display font-bold text-foreground tracking-wider mb-12">
-          <span className="block">SHAKE</span>
-          <span className="block">SOCIAL</span>
-        </h1>
+        <div className="mb-12 text-center">
+          <h1 className="text-3xl font-display font-bold text-foreground tracking-wider">SHAKE</h1>
+          <p className="text-lg font-display font-medium text-muted-foreground tracking-[0.3em] mt-1">SOCIAL</p>
+        </div>
         
         {/* Let's Shake! button */}
         <button
