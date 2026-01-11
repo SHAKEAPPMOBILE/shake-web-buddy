@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DAY_NAMES, getTodayDefaultIndex, getOrderedActivities } from "@/data/activityTypes";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import shakeLogo from "@/assets/shake-logo-new.png";
 
 interface HomeTabProps {
   onSelectActivity?: (activityType: string) => void;
@@ -97,6 +98,37 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     }
   }, [goToNext, goToPrevious]);
 
+  // Landing page for logged out users
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+        {/* SHAKE Logo */}
+        <img 
+          src={shakeLogo} 
+          alt="SHAKE" 
+          className="w-32 h-32 object-contain mb-4"
+        />
+        
+        {/* SHAKE-SOCIAL text */}
+        <h1 className="text-2xl font-display font-bold text-foreground tracking-wider mb-12">
+          SHAKE-SOCIAL
+        </h1>
+        
+        {/* Let's Shake! button */}
+        <button
+          onClick={() => navigate("/auth")}
+          className="px-8 py-3 rounded-full text-white font-medium transition-all hover:opacity-90 hover:scale-105"
+          style={{
+            background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+          }}
+        >
+          Let's Shake!
+        </button>
+      </div>
+    );
+  }
+
+  // Full home tab for logged in users
   return (
     <div className="flex flex-col h-full px-6 text-center pt-16 overflow-y-auto pb-24">
       {/* Welcome Message */}
@@ -188,20 +220,6 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       <div className="mb-6">
         <GlobalParticipantsSection />
       </div>
-
-
-      {/* Get Started button for logged out users */}
-      {!user && (
-        <button
-          onClick={() => navigate("/auth")}
-          className="px-8 py-3 rounded-full text-white font-medium transition-all hover:opacity-90"
-          style={{
-            background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
-          }}
-        >
-          Get Started
-        </button>
-      )}
     </div>
   );
 }
