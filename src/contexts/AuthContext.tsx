@@ -218,6 +218,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: {
           redirectTo: "shake://auth/callback",
           skipBrowserRedirect: true,
+          queryParams: {
+            prompt: "select_account",
+          },
         },
       });
 
@@ -235,6 +238,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       provider: "google",
       options: {
         redirectTo: redirectUrl,
+        queryParams: {
+          prompt: "select_account",
+        },
       },
     });
     return { error: error as Error | null };
