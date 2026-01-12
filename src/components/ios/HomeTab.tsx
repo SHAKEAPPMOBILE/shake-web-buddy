@@ -112,11 +112,20 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         
         {/* Welcome text */}
         <p 
-          className="text-lg text-gray-600 mb-12 animate-fade-in opacity-0"
+          className="text-lg text-gray-600 mb-2 animate-fade-in opacity-0"
           style={{ animationDelay: "150ms", animationFillMode: "forwards" }}
         >
-          Welcome to SHAKE social
+          Welcome to
         </p>
+        
+        {/* SHAKE-SOCIAL text */}
+        <div 
+          className="mb-12 text-center animate-fade-in opacity-0"
+          style={{ animationDelay: "200ms", animationFillMode: "forwards" }}
+        >
+          <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
+          <p className="text-lg font-display font-medium text-gray-600 tracking-[0.3em] mt-1">SOCIAL</p>
+        </div>
         
         {/* Let's Shake! button */}
         <button
