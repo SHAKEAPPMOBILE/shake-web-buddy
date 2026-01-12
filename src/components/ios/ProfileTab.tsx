@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Crown } from "lucide-react";
+import { User, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -119,7 +119,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
             }}
           >
             <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
-              <Crown className="w-5 h-5 text-shake-yellow" />
+              <SuperHumanIcon size={24} />
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium text-white">Upgrade to Premium</span>
