@@ -34,6 +34,7 @@ interface PlanActivity {
   creator_avatar?: string;
   participant_count?: number;
   isJoined?: boolean;
+  isCarouselJoin?: boolean;
 }
 
 export function PlansTab() {
@@ -171,6 +172,7 @@ export function PlansTab() {
           creator_avatar: profile?.avatar_url,
           participant_count: count || 1,
           isJoined: true,
+          isCarouselJoin: true,
         };
       })
     );
@@ -238,6 +240,7 @@ export function PlansTab() {
   };
 
   const handlePlanClick = (plan: PlanActivity) => {
+    if (plan.isCarouselJoin) return;
     setSelectedPlan(plan);
     setShowChatDialog(true);
   };
@@ -267,10 +270,10 @@ export function PlansTab() {
 
       if (error) throw error;
 
-      toast.success("Plan deleted");
-      setPlanToDelete(null);
-      fetchPlans();
-    } catch (error) {
+    toast.success("Plan deleted");
+    setPlanToDelete(null);
+    fetchPlans();
+  } catch (error) {
       console.error("Error deleting plan:", error);
       toast.error("Failed to delete plan");
     }
@@ -345,12 +348,14 @@ export function PlansTab() {
                   <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-2xl">
                     {getActivityEmoji(plan.activity_type)}
                   </div>
-                  <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-white/50">
-                    <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
-                    <AvatarFallback className="bg-white/80 text-muted-foreground text-xs font-semibold">
-                      {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                    </AvatarFallback>
-                  </Avatar>
+                  {!plan.isCarouselJoin && (
+                    <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-white/50">
+                      <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
+                      <AvatarFallback className="bg-white/80 text-muted-foreground text-xs font-semibold">
+                        {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -368,12 +373,19 @@ export function PlansTab() {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-white/70">by {plan.creator_name || "Anonymous"}</span>
-                    {plan.city !== selectedCity && (
-                      <span className="text-xs text-white/50">• {plan.city}</span>
-                    )}
-                  </div>
+                  {!plan.isCarouselJoin && (
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-white/70">by {plan.creator_name || "Anonymous"}</span>
+                      {plan.city !== selectedCity && (
+                        <span className="text-xs text-white/50">• {plan.city}</span>
+                      )}
+                    </div>
+                  )}
+                  {plan.isCarouselJoin && plan.city !== selectedCity && (
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-white/50">{plan.city}</span>
+                    </div>
+                  )}
                   {plan.note && (
                     <p className="text-xs text-white/60 italic mt-1 line-clamp-1">
                       "{plan.note}"
@@ -387,7 +399,7 @@ export function PlansTab() {
                   </div>
                 </div>
                 {/* Delete button for own plans */}
-                {plan.user_id === user?.id && (
+                {plan.user_id === user?.id && !plan.isCarouselJoin && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
