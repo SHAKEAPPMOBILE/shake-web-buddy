@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DAY_NAMES, getTodayDefaultIndex, getOrderedActivities } from "@/data/activityTypes";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import shakeLogo from "@/assets/shake-logo-new.png";
 
@@ -110,14 +110,13 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           style={{ animationDelay: "0ms", animationFillMode: "forwards" }}
         />
         
-        {/* SHAKE-SOCIAL text */}
-        <div 
-          className="mb-12 text-center animate-fade-in opacity-0"
+        {/* Welcome text */}
+        <p 
+          className="text-lg text-gray-600 mb-12 animate-fade-in opacity-0"
           style={{ animationDelay: "150ms", animationFillMode: "forwards" }}
         >
-          <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
-          <p className="text-lg font-display font-medium text-gray-600 tracking-[0.3em] mt-1">SOCIAL</p>
-        </div>
+          Welcome to SHAKE social
+        </p>
         
         {/* Let's Shake! button */}
         <button
@@ -131,6 +130,22 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         >
           Let's Shake!
         </button>
+
+        {/* Terms and Privacy disclaimer */}
+        <p 
+          className="text-sm text-gray-400 mt-6 animate-fade-in opacity-0"
+          style={{ animationDelay: "450ms", animationFillMode: "forwards" }}
+        >
+          By continuing, you agree to our{" "}
+          <Link to="/terms-of-service" className="underline hover:text-gray-600">
+            terms
+          </Link>{" "}
+          and{" "}
+          <Link to="/privacy-policy" className="underline hover:text-gray-600">
+            privacy policy
+          </Link>
+          .
+        </p>
       </div>
     );
   }
