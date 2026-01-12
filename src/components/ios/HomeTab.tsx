@@ -102,21 +102,21 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-white">
+        {/* Welcome text */}
+        <p 
+          className="text-lg text-gray-600 mb-2 animate-fade-in opacity-0"
+          style={{ animationDelay: "0ms", animationFillMode: "forwards" }}
+        >
+          Welcome to
+        </p>
+
         {/* SHAKE Logo */}
         <img 
           src={shakeLogo} 
           alt="SHAKE" 
           className="w-32 h-32 object-contain mb-4 animate-fade-in opacity-0"
-          style={{ animationDelay: "0ms", animationFillMode: "forwards" }}
+          style={{ animationDelay: "100ms", animationFillMode: "forwards" }}
         />
-        
-        {/* Welcome text */}
-        <p 
-          className="text-lg text-gray-600 mb-2 animate-fade-in opacity-0"
-          style={{ animationDelay: "150ms", animationFillMode: "forwards" }}
-        >
-          Welcome to
-        </p>
         
         {/* SHAKE-SOCIAL text */}
         <div 
