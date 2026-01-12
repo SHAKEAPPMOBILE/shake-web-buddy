@@ -6,6 +6,7 @@ import { DAY_NAMES, getTodayDefaultIndex, getOrderedActivities } from "@/data/ac
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import shakeLogo from "@/assets/shake-logo-new.png";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface HomeTabProps {
   onSelectActivity?: (activityType: string) => void;
@@ -101,30 +102,31 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   // Landing page for logged out users
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-white">
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-background">
         {/* SHAKE Logo */}
-        <img 
-          src={shakeLogo} 
-          alt="SHAKE" 
+        <img
+          src={shakeLogo}
+          alt="SHAKE"
           className="w-32 h-32 object-contain mb-4 animate-fade-in opacity-0"
           style={{ animationDelay: "0ms", animationFillMode: "forwards" }}
         />
-        
+
         {/* SHAKE-SOCIAL text */}
-        <div 
+        <div
           className="mb-12 text-center animate-fade-in opacity-0"
           style={{ animationDelay: "200ms", animationFillMode: "forwards" }}
         >
-          <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
-          <p className="text-lg font-display font-medium text-gray-600 tracking-[0.3em] mt-1">SOCIAL</p>
+          <h1 className="text-3xl font-display font-bold text-foreground tracking-wider">SHAKE</h1>
+          <p className="text-lg font-display font-medium text-muted-foreground tracking-[0.3em] mt-1">
+            SOCIAL
+          </p>
         </div>
-        
+
         {/* Let's Shake! button */}
         <button
           onClick={() => navigate("/auth")}
-          className="px-8 py-3 rounded-full text-white font-medium transition-all hover:opacity-90 hover:scale-105 animate-fade-in opacity-0"
+          className="px-8 py-3 rounded-full text-primary-foreground font-medium transition-all hover:opacity-90 hover:scale-105 animate-fade-in opacity-0 bg-primary"
           style={{
-            background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
             animationDelay: "300ms",
             animationFillMode: "forwards",
           }}
@@ -132,18 +134,26 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           Let's Shake!
         </button>
 
+        {/* Theme toggle */}
+        <div
+          className="mt-6 animate-fade-in opacity-0"
+          style={{ animationDelay: "350ms", animationFillMode: "forwards" }}
+        >
+          <ThemeToggle />
+        </div>
+
         {/* Terms and Privacy disclaimer */}
-        <div 
-          className="text-sm text-gray-400 mt-6 animate-fade-in opacity-0"
+        <div
+          className="text-sm text-muted-foreground mt-6 animate-fade-in opacity-0"
           style={{ animationDelay: "450ms", animationFillMode: "forwards" }}
         >
           <p>By continuing, you agree to our</p>
           <p>
-            <Link to="/terms-of-service" className="underline hover:text-gray-600">
+            <Link to="/terms-of-service" className="underline hover:text-foreground">
               terms
             </Link>{" "}
             and{" "}
-            <Link to="/privacy-policy" className="underline hover:text-gray-600">
+            <Link to="/privacy-policy" className="underline hover:text-foreground">
               privacy policy
             </Link>
             .
@@ -242,8 +252,13 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       {showActivities && <div className="h-16" />}
 
       {/* Global participants */}
-      <div className="mb-6">
+      <div className="mb-3">
         <GlobalParticipantsSection />
+      </div>
+
+      {/* Theme toggle - below Shakers nearby */}
+      <div className="flex justify-center mb-6">
+        <ThemeToggle />
       </div>
     </div>
   );
