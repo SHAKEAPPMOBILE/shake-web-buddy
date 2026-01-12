@@ -101,7 +101,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   // Landing page for logged out users
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-white">
         {/* SHAKE Logo */}
         <img 
           src={shakeLogo} 
@@ -115,8 +115,8 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           className="mb-12 text-center animate-fade-in opacity-0"
           style={{ animationDelay: "150ms", animationFillMode: "forwards" }}
         >
-          <h1 className="text-3xl font-display font-bold text-foreground tracking-wider">SHAKE</h1>
-          <p className="text-lg font-display font-medium text-muted-foreground tracking-[0.3em] mt-1">SOCIAL</p>
+          <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
+          <p className="text-lg font-display font-medium text-gray-600 tracking-[0.3em] mt-1">SOCIAL</p>
         </div>
         
         {/* Let's Shake! button */}
