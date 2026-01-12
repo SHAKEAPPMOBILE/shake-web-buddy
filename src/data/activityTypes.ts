@@ -60,7 +60,7 @@ export const ACTIVITY_TYPES: ActivityType[] = [
   { 
     id: "hike", 
     label: "Hike", 
-    emoji: "🥾",
+    emoji: "⛰️",
     icon: iconHike,
     color: "bg-shake-green/20 hover:bg-shake-green/30",
     bgImage: bgHiker,
