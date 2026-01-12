@@ -139,6 +139,7 @@ export function GroupChatDialog({
   const [audioResetTrigger, setAudioResetTrigger] = useState(0);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showParticipantsList, setShowParticipantsList] = useState(false);
+  const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
     userId: string;
     userName: string | null;
@@ -438,7 +439,7 @@ export function GroupChatDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-lg h-[600px] flex flex-col p-0 bg-[hsl(50,40%,92%)] backdrop-blur-xl border-border/50 [&>button.dialog-close]:text-black"
+        className={`sm:max-w-lg flex flex-col p-0 bg-[hsl(50,40%,92%)] backdrop-blur-xl border-border/50 [&>button.dialog-close]:text-black transition-all duration-300 ${isChatExpanded ? 'h-[600px]' : 'h-auto'}`}
         {...(isMobile ? swipeHandlers : {})}
       >
         {isMobile && (
@@ -486,50 +487,72 @@ export function GroupChatDialog({
           </div>
         </DialogHeader>
 
-        {/* Attendees section with avatars */}
+        {/* Attendees section with avatars and Enter Chat button */}
         {showAttendees ? (
-          <button 
-            onClick={() => setShowParticipantsList(true)}
-            className="w-full px-4 py-3 border-b border-border/50 text-left hover:bg-muted/30 transition-colors"
-          >
+          <div className="w-full px-4 py-3 border-b border-border/50">
             <div className="flex items-center gap-3">
-              <div className="flex -space-x-2 overflow-hidden">
-                {participants.slice(0, 6).map((participant) => (
-                  <div
-                    key={participant.user_id}
-                    className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-[hsl(50,40%,92%)] shrink-0"
-                  >
-                    {participant.avatar_url ? (
-                      <img
-                        src={participant.avatar_url}
-                        alt={participant.name || "User"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </div>
-                ))}
-                {participants.length > 6 && (
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border-2 border-[hsl(50,40%,92%)] text-xs font-medium text-muted-foreground shrink-0">
-                    +{participants.length - 6}
-                  </div>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined today
-              </p>
+              <button 
+                onClick={() => setShowParticipantsList(true)}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              >
+                <div className="flex -space-x-2 overflow-hidden">
+                  {participants.slice(0, 6).map((participant) => (
+                    <div
+                      key={participant.user_id}
+                      className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-[hsl(50,40%,92%)] shrink-0"
+                    >
+                      {participant.avatar_url ? (
+                        <img
+                          src={participant.avatar_url}
+                          alt={participant.name || "User"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  ))}
+                  {participants.length > 6 && (
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border-2 border-[hsl(50,40%,92%)] text-xs font-medium text-muted-foreground shrink-0">
+                      +{participants.length - 6}
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined
+                </p>
+              </button>
+              {!isChatExpanded && (
+                <Button
+                  onClick={() => setIsChatExpanded(true)}
+                  className="ml-auto bg-black text-white hover:bg-black/80 text-sm px-4 py-2 h-auto"
+                >
+                  Enter Group Chat
+                </Button>
+              )}
             </div>
-          </button>
+          </div>
         ) : (
-          <div className="px-4 py-3 border-b border-border/50">
-            <p className="text-sm text-muted-foreground/70">
-              You're the first one here today! Others will be notified when they join.
-            </p>
+          <div className="w-full px-4 py-3 border-b border-border/50">
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground/70">
+                You're the first one here today!
+              </p>
+              {!isChatExpanded && (
+                <Button
+                  onClick={() => setIsChatExpanded(true)}
+                  className="ml-auto bg-black text-white hover:bg-black/80 text-sm px-4 py-2 h-auto"
+                >
+                  Enter Group Chat
+                </Button>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Messages */}
+        {/* Messages - only show when expanded */}
+        {isChatExpanded && (
+        <>
         <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
           {!user && messages.length > 0 && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
@@ -683,6 +706,8 @@ export function GroupChatDialog({
             </div>
           </div>
         </div>
+        </>
+        )}
 
         {/* Premium Dialog */}
         <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
