@@ -28,7 +28,7 @@ export const getActivityDay = (id: string): string => {
   return '';
 };
 
-// Standard activities for the carousel (original 7)
+// Carousel activities with specific days (lunch, dinner, drinks, hike)
 export const ACTIVITY_TYPES: ActivityType[] = [
   { 
     id: "lunch", 
@@ -66,69 +66,61 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     bgImage: bgHiker,
     defaultDay: 0 // Sunday
   },
+];
+
+// Additional activities only for "create a plan" dialog (excludes carousel activities)
+export const PLAN_ONLY_ACTIVITY_TYPES: ActivityType[] = [
   { 
     id: "surf", 
     label: "Surf", 
     emoji: "🏄",
     color: "bg-blue-500/20 hover:bg-blue-500/30",
-    defaultDay: 6 // Saturday
   },
   { 
     id: "run", 
     label: "Run", 
     emoji: "🏃",
     color: "bg-orange-500/20 hover:bg-orange-500/30",
-    defaultDay: 6 // Saturday (alternate)
   },
   { 
     id: "co-working", 
     label: "Co-working", 
     emoji: "💻",
     color: "bg-slate-500/20 hover:bg-slate-500/30",
-    defaultDay: 3 // Wednesday
   },
-];
-
-// Additional activities only for "create a plan" (with date picker)
-export const PLAN_ONLY_ACTIVITY_TYPES: ActivityType[] = [
   { 
     id: "basketball", 
     label: "Basketball", 
     emoji: "🏀",
     color: "bg-orange-600/20 hover:bg-orange-600/30",
-    defaultDay: 6 // Saturday
   },
   { 
     id: "tennis-padel", 
     label: "Tennis/Padel", 
     emoji: "🎾",
     color: "bg-yellow-500/20 hover:bg-yellow-500/30",
-    defaultDay: 6 // Saturday
   },
   { 
     id: "football", 
     label: "Football", 
     emoji: "⚽",
     color: "bg-green-600/20 hover:bg-green-600/30",
-    defaultDay: 6 // Saturday
   },
   { 
     id: "shopping", 
     label: "Shopping", 
     emoji: "🛍️",
     color: "bg-pink-500/20 hover:bg-pink-500/30",
-    defaultDay: 6 // Saturday
   },
   { 
     id: "arts", 
     label: "Arts", 
     emoji: "🎨",
     color: "bg-purple-500/20 hover:bg-purple-500/30",
-    defaultDay: 6 // Saturday
   },
 ];
 
-// All activities combined (for create plan feature)
+// All activities combined (for lookups and helpers)
 export const ALL_ACTIVITY_TYPES: ActivityType[] = [...ACTIVITY_TYPES, ...PLAN_ONLY_ACTIVITY_TYPES];
 
 // Helper functions
