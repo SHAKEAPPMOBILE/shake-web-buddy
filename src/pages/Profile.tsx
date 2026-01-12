@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, Loader2, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell } from "lucide-react";
+import { Camera, ArrowLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell } from "lucide-react";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -196,7 +197,7 @@ export default function Profile() {
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -222,7 +223,7 @@ export default function Profile() {
             }}
           >
             {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <LoadingSpinner size="sm" />
             ) : (
               <Save className="w-4 h-4" />
             )}
@@ -255,7 +256,7 @@ export default function Profile() {
                 }}
               >
                 {isUploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <LoadingSpinner size="sm" />
                 ) : (
                   <Camera className="w-4 h-4 text-white" />
                 )}

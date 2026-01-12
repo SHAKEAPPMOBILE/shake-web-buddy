@@ -8,6 +8,7 @@ import { PremiumDialog } from "@/components/PremiumDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { SuperHumanIcon } from "./SuperHumanIcon";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface Participant {
   user_id: string;
@@ -131,7 +132,7 @@ export function ParticipantsListDialog({
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin w-6 h-6 border-2 border-shake-yellow border-t-transparent rounded-full" />
+                <LoadingSpinner size="lg" />
               </div>
             ) : participants.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">

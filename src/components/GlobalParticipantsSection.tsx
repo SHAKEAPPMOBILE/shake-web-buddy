@@ -8,6 +8,7 @@ import { SayHiButton } from "@/components/SayHiButton";
 import { PrivateChatDialog } from "@/components/PrivateChatDialog";
 import { Button } from "@/components/ui/button";
 import { SuperHumanIcon } from "./SuperHumanIcon";
+import { LoadingSpinner } from "./LoadingSpinner";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { playNotificationSound, playWelcomeVoice } from "@/lib/notification-sound";
@@ -276,7 +277,7 @@ export function GlobalParticipantsSection() {
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin w-6 h-6 border-2 border-shake-yellow border-t-transparent rounded-full" />
+                <LoadingSpinner size="lg" />
               </div>
             ) : participants.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
