@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, Trash2, Loader2, Mic } from "lucide-react";
+import { ArrowLeft, Send, Users, User, Trash2, Mic } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface PlanGroupChatDialogProps {
   open: boolean;
@@ -501,7 +502,7 @@ export function PlanGroupChatDialog({
                   <Trash2 className="w-4 h-4" />
                 </Button>
                 <Button onClick={handleSendMessage} disabled={isSending} variant="shake">
-                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
             </div>
@@ -524,7 +525,7 @@ export function PlanGroupChatDialog({
                   resetTrigger={audioResetTrigger}
                 />
                 <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} variant="shake">
-                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
             </div>

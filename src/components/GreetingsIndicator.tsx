@@ -15,6 +15,7 @@ import { PrivateChatDialog } from "./PrivateChatDialog";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 export function GreetingsIndicator() {
   const { user } = useAuth();
@@ -100,7 +101,7 @@ export function GreetingsIndicator() {
             <TabsContent value="pending" className="mt-4">
               {isLoading ? (
                 <div className="flex justify-center py-8">
-                  <div className="w-5 h-5 border-2 border-shake-yellow border-t-transparent rounded-full animate-spin" />
+                  <LoadingSpinner size="md" />
                 </div>
               ) : pendingReceived.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8 text-sm">
@@ -155,7 +156,7 @@ export function GreetingsIndicator() {
             <TabsContent value="matches" className="mt-4">
               {isLoading ? (
                 <div className="flex justify-center py-8">
-                  <div className="w-5 h-5 border-2 border-shake-yellow border-t-transparent rounded-full animate-spin" />
+                  <LoadingSpinner size="md" />
                 </div>
               ) : matches.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8 text-sm">

@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, User, Loader2, Mic, Lock } from "lucide-react";
+import { Send, User, Mic, Lock } from "lucide-react";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -21,6 +21,7 @@ import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface PrivateChatDialogProps {
   open: boolean;
@@ -185,7 +186,7 @@ export function PrivateChatDialog({
         <ScrollArea className="flex-1 py-4" ref={scrollRef}>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              <LoadingSpinner size="lg" />
             </div>
           ) : messages.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
@@ -271,7 +272,7 @@ export function PrivateChatDialog({
                 disabled={isSending}
                 variant="shake"
               >
-                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
           ) : (
@@ -296,7 +297,7 @@ export function PrivateChatDialog({
                 variant="shake"
               >
                 {isSending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <LoadingSpinner size="sm" />
                 ) : (
                   <Send className="w-4 h-4" />
                 )}

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Hand, MessageCircle, Check, Loader2 } from "lucide-react";
+import { Hand, MessageCircle, Check } from "lucide-react";
 import { useGreetings } from "@/hooks/useGreetings";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface SayHiButtonProps {
   targetUserId: string;
@@ -106,7 +107,7 @@ export function SayHiButton({
         className={`bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 animate-pulse ${className}`}
       >
         {isSending ? (
-          <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+          <LoadingSpinner size="sm" className="mr-1.5" />
         ) : (
           <Hand className="w-4 h-4 mr-1.5" />
         )}
@@ -125,7 +126,7 @@ export function SayHiButton({
       className={`border-shake-yellow/50 text-shake-yellow hover:bg-shake-yellow/10 ${className}`}
     >
       {isSending ? (
-        <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+        <LoadingSpinner size="sm" className="mr-1.5" />
       ) : (
         <Hand className="w-4 h-4 mr-1.5" />
       )}

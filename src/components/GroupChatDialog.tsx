@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Loader2, Globe, MapPin, Trash2, Mic } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Globe, MapPin, Trash2, Mic } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -701,7 +702,7 @@ export function GroupChatDialog({
                 onClick={handleSendMessage}
                 disabled={isSending || (!message.trim() && !pendingAudio)}
               >
-                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
           </div>

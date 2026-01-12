@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { SuperHumanIcon } from "@/components/SuperHumanIcon";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
@@ -65,7 +66,7 @@ export default function SubscriptionSuccess() {
 
           {isChecking ? (
             <div className="flex items-center justify-center gap-2 text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <LoadingSpinner size="sm" />
               <span className="text-sm">Confirming subscription...</span>
             </div>
           ) : isPremium ? (
