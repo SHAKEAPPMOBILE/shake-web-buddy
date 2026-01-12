@@ -670,25 +670,26 @@ export default function Auth() {
               </div>
             )}
 
-            {/* Logo - same style as Welcome page header (not for profile steps or method step) */}
+            {/* Logo - same style as first page (not for profile steps or method step) */}
             {!(step === 'name' || step === 'social' || step === 'avatar' || step === 'method') && (
-              <div className="flex flex-col items-center gap-4 mb-8">
-                <div className="flex items-center gap-1.5">
-                  <img 
-                    src={logoShake} 
-                    alt="Shake" 
-                    className="h-6 w-auto object-contain" 
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-base font-display font-bold text-foreground lowercase leading-tight">
-                      shake
-                    </span>
-                    <span className="text-[7px] font-medium tracking-[0.12em] uppercase text-muted-foreground -mt-0.5">
-                      social
-                    </span>
-                  </div>
+              <div className="flex flex-col items-center mb-8">
+                <p className="text-lg text-gray-600 mb-2">Welcome to</p>
+                <img 
+                  src={logoShake} 
+                  alt="SHAKE" 
+                  className="w-28 h-28 object-contain mb-4"
+                />
+                <div className="text-center">
+                  <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
+                  <p className="text-lg font-display font-medium text-gray-600 tracking-[0.3em] mt-1">SOCIAL</p>
                 </div>
-                <h1 className="text-2xl font-display font-bold text-foreground">
+              </div>
+            )}
+
+            {/* Step title */}
+            {!(step === 'name' || step === 'social' || step === 'avatar' || step === 'method') && (
+              <div className="flex flex-col items-center gap-2 mb-6">
+                <h1 className="text-2xl font-display font-bold text-black">
                   {step === 'otp' 
                     ? "Enter verification code" 
                     : step === 'password'
@@ -701,7 +702,7 @@ export default function Auth() {
                       ? "Welcome"
                       : "Create your account"}
                 </h1>
-                <p className="text-muted-foreground text-center">
+                <p className="text-gray-600 text-center">
                   {step === 'otp'
                     ? `We sent a code to ${phoneNumber}`
                     : step === 'password'
