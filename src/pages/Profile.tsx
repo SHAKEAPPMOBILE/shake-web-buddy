@@ -35,6 +35,7 @@ export default function Profile() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [originalPhoneNumber, setOriginalPhoneNumber] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +85,7 @@ export default function Profile() {
         console.error("Error fetching private profile:", privateError);
       } else if (privateProfile) {
         setPhoneNumber(privateProfile.phone_number || "");
+        setOriginalPhoneNumber(privateProfile.phone_number || "");
         setPushNotificationsEnabled(privateProfile.push_notifications_enabled ?? true);
       }
 
@@ -164,15 +166,27 @@ export default function Profile() {
 
       if (publicError) throw publicError;
 
-      // Update private profile for push notifications
+      // Update private profile for push notifications and phone number (if adding new)
+      const privateUpdateData: { push_notifications_enabled: boolean; phone_number?: string } = {
+        push_notifications_enabled: pushNotificationsEnabled,
+      };
+      
+      // Only allow adding phone number if it was originally empty
+      if (!originalPhoneNumber && phoneNumber.trim()) {
+        privateUpdateData.phone_number = phoneNumber.trim();
+      }
+      
       const { error: privateError } = await supabase
         .from("profiles_private")
-        .update({
-          push_notifications_enabled: pushNotificationsEnabled,
-        })
+        .update(privateUpdateData)
         .eq("user_id", user.id);
 
       if (privateError) throw privateError;
+
+      // Update original phone number if we just added it
+      if (!originalPhoneNumber && phoneNumber.trim()) {
+        setOriginalPhoneNumber(phoneNumber.trim());
+      }
 
       toast.success("Profile saved!");
       triggerConfettiWaterfall();
@@ -293,17 +307,28 @@ export default function Profile() {
               />
             </div>
 
-            {/* Phone (read-only) */}
+            {/* Phone */}
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                value={phoneNumber}
-                readOnly
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">Phone number cannot be changed</p>
+              {phoneNumber ? (
+                <>
+                  <Input
+                    id="phone"
+                    value={phoneNumber}
+                    readOnly
+                    disabled
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground">Phone number cannot be changed</p>
+                </>
+              ) : (
+                <Input
+                  id="phone"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="Add your phone number"
+                />
+              )}
             </div>
 
             {/* Social Links Section */}
