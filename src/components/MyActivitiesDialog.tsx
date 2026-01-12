@@ -56,61 +56,93 @@ export function MyActivitiesDialog({
       const now = new Date();
       const nowIso = now.toISOString();
       
-      // Only show joins from the last 24 hours
-      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+      // Fetch activities where user has sent messages (activity_messages for carousel chats)
+      const { data: userActivityMessages } = await supabase
+        .from("activity_messages")
+        .select("activity_type, city")
+        .eq("user_id", user.id);
 
-      // 1) Fetch user's active chat joins from last 24h (includes plan joins where activity_id is set)
-      const { data: joins, error } = await supabase
+      // Fetch plan messages where user participated
+      const { data: userPlanMessages } = await supabase
+        .from("plan_messages")
+        .select("activity_id")
+        .eq("user_id", user.id);
+
+      // Get unique activity types + cities from carousel chat participation
+      const carouselChatsParticipated = new Set<string>();
+      (userActivityMessages || []).forEach(msg => {
+        carouselChatsParticipated.add(`${msg.activity_type}::${msg.city}`);
+      });
+
+      // Get unique plan IDs from plan chat participation
+      const planChatsParticipated = new Set<string>();
+      (userPlanMessages || []).forEach(msg => {
+        if (msg.activity_id) planChatsParticipated.add(msg.activity_id);
+      });
+
+      // Fetch user's activity joins to check for unread messages
+      const { data: joins } = await supabase
         .from("activity_joins")
         .select("id, activity_type, city, joined_at, expires_at, activity_id")
         .eq("user_id", user.id)
-        .gt("expires_at", nowIso)
-        .gte("joined_at", twentyFourHoursAgo)
-        .order("joined_at", { ascending: false });
+        .gt("expires_at", nowIso);
 
-      if (error) {
-        console.error("Error fetching activities:", error);
-        return;
-      }
-
-      // 2) Fetch user's own upcoming plans (creator should see their plan chats too)
-      // Show plans scheduled for today or in the future
+      // Fetch user's own plans
       const startOfToday = new Date(now);
       startOfToday.setHours(0, 0, 0, 0);
       
-      const { data: myPlans, error: plansError } = await supabase
+      const { data: myPlans } = await supabase
         .from("user_activities")
         .select("id, activity_type, city, scheduled_for, created_at")
         .eq("user_id", user.id)
         .eq("is_active", true)
-        .gte("scheduled_for", startOfToday.toISOString())
-        .order("scheduled_for", { ascending: true });
+        .gte("scheduled_for", startOfToday.toISOString());
 
-      if (plansError) {
-        console.error("Error fetching my plans:", plansError);
+      // Fetch read status for unread detection
+      const { data: readStatuses } = await supabase
+        .from("activity_read_status")
+        .select("activity_type, city, last_read_at")
+        .eq("user_id", user.id);
+
+      const readStatusMap = new Map<string, string>();
+      (readStatuses || []).forEach(rs => {
+        readStatusMap.set(`${rs.activity_type}::${rs.city}`, rs.last_read_at);
+      });
+
+      // Check for unread messages in carousel chats
+      const carouselChatsWithUnread = new Set<string>();
+      for (const join of (joins || []).filter(j => !j.activity_id)) {
+        const key = `${join.activity_type}::${join.city}`;
+        const lastRead = readStatusMap.get(key);
+        
+        // Check if there are messages after last read
+        let query = supabase
+          .from("activity_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("activity_type", join.activity_type)
+          .eq("city", join.city)
+          .neq("user_id", user.id);
+        
+        if (lastRead) {
+          query = query.gt("created_at", lastRead);
+        }
+        
+        const { count } = await query;
+        if (count && count > 0) {
+          carouselChatsWithUnread.add(key);
+        }
       }
 
-      // Participant counts (plan joins count by activity_id; quick joins count by activity_type+city)
-      const joinItems: ActivityJoin[] = await Promise.all(
-        (joins || []).map(async (join: any) => {
-          if (join.activity_id) {
-            const { count } = await supabase
-              .from("activity_joins")
-              .select("*", { count: "exact", head: true })
-              .eq("activity_id", join.activity_id);
+      // Filter to only show activities with participation or unread messages
+      const relevantActivities: ActivityJoin[] = [];
 
-            return {
-              id: join.id,
-              activity_type: join.activity_type,
-              city: join.city,
-              joined_at: join.joined_at,
-              expires_at: join.expires_at,
-              participant_count: (count || 0) + 1,
-              activity_id: join.activity_id,
-              source: "join",
-            };
-          }
-
+      // Process carousel joins (no activity_id)
+      for (const join of (joins || []).filter(j => !j.activity_id)) {
+        const key = `${join.activity_type}::${join.city}`;
+        const hasParticipated = carouselChatsParticipated.has(key);
+        const hasUnread = carouselChatsWithUnread.has(key);
+        
+        if (hasParticipated || hasUnread) {
           const { count } = await supabase
             .from("activity_joins")
             .select("*", { count: "exact", head: true })
@@ -118,57 +150,94 @@ export function MyActivitiesDialog({
             .eq("city", join.city)
             .gt("expires_at", nowIso);
 
-          return {
+          relevantActivities.push({
             id: join.id,
             activity_type: join.activity_type,
             city: join.city,
             joined_at: join.joined_at,
             expires_at: join.expires_at,
             participant_count: count || 0,
-            activity_id: join.activity_id,
+            activity_id: undefined,
             source: "join",
-          };
-        })
-      );
+          });
+        }
+      }
 
-      const planItems: ActivityJoin[] = await Promise.all(
-        (myPlans || []).map(async (plan: any) => {
+      // Process plan joins and own plans
+      for (const join of (joins || []).filter(j => j.activity_id)) {
+        const hasParticipated = planChatsParticipated.has(join.activity_id!);
+        
+        // Check for unread plan messages
+        const { count: unreadCount } = await supabase
+          .from("plan_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("activity_id", join.activity_id!)
+          .neq("user_id", user.id)
+          .gt("created_at", join.joined_at);
+        
+        const hasUnread = (unreadCount || 0) > 0;
+        
+        if (hasParticipated || hasUnread) {
           const { count } = await supabase
             .from("activity_joins")
             .select("*", { count: "exact", head: true })
-            .eq("activity_id", plan.id);
+            .eq("activity_id", join.activity_id);
 
-          return {
-            id: `plan-${plan.id}`,
-            activity_type: plan.activity_type,
-            city: plan.city,
-            joined_at: plan.created_at,
-            // Keep plan visible until its scheduled time (so it's available in chat shortcut)
-            expires_at: plan.scheduled_for,
-            scheduled_for: plan.scheduled_for,
-            activity_id: plan.id,
+          // Get plan details for scheduled_for
+          const { data: planData } = await supabase
+            .from("user_activities")
+            .select("scheduled_for")
+            .eq("id", join.activity_id!)
+            .maybeSingle();
+
+          relevantActivities.push({
+            id: join.id,
+            activity_type: join.activity_type,
+            city: join.city,
+            joined_at: join.joined_at,
+            expires_at: join.expires_at,
             participant_count: (count || 0) + 1,
-            source: "plan",
-          };
-        })
-      );
+            activity_id: join.activity_id,
+            scheduled_for: planData?.scheduled_for,
+            source: "join",
+          });
+        }
+      }
 
-      // Deduplicate by activity_type + city, preferring plan entries over generic joins
-      const merged = [...planItems, ...joinItems];
+      // Add user's own plans (always show as creator)
+      for (const plan of (myPlans || [])) {
+        // Check if already added via join
+        const alreadyAdded = relevantActivities.some(a => a.activity_id === plan.id);
+        if (alreadyAdded) continue;
+
+        const { count } = await supabase
+          .from("activity_joins")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_id", plan.id);
+
+        relevantActivities.push({
+          id: `plan-${plan.id}`,
+          activity_type: plan.activity_type,
+          city: plan.city,
+          joined_at: plan.created_at,
+          expires_at: plan.scheduled_for,
+          scheduled_for: plan.scheduled_for,
+          activity_id: plan.id,
+          participant_count: (count || 0) + 1,
+          source: "plan",
+        });
+      }
+
+      // Deduplicate and sort
       const byKey = new Map<string, ActivityJoin>();
-      for (const item of merged) {
-        const key = `${item.activity_type}::${item.city}`;
+      for (const item of relevantActivities) {
+        const key = item.activity_id || `${item.activity_type}::${item.city}`;
         const existing = byKey.get(key);
         if (!existing) {
           byKey.set(key, item);
           continue;
         }
         if (existing.source !== "plan" && item.source === "plan") {
-          byKey.set(key, item);
-          continue;
-        }
-        // Otherwise keep the most recently joined
-        if (new Date(item.joined_at).getTime() > new Date(existing.joined_at).getTime()) {
           byKey.set(key, item);
         }
       }
