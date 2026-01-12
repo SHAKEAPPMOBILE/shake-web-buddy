@@ -412,10 +412,10 @@ export function PlansTab() {
                       e.stopPropagation();
                       setPlanToDelete(plan);
                     }}
-                    className="p-2 text-white/70 hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
+                    className="p-2.5 bg-white/20 hover:bg-destructive/80 text-white hover:text-white rounded-full transition-all shadow-sm"
                     title="Delete plan"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 )}
               </div>
