@@ -135,14 +135,6 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           Let's Shake!
         </button>
 
-        {/* Theme toggle */}
-        <div
-          className="mt-6 animate-fade-in opacity-0"
-          style={{ animationDelay: "350ms", animationFillMode: "forwards" }}
-        >
-          <ThemeToggle />
-        </div>
-
         {/* Terms and Privacy disclaimer */}
         <div
           className="text-sm text-muted-foreground mt-6 animate-fade-in opacity-0"
