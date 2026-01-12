@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Zap, MapPin } from "lucide-react";
+import { Zap, MapPin, Sun, Moon } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
@@ -15,6 +15,7 @@ import avatar1 from "@/assets/avatar-1.png";
 import avatar2 from "@/assets/avatar-2.png";
 import shakeLogo from "@/assets/shake-logo-new.png";
 import { GlobalParticipantsSection } from "./GlobalParticipantsSection";
+import { Switch } from "@/components/ui/switch";
 export function HeroSection() {
   const [isShaking, setIsShaking] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
@@ -24,6 +25,19 @@ export function HeroSection() {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [phoneInitialShake, setPhoneInitialShake] = useState(true);
   const [phoneHovered, setPhoneHovered] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  // Apply theme to document
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.remove('light');
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    }
+  }, [isDarkMode]);
   const {
     user
   } = useAuth();
@@ -118,10 +132,21 @@ export function HeroSection() {
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-6">
-            {/* Logo with wording */}
+            {/* Logo with wording and theme toggle */}
             <div className="flex items-center justify-center gap-3 animate-fade-up">
               <img src={shakeLogo} alt="Shake" className="w-10 h-10 md:w-12 md:h-12" />
               <span className="text-2xl md:text-3xl font-display font-bold text-foreground">Shake</span>
+              
+              {/* Theme Toggle */}
+              <div className="flex items-center gap-2 ml-4 px-3 py-1.5 rounded-full bg-card/50 border border-border/50 backdrop-blur-sm">
+                <Sun className={`w-4 h-4 transition-colors ${!isDarkMode ? 'text-shake-yellow' : 'text-muted-foreground'}`} />
+                <Switch
+                  checked={isDarkMode}
+                  onCheckedChange={setIsDarkMode}
+                  className="data-[state=checked]:bg-muted data-[state=unchecked]:bg-shake-yellow/30"
+                />
+                <Moon className={`w-4 h-4 transition-colors ${isDarkMode ? 'text-primary' : 'text-muted-foreground'}`} />
+              </div>
             </div>
 
             {/* Badge */}
