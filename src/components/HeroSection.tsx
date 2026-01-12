@@ -132,21 +132,10 @@ export function HeroSection() {
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-6">
-            {/* Logo with wording and theme toggle */}
+            {/* Logo with wording */}
             <div className="flex items-center justify-center gap-3 animate-fade-up">
               <img src={shakeLogo} alt="Shake" className="w-10 h-10 md:w-12 md:h-12" />
               <span className="text-2xl md:text-3xl font-display font-bold text-foreground">Shake</span>
-              
-              {/* Theme Toggle */}
-              <div className="flex items-center gap-2 ml-4 px-3 py-1.5 rounded-full bg-card/50 border border-border/50 backdrop-blur-sm">
-                <Sun className={`w-4 h-4 transition-colors ${!isDarkMode ? 'text-shake-yellow' : 'text-muted-foreground'}`} />
-                <Switch
-                  checked={isDarkMode}
-                  onCheckedChange={setIsDarkMode}
-                  className="data-[state=checked]:bg-muted data-[state=unchecked]:bg-shake-yellow/30"
-                />
-                <Moon className={`w-4 h-4 transition-colors ${isDarkMode ? 'text-primary' : 'text-muted-foreground'}`} />
-              </div>
             </div>
 
             {/* Badge */}
@@ -238,6 +227,19 @@ export function HeroSection() {
             animationDelay: "250ms"
           }}>
               <GlobalParticipantsSection />
+            </div>
+
+            {/* Theme Toggle - below shakers nearby */}
+            <div className="flex justify-center animate-fade-up" style={{ animationDelay: "300ms" }}>
+              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-card/50 border border-border/50 backdrop-blur-sm">
+                <Sun className={`w-5 h-5 transition-colors ${!isDarkMode ? 'text-shake-yellow' : 'text-muted-foreground'}`} />
+                <Switch
+                  checked={isDarkMode}
+                  onCheckedChange={setIsDarkMode}
+                  className="data-[state=checked]:bg-muted data-[state=unchecked]:bg-shake-yellow/30"
+                />
+                <Moon className={`w-5 h-5 transition-colors ${isDarkMode ? 'text-primary' : 'text-muted-foreground'}`} />
+              </div>
             </div>
 
 
