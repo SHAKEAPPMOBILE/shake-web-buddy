@@ -14,7 +14,6 @@ export function ThemeToggle({ label = "Theme", className }: ThemeToggleProps) {
   return (
     <div className={className}>
       <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-muted/60 border border-border shadow-sm">
-        <span className="text-sm font-medium text-foreground">{label}</span>
         <Sun className={"w-5 h-5 text-muted-foreground"} />
         <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Toggle theme" />
         <Moon className={"w-5 h-5 text-muted-foreground"} />
