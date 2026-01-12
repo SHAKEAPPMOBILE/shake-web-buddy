@@ -6,6 +6,7 @@ import { PlansMapDialog } from "../PlansMapDialog";
 import { PremiumDialog } from "../PremiumDialog";
 import { CreateActivityDialog } from "../CreateActivityDialog";
 import { PlanGroupChatDialog } from "../PlanGroupChatDialog";
+import { GroupChatDialog } from "../GroupChatDialog";
 import { format } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -217,6 +218,8 @@ export function PlansTab() {
   const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
+  const [selectedCarouselActivity, setSelectedCarouselActivity] = useState<PlanActivity | null>(null);
+  const [showCarouselChatDialog, setShowCarouselChatDialog] = useState(false);
 
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
@@ -240,7 +243,11 @@ export function PlansTab() {
   };
 
   const handlePlanClick = (plan: PlanActivity) => {
-    if (plan.isCarouselJoin) return;
+    if (plan.isCarouselJoin) {
+      setSelectedCarouselActivity(plan);
+      setShowCarouselChatDialog(true);
+      return;
+    }
     setSelectedPlan(plan);
     setShowChatDialog(true);
   };
@@ -452,6 +459,22 @@ export function PlansTab() {
             updated_at: selectedPlan.scheduled_for,
           }}
           onBack={() => setShowChatDialog(false)}
+        />
+      )}
+
+      {/* Carousel Activity Group Chat Dialog */}
+      {selectedCarouselActivity && (
+        <GroupChatDialog
+          open={showCarouselChatDialog}
+          onOpenChange={setShowCarouselChatDialog}
+          activityType={selectedCarouselActivity.activity_type}
+          city={selectedCarouselActivity.city}
+          attendeeCount={selectedCarouselActivity.participant_count || 1}
+          onBack={() => setShowCarouselChatDialog(false)}
+          onLeaveActivity={() => {
+            setShowCarouselChatDialog(false);
+            fetchPlans();
+          }}
         />
       )}
 
