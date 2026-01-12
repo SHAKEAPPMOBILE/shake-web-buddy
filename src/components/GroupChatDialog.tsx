@@ -44,7 +44,7 @@ interface Message {
   created_at: string;
 }
 
-import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
+import { getActivityLabel, getActivityEmoji, getActivityDay } from "@/data/activityTypes";
 
 const defaultSuggestions = [
   "What time works best?",
@@ -454,7 +454,7 @@ export function GroupChatDialog({
             </Button>
             <div className="flex-1">
               <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
-              <p className="text-sm text-black/60">{formattedTime}</p>
+              <p className="text-sm text-black/60">{getActivityDay(activityType) || formattedTime}</p>
             </div>
             {showAttendees && (
               <button 
