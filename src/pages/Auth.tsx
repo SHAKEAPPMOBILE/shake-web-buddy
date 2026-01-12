@@ -750,7 +750,7 @@ export default function Auth() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={countrySearchOpen}
-                        className="w-[120px] justify-between px-3"
+                        className="w-[120px] justify-between px-3 bg-black text-white hover:bg-black hover:text-white border-black"
                       >
                         <span className="flex items-center gap-1">
                           <span className="text-lg">{selectedCountry.flag}</span>
@@ -846,7 +846,7 @@ export default function Auth() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={countrySearchOpen}
-                        className="w-[120px] justify-between px-3"
+                        className="w-[120px] justify-between px-3 bg-black text-white hover:bg-black hover:text-white border-black"
                       >
                         <span className="flex items-center gap-1">
                           <span className="text-lg">{selectedCountry.flag}</span>
