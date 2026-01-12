@@ -341,10 +341,18 @@ export function PlansTab() {
           </div>
         ) : (
           activities.map((plan) => (
-            <button
+            <div
               key={plan.id}
+              role="button"
+              tabIndex={0}
               onClick={() => handlePlanClick(plan)}
-              className="w-full text-left rounded-2xl p-4 space-y-3 hover:opacity-90 transition-all"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handlePlanClick(plan);
+                }
+              }}
+              className="w-full text-left rounded-2xl p-4 space-y-3 hover:opacity-90 transition-all cursor-pointer"
               style={{
                 background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
               }}
@@ -364,11 +372,10 @@ export function PlansTab() {
                     </Avatar>
                   )}
                 </div>
+
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-white">
-                      {getActivityLabel(plan.activity_type)}
-                    </h3>
+                    <h3 className="font-semibold text-white">{getActivityLabel(plan.activity_type)}</h3>
                     {plan.isJoined && (
                       <span className="text-xs bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">
                         Joined
@@ -380,6 +387,7 @@ export function PlansTab() {
                       </span>
                     )}
                   </div>
+
                   {!plan.isCarouselJoin && (
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-white/70">by {plan.creator_name || "Anonymous"}</span>
@@ -388,16 +396,17 @@ export function PlansTab() {
                       )}
                     </div>
                   )}
+
                   {plan.isCarouselJoin && plan.city !== selectedCity && (
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-white/50">{plan.city}</span>
                     </div>
                   )}
+
                   {plan.note && (
-                    <p className="text-xs text-white/60 italic mt-1 line-clamp-1">
-                      "{plan.note}"
-                    </p>
+                    <p className="text-xs text-white/60 italic mt-1 line-clamp-1">"{plan.note}"</p>
                   )}
+
                   <div className="flex items-center gap-2 mt-1">
                     <Calendar className="w-3.5 h-3.5 text-white/70" />
                     <span className="text-sm text-white/70">
@@ -405,27 +414,31 @@ export function PlansTab() {
                     </span>
                   </div>
                 </div>
+
                 {/* Delete button for own plans */}
                 {plan.user_id === user?.id && !plan.isCarouselJoin && (
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setPlanToDelete(plan);
                     }}
                     className="p-2.5 bg-white/20 hover:bg-destructive/80 text-white hover:text-white rounded-full transition-all shadow-sm"
                     title="Delete plan"
+                    aria-label="Delete plan"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
                 )}
               </div>
+
               {plan.participant_count && plan.participant_count > 1 && (
                 <div className="flex items-center gap-1 text-sm text-white/70">
                   <Users className="w-3.5 h-3.5" />
                   <span>{plan.participant_count} joined</span>
                 </div>
               )}
-            </button>
+            </div>
           ))
         )}
       </div>
