@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
 import { getActivityEmoji } from "@/data/activityTypes";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface UserProfileDialogProps {
   open: boolean;
@@ -223,7 +224,7 @@ export function UserProfileDialog({
             
             {isLoading ? (
               <div className="flex justify-center py-4">
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <LoadingSpinner size="md" />
               </div>
             ) : activityHistory.length === 0 ? (
               <p className="text-sm text-muted-foreground/70 text-center py-4">

@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { PlanGroupChatDialog } from "@/components/PlanGroupChatDialog";
 import { SuperHumanIcon } from "./SuperHumanIcon";
+import { LoadingSpinner } from "./LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { toast } from "sonner";
 
@@ -303,7 +304,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <LoadingSpinner size="sm" />
                     Creating...
                   </span>
                 ) : (

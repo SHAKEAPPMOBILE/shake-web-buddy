@@ -12,6 +12,7 @@ import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay } from "@/data/activ
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { LoadingSpinner } from "../LoadingSpinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -319,7 +320,7 @@ export function PlansTab() {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <LoadingSpinner size="lg" />
           </div>
         ) : activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">

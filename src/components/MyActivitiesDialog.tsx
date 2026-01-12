@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { getActivityEmoji, getActivityLabel, ACTIVITY_TYPES } from "@/data/activityTypes";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface MyActivitiesDialogProps {
   open: boolean;
@@ -332,7 +333,7 @@ export function MyActivitiesDialog({
         <div className="py-4">
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <LoadingSpinner size="lg" />
             </div>
           ) : activities.length === 0 ? (
             <div className="text-center py-8">

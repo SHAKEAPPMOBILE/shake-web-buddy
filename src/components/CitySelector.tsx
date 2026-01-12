@@ -1,4 +1,4 @@
-import { MapPin, ChevronDown, Loader2 } from "lucide-react";
+import { MapPin, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { SuperHumanIcon } from "./SuperHumanIcon";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface CitySelectorProps {
   isPremium?: boolean;
@@ -46,7 +47,7 @@ export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors outline-none">
         {isLoading ? (
-          <Loader2 className="w-4 h-4 text-primary animate-spin" />
+          <LoadingSpinner size="sm" />
         ) : (
           <MapPin className="w-4 h-4 text-shake-teal" />
         )}
