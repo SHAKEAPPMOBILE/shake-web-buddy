@@ -230,13 +230,15 @@ export function HeroSection() {
             </div>
 
             {/* Theme Toggle - below shakers nearby */}
-            <div className="flex justify-center animate-fade-up" style={{ animationDelay: "300ms" }}>
-              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-card/50 border border-border/50 backdrop-blur-sm">
+            <div className="flex justify-center animate-fade-up mt-3" style={{ animationDelay: "300ms" }}>
+              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-muted/60 border border-border shadow-sm">
+                <span className="text-sm font-medium text-foreground">Theme</span>
                 <Sun className={`w-5 h-5 transition-colors ${!isDarkMode ? 'text-shake-yellow' : 'text-muted-foreground'}`} />
                 <Switch
                   checked={isDarkMode}
                   onCheckedChange={setIsDarkMode}
-                  className="data-[state=checked]:bg-muted data-[state=unchecked]:bg-shake-yellow/30"
+                  aria-label="Toggle theme"
+                  className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
                 />
                 <Moon className={`w-5 h-5 transition-colors ${isDarkMode ? 'text-primary' : 'text-muted-foreground'}`} />
               </div>
