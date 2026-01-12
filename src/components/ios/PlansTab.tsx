@@ -7,7 +7,7 @@ import { PremiumDialog } from "../PremiumDialog";
 import { CreateActivityDialog } from "../CreateActivityDialog";
 import { PlanGroupChatDialog } from "../PlanGroupChatDialog";
 import { format } from "date-fns";
-import { ALL_ACTIVITY_TYPES } from "@/data/activityTypes";
+import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -66,7 +66,7 @@ export function PlansTab() {
       return;
     }
 
-    // Fetch activities user has joined (from carousel or anywhere)
+    // Fetch activities user has joined (with activity_id - actual plans)
     let joinedActivityIds: string[] = [];
     if (user) {
       const { data: joins } = await supabase
@@ -76,6 +76,19 @@ export function PlansTab() {
         .not("activity_id", "is", null);
       
       joinedActivityIds = (joins || []).map(j => j.activity_id).filter(Boolean) as string[];
+    }
+
+    // Fetch carousel joins (without activity_id) for the current user
+    let carouselJoins: { activity_type: string; city: string; joined_at: string }[] = [];
+    if (user) {
+      const { data: cJoins } = await supabase
+        .from("activity_joins")
+        .select("activity_type, city, joined_at")
+        .eq("user_id", user.id)
+        .is("activity_id", null)
+        .gt("expires_at", new Date().toISOString());
+      
+      carouselJoins = cJoins || [];
     }
 
     // Get joined activities that might be in other cities or not in current list
@@ -123,12 +136,54 @@ export function PlansTab() {
       })
     );
 
+    // Create virtual plans from carousel joins
+    const virtualPlans: PlanActivity[] = await Promise.all(
+      carouselJoins.map(async (join) => {
+        // Get user profile
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name, avatar_url")
+          .eq("user_id", user!.id)
+          .maybeSingle();
+
+        // Get participant count for this activity type in this city
+        const { count } = await supabase
+          .from("activity_joins")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_type", join.activity_type)
+          .eq("city", join.city)
+          .is("activity_id", null)
+          .gt("expires_at", new Date().toISOString());
+
+        // Get the day for this activity type
+        const activityDef = ACTIVITY_TYPES.find(a => a.id === join.activity_type);
+        const dayLabel = getActivityDay(join.activity_type);
+
+        return {
+          id: `carousel-${join.activity_type}-${join.city}`,
+          user_id: user!.id,
+          activity_type: join.activity_type,
+          city: join.city,
+          scheduled_for: join.joined_at,
+          is_active: true,
+          note: dayLabel ? `Every ${dayLabel}` : null,
+          creator_name: profile?.name || "You",
+          creator_avatar: profile?.avatar_url,
+          participant_count: count || 1,
+          isJoined: true,
+        };
+      })
+    );
+
+    // Combine real activities with virtual carousel plans
+    const allPlans = [...activitiesWithDetails, ...virtualPlans];
+
     // Sort by scheduled_for
-    activitiesWithDetails.sort((a, b) => 
+    allPlans.sort((a, b) => 
       new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime()
     );
 
-    setActivities(activitiesWithDetails);
+    setActivities(allPlans);
     setIsLoading(false);
   }, [selectedCity, user]);
 
