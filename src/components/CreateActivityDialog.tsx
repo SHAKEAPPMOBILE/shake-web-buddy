@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { format, startOfDay, isSameDay } from "date-fns";
 import { Plus, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ALL_ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
+import { PLAN_ONLY_ACTIVITY_TYPES, getActivityColor, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { useUserActivities, UserActivity } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
@@ -194,7 +194,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             <div className="space-y-3">
               <label className="text-sm font-medium text-foreground">What type of activity?</label>
               <div className="grid grid-cols-4 gap-2">
-                {ALL_ACTIVITY_TYPES.map((activity) => {
+                {PLAN_ONLY_ACTIVITY_TYPES.map((activity) => {
                   // Check if user has this activity type for today
                   const hasTodayPlan = myActivities.some(a => 
                     a.activity_type === activity.id &&
