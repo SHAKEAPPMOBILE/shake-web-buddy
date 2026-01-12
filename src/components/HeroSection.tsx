@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Zap, MapPin, Sun, Moon } from "lucide-react";
+import { Zap, MapPin } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
@@ -15,7 +15,8 @@ import avatar1 from "@/assets/avatar-1.png";
 import avatar2 from "@/assets/avatar-2.png";
 import shakeLogo from "@/assets/shake-logo-new.png";
 import { GlobalParticipantsSection } from "./GlobalParticipantsSection";
-import { Switch } from "@/components/ui/switch";
+import { ThemeToggle } from "@/components/ThemeToggle";
+
 export function HeroSection() {
   const [isShaking, setIsShaking] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
@@ -25,19 +26,6 @@ export function HeroSection() {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [phoneInitialShake, setPhoneInitialShake] = useState(true);
   const [phoneHovered, setPhoneHovered] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
-
-  // Apply theme to document
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isDarkMode) {
-      root.classList.remove('light');
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-      root.classList.add('light');
-    }
-  }, [isDarkMode]);
   const {
     user
   } = useAuth();
@@ -229,19 +217,9 @@ export function HeroSection() {
               <GlobalParticipantsSection />
             </div>
 
-            {/* Theme Toggle - below shakers nearby */}
+            {/* Theme toggle - below Shakers nearby */}
             <div className="flex justify-center animate-fade-up mt-3" style={{ animationDelay: "300ms" }}>
-              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-muted/60 border border-border shadow-sm">
-                <span className="text-sm font-medium text-foreground">Theme</span>
-                <Sun className={`w-5 h-5 transition-colors ${!isDarkMode ? 'text-shake-yellow' : 'text-muted-foreground'}`} />
-                <Switch
-                  checked={isDarkMode}
-                  onCheckedChange={setIsDarkMode}
-                  aria-label="Toggle theme"
-                  className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
-                />
-                <Moon className={`w-5 h-5 transition-colors ${isDarkMode ? 'text-primary' : 'text-muted-foreground'}`} />
-              </div>
+              <ThemeToggle />
             </div>
 
 
