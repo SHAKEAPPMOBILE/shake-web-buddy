@@ -367,7 +367,7 @@ export function PlansTab() {
                         Joined
                       </span>
                     )}
-                    {plan.user_id === user?.id && (
+                    {plan.user_id === user?.id && !plan.isCarouselJoin && (
                       <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
                         Your plan
                       </span>
