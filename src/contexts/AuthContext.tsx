@@ -52,7 +52,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("check-subscription");
+      // Pass the access token explicitly to ensure it's included in the request
+      const { data, error } = await supabase.functions.invoke("check-subscription", {
+        headers: {
+          Authorization: `Bearer ${freshSession.access_token}`,
+        },
+      });
       
       if (error) {
         // Handle auth-related errors silently - user just isn't premium
