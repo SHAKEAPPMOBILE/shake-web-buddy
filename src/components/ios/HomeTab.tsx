@@ -125,10 +125,11 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         {/* Let's Shake! button */}
         <button
           onClick={() => navigate("/auth")}
-          className="px-8 py-3 rounded-full text-primary-foreground font-medium transition-all hover:opacity-90 hover:scale-105 animate-fade-in opacity-0 bg-primary"
+          className="px-8 py-3 rounded-full text-white font-medium transition-all hover:opacity-90 hover:scale-105 animate-fade-in opacity-0"
           style={{
             animationDelay: "300ms",
             animationFillMode: "forwards",
+            background: "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))",
           }}
         >
           Let's Shake!
