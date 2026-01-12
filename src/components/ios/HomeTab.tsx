@@ -141,20 +141,22 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         </button>
 
         {/* Terms and Privacy disclaimer */}
-        <p 
+        <div 
           className="text-sm text-gray-400 mt-6 animate-fade-in opacity-0"
           style={{ animationDelay: "450ms", animationFillMode: "forwards" }}
         >
-          By continuing, you agree to our{" "}
-          <Link to="/terms-of-service" className="underline hover:text-gray-600">
-            terms
-          </Link>{" "}
-          and{" "}
-          <Link to="/privacy-policy" className="underline hover:text-gray-600">
-            privacy policy
-          </Link>
-          .
-        </p>
+          <p>By continuing, you agree to our</p>
+          <p>
+            <Link to="/terms-of-service" className="underline hover:text-gray-600">
+              terms
+            </Link>{" "}
+            and{" "}
+            <Link to="/privacy-policy" className="underline hover:text-gray-600">
+              privacy policy
+            </Link>
+            .
+          </p>
+        </div>
       </div>
     );
   }
