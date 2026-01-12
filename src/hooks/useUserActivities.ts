@@ -164,17 +164,17 @@ export function useUserActivities(city: string) {
       return false;
     }
 
-    const { error } = await supabase.from("user_activities").insert({
+    const { data: newActivity, error } = await supabase.from("user_activities").insert({
       user_id: user.id,
       activity_type: activityType,
       city: city,
       scheduled_for: scheduledFor.toISOString(),
       note: note?.trim() || null,
-    });
+    }).select().single();
 
-    if (error) {
+    if (error || !newActivity) {
       console.error("Error creating activity:", error);
-      if (error.message.includes("row-level security")) {
+      if (error?.message.includes("row-level security")) {
         toast.error(`You've reached your limit of ${MAX_ACTIVITIES_PER_MONTH} activities this month`);
       } else {
         toast.error("Failed to create activity");
@@ -182,6 +182,14 @@ export function useUserActivities(city: string) {
       setIsLoading(false);
       return false;
     }
+
+    // Also add creator to activity_joins so they appear in Plans list
+    await supabase.from("activity_joins").insert({
+      user_id: user.id,
+      activity_id: newActivity.id,
+      activity_type: activityType,
+      city: city,
+    });
 
     await Promise.all([fetchActivities(), fetchMyActivities(), fetchMonthlyCount()]);
     setIsLoading(false);
