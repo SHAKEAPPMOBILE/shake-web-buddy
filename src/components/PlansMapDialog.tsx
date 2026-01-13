@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown } from "lucide-react";
+import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown, Check } from "lucide-react";
 import { WorldMap } from "@/components/WorldMap";
 import { useAllActivities } from "@/hooks/useAllActivities";
 import { UserActivity } from "@/hooks/useUserActivities";
@@ -15,6 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { usePlanNotifications } from "@/hooks/usePushNotifications";
 import { toast } from "sonner";
+import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { playDingDingSound } from "@/lib/notification-sound";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { PremiumDialog } from "@/components/PremiumDialog";
@@ -38,6 +40,8 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
   const [joinedActivities, setJoinedActivities] = useState<Set<string>>(new Set());
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [showJoinSuccess, setShowJoinSuccess] = useState(false);
+  const [joinedActivityInfo, setJoinedActivityInfo] = useState<{ label: string; emoji: string; city: string } | null>(null);
 
   // Swipe to close on mobile
   const swipeHandlers = useSwipeToClose({
@@ -104,11 +108,76 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
       return;
     }
     if (result.success) {
+      // Store joined activity info for confirmation display
+      setJoinedActivityInfo({
+        label: getActivityLabel(activity.activity_type),
+        emoji: getActivityEmoji(activity.activity_type),
+        city: activity.city,
+      });
+      
+      // Show success confirmation
+      setShowJoinSuccess(true);
+      
+      // Play celebration effects
+      playDingDingSound();
+      triggerConfettiWaterfall();
+      
       setJoinedActivities((prev) => new Set([...prev, activity.id]));
-      setSelectedActivity(activity);
-      setShowChatDialog(true);
+      
+      // After delay, close confirmation and open chat
+      setTimeout(() => {
+        setShowJoinSuccess(false);
+        setJoinedActivityInfo(null);
+        setSelectedActivity(activity);
+        setShowChatDialog(true);
+      }, 2000);
     }
   };
+
+  // Join success confirmation overlay
+  if (showJoinSuccess && joinedActivityInfo) {
+    return (
+      <Dialog open={open} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+          <div className="flex flex-col items-center justify-center py-12 space-y-6">
+            {/* Activity emoji with animation */}
+            <div 
+              className="animate-scale-in"
+              style={{ animationDuration: '0.4s' }}
+            >
+              <div className="w-28 h-28 rounded-full bg-white shadow-lg flex items-center justify-center">
+                <span className="text-6xl">{joinedActivityInfo.emoji}</span>
+              </div>
+            </div>
+            
+            {/* Confirmation message */}
+            <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <h2 className="text-2xl font-display font-bold text-foreground">
+                You joined {joinedActivityInfo.label}! 🎉
+              </h2>
+              <p className="text-lg text-muted-foreground mt-2">
+                in {joinedActivityInfo.city}
+              </p>
+            </div>
+            
+            {/* Success icon */}
+            <div 
+              className="animate-scale-in"
+              style={{ animationDelay: '0.3s' }}
+            >
+              <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                <Check className="w-6 h-6 text-green-500" />
+              </div>
+            </div>
+            
+            <p className="text-sm text-muted-foreground/70 text-center max-w-xs animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              Opening the group chat so you can say hi!
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <>
