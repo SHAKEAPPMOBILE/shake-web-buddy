@@ -2,7 +2,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown, Check } from "lucide-react";
+import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown, Check, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { WorldMap } from "@/components/WorldMap";
 import { useAllActivities } from "@/hooks/useAllActivities";
 import { UserActivity } from "@/hooks/useUserActivities";
@@ -42,6 +43,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showJoinSuccess, setShowJoinSuccess] = useState(false);
   const [joinedActivityInfo, setJoinedActivityInfo] = useState<{ label: string; emoji: string; city: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Swipe to close on mobile
   const swipeHandlers = useSwipeToClose({
@@ -52,6 +54,15 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
 
   // Get IDs of activities the user owns
   const myActivityIds = useMemo(() => myActivities.map((a) => a.id), [myActivities]);
+
+  // Filter activities by search query
+  const filteredActivities = useMemo(() => {
+    if (!searchQuery.trim()) return activities;
+    const query = searchQuery.toLowerCase().trim();
+    return activities.filter((activity) => 
+      activity.city.toLowerCase().includes(query)
+    );
+  }, [activities, searchQuery]);
 
   // Set up plan notifications
   const { requestPermission } = usePlanNotifications(
@@ -211,8 +222,19 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                   <span className="truncate">Explore Plans</span>
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  {activities.length} {activities.length === 1 ? "plan" : "plans"} worldwide
+                  {filteredActivities.length} {filteredActivities.length === 1 ? "plan" : "plans"} {searchQuery ? "found" : "worldwide"}
                 </p>
+              </div>
+              {/* Search bar */}
+              <div className="relative hidden sm:block">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search by city..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-8 w-40 text-sm bg-background/50"
+                />
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
@@ -246,16 +268,31 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                 )}
                 {mobileView === 'list' && (
                   <div className="flex-1 flex flex-col bg-card/95">
+                    {/* Mobile search bar */}
+                    <div className="p-2 border-b border-border/30">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Search by city..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-8 h-9 text-sm bg-background/50"
+                        />
+                      </div>
+                    </div>
                     <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                      {activities.length === 0 ? (
+                      {filteredActivities.length === 0 ? (
                         <div className="text-center py-8">
-                          <p className="text-sm text-muted-foreground">No plans yet</p>
+                          <p className="text-sm text-muted-foreground">
+                            {searchQuery ? "No plans found" : "No plans yet"}
+                          </p>
                           <p className="text-xs text-muted-foreground/70 mt-1">
-                            Be the first to create one!
+                            {searchQuery ? "Try a different city name" : "Be the first to create one!"}
                           </p>
                         </div>
                       ) : (
-                        activities.map((activity) => {
+                        filteredActivities.map((activity) => {
                           const isOwner = activity.user_id === user?.id;
 
                           return (
@@ -341,15 +378,17 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                    {activities.length === 0 ? (
+                    {filteredActivities.length === 0 ? (
                       <div className="text-center py-8">
-                        <p className="text-sm text-muted-foreground">No plans yet</p>
+                        <p className="text-sm text-muted-foreground">
+                          {searchQuery ? "No plans found" : "No plans yet"}
+                        </p>
                         <p className="text-xs text-muted-foreground/70 mt-1">
-                          Be the first to create one!
+                          {searchQuery ? "Try a different city name" : "Be the first to create one!"}
                         </p>
                       </div>
                     ) : (
-                      activities.map((activity) => {
+                      filteredActivities.map((activity) => {
                         const isOwner = activity.user_id === user?.id;
 
                         return (
