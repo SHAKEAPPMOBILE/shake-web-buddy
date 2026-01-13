@@ -204,6 +204,18 @@ export default function Auth() {
       return;
     }
 
+    // For signup, also validate password
+    if (!isLogin) {
+      if (!password || password.length < 6) {
+        toast.error("Password must be at least 6 characters");
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
@@ -221,6 +233,8 @@ export default function Auth() {
           toast.info("You already have an account! Switching to sign in...");
           setIsLogin(true);
           setUsePasswordLogin(true);
+          setPassword("");
+          setConfirmPassword("");
           setIsLoading(false);
           return;
         }
@@ -488,10 +502,21 @@ export default function Auth() {
             .eq("user_id", currentUser.id)
             .single();
 
-          // If profile has no name, this is a new user - show password setup then profile
+          // If profile has no name, this is a new user
           if (!profile?.name) {
-            toast.success("Phone verified! Now set a password.");
-            setStep('password');
+            // If password was set during signup, save it now and go to profile
+            if (password && password.length >= 6) {
+              const { error: pwError } = await updatePassword(password);
+              if (pwError) {
+                console.error("Error setting password:", pwError);
+              }
+              toast.success("Phone verified! Now complete your profile.");
+              setStep('name');
+            } else {
+              // Fallback to old flow if no password was set
+              toast.success("Phone verified! Now set a password.");
+              setStep('password');
+            }
           } else {
             toast.success("Welcome!");
             navigate("/");
@@ -811,6 +836,57 @@ export default function Auth() {
                   We'll send you a verification code via SMS
                 </p>
               </div>
+
+              {/* Password fields for signup */}
+              {!isLogin && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password" className="text-black">Create Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="signup-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="At least 6 characters"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm-password" className="text-black">Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="signup-confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Re-enter your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <Button
                 type="submit"
