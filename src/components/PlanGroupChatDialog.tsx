@@ -363,12 +363,12 @@ export function PlanGroupChatDialog({
                       href={getVenueMapsUrl(activity.activity_type, activity.city)!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline"
+                      className="text-xs text-primary hover:underline"
                     >
                       📍 {getActivityLocation(activity.activity_type, activity.city)}
                     </a>
                   ) : (
-                    <span className="text-xs text-black/50">
+                    <span className="text-xs text-muted-foreground">
                       📍 {getActivityLocation(activity.activity_type, activity.city)}
                     </span>
                   )}
