@@ -216,53 +216,6 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              {user && myActivityIds.length > 0 && (
-                <Button
-                  variant={notificationsEnabled ? "secondary" : "outline"}
-                  size="sm"
-                  onClick={handleEnableNotifications}
-                  className="gap-1 px-2 sm:px-3"
-                >
-                  {notificationsEnabled ? (
-                    <Bell className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <BellOff className="w-4 h-4" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {notificationsEnabled ? "Notifications On" : "Enable Notifications"}
-                  </span>
-                </Button>
-              )}
-              {/* Mobile view toggle */}
-              {isMobile ? (
-                <div className="flex rounded-lg overflow-hidden border border-border">
-                  <Button
-                    variant={mobileView === 'list' ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => setMobileView('list')}
-                    className="rounded-none px-3"
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={mobileView === 'map' ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => setMobileView('map')}
-                    className="rounded-none px-3"
-                  >
-                    <Map className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant={showList ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setShowList(!showList)}
-                >
-                  <List className="w-4 h-4 mr-1" />
-                  List
-                </Button>
-              )}
               <button
                 onClick={() => setShowCreateDialog(true)}
                 className="px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all flex items-center gap-1"
