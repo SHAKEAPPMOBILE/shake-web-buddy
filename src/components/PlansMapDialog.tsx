@@ -1,11 +1,11 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { format } from "date-fns";
 import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown, Check, Search, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
-import { WorldMap } from "@/components/WorldMap";
+import { WorldMap, WorldMapHandle } from "@/components/WorldMap";
 import { useAllActivities } from "@/hooks/useAllActivities";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { getActivityEmoji, getActivityLabel, getActivityColor, ACTIVITY_TYPES } from "@/data/activityTypes";
@@ -22,6 +22,7 @@ import { playDingDingSound } from "@/lib/notification-sound";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { PremiumDialog } from "@/components/PremiumDialog";
+import { SHAKE_CITIES } from "@/data/cities";
 
 interface PlansMapDialogProps {
   open: boolean;
@@ -34,6 +35,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
   const { activities, isLoading, refetch: refetchActivities } = useAllActivities();
   const { joinActivity, hasJoinedActivity, myActivities } = useUserActivities(city);
   const isMobile = useIsMobile();
+  const mapRef = useRef<WorldMapHandle>(null);
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
   const [showList, setShowList] = useState(true);
   const [selectedActivity, setSelectedActivity] = useState<UserActivity | null>(null);
@@ -45,6 +47,28 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
   const [showJoinSuccess, setShowJoinSuccess] = useState(false);
   const [joinedActivityInfo, setJoinedActivityInfo] = useState<{ label: string; emoji: string; city: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+
+  // Get city suggestions based on search query
+  const citySuggestions = useMemo(() => {
+    if (!searchQuery.trim() || searchQuery.length < 1) return [];
+    const query = searchQuery.toLowerCase().trim();
+    return SHAKE_CITIES
+      .filter((city) => city.name.toLowerCase().includes(query))
+      .slice(0, 6);
+  }, [searchQuery]);
+
+  // Handle city selection from suggestions
+  const handleSelectCity = (cityName: string) => {
+    setSearchQuery(cityName);
+    setShowCitySuggestions(false);
+    // Fly to the city on the map
+    mapRef.current?.flyToCity(cityName);
+    // Switch to map view on mobile
+    if (isMobile) {
+      setMobileView('map');
+    }
+  };
 
   // Swipe to close on mobile
   const swipeHandlers = useSwipeToClose({
@@ -226,16 +250,39 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                   {filteredActivities.length} {filteredActivities.length === 1 ? "plan" : "plans"} {searchQuery ? "found" : "worldwide"}
                 </p>
               </div>
-              {/* Search bar */}
+              {/* Search bar with autocomplete */}
               <div className="relative hidden sm:block">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                 <Input
                   type="text"
                   placeholder="Search by city..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 h-8 w-40 text-sm bg-background/50"
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowCitySuggestions(true);
+                  }}
+                  onFocus={() => setShowCitySuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowCitySuggestions(false), 150)}
+                  className="pl-8 h-8 w-48 text-sm bg-background"
                 />
+                {/* City suggestions dropdown */}
+                {showCitySuggestions && citySuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                    {citySuggestions.map((cityItem) => (
+                      <button
+                        key={cityItem.name}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelectCity(cityItem.name);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors flex items-center justify-between"
+                      >
+                        <span className="font-medium">{cityItem.name}</span>
+                        <span className="text-xs text-muted-foreground">{cityItem.country}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
@@ -260,6 +307,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                 {mobileView === 'map' && (
                   <div className="flex-1 h-full">
                     <WorldMap
+                      ref={mapRef}
                       activities={activities}
                       onActivityClick={handleActivityClick}
                       selectedActivityId={selectedActivity?.id}
@@ -269,17 +317,40 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                 )}
                 {mobileView === 'list' && (
                   <div className="flex-1 flex flex-col bg-card/95">
-                    {/* Mobile search bar */}
+                    {/* Mobile search bar with autocomplete */}
                     <div className="p-2 border-b border-border/30">
                       <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                         <Input
                           type="text"
                           placeholder="Search by city..."
                           value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-8 h-9 text-sm bg-background/50"
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setShowCitySuggestions(true);
+                          }}
+                          onFocus={() => setShowCitySuggestions(true)}
+                          onBlur={() => setTimeout(() => setShowCitySuggestions(false), 150)}
+                          className="pl-8 h-9 text-sm bg-background"
                         />
+                        {/* City suggestions dropdown */}
+                        {showCitySuggestions && citySuggestions.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                            {citySuggestions.map((cityItem) => (
+                              <button
+                                key={cityItem.name}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleSelectCity(cityItem.name);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors flex items-center justify-between"
+                              >
+                                <span className="font-medium">{cityItem.name}</span>
+                                <span className="text-xs text-muted-foreground">{cityItem.country}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-2 space-y-2">
@@ -369,6 +440,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
               <>
                 <div className={cn("flex-1 h-full transition-all duration-300", showList && "mr-80")}>
                   <WorldMap
+                    ref={mapRef}
                     activities={activities}
                     onActivityClick={handleActivityClick}
                     selectedActivityId={selectedActivity?.id}
