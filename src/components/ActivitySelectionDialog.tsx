@@ -11,6 +11,7 @@ import {
 import { Check, Clock } from "lucide-react";
 import { getOrderedActivities, getTodayDefaultIndex } from "@/data/activityTypes";
 import { useUserActivities } from "@/hooks/useUserActivities";
+import { PremiumDialog } from "@/components/PremiumDialog";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { playDingDingSound } from "@/lib/notification-sound";
 import { toast } from "sonner";
@@ -27,8 +28,9 @@ interface ActivitySelectionDialogProps {
 
 export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, onPlanCreated, city }: ActivitySelectionDialogProps) {
   const { getActivityJoinCount } = useActivityJoins(city);
-  const { user } = useAuth();
-  const { createActivity } = useUserActivities(city);
+  const { user, isPremium } = useAuth();
+  const { createActivity, remainingActivities } = useUserActivities(city);
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
   const [selectingId, setSelectingId] = useState<string | null>(null);
@@ -61,6 +63,12 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   const handleSelectActivity = useCallback(async (activityId: string) => {
     if (!user) {
       onSelectActivity(activityId);
+      return;
+    }
+
+    // Check if user has remaining activities (unless premium)
+    if (!isPremium && remainingActivities <= 0) {
+      setShowPremiumDialog(true);
       return;
     }
 
@@ -118,7 +126,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
       setSelectingId(null);
       setIsCreatingPlan(false);
     }
-  }, [user, onSelectActivity, triggerHaptic, createActivity, onOpenChange, onPlanCreated]);
+  }, [user, isPremium, remainingActivities, onSelectActivity, triggerHaptic, createActivity, onOpenChange, onPlanCreated]);
 
   // Get ordered activities (consistent with HomeTab)
   const orderedActivities = getOrderedActivities();
@@ -184,6 +192,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={isCreatingPlan ? () => {} : onOpenChange}>
       <DialogContent 
         className="sm:max-w-md bg-transparent border-none shadow-none"
@@ -296,7 +305,15 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
             Sign in to create plans and meet others!
           </p>
         )}
+        {user && !isPremium && remainingActivities > 0 && (
+          <p className="text-center text-xs text-muted-foreground/70">
+            {remainingActivities} free {remainingActivities === 1 ? 'plan' : 'plans'} left this month
+          </p>
+        )}
       </DialogContent>
     </Dialog>
+    
+    <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+    </>
   );
 }
