@@ -130,7 +130,7 @@ export const CITY_VENUES: Record<string, Venue> = {
   },
   
   // USA
-  "New York": {
+  "New York City": {
     name: "Sweetgreen Broadway",
     address: "New York, NY"
   },
@@ -575,7 +575,7 @@ export const CITY_BARS: Record<string, Bar[]> = {
     { name: "The Jungle Bird", address: "Sacramento, CA" },
     { name: "Paradise Lounge", address: "Sacramento, CA" },
   ],
-  "New York": [
+  "New York City": [
     { name: "Superbueno", address: "East Village, NYC" },
     { name: "Dante", address: "New York, NY" },
     { name: "Katana Kitten", address: "New York, NY" },

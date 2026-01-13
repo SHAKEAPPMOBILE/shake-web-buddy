@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { MapPin, Calendar, Users, Plus, Crown, Trash2 } from "lucide-react";
+import { MapPin, Calendar, Users, Plus, Trash2 } from "lucide-react";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlansMapDialog } from "../PlansMapDialog";
@@ -300,7 +300,6 @@ export function PlansTab() {
             >
               <Plus className="w-4 h-4" />
               Create
-              {!isPremium && <Crown className="w-3 h-3 ml-0.5" />}
             </button>
           )}
           <button
@@ -334,7 +333,6 @@ export function PlansTab() {
             >
               <Plus className="w-4 h-4" />
               Create
-              {!isPremium && <Crown className="w-3 h-3 ml-0.5" />}
             </button>
           </div>
         ) : (
