@@ -683,14 +683,32 @@ export default function Auth() {
                   <span className="text-gray-700 font-medium">Continue with Google</span>
                 </button>
 
-                {/* Continue with Phone */}
+                {/* Continue with Phone - Login */}
                 <button
                   type="button"
-                  onClick={() => setStep('phone')}
+                  onClick={() => {
+                    setIsLogin(true);
+                    setUsePasswordLogin(true);
+                    setStep('phone');
+                  }}
                   className="w-full max-w-xs flex items-center justify-center gap-3 px-6 py-3 rounded-full border border-gray-300 bg-transparent hover:bg-gray-50 transition-colors"
                 >
                   <Phone className="w-5 h-5 text-gray-600" />
-                  <span className="text-gray-700 font-medium">Continue with Phone</span>
+                  <span className="text-gray-700 font-medium">Sign in with Phone</span>
+                </button>
+
+                {/* Create Account with Phone - Signup */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(false);
+                    setUsePasswordLogin(false);
+                    setStep('phone');
+                  }}
+                  className="w-full max-w-xs flex items-center justify-center gap-3 px-6 py-3 rounded-full bg-black text-white hover:bg-gray-800 transition-colors"
+                >
+                  <User className="w-5 h-5" />
+                  <span className="font-medium">Create an Account</span>
                 </button>
               </div>
             )}
