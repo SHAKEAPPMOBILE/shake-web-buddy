@@ -635,16 +635,87 @@ export function getTodaysBar(city: string): Bar | null {
   return bars[barIndex];
 }
 
+import { SHAKE_CITIES, getDistanceFromLatLng } from "./cities";
+
+/**
+ * Find the nearest city that has a venue defined
+ */
+function findNearestCityWithVenue(city: string): string | null {
+  const cityData = SHAKE_CITIES.find(c => c.name === city);
+  if (!cityData) return null;
+  
+  const citiesWithVenues = Object.keys(CITY_VENUES);
+  let nearestCity: string | null = null;
+  let minDistance = Infinity;
+  
+  for (const venueCity of citiesWithVenues) {
+    const venueCityData = SHAKE_CITIES.find(c => c.name === venueCity);
+    if (!venueCityData) continue;
+    
+    const distance = getDistanceFromLatLng(
+      cityData.lat, cityData.lng,
+      venueCityData.lat, venueCityData.lng
+    );
+    
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestCity = venueCity;
+    }
+  }
+  
+  return nearestCity;
+}
+
+/**
+ * Find the nearest city that has bars defined
+ */
+function findNearestCityWithBars(city: string): string | null {
+  const cityData = SHAKE_CITIES.find(c => c.name === city);
+  if (!cityData) return null;
+  
+  const citiesWithBars = Object.keys(CITY_BARS);
+  let nearestCity: string | null = null;
+  let minDistance = Infinity;
+  
+  for (const barCity of citiesWithBars) {
+    const barCityData = SHAKE_CITIES.find(c => c.name === barCity);
+    if (!barCityData) continue;
+    
+    const distance = getDistanceFromLatLng(
+      cityData.lat, cityData.lng,
+      barCityData.lat, barCityData.lng
+    );
+    
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestCity = barCity;
+    }
+  }
+  
+  return nearestCity;
+}
+
 /**
  * Get the venue location string for an activity
- * For lunch and dinner: returns venue name and address if available
- * For drinks: returns today's rotating bar
+ * For lunch and dinner: returns venue name and address if available (with proximity fallback)
+ * For drinks: returns today's rotating bar (with proximity fallback)
  * For hike: returns "TBD - Vote in chat!"
  */
 export function getActivityLocation(activityType: string, city: string): string {
   // Lunch and dinner have pre-set venues
   if (activityType === "lunch" || activityType === "dinner") {
-    const venue = CITY_VENUES[city];
+    let venue = CITY_VENUES[city];
+    let usedCity = city;
+    
+    // If no venue for this city, find the nearest city with a venue
+    if (!venue) {
+      const nearestCity = findNearestCityWithVenue(city);
+      if (nearestCity) {
+        venue = CITY_VENUES[nearestCity];
+        usedCity = nearestCity;
+      }
+    }
+    
     if (venue) {
       return `${venue.name}, ${venue.address}`;
     }
@@ -653,7 +724,16 @@ export function getActivityLocation(activityType: string, city: string): string 
   
   // Drinks have rotating bars
   if (activityType === "drinks") {
-    const bar = getTodaysBar(city);
+    let bar = getTodaysBar(city);
+    
+    // If no bar for this city, find the nearest city with bars
+    if (!bar) {
+      const nearestCity = findNearestCityWithBars(city);
+      if (nearestCity) {
+        bar = getTodaysBar(nearestCity);
+      }
+    }
+    
     if (bar) {
       return `${bar.name}, ${bar.address}`;
     }
@@ -670,7 +750,16 @@ export function getActivityLocation(activityType: string, city: string): string 
  */
 export function getVenueMapsUrl(activityType: string, city: string): string | null {
   if (activityType === "lunch" || activityType === "dinner") {
-    const venue = CITY_VENUES[city];
+    let venue = CITY_VENUES[city];
+    
+    // If no venue for this city, find the nearest city with a venue
+    if (!venue) {
+      const nearestCity = findNearestCityWithVenue(city);
+      if (nearestCity) {
+        venue = CITY_VENUES[nearestCity];
+      }
+    }
+    
     if (!venue) {
       return null;
     }
@@ -679,7 +768,16 @@ export function getVenueMapsUrl(activityType: string, city: string): string | nu
   }
   
   if (activityType === "drinks") {
-    const bar = getTodaysBar(city);
+    let bar = getTodaysBar(city);
+    
+    // If no bar for this city, find the nearest city with bars
+    if (!bar) {
+      const nearestCity = findNearestCityWithBars(city);
+      if (nearestCity) {
+        bar = getTodaysBar(nearestCity);
+      }
+    }
+    
     if (!bar) {
       return null;
     }
