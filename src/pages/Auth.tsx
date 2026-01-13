@@ -7,7 +7,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoShake from "@/assets/shake-logo-new.png";
-import { ArrowLeft, ChevronDown, Phone, User, Instagram, Linkedin, Twitter, Calendar, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ChevronDown, Phone, User, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff } from "lucide-react";
+import { BirthdayPicker } from "@/components/BirthdayPicker";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { countryCodes, CountryCode } from "@/data/countryCodes";
@@ -1267,19 +1268,12 @@ export default function Auth() {
 
               {/* Date of Birth */}
               <div className="space-y-2">
-                <Label htmlFor="dob">Date of Birth <span className="text-destructive">*</span></Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="dob"
-                    type="date"
-                    value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                    max={getMaxDate()}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+                <Label>Date of Birth <span className="text-destructive">*</span></Label>
+                <BirthdayPicker
+                  value={dateOfBirth}
+                  onChange={setDateOfBirth}
+                  maxDate={getMaxDate()}
+                />
                 <p className="text-xs text-muted-foreground">You must be 18 or older to join</p>
               </div>
 
