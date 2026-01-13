@@ -34,6 +34,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   const [selectingId, setSelectingId] = useState<string | null>(null);
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successActivity, setSuccessActivity] = useState<{ id: string; label: string; emoji: string } | null>(null);
   const isMobile = useIsMobile();
   
   const swipeHandlers = useSwipeToClose({
@@ -77,6 +78,14 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     const success = await createActivity(activityId, scheduledFor);
     
     if (success) {
+      // Store selected activity info for confirmation display
+      const selectedActivity = orderedActivities.find(a => a.id === activityId);
+      setSuccessActivity(selectedActivity ? { 
+        id: selectedActivity.id, 
+        label: selectedActivity.label, 
+        emoji: selectedActivity.emoji 
+      } : null);
+      
       // Show success state
       setShowSuccess(true);
       
@@ -95,6 +104,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
       // Close after a delay and open map
       setTimeout(() => {
         setShowSuccess(false);
+        setSuccessActivity(null);
         setSelectingId(null);
         setIsCreatingPlan(false);
         onOpenChange(false);
@@ -130,28 +140,42 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   }, [api, onSelect]);
 
 
-  // Success celebration view
-  if (showSuccess) {
+  // Success celebration view with activity confirmation
+  if (showSuccess && successActivity) {
     return (
       <Dialog open={open} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <div className="flex flex-col items-center justify-center py-12 space-y-6">
+            {/* Activity emoji with animation */}
+            <div 
+              className="animate-scale-in"
+              style={{ animationDuration: '0.4s' }}
+            >
+              <div className="w-28 h-28 rounded-full bg-white shadow-lg flex items-center justify-center">
+                <span className="text-6xl">{successActivity.emoji}</span>
+              </div>
+            </div>
+            
+            {/* Activity name confirmation */}
+            <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <h2 className="text-2xl font-display font-bold text-foreground">
+                {successActivity.label} Plan Created! 🎉
+              </h2>
+              <p className="text-lg text-muted-foreground mt-2">
+                Ding Ding! It's time to shake!
+              </p>
+            </div>
+            
+            {/* Shaking clock */}
             <div 
               className="animate-shake"
-              style={{
-                animation: 'shake 0.5s ease-in-out infinite'
-              }}
+              style={{ animation: 'shake 0.5s ease-in-out infinite' }}
             >
-              <Clock className="w-20 h-20 text-shake-yellow" />
+              <Clock className="w-10 h-10 text-shake-yellow" />
             </div>
-            <h2 className="text-2xl font-display font-bold text-foreground text-center">
-              Ding Ding! 🔔
-            </h2>
-            <p className="text-lg text-muted-foreground text-center">
-              It's time to shake!
-            </p>
-            <p className="text-sm text-muted-foreground/70 text-center max-w-xs">
-              Your plan is now visible on the map. Others can join!
+            
+            <p className="text-sm text-muted-foreground/70 text-center max-w-xs animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              Your <span className="font-semibold text-foreground">{successActivity.label}</span> plan is now visible on the map. Others can join!
             </p>
           </div>
         </DialogContent>
