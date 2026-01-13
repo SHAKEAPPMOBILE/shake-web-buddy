@@ -130,7 +130,7 @@ export function GroupChatDialog({
   onBack, 
   onLeaveActivity,
   attendeeCount = 0,
-  city = "New York"
+  city = "New York City",
 }: GroupChatDialogProps) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -457,6 +457,22 @@ export function GroupChatDialog({
             <div className="flex-1">
               <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
               <p className="text-sm text-black/60">{getActivityDay(activityType) || formattedTime}</p>
+              {(activityType === "lunch" || activityType === "dinner") && (
+                <div className="mt-1">
+                  {mapsUrl ? (
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline"
+                    >
+                      📍 {location}
+                    </a>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">📍 {location}</span>
+                  )}
+                </div>
+              )}
             </div>
             {showAttendees && (
               <button 
