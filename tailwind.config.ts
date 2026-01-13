@@ -114,6 +114,11 @@ export default {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(-50%)" },
         },
+        "peek": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "25%": { transform: "translateX(-2px)" },
+          "75%": { transform: "translateX(2px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -125,6 +130,7 @@ export default {
         "shake": "shake 0.4s ease-in-out",
         "float": "float 3s ease-in-out infinite",
         "scroll-flags": "scroll-flags 30s linear infinite",
+        "peek": "peek 1s ease-in-out infinite",
       },
     },
   },
