@@ -9,7 +9,7 @@ import {
   CarouselApi,
 } from "@/components/ui/carousel";
 import { Check, Clock } from "lucide-react";
-import { ACTIVITY_TYPES, getTimeBasedDefaultActivity } from "@/data/activityTypes";
+import { getOrderedActivities, getTodayDefaultIndex } from "@/data/activityTypes";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { playDingDingSound } from "@/lib/notification-sound";
@@ -110,15 +110,15 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     }
   }, [user, onSelectActivity, triggerHaptic, createActivity, onOpenChange, onPlanCreated]);
 
+  // Get ordered activities (consistent with HomeTab)
+  const orderedActivities = getOrderedActivities();
 
-  // Set up the carousel API callback and scroll to time-based default on open
+  // Set up the carousel API callback and scroll to today's default on open
   useEffect(() => {
     if (!api) return;
     
-    // Get time-based default activity
-    const defaultActivity = getTimeBasedDefaultActivity();
-    const defaultIndex = ACTIVITY_TYPES.findIndex(a => a.id === defaultActivity);
-    const startIndex = defaultIndex >= 0 ? defaultIndex : 1;
+    // Start at today's default activity (index 0 since list is reordered)
+    const startIndex = getTodayDefaultIndex();
     
     api.scrollTo(startIndex, false);
     setCurrentIndex(startIndex);
@@ -188,7 +188,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
             className="w-full overflow-hidden"
           >
             <CarouselContent className="-ml-2 md:-ml-4">
-              {ACTIVITY_TYPES.map((activity, index) => {
+              {orderedActivities.map((activity, index) => {
                 const joinCount = getActivityJoinCount(activity.id);
                 const isCenter = currentIndex === index;
                 
@@ -255,7 +255,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
           
           {/* Dots indicator */}
           <div className="flex justify-center gap-2 mt-4">
-            {ACTIVITY_TYPES.map((_, index) => (
+            {orderedActivities.map((_, index) => (
               <button
                 key={index}
                 onClick={() => api?.scrollTo(index)}
