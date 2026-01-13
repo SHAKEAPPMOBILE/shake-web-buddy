@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState, useMemo, useImperativeHandle, forwardRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { SHAKE_CITIES, City } from "@/data/cities";
@@ -10,6 +10,10 @@ import { LocateFixed } from "lucide-react";
 // Mapbox public token (publishable key - safe for frontend)
 const MAPBOX_TOKEN = "pk.eyJ1IjoibGVvbmVsbWVuZXNlcyIsImEiOiJjbWpoOHdmMTgwb2EzM2Rxdmh5ODRmZ29rIn0.b8ghz8NdmX7Tqr56BM6kfg";
 
+export interface WorldMapHandle {
+  flyToCity: (cityName: string) => void;
+}
+
 interface WorldMapProps {
   activities: UserActivity[];
   onActivityClick: (activity: UserActivity) => void;
@@ -18,18 +22,32 @@ interface WorldMapProps {
   initialCity?: string;
 }
 
-export function WorldMap({ 
+export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function WorldMap({ 
   activities, 
   onActivityClick, 
   onCityClick, 
   selectedActivityId, 
   initialCity 
-}: WorldMapProps) {
+}, ref) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [hoveredActivity, setHoveredActivity] = useState<string | null>(null);
+
+  // Expose flyToCity method via ref
+  useImperativeHandle(ref, () => ({
+    flyToCity: (cityName: string) => {
+      if (!map.current || !mapLoaded) return;
+      const city = SHAKE_CITIES.find((c) => c.name === cityName);
+      if (!city) return;
+      map.current.flyTo({
+        center: [city.lng, city.lat],
+        zoom: 11,
+        duration: 1500,
+      });
+    },
+  }), [mapLoaded]);
 
   // Create activities with random offsets for positioning
   const activitiesWithPositions = useMemo(() => {
@@ -231,4 +249,4 @@ export function WorldMap({
       )}
     </div>
   );
-}
+});
