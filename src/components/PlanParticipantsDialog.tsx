@@ -237,8 +237,7 @@ export function PlanParticipantsDialog({
                         onClick={handleUnlockClick}
                         className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg"
                       >
-                        <SuperHumanIcon size={16} className="mr-2" />
-                        <span className="animate-peek inline-block">👀</span> Unlock {blurredParticipants.length} more
+                        <span className="animate-peek inline-block mr-1">👀</span> Unlock {blurredParticipants.length} more
                       </Button>
                     </div>
                   </div>

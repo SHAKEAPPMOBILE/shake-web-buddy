@@ -130,7 +130,7 @@ export default {
         "shake": "shake 0.4s ease-in-out",
         "float": "float 3s ease-in-out infinite",
         "scroll-flags": "scroll-flags 30s linear infinite",
-        "peek": "peek 1s ease-in-out infinite",
+        "peek": "peek 1s ease-in-out 3",
       },
     },
   },
