@@ -15,6 +15,7 @@ import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
+import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
@@ -355,6 +356,24 @@ export function PlanGroupChatDialog({
               <p className="text-sm text-black/60 truncate">
                 {activity.city} • {format(new Date(activity.scheduled_for), "EEE, MMM d")}
               </p>
+              {(activity.activity_type === "lunch" || activity.activity_type === "dinner") && (
+                <div className="mt-1">
+                  {getVenueMapsUrl(activity.activity_type, activity.city) ? (
+                    <a
+                      href={getVenueMapsUrl(activity.activity_type, activity.city)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      📍 {getActivityLocation(activity.activity_type, activity.city)}
+                    </a>
+                  ) : (
+                    <span className="text-xs text-black/50">
+                      📍 {getActivityLocation(activity.activity_type, activity.city)}
+                    </span>
+                  )}
+                </div>
+              )}
               <button
                 className="text-xs text-black/50 mt-0.5 hover:underline cursor-pointer text-left"
                 onClick={() => {

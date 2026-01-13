@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-const FREE_AUDIO_LIMIT = 30;
+const FREE_AUDIO_LIMIT = 10;
 
 interface UseAudioMessageLimitProps {
   conversationType: 'private' | 'activity' | 'plan';

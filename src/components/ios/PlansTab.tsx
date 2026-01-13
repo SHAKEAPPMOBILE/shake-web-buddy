@@ -236,10 +236,7 @@ export function PlansTab() {
     if (!user) {
       return;
     }
-    if (!isPremium) {
-      setShowPremiumDialog(true);
-      return;
-    }
+    // Always open create dialog - it handles premium check internally based on remaining activities
     setShowCreateDialog(true);
   };
 
