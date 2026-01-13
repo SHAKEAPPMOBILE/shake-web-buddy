@@ -1,3 +1,4 @@
+import * as React from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 type ThemeMode = "dark" | "light";
