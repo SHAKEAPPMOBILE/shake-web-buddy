@@ -2,8 +2,9 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown, Check, Search } from "lucide-react";
+import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown, Check, Search, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { getActivityLocation } from "@/data/venues";
 import { WorldMap } from "@/components/WorldMap";
 import { useAllActivities } from "@/hooks/useAllActivities";
 import { UserActivity } from "@/hooks/useUserActivities";
@@ -333,8 +334,14 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                                   )}
                                 </div>
                                 <p className="text-xs text-white/70 truncate">
-                                  Scheduled for {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
+                                  {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
                                 </p>
+                                {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks") && (
+                                  <p className="text-xs text-white/60 truncate flex items-center gap-1">
+                                    <MapPin className="w-3 h-3 shrink-0" />
+                                    {getActivityLocation(activity.activity_type, activity.city)}
+                                  </p>
+                                )}
                               </div>
                               <div className="flex flex-col items-end gap-1 shrink-0">
                                 <div className="flex items-center gap-1 text-xs text-white/70">
@@ -429,8 +436,14 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                                 )}
                               </div>
                               <p className="text-xs text-white/70">
-                                Scheduled for {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
+                                {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
                               </p>
+                              {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks") && (
+                                <p className="text-xs text-white/60 truncate flex items-center gap-1">
+                                  <MapPin className="w-3 h-3 shrink-0" />
+                                  {getActivityLocation(activity.activity_type, activity.city)}
+                                </p>
+                              )}
                             </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
                               <div className="flex items-center gap-1 text-xs text-white/70">
