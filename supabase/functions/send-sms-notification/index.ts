@@ -8,8 +8,8 @@ const corsHeaders = {
 
 // Valid activity types for validation (must match src/data/activityTypes.ts)
 const VALID_ACTIVITY_TYPES = [
-  'lunch', 'dinner', 'drinks', 'hike', 'surf', 'run', 'co-working',
-  'basketball', 'tennis-padel', 'football', 'shopping', 'arts'
+  'lunch', 'dinner', 'drinks', 'brunch', 'hike', 'surf', 'run', 'co-working',
+  'basketball', 'tennis-padel', 'football', 'shopping', 'arts', 'sunset', 'dance'
 ] as const;
 
 // UUID validation regex

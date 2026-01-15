@@ -356,7 +356,7 @@ export function PlanGroupChatDialog({
               <p className="text-sm text-black/60 truncate">
                 {activity.city} • {format(new Date(activity.scheduled_for), "EEE, MMM d")}
               </p>
-              {(activity.activity_type === "lunch" || activity.activity_type === "dinner") && (
+              {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "brunch") && (
                 <div className="mt-1">
                   {getVenueMapsUrl(activity.activity_type, activity.city) ? (
                     <a
