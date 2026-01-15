@@ -58,6 +58,15 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     defaultDay: 5 // Friday
   },
   { 
+    id: "brunch", 
+    label: "Brunch", 
+    emoji: "🥐",
+    icon: iconLunch,
+    color: "bg-amber-500/20 hover:bg-amber-500/30",
+    bgImage: bgBarManCook,
+    defaultDay: 0 // Sunday
+  },
+  { 
     id: "hike", 
     label: "Hike", 
     emoji: "⛰️",
