@@ -1,4 +1,4 @@
-// Venue data for lunch and dinner activities
+// Venue data for lunch, dinner, and brunch activities
 // For drinks and hike, we keep "TBD - Vote in chat!"
 
 export interface Venue {
@@ -10,6 +10,248 @@ export interface Bar {
   name: string;
   address: string;
 }
+
+export interface BrunchVenue {
+  name: string;
+  description: string;
+}
+
+// Brunch venues - 3 per city, rotates weekly within a month
+export const CITY_BRUNCH_VENUES: Record<string, BrunchVenue[]> = {
+  // Italy
+  "Rome": [
+    { name: "Ginger Sapori e Salute", description: "Healthy, stylish, central" },
+    { name: "Barnum Café", description: "Creative brunch, international crowd" },
+    { name: "Coromandel", description: "Cozy, artistic, brunch classics" },
+  ],
+  "Milan": [
+    { name: "That's Vapore", description: "Modern Italian, great setting" },
+    { name: "Pavé", description: "Iconic brunch bakery" },
+    { name: "California Bakery", description: "Reliable brunch classic" },
+  ],
+  "Florence": [
+    { name: "Shake Café", description: "International, clean, modern" },
+    { name: "Ditta Artigianale", description: "Coffee-driven brunch culture" },
+    { name: "Melaleuca Bakery", description: "Popular with expats & creatives" },
+  ],
+  
+  // France
+  "Paris": [
+    { name: "Wild & The Moon", description: "Plant-based, premium vibe" },
+    { name: "Holybelly", description: "Best classic brunch in town" },
+    { name: "Hardware Société", description: "Australian-style brunch" },
+  ],
+  "Lyon": [
+    { name: "Le Kitchen Café", description: "Brunch institution" },
+    { name: "Slake Coffee House", description: "Trendy & social" },
+    { name: "Against the Grain", description: "Modern, international" },
+  ],
+  
+  // Germany
+  "Berlin": [
+    { name: "The Green Market", description: "Healthy, urban" },
+    { name: "Father Carpenter", description: "Minimal, high quality" },
+    { name: "House of Small Wonder", description: "Iconic brunch spot" },
+  ],
+  "Munich": [
+    { name: "OhJulia (Marienplatz)", description: "Stylish & central" },
+    { name: "Café Frischhut", description: "Classic Bavarian brunch" },
+    { name: "Madam Anna Ekke", description: "Trendy & social" },
+  ],
+  "Hamburg": [
+    { name: "Dean & David", description: "Healthy & scalable" },
+    { name: "The Good One Café", description: "Specialty brunch" },
+    { name: "Klippkroog", description: "Local favorite" },
+  ],
+  
+  // United Kingdom
+  "London": [
+    { name: "Farmacy", description: "Plant-based brunch hotspot" },
+    { name: "Sunday in Brooklyn", description: "Brunch icon" },
+    { name: "Granger & Co.", description: "Australian-style classic" },
+  ],
+  "Manchester": [
+    { name: "Evelyn's Café Bar", description: "Brunch + social vibe" },
+    { name: "Federal Café", description: "Consistent & popular" },
+    { name: "Trof Northern Quarter", description: "Relaxed brunch crowd" },
+  ],
+  "Birmingham": [
+    { name: "Natural Bar & Kitchen", description: "Healthy & modern" },
+    { name: "Cherry Reds Café Bar", description: "Casual brunch" },
+    { name: "Medicine Bakery", description: "High-quality brunch" },
+  ],
+  "Edinburgh": [
+    { name: "Hula Juice Bar & Café", description: "Healthy & social" },
+    { name: "The Pantry", description: "Local brunch favorite" },
+    { name: "Urban Angel", description: "Modern & cozy" },
+  ],
+  
+  // Ireland
+  "Dublin": [
+    { name: "Brother Hubbard (North)", description: "Brunch leader" },
+    { name: "Two Boys Brew", description: "Trendy crowd" },
+    { name: "Herbstreet", description: "Quality & consistency" },
+  ],
+  "Cork": [
+    { name: "Paradiso", description: "Vegetarian fine brunch" },
+    { name: "Cafe Spresso", description: "Casual & social" },
+    { name: "Liberty Grill", description: "Reliable brunch classic" },
+  ],
+  
+  // Switzerland
+  "Zurich": [
+    { name: "Beetnut", description: "Clean, modern, scalable" },
+    { name: "Babu's Bakery & Coffeehouse", description: "Top brunch" },
+    { name: "Kafi Dihei", description: "Cozy & popular" },
+  ],
+  "Geneva": [
+    { name: "Birdie Food & Coffee", description: "International brunch" },
+    { name: "Cottage Café", description: "Classic brunch vibes" },
+    { name: "Boréal Coffee Shop", description: "Trendy & social" },
+  ],
+  "Basel": [
+    { name: "La Manufacture", description: "Stylish brunch" },
+    { name: "Unternehmen Mitte", description: "Community hub" },
+    { name: "Smilla Café", description: "Local favorite" },
+  ],
+  
+  // Austria
+  "Vienna": [
+    { name: "Karma Food", description: "Healthy & modern" },
+    { name: "Café Motto am Fluss", description: "Brunch with views" },
+    { name: "Blue Orange", description: "Trendy brunch scene" },
+  ],
+  "Innsbruck": [
+    { name: "Ludwig Das Burger Restaurant", description: "Casual brunch" },
+    { name: "Café Munding", description: "Classic & central" },
+    { name: "Breakfast Club", description: "Modern & popular" },
+  ],
+  
+  // Poland
+  "Warsaw": [
+    { name: "Tel Aviv Urban Food", description: "Brunch icon" },
+    { name: "Bułkę przez Bibułkę", description: "Trendy & social" },
+    { name: "Charlotte Menora", description: "French-style brunch" },
+  ],
+  
+  // USA
+  "New York City": [
+    { name: "Sweetgreen Broadway", description: "Healthy & scalable" },
+    { name: "Jack's Wife Freda", description: "Brunch institution" },
+    { name: "Bubby's", description: "Classic American brunch" },
+  ],
+  "San Francisco": [
+    { name: "Souvla", description: "Casual & social" },
+    { name: "Foreign Cinema", description: "Iconic brunch" },
+    { name: "Plow", description: "SF brunch legend" },
+  ],
+  "Los Angeles": [
+    { name: "The Butcher's Daughter", description: "Brunch hotspot" },
+    { name: "Great White", description: "Beachy brunch vibe" },
+    { name: "Gracias Madre", description: "Vegan Mexican brunch" },
+  ],
+  "San Diego": [
+    { name: "The Cottage La Jolla", description: "Classic brunch" },
+    { name: "Breakfast Republic", description: "Popular & social" },
+    { name: "Herb & Wood", description: "Upscale brunch" },
+  ],
+  "Austin": [
+    { name: "Sweetgreen Downtown", description: "Clean & scalable" },
+    { name: "Josephine House", description: "Stylish brunch" },
+    { name: "Paperboy", description: "Austin brunch icon" },
+  ],
+  "Dallas": [
+    { name: "Sweetgreen Uptown", description: "Reliable" },
+    { name: "Yolk", description: "Brunch classic" },
+    { name: "Bread Winners Café", description: "Social brunch spot" },
+  ],
+  "Miami": [
+    { name: "Sweetgreen Coral Gables", description: "Clean & modern" },
+    { name: "GreenStreet Café", description: "Iconic brunch" },
+    { name: "The Standard Spa Café", description: "Wellness brunch" },
+  ],
+  "Boston": [
+    { name: "Sweetgreen Back Bay", description: "Consistent" },
+    { name: "Tatte Bakery & Café", description: "Brunch favorite" },
+    { name: "The Friendly Toast", description: "Fun brunch vibe" },
+  ],
+  
+  // Spain
+  "Barcelona": [
+    { name: "Brunch & Cake", description: "Popular brunch spot" },
+    { name: "Federal Café", description: "Consistent & popular" },
+    { name: "Flax & Kale", description: "Healthy brunch" },
+  ],
+  "Madrid": [
+    { name: "Brunch & Cake", description: "Popular brunch spot" },
+    { name: "Federal Café", description: "Consistent & popular" },
+    { name: "Flax & Kale", description: "Healthy brunch" },
+  ],
+  
+  // Portugal
+  "Lisbon": [
+    { name: "Amélia Café", description: "Charming brunch spot" },
+    { name: "Heim Café", description: "Cozy brunch" },
+    { name: "Copenhagen Coffee Lab", description: "Nordic-style brunch" },
+  ],
+  "Porto": [
+    { name: "Seagull Method Café", description: "Trendy brunch" },
+    { name: "Zenith Brunch & Cocktails", description: "Modern brunch" },
+    { name: "O Diplomata", description: "Classic Portuguese" },
+  ],
+  
+  // Netherlands
+  "Amsterdam": [
+    { name: "Dignita", description: "Social enterprise brunch" },
+    { name: "CT Coffee & Coconuts", description: "Iconic brunch spot" },
+    { name: "The Avocado Show", description: "Instagram-worthy brunch" },
+  ],
+  
+  // Mexico
+  "Mexico City": [
+    { name: "Lalo!", description: "Popular brunch spot" },
+    { name: "Panadería Rosetta", description: "Bakery brunch" },
+    { name: "Niddo", description: "Modern Mexican brunch" },
+  ],
+  
+  // Israel
+  "Tel Aviv": [
+    { name: "Benedict", description: "24/7 breakfast" },
+    { name: "Anastasia", description: "Vegan brunch" },
+    { name: "Café Xoho", description: "Trendy brunch" },
+  ],
+  
+  // Colombia
+  "Medellín": [
+    { name: "Al Alma Café", description: "Cozy brunch spot" },
+    { name: "Pergamino Café", description: "Coffee-driven brunch" },
+    { name: "El Social", description: "Local favorite" },
+  ],
+  "Bogotá": [
+    { name: "Pergamino Café", description: "Coffee-driven brunch" },
+    { name: "Abasto", description: "Modern brunch" },
+    { name: "Masa", description: "Artisan bakery brunch" },
+  ],
+  
+  // Brazil
+  "São Paulo": [
+    { name: "Santo Grão", description: "Coffee & brunch" },
+    { name: "Lanchonete da Cidade", description: "Classic São Paulo" },
+    { name: "Padaria da Cidade", description: "Bakery brunch" },
+  ],
+  "Rio de Janeiro": [
+    { name: "Aprazível", description: "Garden brunch" },
+    { name: "Talho Capixaba", description: "Classic brunch" },
+    { name: "Belmonte", description: "Traditional brunch" },
+  ],
+  
+  // UAE
+  "Dubai": [
+    { name: "SEVA Table", description: "Wellness brunch" },
+    { name: "Bounty Beets", description: "Healthy brunch" },
+    { name: "The Sum of Us", description: "Popular brunch spot" },
+  ],
+};
 
 // Map city names to their venues (for lunch/dinner)
 export const CITY_VENUES: Record<string, Venue> = {
@@ -635,6 +877,55 @@ export function getTodaysBar(city: string): Bar | null {
   return bars[barIndex];
 }
 
+/**
+ * Get the weekly brunch venue for a specific city
+ * Rotates through 3 venues weekly, cycling each month
+ */
+export function getWeeklyBrunchVenue(city: string): BrunchVenue | null {
+  const venues = CITY_BRUNCH_VENUES[city];
+  if (!venues || venues.length === 0) {
+    return null;
+  }
+  
+  // Calculate which week of the month (0, 1, 2, 3, 4)
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const weekOfMonth = Math.floor((dayOfMonth - 1) / 7);
+  
+  // Rotate through venues based on week of month (modulo 3 for 3 venues)
+  const venueIndex = weekOfMonth % venues.length;
+  return venues[venueIndex];
+}
+
+/**
+ * Find the nearest city that has brunch venues defined
+ */
+function findNearestCityWithBrunchVenues(city: string): string | null {
+  const cityData = SHAKE_CITIES.find(c => c.name === city);
+  if (!cityData) return null;
+  
+  const citiesWithBrunchVenues = Object.keys(CITY_BRUNCH_VENUES);
+  let nearestCity: string | null = null;
+  let minDistance = Infinity;
+  
+  for (const brunchCity of citiesWithBrunchVenues) {
+    const brunchCityData = SHAKE_CITIES.find(c => c.name === brunchCity);
+    if (!brunchCityData) continue;
+    
+    const distance = getDistanceFromLatLng(
+      cityData.lat, cityData.lng,
+      brunchCityData.lat, brunchCityData.lng
+    );
+    
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestCity = brunchCity;
+    }
+  }
+  
+  return nearestCity;
+}
+
 import { SHAKE_CITIES, getDistanceFromLatLng } from "./cities";
 
 /**
@@ -722,6 +1013,24 @@ export function getActivityLocation(activityType: string, city: string): string 
     return "TBD - Vote in chat!";
   }
   
+  // Brunch has weekly rotating venues
+  if (activityType === "brunch") {
+    let brunchVenue = getWeeklyBrunchVenue(city);
+    
+    // If no brunch venue for this city, find the nearest city with brunch venues
+    if (!brunchVenue) {
+      const nearestCity = findNearestCityWithBrunchVenues(city);
+      if (nearestCity) {
+        brunchVenue = getWeeklyBrunchVenue(nearestCity);
+      }
+    }
+    
+    if (brunchVenue) {
+      return `${brunchVenue.name} – ${brunchVenue.description}`;
+    }
+    return "TBD - Vote in chat!";
+  }
+  
   // Drinks have rotating bars
   if (activityType === "drinks") {
     let bar = getTodaysBar(city);
@@ -764,6 +1073,25 @@ export function getVenueMapsUrl(activityType: string, city: string): string | nu
       return null;
     }
     const query = encodeURIComponent(`${venue.name}, ${venue.address}`);
+    return `https://www.google.com/maps/search/?api=1&query=${query}`;
+  }
+  
+  // Brunch venues
+  if (activityType === "brunch") {
+    let brunchVenue = getWeeklyBrunchVenue(city);
+    
+    // If no brunch venue for this city, find the nearest city with brunch venues
+    if (!brunchVenue) {
+      const nearestCity = findNearestCityWithBrunchVenues(city);
+      if (nearestCity) {
+        brunchVenue = getWeeklyBrunchVenue(nearestCity);
+      }
+    }
+    
+    if (!brunchVenue) {
+      return null;
+    }
+    const query = encodeURIComponent(`${brunchVenue.name}, ${city}`);
     return `https://www.google.com/maps/search/?api=1&query=${query}`;
   }
   
