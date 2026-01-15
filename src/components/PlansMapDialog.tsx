@@ -407,7 +407,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                                 <p className="text-xs text-white/70 truncate">
                                   {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
                                 </p>
-                                {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks") && (
+                                {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks" || activity.activity_type === "brunch") && (
                                   <a
                                     href={getVenueMapsUrl(activity.activity_type, activity.city) || "#"}
                                     target="_blank"
@@ -516,7 +516,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                               <p className="text-xs text-white/70">
                                 {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
                               </p>
-                              {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks") && (
+                              {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks" || activity.activity_type === "brunch") && (
                                 <a
                                   href={getVenueMapsUrl(activity.activity_type, activity.city) || "#"}
                                   target="_blank"

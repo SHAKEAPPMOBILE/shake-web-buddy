@@ -457,7 +457,7 @@ export function GroupChatDialog({
             <div className="flex-1">
               <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
               <p className="text-sm text-black/60">{getActivityDay(activityType) || formattedTime}</p>
-              {(activityType === "lunch" || activityType === "dinner") && (
+              {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && (
                 <div className="mt-1">
                   {mapsUrl ? (
                     <a
