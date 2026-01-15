@@ -179,12 +179,14 @@ export function ParticipantsListDialog({
 
                 {/* Blurred participants for non-premium */}
                 {hasMoreParticipants && !isPremium && (
-                  <div className="relative">
-                    <div className="space-y-2 blur-sm pointer-events-none select-none">
-                      {blurredParticipants.map((participant) => (
+                  <div className="space-y-2">
+                    {blurredParticipants.map((participant, index) => (
+                      <div
+                        key={participant.user_id}
+                        className="relative"
+                      >
                         <div
-                          key={participant.user_id}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-muted/30"
+                          className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 blur-sm pointer-events-none select-none"
                         >
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
                             {participant.avatar_url ? (
@@ -203,18 +205,19 @@ export function ParticipantsListDialog({
                             </p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                    
-                    {/* Unlock overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Button
-                        onClick={handleUnlockClick}
-                        className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg"
-                      >
-                        <span className="animate-peek inline-block mr-1">👀</span> Unlock {blurredParticipants.length} more
-                      </Button>
-                    </div>
+                        {/* Unlock button on second blurred user */}
+                        {index === 1 && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Button
+                              onClick={handleUnlockClick}
+                              className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg"
+                            >
+                              <span className="animate-peek inline-block mr-1">👀</span> Unlock {blurredParticipants.length} more
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
 
