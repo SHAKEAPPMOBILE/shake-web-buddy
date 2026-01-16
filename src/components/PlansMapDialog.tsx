@@ -409,7 +409,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                                 </p>
                                 {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks" || activity.activity_type === "brunch") && (
                                   <a
-                                    href={getVenueMapsUrl(activity.activity_type, activity.city) || "#"}
+                                    href={getVenueMapsUrl(activity.activity_type, activity.city) || "/"}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
@@ -518,7 +518,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                               </p>
                               {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks" || activity.activity_type === "brunch") && (
                                 <a
-                                  href={getVenueMapsUrl(activity.activity_type, activity.city) || "#"}
+                                  href={getVenueMapsUrl(activity.activity_type, activity.city) || "/"}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}

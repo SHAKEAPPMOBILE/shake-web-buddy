@@ -183,7 +183,7 @@ export function UserProfileDialog({
               <div className="flex items-center justify-center gap-3 mt-3">
                 {socialLinks.instagram_url && (
                   <a
-                    href={normalizeInstagramUrl(socialLinks.instagram_url) || '#'}
+                    href={normalizeInstagramUrl(socialLinks.instagram_url) || '/'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center hover:scale-110 transition-transform"
@@ -203,7 +203,7 @@ export function UserProfileDialog({
                 )}
                 {socialLinks.twitter_url && (
                   <a
-                    href={normalizeTwitterUrl(socialLinks.twitter_url) || '#'}
+                    href={normalizeTwitterUrl(socialLinks.twitter_url) || '/'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center hover:scale-110 transition-transform"
