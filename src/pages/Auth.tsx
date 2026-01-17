@@ -796,7 +796,7 @@ export default function Auth() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={countrySearchOpen}
-                        className="w-[120px] justify-between px-3 bg-black text-white hover:bg-black hover:text-white border-black"
+                        className="w-[120px] justify-between px-3 bg-white text-foreground hover:bg-gray-50 border-gray-300"
                       >
                         <span className="flex items-center gap-1">
                           <span className="text-lg">{selectedCountry.flag}</span>
@@ -911,7 +911,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 size="lg"
                 disabled={isLoading}
               >
@@ -943,7 +943,7 @@ export default function Auth() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={countrySearchOpen}
-                        className="w-[120px] justify-between px-3 bg-black text-white hover:bg-black hover:text-white border-black"
+                        className="w-[120px] justify-between px-3 bg-white text-foreground hover:bg-gray-50 border-gray-300"
                       >
                         <span className="flex items-center gap-1">
                           <span className="text-lg">{selectedCountry.flag}</span>
@@ -1027,7 +1027,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 size="lg"
                 disabled={isLoading}
               >
