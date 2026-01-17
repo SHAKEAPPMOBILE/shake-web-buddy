@@ -1,12 +1,13 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState } from "react";
-import { MapPin, Globe, ChevronRight, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MapPin, Globe, ChevronRight, Calendar } from "lucide-react";
 import { SHAKE_CITIES, REGIONS } from "@/data/cities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { SuperHumanIcon } from "@/components/SuperHumanIcon";
+import { getActivityDay } from "@/data/activityTypes";
 
 interface ActivityConfirmationDialogProps {
   open: boolean;
@@ -29,7 +30,16 @@ export function ActivityConfirmationDialog({
   const [showCityPicker, setShowCityPicker] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
 
+  // Reset city picker view when dialog opens or activity changes
+  useEffect(() => {
+    if (open) {
+      setShowCityPicker(false);
+    }
+  }, [open, activity?.id]);
+
   if (!activity) return null;
+
+  const activityDay = getActivityDay(activity.id);
 
   const handleChangeCity = () => {
     if (!isPremium) {
@@ -126,6 +136,12 @@ export function ActivityConfirmationDialog({
               <p className="text-2xl font-bold text-primary">
                 {activity.label}
               </p>
+              {activityDay && (
+                <div className="flex items-center justify-center gap-2 text-primary font-medium">
+                  <Calendar className="w-4 h-4" />
+                  <span>{activityDay}</span>
+                </div>
+              )}
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <MapPin className="w-4 h-4" />
                 <span>in {currentCity}</span>
