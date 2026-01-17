@@ -67,54 +67,60 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
 
   // Handle activity selection - shows confirmation dialog
   const handleActivityClick = useCallback((activityId: string) => {
-    if (!user) {
-      onSelectActivity(activityId);
-      return;
-    }
-
-    // Check if user has remaining activities (unless premium)
-    if (!isPremium && remainingActivities <= 0) {
+    // For signed-in users, enforce free-plan limits unless premium
+    if (user && !isPremium && remainingActivities <= 0) {
       setShowPremiumDialog(true);
       return;
     }
 
-    // Find the activity and show confirmation
+    // Always show confirmation first (even if not signed in)
     const activity = orderedActivities.find(a => a.id === activityId);
     if (activity) {
       setPendingActivity({ id: activity.id, label: activity.label, emoji: activity.emoji });
       setShowConfirmation(true);
     }
-  }, [user, isPremium, remainingActivities, onSelectActivity, orderedActivities]);
+  }, [user, isPremium, remainingActivities, orderedActivities]);
 
   // Actually create the plan after confirmation
   const handleConfirmActivity = useCallback(async (selectedCity: string) => {
     if (!pendingActivity) return;
 
+    // If not signed in, confirmation should still work, but we route to auth
+    // (no confetti/ding until an actual plan is created).
+    if (!user) {
+      setShowConfirmation(false);
+      const activityId = pendingActivity.id;
+      setPendingActivity(null);
+      onOpenChange(false);
+      onSelectActivity(activityId);
+      return;
+    }
+
     setShowConfirmation(false);
     triggerHaptic('heavy');
     setSelectingId(pendingActivity.id);
     setIsCreatingPlan(true);
-    
+
     // Save as favorite activity
     localStorage.setItem('favoriteActivity', pendingActivity.id);
-    
+
     // Create the plan with scheduled time (2 hours from now)
     const scheduledFor = new Date();
     scheduledFor.setHours(scheduledFor.getHours() + 2);
-    
+
     const success = await createActivity(pendingActivity.id, scheduledFor);
-    
+
     if (success) {
       setSuccessActivity(pendingActivity);
       setShowSuccess(true);
       playDingDingSound();
       triggerConfettiWaterfall();
-      
+
       toast.success("Plan created! 🎉", {
         description: `Your ${pendingActivity.label} plan in ${selectedCity} is now visible on the map`,
         icon: <Check className="w-4 h-4" />,
       });
-      
+
       setTimeout(() => {
         setShowSuccess(false);
         setSuccessActivity(null);
@@ -122,7 +128,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
         setIsCreatingPlan(false);
         setPendingActivity(null);
         onOpenChange(false);
-        
+
         if (onPlanCreated) {
           onPlanCreated(pendingActivity.id);
         }
@@ -132,7 +138,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
       setIsCreatingPlan(false);
       setPendingActivity(null);
     }
-  }, [pendingActivity, triggerHaptic, createActivity, onOpenChange, onPlanCreated]);
+  }, [pendingActivity, user, triggerHaptic, createActivity, onOpenChange, onPlanCreated, onSelectActivity, onOpenChange]);
 
   // Handle "just exploring" action
   const handleExplore = useCallback(() => {
