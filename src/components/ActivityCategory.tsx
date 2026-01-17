@@ -22,8 +22,8 @@ const colorMap = {
   hike: "from-shake-green to-shake-teal",
   drinks: "from-shake-purple to-accent",
   coffee: "from-shake-yellow to-primary",
-  lunch: "from-primary to-shake-coral",
-  dinner: "from-shake-coral to-shake-purple",
+  lunch: "from-primary to-accent",
+  dinner: "from-accent to-shake-purple",
   social: "from-shake-teal to-secondary",
 };
 

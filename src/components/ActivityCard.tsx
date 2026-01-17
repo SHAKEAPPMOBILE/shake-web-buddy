@@ -32,7 +32,7 @@ export function ActivityCard({
     drinks: "bg-shake-purple",
     coffee: "bg-shake-yellow",
     lunch: "bg-primary",
-    dinner: "bg-shake-coral",
+    dinner: "bg-primary",
     social: "bg-shake-teal",
   };
 

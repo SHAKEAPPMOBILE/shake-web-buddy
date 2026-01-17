@@ -62,7 +62,7 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     label: "Brunch", 
     emoji: "🥐",
     icon: iconLunch,
-    color: "bg-amber-500/20 hover:bg-amber-500/30",
+    color: "bg-shake-yellow/20 hover:bg-shake-yellow/30",
     bgImage: bgBarManCook,
     defaultDay: 0 // Sunday
   },
@@ -89,7 +89,7 @@ export const PLAN_ONLY_ACTIVITY_TYPES: ActivityType[] = [
     id: "run", 
     label: "Run", 
     emoji: "🏃",
-    color: "bg-orange-500/20 hover:bg-orange-500/30",
+    color: "bg-shake-coral/20 hover:bg-shake-coral/30",
   },
   { 
     id: "co-working", 
@@ -101,13 +101,13 @@ export const PLAN_ONLY_ACTIVITY_TYPES: ActivityType[] = [
     id: "basketball", 
     label: "Basketball", 
     emoji: "🏀",
-    color: "bg-orange-600/20 hover:bg-orange-600/30",
+    color: "bg-shake-coral/20 hover:bg-shake-coral/30",
   },
   { 
     id: "tennis-padel", 
     label: "Tennis/Padel", 
     emoji: "🎾",
-    color: "bg-yellow-500/20 hover:bg-yellow-500/30",
+    color: "bg-shake-yellow/20 hover:bg-shake-yellow/30",
   },
   { 
     id: "football", 

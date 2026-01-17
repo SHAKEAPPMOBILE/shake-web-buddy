@@ -8,7 +8,7 @@ export function HowItWorks() {
       icon: <UserPlus className="w-8 h-8" />,
       title: "Sign Up",
       description: "Create your account with your phone number.",
-      color: "from-primary to-shake-coral",
+      color: "from-primary to-accent",
       isAvatar: false,
     },
     {
@@ -54,7 +54,7 @@ export function HowItWorks() {
             const cardGradients = [
               "bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500",
               "bg-gradient-to-br from-emerald-500 via-green-500 to-teal-500",
-              "bg-gradient-to-br from-orange-500 via-red-400 to-rose-500",
+              "bg-gradient-to-br from-fuchsia-500 via-purple-400 to-violet-500",
               "bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-500",
             ];
             
