@@ -155,20 +155,20 @@ export function HeroSection() {
                   <div className={`w-8 h-1 bg-primary/70 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
                   animationDelay: "0ms"
                 }} />
-                  <div className={`w-12 h-1 bg-shake-coral/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
+                  <div className={`w-12 h-1 bg-accent/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
                   animationDelay: "100ms"
                 }} />
-                  <div className={`w-6 h-1 bg-accent/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
+                  <div className={`w-6 h-1 bg-secondary/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
                   animationDelay: "200ms"
                 }} />
                 </div>
                 
                 {/* Motion lines - right side */}
                 <div className={`absolute -right-10 md:-right-14 top-1/2 -translate-y-1/2 flex flex-col gap-3 transition-opacity duration-300 ${isPhoneShaking ? 'opacity-100' : 'opacity-30'}`}>
-                  <div className={`w-6 h-1 bg-accent/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
+                  <div className={`w-6 h-1 bg-secondary/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
                   animationDelay: "50ms"
                 }} />
-                  <div className={`w-12 h-1 bg-shake-coral/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
+                  <div className={`w-12 h-1 bg-accent/60 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
                   animationDelay: "150ms"
                 }} />
                   <div className={`w-8 h-1 bg-primary/70 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
@@ -179,7 +179,7 @@ export function HeroSection() {
                 {/* Phone body */}
                 <div className={`relative w-20 h-36 md:w-24 md:h-44 bg-gradient-to-b from-card to-card/80 rounded-3xl border-2 border-border shadow-2xl transition-transform ${isPhoneShaking ? 'animate-shake' : ''}`}>
                   {/* Phone screen with Let's Shake circle */}
-                  <div className="absolute inset-2 bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 rounded-2xl flex flex-col items-center justify-center gap-1">
+                  <div className="absolute inset-2 bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 rounded-2xl flex flex-col items-center justify-center gap-1">
                     <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/30 border-2 border-primary/50 flex items-center justify-center">
                       <span className="text-xl md:text-2xl">🤝</span>
                     </div>
@@ -237,8 +237,8 @@ export function HeroSection() {
       <div className="absolute bottom-20 left-10 animate-float" style={{
         animationDelay: "0s"
       }}>
-        <div className="w-12 h-12 rounded-xl bg-shake-coral/20 backdrop-blur flex items-center justify-center">
-          <Zap className="w-6 h-6 text-shake-coral" />
+        <div className="w-12 h-12 rounded-xl bg-primary/20 backdrop-blur flex items-center justify-center">
+          <Zap className="w-6 h-6 text-primary" />
         </div>
       </div>
       <div className="absolute top-40 right-20 animate-float" style={{

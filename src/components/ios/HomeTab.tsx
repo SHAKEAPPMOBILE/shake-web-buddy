@@ -185,7 +185,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       >
         <div 
           className={cn(
-            "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-shake-coral/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
+            "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
             isShaking && "animate-shake-center"
           )}
           onClick={() => showActivities && handleActivitySelect(currentActivity.id)}
