@@ -1111,7 +1111,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 size="lg"
                 disabled={isLoading}
               >
@@ -1162,7 +1162,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 size="lg"
                 disabled={isLoading || otpCode.length !== 6}
               >
@@ -1224,7 +1224,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 size="lg"
                 disabled={isLoading}
               >
@@ -1281,7 +1281,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 size="lg"
               >
                 Continue
@@ -1340,7 +1340,7 @@ export default function Auth() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                  className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                   size="lg"
                 >
                   Continue
@@ -1379,7 +1379,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 size="lg"
                 disabled={isLoading}
               >
@@ -1430,7 +1430,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 size="lg"
                 disabled={isLoading || otpCode.length !== 6}
               >
@@ -1456,9 +1456,9 @@ export default function Auth() {
           {/* Subtle progress dots for profile creation steps */}
           {(step === 'name' || step === 'social' || step === 'avatar') && (
             <div className="flex items-center justify-center gap-2 pt-4">
-              <div className={`w-2 h-2 rounded-full transition-colors ${step === 'name' ? 'bg-shake-yellow' : 'bg-shake-yellow/30'}`} />
-              <div className={`w-2 h-2 rounded-full transition-colors ${step === 'social' ? 'bg-shake-yellow' : 'bg-shake-yellow/30'}`} />
-              <div className={`w-2 h-2 rounded-full transition-colors ${step === 'avatar' ? 'bg-shake-yellow' : 'bg-shake-yellow/30'}`} />
+              <div className={`w-2 h-2 rounded-full transition-colors ${step === 'name' ? 'bg-primary' : 'bg-primary/30'}`} />
+              <div className={`w-2 h-2 rounded-full transition-colors ${step === 'social' ? 'bg-primary' : 'bg-primary/30'}`} />
+              <div className={`w-2 h-2 rounded-full transition-colors ${step === 'avatar' ? 'bg-primary' : 'bg-primary/30'}`} />
             </div>
           )}
           </div>
