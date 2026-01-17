@@ -133,7 +133,7 @@ export function ActivityConfirmationDialog({
               <h2 className="text-xl font-display font-bold text-foreground">
                 You are about to join
               </h2>
-              <p className="text-2xl font-bold text-[hsl(210,100%,50%)]">
+              <p className="text-2xl font-bold text-foreground">
                 {activity.label}
               </p>
               {activityDay && (
