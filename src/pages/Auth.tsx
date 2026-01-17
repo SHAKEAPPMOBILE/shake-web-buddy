@@ -231,11 +231,13 @@ export default function Auth() {
           .maybeSingle();
         
         if (existingProfile) {
-          toast.info("You already have an account! Switching to sign in...");
+          toast.info("You already have an account, please login instead");
           setIsLogin(true);
           setUsePasswordLogin(true);
+          setStep('phone');
           setPassword("");
           setConfirmPassword("");
+          setOtpCode("");
           setIsLoading(false);
           return;
         }
