@@ -136,7 +136,7 @@ export function ActivityConfirmationDialog({
             <div className="w-full space-y-3">
               <Button
                 onClick={() => onConfirm(currentCity)}
-                className="w-full h-12 text-base font-semibold bg-shake-yellow hover:bg-shake-yellow/90 text-background"
+                className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 ✅ Yes, put me in!
               </Button>
