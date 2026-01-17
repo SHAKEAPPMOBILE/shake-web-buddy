@@ -12,6 +12,7 @@ import { Check, Clock } from "lucide-react";
 import { getOrderedActivities, getTodayDefaultIndex } from "@/data/activityTypes";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { PremiumDialog } from "@/components/PremiumDialog";
+import { ActivityConfirmationDialog } from "@/components/ActivityConfirmationDialog";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { playDingDingSound } from "@/lib/notification-sound";
 import { toast } from "sonner";
@@ -31,6 +32,8 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   const { user, isPremium } = useAuth();
   const { createActivity, remainingActivities } = useUserActivities(city);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingActivity, setPendingActivity] = useState<{ id: string; label: string; emoji: string } | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
   const [selectingId, setSelectingId] = useState<string | null>(null);
@@ -42,7 +45,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
     threshold: 80,
-    enabled: isMobile && !isCreatingPlan,
+    enabled: isMobile && !isCreatingPlan && !showConfirmation,
   });
 
   // Haptic feedback helper
@@ -59,8 +62,11 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     triggerHaptic('light');
   }, [api, triggerHaptic]);
 
-  // Handle activity selection - creates a plan
-  const handleSelectActivity = useCallback(async (activityId: string) => {
+  // Get ordered activities (consistent with HomeTab)
+  const orderedActivities = getOrderedActivities();
+
+  // Handle activity selection - shows confirmation dialog
+  const handleActivityClick = useCallback((activityId: string) => {
     if (!user) {
       onSelectActivity(activityId);
       return;
@@ -72,64 +78,67 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
       return;
     }
 
+    // Find the activity and show confirmation
+    const activity = orderedActivities.find(a => a.id === activityId);
+    if (activity) {
+      setPendingActivity({ id: activity.id, label: activity.label, emoji: activity.emoji });
+      setShowConfirmation(true);
+    }
+  }, [user, isPremium, remainingActivities, onSelectActivity, orderedActivities]);
+
+  // Actually create the plan after confirmation
+  const handleConfirmActivity = useCallback(async (selectedCity: string) => {
+    if (!pendingActivity) return;
+
+    setShowConfirmation(false);
     triggerHaptic('heavy');
-    setSelectingId(activityId);
+    setSelectingId(pendingActivity.id);
     setIsCreatingPlan(true);
     
     // Save as favorite activity
-    localStorage.setItem('favoriteActivity', activityId);
+    localStorage.setItem('favoriteActivity', pendingActivity.id);
     
     // Create the plan with scheduled time (2 hours from now)
     const scheduledFor = new Date();
     scheduledFor.setHours(scheduledFor.getHours() + 2);
     
-    const success = await createActivity(activityId, scheduledFor);
+    const success = await createActivity(pendingActivity.id, scheduledFor);
     
     if (success) {
-      // Store selected activity info for confirmation display
-      const selectedActivity = orderedActivities.find(a => a.id === activityId);
-      setSuccessActivity(selectedActivity ? { 
-        id: selectedActivity.id, 
-        label: selectedActivity.label, 
-        emoji: selectedActivity.emoji 
-      } : null);
-      
-      // Show success state
+      setSuccessActivity(pendingActivity);
       setShowSuccess(true);
-      
-      // Play ding-ding sound
       playDingDingSound();
-      
-      // Trigger confetti waterfall
       triggerConfettiWaterfall();
       
-      // Show toast
       toast.success("Plan created! 🎉", {
-        description: "Your plan is now visible on the map",
+        description: `Your ${pendingActivity.label} plan in ${selectedCity} is now visible on the map`,
         icon: <Check className="w-4 h-4" />,
       });
       
-      // Close after a delay and open map
       setTimeout(() => {
         setShowSuccess(false);
         setSuccessActivity(null);
         setSelectingId(null);
         setIsCreatingPlan(false);
+        setPendingActivity(null);
         onOpenChange(false);
         
-        // Notify parent to show map with the plan
         if (onPlanCreated) {
-          onPlanCreated(activityId);
+          onPlanCreated(pendingActivity.id);
         }
       }, 1500);
     } else {
       setSelectingId(null);
       setIsCreatingPlan(false);
+      setPendingActivity(null);
     }
-  }, [user, isPremium, remainingActivities, onSelectActivity, triggerHaptic, createActivity, onOpenChange, onPlanCreated]);
+  }, [pendingActivity, triggerHaptic, createActivity, onOpenChange, onPlanCreated]);
 
-  // Get ordered activities (consistent with HomeTab)
-  const orderedActivities = getOrderedActivities();
+  // Handle "just exploring" action
+  const handleExplore = useCallback(() => {
+    setShowConfirmation(false);
+    setPendingActivity(null);
+  }, []);
 
   // Set up the carousel API callback and scroll to today's default on open
   useEffect(() => {
@@ -234,7 +243,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                       disabled={isCreatingPlan}
                       onClick={() => {
                         if (isCenter) {
-                          handleSelectActivity(activity.id);
+                          handleActivityClick(activity.id);
                         } else {
                           triggerHaptic('light');
                           api?.scrollTo(index);
@@ -314,6 +323,15 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     </Dialog>
     
     <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+    
+    <ActivityConfirmationDialog
+      open={showConfirmation}
+      onOpenChange={setShowConfirmation}
+      activity={pendingActivity}
+      currentCity={city}
+      onConfirm={handleConfirmActivity}
+      onExplore={handleExplore}
+    />
     </>
   );
 }
