@@ -129,7 +129,7 @@ export function ActivityConfirmationDialog({
             </h2>
 
             {/* Activity emoji */}
-            <div className="w-24 h-24 rounded-full bg-white shadow-lg flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle">
               <span className="text-5xl">{activity.emoji}</span>
             </div>
 

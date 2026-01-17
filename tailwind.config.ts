@@ -119,6 +119,10 @@ export default {
           "25%": { transform: "translateX(-2px)" },
           "75%": { transform: "translateX(2px)" },
         },
+        "bounce-subtle": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.05)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -131,6 +135,7 @@ export default {
         "float": "float 3s ease-in-out infinite",
         "scroll-flags": "scroll-flags 30s linear infinite",
         "peek": "peek 1s ease-in-out infinite",
+        "bounce-subtle": "bounce-subtle 0.6s ease-out",
       },
     },
   },
