@@ -5,6 +5,7 @@ import { PlansTab } from "./ios/PlansTab";
 import { ChatTab } from "./ios/ChatTab";
 import { ProfileTab } from "./ios/ProfileTab";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
+import { ActivityConfirmationDialog } from "./ActivityConfirmationDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { PlansMapDialog } from "./PlansMapDialog";
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { getOrderedActivities } from "@/data/activityTypes";
 
 export function IOSAppLayout() {
   const [activeTab, setActiveTab] = useState("home");
@@ -29,6 +31,10 @@ export function IOSAppLayout() {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [showHomeActivities, setShowHomeActivities] = useState(false);
   const [isHeroShaking, setIsHeroShaking] = useState(false);
+
+  // Confirmation state for the HomeTab carousel (the big circle swipe carousel)
+  const [showHomeConfirmation, setShowHomeConfirmation] = useState(false);
+  const [pendingHomeActivity, setPendingHomeActivity] = useState<{ id: string; label: string; emoji: string } | null>(null);
 
   const { user, isLoading } = useAuth();
   const { selectedCity } = useCity();
@@ -101,18 +107,11 @@ export function IOSAppLayout() {
     setActiveTab(tab);
   };
 
-  const handleSelectActivity = async (activity: string) => {
-    if (!user) {
-      toast.error("Please sign in to join an activity");
-      setShowActivityDialog(false);
-      navigate("/auth");
-      return;
-    }
-    
+  const actuallyJoinActivity = useCallback(async (activity: string) => {
     // Close any open dialogs first
     setShowActivityDialog(false);
     setShowChatDialog(false);
-    
+
     // Set the selected activity
     setSelectedActivity(activity);
 
@@ -127,6 +126,17 @@ export function IOSAppLayout() {
         setShowChatDialog(true);
       }
     }
+  }, [joinActivity]);
+
+  const handleSelectActivity = async (activity: string) => {
+    if (!user) {
+      toast.error("Please sign in to join an activity");
+      setShowActivityDialog(false);
+      navigate("/auth");
+      return;
+    }
+
+    await actuallyJoinActivity(activity);
   };
 
   const handlePlanCreated = useCallback((activityType: string) => {
@@ -144,14 +154,23 @@ export function IOSAppLayout() {
     setShowHomeActivities(false);
   };
 
-  const handleHomeActivitySelect = async (activity: string) => {
+  const handleHomeActivitySelect = async (activityId: string) => {
     if (!user) {
       toast.error("Please sign in to join an activity");
       navigate("/auth");
       return;
     }
-    setShowHomeActivities(false);
-    await handleSelectActivity(activity);
+
+    // Show confirmation BEFORE we join + BEFORE any confetti/clock
+    const activity = getOrderedActivities().find(a => a.id === activityId);
+    if (activity) {
+      setPendingHomeActivity({ id: activity.id, label: activity.label, emoji: activity.emoji });
+      setShowHomeConfirmation(true);
+    } else {
+      // Fallback: if we can't resolve label/emoji, just join
+      setShowHomeActivities(false);
+      await actuallyJoinActivity(activityId);
+    }
   };
 
   const handleSignOut = useCallback(() => {
@@ -224,6 +243,25 @@ export function IOSAppLayout() {
         onSelectActivity={handleSelectActivity}
         onPlanCreated={handlePlanCreated}
         city={selectedCity}
+      />
+
+      <ActivityConfirmationDialog
+        open={showHomeConfirmation}
+        onOpenChange={setShowHomeConfirmation}
+        activity={pendingHomeActivity}
+        currentCity={selectedCity}
+        onExplore={() => {
+          setShowHomeConfirmation(false);
+          setPendingHomeActivity(null);
+        }}
+        onConfirm={async (city) => {
+          if (!pendingHomeActivity) return;
+          setShowHomeConfirmation(false);
+          setShowHomeActivities(false);
+          const id = pendingHomeActivity.id;
+          setPendingHomeActivity(null);
+          await actuallyJoinActivity(id);
+        }}
       />
 
       <ShakingClockAnimation
