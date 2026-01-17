@@ -154,7 +154,7 @@ export function ActivityConfirmationDialog({
                 onClick={() => onConfirm(currentCity)}
                 className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                <CheckCircle2 className="w-5 h-5" />
+                <CheckCircle2 className="w-5 h-5 text-[hsl(210,100%,50%)]" />
                 <span>Yes, put me in!</span>
               </Button>
               
