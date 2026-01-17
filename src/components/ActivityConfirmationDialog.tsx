@@ -123,16 +123,18 @@ export function ActivityConfirmationDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
           <div className="flex flex-col items-center py-6 space-y-6">
+            {/* Confirmation text */}
+            <h2 className="text-xl font-display font-bold text-foreground text-center">
+              You are about to join
+            </h2>
+
             {/* Activity emoji */}
             <div className="w-24 h-24 rounded-full bg-white shadow-lg flex items-center justify-center">
               <span className="text-5xl">{activity.emoji}</span>
             </div>
 
-            {/* Confirmation text */}
+            {/* Activity name and details */}
             <div className="text-center space-y-2">
-              <h2 className="text-xl font-display font-bold text-foreground">
-                You are about to join
-              </h2>
               <p className="text-2xl font-bold text-foreground">
                 {activity.label}
               </p>
