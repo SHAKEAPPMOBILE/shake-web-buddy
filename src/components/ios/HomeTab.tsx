@@ -33,6 +33,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  const tappedActivityRef = useRef<{ id: string; label: string; emoji: string } | null>(null);
 
   useEffect(() => {
     phraseIntervalRef.current = setInterval(() => {
@@ -56,15 +57,19 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   }, [showActivities]);
 
   const handleActivitySelect = () => {
-    // Capture the CURRENT activity at the moment of click to avoid race conditions
-    const activityToSelect = orderedActivities[currentActivityIndex];
+    // On iOS Safari, `onClick` can fire after touch handlers and state updates.
+    // So we lock the chosen activity on pointer/touch start and use it here.
+    const activityToSelect = tappedActivityRef.current ?? orderedActivities[currentActivityIndex];
+
     if (activityToSelect) {
-      onSelectActivity?.({ 
-        id: activityToSelect.id, 
-        label: activityToSelect.label, 
-        emoji: activityToSelect.emoji 
+      onSelectActivity?.({
+        id: activityToSelect.id,
+        label: activityToSelect.label,
+        emoji: activityToSelect.emoji,
       });
     }
+
+    tappedActivityRef.current = null;
     onCloseActivities?.();
   };
 
@@ -196,6 +201,22 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
             isShaking && "animate-shake-center"
           )}
+          onTouchStart={(e) => {
+            if (!showActivities) return;
+            // Prevent swipe handlers from changing the carousel on a tap.
+            e.stopPropagation();
+            const a = orderedActivities[currentActivityIndex];
+            tappedActivityRef.current = a
+              ? { id: a.id, label: a.label, emoji: a.emoji }
+              : null;
+          }}
+          onPointerDown={() => {
+            if (!showActivities) return;
+            const a = orderedActivities[currentActivityIndex];
+            tappedActivityRef.current = a
+              ? { id: a.id, label: a.label, emoji: a.emoji }
+              : null;
+          }}
           onClick={() => showActivities && handleActivitySelect()}
         >
           {!showActivities ? (
