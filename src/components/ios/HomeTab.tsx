@@ -9,7 +9,7 @@ import shakeLogo from "@/assets/shake-logo-new.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface HomeTabProps {
-  onSelectActivity?: (activityType: string) => void;
+  onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
   showActivities?: boolean;
   onCloseActivities?: () => void;
   isShaking?: boolean;
@@ -55,9 +55,16 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     }
   }, [showActivities]);
 
-  const handleActivitySelect = (activityId: string) => {
-    // Call onSelectActivity FIRST before closing, so the activity ID is captured correctly
-    onSelectActivity?.(activityId);
+  const handleActivitySelect = () => {
+    // Capture the CURRENT activity at the moment of click to avoid race conditions
+    const activityToSelect = orderedActivities[currentActivityIndex];
+    if (activityToSelect) {
+      onSelectActivity?.({ 
+        id: activityToSelect.id, 
+        label: activityToSelect.label, 
+        emoji: activityToSelect.emoji 
+      });
+    }
     onCloseActivities?.();
   };
 
@@ -189,7 +196,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
             isShaking && "animate-shake-center"
           )}
-          onClick={() => showActivities && handleActivitySelect(currentActivity.id)}
+          onClick={() => showActivities && handleActivitySelect()}
         >
           {!showActivities ? (
             <span className="text-5xl">🤝</span>
