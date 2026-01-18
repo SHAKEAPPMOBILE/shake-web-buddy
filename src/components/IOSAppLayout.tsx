@@ -154,23 +154,17 @@ export function IOSAppLayout() {
     setShowHomeActivities(false);
   };
 
-  const handleHomeActivitySelect = async (activityId: string) => {
+  const handleHomeActivitySelect = async (activity: { id: string; label: string; emoji: string }) => {
     if (!user) {
       toast.error("Please sign in to join an activity");
       navigate("/auth");
       return;
     }
 
-    // Show confirmation BEFORE we join + BEFORE any confetti/clock
-    const activity = getOrderedActivities().find(a => a.id === activityId);
-    if (activity) {
-      setPendingHomeActivity({ id: activity.id, label: activity.label, emoji: activity.emoji });
-      setShowHomeConfirmation(true);
-    } else {
-      // Fallback: if we can't resolve label/emoji, just join
-      setShowHomeActivities(false);
-      await actuallyJoinActivity(activityId);
-    }
+    // Use the activity object passed directly - no lookup needed
+    // This prevents race conditions on mobile where the carousel might change
+    setPendingHomeActivity(activity);
+    setShowHomeConfirmation(true);
   };
 
   const handleSignOut = useCallback(() => {
