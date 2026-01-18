@@ -56,8 +56,9 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   }, [showActivities]);
 
   const handleActivitySelect = (activityId: string) => {
-    onCloseActivities?.();
+    // Call onSelectActivity FIRST before closing, so the activity ID is captured correctly
     onSelectActivity?.(activityId);
+    onCloseActivities?.();
   };
 
   const goToPrevious = useCallback(() => {
