@@ -151,7 +151,7 @@ export function ActivityConfirmationDialog({
                 onClick={() => onConfirm(currentCity)}
                 className="w-full h-9 text-sm font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] text-white gap-1.5"
               >
-                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                <CheckCircle2 className="w-3 h-3 text-white" />
                 <span>Yes!</span>
               </Button>
               
@@ -160,7 +160,7 @@ export function ActivityConfirmationDialog({
                 variant="outline"
                 className="w-full h-9 text-sm font-medium gap-1.5"
               >
-                <Search className="w-3.5 h-3.5 text-primary" />
+                <Search className="w-3 h-3 text-primary" />
                 <span>Hum!</span>
               </Button>
             </div>
