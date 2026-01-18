@@ -122,51 +122,46 @@ export function ActivityConfirmationDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
-          <div className="flex flex-col items-center py-6 space-y-6">
-            {/* Confirmation text */}
-            <h2 className="text-xl font-display font-bold text-foreground text-center">
-              You are about to join
-            </h2>
-
+          <div className="flex flex-col items-center py-4 space-y-4">
             {/* Activity emoji */}
-            <div className="w-24 h-24 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle">
-              <span className="text-5xl">{activity.emoji}</span>
+            <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle">
+              <span className="text-4xl">{activity.emoji}</span>
             </div>
 
             {/* Activity name and details */}
-            <div className="text-center space-y-2">
-              <p className="text-2xl font-bold text-foreground">
+            <div className="text-center space-y-1.5">
+              <p className="text-xl font-bold text-foreground">
                 {activity.label}
               </p>
               {activityDay && (
-                <div className="flex items-center justify-center gap-2 text-primary font-medium">
-                  <Calendar className="w-4 h-4" />
+                <div className="flex items-center justify-center gap-1.5 text-primary font-medium text-sm">
+                  <Calendar className="w-3.5 h-3.5" />
                   <span>{activityDay}</span>
                 </div>
               )}
-              <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                <MapPin className="w-4 h-4" />
+              <div className="flex items-center justify-center gap-1.5 text-muted-foreground text-sm">
+                <MapPin className="w-3.5 h-3.5" />
                 <span>in {currentCity}</span>
               </div>
             </div>
 
             {/* Action buttons */}
-            <div className="w-full space-y-3">
+            <div className="w-full space-y-2">
               <Button
                 onClick={() => onConfirm(currentCity)}
-                className="w-full h-12 text-base font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] text-white"
+                className="w-full h-10 text-sm font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] text-white"
               >
-                <CheckCircle2 className="w-5 h-5 text-white" />
-                <span>Yes, put me in!</span>
+                <CheckCircle2 className="w-4 h-4 text-white" />
+                <span>Yes!</span>
               </Button>
               
               <Button
                 onClick={onExplore}
                 variant="outline"
-                className="w-full h-12 text-base font-medium"
+                className="w-full h-10 text-sm font-medium"
               >
-                <Search className="w-5 h-5 text-primary" />
-                <span>Hum, I'm just exploring</span>
+                <Search className="w-4 h-4 text-primary" />
+                <span>Hum!</span>
               </Button>
             </div>
 
