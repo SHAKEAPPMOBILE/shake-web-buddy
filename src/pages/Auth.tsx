@@ -610,10 +610,10 @@ export default function Auth() {
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 w-full overflow-y-auto">
         <button
           onClick={handleBack}
-          className="absolute top-4 left-4 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors z-50 p-2 -m-2"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm font-medium">Back</span>
         </button>
 
         <div className="w-full max-w-md space-y-8 px-2 flex flex-col min-h-[calc(100vh-120px)]">
