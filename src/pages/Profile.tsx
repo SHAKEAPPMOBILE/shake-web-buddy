@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
 import { Switch } from "@/components/ui/switch";
+import { NationalitySelector } from "@/components/NationalitySelector";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -339,15 +340,14 @@ export default function Profile() {
 
             {/* Nationality */}
             <div className="space-y-2">
-              <Label htmlFor="nationality" className="flex items-center gap-2">
+              <Label className="flex items-center gap-2">
                 <span className="text-lg">🌍</span>
                 Nationality
               </Label>
-              <Input
-                id="nationality"
+              <NationalitySelector
                 value={nationality}
-                onChange={(e) => setNationality(e.target.value)}
-                placeholder="e.g. Portuguese, Brazilian, American"
+                onChange={setNationality}
+                placeholder="Select your nationality"
               />
             </div>
 
