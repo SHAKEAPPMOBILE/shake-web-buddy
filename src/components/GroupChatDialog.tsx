@@ -732,16 +732,18 @@ export function GroupChatDialog({
 
         {/* Chat Suggestions - show when input is empty */}
         {user && !message.trim() && (
-          <div className="px-4 pb-2 flex gap-2 flex-wrap">
-            {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => setMessage(suggestion)}
-                className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20"
-              >
-                {suggestion}
-              </button>
-            ))}
+          <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 w-max">
+              {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => setMessage(suggestion)}
+                  className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20 whitespace-nowrap shrink-0"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
