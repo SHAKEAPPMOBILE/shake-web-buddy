@@ -482,15 +482,15 @@ export function PlanGroupChatDialog({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick suggestions */}
-        {user && (
-          <div className="px-4 py-2 border-t border-muted-foreground/20">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {/* Quick suggestions - show when input is empty */}
+        {user && !message.trim() && (
+          <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 w-max">
               {chatSuggestions.map((suggestion) => (
                 <button
                   key={suggestion}
                   onClick={() => setMessage(suggestion)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 whitespace-nowrap transition-colors shrink-0 border border-blue-500/20"
+                  className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20 whitespace-nowrap shrink-0"
                 >
                   {suggestion}
                 </button>
