@@ -31,6 +31,8 @@ interface SocialLinks {
   instagram_url: string | null;
   linkedin_url: string | null;
   twitter_url: string | null;
+  nationality: string | null;
+  occupation: string | null;
 }
 
 const calculateAge = (birthDate: string): number => {
@@ -52,7 +54,7 @@ export function UserProfileDialog({
   avatarUrl 
 }: UserProfileDialogProps) {
   const [activityHistory, setActivityHistory] = useState<ActivityJoin[]>([]);
-  const [socialLinks, setSocialLinks] = useState<SocialLinks>({ instagram_url: null, linkedin_url: null, twitter_url: null });
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({ instagram_url: null, linkedin_url: null, twitter_url: null, nationality: null, occupation: null });
   const [userAge, setUserAge] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
@@ -88,7 +90,7 @@ export function UserProfileDialog({
         // Fetch social links from profile
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
-          .select("instagram_url, linkedin_url, twitter_url")
+          .select("instagram_url, linkedin_url, twitter_url, nationality, occupation")
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -99,6 +101,8 @@ export function UserProfileDialog({
             instagram_url: profileData.instagram_url,
             linkedin_url: profileData.linkedin_url,
             twitter_url: profileData.twitter_url,
+            nationality: profileData.nationality,
+            occupation: profileData.occupation,
           });
         }
 
@@ -160,6 +164,24 @@ export function UserProfileDialog({
             <h3 className="mt-4 text-xl font-semibold text-foreground">
               {userName || "Shaker"}{userAge ? `, ${userAge}` : ''}
             </h3>
+            
+            {/* Nationality and Occupation */}
+            {(socialLinks.nationality || socialLinks.occupation) && (
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                {socialLinks.nationality && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-sm">
+                    <span>🌍</span>
+                    <span className="text-foreground">{socialLinks.nationality}</span>
+                  </span>
+                )}
+                {socialLinks.occupation && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-sm">
+                    <span>💼</span>
+                    <span className="text-foreground">{socialLinks.occupation}</span>
+                  </span>
+                )}
+              </div>
+            )}
             
             {/* Location from most recent activity */}
             {activityHistory.length > 0 && (

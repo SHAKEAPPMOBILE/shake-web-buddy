@@ -206,6 +206,8 @@ export type Database = {
           instagram_url: string | null
           linkedin_url: string | null
           name: string | null
+          nationality: string | null
+          occupation: string | null
           twitter_url: string | null
           updated_at: string
           user_id: string
@@ -217,6 +219,8 @@ export type Database = {
           instagram_url?: string | null
           linkedin_url?: string | null
           name?: string | null
+          nationality?: string | null
+          occupation?: string | null
           twitter_url?: string | null
           updated_at?: string
           user_id: string
@@ -228,6 +232,8 @@ export type Database = {
           instagram_url?: string | null
           linkedin_url?: string | null
           name?: string | null
+          nationality?: string | null
+          occupation?: string | null
           twitter_url?: string | null
           updated_at?: string
           user_id?: string

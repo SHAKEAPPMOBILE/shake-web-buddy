@@ -31,6 +31,8 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [name, setName] = useState("");
+  const [nationality, setNationality] = useState("");
+  const [occupation, setOccupation] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
@@ -60,7 +62,7 @@ export default function Profile() {
       // Fetch public profile
       const { data: publicProfile, error: publicError } = await supabase
         .from("profiles")
-        .select("name, avatar_url, instagram_url, linkedin_url, twitter_url")
+        .select("name, avatar_url, nationality, occupation, instagram_url, linkedin_url, twitter_url")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -69,6 +71,8 @@ export default function Profile() {
       } else if (publicProfile) {
         setName(publicProfile.name || "");
         setAvatarUrl(publicProfile.avatar_url);
+        setNationality(publicProfile.nationality || "");
+        setOccupation(publicProfile.occupation || "");
         setInstagramUrl(publicProfile.instagram_url || "");
         setLinkedinUrl(publicProfile.linkedin_url || "");
         setTwitterUrl(publicProfile.twitter_url || "");
@@ -158,6 +162,8 @@ export default function Profile() {
         .from("profiles")
         .update({
           name: name.trim(),
+          nationality: nationality.trim() || null,
+          occupation: occupation.trim() || null,
           instagram_url: instagramUrl.trim() || null,
           linkedin_url: linkedinUrl.trim() || null,
           twitter_url: twitterUrl.trim() || null,
@@ -329,6 +335,34 @@ export default function Profile() {
                   placeholder="Add your phone number"
                 />
               )}
+            </div>
+
+            {/* Nationality */}
+            <div className="space-y-2">
+              <Label htmlFor="nationality" className="flex items-center gap-2">
+                <span className="text-lg">🌍</span>
+                Nationality
+              </Label>
+              <Input
+                id="nationality"
+                value={nationality}
+                onChange={(e) => setNationality(e.target.value)}
+                placeholder="e.g. Portuguese, Brazilian, American"
+              />
+            </div>
+
+            {/* Occupation */}
+            <div className="space-y-2">
+              <Label htmlFor="occupation" className="flex items-center gap-2">
+                <span className="text-lg">💼</span>
+                Occupation
+              </Label>
+              <Input
+                id="occupation"
+                value={occupation}
+                onChange={(e) => setOccupation(e.target.value)}
+                placeholder="e.g. Software Engineer, Designer, Student"
+              />
             </div>
 
             {/* Social Links Section */}

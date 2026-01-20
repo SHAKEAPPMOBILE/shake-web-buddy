@@ -22,7 +22,7 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
-  const [step, setStep] = useState<'method' | 'phone' | 'otp' | 'name' | 'social' | 'avatar' | 'password' | 'forgot' | 'reset'>('method');
+  const [step, setStep] = useState<'method' | 'phone' | 'otp' | 'name' | 'nationality' | 'occupation' | 'social' | 'avatar' | 'password' | 'forgot' | 'reset'>('method');
   const [isLogin, setIsLogin] = useState(() => searchParams.get('mode') !== 'signup');
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -33,6 +33,8 @@ export default function Auth() {
   const [usePasswordLogin, setUsePasswordLogin] = useState(() => searchParams.get('mode') !== 'signup');
   const [name, setName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [nationality, setNationality] = useState("");
+  const [occupation, setOccupation] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
@@ -449,6 +451,8 @@ export default function Auth() {
           user_id: currentUser.id,
           name: name.trim(),
           avatar_url: avatarUrl,
+          nationality: nationality.trim() || null,
+          occupation: occupation.trim() || null,
           instagram_url: instagramUrl.trim() || null,
           linkedin_url: linkedinUrl.trim() || null,
           twitter_url: twitterUrl.trim() || null
@@ -585,8 +589,12 @@ export default function Auth() {
     } else if (step === 'name') {
       // For signup, after password set, don't allow going back
       navigate("/");
-    } else if (step === 'social') {
+    } else if (step === 'nationality') {
       setStep('name');
+    } else if (step === 'occupation') {
+      setStep('nationality');
+    } else if (step === 'social') {
+      setStep('occupation');
     } else if (step === 'avatar') {
       setStep('social');
     } else if (step === 'method') {
@@ -618,7 +626,7 @@ export default function Auth() {
 
         <div className="w-full max-w-md space-y-8 px-2 flex flex-col min-h-[calc(100vh-120px)]">
           {/* Logo on top for profile steps */}
-          {(step === 'name' || step === 'social' || step === 'avatar') && (
+          {(step === 'name' || step === 'nationality' || step === 'occupation' || step === 'social' || step === 'avatar') && (
             <div className="flex items-center justify-center gap-1.5 pt-4">
               <img 
                 src={logoShake} 
@@ -764,17 +772,25 @@ export default function Auth() {
             )}
 
             {/* Profile steps header */}
-            {(step === 'name' || step === 'social' || step === 'avatar') && (
+            {(step === 'name' || step === 'nationality' || step === 'occupation' || step === 'social' || step === 'avatar') && (
               <div className="flex flex-col items-center gap-2 mb-8">
                 <h1 className="text-2xl font-display font-bold text-foreground">
                   {step === 'name'
                     ? "Let's create your profile."
+                    : step === 'nationality'
+                    ? "Where are you from?"
+                    : step === 'occupation'
+                    ? "What do you do?"
                     : step === 'social'
                     ? "Social Links"
                     : "Profile Picture"}
                 </h1>
                 <p className="text-muted-foreground text-center">
-                  {step === 'social'
+                  {step === 'nationality'
+                    ? "Tell us your nationality"
+                    : step === 'occupation'
+                    ? "Share your profession or field"
+                    : step === 'social'
                     ? "Connect your social profiles (optional)"
                     : step === 'avatar'
                     ? "Choose an avatar or upload your own"
@@ -1250,7 +1266,7 @@ export default function Auth() {
                 toast.error("You must be 18 or older to use Shake");
                 return;
               }
-              setStep('social');
+              setStep('nationality');
             }} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
@@ -1289,7 +1305,91 @@ export default function Auth() {
             </form>
           )}
 
-          {/* Social Links Form - Step 2 of profile */}
+          {/* Nationality Form - Step 2 of profile */}
+          {step === 'nationality' && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setStep('occupation');
+            }} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="nationality">Nationality</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg">🌍</span>
+                  <Input
+                    id="nationality"
+                    type="text"
+                    placeholder="e.g. Portuguese, Brazilian, American"
+                    value={nationality}
+                    onChange={(e) => setNationality(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
+                  onClick={() => setStep('occupation')}
+                >
+                  Skip
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-shake-green text-background hover:bg-shake-green/90"
+                  size="lg"
+                >
+                  Continue
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Occupation Form - Step 3 of profile */}
+          {step === 'occupation' && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setStep('social');
+            }} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="occupation">Occupation</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg">💼</span>
+                  <Input
+                    id="occupation"
+                    type="text"
+                    placeholder="e.g. Software Engineer, Designer, Student"
+                    value={occupation}
+                    onChange={(e) => setOccupation(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
+                  onClick={() => setStep('social')}
+                >
+                  Skip
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-shake-green text-background hover:bg-shake-green/90"
+                  size="lg"
+                >
+                  Continue
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Social Links Form - Step 4 of profile */}
           {step === 'social' && (
             <form onSubmit={(e) => {
               e.preventDefault();
