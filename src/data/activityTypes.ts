@@ -51,7 +51,7 @@ export const ACTIVITY_TYPES: ActivityType[] = [
   { 
     id: "drinks", 
     label: "Drinks", 
-    emoji: "🍻",
+    emoji: "🍹",
     icon: iconDrinks,
     color: "bg-shake-teal/20 hover:bg-shake-teal/30",
     bgImage: bgBarManCook,
