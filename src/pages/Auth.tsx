@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { NationalitySelector } from "@/components/NationalitySelector";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -1312,18 +1313,12 @@ export default function Auth() {
               setStep('occupation');
             }} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="nationality">Nationality</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg">🌍</span>
-                  <Input
-                    id="nationality"
-                    type="text"
-                    placeholder="e.g. Portuguese, Brazilian, American"
-                    value={nationality}
-                    onChange={(e) => setNationality(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+                <Label>Nationality</Label>
+                <NationalitySelector
+                  value={nationality}
+                  onChange={setNationality}
+                  placeholder="Select your nationality"
+                />
               </div>
 
               <div className="flex gap-3">
