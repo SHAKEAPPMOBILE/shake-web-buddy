@@ -563,15 +563,6 @@ export function GroupChatDialog({
                   </div>
                 )}
               </div>
-              {showAttendees && (
-                <button 
-                  onClick={() => setShowParticipantsList(true)}
-                  className="flex items-center gap-1 text-black/70 hover:text-black transition-colors"
-                >
-                  <Users className="w-4 h-4" />
-                  <span className="text-sm">{attendeeCount}</span>
-                </button>
-              )}
               <Button 
                 variant="ghost" 
                 size="icon" 
