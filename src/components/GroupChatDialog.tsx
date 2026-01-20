@@ -448,15 +448,25 @@ export function GroupChatDialog({
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
         )}
-        {/* Header */}
-        <DialogHeader className="p-4 border-b border-muted-foreground/20">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="flex-1">
-              <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
-              <p className="text-sm text-black/60">{getActivityDay(activityType) || formattedTime}</p>
+        {/* Welcome view when not expanded - centered like confirmation dialog */}
+        {!isChatExpanded ? (
+          <div className="flex flex-col items-center py-6 px-4 space-y-4">
+            {/* Activity emoji */}
+            <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle">
+              <span className="text-4xl">{getActivityEmoji(activityType)}</span>
+            </div>
+
+            {/* Activity name and details */}
+            <div className="text-center space-y-1.5">
+              <p className="text-xl font-bold text-foreground">
+                {getActivityLabel(activityType)}
+              </p>
+              {getActivityDay(activityType) && (
+                <p className="text-sm text-primary font-medium">
+                  {getActivityDay(activityType)}
+                </p>
+              )}
+              {/* Venue info */}
               {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && (
                 <div className="mt-1">
                   {mapsUrl ? (
@@ -464,48 +474,128 @@ export function GroupChatDialog({
                       href={mapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline"
+                      className="text-xs text-primary hover:underline flex items-center justify-center gap-1"
                     >
-                      📍 {location}
+                      <MapPin className="w-3 h-3" />
+                      {location}
                     </a>
                   ) : (
-                    <span className="text-xs text-muted-foreground">📍 {location}</span>
+                    <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {location}
+                    </span>
                   )}
                 </div>
               )}
             </div>
-            {showAttendees && (
+
+            {/* Attendees preview */}
+            {showAttendees ? (
               <button 
                 onClick={() => setShowParticipantsList(true)}
-                className="flex items-center gap-1 text-black/70 hover:text-black transition-colors"
+                className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
               >
-                <Users className="w-4 h-4" />
-                <span className="text-sm">{attendeeCount}</span>
+                <div className="flex -space-x-2 overflow-hidden">
+                  {participants.slice(0, 6).map((participant) => (
+                    <div
+                      key={participant.user_id}
+                      className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-[hsl(50,40%,92%)] shrink-0"
+                    >
+                      {participant.avatar_url ? (
+                        <img
+                          src={participant.avatar_url}
+                          alt={participant.name || "User"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                  ))}
+                  {participants.length > 6 && (
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center border-2 border-[hsl(50,40%,92%)] text-xs font-medium text-muted-foreground shrink-0">
+                      +{participants.length - 6}
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} attending
+                </p>
               </button>
+            ) : (
+              <p className="text-sm text-muted-foreground/70">
+                You're the first one here today!
+              </p>
             )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleMuteToggle}
-              className="shrink-0 text-black/70 hover:text-black hover:bg-black/10"
-              title={isMuted ? "Unmute notifications" : "Mute notifications"}
+
+            {/* Enter Group Chat button */}
+            <Button
+              onClick={() => setIsChatExpanded(true)}
+              className="w-full max-w-xs bg-black text-white hover:bg-black/80 text-sm px-6 py-3 h-auto font-semibold"
             >
-              {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleLeaveActivity}
-              className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-              title="Leave activity"
-            >
-              <LogOut className="w-4 h-4" />
+              Enter Group Chat
             </Button>
           </div>
-        </DialogHeader>
+        ) : (
+          /* Header - only show when expanded */
+          <DialogHeader className="p-4 border-b border-muted-foreground/20">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div className="flex-1">
+                <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
+                <p className="text-sm text-black/60">{getActivityDay(activityType) || formattedTime}</p>
+                {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && (
+                  <div className="mt-1">
+                    {mapsUrl ? (
+                      <a
+                        href={mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        📍 {location}
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">📍 {location}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              {showAttendees && (
+                <button 
+                  onClick={() => setShowParticipantsList(true)}
+                  className="flex items-center gap-1 text-black/70 hover:text-black transition-colors"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm">{attendeeCount}</span>
+                </button>
+              )}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleMuteToggle}
+                className="shrink-0 text-black/70 hover:text-black hover:bg-black/10"
+                title={isMuted ? "Unmute notifications" : "Mute notifications"}
+              >
+                {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleLeaveActivity}
+                className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                title="Leave activity"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+        )}
 
-        {/* Attendees section with avatars and Enter Chat button */}
-        {showAttendees ? (
+        {/* Attendees section with avatars - only show when expanded */}
+        {isChatExpanded && showAttendees && (
           <div className="w-full px-4 py-3 border-b border-border/50">
             <div className="flex items-center gap-3">
               <button 
@@ -539,31 +629,14 @@ export function GroupChatDialog({
                   {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined
                 </p>
               </button>
-              {!isChatExpanded && (
-                <Button
-                  onClick={() => setIsChatExpanded(true)}
-                  className="ml-auto bg-black text-white hover:bg-black/80 text-sm px-4 py-2 h-auto"
-                >
-                  Enter Group Chat
-                </Button>
-              )}
             </div>
           </div>
-        ) : (
+        )}
+        {isChatExpanded && !showAttendees && (
           <div className="w-full px-4 py-3 border-b border-border/50">
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground/70">
-                You're the first one here today!
-              </p>
-              {!isChatExpanded && (
-                <Button
-                  onClick={() => setIsChatExpanded(true)}
-                  className="ml-auto bg-black text-white hover:bg-black/80 text-sm px-4 py-2 h-auto"
-                >
-                  Enter Group Chat
-                </Button>
-              )}
-            </div>
+            <p className="text-sm text-muted-foreground/70">
+              You're the first one here today!
+            </p>
           </div>
         )}
 
