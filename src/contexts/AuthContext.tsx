@@ -30,6 +30,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isPremium, setIsPremium] = useState(false);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
 
+  // New users can exist without rows in `profiles` / `profiles_private`.
+  // Some parts of the app assume these rows exist; ensure they do right after login.
+  const ensureProfilesExist = async (currentUser: User) => {
+    try {
+      // Public profile
+      const { data: publicProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+      if (!publicProfile) {
+        await supabase.from("profiles").insert({
+          user_id: currentUser.id,
+          name:
+            (currentUser.user_metadata?.name as string | undefined) ||
+            (currentUser.user_metadata?.full_name as string | undefined) ||
+            null,
+          avatar_url:
+            (currentUser.user_metadata?.avatar_url as string | undefined) ||
+            (currentUser.user_metadata?.picture as string | undefined) ||
+            null,
+        });
+      }
+
+      // Private profile
+      const { data: privateProfile } = await supabase
+        .from("profiles_private")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+      if (!privateProfile) {
+        await supabase.from("profiles_private").insert({
+          user_id: currentUser.id,
+          phone_number: (currentUser.phone as string | undefined) || null,
+        });
+      }
+    } catch (e) {
+      // Never block app load on this; we just want best-effort stability.
+      console.log("ensureProfilesExist failed:", e);
+    }
+  };
+
   const checkSubscription = async (currentSession?: Session | null) => {
     // Use passed session or fall back to state (for external calls)
     const activeSession = currentSession ?? session;
@@ -125,6 +169,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
 
+      if (currentSession?.user) {
+        // Ensure required profile rows exist (avoids runtime crashes / 406s)
+        setTimeout(() => {
+          ensureProfilesExist(currentSession.user);
+        }, 0);
+      }
+
       // Defer subscription check with the current session
       if (currentSession?.user) {
         setTimeout(() => {
@@ -143,6 +194,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
 
       if (existingSession?.user) {
+        setTimeout(() => {
+          ensureProfilesExist(existingSession.user);
+        }, 0);
         setTimeout(() => {
           checkSubscription(existingSession);
         }, 0);
