@@ -548,37 +548,35 @@ export function GroupChatDialog({
           </div>
         ) : (
           /* Header - only show when expanded */
-          <DialogHeader className="p-4 border-b border-muted-foreground/20">
+          <DialogHeader className="p-4">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-lg font-display text-black flex items-center gap-2">
+                  <span className="truncate">{title}</span>
                   {isCrossCity && (
-                    <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                    <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full shrink-0">
                       <Plane className="w-3 h-3" />
                       {city}
                     </span>
                   )}
-                </div>
+                </DialogTitle>
                 <p className="text-sm text-black/60">{getActivityDay(activityType) || formattedTime}</p>
                 {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && (
-                  <div className="mt-1">
-                    {mapsUrl ? (
-                      <a
-                        href={mapsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline"
-                      >
-                        📍 {location}
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">📍 {location}</span>
-                    )}
-                  </div>
+                  mapsUrl ? (
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline"
+                    >
+                      📍 {location}
+                    </a>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">📍 {location}</span>
+                  )
                 )}
               </div>
               <Button 
@@ -605,7 +603,7 @@ export function GroupChatDialog({
 
         {/* Attendees section with avatars - only show when expanded */}
         {isChatExpanded && showAttendees && (
-          <div className="w-full px-4 py-3 border-b border-border/50">
+          <div className="w-full px-4 py-3">
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => setShowParticipantsList(true)}
@@ -642,7 +640,7 @@ export function GroupChatDialog({
           </div>
         )}
         {isChatExpanded && !showAttendees && (
-          <div className="w-full px-4 py-3 border-b border-border/50">
+          <div className="w-full px-4 py-3">
             <p className="text-sm text-muted-foreground/70">
               You're the first one here today!
             </p>
@@ -765,18 +763,18 @@ export function GroupChatDialog({
           </div>
         )}
 
-        {/* Audio limit indicator for free users */}
-        {user && !isPremium && (
+        {/* Audio limit indicator for free users - only show when 5 or fewer remaining */}
+        {user && !isPremium && remainingAudio <= 5 && (
           <div className="px-4 py-1 text-xs text-muted-foreground text-center">
             <span className="flex items-center justify-center gap-1">
               <Mic className="w-3 h-3" />
-              {remainingAudio} / {FREE_AUDIO_LIMIT} voice notes remaining
+              {remainingAudio} voice notes remaining
             </span>
           </div>
         )}
 
         {/* Input */}
-        <div className="p-4 border-t border-muted-foreground/20">
+        <div className="p-4">
           <div className="flex items-center gap-2">
             {!pendingAudio && (
               <Input
