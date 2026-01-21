@@ -34,7 +34,10 @@ export function useActivityJoins(city: string) {
   };
 
   // Join an activity - returns { success: boolean, isNewJoin: boolean }
-  const joinActivity = async (activityType: string): Promise<{ success: boolean; isNewJoin: boolean }> => {
+  // Optional cityOverride allows joining in a different city (for premium users)
+  const joinActivity = async (activityType: string, cityOverride?: string): Promise<{ success: boolean; isNewJoin: boolean }> => {
+    const targetCity = cityOverride || city;
+    
     if (!user) {
       toast.error("Please sign in to join an activity");
       return { success: false, isNewJoin: false };
@@ -48,7 +51,7 @@ export function useActivityJoins(city: string) {
       .select("*")
       .eq("user_id", user.id)
       .eq("activity_type", activityType)
-      .eq("city", city)
+      .eq("city", targetCity)
       .gt("expires_at", new Date().toISOString());
 
     if (checkError) {
@@ -69,7 +72,7 @@ export function useActivityJoins(city: string) {
       .insert({
         user_id: user.id,
         activity_type: activityType,
-        city: city,
+        city: targetCity,
       });
 
     if (insertError) {
@@ -86,7 +89,7 @@ export function useActivityJoins(city: string) {
     supabase.functions.invoke('send-sms-notification', {
       body: {
         activityType,
-        city,
+        city: targetCity,
         joinerName: userName,
         joinerUserId: user.id,
       }

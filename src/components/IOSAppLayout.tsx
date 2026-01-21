@@ -35,6 +35,9 @@ export function IOSAppLayout() {
   // Confirmation state for the HomeTab carousel (the big circle swipe carousel)
   const [showHomeConfirmation, setShowHomeConfirmation] = useState(false);
   const [pendingHomeActivity, setPendingHomeActivity] = useState<{ id: string; label: string; emoji: string } | null>(null);
+  
+  // Track the city used for the current activity/chat (for cross-city joins)
+  const [activityCity, setActivityCity] = useState<string>("");
 
   const { user, isLoading } = useAuth();
   const { selectedCity } = useCity();
@@ -107,15 +110,17 @@ export function IOSAppLayout() {
     setActiveTab(tab);
   };
 
-  const actuallyJoinActivity = useCallback(async (activity: string) => {
+  const actuallyJoinActivity = useCallback(async (activity: string, cityOverride?: string) => {
     // Close any open dialogs first
     setShowActivityDialog(false);
     setShowChatDialog(false);
 
-    // Set the selected activity
+    // Set the selected activity and city
     setSelectedActivity(activity);
+    const targetCity = cityOverride || selectedCity;
+    setActivityCity(targetCity);
 
-    const result = await joinActivity(activity);
+    const result = await joinActivity(activity, cityOverride);
     if (result.success) {
       if (result.isNewJoin) {
         triggerConfettiWaterfall();
@@ -126,7 +131,7 @@ export function IOSAppLayout() {
         setShowChatDialog(true);
       }
     }
-  }, [joinActivity]);
+  }, [joinActivity, selectedCity]);
 
   const handleSelectActivity = async (activity: string) => {
     if (!user) {
@@ -254,7 +259,7 @@ export function IOSAppLayout() {
           setShowHomeActivities(false);
           const id = pendingHomeActivity.id;
           setPendingHomeActivity(null);
-          await actuallyJoinActivity(id);
+          await actuallyJoinActivity(id, city);
         }}
       />
 
@@ -270,7 +275,7 @@ export function IOSAppLayout() {
         activityType={selectedActivity}
         onBack={handleBackToActivities}
         attendeeCount={getActivityJoinCount(selectedActivity)}
-        city={selectedCity}
+        city={activityCity || selectedCity}
       />
 
       <PlansMapDialog
