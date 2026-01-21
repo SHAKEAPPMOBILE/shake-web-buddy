@@ -49,14 +49,32 @@ export function CityProvider({ children }: { children: ReactNode }) {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords;
-          const closestCity = findClosestCity(latitude, longitude);
-          
-          setDetectedCity(closestCity);
-          setSelectedCity(closestCity.name);
-          setIsLoading(false);
+          try {
+            const latitude = position?.coords?.latitude;
+            const longitude = position?.coords?.longitude;
+
+            // Some Safari/permission edge cases can yield undefined coords; avoid crashing the app.
+            if (typeof latitude !== "number" || typeof longitude !== "number") {
+              console.warn("Geolocation returned invalid coords; falling back to IP geolocation.", {
+                latitude,
+                longitude,
+              });
+              fallbackToIpGeolocation();
+              return;
+            }
+
+            const closestCity = findClosestCity(latitude, longitude);
+
+            setDetectedCity(closestCity);
+            setSelectedCity(closestCity.name);
+            setIsLoading(false);
+          } catch (error) {
+            console.error("Geolocation handling error; falling back to IP geolocation:", error);
+            fallbackToIpGeolocation();
+          }
         },
-        () => {
+        (error) => {
+          console.warn("Browser geolocation failed; falling back to IP geolocation:", error);
           // Browser geolocation denied/failed - fallback to IP geolocation
           fallbackToIpGeolocation();
         },
