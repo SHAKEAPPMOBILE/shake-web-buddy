@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { MapPin, Calendar, Users, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { MapPin, Calendar, Users, Plus, Trash2, Filter } from "lucide-react";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlansMapDialog } from "../PlansMapDialog";
@@ -13,6 +13,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LoadingSpinner } from "../LoadingSpinner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +49,7 @@ export function PlansTab() {
   const { selectedCity } = useCity();
   const { user, isPremium } = useAuth();
   const [activities, setActivities] = useState<PlanActivity[]>([]);
+  const [cityFilter, setCityFilter] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch all plans: activities in city + activities user has joined
@@ -222,6 +229,18 @@ export function PlansTab() {
   const [selectedCarouselActivity, setSelectedCarouselActivity] = useState<PlanActivity | null>(null);
   const [showCarouselChatDialog, setShowCarouselChatDialog] = useState(false);
 
+  // Get unique cities from all activities for the filter
+  const availableCities = useMemo(() => {
+    const cities = [...new Set(activities.map(a => a.city))];
+    return cities.sort();
+  }, [activities]);
+
+  // Filter activities based on selected city
+  const filteredActivities = useMemo(() => {
+    if (cityFilter === "all") return activities;
+    return activities.filter(a => a.city === cityFilter);
+  }, [activities, cityFilter]);
+
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
     return activity?.emoji || "📍";
@@ -290,6 +309,34 @@ export function PlansTab() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <h2 className="text-lg font-display font-bold">Your Plans</h2>
         <div className="flex items-center gap-2">
+          {/* City Filter */}
+          {availableCities.length > 1 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1 px-3 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium">
+                  <Filter className="w-4 h-4" />
+                  {cityFilter === "all" ? "All cities" : cityFilter}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-card border-border z-50">
+                <DropdownMenuItem 
+                  onClick={() => setCityFilter("all")}
+                  className={cityFilter === "all" ? "bg-primary/10" : ""}
+                >
+                  All cities
+                </DropdownMenuItem>
+                {availableCities.map((city) => (
+                  <DropdownMenuItem 
+                    key={city} 
+                    onClick={() => setCityFilter(city)}
+                    className={cityFilter === city ? "bg-primary/10" : ""}
+                  >
+                    {city}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {activities.length > 0 && (
             <button
               onClick={handleCreatePlan}
@@ -318,25 +365,39 @@ export function PlansTab() {
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
           </div>
-        ) : activities.length === 0 ? (
+        ) : filteredActivities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <MapPin className="w-8 h-8 text-muted-foreground" />
             </div>
-            <p className="text-muted-foreground">No plans yet in {selectedCity}</p>
-            <button
-              onClick={handleCreatePlan}
-              className="mt-3 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
-              style={{
-                background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
-              }}
-            >
-              <Plus className="w-4 h-4" />
-              Create
-            </button>
+            {activities.length === 0 ? (
+              <>
+                <p className="text-muted-foreground">No plans yet</p>
+                <button
+                  onClick={handleCreatePlan}
+                  className="mt-3 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
+                  style={{
+                    background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+                  }}
+                >
+                  <Plus className="w-4 h-4" />
+                  Create
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground">No plans in {cityFilter}</p>
+                <button
+                  onClick={() => setCityFilter("all")}
+                  className="mt-3 text-sm text-primary hover:underline"
+                >
+                  Show all cities
+                </button>
+              </>
+            )}
           </div>
         ) : (
-          activities.map((plan) => (
+          filteredActivities.map((plan) => (
             <div
               key={plan.id}
               role="button"
