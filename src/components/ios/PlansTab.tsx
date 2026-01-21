@@ -191,10 +191,13 @@ export function PlansTab() {
     // Combine real activities with virtual carousel plans
     const allPlans = [...activitiesWithDetails, ...virtualPlans];
 
-    // Sort by scheduled_for
-    allPlans.sort((a, b) => 
-      new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime()
-    );
+    // Sort by proximity to today's date (closest first)
+    const now = new Date().getTime();
+    allPlans.sort((a, b) => {
+      const diffA = Math.abs(new Date(a.scheduled_for).getTime() - now);
+      const diffB = Math.abs(new Date(b.scheduled_for).getTime() - now);
+      return diffA - diffB;
+    });
 
     setActivities(allPlans);
     setIsLoading(false);
