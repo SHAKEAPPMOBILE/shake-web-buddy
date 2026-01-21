@@ -169,11 +169,30 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     );
   }
 
+  // Handle backdrop click to close activities
+  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
+    // Only close if clicking the backdrop itself, not the carousel
+    if (e.target === e.currentTarget) {
+      onCloseActivities?.();
+    }
+  }, [onCloseActivities]);
+
   // Full home tab for logged in users
   return (
-    <div className="flex flex-col h-full px-6 text-center pt-16 overflow-y-auto pb-24">
-      {/* Welcome Message */}
-      <div className="mb-8">
+    <div className="flex flex-col h-full px-6 text-center pt-16 overflow-y-auto pb-24 relative">
+      {/* Backdrop for focused mode - clicking outside carousel closes it */}
+      {showActivities && (
+        <div 
+          className="fixed inset-0 z-10 bg-background/80 backdrop-blur-sm animate-fade-in"
+          onClick={handleBackdropClick}
+        />
+      )}
+
+      {/* Welcome Message - hidden in focused mode */}
+      <div className={cn(
+        "mb-8 transition-all duration-300",
+        showActivities && "opacity-0 pointer-events-none"
+      )}>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border mb-6">
           <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
           <span className="text-sm text-muted-foreground">
@@ -191,7 +210,10 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
       {/* Center Area - Circle with Handshake or Activity Carousel */}
       <div 
-        className="relative mb-8 flex items-center justify-center"
+        className={cn(
+          "relative mb-8 flex items-center justify-center transition-all duration-300",
+          showActivities && "z-20 flex-1 items-center"
+        )}
         onTouchStart={showActivities ? handleTouchStart : undefined}
         onTouchMove={showActivities ? handleTouchMove : undefined}
         onTouchEnd={showActivities ? handleTouchEnd : undefined}
@@ -199,11 +221,11 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         <div 
           className={cn(
             "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
-            isShaking && "animate-shake-center"
+            isShaking && "animate-shake-center",
+            showActivities && "w-40 h-40 shadow-2xl"
           )}
           onTouchStart={(e) => {
             if (!showActivities) return;
-            // Prevent swipe handlers from changing the carousel on a tap.
             e.stopPropagation();
             const a = orderedActivities[currentActivityIndex];
             tappedActivityRef.current = a
@@ -222,14 +244,14 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           {!showActivities ? (
             <span className="text-5xl">🤝</span>
           ) : (
-            <span className="text-5xl animate-scale-in">{currentActivity?.emoji}</span>
+            <span className="text-6xl animate-scale-in">{currentActivity?.emoji}</span>
           )}
         </div>
 
         {/* Activity Label & Day */}
         {showActivities && (
-          <div className="mt-4 animate-fade-in absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
-            <div className="text-lg font-semibold text-foreground">{currentActivity?.label}</div>
+          <div className="mt-4 animate-fade-in absolute -bottom-14 left-1/2 -translate-x-1/2 whitespace-nowrap">
+            <div className="text-xl font-semibold text-foreground">{currentActivity?.label}</div>
             <div className="text-sm text-muted-foreground">{dayName}</div>
           </div>
         )}
@@ -239,29 +261,29 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           <>
             <button
               onClick={goToPrevious}
-              className="flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 w-10 h-10 rounded-full bg-card border border-border items-center justify-center shadow-md hover:bg-muted transition-colors"
+              className="flex absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors z-30"
             >
-              <ChevronLeft className="w-5 h-5 text-foreground" />
+              <ChevronLeft className="w-6 h-6 text-foreground" />
             </button>
             <button
               onClick={goToNext}
-              className="flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-10 h-10 rounded-full bg-card border border-border items-center justify-center shadow-md hover:bg-muted transition-colors"
+              className="flex absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors z-30"
             >
-              <ChevronRight className="w-5 h-5 text-foreground" />
+              <ChevronRight className="w-6 h-6 text-foreground" />
             </button>
           </>
         )}
 
         {/* Dot Indicators */}
         {showActivities && (
-          <div className="flex justify-center gap-2 mt-4 absolute -bottom-20 left-1/2 -translate-x-1/2">
+          <div className="flex justify-center gap-2 mt-4 absolute -bottom-24 left-1/2 -translate-x-1/2 z-30">
             {orderedActivities.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentActivityIndex(index)}
-                className={`w-2 h-2 rounded-full transition-all ${
+                className={`w-2.5 h-2.5 rounded-full transition-all ${
                   index === currentActivityIndex 
-                    ? 'bg-primary w-4' 
+                    ? 'bg-primary w-5' 
                     : 'bg-muted-foreground/30'
                 }`}
               />
@@ -271,15 +293,21 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       </div>
 
       {/* Extra spacing when activities are shown */}
-      {showActivities && <div className="h-16" />}
+      {showActivities && <div className="h-20" />}
 
-      {/* Global participants */}
-      <div className="mb-3">
+      {/* Global participants - hidden in focused mode */}
+      <div className={cn(
+        "mb-3 transition-all duration-300",
+        showActivities && "opacity-0 pointer-events-none"
+      )}>
         <GlobalParticipantsSection />
       </div>
 
-      {/* Theme toggle - below Shakers nearby */}
-      <div className="flex justify-center mb-6">
+      {/* Theme toggle - hidden in focused mode */}
+      <div className={cn(
+        "flex justify-center mb-6 transition-all duration-300",
+        showActivities && "opacity-0 pointer-events-none"
+      )}>
         <ThemeToggle />
       </div>
     </div>
