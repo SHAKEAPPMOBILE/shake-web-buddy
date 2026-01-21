@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, MapPin, MessageSquare, Users } from "lucide-react";
+import { Calendar, MapPin, MessageSquare, Users, Plane } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +18,7 @@ interface MyActivitiesDialogProps {
     /** Present when this entry is a scheduled plan (or a join to a specific plan) */
     activityId?: string;
   }) => void;
+  homeCity?: string;
 }
 
 interface ActivityJoin {
@@ -36,7 +37,8 @@ interface ActivityJoin {
 export function MyActivitiesDialog({ 
   open, 
   onOpenChange, 
-  onSelectActivity 
+  onSelectActivity,
+  homeCity,
 }: MyActivitiesDialogProps) {
   const [activities, setActivities] = useState<ActivityJoin[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -375,8 +377,12 @@ export function MyActivitiesDialog({
                         {activity.participant_count}
                       </span>
                     </div>
-                    <p className="text-sm text-white/70 flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-3 h-3" />
+                    <p className={`text-sm flex items-center gap-1 mt-0.5 ${homeCity && activity.city !== homeCity ? 'text-primary font-medium' : 'text-white/70'}`}>
+                      {homeCity && activity.city !== homeCity ? (
+                        <Plane className="w-3 h-3" />
+                      ) : (
+                        <MapPin className="w-3 h-3" />
+                      )}
                       {activity.city}
                     </p>
                     {activity.scheduled_for && (
