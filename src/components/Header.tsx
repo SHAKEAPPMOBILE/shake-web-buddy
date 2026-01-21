@@ -307,6 +307,7 @@ export function Header() {
         open={showMyActivitiesDialog}
         onOpenChange={setShowMyActivitiesDialog}
         onSelectActivity={handleSelectActivityFromList}
+        homeCity={selectedCity}
       />
 
       {selectedChatActivity && (
@@ -317,6 +318,7 @@ export function Header() {
           onBack={handleBackToActivities}
           attendeeCount={getActivityJoinCount(selectedChatActivity.activityType)}
           city={selectedChatActivity.city}
+          homeCity={selectedCity}
         />
       )}
 

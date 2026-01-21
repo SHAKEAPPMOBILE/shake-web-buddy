@@ -84,6 +84,7 @@ export function ChatTab() {
         open={showMyActivitiesDialog}
         onOpenChange={setShowMyActivitiesDialog}
         onSelectActivity={handleSelectActivityFromList}
+        homeCity={selectedCity}
       />
 
       {selectedChatActivity && (
@@ -94,6 +95,7 @@ export function ChatTab() {
           onBack={handleBackToActivities}
           attendeeCount={getActivityJoinCount(selectedChatActivity.activityType)}
           city={selectedChatActivity.city}
+          homeCity={selectedCity}
         />
       )}
 
