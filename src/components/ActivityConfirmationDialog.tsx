@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
-import { MapPin, Globe, ChevronRight, Calendar, CheckCircle2, Search } from "lucide-react";
+import { MapPin, Globe, ChevronRight, Calendar, CheckCircle2, Search, Plane } from "lucide-react";
 import { SHAKE_CITIES, REGIONS } from "@/data/cities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
@@ -142,9 +142,18 @@ export function ActivityConfirmationDialog({
                   <span>{activityDay}</span>
                 </div>
               )}
-              <div className="flex items-center justify-center gap-1.5 text-muted-foreground text-sm">
-                <MapPin className="w-3.5 h-3.5" />
+              <div className={`flex items-center justify-center gap-1.5 text-sm ${selectedCity ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                {selectedCity ? (
+                  <Plane className="w-3.5 h-3.5" />
+                ) : (
+                  <MapPin className="w-3.5 h-3.5" />
+                )}
                 <span>in {displayCity}</span>
+                {selectedCity && (
+                  <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold bg-primary/10 text-primary rounded-full">
+                    Travel
+                  </span>
+                )}
               </div>
             </div>
 
