@@ -276,6 +276,7 @@ export function IOSAppLayout() {
         onBack={handleBackToActivities}
         attendeeCount={getActivityJoinCount(selectedActivity)}
         city={activityCity || selectedCity}
+        homeCity={selectedCity}
       />
 
       <PlansMapDialog

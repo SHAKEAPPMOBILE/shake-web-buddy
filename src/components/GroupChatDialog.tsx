@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Globe, MapPin, Trash2, Mic } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Globe, MapPin, Trash2, Mic, Plane } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,7 @@ interface GroupChatDialogProps {
   onLeaveActivity?: () => void;
   attendeeCount?: number;
   city?: string;
+  homeCity?: string;
 }
 
 interface Message {
@@ -131,7 +132,9 @@ export function GroupChatDialog({
   onLeaveActivity,
   attendeeCount = 0,
   city = "New York City",
+  homeCity,
 }: GroupChatDialogProps) {
+  const isCrossCity = homeCity && city !== homeCity;
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -466,6 +469,13 @@ export function GroupChatDialog({
                   {getActivityDay(activityType)}
                 </p>
               )}
+              {/* Cross-city indicator */}
+              {isCrossCity && (
+                <div className="flex items-center justify-center gap-1.5 text-sm text-primary font-medium">
+                  <Plane className="w-3.5 h-3.5" />
+                  <span>in {city}</span>
+                </div>
+              )}
               {/* Venue info */}
               {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && (
                 <div className="mt-1">
@@ -544,7 +554,15 @@ export function GroupChatDialog({
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div className="flex-1">
-                <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
+                <div className="flex items-center gap-2">
+                  <DialogTitle className="text-lg font-display text-black">{title}</DialogTitle>
+                  {isCrossCity && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                      <Plane className="w-3 h-3" />
+                      {city}
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-black/60">{getActivityDay(activityType) || formattedTime}</p>
                 {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && (
                   <div className="mt-1">
