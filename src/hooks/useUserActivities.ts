@@ -170,7 +170,7 @@ export function useUserActivities(city: string) {
       city: city,
       scheduled_for: scheduledFor.toISOString(),
       note: note?.trim() || null,
-    }).select().single();
+    }).select().maybeSingle();
 
     if (error || !newActivity) {
       console.error("Error creating activity:", error);
