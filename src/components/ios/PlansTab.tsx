@@ -49,7 +49,9 @@ export function PlansTab() {
   const { selectedCity } = useCity();
   const { user, isPremium } = useAuth();
   const [activities, setActivities] = useState<PlanActivity[]>([]);
-  const [cityFilter, setCityFilter] = useState<string>("all");
+  const [cityFilter, setCityFilter] = useState<string>(() => {
+    return localStorage.getItem("plans-city-filter") || "all";
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch all plans: activities in city + activities user has joined
@@ -240,6 +242,11 @@ export function PlansTab() {
     if (cityFilter === "all") return activities;
     return activities.filter(a => a.city === cityFilter);
   }, [activities, cityFilter]);
+
+  // Persist city filter to localStorage
+  useEffect(() => {
+    localStorage.setItem("plans-city-filter", cityFilter);
+  }, [cityFilter]);
 
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
