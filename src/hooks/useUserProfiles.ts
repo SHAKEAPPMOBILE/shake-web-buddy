@@ -32,7 +32,7 @@ export function useUserProfiles(userIds: string[]) {
             .from("profiles")
             .select("user_id, name, avatar_url")
             .eq("user_id", userId)
-            .single();
+            .maybeSingle();
 
           if (data) {
             fetchedProfiles[userId] = data;

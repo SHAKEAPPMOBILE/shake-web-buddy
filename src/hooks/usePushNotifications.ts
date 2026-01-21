@@ -175,14 +175,14 @@ export function usePlanNotifications(
             .from("profiles")
             .select("name")
             .eq("user_id", join.user_id)
-            .single();
+            .maybeSingle();
 
           // Get activity details
           const { data: activity } = await supabase
             .from("user_activities")
             .select("activity_type")
             .eq("id", join.activity_id)
-            .single();
+            .maybeSingle();
 
           const joinerName = profile?.name || "Someone";
           const activityLabel = activity?.activity_type
@@ -230,7 +230,7 @@ export function usePlanNotifications(
             .from("profiles")
             .select("name")
             .eq("user_id", message.user_id)
-            .single();
+            .maybeSingle();
 
           const senderName = profile?.name || "Someone";
           const truncatedMessage =

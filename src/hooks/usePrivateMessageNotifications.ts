@@ -20,7 +20,7 @@ export function usePrivateMessageNotifications(
         .from("profiles_private")
         .select("push_notifications_enabled")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (data) {
         setPushEnabled(data.push_notifications_enabled);
@@ -71,7 +71,7 @@ export function usePrivateMessageNotifications(
             .from("profiles")
             .select("name")
             .eq("user_id", message.sender_id)
-            .single();
+            .maybeSingle();
 
           const senderName = profile?.name || "Someone";
           const truncatedMessage =
