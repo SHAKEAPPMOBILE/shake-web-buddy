@@ -29,17 +29,20 @@ export function ActivityConfirmationDialog({
   const { isPremium } = useAuth();
   const [showCityPicker, setShowCityPicker] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
 
-  // Reset city picker view when dialog opens or activity changes
+  // Reset state when dialog opens or activity changes
   useEffect(() => {
     if (open) {
       setShowCityPicker(false);
+      setSelectedCity(null);
     }
   }, [open, activity?.id]);
 
   if (!activity) return null;
 
   const activityDay = getActivityDay(activity.id);
+  const displayCity = selectedCity || currentCity;
 
   const handleChangeCity = () => {
     if (!isPremium) {
@@ -50,12 +53,12 @@ export function ActivityConfirmationDialog({
   };
 
   const handleSelectCity = (cityName: string) => {
+    setSelectedCity(cityName);
     setShowCityPicker(false);
-    onConfirm(cityName);
   };
 
   const groupedCities = REGIONS.reduce((acc, region) => {
-    acc[region] = SHAKE_CITIES.filter(city => city.region === region && city.name !== currentCity);
+    acc[region] = SHAKE_CITIES.filter(city => city.region === region && city.name !== displayCity);
     return acc;
   }, {} as Record<string, typeof SHAKE_CITIES>);
 
@@ -141,14 +144,14 @@ export function ActivityConfirmationDialog({
               )}
               <div className="flex items-center justify-center gap-1.5 text-muted-foreground text-sm">
                 <MapPin className="w-3.5 h-3.5" />
-                <span>in {currentCity}</span>
+                <span>in {displayCity}</span>
               </div>
             </div>
 
             {/* Action buttons */}
             <div className="w-full space-y-2">
               <Button
-                onClick={() => onConfirm(currentCity)}
+                onClick={() => onConfirm(displayCity)}
                 className="w-full h-9 text-sm font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] text-white gap-1.5"
               >
                 <CheckCircle2 className="w-3 h-3 text-white" />
