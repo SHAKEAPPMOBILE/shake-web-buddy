@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MapPin, Calendar, Users, Plus, Trash2, Filter } from "lucide-react";
+import { MapPin, Calendar, Users, Plus, Trash2, Plane } from "lucide-react";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlansMapDialog } from "../PlansMapDialog";
@@ -320,9 +320,9 @@ export function PlansTab() {
           {availableCities.length > 1 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1 px-3 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium">
-                  <Filter className="w-4 h-4" />
-                  {cityFilter === "all" ? "All cities" : cityFilter}
+                <button className="flex items-center gap-1 px-2.5 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium">
+                  <Plane className="w-4 h-4" />
+                  {cityFilter !== "all" && <span>{cityFilter}</span>}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-card border-border z-50">
