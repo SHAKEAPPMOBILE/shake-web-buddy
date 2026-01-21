@@ -508,7 +508,7 @@ export default function Auth() {
             .from("profiles")
             .select("name")
             .eq("user_id", currentUser.id)
-            .single();
+            .maybeSingle();
 
           // If profile has no name, this is a new user
           if (!profile?.name) {

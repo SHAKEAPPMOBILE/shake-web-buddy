@@ -58,7 +58,7 @@ export function useUserActivities(city: string) {
           .from("profiles")
           .select("name, avatar_url")
           .eq("user_id", activity.user_id)
-          .single();
+          .maybeSingle();
 
         // Get participant count
         const { count } = await supabase
@@ -321,7 +321,7 @@ export function useUserActivities(city: string) {
       .from("profiles")
       .select("name")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     // Send SMS notification to activity creator
     try {
@@ -373,7 +373,7 @@ export function useUserActivities(city: string) {
       .select("id")
       .eq("activity_id", activityId)
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     return !!data;
   }, [user]);

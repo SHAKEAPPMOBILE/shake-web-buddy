@@ -154,7 +154,7 @@ export function PlanGroupChatDialog({
                 .from("profiles")
                 .select("name")
                 .eq("user_id", newMessage.user_id)
-                .single();
+                .maybeSingle();
               
               const senderName = senderProfile?.name || "Someone";
               const activityLabel = getActivityLabel(activity.activity_type);
@@ -287,7 +287,7 @@ export function PlanGroupChatDialog({
           .from("profiles")
           .select("name")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
         
         try {
           await supabase.functions.invoke("send-plan-sms", {

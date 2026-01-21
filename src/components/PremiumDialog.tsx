@@ -47,7 +47,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         .from("profiles_private")
         .select("billing_email")
         .eq("user_id", user.id)
-        .single()
+        .maybeSingle()
         .then(({ data }) => {
           if (data?.billing_email) {
             setSavedBillingEmail(data.billing_email);
