@@ -340,7 +340,7 @@ export function PlanGroupChatDialog({
           </div>
         )}
         {/* Header */}
-        <DialogHeader className="p-4 border-b border-muted-foreground/20">
+        <DialogHeader className="p-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
               <ArrowLeft className="w-5 h-5" />
@@ -353,26 +353,24 @@ export function PlanGroupChatDialog({
               {activity.note && (
                 <p className="text-sm text-black/80 italic truncate">"{activity.note}"</p>
               )}
-              <p className="text-sm text-black/60 truncate">
+              <p className="text-sm text-black/60">
                 {activity.city} • {format(new Date(activity.scheduled_for), "EEE, MMM d")}
               </p>
               {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "brunch") && (
-                <div className="mt-1">
-                  {getVenueMapsUrl(activity.activity_type, activity.city) ? (
-                    <a
-                      href={getVenueMapsUrl(activity.activity_type, activity.city)!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline"
-                    >
-                      📍 {getActivityLocation(activity.activity_type, activity.city)}
-                    </a>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      📍 {getActivityLocation(activity.activity_type, activity.city)}
-                    </span>
-                  )}
-                </div>
+                getVenueMapsUrl(activity.activity_type, activity.city) ? (
+                  <a
+                    href={getVenueMapsUrl(activity.activity_type, activity.city)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline"
+                  >
+                    📍 {getActivityLocation(activity.activity_type, activity.city)}
+                  </a>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    📍 {getActivityLocation(activity.activity_type, activity.city)}
+                  </span>
+                )
               )}
               <button
                 className="text-xs text-black/50 mt-0.5 hover:underline cursor-pointer text-left"
@@ -499,18 +497,18 @@ export function PlanGroupChatDialog({
           </div>
         )}
 
-        {/* Audio limit indicator for free users */}
-        {user && !isPremium && (
+        {/* Audio limit indicator for free users - only show when 5 or fewer remaining */}
+        {user && !isPremium && remainingAudio <= 5 && (
           <div className="px-4 py-1 text-xs text-muted-foreground text-center">
             <span className="flex items-center justify-center gap-1">
               <Mic className="w-3 h-3" />
-              {remainingAudio} / {FREE_AUDIO_LIMIT} voice notes remaining
+              {remainingAudio} voice notes remaining
             </span>
           </div>
         )}
 
         {/* Input area */}
-        <div className="p-4 border-t border-muted-foreground/20">
+        <div className="p-4">
           {pendingAudio ? (
             <div className="flex items-center gap-2">
               <div className="flex-1 p-2 bg-muted rounded-lg">

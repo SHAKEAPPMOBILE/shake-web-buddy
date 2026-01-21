@@ -163,7 +163,7 @@ export function PrivateChatDialog({
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
         )}
-        <DialogHeader className="border-b border-black/10 pb-4">
+        <DialogHeader className="pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-black/20 shadow-sm">
               {otherUserAvatar ? (
@@ -246,18 +246,18 @@ export function PrivateChatDialog({
           </div>
         )}
 
-        {/* Audio limit indicator for free users */}
-        {user && !isPremium && (
-          <div className="px-4 py-1 text-xs text-muted-foreground text-center border-t border-border/50">
+        {/* Audio limit indicator for free users - only show when 5 or fewer remaining */}
+        {user && !isPremium && remainingAudio <= 5 && (
+          <div className="px-4 py-1 text-xs text-muted-foreground text-center">
             <span className="flex items-center justify-center gap-1">
               <Mic className="w-3 h-3" />
-              {remainingAudio} / {FREE_AUDIO_LIMIT} voice notes remaining
+              {remainingAudio} voice notes remaining
             </span>
           </div>
         )}
 
         {/* Input */}
-        <form onSubmit={handleSend} className="border-t border-border/50 pt-4 px-4 pb-4">
+        <form onSubmit={handleSend} className="pt-4 px-4 pb-4">
           {pendingAudio ? (
             <div className="flex items-center gap-2">
               <div className="flex-1 p-2 bg-muted rounded-lg">
