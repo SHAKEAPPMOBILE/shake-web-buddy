@@ -142,7 +142,7 @@ export function PlansTab() {
           ...activity,
           creator_name: profile?.name || "Anonymous",
           creator_avatar: profile?.avatar_url,
-          participant_count: (count || 0) + 1,
+          participant_count: count || 0,
           isJoined: joinedActivityIds.includes(activity.id),
         };
       })
@@ -489,12 +489,18 @@ export function PlansTab() {
                 )}
               </div>
 
-              {plan.participant_count && plan.participant_count > 1 && (
-                <div className="flex items-center gap-1 text-sm text-white/70">
-                  <Users className="w-3.5 h-3.5" />
-                  <span>{plan.participant_count} joined</span>
-                </div>
-              )}
+              {/* Show creator avatar + participant count if someone joined */}
+              <div className="flex items-center gap-1.5 mt-2">
+                <Avatar className="w-5 h-5 border border-white/30">
+                  <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
+                  <AvatarFallback className="bg-white/20 text-white text-[10px] font-medium">
+                    {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                {plan.participant_count > 0 && (
+                  <span className="text-sm text-white/70">+{plan.participant_count} joined</span>
+                )}
+              </div>
             </div>
           ))
         )}
