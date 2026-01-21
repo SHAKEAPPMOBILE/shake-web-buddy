@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
-import { MapPin, Globe, ChevronRight, Calendar, CheckCircle2, Search, Plane, Pencil } from "lucide-react";
+import { MapPin, Globe, ChevronRight, Calendar, CheckCircle2, Search, Plane } from "lucide-react";
 import { SHAKE_CITIES, REGIONS } from "@/data/cities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
@@ -153,7 +153,6 @@ export function ActivityConfirmationDialog({
                     <MapPin className="w-3.5 h-3.5" />
                   )}
                   <span>in {displayCity}</span>
-                  <Pencil className="w-3 h-3 ml-1 opacity-50" />
                 </button>
               ) : (
                 <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
