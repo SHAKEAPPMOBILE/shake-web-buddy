@@ -153,11 +153,6 @@ export function ActivityConfirmationDialog({
                     <MapPin className="w-3.5 h-3.5" />
                   )}
                   <span>in {displayCity}</span>
-                  {selectedCity && (
-                    <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold bg-primary/10 text-primary rounded-full">
-                      Travel
-                    </span>
-                  )}
                   <Pencil className="w-3 h-3 ml-1 opacity-50" />
                 </button>
               ) : (
