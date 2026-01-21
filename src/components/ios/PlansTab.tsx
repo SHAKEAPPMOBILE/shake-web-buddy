@@ -288,7 +288,7 @@ export function PlansTab() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h2 className="text-lg font-display font-bold">Plans in {selectedCity}</h2>
+        <h2 className="text-lg font-display font-bold">Your Plans</h2>
         <div className="flex items-center gap-2">
           {activities.length > 0 && (
             <button
@@ -384,20 +384,13 @@ export function PlansTab() {
                     )}
                   </div>
 
-                  {!plan.isCarouselJoin && (
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-white/70">by {plan.creator_name || "Anonymous"}</span>
-                      {plan.city !== selectedCity && (
-                        <span className="text-xs text-white/50">• {plan.city}</span>
-                      )}
-                    </div>
-                  )}
-
-                  {plan.isCarouselJoin && plan.city !== selectedCity && (
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-white/50">{plan.city}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3 text-white/60" />
+                    <span className="text-xs text-white/70">{plan.city}</span>
+                    {!plan.isCarouselJoin && (
+                      <span className="text-xs text-white/50">• by {plan.creator_name || "Anonymous"}</span>
+                    )}
+                  </div>
 
                   {plan.note && (
                     <p className="text-xs text-white/60 italic mt-1 line-clamp-1">"{plan.note}"</p>
