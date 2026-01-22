@@ -628,12 +628,12 @@ export default function Auth() {
         <div className="w-full max-w-md px-2 flex flex-col flex-1 min-h-0">
           {/* Fixed logo/header (so only the form scrolls on short screens) */}
           {step !== 'method' && (
-            <div className="shrink-0 pt-2">
+            <div className="shrink-0 pt-[clamp(0.25rem,1.2vh,0.75rem)]">
               <div className="flex flex-col items-center">
                 <img
                   src={logoShake}
                   alt="SHAKE"
-                  className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-contain mb-3"
+                  className="h-[clamp(4.25rem,14vh,7rem)] w-auto object-contain mb-[clamp(0.4rem,1.2vh,0.75rem)]"
                 />
                 <div className="text-center">
                   <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
@@ -644,7 +644,7 @@ export default function Auth() {
           )}
 
           {/* Scrollable content area (only when needed) */}
-          <div className="flex-1 min-h-0 overflow-y-auto pt-6 sm:pt-8">
+          <div className="flex-1 min-h-0 overflow-y-auto pt-[clamp(0.75rem,2vh,2rem)]">
             {/* Method selection step - clean white background with centered options */}
             {step === 'method' && (
               <div className="flex flex-col items-center justify-center h-full gap-6 animate-fade-in">
