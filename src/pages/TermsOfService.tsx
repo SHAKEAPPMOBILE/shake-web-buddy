@@ -5,8 +5,8 @@ export default function TermsOfService() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="pt-16 pb-16">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden safe-area-top safe-area-bottom">
+      <main className="flex-1 min-h-0 overflow-y-auto pt-16 pb-[calc(env(safe-area-inset-bottom,0px)+4rem)]">
         <div className="container mx-auto px-4 max-w-3xl">
           <button
             onClick={() => navigate(-1)}
