@@ -12,6 +12,7 @@ import { BirthdayPicker } from "@/components/BirthdayPicker";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { countryCodes, CountryCode } from "@/data/countryCodes";
+import { z } from "zod";
 import {
   Popover,
   PopoverContent,
@@ -36,6 +37,8 @@ export default function Auth() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [nationality, setNationality] = useState("");
   const [occupation, setOccupation] = useState("");
+  const [occupationTouched, setOccupationTouched] = useState(false);
+  const [occupationError, setOccupationError] = useState<string | null>(null);
   const [instagramUrl, setInstagramUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
@@ -62,6 +65,22 @@ export default function Auth() {
       age--;
     }
     return age;
+  };
+
+  const occupationSchema = z
+    .string()
+    .trim()
+    .min(2, { message: "Please enter at least 2 characters" })
+    .max(50, { message: "Please keep it under 50 characters" })
+    .regex(/^[\p{L}\p{N} .,'&\-\/()]+$/u, {
+      message: "Only letters, numbers and basic punctuation",
+    });
+
+  const validateOccupation = (raw: string): string | null => {
+    const trimmed = raw.trim();
+    if (!trimmed) return null; // optional
+    const parsed = occupationSchema.safeParse(trimmed);
+    return parsed.success ? null : parsed.error.issues[0]?.message ?? "Invalid occupation";
   };
 
   const getMaxDate = (): string => {
@@ -403,6 +422,13 @@ export default function Auth() {
 
     if (!selectedAvatar) {
       toast.error("Please choose a profile picture or avatar");
+      return;
+    }
+
+    // Validate optional fields before saving
+    const occError = validateOccupation(occupation);
+    if (occError) {
+      toast.error(`Occupation: ${occError}`);
       return;
     }
 
@@ -1331,6 +1357,10 @@ export default function Auth() {
           {step === 'occupation' && (
             <form onSubmit={(e) => {
               e.preventDefault();
+              setOccupationTouched(true);
+              const err = validateOccupation(occupation);
+              setOccupationError(err);
+              if (err) return;
               setStep('social');
             }} className="space-y-6">
               <div className="space-y-2">
@@ -1342,10 +1372,27 @@ export default function Auth() {
                     type="text"
                     placeholder="e.g. Software Engineer, Designer, Student"
                     value={occupation}
-                    onChange={(e) => setOccupation(e.target.value)}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setOccupation(next);
+                      if (occupationTouched) {
+                        setOccupationError(validateOccupation(next));
+                      }
+                    }}
+                    onBlur={() => {
+                      setOccupationTouched(true);
+                      setOccupationError(validateOccupation(occupation));
+                    }}
+                    aria-invalid={!!occupationError}
+                    aria-describedby={occupationError ? "occupation-error" : undefined}
                     className="pl-10"
                   />
                 </div>
+                {occupationError ? (
+                  <p id="occupation-error" className="text-xs text-destructive">
+                    {occupationError}
+                  </p>
+                ) : null}
               </div>
 
               <div className="flex gap-3">
