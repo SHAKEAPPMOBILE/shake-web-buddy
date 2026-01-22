@@ -239,7 +239,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           >
             {/* Day Name - Above the circle */}
             <div className="mb-6 animate-fade-in text-center">
-              <div className="text-3xl md:text-4xl font-display font-bold text-foreground">
+              <div className="text-4xl md:text-5xl font-handwritten text-foreground">
                 This {dayName}
               </div>
             </div>
