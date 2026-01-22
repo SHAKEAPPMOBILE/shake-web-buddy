@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -112,6 +112,18 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     }
   }, [goToNext, goToPrevious]);
 
+  // Handle backdrop click to close activities
+  // IMPORTANT: must be declared before any conditional returns to keep hook order stable.
+  const handleBackdropClick = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      // Only close if clicking the backdrop itself, not the carousel
+      if (e.target === e.currentTarget) {
+        onCloseActivities?.();
+      }
+    },
+    [onCloseActivities]
+  );
+
   // Landing page for logged out users
   if (!user) {
     return (
@@ -168,14 +180,6 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       </div>
     );
   }
-
-  // Handle backdrop click to close activities
-  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
-    // Only close if clicking the backdrop itself, not the carousel
-    if (e.target === e.currentTarget) {
-      onCloseActivities?.();
-    }
-  }, [onCloseActivities]);
 
   // Full home tab for logged in users
   return (
