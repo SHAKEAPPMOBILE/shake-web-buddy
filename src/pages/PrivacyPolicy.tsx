@@ -113,6 +113,12 @@ export default function PrivacyPolicy() {
                 We may update this policy from time to time. When we do, we will post the new version with an updated "Last updated" date.
               </p>
             </section>
+
+            <section>
+              <p className="text-muted-foreground">
+                © 2026 Shakeapp, Inc. All rights reserved.
+              </p>
+            </section>
           </div>
         </div>
       </main>
