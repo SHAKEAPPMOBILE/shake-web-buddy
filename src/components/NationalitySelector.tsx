@@ -75,7 +75,14 @@ export function NationalitySelector({
           <ChevronDown className="h-4 w-4 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0 bg-popover border border-border z-[100]" align="start">
+      <PopoverContent
+        align="start"
+        className={cn(
+          // Match trigger width, but never overflow the viewport.
+          "w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] p-0 bg-popover border border-border",
+          "z-[100]"
+        )}
+      >
         <div className="p-2 border-b border-border">
           <Input
             placeholder="Search countries..."
@@ -88,7 +95,7 @@ export function NationalitySelector({
             className="h-9"
           />
         </div>
-        <ScrollArea className="h-[250px]">
+        <ScrollArea className="h-[min(250px,50vh)]">
           <div className="p-1">
             {filteredCountries.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
