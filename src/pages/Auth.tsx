@@ -643,7 +643,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col overflow-hidden fixed inset-0">
+    <div className="min-h-screen bg-white flex flex-col overflow-hidden fixed inset-0 safe-area-top safe-area-bottom">
 
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center w-full overflow-hidden px-4 py-6 sm:py-10">
         <button
