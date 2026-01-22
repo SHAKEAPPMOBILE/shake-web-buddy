@@ -626,25 +626,6 @@ export default function Auth() {
         </button>
 
         <div className="w-full max-w-md space-y-8 px-2 flex flex-col min-h-[calc(100vh-120px)]">
-          {/* Logo on top for profile steps */}
-          {(step === 'name' || step === 'nationality' || step === 'occupation' || step === 'social' || step === 'avatar') && (
-            <div className="flex items-center justify-center gap-1.5 pt-4">
-              <img 
-                src={logoShake} 
-                alt="Shake" 
-                className="h-6 w-auto object-contain" 
-              />
-              <div className="flex flex-col">
-                <span className="text-base font-display font-bold text-foreground lowercase leading-tight">
-                  shake
-                </span>
-                <span className="text-[7px] font-medium tracking-[0.12em] uppercase text-muted-foreground -mt-0.5">
-                  social
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* Main content area */}
           <div className="flex-1">
             {/* Method selection step - clean white background with centered options */}
@@ -725,8 +706,8 @@ export default function Auth() {
               </div>
             )}
 
-            {/* Logo - same style as first page (not for profile steps or method step) */}
-            {!(step === 'name' || step === 'social' || step === 'avatar' || step === 'method') && (
+            {/* Logo - use the big logo lockup for all onboarding steps (avoid the small duplicate logo) */}
+            {step !== 'method' && (
               <div className="flex flex-col items-center mb-8">
                 <img 
                   src={logoShake} 
