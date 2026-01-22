@@ -14,9 +14,17 @@ interface NationalitySelectorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  onOpenChange?: (open: boolean) => void;
+  onSearchChange?: (search: string) => void;
 }
 
-export function NationalitySelector({ value, onChange, placeholder = "Select your nationality" }: NationalitySelectorProps) {
+export function NationalitySelector({
+  value,
+  onChange,
+  placeholder = "Select your nationality",
+  onOpenChange,
+  onSearchChange,
+}: NationalitySelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -32,10 +40,17 @@ export function NationalitySelector({ value, onChange, placeholder = "Select you
     onChange(country.name);
     setOpen(false);
     setSearch("");
+    onSearchChange?.("");
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        onOpenChange?.(next);
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -65,7 +80,11 @@ export function NationalitySelector({ value, onChange, placeholder = "Select you
           <Input
             placeholder="Search countries..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setSearch(next);
+              onSearchChange?.(next);
+            }}
             className="h-9"
           />
         </div>
