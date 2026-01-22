@@ -216,90 +216,94 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       <div 
         className={cn(
           "relative mb-8 flex flex-col items-center justify-center transition-all duration-300",
-          showActivities && "z-20 flex-1 items-center"
+          showActivities && "z-20 flex-1 justify-center"
         )}
-        onTouchStart={showActivities ? handleTouchStart : undefined}
-        onTouchMove={showActivities ? handleTouchMove : undefined}
-        onTouchEnd={showActivities ? handleTouchEnd : undefined}
       >
-        {/* Day Name - Above the circle */}
-        {showActivities && (
-          <div className="mb-6 animate-fade-in text-center">
-            <div className="text-3xl md:text-4xl font-display font-bold text-foreground">
-              This {dayName}
-            </div>
-          </div>
-        )}
-
-        <div 
-          className={cn(
-            "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
-            isShaking && "animate-shake-center",
-            showActivities && "w-40 h-40 shadow-2xl"
-          )}
-          onTouchStart={(e) => {
-            if (!showActivities) return;
-            e.stopPropagation();
-            const a = orderedActivities[currentActivityIndex];
-            tappedActivityRef.current = a
-              ? { id: a.id, label: a.label, emoji: a.emoji }
-              : null;
-          }}
-          onPointerDown={() => {
-            if (!showActivities) return;
-            const a = orderedActivities[currentActivityIndex];
-            tappedActivityRef.current = a
-              ? { id: a.id, label: a.label, emoji: a.emoji }
-              : null;
-          }}
-          onClick={() => showActivities && handleActivitySelect()}
-        >
-          {!showActivities ? (
+        {!showActivities ? (
+          /* Default handshake circle */
+          <div 
+            className={cn(
+              "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
+              isShaking && "animate-shake-center"
+            )}
+          >
             <span className="text-5xl">🤝</span>
-          ) : (
-            <span className="text-6xl animate-scale-in">{currentActivity?.emoji}</span>
-          )}
-        </div>
-
-        {/* Activity Label - Below the circle */}
-        {showActivities && (
-          <div className="mt-4 animate-fade-in text-center">
-            <div className="text-xl font-semibold text-foreground">{currentActivity?.label}</div>
           </div>
-        )}
+        ) : (
+          /* Carousel mode - everything centered */
+          <div 
+            className="flex flex-col items-center justify-center w-full"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Day Name - Above the circle */}
+            <div className="mb-6 animate-fade-in text-center">
+              <div className="text-3xl md:text-4xl font-display font-bold text-foreground">
+                This {dayName}
+              </div>
+            </div>
 
-        {/* Navigation Arrows - Side by side with circle */}
-        {showActivities && (
-          <>
-            <button
-              onClick={goToPrevious}
-              className="flex absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors z-30"
-            >
-              <ChevronLeft className="w-6 h-6 text-foreground" />
-            </button>
-            <button
-              onClick={goToNext}
-              className="flex absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors z-30"
-            >
-              <ChevronRight className="w-6 h-6 text-foreground" />
-            </button>
-          </>
-        )}
-
-        {/* Dot Indicators */}
-        {showActivities && (
-          <div className="flex justify-center gap-2 mt-4 absolute -bottom-24 left-1/2 -translate-x-1/2 z-30">
-            {orderedActivities.map((_, index) => (
+            {/* Activity circle with arrows on sides */}
+            <div className="relative flex items-center justify-center w-full max-w-sm mx-auto">
+              {/* Left Arrow */}
               <button
-                key={index}
-                onClick={() => setCurrentActivityIndex(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all ${
-                  index === currentActivityIndex 
-                    ? 'bg-primary w-5' 
-                    : 'bg-muted-foreground/30'
-                }`}
-              />
-            ))}
+                onClick={goToPrevious}
+                className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors z-30 shrink-0"
+              >
+                <ChevronLeft className="w-6 h-6 text-foreground" />
+              </button>
+
+              {/* Circle */}
+              <div 
+                className="w-40 h-40 mx-6 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-2xl cursor-pointer transition-all hover:scale-105 shrink-0"
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  const a = orderedActivities[currentActivityIndex];
+                  tappedActivityRef.current = a
+                    ? { id: a.id, label: a.label, emoji: a.emoji }
+                    : null;
+                }}
+                onPointerDown={() => {
+                  const a = orderedActivities[currentActivityIndex];
+                  tappedActivityRef.current = a
+                    ? { id: a.id, label: a.label, emoji: a.emoji }
+                    : null;
+                }}
+                onClick={handleActivitySelect}
+              >
+                <span className="text-6xl animate-scale-in">{currentActivity?.emoji}</span>
+              </div>
+
+              {/* Right Arrow */}
+              <button
+                onClick={goToNext}
+                className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors z-30 shrink-0"
+              >
+                <ChevronRight className="w-6 h-6 text-foreground" />
+              </button>
+            </div>
+
+            {/* Activity Label - Below the circle */}
+            <div className="mt-6 animate-fade-in text-center">
+              <div className="text-xl font-semibold text-foreground">{currentActivity?.label}</div>
+            </div>
+
+            {/* Dot Indicators */}
+            <div className="flex justify-center gap-2 mt-6">
+              {orderedActivities.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentActivityIndex(index)}
+                  className={cn(
+                    "h-2.5 rounded-full transition-all",
+                    index === currentActivityIndex 
+                      ? "bg-primary w-5" 
+                      : "bg-muted-foreground/30 w-2.5"
+                  )}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
