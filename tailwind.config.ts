@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         sans: ["DM Sans", "system-ui", "sans-serif"],
         display: ["Space Grotesk", "system-ui", "sans-serif"],
+        handwritten: ["Sue Ellen Francisco", "cursive"],
       },
       colors: {
         border: "hsl(var(--border))",
