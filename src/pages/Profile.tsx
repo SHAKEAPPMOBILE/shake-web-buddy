@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
 import { Switch } from "@/components/ui/switch";
 import { NationalitySelector } from "@/components/NationalitySelector";
+import { ChangePhoneDialog } from "@/components/ChangePhoneDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +39,6 @@ export default function Profile() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [originalPhoneNumber, setOriginalPhoneNumber] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +47,7 @@ export default function Profile() {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+  const [showChangePhone, setShowChangePhone] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -90,7 +91,6 @@ export default function Profile() {
         console.error("Error fetching private profile:", privateError);
       } else if (privateProfile) {
         setPhoneNumber(privateProfile.phone_number || "");
-        setOriginalPhoneNumber(privateProfile.phone_number || "");
         setPushNotificationsEnabled(privateProfile.push_notifications_enabled ?? true);
       }
 
@@ -174,14 +174,9 @@ export default function Profile() {
       if (publicError) throw publicError;
 
       // Update private profile for push notifications and phone number (if adding new)
-      const privateUpdateData: { push_notifications_enabled: boolean; phone_number?: string } = {
+      const privateUpdateData: { push_notifications_enabled: boolean } = {
         push_notifications_enabled: pushNotificationsEnabled,
       };
-      
-      // Only allow adding phone number if it was originally empty
-      if (!originalPhoneNumber && phoneNumber.trim()) {
-        privateUpdateData.phone_number = phoneNumber.trim();
-      }
       
       const { error: privateError } = await supabase
         .from("profiles_private")
@@ -189,11 +184,6 @@ export default function Profile() {
         .eq("user_id", user.id);
 
       if (privateError) throw privateError;
-
-      // Update original phone number if we just added it
-      if (!originalPhoneNumber && phoneNumber.trim()) {
-        setOriginalPhoneNumber(phoneNumber.trim());
-      }
 
       toast.success("Profile saved!");
       triggerConfettiWaterfall();
@@ -317,25 +307,27 @@ export default function Profile() {
             {/* Phone */}
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
-              {phoneNumber ? (
-                <>
-                  <Input
-                    id="phone"
-                    value={phoneNumber}
-                    readOnly
-                    disabled
-                    className="bg-muted"
-                  />
-                  <p className="text-xs text-muted-foreground">Phone number cannot be changed</p>
-                </>
-              ) : (
+              <div className="space-y-2">
                 <Input
                   id="phone"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Add your phone number"
+                  readOnly
+                  disabled
+                  className="bg-muted"
+                  placeholder="No phone number added"
                 />
-              )}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => setShowChangePhone(true)}
+                >
+                  {phoneNumber ? "Change phone number" : "Add phone number"}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  For safety, phone numbers can only be changed via SMS verification.
+                </p>
+              </div>
             </div>
 
             {/* Nationality */}
@@ -500,6 +492,16 @@ export default function Profile() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ChangePhoneDialog
+        open={showChangePhone}
+        onOpenChange={setShowChangePhone}
+        currentPhone={phoneNumber || null}
+        onPhoneUpdated={(newPhone) => {
+          setPhoneNumber(newPhone);
+          toast.success("Phone number updated");
+        }}
+      />
     </div>
   );
 }
