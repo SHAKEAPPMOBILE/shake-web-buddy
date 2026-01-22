@@ -183,80 +183,40 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
   // Full home tab for logged in users
   return (
-    <div className="flex flex-col h-full px-6 text-center pt-16 overflow-y-auto pb-24 relative">
-      {/* Backdrop for focused mode - clicking outside carousel closes it */}
+    <>
+      {/* Carousel Overlay - Fixed fullscreen, no scroll, perfectly centered */}
       {showActivities && (
         <div 
-          className="fixed inset-0 z-10 bg-background/80 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md"
           onClick={handleBackdropClick}
-        />
-      )}
-
-      {/* Welcome Message - hidden in focused mode */}
-      <div className={cn(
-        "mb-8 transition-all duration-300",
-        showActivities && "opacity-0 pointer-events-none"
-      )}>
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border mb-6">
-          <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
-          <span className="text-sm text-muted-foreground">
-            Real connections, real life.
-          </span>
-        </div>
-
-        <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">
-          <span className="transition-opacity duration-500 block">
-            {meetPhrases[currentPhraseIndex]}
-          </span>
-          <span className="text-gradient block mt-2">SHAKE up your life.</span>
-        </h1>
-      </div>
-
-      {/* Center Area - Circle with Handshake or Activity Carousel */}
-      <div 
-        className={cn(
-          "relative mb-8 flex flex-col items-center justify-center transition-all duration-300",
-          showActivities && "z-20 flex-1 justify-center"
-        )}
-      >
-        {!showActivities ? (
-          /* Default handshake circle */
+        >
           <div 
-            className={cn(
-              "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
-              isShaking && "animate-shake-center"
-            )}
-          >
-            <span className="text-5xl">🤝</span>
-          </div>
-        ) : (
-          /* Carousel mode - everything centered */
-          <div 
-            className="flex flex-col items-center justify-center w-full"
+            className="flex flex-col items-center justify-center w-full px-6"
+            onClick={(e) => e.stopPropagation()}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
             {/* Day Name - Above the circle */}
-            <div className="mb-6 animate-fade-in text-center">
+            <div className="mb-8 animate-fade-in text-center">
               <div className="text-4xl md:text-5xl font-handwritten text-foreground">
                 This {dayName}
               </div>
             </div>
 
             {/* Activity circle with arrows on sides */}
-            <div className="relative flex items-center justify-center w-full max-w-sm mx-auto">
+            <div className="flex items-center justify-center w-full max-w-sm mx-auto">
               {/* Left Arrow */}
               <button
                 onClick={goToPrevious}
-                className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors z-30 shrink-0"
+                className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors shrink-0"
               >
                 <ChevronLeft className="w-6 h-6 text-foreground" />
               </button>
 
-              {/* Circle */}
+              {/* Circle with float animation */}
               <div 
-                className="w-40 h-40 mx-6 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-2xl cursor-pointer transition-all hover:scale-105 shrink-0"
+                className="w-40 h-40 mx-6 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
                 onTouchStart={(e) => {
                   e.stopPropagation();
                   const a = orderedActivities[currentActivityIndex];
@@ -278,14 +238,14 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
               {/* Right Arrow */}
               <button
                 onClick={goToNext}
-                className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors z-30 shrink-0"
+                className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors shrink-0"
               >
                 <ChevronRight className="w-6 h-6 text-foreground" />
               </button>
             </div>
 
             {/* Activity Label - Below the circle */}
-            <div className="mt-6 animate-fade-in text-center">
+            <div className="mt-8 animate-fade-in text-center">
               <div className="text-xl font-semibold text-foreground">{currentActivity?.label}</div>
             </div>
 
@@ -305,27 +265,53 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
               ))}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Extra spacing when activities are shown */}
-      {showActivities && <div className="h-20" />}
-
-      {/* Global participants - hidden in focused mode */}
+      {/* Main content - hidden when carousel is active */}
       <div className={cn(
-        "mb-3 transition-all duration-300",
-        showActivities && "opacity-0 pointer-events-none"
+        "flex flex-col h-full px-6 text-center pt-16 overflow-y-auto pb-24 relative",
+        showActivities && "overflow-hidden"
       )}>
-        <GlobalParticipantsSection />
-      </div>
+        {/* Welcome Message */}
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border mb-6">
+            <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
+            <span className="text-sm text-muted-foreground">
+              Real connections, real life.
+            </span>
+          </div>
 
-      {/* Theme toggle - hidden in focused mode */}
-      <div className={cn(
-        "flex justify-center mb-6 transition-all duration-300",
-        showActivities && "opacity-0 pointer-events-none"
-      )}>
-        <ThemeToggle />
+          <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">
+            <span className="transition-opacity duration-500 block">
+              {meetPhrases[currentPhraseIndex]}
+            </span>
+            <span className="text-gradient block mt-2">SHAKE up your life.</span>
+          </h1>
+        </div>
+
+        {/* Center Area - Circle with Handshake */}
+        <div className="relative mb-8 flex flex-col items-center justify-center">
+          <div 
+            className={cn(
+              "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
+              isShaking && "animate-shake-center"
+            )}
+          >
+            <span className="text-5xl">🤝</span>
+          </div>
+        </div>
+
+        {/* Global participants */}
+        <div className="mb-3">
+          <GlobalParticipantsSection />
+        </div>
+
+        {/* Theme toggle */}
+        <div className="flex justify-center mb-6">
+          <ThemeToggle />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
