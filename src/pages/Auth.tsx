@@ -1592,19 +1592,7 @@ export default function Auth() {
             </form>
           )}
 
-          {/* Toggle - only show on phone step */}
-          {step === 'phone' && (
-            <p className="text-center text-sm text-muted-foreground">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary hover:underline font-medium"
-              >
-                {isLogin ? "Sign up" : "Sign in"}
-              </button>
-            </p>
-          )}
+          {/* Phone step: no sign up/sign in toggle copy */}
 
           {/* Subtle progress dots for profile creation steps */}
           {(step === 'name' || step === 'social' || step === 'avatar') && (
