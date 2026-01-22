@@ -17,6 +17,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import NotFound from "./pages/NotFound";
+import Welcome from "./pages/Welcome";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
                 <Routes>
                   <Route path="/*" element={<IOSAppLayout />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/welcome" element={<Welcome />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
