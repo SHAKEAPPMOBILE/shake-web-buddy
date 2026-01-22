@@ -728,7 +728,14 @@ export default function Auth() {
             )}
 
             {/* Step title */}
-            {!(step === 'name' || step === 'social' || step === 'avatar' || step === 'method') && (
+            {!(
+              step === 'name' ||
+              step === 'nationality' ||
+              step === 'occupation' ||
+              step === 'social' ||
+              step === 'avatar' ||
+              step === 'method'
+            ) && (
               <div className="flex flex-col items-center gap-2 mb-6">
                 <h1 className="text-2xl font-display font-bold text-black">
                   {step === 'otp' 
@@ -760,25 +767,17 @@ export default function Auth() {
             )}
 
             {/* Profile steps header */}
-            {(step === 'name' || step === 'nationality' || step === 'occupation' || step === 'social' || step === 'avatar') && (
+            {(step === 'name' || step === 'social' || step === 'avatar') && (
               <div className="flex flex-col items-center gap-2 mb-6 sm:mb-8">
                 <h1 className="text-2xl font-display font-bold text-foreground">
                   {step === 'name'
                     ? "Let's create your profile."
-                    : step === 'nationality'
-                    ? "Where are you from?"
-                    : step === 'occupation'
-                    ? "What do you do?"
                     : step === 'social'
                     ? "Social Links"
                     : "Profile Picture"}
                 </h1>
                 <p className="text-muted-foreground text-center">
-                  {step === 'nationality'
-                    ? "Tell us your nationality"
-                    : step === 'occupation'
-                    ? "Share your profession or field"
-                    : step === 'social'
+                  {step === 'social'
                     ? "Connect your social profiles (optional)"
                     : step === 'avatar'
                     ? "Choose an avatar or upload your own"
