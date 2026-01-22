@@ -616,7 +616,7 @@ export default function Auth() {
         </>
       )}
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 w-full overflow-y-auto">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center w-full overflow-y-auto px-4 py-6 sm:py-10">
         <button
           onClick={handleBack}
           className="absolute top-[calc(3rem+env(safe-area-inset-top,0px))] left-[calc(1.25rem+env(safe-area-inset-left,0px))] flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors z-50 p-2 -m-2"
@@ -625,7 +625,7 @@ export default function Auth() {
           <span className="text-sm font-medium">Back</span>
         </button>
 
-        <div className="w-full max-w-md space-y-8 px-2 flex flex-col min-h-[calc(100vh-120px)]">
+        <div className="w-full max-w-md space-y-6 sm:space-y-8 px-2 flex flex-col">
           {/* Main content area */}
           <div className="flex-1">
             {/* Method selection step - clean white background with centered options */}
@@ -634,7 +634,7 @@ export default function Auth() {
                 <img 
                   src={logoShake} 
                   alt="SHAKE" 
-                  className="w-24 h-24 object-contain mb-2"
+                  className="w-20 h-20 sm:w-24 sm:h-24 object-contain mb-2"
                 />
                 <div className="text-center mb-8">
                   <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
@@ -708,11 +708,11 @@ export default function Auth() {
 
             {/* Logo - use the big logo lockup for all onboarding steps (avoid the small duplicate logo) */}
             {step !== 'method' && (
-              <div className="flex flex-col items-center mb-8">
+              <div className="flex flex-col items-center mb-6 sm:mb-8">
                 <img 
                   src={logoShake} 
                   alt="SHAKE" 
-                  className="w-28 h-28 object-contain mb-4"
+                  className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-contain mb-4"
                 />
                 <div className="text-center">
                   <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
@@ -755,7 +755,7 @@ export default function Auth() {
 
             {/* Profile steps header */}
             {(step === 'name' || step === 'nationality' || step === 'occupation' || step === 'social' || step === 'avatar') && (
-              <div className="flex flex-col items-center gap-2 mb-8">
+              <div className="flex flex-col items-center gap-2 mb-6 sm:mb-8">
                 <h1 className="text-2xl font-display font-bold text-foreground">
                   {step === 'name'
                     ? "Let's create your profile."
