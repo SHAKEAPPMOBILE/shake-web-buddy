@@ -214,7 +214,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header with back button */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border safe-area-top">
         <div className="flex items-center justify-between px-4 h-14">
@@ -244,7 +244,7 @@ export default function Profile() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 pt-20 pb-8 px-4 overflow-y-auto">
+      <main className="flex-1 min-h-0 pt-20 px-4 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]">
         <div className="max-w-md mx-auto space-y-6">
           {/* Profile Header */}
           <div className="flex flex-col items-center py-6">
@@ -442,7 +442,7 @@ export default function Profile() {
       </main>
 
       {/* Footer */}
-      <footer className="pb-8 px-4">
+      <footer className="pb-8 px-4 safe-area-bottom">
         <p className="text-center text-sm text-muted-foreground">
           Made with ❤️ for social butterflies
         </p>
