@@ -616,7 +616,7 @@ export default function Auth() {
         </>
       )}
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center w-full overflow-y-auto px-4 py-6 sm:py-10">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center w-full overflow-hidden px-4 py-6 sm:py-10">
         <button
           onClick={handleBack}
           className="absolute top-[calc(3rem+env(safe-area-inset-top,0px))] left-[calc(1.25rem+env(safe-area-inset-left,0px))] flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors z-50 p-2 -m-2"
@@ -625,9 +625,26 @@ export default function Auth() {
           <span className="text-sm font-medium">Back</span>
         </button>
 
-        <div className="w-full max-w-md space-y-6 sm:space-y-8 px-2 flex flex-col">
-          {/* Main content area */}
-          <div className="flex-1">
+        <div className="w-full max-w-md px-2 flex flex-col flex-1 min-h-0">
+          {/* Fixed logo/header (so only the form scrolls on short screens) */}
+          {step !== 'method' && (
+            <div className="shrink-0 pt-2">
+              <div className="flex flex-col items-center">
+                <img
+                  src={logoShake}
+                  alt="SHAKE"
+                  className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-contain mb-3"
+                />
+                <div className="text-center">
+                  <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
+                  <p className="text-lg font-display font-medium text-gray-600 tracking-[0.3em] mt-1">SOCIAL</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Scrollable content area (only when needed) */}
+          <div className="flex-1 min-h-0 overflow-y-auto pt-6 sm:pt-8">
             {/* Method selection step - clean white background with centered options */}
             {step === 'method' && (
               <div className="flex flex-col items-center justify-center h-full gap-6 animate-fade-in">
@@ -706,21 +723,6 @@ export default function Auth() {
               </div>
             )}
 
-            {/* Logo - use the big logo lockup for all onboarding steps (avoid the small duplicate logo) */}
-            {step !== 'method' && (
-              <div className="flex flex-col items-center mb-6 sm:mb-8">
-                <img 
-                  src={logoShake} 
-                  alt="SHAKE" 
-                  className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-contain mb-4"
-                />
-                <div className="text-center">
-                  <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
-                  <p className="text-lg font-display font-medium text-gray-600 tracking-[0.3em] mt-1">SOCIAL</p>
-                </div>
-              </div>
-            )}
-
             {/* Step title */}
             {!(step === 'name' || step === 'social' || step === 'avatar' || step === 'method') && (
               <div className="flex flex-col items-center gap-2 mb-6">
@@ -780,7 +782,6 @@ export default function Auth() {
                 </p>
               </div>
             )}
-
           {/* Phone Number Form - for signup or login with OTP */}
           {step === 'phone' && !usePasswordLogin && (
             <form onSubmit={handleSendOtp} className="space-y-4">
