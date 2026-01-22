@@ -133,6 +133,42 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_change_requests: {
+        Row: {
+          code_hash: string
+          created_at: string
+          expires_at: string
+          id: string
+          last_sent_at: string
+          phone_number: string
+          user_id: string
+          verified_at: string | null
+          verify_attempts: number
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          last_sent_at?: string
+          phone_number: string
+          user_id: string
+          verified_at?: string | null
+          verify_attempts?: number
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_sent_at?: string
+          phone_number?: string
+          user_id?: string
+          verified_at?: string | null
+          verify_attempts?: number
+        }
+        Relationships: []
+      }
       plan_messages: {
         Row: {
           activity_id: string
