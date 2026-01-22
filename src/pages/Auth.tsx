@@ -512,7 +512,7 @@ export default function Auth() {
       triggerConfettiWaterfall();
       
       toast.success("Welcome to Shake! 🎉");
-      navigate("/");
+      navigate("/welcome");
     } catch (error) {
       console.error("Error saving profile:", error);
       toast.error("Failed to save profile");
