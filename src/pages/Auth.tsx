@@ -36,6 +36,8 @@ export default function Auth() {
   const [name, setName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [nationality, setNationality] = useState("");
+  const [nationalityInteracted, setNationalityInteracted] = useState(false);
+  const [nationalityError, setNationalityError] = useState<string | null>(null);
   const [occupation, setOccupation] = useState("");
   const [occupationTouched, setOccupationTouched] = useState(false);
   const [occupationError, setOccupationError] = useState<string | null>(null);
@@ -81,6 +83,15 @@ export default function Auth() {
     if (!trimmed) return null; // optional
     const parsed = occupationSchema.safeParse(trimmed);
     return parsed.success ? null : parsed.error.issues[0]?.message ?? "Invalid occupation";
+  };
+
+  const validateNationality = (raw: string, interacted: boolean): string | null => {
+    if (!interacted) return null; // optional unless the user started interacting
+    const trimmed = raw.trim();
+    if (!trimmed) return "Please select a nationality";
+    // Keep it permissive: prevent extreme values; actual value comes from selector.
+    if (trimmed.length > 60) return "Please keep it under 60 characters";
+    return null;
   };
 
   const getMaxDate = (): string => {
@@ -1321,15 +1332,35 @@ export default function Auth() {
           {step === 'nationality' && (
             <form onSubmit={(e) => {
               e.preventDefault();
+              const err = validateNationality(nationality, nationalityInteracted);
+              setNationalityError(err);
+              if (err) return;
               setStep('occupation');
             }} className="space-y-6">
               <div className="space-y-2">
                 <Label>Nationality</Label>
                 <NationalitySelector
                   value={nationality}
-                  onChange={setNationality}
+                  onChange={(value) => {
+                    setNationality(value);
+                    if (nationalityInteracted) {
+                      setNationalityError(validateNationality(value, true));
+                    }
+                  }}
                   placeholder="Select your nationality"
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setNationalityInteracted(true);
+                      setNationalityError(validateNationality(nationality, true));
+                    }
+                  }}
+                  onSearchChange={() => {
+                    if (!nationalityInteracted) setNationalityInteracted(true);
+                  }}
                 />
+                {nationalityError ? (
+                  <p className="text-xs text-destructive">{nationalityError}</p>
+                ) : null}
               </div>
 
               <div className="flex gap-3">
@@ -1338,7 +1369,10 @@ export default function Auth() {
                   variant="outline"
                   className="flex-1"
                   size="lg"
-                  onClick={() => setStep('occupation')}
+                  onClick={() => {
+                    setNationalityError(null);
+                    setStep('occupation');
+                  }}
                 >
                   Skip
                 </Button>
