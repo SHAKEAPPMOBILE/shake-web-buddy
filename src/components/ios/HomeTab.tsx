@@ -215,13 +215,22 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       {/* Center Area - Circle with Handshake or Activity Carousel */}
       <div 
         className={cn(
-          "relative mb-8 flex items-center justify-center transition-all duration-300",
+          "relative mb-8 flex flex-col items-center justify-center transition-all duration-300",
           showActivities && "z-20 flex-1 items-center"
         )}
         onTouchStart={showActivities ? handleTouchStart : undefined}
         onTouchMove={showActivities ? handleTouchMove : undefined}
         onTouchEnd={showActivities ? handleTouchEnd : undefined}
       >
+        {/* Day Name - Above the circle */}
+        {showActivities && (
+          <div className="mb-6 animate-fade-in text-center">
+            <div className="text-3xl md:text-4xl font-display font-bold text-foreground">
+              This {dayName}
+            </div>
+          </div>
+        )}
+
         <div 
           className={cn(
             "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
@@ -252,11 +261,10 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           )}
         </div>
 
-        {/* Activity Label & Day */}
+        {/* Activity Label - Below the circle */}
         {showActivities && (
-          <div className="mt-4 animate-fade-in absolute -bottom-14 left-1/2 -translate-x-1/2 whitespace-nowrap">
+          <div className="mt-4 animate-fade-in text-center">
             <div className="text-xl font-semibold text-foreground">{currentActivity?.label}</div>
-            <div className="text-sm text-muted-foreground">{dayName}</div>
           </div>
         )}
 
