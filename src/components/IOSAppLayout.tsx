@@ -6,7 +6,7 @@ import { ChatTab } from "./ios/ChatTab";
 import { ProfileTab } from "./ios/ProfileTab";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { ActivityConfirmationDialog } from "./ActivityConfirmationDialog";
-// GroupChatDialog removed - now using full-screen chat views only
+import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { PlansMapDialog } from "./PlansMapDialog";
 import { PremiumDialog } from "./PremiumDialog";
@@ -25,6 +25,7 @@ export function IOSAppLayout() {
   const [activeTab, setActiveTab] = useState("home");
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showClockAnimation, setShowClockAnimation] = useState(false);
+  const [showJoinedConfirmation, setShowJoinedConfirmation] = useState(false);
   const [showPlansMap, setShowPlansMap] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
@@ -154,7 +155,12 @@ export function IOSAppLayout() {
 
   const handleClockAnimationComplete = useCallback(() => {
     setShowClockAnimation(false);
-    // Navigate to chat tab with full-screen view instead of dialog
+    // Show the joined confirmation with venue info and option to join chat
+    setShowJoinedConfirmation(true);
+  }, []);
+
+  const handleJoinGroupChatFromConfirmation = useCallback(() => {
+    // Navigate to chat tab with full-screen view
     setPendingChatActivity({ activityType: selectedActivity, city: activityCity || selectedCity });
     setActiveTab("chat");
     setShowHomeActivities(false);
@@ -280,7 +286,13 @@ export function IOSAppLayout() {
         onComplete={handleClockAnimationComplete}
       />
 
-      {/* GroupChatDialog removed - using full-screen chat views only */}
+      <ActivityJoinedConfirmation
+        open={showJoinedConfirmation}
+        onOpenChange={setShowJoinedConfirmation}
+        activityType={selectedActivity}
+        city={activityCity || selectedCity}
+        onJoinGroupChat={handleJoinGroupChatFromConfirmation}
+      />
 
       <PlansMapDialog
         open={showPlansMap}
