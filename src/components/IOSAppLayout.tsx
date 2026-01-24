@@ -6,7 +6,7 @@ import { ChatTab } from "./ios/ChatTab";
 import { ProfileTab } from "./ios/ProfileTab";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { ActivityConfirmationDialog } from "./ActivityConfirmationDialog";
-import { GroupChatDialog } from "./GroupChatDialog";
+// GroupChatDialog removed - now using full-screen chat views only
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { PlansMapDialog } from "./PlansMapDialog";
 import { PremiumDialog } from "./PremiumDialog";
@@ -24,7 +24,6 @@ import { getOrderedActivities } from "@/data/activityTypes";
 export function IOSAppLayout() {
   const [activeTab, setActiveTab] = useState("home");
   const [showActivityDialog, setShowActivityDialog] = useState(false);
-  const [showChatDialog, setShowChatDialog] = useState(false);
   const [showClockAnimation, setShowClockAnimation] = useState(false);
   const [showPlansMap, setShowPlansMap] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
@@ -32,6 +31,9 @@ export function IOSAppLayout() {
   const [showHomeActivities, setShowHomeActivities] = useState(false);
   const [isHeroShaking, setIsHeroShaking] = useState(false);
   const [isInFullPageChat, setIsInFullPageChat] = useState(false);
+  
+  // State for navigating to chat tab with a specific activity
+  const [pendingChatActivity, setPendingChatActivity] = useState<{ activityType: string; city: string } | null>(null);
 
   // Confirmation state for the HomeTab carousel (the big circle swipe carousel)
   const [showHomeConfirmation, setShowHomeConfirmation] = useState(false);
@@ -114,7 +116,6 @@ export function IOSAppLayout() {
   const actuallyJoinActivity = useCallback(async (activity: string, cityOverride?: string) => {
     // Close any open dialogs first
     setShowActivityDialog(false);
-    setShowChatDialog(false);
 
     // Set the selected activity and city
     setSelectedActivity(activity);
@@ -127,9 +128,10 @@ export function IOSAppLayout() {
         triggerConfettiWaterfall();
         setShowClockAnimation(true);
       } else {
-        // Use the activity parameter directly to ensure correct activity is shown
-        // The state will be updated by setSelectedActivity above
-        setShowChatDialog(true);
+        // Navigate to chat tab with the activity - full screen chat view
+        setPendingChatActivity({ activityType: activity, city: targetCity });
+        setActiveTab("chat");
+        setShowHomeActivities(false);
       }
     }
   }, [joinActivity, selectedCity]);
@@ -152,13 +154,11 @@ export function IOSAppLayout() {
 
   const handleClockAnimationComplete = useCallback(() => {
     setShowClockAnimation(false);
-    setShowChatDialog(true);
-  }, []);
-
-  const handleBackToActivities = () => {
-    setShowChatDialog(false);
+    // Navigate to chat tab with full-screen view instead of dialog
+    setPendingChatActivity({ activityType: selectedActivity, city: activityCity || selectedCity });
+    setActiveTab("chat");
     setShowHomeActivities(false);
-  };
+  }, [selectedActivity, activityCity, selectedCity]);
 
   const handleHomeActivitySelect = async (activity: { id: string; label: string; emoji: string }) => {
     if (!user) {
@@ -202,7 +202,13 @@ export function IOSAppLayout() {
       case "plans":
         return <PlansTab onChatViewChange={handleChatViewChange} />;
       case "chat":
-        return <ChatTab onChatViewChange={handleChatViewChange} />;
+        return (
+          <ChatTab 
+            onChatViewChange={handleChatViewChange} 
+            pendingActivity={pendingChatActivity}
+            onPendingActivityHandled={() => setPendingChatActivity(null)}
+          />
+        );
       case "profile":
         // If user is not logged in, show home tab instead
         if (!user) {
@@ -274,15 +280,7 @@ export function IOSAppLayout() {
         onComplete={handleClockAnimationComplete}
       />
 
-      <GroupChatDialog
-        open={showChatDialog}
-        onOpenChange={setShowChatDialog}
-        activityType={selectedActivity}
-        onBack={handleBackToActivities}
-        attendeeCount={getActivityJoinCount(selectedActivity)}
-        city={activityCity || selectedCity}
-        homeCity={selectedCity}
-      />
+      {/* GroupChatDialog removed - using full-screen chat views only */}
 
       <PlansMapDialog
         open={showPlansMap}

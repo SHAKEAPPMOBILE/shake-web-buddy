@@ -34,9 +34,11 @@ interface ChatActivity {
 
 interface ChatTabProps {
   onChatViewChange?: (isInChat: boolean) => void;
+  pendingActivity?: { activityType: string; city: string } | null;
+  onPendingActivityHandled?: () => void;
 }
 
-export function ChatTab({ onChatViewChange }: ChatTabProps = {}) {
+export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHandled }: ChatTabProps = {}) {
   const { user } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
@@ -56,6 +58,15 @@ export function ChatTab({ onChatViewChange }: ChatTabProps = {}) {
     const isInChat = showChatDialog || showPlanChatDialog;
     onChatViewChange?.(isInChat);
   }, [showChatDialog, showPlanChatDialog, onChatViewChange]);
+
+  // Handle pending activity from carousel join (open chat immediately)
+  useEffect(() => {
+    if (pendingActivity) {
+      setSelectedChatActivity(pendingActivity);
+      setShowChatDialog(true);
+      onPendingActivityHandled?.();
+    }
+  }, [pendingActivity, onPendingActivityHandled]);
 
   const fetchActivities = useCallback(async () => {
     if (!user) {
