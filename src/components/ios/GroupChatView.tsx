@@ -408,8 +408,8 @@ export function GroupChatView({
 
   return (
     <div className="flex flex-col h-full bg-[hsl(50,40%,92%)]">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-black/10 safe-area-top">
+      {/* Minimal Header */}
+      <div className="flex items-center gap-3 px-4 py-3 safe-area-top">
         <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -439,24 +439,26 @@ export function GroupChatView({
             )
           )}
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={handleMuteToggle}
-          className="shrink-0 text-black/70 hover:text-black hover:bg-black/10"
-          title={isMuted ? "Unmute notifications" : "Mute notifications"}
-        >
-          {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={handleLeaveActivity}
-          className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-          title="Leave activity"
-        >
-          <LogOut className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleMuteToggle}
+            className="shrink-0 text-black/50 hover:text-black hover:bg-black/10 h-8 w-8"
+            title={isMuted ? "Unmute notifications" : "Mute notifications"}
+          >
+            {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleLeaveActivity}
+            className="shrink-0 text-destructive/70 hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+            title="Leave activity"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Attendees section */}
