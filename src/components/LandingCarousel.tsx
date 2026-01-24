@@ -20,38 +20,53 @@ import iconDinner from "@/assets/icon-dinner.png";
 import iconDrinks from "@/assets/icon-drinks.png";
 import iconHike from "@/assets/icon-hike.png";
 
-// Row 1 & 5: Dense, continuous avatars only (no gaps)
+// Row 1: Mix of avatars and activity icons
 const row1Continuous = [
   { type: "avatar", src: avatar1 },
+  { type: "icon", src: iconLunch },
   { type: "avatar", src: avatar2 },
   { type: "avatar", src: avatar3 },
+  { type: "icon", src: iconDrinks },
   { type: "avatar", src: avatar4 },
   { type: "avatar", src: avatar5 },
+  { type: "icon", src: iconHike },
   { type: "avatar", src: avatar6 },
   { type: "avatar", src: avatar7 },
+  { type: "icon", src: iconDinner },
   { type: "avatar", src: avatar8 },
   { type: "avatar", src: avatar9 },
+  { type: "icon", src: iconLunch },
   { type: "avatar", src: avatar11 },
   { type: "avatar", src: avatar12 },
+  { type: "icon", src: iconDrinks },
   { type: "avatar", src: avatar13 },
   { type: "avatar", src: avatar14 },
+  { type: "icon", src: iconHike },
   { type: "avatar", src: avatar15 },
 ];
 
+// Row 2: Mix of avatars and activity icons (reversed order)
 const row5Continuous = [
   { type: "avatar", src: avatar15 },
+  { type: "icon", src: iconDinner },
   { type: "avatar", src: avatar14 },
   { type: "avatar", src: avatar13 },
+  { type: "icon", src: iconLunch },
   { type: "avatar", src: avatar12 },
   { type: "avatar", src: avatar11 },
+  { type: "icon", src: iconDrinks },
   { type: "avatar", src: avatar9 },
   { type: "avatar", src: avatar8 },
+  { type: "icon", src: iconHike },
   { type: "avatar", src: avatar7 },
   { type: "avatar", src: avatar6 },
+  { type: "icon", src: iconDinner },
   { type: "avatar", src: avatar5 },
   { type: "avatar", src: avatar4 },
+  { type: "icon", src: iconLunch },
   { type: "avatar", src: avatar3 },
   { type: "avatar", src: avatar2 },
+  { type: "icon", src: iconHike },
   { type: "avatar", src: avatar1 },
 ];
 
