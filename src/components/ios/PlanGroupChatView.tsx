@@ -318,8 +318,8 @@ export function PlanGroupChatView({
 
   return (
     <div className="flex flex-col h-full bg-[hsl(50,40%,92%)]">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-black/10 safe-area-top">
+      {/* Minimal Header */}
+      <div className="flex items-center gap-3 px-4 py-3 safe-area-top">
         <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -328,43 +328,23 @@ export function PlanGroupChatView({
             <span>{getActivityEmoji(activity.activity_type)}</span>
             <span className="truncate">{getActivityLabel(activity.activity_type)}</span>
           </h1>
-          {activity.note && (
-            <p className="text-sm text-black/80 italic truncate">"{activity.note}"</p>
-          )}
           <p className="text-sm text-black/60">
-            {activity.city} • {format(new Date(activity.scheduled_for), "EEE, MMM d")}
+            {format(new Date(activity.scheduled_for), "EEEE")} • {activity.note ? `"${activity.note}"` : (
+              mapsUrl ? (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  📍 {location}
+                </a>
+              ) : `📍 ${location}`
+            )}
           </p>
-          {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "brunch") && (
-            mapsUrl ? (
-              <a
-                href={mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-primary hover:underline"
-              >
-                📍 {location}
-              </a>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                📍 {location}
-              </span>
-            )
-          )}
-          <button
-            className="text-xs text-black/50 mt-0.5 hover:underline cursor-pointer text-left block"
-            onClick={() => {
-              setSelectedUserProfile({
-                userId: activity.user_id,
-                userName: activity.creator_name || null,
-                avatarUrl: activity.creator_avatar || null,
-              });
-            }}
-          >
-            By {activity.creator_name}
-          </button>
         </div>
         <button
-          className="flex items-center gap-1 text-black/70 shrink-0 hover:text-black transition-colors"
+          className="flex items-center gap-1 text-black/50 shrink-0 hover:text-black transition-colors"
           onClick={() => setShowParticipantsDialog(true)}
         >
           <Users className="w-4 h-4" />
