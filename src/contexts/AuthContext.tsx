@@ -16,6 +16,9 @@ interface AuthContextType {
   signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
   signInWithPassword: (phone: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
+  signUpWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
+  resetPasswordWithEmail: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   checkSubscription: () => Promise<void>;
@@ -268,6 +271,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const signUpWithEmail = async (email: string, password: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+    return { error: error as Error | null };
+  };
+
+  const signInWithEmail = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error: error as Error | null };
+  };
+
+  const resetPasswordWithEmail = async (email: string) => {
+    const redirectUrl = `${window.location.origin}/auth?mode=reset`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    });
+    return { error: error as Error | null };
+  };
+
   const signInWithGoogle = async () => {
     // Web: browser redirect back to current origin
     // Native: use deep link + exchangeCodeForSession via appUrlOpen listener
@@ -331,6 +362,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithPhone,
         signInWithPassword,
         signInWithGoogle,
+        signUpWithEmail,
+        signInWithEmail,
+        resetPasswordWithEmail,
         updatePassword,
         verifyOtp,
         signOut,
