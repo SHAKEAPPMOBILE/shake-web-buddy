@@ -31,7 +31,6 @@ const REPORT_REASONS: { value: ReportReason; label: string; description: string 
   { value: "harassment", label: "Harassment", description: "Bullying, threats, or abusive behavior" },
   { value: "inappropriate_content", label: "Inappropriate Content", description: "Offensive images, language, or behavior" },
   { value: "fake_profile", label: "Fake Profile", description: "Impersonation or misleading information" },
-  { value: "underage", label: "Underage User", description: "User appears to be under 18" },
   { value: "other", label: "Other", description: "Something else not listed above" },
 ];
 
