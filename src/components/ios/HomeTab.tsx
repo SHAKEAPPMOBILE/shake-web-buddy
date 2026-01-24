@@ -127,7 +127,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   // Landing page for logged out users
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-background">
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-background pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
         {/* SHAKE Logo */}
         <img
           src={shakeLogo}
@@ -270,7 +270,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
       {/* Main content - hidden when carousel is active */}
       <div className={cn(
-        "flex flex-col h-full px-6 text-center pt-16 overflow-y-auto pb-24 relative",
+        "flex flex-col h-full px-6 text-center pt-[calc(env(safe-area-inset-top,0px)+4rem)] overflow-y-auto pb-24 relative",
         showActivities && "overflow-hidden"
       )}>
         {/* Welcome Message */}
