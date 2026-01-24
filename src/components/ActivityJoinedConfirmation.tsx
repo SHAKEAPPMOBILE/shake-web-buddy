@@ -54,7 +54,7 @@ export function ActivityJoinedConfirmation({
           
           {activityDay && (
             <p className="text-sm text-muted-foreground">
-              Every {activityDay}
+              This {activityDay}
             </p>
           )}
         </div>
