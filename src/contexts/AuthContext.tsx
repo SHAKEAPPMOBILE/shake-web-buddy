@@ -1,8 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { Capacitor } from "@capacitor/core";
-import { App as CapApp } from "@capacitor/app";
-import { Browser } from "@capacitor/browser";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
@@ -138,30 +135,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    let urlOpenListener: any = null;
-
-    // Native (Capacitor) OAuth: catch the deep link and exchange the code for a session
-    if (Capacitor.isNativePlatform()) {
-      CapApp.addListener("appUrlOpen", async ({ url }) => {
-        if (!url) return;
-        if (!url.startsWith("shake://auth/callback")) return;
-
-        // Close the in-app browser and finish the auth exchange
-        try {
-          await Browser.close();
-        } catch {
-          // ignore
-        }
-
-        try {
-          await supabase.auth.exchangeCodeForSession(url);
-        } catch {
-          console.log("OAuth code exchange failed");
-        }
-      }).then((handle) => {
-        urlOpenListener = handle;
-      });
-    }
 
     // Set up auth state listener FIRST
     const {
@@ -207,7 +180,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       subscription.unsubscribe();
-      urlOpenListener?.remove();
     };
   }, []);
 
