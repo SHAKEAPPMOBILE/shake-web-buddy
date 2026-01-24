@@ -30,7 +30,6 @@ const REPORT_REASONS: { value: ReportReason; label: string; description: string 
   { value: "spam", label: "Spam", description: "Promotional content or repetitive messages" },
   { value: "harassment", label: "Harassment", description: "Bullying, threats, or abusive behavior" },
   { value: "inappropriate_content", label: "Inappropriate Content", description: "Offensive images, language, or behavior" },
-  { value: "fake_profile", label: "Fake Profile", description: "Impersonation or misleading information" },
   { value: "other", label: "Other", description: "Something else not listed above" },
 ];
 
