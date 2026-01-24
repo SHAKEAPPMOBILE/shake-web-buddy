@@ -155,8 +155,12 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
           {/* Tagline */}
           <p
-            className="text-lg font-medium text-foreground/80 mb-8 animate-fade-in opacity-0"
-            style={{ animationDelay: "250ms", animationFillMode: "forwards" }}
+            className="text-2xl text-foreground/80 mb-8 animate-fade-in opacity-0"
+            style={{ 
+              animationDelay: "250ms", 
+              animationFillMode: "forwards",
+              fontFamily: "'Sue Ellen Francisco', cursive"
+            }}
           >
             Connection happens offline.
           </p>
