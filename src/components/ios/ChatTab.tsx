@@ -32,7 +32,11 @@ interface ChatActivity {
   note?: string | null;
 }
 
-export function ChatTab() {
+interface ChatTabProps {
+  onChatViewChange?: (isInChat: boolean) => void;
+}
+
+export function ChatTab({ onChatViewChange }: ChatTabProps = {}) {
   const { user } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
@@ -46,6 +50,12 @@ export function ChatTab() {
   const [selectedChatActivity, setSelectedChatActivity] = useState<{ activityType: string; city: string } | null>(null);
   const [selectedPlanActivity, setSelectedPlanActivity] = useState<any>(null);
   const { getActivityJoinCount } = useActivityJoins(selectedCity);
+
+  // Notify parent when entering/leaving chat view
+  useEffect(() => {
+    const isInChat = showChatDialog || showPlanChatDialog;
+    onChatViewChange?.(isInChat);
+  }, [showChatDialog, showPlanChatDialog, onChatViewChange]);
 
   const fetchActivities = useCallback(async () => {
     if (!user) {

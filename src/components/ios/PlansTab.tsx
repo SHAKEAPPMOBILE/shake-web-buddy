@@ -5,8 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PlansMapDialog } from "../PlansMapDialog";
 import { PremiumDialog } from "../PremiumDialog";
 import { CreateActivityDialog } from "../CreateActivityDialog";
-import { PlanGroupChatDialog } from "../PlanGroupChatDialog";
-import { GroupChatDialog } from "../GroupChatDialog";
+import { PlanGroupChatView } from "./PlanGroupChatView";
+import { GroupChatView } from "./GroupChatView";
 import { format } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -45,7 +45,11 @@ interface PlanActivity {
   isCarouselJoin?: boolean;
 }
 
-export function PlansTab() {
+interface PlansTabProps {
+  onChatViewChange?: (isInChat: boolean) => void;
+}
+
+export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
   const { selectedCity } = useCity();
   const { user, isPremium } = useAuth();
   const [activities, setActivities] = useState<PlanActivity[]>([]);
@@ -226,10 +230,16 @@ export function PlansTab() {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
-  const [showChatDialog, setShowChatDialog] = useState(false);
+  const [showChatView, setShowChatView] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
   const [selectedCarouselActivity, setSelectedCarouselActivity] = useState<PlanActivity | null>(null);
-  const [showCarouselChatDialog, setShowCarouselChatDialog] = useState(false);
+  const [showCarouselChatView, setShowCarouselChatView] = useState(false);
+
+  // Notify parent when entering/leaving chat view
+  useEffect(() => {
+    const isInChat = showChatView || showCarouselChatView;
+    onChatViewChange?.(isInChat);
+  }, [showChatView, showCarouselChatView, onChatViewChange]);
 
   // Get unique cities from all activities for the filter
   const availableCities = useMemo(() => {
@@ -269,11 +279,19 @@ export function PlansTab() {
   const handlePlanClick = (plan: PlanActivity) => {
     if (plan.isCarouselJoin) {
       setSelectedCarouselActivity(plan);
-      setShowCarouselChatDialog(true);
+      setShowCarouselChatView(true);
       return;
     }
     setSelectedPlan(plan);
-    setShowChatDialog(true);
+    setShowChatView(true);
+  };
+
+  const handleBackFromChat = () => {
+    setShowChatView(false);
+    setShowCarouselChatView(false);
+    setSelectedPlan(null);
+    setSelectedCarouselActivity(null);
+    fetchPlans();
   };
 
   const handleDeletePlan = async () => {
@@ -309,6 +327,34 @@ export function PlansTab() {
       toast.error("Failed to delete plan");
     }
   };
+
+  // Show full-page PlanGroupChatView when a plan is selected
+  if (selectedPlan && showChatView) {
+    return (
+      <PlanGroupChatView
+        activity={{
+          ...selectedPlan,
+          note: selectedPlan.note,
+          created_at: selectedPlan.scheduled_for,
+          updated_at: selectedPlan.scheduled_for,
+          participant_count: selectedPlan.participant_count || 0,
+        }}
+        onBack={handleBackFromChat}
+      />
+    );
+  }
+
+  // Show full-page GroupChatView when a carousel activity is selected
+  if (selectedCarouselActivity && showCarouselChatView) {
+    return (
+      <GroupChatView
+        activityType={selectedCarouselActivity.activity_type}
+        city={selectedCarouselActivity.city}
+        onBack={handleBackFromChat}
+        attendeeCount={selectedCarouselActivity.participant_count || 1}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -523,36 +569,6 @@ export function PlansTab() {
         city={selectedCity}
       />
 
-      {/* Plan Chat Dialog */}
-      {selectedPlan && (
-        <PlanGroupChatDialog
-          open={showChatDialog}
-          onOpenChange={setShowChatDialog}
-          activity={{
-            ...selectedPlan,
-            note: selectedPlan.note,
-            created_at: selectedPlan.scheduled_for,
-            updated_at: selectedPlan.scheduled_for,
-          }}
-          onBack={() => setShowChatDialog(false)}
-        />
-      )}
-
-      {/* Carousel Activity Group Chat Dialog */}
-      {selectedCarouselActivity && (
-        <GroupChatDialog
-          open={showCarouselChatDialog}
-          onOpenChange={setShowCarouselChatDialog}
-          activityType={selectedCarouselActivity.activity_type}
-          city={selectedCarouselActivity.city}
-          attendeeCount={selectedCarouselActivity.participant_count || 1}
-          onBack={() => setShowCarouselChatDialog(false)}
-          onLeaveActivity={() => {
-            setShowCarouselChatDialog(false);
-            fetchPlans();
-          }}
-        />
-      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>

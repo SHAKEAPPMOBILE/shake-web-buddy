@@ -31,6 +31,7 @@ export function IOSAppLayout() {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [showHomeActivities, setShowHomeActivities] = useState(false);
   const [isHeroShaking, setIsHeroShaking] = useState(false);
+  const [isInFullPageChat, setIsInFullPageChat] = useState(false);
 
   // Confirmation state for the HomeTab carousel (the big circle swipe carousel)
   const [showHomeConfirmation, setShowHomeConfirmation] = useState(false);
@@ -183,6 +184,10 @@ export function IOSAppLayout() {
     }, 3000);
   }, []);
 
+  const handleChatViewChange = useCallback((isInChat: boolean) => {
+    setIsInFullPageChat(isInChat);
+  }, []);
+
   const renderTab = () => {
     switch (activeTab) {
       case "home":
@@ -195,9 +200,9 @@ export function IOSAppLayout() {
           />
         );
       case "plans":
-        return <PlansTab />;
+        return <PlansTab onChatViewChange={handleChatViewChange} />;
       case "chat":
-        return <ChatTab />;
+        return <ChatTab onChatViewChange={handleChatViewChange} />;
       case "profile":
         // If user is not logged in, show home tab instead
         if (!user) {
@@ -226,14 +231,14 @@ export function IOSAppLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Main content area - fixed height, no scroll */}
-      <main className={cn("flex-1 overflow-hidden safe-area-top", user && "pb-20")}>
+      <main className={cn("flex-1 overflow-hidden safe-area-top", user && !isInFullPageChat && "pb-20")}>
         <div className="h-full">
           {renderTab()}
         </div>
       </main>
 
-      {/* Only show navigation when user is logged in */}
-      {user && <IOSTabBar activeTab={activeTab} onTabChange={handleTabChange} onShakeStart={handleTabBarShake} />}
+      {/* Only show navigation when user is logged in and not in full-page chat */}
+      {user && !isInFullPageChat && <IOSTabBar activeTab={activeTab} onTabChange={handleTabChange} onShakeStart={handleTabBarShake} />}
 
       {/* Dialogs */}
       <ActivitySelectionDialog

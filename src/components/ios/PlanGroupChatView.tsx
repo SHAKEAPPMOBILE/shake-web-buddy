@@ -317,9 +317,9 @@ export function PlanGroupChatView({
   const mapsUrl = getVenueMapsUrl(activity.activity_type, activity.city);
 
   return (
-    <div className="flex flex-col h-full bg-[hsl(50,40%,92%)]">
+    <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50">
       {/* Minimal Header */}
-      <div className="flex items-center gap-3 px-4 py-3 safe-area-top">
+      <div className="flex items-center gap-3 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -465,7 +465,7 @@ export function PlanGroupChatView({
       )}
 
       {/* Input area */}
-      <div className="p-4 pb-6 safe-area-bottom">
+      <div className="p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         {pendingAudio ? (
           <div className="flex items-center gap-2">
             <div className="flex-1 p-2 bg-muted rounded-lg">
