@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoShake from "@/assets/shake-logo-new.png";
-import { ArrowLeft, ChevronDown, Phone, User, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ChevronDown, Phone, User, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff, Mail } from "lucide-react";
 import { BirthdayPicker } from "@/components/BirthdayPicker";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -24,9 +24,11 @@ import { NationalitySelector } from "@/components/NationalitySelector";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
-  const [step, setStep] = useState<'method' | 'phone' | 'otp' | 'name' | 'nationality' | 'occupation' | 'social' | 'avatar' | 'password' | 'forgot' | 'reset'>('method');
+  const [step, setStep] = useState<'method' | 'phone' | 'email' | 'otp' | 'name' | 'nationality' | 'occupation' | 'social' | 'avatar' | 'password' | 'forgot' | 'reset' | 'email-forgot'>('method');
   const [isLogin, setIsLogin] = useState(() => searchParams.get('mode') !== 'signup');
+  const [authMethod, setAuthMethod] = useState<'phone' | 'email'>('phone');
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -53,7 +55,7 @@ export default function Auth() {
   );
   const [countrySearchOpen, setCountrySearchOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
-  const { user, signUpWithPhone, signInWithPhone, signInWithPassword, signInWithGoogle, updatePassword, verifyOtp } = useAuth();
+  const { user, signUpWithPhone, signInWithPhone, signInWithPassword, signInWithGoogle, signUpWithEmail, signInWithEmail, resetPasswordWithEmail, updatePassword, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -607,16 +609,124 @@ export default function Auth() {
     }
   };
 
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await signUpWithEmail(email.trim(), password);
+      if (error) {
+        if (error.message.includes("already registered")) {
+          toast.info("You already have an account, please login instead");
+          setIsLogin(true);
+          setPassword("");
+          setConfirmPassword("");
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.success("Account created! Complete your profile.");
+        setStep('name');
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
+
+    if (!password) {
+      toast.error("Please enter your password");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await signInWithEmail(email.trim(), password);
+      
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          toast.error("Invalid email or password");
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.success("Welcome!");
+        navigate("/");
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailForgotPassword = async () => {
+    if (!email.trim()) {
+      toast.error("Please enter your email first");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await resetPasswordWithEmail(email.trim());
+      
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Password reset link sent to your email!");
+        setStep('email-forgot');
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleBack = () => {
     if (step === 'phone') {
       setStep('method');
       setPhoneNumber("");
+    } else if (step === 'email') {
+      setStep('method');
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
     } else if (step === 'otp') {
       setStep('phone');
       setOtpCode("");
     } else if (step === 'forgot') {
       setStep('phone');
       setOtpCode("");
+    } else if (step === 'email-forgot') {
+      setStep('email');
     } else if (step === 'reset') {
       setStep('phone');
       setPassword("");
@@ -680,13 +790,13 @@ export default function Auth() {
           <div className="flex-1 min-h-0 overflow-y-auto pt-[clamp(0.75rem,2vh,2rem)]">
             {/* Method selection step - clean white background with centered options */}
             {step === 'method' && (
-              <div className="flex flex-col items-center justify-center h-full gap-6 animate-fade-in">
+              <div className="flex flex-col items-center justify-center h-full gap-4 animate-fade-in">
                 <img 
                   src={logoShake} 
                   alt="SHAKE" 
                   className="w-20 h-20 sm:w-24 sm:h-24 object-contain mb-2"
                 />
-                <div className="text-center mb-8">
+                <div className="text-center mb-6">
                   <h1 className="text-3xl font-display font-bold text-black tracking-wider">SHAKE</h1>
                   <p className="text-lg font-display font-medium text-gray-600 tracking-[0.3em] mt-1">SOCIAL</p>
                 </div>
@@ -726,11 +836,26 @@ export default function Auth() {
                   <span className="text-gray-700 font-medium">Continue with Google</span>
                 </button>
 
-                {/* Continue with Phone - Login */}
+                {/* Sign in with Email */}
                 <button
                   type="button"
                   onClick={() => {
                     setIsLogin(true);
+                    setAuthMethod('email');
+                    setStep('email');
+                  }}
+                  className="w-full max-w-xs flex items-center justify-center gap-3 px-6 py-3 rounded-full border border-gray-300 bg-transparent hover:bg-gray-50 transition-colors"
+                >
+                  <Mail className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-700 font-medium">Sign in with Email</span>
+                </button>
+
+                {/* Sign in with Phone */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(true);
+                    setAuthMethod('phone');
                     setUsePasswordLogin(true);
                     setStep('phone');
                   }}
@@ -740,11 +865,12 @@ export default function Auth() {
                   <span className="text-gray-700 font-medium">Sign in with Phone</span>
                 </button>
 
-                {/* Create Account with Phone - Signup */}
+                {/* Create Account */}
                 <button
                   type="button"
                   onClick={() => {
                     setIsLogin(false);
+                    setAuthMethod('phone');
                     setUsePasswordLogin(false);
                     setStep('phone');
                   }}
@@ -752,6 +878,19 @@ export default function Auth() {
                 >
                   <User className="w-5 h-5" />
                   <span className="font-medium">Create an Account</span>
+                </button>
+
+                {/* Create Account with Email link */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(false);
+                    setAuthMethod('email');
+                    setStep('email');
+                  }}
+                  className="text-sm text-muted-foreground hover:text-primary"
+                >
+                  Create account with email instead
                 </button>
               </div>
             )}
@@ -775,6 +914,10 @@ export default function Auth() {
                     ? "Reset your password"
                     : step === 'reset'
                     ? "Create new password"
+                    : step === 'email-forgot'
+                    ? "Check your email"
+                    : step === 'email'
+                    ? (isLogin ? "Welcome" : "Create your account")
                     : isLogin 
                       ? "Welcome"
                       : "Create your account"}
@@ -788,10 +931,155 @@ export default function Auth() {
                     ? `We sent a code to ${phoneNumber}`
                     : step === 'reset'
                     ? "Enter your new password"
+                    : step === 'email-forgot'
+                    ? `We sent a password reset link to ${email}`
+                    : step === 'email'
+                    ? (isLogin ? "Sign in with your email" : "Create an account with your email")
                     : isLogin
                       ? (usePasswordLogin ? "Sign in with your password" : "Sign in with your phone number")
                       : "Create your account with your phone number"}
                 </p>
+              </div>
+            )}
+
+            {/* Email Form */}
+            {step === 'email' && (
+              <form onSubmit={isLogin ? handleEmailLogin : handleEmailSignup} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-black">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email-password" className="text-black">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="email-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder={isLogin ? "Enter your password" : "At least 6 characters"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm password for signup */}
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="email-confirm-password" className="text-black">Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="email-confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  size="lg"
+                  disabled={isLoading}
+                >
+                  {isLoading 
+                    ? (isLogin ? "Signing in..." : "Creating account...") 
+                    : (isLogin ? "Sign In" : "Create Account")}
+                </Button>
+
+                <div className="flex flex-col gap-2">
+                  {isLogin && (
+                    <button
+                      type="button"
+                      onClick={handleEmailForgotPassword}
+                      className="text-sm text-muted-foreground hover:text-primary"
+                      disabled={isLoading}
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setPassword("");
+                      setConfirmPassword("");
+                    }}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMethod('phone');
+                      setStep('phone');
+                      setUsePasswordLogin(isLogin);
+                    }}
+                    className="text-sm text-muted-foreground hover:text-primary"
+                  >
+                    Use phone number instead
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Email Forgot Password Confirmation */}
+            {step === 'email-forgot' && (
+              <div className="space-y-6 text-center">
+                <div className="w-16 h-16 mx-auto bg-shake-green/20 rounded-full flex items-center justify-center">
+                  <Mail className="w-8 h-8 text-shake-green" />
+                </div>
+                <p className="text-gray-600">
+                  We've sent a password reset link to <strong>{email}</strong>. 
+                  Check your email and click the link to reset your password.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                  onClick={() => {
+                    setStep('email');
+                    setPassword("");
+                  }}
+                >
+                  Back to Sign In
+                </Button>
               </div>
             )}
 
