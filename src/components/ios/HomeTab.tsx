@@ -7,6 +7,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import shakeLogo from "@/assets/shake-logo-new.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LandingCarousel } from "@/components/LandingCarousel";
 
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
@@ -127,55 +128,69 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   // Landing page for logged out users
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-background pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
-        {/* SHAKE Logo */}
-        <img
-          src={shakeLogo}
-          alt="SHAKE"
-          className="w-32 h-32 object-contain mb-4 animate-fade-in opacity-0"
-          style={{ animationDelay: "0ms", animationFillMode: "forwards" }}
-        />
+      <div className="relative flex flex-col items-center justify-center min-h-screen px-6 text-center bg-background pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] overflow-hidden">
+        {/* Background carousel */}
+        <LandingCarousel />
 
-        {/* SHAKE-SOCIAL text */}
-        <div
-          className="mb-12 text-center animate-fade-in opacity-0"
-          style={{ animationDelay: "200ms", animationFillMode: "forwards" }}
-        >
-          <h1 className="text-3xl font-display font-bold text-foreground tracking-wider">SHAKE</h1>
-          <p className="text-lg font-display font-medium text-muted-foreground tracking-[0.3em] mt-1">
-            SOCIAL
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center">
+          {/* SHAKE Logo */}
+          <img
+            src={shakeLogo}
+            alt="SHAKE"
+            className="w-32 h-32 object-contain mb-4 animate-fade-in opacity-0"
+            style={{ animationDelay: "0ms", animationFillMode: "forwards" }}
+          />
+
+          {/* SHAKE-SOCIAL text */}
+          <div
+            className="mb-6 text-center animate-fade-in opacity-0"
+            style={{ animationDelay: "200ms", animationFillMode: "forwards" }}
+          >
+            <h1 className="text-3xl font-display font-bold text-foreground tracking-wider">SHAKE</h1>
+            <p className="text-lg font-display font-medium text-muted-foreground tracking-[0.3em] mt-1">
+              SOCIAL
+            </p>
+          </div>
+
+          {/* Tagline */}
+          <p
+            className="text-lg font-medium text-foreground/80 mb-8 animate-fade-in opacity-0"
+            style={{ animationDelay: "250ms", animationFillMode: "forwards" }}
+          >
+            Connection happens offline.
           </p>
-        </div>
 
-        {/* Let's Shake! button */}
-        <button
-          onClick={() => navigate("/auth")}
-          className="px-8 py-3 rounded-full text-white font-medium transition-all hover:opacity-90 hover:scale-105 animate-fade-in opacity-0"
-          style={{
-            animationDelay: "300ms",
-            animationFillMode: "forwards",
-            background: "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))",
-          }}
-        >
-          Let's Shake!
-        </button>
+          {/* Let's Shake! button */}
+          <button
+            onClick={() => navigate("/auth")}
+            className="px-8 py-3 rounded-full text-white font-medium transition-all hover:opacity-90 hover:scale-105 animate-fade-in opacity-0"
+            style={{
+              animationDelay: "300ms",
+              animationFillMode: "forwards",
+              background: "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))",
+            }}
+          >
+            Let's Shake!
+          </button>
 
-        {/* Terms and Privacy disclaimer */}
-        <div
-          className="text-sm text-muted-foreground mt-6 animate-fade-in opacity-0"
-          style={{ animationDelay: "450ms", animationFillMode: "forwards" }}
-        >
-          <p>By continuing, you agree to our</p>
-          <p>
-            <Link to="/terms-of-service" className="underline hover:text-foreground">
-              terms
-            </Link>{" "}
-            and{" "}
-            <Link to="/privacy-policy" className="underline hover:text-foreground">
-              privacy policy
-            </Link>
-            .
-          </p>
+          {/* Terms and Privacy disclaimer */}
+          <div
+            className="text-sm text-muted-foreground mt-6 animate-fade-in opacity-0"
+            style={{ animationDelay: "450ms", animationFillMode: "forwards" }}
+          >
+            <p>By continuing, you agree to our</p>
+            <p>
+              <Link to="/terms-of-service" className="underline hover:text-foreground">
+                terms
+              </Link>{" "}
+              and{" "}
+              <Link to="/privacy-policy" className="underline hover:text-foreground">
+                privacy policy
+              </Link>
+              .
+            </p>
+          </div>
         </div>
       </div>
     );
