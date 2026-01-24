@@ -68,7 +68,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full pt-[env(safe-area-inset-top,0px)]">
       {/* Profile Header - Clickable to view own profile */}
       <button
         onClick={() => setShowProfileDialog(true)}
