@@ -2,6 +2,160 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --background: 270 50% 8%;
+    --foreground: 270 20% 95%;
+    
+    --card: 270 45% 12%;
+    --card-foreground: 270 20% 95%;
+    
+    --popover: 270 45% 10%;
+    --popover-foreground: 270 20% 95%;
+    
+    --primary: 270 70% 60%;
+    --primary-foreground: 270 20% 98%;
+    
+    --secondary: 270 30% 20%;
+    --secondary-foreground: 270 20% 95%;
+    
+    --muted: 270 25% 18%;
+    --muted-foreground: 270 15% 60%;
+    
+    --accent: 270 40% 25%;
+    --accent-foreground: 270 20% 95%;
+    
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 270 30% 20%;
+    --input: 270 30% 18%;
+    --ring: 270 70% 60%;
+    
+    --radius: 0.75rem;
+    
+    /* Shake brand colors */
+    --shake-coral: 12 85% 62%;
+    --shake-teal: 174 60% 50%;
+    --shake-purple: 270 70% 60%;
+    --shake-yellow: 45 95% 55%;
+    --shake-green: 145 65% 42%;
+    
+    /* Sidebar */
+    --sidebar-background: 270 50% 8%;
+    --sidebar-foreground: 270 20% 95%;
+    --sidebar-primary: 270 70% 60%;
+    --sidebar-primary-foreground: 270 20% 98%;
+    --sidebar-accent: 270 40% 25%;
+    --sidebar-accent-foreground: 270 20% 95%;
+    --sidebar-border: 270 30% 20%;
+    --sidebar-ring: 270 70% 60%;
+  }
+  
+  .dark {
+    --background: 270 50% 8%;
+    --foreground: 270 20% 95%;
+    
+    --card: 270 45% 12%;
+    --card-foreground: 270 20% 95%;
+    
+    --popover: 270 45% 10%;
+    --popover-foreground: 270 20% 95%;
+    
+    --primary: 270 70% 60%;
+    --primary-foreground: 270 20% 98%;
+    
+    --secondary: 270 30% 20%;
+    --secondary-foreground: 270 20% 95%;
+    
+    --muted: 270 25% 18%;
+    --muted-foreground: 270 15% 60%;
+    
+    --accent: 270 40% 25%;
+    --accent-foreground: 270 20% 95%;
+    
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 270 30% 20%;
+    --input: 270 30% 18%;
+    --ring: 270 70% 60%;
+    
+    /* Shake brand colors */
+    --shake-coral: 12 85% 62%;
+    --shake-teal: 174 60% 50%;
+    --shake-purple: 270 70% 60%;
+    --shake-yellow: 45 95% 55%;
+    --shake-green: 145 65% 42%;
+    
+    /* Sidebar */
+    --sidebar-background: 270 50% 8%;
+    --sidebar-foreground: 270 20% 95%;
+    --sidebar-primary: 270 70% 60%;
+    --sidebar-primary-foreground: 270 20% 98%;
+    --sidebar-accent: 270 40% 25%;
+    --sidebar-accent-foreground: 270 20% 95%;
+    --sidebar-border: 270 30% 20%;
+    --sidebar-ring: 270 70% 60%;
+  }
+  
+  .light {
+    --background: 270 30% 98%;
+    --foreground: 270 50% 10%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 270 50% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 270 50% 10%;
+    
+    --primary: 270 70% 55%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 270 20% 92%;
+    --secondary-foreground: 270 50% 15%;
+    
+    --muted: 270 15% 92%;
+    --muted-foreground: 270 20% 40%;
+    
+    --accent: 270 30% 92%;
+    --accent-foreground: 270 50% 15%;
+    
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 270 20% 88%;
+    --input: 270 20% 90%;
+    --ring: 270 70% 55%;
+    
+    /* Shake brand colors */
+    --shake-coral: 12 85% 62%;
+    --shake-teal: 174 60% 50%;
+    --shake-purple: 270 70% 55%;
+    --shake-yellow: 45 95% 55%;
+    --shake-green: 145 65% 42%;
+    
+    /* Sidebar */
+    --sidebar-background: 270 30% 98%;
+    --sidebar-foreground: 270 50% 10%;
+    --sidebar-primary: 270 70% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 30% 92%;
+    --sidebar-accent-foreground: 270 50% 15%;
+    --sidebar-border: 270 20% 88%;
+    --sidebar-ring: 270 70% 55%;
+  }
+  
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
 /* Shaking animation for clock */
 @keyframes shake {
   10%, 90% { transform: translate3d(-1px, 0, 0) rotate(-1deg); }
