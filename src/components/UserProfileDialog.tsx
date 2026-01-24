@@ -1,17 +1,19 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Calendar, MapPin, Instagram, Linkedin, Twitter } from "lucide-react";
+import { User, Calendar, MapPin, Instagram, Linkedin, Twitter, Flag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { SayHiButton } from "./SayHiButton";
 import { PrivateChatDialog } from "./PrivateChatDialog";
+import { ReportUserDialog } from "./ReportUserDialog";
 import { useGreetings } from "@/hooks/useGreetings";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
 import { getActivityEmoji } from "@/data/activityTypes";
 import { LoadingSpinner } from "./LoadingSpinner";
-
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 interface UserProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -58,7 +60,9 @@ export function UserProfileDialog({
   const [userAge, setUserAge] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
   const { isMatched } = useGreetings();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   
   const swipeHandlers = useSwipeToClose({
@@ -127,6 +131,7 @@ export function UserProfileDialog({
 
   const hasSocialLinks = socialLinks.instagram_url || socialLinks.linkedin_url || socialLinks.twitter_url;
   const matched = isMatched(userId);
+  const isOwnProfile = user?.id === userId;
 
   const handleMatch = () => {
     setShowChatDialog(true);
@@ -279,6 +284,21 @@ export function UserProfileDialog({
               </div>
             )}
           </div>
+
+          {/* Report User Button - only show for other users */}
+          {!isOwnProfile && (
+            <div className="border-t border-border/50 pt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReportDialog(true)}
+                className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              >
+                <Flag className="w-4 h-4 mr-2" />
+                Report User
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -288,6 +308,13 @@ export function UserProfileDialog({
         otherUserId={userId}
         otherUserName={userName}
         otherUserAvatar={avatarUrl}
+      />
+
+      <ReportUserDialog
+        open={showReportDialog}
+        onOpenChange={setShowReportDialog}
+        reportedUserId={userId}
+        reportedUserName={userName}
       />
     </>
   );
