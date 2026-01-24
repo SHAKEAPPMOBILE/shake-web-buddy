@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Zap, MapPin } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
-import { GroupChatDialog } from "./GroupChatDialog";
+// GroupChatDialog removed - using full-screen chat views only
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { PlansMapDialog } from "./PlansMapDialog";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
@@ -20,7 +20,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 export function HeroSection() {
   const [isShaking, setIsShaking] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
-  const [showChatDialog, setShowChatDialog] = useState(false);
   const [showClockAnimation, setShowClockAnimation] = useState(false);
   const [showPlansMap, setShowPlansMap] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
@@ -80,10 +79,8 @@ export function HeroSection() {
         // Show the clock animation and confetti for new joins
         triggerConfettiWaterfall();
         setShowClockAnimation(true);
-      } else {
-        // Already joined today, go straight to chat
-        setShowChatDialog(true);
       }
+      // No pop-up chat dialog - user can access via chat tab in iOS layout
     }
   };
 
@@ -95,12 +92,8 @@ export function HeroSection() {
   }, []);
   const handleClockAnimationComplete = useCallback(() => {
     setShowClockAnimation(false);
-    setShowChatDialog(true);
+    // No pop-up dialog - the user can access the chat via the chat tab
   }, []);
-  const handleBackToActivities = () => {
-    setShowChatDialog(false);
-    setShowActivityDialog(true);
-  };
 
   // Stop initial phone shake after 5 seconds
   useEffect(() => {
@@ -257,7 +250,7 @@ export function HeroSection() {
 
       <ShakingClockAnimation open={showClockAnimation} onOpenChange={setShowClockAnimation} onComplete={handleClockAnimationComplete} />
 
-      <GroupChatDialog open={showChatDialog} onOpenChange={setShowChatDialog} activityType={selectedActivity} onBack={handleBackToActivities} attendeeCount={getActivityJoinCount(selectedActivity)} city={selectedCity} />
+      {/* GroupChatDialog removed - using full-screen chat views only */}
 
       <PlansMapDialog open={showPlansMap} onOpenChange={setShowPlansMap} city={selectedCity} />
     </>;
