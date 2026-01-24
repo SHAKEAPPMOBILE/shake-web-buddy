@@ -3,8 +3,8 @@ import { MessageSquare, Users, Plane, MapPin, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useNavigate } from "react-router-dom";
-import { GroupChatDialog } from "../GroupChatDialog";
-import { PlanGroupChatDialog } from "../PlanGroupChatDialog";
+import { GroupChatView } from "./GroupChatView";
+import { PlanGroupChatView } from "./PlanGroupChatView";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -320,6 +320,29 @@ export function ChatTab() {
     );
   }
 
+  // Show full-page GroupChatView when a carousel activity is selected
+  if (selectedChatActivity && showChatDialog) {
+    return (
+      <GroupChatView
+        activityType={selectedChatActivity.activityType}
+        city={selectedChatActivity.city}
+        homeCity={selectedCity}
+        onBack={handleBackToActivities}
+        attendeeCount={getActivityJoinCount(selectedChatActivity.activityType)}
+      />
+    );
+  }
+
+  // Show full-page PlanGroupChatView when a plan activity is selected
+  if (selectedPlanActivity && showPlanChatDialog) {
+    return (
+      <PlanGroupChatView
+        activity={selectedPlanActivity}
+        onBack={handleBackToActivities}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -473,27 +496,6 @@ export function ChatTab() {
         )}
       </div>
 
-      {/* Chat Dialogs */}
-      {selectedChatActivity && (
-        <GroupChatDialog
-          open={showChatDialog}
-          onOpenChange={setShowChatDialog}
-          activityType={selectedChatActivity.activityType}
-          onBack={handleBackToActivities}
-          attendeeCount={getActivityJoinCount(selectedChatActivity.activityType)}
-          city={selectedChatActivity.city}
-          homeCity={selectedCity}
-        />
-      )}
-
-      {selectedPlanActivity && (
-        <PlanGroupChatDialog
-          open={showPlanChatDialog}
-          onOpenChange={setShowPlanChatDialog}
-          activity={selectedPlanActivity}
-          onBack={handleBackToActivities}
-        />
-      )}
     </div>
   );
 }
