@@ -71,8 +71,8 @@ function DiagonalRow({ items, direction, speed = "normal", opacity = 0.35 }: Dia
   const speedClass = speed === "slow" ? "duration-[50s]" : speed === "fast" ? "duration-[20s]" : "duration-[35s]";
   
   return (
-    <div className="flex gap-8 whitespace-nowrap" style={{ animationDuration: speed === "slow" ? "50s" : speed === "fast" ? "20s" : "35s" }}>
-      <div className={`flex gap-8 ${animationClass}`} style={{ animationDuration: speed === "slow" ? "50s" : speed === "fast" ? "20s" : "35s" }}>
+    <div className="flex gap-8 whitespace-nowrap" style={{ animationDuration: speed === "slow" ? "90s" : speed === "fast" ? "40s" : "60s" }}>
+      <div className={`flex gap-8 ${animationClass}`} style={{ animationDuration: speed === "slow" ? "90s" : speed === "fast" ? "40s" : "60s" }}>
         {items.map((item, index) => (
           <div
             key={index}
@@ -96,7 +96,7 @@ export function LandingCarousel() {
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Rotated container for diagonal effect */}
       <div 
-        className="absolute inset-0 flex flex-col justify-center gap-6 sm:gap-8"
+        className="absolute inset-0 flex flex-col justify-center gap-6 sm:gap-8 pt-32"
         style={{ 
           transform: "rotate(-12deg) scale(1.3)",
           transformOrigin: "center center"
