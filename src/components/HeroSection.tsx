@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Zap, MapPin } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
-// GroupChatDialog removed - using full-screen chat views only
+import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { PlansMapDialog } from "./PlansMapDialog";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
@@ -21,6 +21,7 @@ export function HeroSection() {
   const [isShaking, setIsShaking] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showClockAnimation, setShowClockAnimation] = useState(false);
+  const [showJoinedConfirmation, setShowJoinedConfirmation] = useState(false);
   const [showPlansMap, setShowPlansMap] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
   const [phoneInitialShake, setPhoneInitialShake] = useState(true);
@@ -92,7 +93,8 @@ export function HeroSection() {
   }, []);
   const handleClockAnimationComplete = useCallback(() => {
     setShowClockAnimation(false);
-    // No pop-up dialog - the user can access the chat via the chat tab
+    // Show joined confirmation with venue info
+    setShowJoinedConfirmation(true);
   }, []);
 
   // Stop initial phone shake after 5 seconds
@@ -250,7 +252,17 @@ export function HeroSection() {
 
       <ShakingClockAnimation open={showClockAnimation} onOpenChange={setShowClockAnimation} onComplete={handleClockAnimationComplete} />
 
-      {/* GroupChatDialog removed - using full-screen chat views only */}
+      <ActivityJoinedConfirmation
+        open={showJoinedConfirmation}
+        onOpenChange={setShowJoinedConfirmation}
+        activityType={selectedActivity}
+        city={selectedCity}
+        onJoinGroupChat={() => {
+          // On web, just close the dialog - user can access chat from navigation
+          setShowJoinedConfirmation(false);
+          toast.success("Check your chats to join the group conversation!");
+        }}
+      />
 
       <PlansMapDialog open={showPlansMap} onOpenChange={setShowPlansMap} city={selectedCity} />
     </>;
