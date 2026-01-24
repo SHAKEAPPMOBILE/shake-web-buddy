@@ -351,6 +351,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          reason: Database["public"]["Enums"]["report_reason"]
+          reported_user_id: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["report_status"]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: Database["public"]["Enums"]["report_reason"]
+          reported_user_id: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: Database["public"]["Enums"]["report_reason"]
+          reported_user_id?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -363,7 +399,14 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      report_reason:
+        | "spam"
+        | "harassment"
+        | "inappropriate_content"
+        | "fake_profile"
+        | "underage"
+        | "other"
+      report_status: "pending" | "reviewed" | "resolved" | "dismissed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -490,6 +533,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      report_reason: [
+        "spam",
+        "harassment",
+        "inappropriate_content",
+        "fake_profile",
+        "underage",
+        "other",
+      ],
+      report_status: ["pending", "reviewed", "resolved", "dismissed"],
+    },
   },
 } as const
