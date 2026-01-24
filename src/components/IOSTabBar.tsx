@@ -3,8 +3,7 @@ import { Home, MapPin, MessageSquare, User, Plus, ChevronLeft, ChevronRight } fr
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useActiveChat } from "@/hooks/useActiveChat";
-import { useCity } from "@/contexts/CityContext";
+import { useTotalUnreadChats } from "@/hooks/useTotalUnreadChats";
 
 interface IOSTabBarProps {
   activeTab: string;
@@ -13,9 +12,8 @@ interface IOSTabBarProps {
 }
 
 export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarProps) {
-  const { user, isPremium } = useAuth();
-  const { selectedCity } = useCity();
-  const { activeChat } = useActiveChat(selectedCity);
+  const { user } = useAuth();
+  const { totalUnread } = useTotalUnreadChats();
   const navigate = useNavigate();
   const [isShaking, setIsShaking] = useState(false);
 
@@ -52,7 +50,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          const hasNotification = tab.id === "chat" && activeChat && activeChat.unreadCount > 0;
+          const hasNotification = tab.id === "chat" && totalUnread > 0;
 
           if (tab.isCenter) {
             return (
@@ -111,7 +109,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                 )} />
                 {hasNotification && (
                   <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
-                    {activeChat.unreadCount > 99 ? "99+" : activeChat.unreadCount}
+                    {totalUnread > 99 ? "99+" : totalUnread}
                   </span>
                 )}
               </div>
