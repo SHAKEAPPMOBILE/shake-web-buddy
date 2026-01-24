@@ -1,26 +1,301 @@
-import { useState } from "react";
-import { MessageSquare } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { MessageSquare, Users, Plane, MapPin, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useNavigate } from "react-router-dom";
-import { MyActivitiesDialog } from "../MyActivitiesDialog";
 import { GroupChatDialog } from "../GroupChatDialog";
 import { PlanGroupChatDialog } from "../PlanGroupChatDialog";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
-import { useUserActivities, type UserActivity } from "@/hooks/useUserActivities";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay } from "@/data/activityTypes";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LoadingSpinner } from "../LoadingSpinner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+interface ChatActivity {
+  id: string;
+  activity_type: string;
+  city: string;
+  scheduled_for: string;
+  participant_count: number;
+  unread_count?: number;
+  is_plan: boolean;
+  plan_id?: string;
+  creator_name?: string;
+  creator_avatar?: string;
+  note?: string | null;
+}
 
 export function ChatTab() {
   const { user } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
-  const [showMyActivitiesDialog, setShowMyActivitiesDialog] = useState(true);
+  const [activities, setActivities] = useState<ChatActivity[]>([]);
+  const [cityFilter, setCityFilter] = useState<string>(() => {
+    return localStorage.getItem("chat-city-filter") || "all";
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showPlanChatDialog, setShowPlanChatDialog] = useState(false);
   const [selectedChatActivity, setSelectedChatActivity] = useState<{ activityType: string; city: string } | null>(null);
-  const [selectedPlanActivity, setSelectedPlanActivity] = useState<UserActivity | null>(null);
+  const [selectedPlanActivity, setSelectedPlanActivity] = useState<any>(null);
   const { getActivityJoinCount } = useActivityJoins(selectedCity);
-  const { fetchActivities: refetchCityPlans } = useUserActivities(selectedCity);
+
+  const fetchActivities = useCallback(async () => {
+    if (!user) {
+      setActivities([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Get user's active carousel joins (activity_id is null)
+      const { data: carouselJoins, error: carouselError } = await supabase
+        .from("activity_joins")
+        .select("activity_type, city, joined_at, expires_at")
+        .eq("user_id", user.id)
+        .is("activity_id", null)
+        .gt("expires_at", new Date().toISOString());
+
+      if (carouselError) throw carouselError;
+
+      // Get user's plan joins (activity_id is not null)
+      const { data: planJoins, error: planJoinsError } = await supabase
+        .from("activity_joins")
+        .select("activity_id")
+        .eq("user_id", user.id)
+        .not("activity_id", "is", null)
+        .gt("expires_at", new Date().toISOString());
+
+      if (planJoinsError) throw planJoinsError;
+
+      // Get user's own plans
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const { data: userPlans, error: userPlansError } = await supabase
+        .from("user_activities")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .gte("scheduled_for", startOfToday.toISOString());
+
+      if (userPlansError) throw userPlansError;
+
+      // Get joined plans
+      const joinedPlanIds = (planJoins || []).map(j => j.activity_id).filter(Boolean) as string[];
+      let joinedPlans: any[] = [];
+      
+      if (joinedPlanIds.length > 0) {
+        const { data: joinedPlansData } = await supabase
+          .from("user_activities")
+          .select("*")
+          .in("id", joinedPlanIds)
+          .eq("is_active", true)
+          .gte("scheduled_for", startOfToday.toISOString());
+        
+        joinedPlans = joinedPlansData || [];
+      }
+
+      // Build activities list
+      const chatActivities: ChatActivity[] = [];
+
+      // Add carousel joins
+      for (const join of carouselJoins || []) {
+        const { count } = await supabase
+          .from("activity_joins")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_type", join.activity_type)
+          .eq("city", join.city)
+          .is("activity_id", null)
+          .gt("expires_at", new Date().toISOString());
+
+        // Get unread count for activity messages
+        const { data: readStatus } = await supabase
+          .from("activity_read_status")
+          .select("last_read_at")
+          .eq("user_id", user.id)
+          .eq("activity_type", join.activity_type)
+          .eq("city", join.city)
+          .maybeSingle();
+
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const lastReadAt = readStatus?.last_read_at || todayStart.toISOString();
+
+        const { count: unreadCount } = await supabase
+          .from("activity_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_type", join.activity_type)
+          .eq("city", join.city)
+          .gt("created_at", lastReadAt)
+          .neq("user_id", user.id);
+
+        chatActivities.push({
+          id: `carousel-${join.activity_type}-${join.city}`,
+          activity_type: join.activity_type,
+          city: join.city,
+          scheduled_for: join.joined_at,
+          participant_count: count || 1,
+          unread_count: unreadCount || 0,
+          is_plan: false,
+          note: getActivityDay(join.activity_type) ? `Every ${getActivityDay(join.activity_type)}` : null,
+        });
+      }
+
+      // Add user's own plans and joined plans
+      const allPlans = [...(userPlans || []), ...joinedPlans];
+      const uniquePlans = new Map();
+      allPlans.forEach(p => uniquePlans.set(p.id, p));
+
+      for (const plan of uniquePlans.values()) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name, avatar_url")
+          .eq("user_id", plan.user_id)
+          .maybeSingle();
+
+        const { count } = await supabase
+          .from("activity_joins")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_id", plan.id);
+
+        // Get unread count for plan messages
+        const { data: planReadStatus } = await supabase
+          .from("activity_read_status")
+          .select("last_read_at")
+          .eq("user_id", user.id)
+          .eq("activity_type", plan.id)
+          .maybeSingle();
+
+        const lastPlanRead = planReadStatus?.last_read_at || plan.created_at;
+
+        const { count: unreadPlanCount } = await supabase
+          .from("plan_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_id", plan.id)
+          .gt("created_at", lastPlanRead)
+          .neq("user_id", user.id);
+
+        chatActivities.push({
+          id: plan.id,
+          activity_type: plan.activity_type,
+          city: plan.city,
+          scheduled_for: plan.scheduled_for,
+          participant_count: (count || 0) + 1,
+          unread_count: unreadPlanCount || 0,
+          is_plan: true,
+          plan_id: plan.id,
+          creator_name: profile?.name || "Anonymous",
+          creator_avatar: profile?.avatar_url,
+          note: plan.note,
+        });
+      }
+
+      // Sort by scheduled time
+      chatActivities.sort((a, b) => 
+        new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime()
+      );
+
+      setActivities(chatActivities);
+    } catch (error) {
+      console.error("Error fetching chat activities:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  // Initial fetch and realtime subscription
+  useEffect(() => {
+    fetchActivities();
+
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`chat-tab-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "activity_joins", filter: `user_id=eq.${user.id}` },
+        () => fetchActivities()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "activity_messages" },
+        () => fetchActivities()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "plan_messages" },
+        () => fetchActivities()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchActivities, user]);
+
+  // Persist city filter to localStorage
+  useEffect(() => {
+    localStorage.setItem("chat-city-filter", cityFilter);
+  }, [cityFilter]);
+
+  // Get unique cities from all activities for the filter
+  const availableCities = useMemo(() => {
+    const cities = [...new Set(activities.map(a => a.city))];
+    return cities.sort();
+  }, [activities]);
+
+  // Filter activities based on selected city
+  const filteredActivities = useMemo(() => {
+    if (cityFilter === "all") return activities;
+    return activities.filter(a => a.city === cityFilter);
+  }, [activities, cityFilter]);
+
+  const getActivityEmoji = (type: string) => {
+    const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
+    return activity?.emoji || "📍";
+  };
+
+  const getActivityLabel = (type: string) => {
+    const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
+    return activity?.label || type;
+  };
+
+  const handleActivityClick = async (activity: ChatActivity) => {
+    if (activity.is_plan && activity.plan_id) {
+      // Fetch full plan details
+      const { data: plan } = await supabase
+        .from("user_activities")
+        .select("*")
+        .eq("id", activity.plan_id)
+        .maybeSingle();
+
+      if (plan) {
+        setSelectedPlanActivity(plan);
+        setShowPlanChatDialog(true);
+      }
+    } else {
+      setSelectedChatActivity({ activityType: activity.activity_type, city: activity.city });
+      setShowChatDialog(true);
+    }
+  };
+
+  const handleBackToActivities = () => {
+    setShowChatDialog(false);
+    setShowPlanChatDialog(false);
+    setSelectedPlanActivity(null);
+    setSelectedChatActivity(null);
+    fetchActivities();
+  };
 
   if (!user) {
     return (
@@ -45,48 +320,160 @@ export function ChatTab() {
     );
   }
 
-  const handleSelectActivityFromList = async (selection: { activityType: string; city: string; activityId?: string }) => {
-    setShowMyActivitiesDialog(false);
-
-    if (selection.activityId) {
-      const { data: plan, error } = await supabase
-        .from("user_activities")
-        .select("*")
-        .eq("id", selection.activityId)
-        .maybeSingle();
-
-      if (error || !plan) {
-        setSelectedChatActivity({ activityType: selection.activityType, city: selection.city });
-        setShowChatDialog(true);
-        return;
-      }
-
-      await refetchCityPlans();
-      setSelectedPlanActivity(plan as unknown as UserActivity);
-      setShowPlanChatDialog(true);
-      return;
-    }
-
-    setSelectedChatActivity({ activityType: selection.activityType, city: selection.city });
-    setShowChatDialog(true);
-  };
-
-  const handleBackToActivities = () => {
-    setShowChatDialog(false);
-    setShowPlanChatDialog(false);
-    setSelectedPlanActivity(null);
-    setShowMyActivitiesDialog(true);
-  };
-
   return (
     <div className="flex flex-col h-full">
-      <MyActivitiesDialog
-        open={showMyActivitiesDialog}
-        onOpenChange={setShowMyActivitiesDialog}
-        onSelectActivity={handleSelectActivityFromList}
-        homeCity={selectedCity}
-      />
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h2 className="text-lg font-display font-bold">My Chats</h2>
+        <div className="flex items-center gap-2">
+          {/* City Filter */}
+          {availableCities.length > 1 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1 px-2.5 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium">
+                  <Plane className="w-4 h-4" />
+                  {cityFilter !== "all" && <span>{cityFilter}</span>}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-card border-border z-50">
+                <DropdownMenuItem 
+                  onClick={() => setCityFilter("all")}
+                  className={cityFilter === "all" ? "bg-primary/10" : ""}
+                >
+                  All cities
+                </DropdownMenuItem>
+                {availableCities.map((city) => (
+                  <DropdownMenuItem 
+                    key={city} 
+                    onClick={() => setCityFilter(city)}
+                    className={cityFilter === city ? "bg-primary/10" : ""}
+                  >
+                    {city}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
 
+      {/* Activities List */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-40">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : filteredActivities.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-40 text-center">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <MessageSquare className="w-8 h-8 text-muted-foreground" />
+            </div>
+            {activities.length === 0 ? (
+              <>
+                <p className="text-muted-foreground mb-1">No active chats</p>
+                <p className="text-sm text-muted-foreground">
+                  Join an activity to start chatting
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground">No chats in {cityFilter}</p>
+                <button
+                  onClick={() => setCityFilter("all")}
+                  className="mt-3 text-sm text-primary hover:underline"
+                >
+                  Show all cities
+                </button>
+              </>
+            )}
+          </div>
+        ) : (
+          filteredActivities.map((activity) => (
+            <div
+              key={activity.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => handleActivityClick(activity)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleActivityClick(activity);
+                }
+              }}
+              className="w-full text-left rounded-2xl p-4 space-y-3 hover:opacity-90 transition-all cursor-pointer relative"
+              style={{
+                background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+              }}
+            >
+              {/* Unread badge */}
+              {(activity.unread_count ?? 0) > 0 && (
+                <div className="absolute top-3 right-3 min-w-5 h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {activity.unread_count}
+                </div>
+              )}
+
+              <div className="flex items-start gap-3">
+                {/* Activity Icon */}
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-2xl">
+                    {getActivityEmoji(activity.activity_type)}
+                  </div>
+                  {activity.is_plan && activity.creator_avatar && (
+                    <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-white/50">
+                      <AvatarImage src={activity.creator_avatar} alt={activity.creator_name} />
+                      <AvatarFallback className="bg-white/80 text-muted-foreground text-xs font-semibold">
+                        {activity.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-white">{getActivityLabel(activity.activity_type)}</h3>
+                    {activity.is_plan && (
+                      <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
+                        Plan
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3 text-white/60" />
+                    <span className="text-xs text-white/70">{activity.city}</span>
+                    {activity.is_plan && activity.creator_name && (
+                      <span className="text-xs text-white/50">• by {activity.creator_name}</span>
+                    )}
+                  </div>
+
+                  {activity.note && (
+                    <p className="text-xs text-white/60 italic mt-1 line-clamp-1">"{activity.note}"</p>
+                  )}
+
+                  <div className="flex items-center gap-3 mt-1">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-white/70" />
+                      <span className="text-sm text-white/70">
+                        {activity.participant_count} {activity.participant_count === 1 ? "person" : "people"}
+                      </span>
+                    </div>
+                    {activity.is_plan && (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-white/70" />
+                        <span className="text-sm text-white/70">
+                          {format(new Date(activity.scheduled_for), "MMM d, h:mm a")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Chat Dialogs */}
       {selectedChatActivity && (
         <GroupChatDialog
           open={showChatDialog}
