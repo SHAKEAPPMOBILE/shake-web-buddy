@@ -15,7 +15,6 @@ interface AuthContextType {
   verifyOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
   signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
   signInWithPassword: (phone: string, password: string) => Promise<{ error: Error | null }>;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signUpWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
   resetPasswordWithEmail: (email: string) => Promise<{ error: Error | null }>;
@@ -299,42 +298,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
-  const signInWithGoogle = async () => {
-    // Web: browser redirect back to current origin
-    // Native: use deep link + exchangeCodeForSession via appUrlOpen listener
-    if (Capacitor.isNativePlatform()) {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: "shake://auth/callback",
-          skipBrowserRedirect: true,
-          queryParams: {
-            prompt: "select_account",
-          },
-        },
-      });
-
-      if (error) return { error: error as Error | null };
-
-      if (data?.url) {
-        await Browser.open({ url: data.url });
-      }
-
-      return { error: null };
-    }
-
-    const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          prompt: "select_account",
-        },
-      },
-    });
-    return { error: error as Error | null };
-  };
 
   const signOut = async () => {
     try {
@@ -361,7 +324,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUpWithPhone,
         signInWithPhone,
         signInWithPassword,
-        signInWithGoogle,
         signUpWithEmail,
         signInWithEmail,
         resetPasswordWithEmail,
