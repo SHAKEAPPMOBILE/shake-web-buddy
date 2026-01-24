@@ -12,3 +12,6 @@ verify_jwt = true
 
 [functions.elevenlabs-welcome]
 verify_jwt = false
+
+[functions.send-report-notification]
+verify_jwt = false

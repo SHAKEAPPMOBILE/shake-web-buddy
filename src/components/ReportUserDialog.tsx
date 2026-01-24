@@ -50,8 +50,8 @@ export function ReportUserDialog({
 
     setIsSubmitting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
         toast.error("You must be logged in to report a user");
         return;
       }
@@ -72,6 +72,19 @@ export function ReportUserDialog({
         }
         return;
       }
+
+      // Send email notification to admin (fire and forget - don't block on this)
+      supabase.functions.invoke("send-report-notification", {
+        body: {
+          reportedUserId,
+          reportedUserName,
+          reason,
+          description: description.trim() || null,
+        },
+      }).catch((emailError) => {
+        console.error("Failed to send report notification email:", emailError);
+        // Don't show error to user - report was still saved
+      });
 
       toast.success("Report submitted successfully. We'll review it shortly.");
       setReason(null);
