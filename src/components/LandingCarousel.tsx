@@ -8,6 +8,11 @@ import avatar6 from "@/assets/avatar-new-6.png";
 import avatar7 from "@/assets/avatar-new-7.png";
 import avatar8 from "@/assets/avatar-new-8.png";
 import avatar9 from "@/assets/avatar-new-9.png";
+import avatar11 from "@/assets/avatar-new-11.png";
+import avatar12 from "@/assets/avatar-new-12.png";
+import avatar13 from "@/assets/avatar-new-13.png";
+import avatar14 from "@/assets/avatar-new-14.png";
+import avatar15 from "@/assets/avatar-new-15.png";
 
 // Import activity icons
 import iconLunch from "@/assets/icon-lunch.png";
@@ -15,14 +20,42 @@ import iconDinner from "@/assets/icon-dinner.png";
 import iconDrinks from "@/assets/icon-drinks.png";
 import iconHike from "@/assets/icon-hike.png";
 
-const row1 = [
+// Row 1 & 5: Dense, continuous avatars only (no gaps)
+const row1Continuous = [
   { type: "avatar", src: avatar1 },
-  { type: "icon", src: iconLunch },
   { type: "avatar", src: avatar2 },
-  { type: "icon", src: iconDrinks },
   { type: "avatar", src: avatar3 },
+  { type: "avatar", src: avatar4 },
+  { type: "avatar", src: avatar5 },
+  { type: "avatar", src: avatar6 },
+  { type: "avatar", src: avatar7 },
+  { type: "avatar", src: avatar8 },
+  { type: "avatar", src: avatar9 },
+  { type: "avatar", src: avatar11 },
+  { type: "avatar", src: avatar12 },
+  { type: "avatar", src: avatar13 },
+  { type: "avatar", src: avatar14 },
+  { type: "avatar", src: avatar15 },
 ];
 
+const row5Continuous = [
+  { type: "avatar", src: avatar15 },
+  { type: "avatar", src: avatar14 },
+  { type: "avatar", src: avatar13 },
+  { type: "avatar", src: avatar12 },
+  { type: "avatar", src: avatar11 },
+  { type: "avatar", src: avatar9 },
+  { type: "avatar", src: avatar8 },
+  { type: "avatar", src: avatar7 },
+  { type: "avatar", src: avatar6 },
+  { type: "avatar", src: avatar5 },
+  { type: "avatar", src: avatar4 },
+  { type: "avatar", src: avatar3 },
+  { type: "avatar", src: avatar2 },
+  { type: "avatar", src: avatar1 },
+];
+
+// Middle rows: Mixed avatars and icons with spacing
 const row2 = [
   { type: "icon", src: iconDinner },
   { type: "avatar", src: avatar4 },
@@ -47,23 +80,15 @@ const row4 = [
   { type: "icon", src: iconDrinks },
 ];
 
-const row5 = [
-  { type: "avatar", src: avatar2 },
-  { type: "icon", src: iconDinner },
-  { type: "avatar", src: avatar3 },
-  { type: "icon", src: iconHike },
-  { type: "avatar", src: avatar4 },
-];
-
-// Duplicate for seamless loop
-const allRow1 = [...row1, ...row1, ...row1, ...row1];
+// Duplicate for seamless loop - more duplicates for continuous rows
+const allRow1 = [...row1Continuous, ...row1Continuous, ...row1Continuous, ...row1Continuous, ...row1Continuous, ...row1Continuous];
 const allRow2 = [...row2, ...row2, ...row2, ...row2];
 const allRow3 = [...row3, ...row3, ...row3, ...row3];
 const allRow4 = [...row4, ...row4, ...row4, ...row4];
-const allRow5 = [...row5, ...row5, ...row5, ...row5];
+const allRow5 = [...row5Continuous, ...row5Continuous, ...row5Continuous, ...row5Continuous, ...row5Continuous, ...row5Continuous];
 
 interface DiagonalRowProps {
-  items: typeof row1;
+  items: typeof row1Continuous;
   direction: "left" | "right";
   speed?: "slow" | "normal" | "fast";
   opacity?: number;
