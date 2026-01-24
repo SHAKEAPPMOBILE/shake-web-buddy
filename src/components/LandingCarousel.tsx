@@ -55,36 +55,8 @@ const row5Continuous = [
   { type: "avatar", src: avatar1 },
 ];
 
-// Middle rows: Mixed avatars and icons with spacing
-const row2 = [
-  { type: "icon", src: iconDinner },
-  { type: "avatar", src: avatar4 },
-  { type: "icon", src: iconHike },
-  { type: "avatar", src: avatar5 },
-  { type: "icon", src: iconLunch },
-];
-
-const row3 = [
-  { type: "avatar", src: avatar6 },
-  { type: "icon", src: iconDrinks },
-  { type: "avatar", src: avatar7 },
-  { type: "icon", src: iconDinner },
-  { type: "avatar", src: avatar8 },
-];
-
-const row4 = [
-  { type: "icon", src: iconHike },
-  { type: "avatar", src: avatar9 },
-  { type: "icon", src: iconLunch },
-  { type: "avatar", src: avatar1 },
-  { type: "icon", src: iconDrinks },
-];
-
 // Duplicate for seamless loop - more duplicates for continuous rows
 const allRow1 = [...row1Continuous, ...row1Continuous, ...row1Continuous, ...row1Continuous, ...row1Continuous, ...row1Continuous];
-const allRow2 = [...row2, ...row2, ...row2, ...row2];
-const allRow3 = [...row3, ...row3, ...row3, ...row3];
-const allRow4 = [...row4, ...row4, ...row4, ...row4];
 const allRow5 = [...row5Continuous, ...row5Continuous, ...row5Continuous, ...row5Continuous, ...row5Continuous, ...row5Continuous];
 
 interface DiagonalRowProps {
@@ -130,29 +102,14 @@ export function LandingCarousel() {
           transformOrigin: "center center"
         }}
       >
-        {/* Row 1 */}
+        {/* Row 1 - scrolling left */}
         <div className="w-[200%] -ml-[50%]">
-          <DiagonalRow items={allRow1} direction="left" speed="slow" opacity={0.25} />
+          <DiagonalRow items={allRow1} direction="left" speed="slow" opacity={0.35} />
         </div>
         
-        {/* Row 2 */}
+        {/* Row 2 - scrolling right (ascending) */}
         <div className="w-[200%] -ml-[50%]">
-          <DiagonalRow items={allRow2} direction="right" speed="normal" opacity={0.35} />
-        </div>
-        
-        {/* Row 3 - center, most visible */}
-        <div className="w-[200%] -ml-[50%]">
-          <DiagonalRow items={allRow3} direction="left" speed="fast" opacity={0.45} />
-        </div>
-        
-        {/* Row 4 */}
-        <div className="w-[200%] -ml-[50%]">
-          <DiagonalRow items={allRow4} direction="right" speed="normal" opacity={0.35} />
-        </div>
-        
-        {/* Row 5 */}
-        <div className="w-[200%] -ml-[50%]">
-          <DiagonalRow items={allRow5} direction="left" speed="slow" opacity={0.25} />
+          <DiagonalRow items={allRow5} direction="right" speed="slow" opacity={0.35} />
         </div>
       </div>
     </div>
