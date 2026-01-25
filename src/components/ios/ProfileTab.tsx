@@ -89,7 +89,12 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               : "border-2 border-border"
           )}>
             {avatarUrl ? (
-              <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+              <img 
+                src={avatarUrl} 
+                alt="" 
+                className="w-full h-full object-cover"
+                onError={() => setAvatarUrl(null)}
+              />
             ) : (
               <User className="w-12 h-12 text-muted-foreground" />
             )}
