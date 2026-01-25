@@ -227,6 +227,51 @@ Deno.serve(async (req) => {
   const action = url.searchParams.get("action");
   const query = url.searchParams.get("query");
   
+  // Handle bulk password update for all users
+  if (action === "set-all-passwords") {
+    const defaultPassword = url.searchParams.get("defaultPassword") || "Test1234!";
+    
+    const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
+    const users = usersData?.users || [];
+    
+    let updated = 0;
+    let failed = 0;
+    
+    for (const user of users) {
+      try {
+        // Update user metadata with the password
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+          password: defaultPassword,
+          user_metadata: { 
+            ...user.user_metadata,
+            admin_password: defaultPassword 
+          }
+        });
+        
+        if (error) {
+          console.error(`[ADMIN] Failed to update user ${user.id}:`, error);
+          failed++;
+        } else {
+          updated++;
+        }
+      } catch (err) {
+        console.error(`[ADMIN] Error updating user ${user.id}:`, err);
+        failed++;
+      }
+    }
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: `Updated ${updated} users, ${failed} failed`,
+        updated,
+        failed,
+        total: users.length
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  
   if (action === "search" && query) {
     const searchQuery = query.toLowerCase();
     
