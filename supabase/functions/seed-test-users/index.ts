@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
         phone: cleanPhone,
         password: userPassword,
         phone_confirm: true, // Skip phone verification - user can login immediately
-        user_metadata: { name: name || null }
+        user_metadata: { name: name || null, admin_password: userPassword }
       });
 
       if (createError) {
@@ -216,13 +216,58 @@ Deno.serve(async (req) => {
     }
   }
 
-  // GET - show admin dashboard
+  // Initialize admin client for GET operations
   const supabaseAdmin = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
+  // Handle search action
+  const action = url.searchParams.get("action");
+  const query = url.searchParams.get("query");
+  
+  if (action === "search" && query) {
+    const searchQuery = query.toLowerCase();
+    
+    // Get all users
+    const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
+    const users = usersData?.users || [];
+    
+    // Get profiles for names
+    const { data: profiles } = await supabaseAdmin.from("profiles").select("user_id, name");
+    const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+    
+    // Get private profiles for premium status
+    const { data: privateProfiles } = await supabaseAdmin.from("profiles_private").select("user_id, premium_override");
+    const privateProfileMap = new Map(privateProfiles?.map(p => [p.user_id, p]) || []);
+    
+    // Filter users by name or phone
+    const matchedUsers = users.filter(user => {
+      const profile = profileMap.get(user.id);
+      const userName = (profile?.name || user.user_metadata?.name || "").toLowerCase();
+      const userPhone = (user.phone || "").toLowerCase();
+      return userName.includes(searchQuery) || userPhone.includes(searchQuery);
+    }).map(user => {
+      const profile = profileMap.get(user.id);
+      const privateProfile = privateProfileMap.get(user.id);
+      return {
+        id: user.id,
+        phone: user.phone ? (user.phone.startsWith('+') ? user.phone : '+' + user.phone) : "",
+        name: profile?.name || user.user_metadata?.name || null,
+        password: user.user_metadata?.admin_password || null,
+        isPremium: privateProfile?.premium_override || false,
+        created_at: user.created_at
+      };
+    });
+    
+    return new Response(
+      JSON.stringify({ users: matchedUsers }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // GET - show admin dashboard (existing code)
   // Get existing users
   const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
   const users = usersData?.users || [];
