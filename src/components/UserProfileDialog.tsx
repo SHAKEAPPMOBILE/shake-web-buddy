@@ -373,23 +373,26 @@ export function UserProfileDialog({
       {showEnlargedAvatar && avatarUrl && (
         <div 
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
-          onClick={() => setShowEnlargedAvatar(false)}
-        >
-        <button
           onClick={(e) => {
             e.stopPropagation();
-            e.preventDefault();
             setShowEnlargedAvatar(false);
           }}
-          onTouchEnd={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setShowEnlargedAvatar(false);
-          }}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-[110] touch-manipulation"
         >
-          <X className="w-6 h-6 text-white" />
-        </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setShowEnlargedAvatar(false);
+            }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
+            className="absolute top-4 right-4 p-3 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 transition-colors z-[110] touch-manipulation"
+            aria-label="Close enlarged avatar"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
           <img 
             src={avatarUrl} 
             alt={userName || "User"}
