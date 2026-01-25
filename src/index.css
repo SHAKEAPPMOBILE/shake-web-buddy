@@ -205,15 +205,19 @@
 }
 
 @keyframes carousel-breathe {
-  0%, 100% {
+  0%, 30% {
     opacity: 0;
   }
-  25% {
+  40%, 60% {
     opacity: 1;
   }
-  75% {
-    opacity: 1;
+  70%, 100% {
+    opacity: 0;
   }
+}
+
+.animate-carousel-breathe {
+  animation: carousel-breathe 12s ease-in-out infinite;
 }
 
 .animate-shake {
