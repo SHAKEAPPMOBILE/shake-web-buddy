@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Plus, Trash2, UserCheck, UserX, Crown } from "lucide-react";
+import { Loader2, Plus, Trash2, UserCheck, UserX, Crown, Search, Eye, EyeOff } from "lucide-react";
 
 interface TestUser {
   id: string;
@@ -14,6 +14,16 @@ interface TestUser {
   created_at: string;
   name?: string | null;
   isPremium?: boolean;
+  password?: string | null;
+}
+
+interface SearchResult {
+  id: string;
+  phone: string;
+  name: string | null;
+  password: string | null;
+  isPremium: boolean;
+  created_at: string;
 }
 
 export default function Admin() {
@@ -27,6 +37,12 @@ export default function Admin() {
   const [userPassword, setUserPassword] = useState("");
   const [name, setName] = useState("");
   const [isPremium, setIsPremium] = useState(false);
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   
   const { toast } = useToast();
 
@@ -85,6 +101,36 @@ export default function Admin() {
     } catch (err) {
       console.error("Error loading users:", err);
     }
+  };
+
+  const searchUsers = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${password}&action=search&query=${encodeURIComponent(searchQuery)}`,
+        { method: "GET" }
+      );
+      const data = await response.json();
+      
+      if (data.users) {
+        setSearchResults(data.users);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (err) {
+      console.error("Error searching users:", err);
+      toast({ title: "Error searching users", variant: "destructive" });
+    }
+    setIsSearching(false);
+  };
+
+  const togglePasswordVisibility = (userId: string) => {
+    setShowPasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
   };
 
   const createUser = async () => {
@@ -257,6 +303,77 @@ export default function Admin() {
           </CardContent>
         </Card>
 
+        {/* User Search */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="w-5 h-5" />
+              Find User
+            </CardTitle>
+            <CardDescription>
+              Search by name or phone to find user credentials
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Input
+                type="text"
+                placeholder="Search by name or phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && searchUsers()}
+                className="flex-1"
+              />
+              <Button onClick={searchUsers} disabled={isSearching}>
+                {isSearching ? <Loader2 className="animate-spin w-4 h-4" /> : <Search className="w-4 h-4" />}
+              </Button>
+            </div>
+            
+            {searchResults.length > 0 && (
+              <div className="mt-4 space-y-3">
+                {searchResults.map((user) => (
+                  <div 
+                    key={user.id}
+                    className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-100"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">{user.name || "No name"}</span>
+                          {user.isPremium && (
+                            <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <Crown className="w-3 h-3" /> Premium
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{user.phone}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-gray-500">Password:</span>
+                          <code className="bg-white px-2 py-1 rounded text-sm font-mono border">
+                            {showPasswords[user.id] ? (user.password || "N/A") : "••••••••"}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => togglePasswordVisibility(user.id)}
+                            className="h-7 w-7 p-0"
+                          >
+                            {showPasswords[user.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 font-mono mt-2">{user.id}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {searchQuery && searchResults.length === 0 && !isSearching && (
+              <p className="text-center text-gray-500 mt-4">No users found matching "{searchQuery}"</p>
+            )}
+          </CardContent>
+        </Card>
         {/* Users List */}
         <Card>
           <CardHeader>
