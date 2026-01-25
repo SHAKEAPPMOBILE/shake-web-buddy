@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { User, LogOut, Settings, Video, CreditCard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -36,6 +36,15 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
   const { statusVideo, hasActiveStatus } = useStatusVideo(user?.id);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Reset video playing state when status changes
+  useEffect(() => {
+    if (hasActiveStatus) {
+      setIsVideoPlaying(true);
+    }
+  }, [hasActiveStatus, statusRefreshKey]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -88,7 +97,17 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               ? "ring-4 ring-shake-green ring-offset-2 ring-offset-background"
               : "border-2 border-border"
           )}>
-            {avatarUrl ? (
+            {hasActiveStatus && isVideoPlaying && statusVideo ? (
+              <video
+                ref={videoRef}
+                src={statusVideo.video_url}
+                className="w-full h-full object-cover"
+                autoPlay
+                muted
+                playsInline
+                onEnded={() => setIsVideoPlaying(false)}
+              />
+            ) : avatarUrl ? (
               <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
             ) : (
               <User className="w-12 h-12 text-muted-foreground" />
