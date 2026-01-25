@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
   </style>
 </head>
 <body>
-  <div class="card">
+  <div class="card" style="text-align: center;">
     <h1>🔐 Admin Access</h1>
     <p>Enter the admin password to continue</p>
     <form method="GET">
