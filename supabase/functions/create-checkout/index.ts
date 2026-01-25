@@ -33,8 +33,28 @@ serve(async (req) => {
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
 
+    if (!user?.id) {
+      throw new Error("User not authenticated");
+    }
+
     let email = user?.email ?? null;
 
+    // If no auth email, check for billing_email in profiles_private
+    if (!email) {
+      logStep("No auth email, checking profiles_private for billing_email");
+      const { data: privateProfile } = await supabaseClient
+        .from("profiles_private")
+        .select("billing_email")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (privateProfile?.billing_email) {
+        email = privateProfile.billing_email;
+        logStep("Found billing_email in profile", { email });
+      }
+    }
+
+    // Also check request body for email (fallback)
     if (!email) {
       const body = await req.json().catch(() => ({}));
       if (typeof body?.email === "string") {
@@ -43,7 +63,7 @@ serve(async (req) => {
     }
 
     if (!email) {
-      throw new Error("User not authenticated or email not available");
+      throw new Error("Email required for subscription. Please add an email address in your profile settings.");
     }
 
     logStep("User authenticated", { userId: user?.id, email });

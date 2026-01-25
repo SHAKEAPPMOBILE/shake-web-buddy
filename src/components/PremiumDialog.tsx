@@ -58,11 +58,16 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     }
   }, [open, user]);
 
-  const needsEmail = !!user && !user.email;
+  // User needs to enter email if: they exist, have no auth email, AND have no saved billing email
+  const needsEmail = !!user && !user.email && !savedBillingEmail;
   const emailToUse = useMemo(() => {
     if (user?.email) return user.email;
+    if (savedBillingEmail) return savedBillingEmail;
     return checkoutEmail.trim();
-  }, [user?.email, checkoutEmail]);
+  }, [user?.email, savedBillingEmail, checkoutEmail]);
+  
+  // Check if we have a valid email to proceed with checkout
+  const hasValidEmail = !!user?.email || !!savedBillingEmail || !!checkoutEmail.trim();
 
   const features = [
     { icon: Sparkles, text: "Create your own activities unlimited" },
@@ -81,8 +86,8 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       return;
     }
 
-    if (needsEmail && !emailToUse) {
-      toast.error("Please enter an email to continue");
+    if (!hasValidEmail) {
+      toast.error("Please add an email address in your profile before subscribing");
       return;
     }
 
@@ -263,7 +268,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
         <button
           onClick={handleSubscribe}
-          disabled={isLoading || (needsEmail && !emailToUse)}
+          disabled={isLoading || !hasValidEmail}
           className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50"
           style={{
             background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
