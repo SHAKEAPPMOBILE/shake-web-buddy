@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Calendar, MapPin, Instagram, Linkedin, Twitter, Flag } from "lucide-react";
+import { User, Calendar, MapPin, Instagram, Linkedin, Twitter, Flag, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -14,6 +14,7 @@ import { getActivityEmoji } from "@/data/activityTypes";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+
 interface UserProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -61,6 +62,7 @@ export function UserProfileDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const [showEnlargedAvatar, setShowEnlargedAvatar] = useState(false);
   const { isMatched } = useGreetings();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -155,7 +157,11 @@ export function UserProfileDialog({
 
           {/* Avatar and Name */}
           <div className="flex flex-col items-center py-4">
-            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-4 border-border shadow-lg">
+            <button
+              onClick={() => avatarUrl && setShowEnlargedAvatar(true)}
+              className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-4 border-border shadow-lg transition-transform hover:scale-105 cursor-pointer"
+              disabled={!avatarUrl}
+            >
               {avatarUrl ? (
                 <img 
                   src={avatarUrl} 
@@ -165,7 +171,7 @@ export function UserProfileDialog({
               ) : (
                 <User className="w-12 h-12 text-muted-foreground" />
               )}
-            </div>
+            </button>
             <h3 className="mt-4 text-xl font-semibold text-foreground">
               {userName || "Shaker"}{userAge ? `, ${userAge}` : ''}
             </h3>
@@ -301,6 +307,27 @@ export function UserProfileDialog({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Enlarged Avatar Modal */}
+      {showEnlargedAvatar && avatarUrl && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
+          onClick={() => setShowEnlargedAvatar(false)}
+        >
+          <button
+            onClick={() => setShowEnlargedAvatar(false)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <img 
+            src={avatarUrl} 
+            alt={userName || "User"}
+            className="max-w-[90vw] max-h-[90vh] rounded-2xl shadow-2xl object-contain animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       <PrivateChatDialog
         open={showChatDialog}
