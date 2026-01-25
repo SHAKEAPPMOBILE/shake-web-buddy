@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -152,7 +152,20 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           <span className="font-medium">Edit Profile</span>
         </button>
 
-        {!isPremium && (
+        {isPremium ? (
+          <button
+            onClick={() => setShowPremiumDialog(true)}
+            className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-shake-green/30 rounded-xl"
+          >
+            <div className="w-10 h-10 rounded-full bg-shake-green/10 flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-shake-green" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="font-medium">Manage Subscription</span>
+              <p className="text-xs text-muted-foreground">Cancel or update your plan</p>
+            </div>
+          </button>
+        ) : (
           <button
             onClick={() => setShowPremiumDialog(true)}
             className="w-full flex items-center gap-4 px-4 py-3 rounded-xl"
