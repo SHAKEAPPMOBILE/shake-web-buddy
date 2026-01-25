@@ -381,7 +381,12 @@ export function UserProfileDialog({
             e.preventDefault();
             setShowEnlargedAvatar(false);
           }}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setShowEnlargedAvatar(false);
+          }}
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-[110] touch-manipulation"
         >
           <X className="w-6 h-6 text-white" />
         </button>
