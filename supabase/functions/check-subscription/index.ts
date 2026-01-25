@@ -53,21 +53,12 @@ serve(async (req) => {
 
     let email = user?.email ?? null;
 
-    if (!email) {
-      const body = await req.json().catch(() => ({}));
-      if (typeof body?.email === "string") {
-        email = body.email.trim();
-      }
-    }
-
-    logStep("User authenticated", { userId: user.id, email });
-
-    // Check for manual premium override first
+    // Check for manual premium override first AND get billing_email in same query
     const { data: privateProfile } = await supabaseClient
       .from("profiles_private")
-      .select("premium_override")
+      .select("premium_override, billing_email")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (privateProfile?.premium_override) {
       logStep("Premium override active for user");
@@ -80,6 +71,14 @@ serve(async (req) => {
         status: 200,
       });
     }
+
+    // If no auth email, use billing_email from profiles_private
+    if (!email && privateProfile?.billing_email) {
+      email = privateProfile.billing_email;
+      logStep("Using billing_email from profile", { email });
+    }
+
+    logStep("User authenticated", { userId: user.id, email });
 
     // If no email available, user is not subscribed via Stripe
     if (!email) {
