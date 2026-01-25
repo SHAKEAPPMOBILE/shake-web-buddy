@@ -204,6 +204,18 @@
   100% { transform: translateX(0); }
 }
 
+@keyframes carousel-breathe {
+  0%, 100% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+}
+
 .animate-shake {
   animation: shake 0.5s ease-in-out;
 }
@@ -234,6 +246,10 @@
 
 .animate-scroll-right {
   animation: scroll-right 30s linear infinite;
+}
+
+.animate-carousel-breathe {
+  animation: carousel-breathe 8s ease-in-out infinite;
 }
 
 /* iOS Safe Areas */
