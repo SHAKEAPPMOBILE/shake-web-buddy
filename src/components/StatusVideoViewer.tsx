@@ -47,6 +47,7 @@ export function StatusVideoViewer({
           playsInline
           controls
           onClick={(e) => e.stopPropagation()}
+          onEnded={() => onOpenChange(false)}
         />
       </div>
     </div>
