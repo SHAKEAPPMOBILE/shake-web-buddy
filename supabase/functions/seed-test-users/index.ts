@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
   if (req.method === "POST") {
     try {
       const body = await req.json();
-      const { phone, userPassword, name } = body;
+      const { phone, userPassword, name, isPremium } = body;
 
       if (!phone || !userPassword) {
         return new Response(
@@ -145,10 +145,11 @@ Deno.serve(async (req) => {
           name: name || null,
         }, { onConflict: "user_id" });
 
-        // Create private profile with phone
+        // Create private profile with phone and premium status
         await supabaseAdmin.from("profiles_private").upsert({
           user_id: newUser.user.id,
           phone_number: cleanPhone,
+          premium_override: isPremium || false,
         }, { onConflict: "user_id" });
 
         return new Response(
