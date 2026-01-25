@@ -315,6 +315,30 @@ export type Database = {
         }
         Relationships: []
       }
+      status_videos: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id?: string
+          video_url?: string
+        }
+        Relationships: []
+      }
       user_activities: {
         Row: {
           activity_type: string

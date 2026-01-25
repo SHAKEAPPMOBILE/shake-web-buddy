@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings } from "lucide-react";
+import { User, LogOut, Settings, Video } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,9 @@ import { PremiumDialog } from "../PremiumDialog";
 import { SuperHumanIcon } from "../SuperHumanIcon";
 import { UserProfileDialog } from "../UserProfileDialog";
 import { Link } from "react-router-dom";
+import { useStatusVideo } from "@/hooks/useStatusVideo";
+import { StatusVideoRecorder } from "../StatusVideoRecorder";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +33,9 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showStatusRecorder, setShowStatusRecorder] = useState(false);
+  const { statusVideo, hasActiveStatus } = useStatusVideo(user?.id);
+  const [statusRefreshKey, setStatusRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -74,14 +80,50 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
         onClick={() => setShowProfileDialog(true)}
         className="flex flex-col items-center px-6 py-8 border-b border-border hover:bg-muted/30 transition-colors"
       >
-        <div className="w-24 h-24 rounded-full bg-muted border-2 border-border overflow-hidden flex items-center justify-center mb-4">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
-          ) : (
-            <User className="w-12 h-12 text-muted-foreground" />
-          )}
+        {/* Avatar with Status Ring */}
+        <div className="relative">
+          <div className={cn(
+            "w-24 h-24 rounded-full bg-muted overflow-hidden flex items-center justify-center",
+            hasActiveStatus
+              ? "ring-4 ring-shake-green ring-offset-2 ring-offset-background"
+              : "border-2 border-border"
+          )}>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-12 h-12 text-muted-foreground" />
+            )}
+          </div>
+
+          {/* Status Camera Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowStatusRecorder(true);
+            }}
+            className={cn(
+              "absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-background transition-colors",
+              hasActiveStatus
+                ? "bg-shake-green hover:bg-shake-green/90"
+                : "bg-primary hover:bg-primary/90"
+            )}
+          >
+            <Video className="w-4 h-4 text-white" />
+          </button>
         </div>
-        <h2 className="text-xl font-display font-bold">{userName || "User"}</h2>
+
+        {/* Status label */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowStatusRecorder(true);
+          }}
+          className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {hasActiveStatus ? "View Status" : "Add Status"}
+        </button>
+
+        <h2 className="mt-2 text-xl font-display font-bold">{userName || "User"}</h2>
         <p className="text-sm text-muted-foreground">{user.email}</p>
         {isPremium && (
           <div
@@ -182,6 +224,17 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Status Video Recorder */}
+      {user && (
+        <StatusVideoRecorder
+          open={showStatusRecorder}
+          onOpenChange={setShowStatusRecorder}
+          userId={user.id}
+          existingVideoUrl={hasActiveStatus ? statusVideo?.video_url : null}
+          onVideoUploaded={() => setStatusRefreshKey((prev) => prev + 1)}
+        />
+      )}
     </div>
   );
 }
