@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Plus, Trash2, UserCheck, UserX, Crown, Search, Eye, EyeOff } from "lucide-react";
+import { Loader2, Plus, Trash2, UserCheck, UserX, Crown, Search, Eye, EyeOff, Key } from "lucide-react";
 
 interface TestUser {
   id: string;
@@ -43,6 +43,7 @@ export default function Admin() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   
   const { toast } = useToast();
 
@@ -131,6 +132,29 @@ export default function Admin() {
 
   const togglePasswordVisibility = (userId: string) => {
     setShowPasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
+  };
+
+  const bulkSetPasswords = async () => {
+    if (!confirm("This will set password 'Test1234!' for ALL users and save it to their metadata. Continue?")) return;
+    
+    setIsBulkUpdating(true);
+    try {
+      const response = await fetch(
+        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${password}&action=set-all-passwords&defaultPassword=Test1234!`,
+        { method: "GET" }
+      );
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({ title: "✅ Passwords updated!", description: data.message });
+      } else {
+        toast({ title: "Error", description: data.error || "Unknown error", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error("Error updating passwords:", err);
+      toast({ title: "Error updating passwords", variant: "destructive" });
+    }
+    setIsBulkUpdating(false);
   };
 
   const createUser = async () => {
@@ -231,9 +255,19 @@ export default function Admin() {
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 text-white">
           <h1 className="text-3xl font-bold">🎯 SHAKE Admin</h1>
           <p className="opacity-90 mt-1">Create and manage test users</p>
-          <div className="mt-4 bg-white/20 rounded-lg px-4 py-2 inline-block">
-            <span className="text-2xl font-bold">{users.length}</span>
-            <span className="ml-2 opacity-90">Total Users</span>
+          <div className="mt-4 flex items-center gap-4 flex-wrap">
+            <div className="bg-white/20 rounded-lg px-4 py-2">
+              <span className="text-2xl font-bold">{users.length}</span>
+              <span className="ml-2 opacity-90">Total Users</span>
+            </div>
+            <Button 
+              onClick={bulkSetPasswords} 
+              disabled={isBulkUpdating}
+              className="bg-white/20 hover:bg-white/30 text-white border-0"
+            >
+              {isBulkUpdating ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : <Key className="mr-2 w-4 h-4" />}
+              Set All Passwords to Test1234!
+            </Button>
           </div>
         </div>
 
