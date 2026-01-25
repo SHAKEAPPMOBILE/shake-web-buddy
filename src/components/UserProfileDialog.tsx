@@ -314,12 +314,16 @@ export function UserProfileDialog({
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
           onClick={() => setShowEnlargedAvatar(false)}
         >
-          <button
-            onClick={() => setShowEnlargedAvatar(false)}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-          >
-            <X className="w-6 h-6 text-white" />
-          </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setShowEnlargedAvatar(false);
+          }}
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+        >
+          <X className="w-6 h-6 text-white" />
+        </button>
           <img 
             src={avatarUrl} 
             alt={userName || "User"}
