@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Calendar, MapPin, Instagram, Linkedin, Twitter, Flag, X } from "lucide-react";
+import { User, Calendar, MapPin, Instagram, Linkedin, Twitter, Flag, X, Video } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -14,6 +14,10 @@ import { getActivityEmoji } from "@/data/activityTypes";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { useStatusVideo } from "@/hooks/useStatusVideo";
+import { StatusVideoRecorder } from "./StatusVideoRecorder";
+import { StatusVideoViewer } from "./StatusVideoViewer";
+import { cn } from "@/lib/utils";
 
 interface UserProfileDialogProps {
   open: boolean;
@@ -63,9 +67,13 @@ export function UserProfileDialog({
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showEnlargedAvatar, setShowEnlargedAvatar] = useState(false);
+  const [showStatusRecorder, setShowStatusRecorder] = useState(false);
+  const [showStatusViewer, setShowStatusViewer] = useState(false);
   const { isMatched } = useGreetings();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { statusVideo, hasActiveStatus } = useStatusVideo(userId);
+  const [statusRefreshKey, setStatusRefreshKey] = useState(0);
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -139,6 +147,18 @@ export function UserProfileDialog({
     setShowChatDialog(true);
   };
 
+  const handleAvatarClick = () => {
+    if (hasActiveStatus && statusVideo) {
+      setShowStatusViewer(true);
+    } else if (avatarUrl) {
+      setShowEnlargedAvatar(true);
+    }
+  };
+
+  const handleStatusVideoUploaded = () => {
+    setStatusRefreshKey((prev) => prev + 1);
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -157,22 +177,63 @@ export function UserProfileDialog({
 
           {/* Avatar and Name */}
           <div className="flex flex-col items-center py-4">
-            <button
-              onClick={() => avatarUrl && setShowEnlargedAvatar(true)}
-              className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-4 border-border shadow-lg transition-transform hover:scale-105 cursor-pointer"
-              disabled={!avatarUrl}
-            >
-              {avatarUrl ? (
-                <img 
-                  src={avatarUrl} 
-                  alt={userName || "User"}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="w-12 h-12 text-muted-foreground" />
+            {/* Avatar with Status Ring */}
+            <div className="relative">
+              <button
+                onClick={handleAvatarClick}
+                className={cn(
+                  "w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden shadow-lg transition-transform hover:scale-105 cursor-pointer",
+                  hasActiveStatus
+                    ? "ring-4 ring-shake-green ring-offset-2 ring-offset-background"
+                    : "border-4 border-border"
+                )}
+                disabled={!avatarUrl && !hasActiveStatus}
+              >
+                {avatarUrl ? (
+                  <img 
+                    src={avatarUrl} 
+                    alt={userName || "User"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-12 h-12 text-muted-foreground" />
+                )}
+              </button>
+
+              {/* Status Camera Button - only for own profile */}
+              {isOwnProfile && (
+                <button
+                  onClick={() => setShowStatusRecorder(true)}
+                  className={cn(
+                    "absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-background transition-colors",
+                    hasActiveStatus
+                      ? "bg-shake-green hover:bg-shake-green/90"
+                      : "bg-primary hover:bg-primary/90"
+                  )}
+                >
+                  <Video className="w-4 h-4 text-white" />
+                </button>
               )}
-            </button>
-            <h3 className="mt-4 text-xl font-semibold text-foreground">
+
+              {/* Status indicator for other users */}
+              {!isOwnProfile && hasActiveStatus && (
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-shake-green flex items-center justify-center border-2 border-background">
+                  <Video className="w-3 h-3 text-white" />
+                </div>
+              )}
+            </div>
+
+            {/* Status label for own profile */}
+            {isOwnProfile && (
+              <button
+                onClick={() => setShowStatusRecorder(true)}
+                className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {hasActiveStatus ? "View Status" : "Add Status"}
+              </button>
+            )}
+
+            <h3 className={cn("text-xl font-semibold text-foreground", isOwnProfile ? "mt-2" : "mt-4")}>
               {userName || "Shaker"}{userAge ? `, ${userAge}` : ''}
             </h3>
             
@@ -347,6 +408,27 @@ export function UserProfileDialog({
         reportedUserId={userId}
         reportedUserName={userName}
       />
+
+      {/* Status Video Recorder - only for own profile */}
+      {isOwnProfile && user && (
+        <StatusVideoRecorder
+          open={showStatusRecorder}
+          onOpenChange={setShowStatusRecorder}
+          userId={user.id}
+          existingVideoUrl={hasActiveStatus ? statusVideo?.video_url : null}
+          onVideoUploaded={handleStatusVideoUploaded}
+        />
+      )}
+
+      {/* Status Video Viewer - for viewing other users' status */}
+      {statusVideo && (
+        <StatusVideoViewer
+          open={showStatusViewer}
+          onOpenChange={setShowStatusViewer}
+          videoUrl={statusVideo.video_url}
+          userName={userName || undefined}
+        />
+      )}
     </>
   );
 }
