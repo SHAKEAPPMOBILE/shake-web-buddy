@@ -108,7 +108,7 @@ function DiagonalRow({ items, direction, speed = "normal", opacity = 0.35 }: Dia
 
 export function LandingCarousel() {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="absolute inset-0 overflow-hidden pointer-events-none animate-carousel-breathe">
       {/* Rotated container for diagonal effect */}
       <div 
         className="absolute inset-0 flex flex-col justify-center gap-6 sm:gap-8 pt-32"
@@ -119,12 +119,12 @@ export function LandingCarousel() {
       >
         {/* Row 1 - scrolling left */}
         <div className="w-[200%] -ml-[50%]">
-          <DiagonalRow items={allRow1} direction="left" speed="slow" opacity={0.35} />
+          <DiagonalRow items={allRow1} direction="left" speed="slow" opacity={1} />
         </div>
         
         {/* Row 2 - scrolling right (ascending) */}
         <div className="w-[200%] -ml-[50%]">
-          <DiagonalRow items={allRow5} direction="right" speed="slow" opacity={0.35} />
+          <DiagonalRow items={allRow5} direction="right" speed="slow" opacity={1} />
         </div>
       </div>
     </div>
