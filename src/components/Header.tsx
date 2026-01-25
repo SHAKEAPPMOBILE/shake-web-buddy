@@ -190,7 +190,12 @@ export function Header() {
                       className="w-9 h-9 rounded-full bg-muted border border-border overflow-hidden flex items-center justify-center hover:border-primary transition-colors"
                     >
                       {avatarUrl ? (
-                        <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                        <img 
+                          src={avatarUrl} 
+                          alt="" 
+                          className="w-full h-full object-cover"
+                          onError={() => setAvatarUrl(null)}
+                        />
                       ) : (
                         <User className="w-4 h-4 text-muted-foreground" />
                       )}
@@ -262,7 +267,12 @@ export function Header() {
                     className="w-10 h-10 rounded-full bg-muted border border-border overflow-hidden flex items-center justify-center"
                   >
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                      <img 
+                        src={avatarUrl} 
+                        alt="" 
+                        className="w-full h-full object-cover"
+                        onError={() => setAvatarUrl(null)}
+                      />
                     ) : (
                       <User className="w-5 h-5 text-muted-foreground" />
                     )}

@@ -252,7 +252,12 @@ export default function Profile() {
             <div className="relative mb-4">
               <div className="w-24 h-24 rounded-full bg-muted border-2 border-border overflow-hidden flex items-center justify-center">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                  <img 
+                    src={avatarUrl} 
+                    alt="" 
+                    className="w-full h-full object-cover"
+                    onError={() => setAvatarUrl(null)}
+                  />
                 ) : (
                   <User className="w-12 h-12 text-muted-foreground" />
                 )}
