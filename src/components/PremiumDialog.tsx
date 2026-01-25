@@ -181,9 +181,9 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
         <div className="text-center py-2">
           <div className="text-3xl font-display font-bold text-foreground">
-            $5<span className="text-base font-normal text-muted-foreground">/month</span>
+            $2.80<span className="text-base font-normal text-muted-foreground">/month</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">Cancel anytime</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Cancel anytime • Best value!</p>
         </div>
 
         <button
