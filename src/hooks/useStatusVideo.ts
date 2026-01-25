@@ -68,9 +68,23 @@ export function useStatusVideo(userId: string | undefined) {
 
 export async function uploadStatusVideo(
   userId: string,
-  videoBlob: Blob
+  videoFile: Blob | File
 ): Promise<string | null> {
-  const fileName = `${userId}/${Date.now()}.webm`;
+  // Determine file extension from type or filename
+  let extension = "mp4"; // default fallback
+  if (videoFile instanceof File) {
+    const nameParts = videoFile.name.split(".");
+    if (nameParts.length > 1) {
+      extension = nameParts[nameParts.length - 1].toLowerCase();
+    }
+  } else if (videoFile.type) {
+    const typeParts = videoFile.type.split("/");
+    if (typeParts.length > 1) {
+      extension = typeParts[1].split(";")[0]; // Handle "video/webm;codecs=vp8"
+    }
+  }
+
+  const fileName = `${userId}/${Date.now()}.${extension}`;
 
   // Delete any existing status videos for this user
   await supabase
@@ -81,8 +95,8 @@ export async function uploadStatusVideo(
   // Upload video to storage
   const { error: uploadError } = await supabase.storage
     .from("status-videos")
-    .upload(fileName, videoBlob, {
-      contentType: "video/webm",
+    .upload(fileName, videoFile, {
+      contentType: videoFile.type || "video/mp4",
       upsert: true,
     });
 
