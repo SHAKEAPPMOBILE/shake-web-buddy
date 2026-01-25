@@ -63,7 +63,7 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: billingEmail, limit: 1 });
     
     if (customers.data.length === 0) {
-      throw new Error("No Stripe customer found for this user");
+      throw new Error("No active Stripe subscription found. Please subscribe first to manage your subscription.");
     }
     
     const customerId = customers.data[0].id;
