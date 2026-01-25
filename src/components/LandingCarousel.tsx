@@ -97,7 +97,7 @@ function DiagonalRow({ items, direction, speed = "normal", opacity = 0.35 }: Dia
             <img
               src={item.src}
               alt=""
-              className={item.type === "avatar" ? "w-full h-full object-cover" : "w-7 h-7 sm:w-8 sm:h-8 object-contain"}
+              className={item.type === "avatar" ? "w-full h-full object-cover rounded-full" : "w-7 h-7 sm:w-8 sm:h-8 object-contain"}
             />
           </div>
         ))}
