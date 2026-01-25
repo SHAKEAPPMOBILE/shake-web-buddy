@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell } from "lucide-react";
+import { Camera, ArrowLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
@@ -39,6 +39,7 @@ export default function Profile() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [billingEmail, setBillingEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,10 +81,10 @@ export default function Profile() {
         setTwitterUrl(publicProfile.twitter_url || "");
       }
 
-      // Fetch private profile for phone number and push notifications
+      // Fetch private profile for phone number, email and push notifications
       const { data: privateProfile, error: privateError } = await supabase
         .from("profiles_private")
-        .select("phone_number, push_notifications_enabled")
+        .select("phone_number, billing_email, push_notifications_enabled")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -91,6 +92,7 @@ export default function Profile() {
         console.error("Error fetching private profile:", privateError);
       } else if (privateProfile) {
         setPhoneNumber(privateProfile.phone_number || "");
+        setBillingEmail(privateProfile.billing_email || "");
         setPushNotificationsEnabled(privateProfile.push_notifications_enabled ?? true);
       }
 
@@ -173,9 +175,10 @@ export default function Profile() {
 
       if (publicError) throw publicError;
 
-      // Update private profile for push notifications and phone number (if adding new)
-      const privateUpdateData: { push_notifications_enabled: boolean } = {
+      // Update private profile for push notifications and billing email
+      const privateUpdateData: { push_notifications_enabled: boolean; billing_email: string | null } = {
         push_notifications_enabled: pushNotificationsEnabled,
+        billing_email: billingEmail.trim() || null,
       };
       
       const { error: privateError } = await supabase
@@ -333,6 +336,24 @@ export default function Profile() {
                   For safety, phone numbers can only be changed via SMS verification.
                 </p>
               </div>
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Email Address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={billingEmail}
+                onChange={(e) => setBillingEmail(e.target.value)}
+                placeholder="your@email.com"
+              />
+              <p className="text-xs text-muted-foreground">
+                Used for billing and to receive updates from us.
+              </p>
             </div>
 
             {/* Nationality */}
