@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, UserCheck, UserX } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Plus, Trash2, UserCheck, UserX, Crown } from "lucide-react";
 
 interface TestUser {
   id: string;
@@ -12,6 +13,7 @@ interface TestUser {
   phone_confirmed_at: string | null;
   created_at: string;
   name?: string | null;
+  isPremium?: boolean;
 }
 
 export default function Admin() {
@@ -24,6 +26,7 @@ export default function Admin() {
   const [phone, setPhone] = useState("+1 ");
   const [userPassword, setUserPassword] = useState("");
   const [name, setName] = useState("");
+  const [isPremium, setIsPremium] = useState(false);
   
   const { toast } = useToast();
 
@@ -97,17 +100,18 @@ export default function Admin() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone, userPassword, name }),
+          body: JSON.stringify({ phone, userPassword, name, isPremium }),
         }
       );
       
       const data = await response.json();
       
       if (data.success) {
-        toast({ title: "✅ User created!", description: `${phone} can now login` });
+        toast({ title: "✅ User created!", description: `${phone} can now login${isPremium ? ' (Super-Human)' : ''}` });
         setPhone("+1 ");
         setUserPassword("");
         setName("");
+        setIsPremium(false);
         await loadUsers();
       } else {
         toast({ title: "Error", description: data.error, variant: "destructive" });
@@ -227,6 +231,20 @@ export default function Admin() {
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
+            </div>
+            <div className="flex items-center gap-3 mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <Switch
+                checked={isPremium}
+                onCheckedChange={setIsPremium}
+                className="data-[state=checked]:bg-amber-500"
+              />
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber-600" />
+                <span className="font-medium text-amber-800">Super-Human Status</span>
+              </div>
+              <span className="text-xs text-amber-600 ml-auto">
+                {isPremium ? "User will have premium features" : "Regular user"}
+              </span>
             </div>
             <Button 
               onClick={createUser} 
