@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isPremium: boolean;
+  isManualOverride: boolean;
   subscriptionEnd: string | null;
   signUpWithPhone: (phone: string, name: string) => Promise<{ error: Error | null }>;
   verifyOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
+  const [isManualOverride, setIsManualOverride] = useState(false);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
 
   // New users can exist without rows in `profiles` / `profiles_private`.
@@ -91,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (sessionError || !freshSession?.access_token) {
         console.log("No valid session for subscription check");
         setIsPremium(false);
+        setIsManualOverride(false);
         setSubscriptionEnd(null);
         return;
       }
@@ -114,22 +117,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ) {
           console.log("Session invalid for subscription check, treating as non-premium");
           setIsPremium(false);
+          setIsManualOverride(false);
           setSubscriptionEnd(null);
           return;
         }
         console.error("Error checking subscription:", error);
         // Don't throw, just treat as not premium
         setIsPremium(false);
+        setIsManualOverride(false);
         setSubscriptionEnd(null);
         return;
       }
       
       setIsPremium(data?.subscribed || false);
+      setIsManualOverride(data?.is_override || false);
       setSubscriptionEnd(data?.subscription_end || null);
     } catch (error: any) {
       // Catch any unexpected errors and fail gracefully
       console.log("Subscription check failed, treating as non-premium:", error?.message || error);
       setIsPremium(false);
+      setIsManualOverride(false);
       setSubscriptionEnd(null);
     }
   };
@@ -158,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }, 0);
       } else {
         setIsPremium(false);
+        setIsManualOverride(false);
         setSubscriptionEnd(null);
       }
     });
@@ -282,6 +290,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setSession(null);
     setIsPremium(false);
+    setIsManualOverride(false);
     setSubscriptionEnd(null);
   };
 
@@ -292,6 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         isLoading,
         isPremium,
+        isManualOverride,
         subscriptionEnd,
         signUpWithPhone,
         signInWithPhone,

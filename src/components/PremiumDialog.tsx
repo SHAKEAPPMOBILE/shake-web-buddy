@@ -31,7 +31,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [checkoutEmail, setCheckoutEmail] = useState("");
   const [savedBillingEmail, setSavedBillingEmail] = useState<string | null>(null);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
-  const { user, isPremium } = useAuth();
+  const { user, isPremium, isManualOverride } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
@@ -144,8 +144,8 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     }
   };
 
-  // If user is already premium, show management view
-  if (isPremium) {
+  // If user is premium via Stripe subscription (not manual override), show management view
+  if (isPremium && !isManualOverride) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
@@ -191,6 +191,50 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
           <p className="text-xs text-center text-muted-foreground">
             Cancel or update your subscription anytime
+          </p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // If user is premium via manual override, show special message
+  if (isPremium && isManualOverride) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent 
+          className="sm:max-w-md bg-card border-border"
+          {...(isMobile ? swipeHandlers : {})}
+        >
+          {isMobile && (
+            <div className="flex justify-center py-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+          )}
+          <DialogHeader className="pb-2">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <SuperHumanIcon size={48} />
+            </div>
+            <DialogTitle className="text-center text-xl font-display">
+              You're a Super-Human! 🎉
+            </DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground text-sm">
+              You have premium access with all features unlocked
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-4">
+            {features.map((feature, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-shake-green/20 flex items-center justify-center shrink-0">
+                  <Check className="w-3.5 h-3.5 text-shake-green" />
+                </div>
+                <span className="text-foreground text-sm">{feature.text}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Your premium access is managed by an administrator
           </p>
         </DialogContent>
       </Dialog>
