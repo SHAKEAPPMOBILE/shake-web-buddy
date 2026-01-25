@@ -38,12 +38,29 @@ serve(async (req) => {
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user) throw new Error("User not authenticated");
     
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    // Get billing email from profiles_private (for phone-authenticated users)
+    let billingEmail = user.email;
+    
+    if (!billingEmail) {
+      const { data: privateProfile } = await supabaseClient
+        .from("profiles_private")
+        .select("billing_email")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      billingEmail = privateProfile?.billing_email;
+    }
+    
+    if (!billingEmail) {
+      throw new Error("No billing email found. Please add your email in profile settings.");
+    }
+    
+    logStep("User authenticated", { userId: user.id, email: billingEmail });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email: billingEmail, limit: 1 });
     
     if (customers.data.length === 0) {
       throw new Error("No Stripe customer found for this user");
