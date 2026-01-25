@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { User, LogOut, Settings, Video, CreditCard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -36,24 +36,6 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
   const { statusVideo, hasActiveStatus } = useStatusVideo(user?.id);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
-  const [videoProgress, setVideoProgress] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Reset video playing state when status changes
-  useEffect(() => {
-    if (hasActiveStatus) {
-      setIsVideoPlaying(true);
-      setVideoProgress(0);
-    }
-  }, [hasActiveStatus, statusRefreshKey]);
-
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
-      setVideoProgress(progress);
-    }
-  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -100,57 +82,13 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
       >
         {/* Avatar with Status Ring and Progress */}
         <div className="relative">
-          {/* Circular Progress Indicator */}
-          {hasActiveStatus && isVideoPlaying && (
-            <svg
-              className="absolute inset-0 w-[104px] h-[104px] -m-[4px] rotate-[-90deg]"
-              viewBox="0 0 104 104"
-            >
-              {/* Background circle */}
-              <circle
-                cx="52"
-                cy="52"
-                r="48"
-                fill="none"
-                stroke="hsl(var(--shake-green) / 0.2)"
-                strokeWidth="4"
-              />
-              {/* Progress circle */}
-              <circle
-                cx="52"
-                cy="52"
-                r="48"
-                fill="none"
-                stroke="hsl(var(--shake-green))"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeDasharray={2 * Math.PI * 48}
-                strokeDashoffset={2 * Math.PI * 48 * (1 - videoProgress / 100)}
-                className="transition-[stroke-dashoffset] duration-100 ease-linear"
-              />
-            </svg>
-          )}
-          
           <div className={cn(
             "w-24 h-24 rounded-full bg-muted overflow-hidden flex items-center justify-center",
-            hasActiveStatus && !isVideoPlaying
+            hasActiveStatus
               ? "ring-4 ring-shake-green ring-offset-2 ring-offset-background"
-              : !hasActiveStatus
-              ? "border-2 border-border"
-              : ""
+              : "border-2 border-border"
           )}>
-            {hasActiveStatus && isVideoPlaying && statusVideo ? (
-              <video
-                ref={videoRef}
-                src={statusVideo.video_url}
-                className="w-full h-full object-cover"
-                autoPlay
-                muted
-                playsInline
-                onTimeUpdate={handleTimeUpdate}
-                onEnded={() => setIsVideoPlaying(false)}
-              />
-            ) : avatarUrl ? (
+            {avatarUrl ? (
               <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
             ) : (
               <User className="w-12 h-12 text-muted-foreground" />
