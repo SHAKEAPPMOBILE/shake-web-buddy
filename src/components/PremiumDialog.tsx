@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, MapPin, Globe, User, Mic, MessageSquare, Sparkles } from "lucide-react";
+import { Check, MapPin, Globe, User, Mic, MessageSquare, Sparkles, Settings } from "lucide-react";
 import shakeCoin from "@/assets/shake-coin.png";
 import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
@@ -27,10 +27,11 @@ interface PremiumDialogProps {
 
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isManageLoading, setIsManageLoading] = useState(false);
   const [checkoutEmail, setCheckoutEmail] = useState("");
   const [savedBillingEmail, setSavedBillingEmail] = useState<string | null>(null);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
@@ -116,6 +117,80 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       setIsLoading(false);
     }
   };
+
+  const handleManageSubscription = async () => {
+    setIsManageLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.url) {
+        window.open(data.url, "_blank");
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error("Error opening customer portal:", error);
+      toast.error("Failed to open subscription management. Please try again.");
+    } finally {
+      setIsManageLoading(false);
+    }
+  };
+
+  // If user is already premium, show management view
+  if (isPremium) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent 
+          className="sm:max-w-md bg-card border-border"
+          {...(isMobile ? swipeHandlers : {})}
+        >
+          {isMobile && (
+            <div className="flex justify-center py-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+          )}
+          <DialogHeader className="pb-2">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <SuperHumanIcon size={48} />
+            </div>
+            <DialogTitle className="text-center text-xl font-display">
+              You're a Super-Human! 🎉
+            </DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground text-sm">
+              You have access to all premium features
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-4">
+            {features.map((feature, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-shake-green/20 flex items-center justify-center shrink-0">
+                  <Check className="w-3.5 h-3.5 text-shake-green" />
+                </div>
+                <span className="text-foreground text-sm">{feature.text}</span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={handleManageSubscription}
+            disabled={isManageLoading}
+            className="w-full py-3 rounded-xl bg-muted text-foreground font-medium transition-all hover:bg-muted/80 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            {isManageLoading ? "Loading..." : "Manage Subscription"}
+          </button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Cancel or update your subscription anytime
+          </p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
