@@ -528,31 +528,11 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                     </div>
                   )}
 
-                  <div className="flex items-center gap-3 mt-1">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-white/70" />
-                      <span className="text-sm text-white/70">
-                        {activity.participant_count} {activity.participant_count === 1 ? "person" : "people"}
-                      </span>
-                    </div>
-                    {activity.is_plan && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-white/70" />
-                        <span className="text-sm text-white/70">
-                          {format(new Date(activity.scheduled_for), "EEE, d MMM")}
-                        </span>
-                        {isToday(new Date(activity.scheduled_for)) && (
-                          <span className="text-xs bg-shake-yellow text-black font-semibold px-2 py-0.5 rounded-full animate-pulse">
-                            Today
-                          </span>
-                        )}
-                        {isTomorrow(new Date(activity.scheduled_for)) && (
-                          <span className="text-xs bg-primary/80 text-white font-semibold px-2 py-0.5 rounded-full">
-                            Tomorrow
-                          </span>
-                        )}
-                      </div>
-                    )}
+                  <div className="flex items-center gap-1 mt-1">
+                    <Users className="w-3.5 h-3.5 text-white/70" />
+                    <span className="text-sm text-white/70">
+                      {activity.participant_count} {activity.participant_count === 1 ? "person" : "people"}
+                    </span>
                   </div>
                 </div>
               </div>
