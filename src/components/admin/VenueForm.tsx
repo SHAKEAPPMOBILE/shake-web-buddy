@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAddVenue, useUpdateVenue, DbVenue, VenueInsert } from "@/hooks/useVenues";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Save, X, MapPin, Loader2 } from "lucide-react";
+import { Plus, Save, X, MapPin, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface VenueFormProps {
@@ -27,24 +27,23 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
   const [longitude, setLongitude] = useState(venue?.longitude?.toString() || "");
   const [sortOrder, setSortOrder] = useState(venue?.sort_order?.toString() || "0");
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodeSuccess, setGeocodeSuccess] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const lastGeocodedAddress = useRef<string>("");
 
   const addVenue = useAddVenue();
   const updateVenue = useUpdateVenue();
 
-  const handleGeocode = async () => {
-    if (!address.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter an address first",
-        variant: "destructive",
-      });
-      return;
+  const geocodeAddress = useCallback(async (addressToGeocode: string): Promise<boolean> => {
+    if (!addressToGeocode.trim() || addressToGeocode === lastGeocodedAddress.current) {
+      return false;
     }
 
     setIsGeocoding(true);
+    setGeocodeSuccess(false);
     try {
       const { data, error } = await supabase.functions.invoke('geocode-address', {
-        body: { address: address.trim() }
+        body: { address: addressToGeocode.trim() }
       });
 
       if (error) throw error;
@@ -52,26 +51,53 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
       if (data.latitude && data.longitude) {
         setLatitude(data.latitude.toString());
         setLongitude(data.longitude.toString());
-        toast({
-          title: "Coordinates found!",
-          description: `Lat: ${data.latitude.toFixed(6)}, Lng: ${data.longitude.toFixed(6)}`,
-        });
-      } else {
-        toast({
-          title: "Address not found",
-          description: "Could not find coordinates for this address. Try a more specific address.",
-          variant: "destructive",
-        });
+        lastGeocodedAddress.current = addressToGeocode;
+        setGeocodeSuccess(true);
+        return true;
       }
+      return false;
     } catch (error: any) {
       console.error('Geocoding error:', error);
-      toast({
-        title: "Geocoding failed",
-        description: error.message || "Failed to fetch coordinates",
-        variant: "destructive",
-      });
+      return false;
     } finally {
       setIsGeocoding(false);
+    }
+  }, []);
+
+  // Auto-geocode when address changes (debounced)
+  useEffect(() => {
+    if (!address.trim() || address.length < 10) return;
+    
+    // Clear previous timeout
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    // Debounce geocoding by 1 second after user stops typing
+    debounceRef.current = setTimeout(() => {
+      geocodeAddress(address);
+    }, 1000);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [address, geocodeAddress]);
+
+  const handleManualGeocode = async () => {
+    const success = await geocodeAddress(address);
+    if (success) {
+      toast({
+        title: "Coordinates found!",
+        description: `Lat: ${latitude}, Lng: ${longitude}`,
+      });
+    } else {
+      toast({
+        title: "Address not found",
+        description: "Could not find coordinates for this address.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -180,18 +206,26 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleGeocode}
+                onClick={handleManualGeocode}
                 disabled={isGeocoding || !address.trim()}
                 className="shrink-0"
               >
                 {isGeocoding ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
+                ) : geocodeSuccess ? (
+                  <Check className="w-4 h-4 text-green-500" />
                 ) : (
                   <MapPin className="w-4 h-4" />
                 )}
-                <span className="ml-1 hidden sm:inline">Get GPS</span>
+                <span className="ml-1 hidden sm:inline">{geocodeSuccess ? "Found" : "Get GPS"}</span>
               </Button>
             </div>
+            {isGeocoding && (
+              <p className="text-xs text-muted-foreground">Auto-fetching coordinates...</p>
+            )}
+            {geocodeSuccess && latitude && longitude && (
+              <p className="text-xs text-green-600">✓ Coordinates auto-filled: {parseFloat(latitude).toFixed(4)}, {parseFloat(longitude).toFixed(4)}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4">
