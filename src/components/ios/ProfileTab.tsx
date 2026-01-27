@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Coins } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,8 @@ import { StatusVideoRecorder } from "../StatusVideoRecorder";
 import { cn } from "@/lib/utils";
 import { PointsDashboard } from "../PointsDashboard";
 import { useUserPoints } from "@/hooks/useUserPoints";
+import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
+import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
 import {
   AlertDialog,
@@ -47,6 +49,47 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const { statusVideo, hasActiveStatus } = useStatusVideo(user?.id);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
   const { points } = useUserPoints(user?.id);
+  const { referralCode } = useReferralCode(user?.id);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyReferralLink = async () => {
+    const link = getReferralLink(referralCode);
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedLink(true);
+      toast({
+        title: "Link copied!",
+        description: "Share it with friends to earn points",
+      });
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      toast({
+        title: "Failed to copy",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleShareReferralLink = async () => {
+    const link = getReferralLink(referralCode);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Join SHAKE!",
+          text: "Join me on SHAKE to find fun activities and meet new people!",
+          url: link,
+        });
+      } catch (err) {
+        // User cancelled or share failed, fallback to copy
+        if ((err as Error).name !== "AbortError") {
+          handleCopyReferralLink();
+        }
+      }
+    } else {
+      handleCopyReferralLink();
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -182,6 +225,41 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
             <p className="text-xs text-muted-foreground">{points.toLocaleString()} points earned</p>
           </div>
         </button>
+
+        {/* Share Referral Link */}
+        <div className="w-full bg-card border border-primary/30 rounded-xl overflow-hidden">
+          <button
+            onClick={handleShareReferralLink}
+            className="w-full flex items-center gap-4 px-4 py-3"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Share2 className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="font-medium">Share Referral Link</span>
+              <p className="text-xs text-muted-foreground">Earn +5 points per signup</p>
+            </div>
+          </button>
+          {referralCode && (
+            <div className="px-4 pb-3 pt-0">
+              <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+                <span className="flex-1 text-sm text-muted-foreground truncate">
+                  {getReferralLink(referralCode)}
+                </span>
+                <button
+                  onClick={handleCopyReferralLink}
+                  className="p-1.5 hover:bg-muted rounded-md transition-colors"
+                >
+                  {copiedLink ? (
+                    <Check className="w-4 h-4 text-shake-green" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {isPremium ? (
           <button
