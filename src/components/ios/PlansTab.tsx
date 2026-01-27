@@ -392,7 +392,6 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
           note: selectedPlan.note,
           created_at: selectedPlan.scheduled_for,
           updated_at: selectedPlan.scheduled_for,
-          participant_count: selectedPlan.participant_count || 0,
         }}
         onBack={handleBackFromChat}
       />

@@ -7,7 +7,6 @@ interface PrivateMessage {
   sender_id: string;
   receiver_id: string;
   message: string;
-  audio_url: string | null;
   created_at: string;
   read_at: string | null;
 }
@@ -43,14 +42,13 @@ export function usePrivateMessages(otherUserId: string | null) {
   }, [user, otherUserId]);
 
   // Send a message
-  const sendMessage = async (message: string, audioUrl?: string) => {
+  const sendMessage = async (message: string) => {
     if (!user || !otherUserId) return { error: new Error("Not authenticated") };
 
     const { error } = await supabase.from("private_messages").insert({
       sender_id: user.id,
       receiver_id: otherUserId,
       message,
-      audio_url: audioUrl || null,
     });
 
     if (!error) {

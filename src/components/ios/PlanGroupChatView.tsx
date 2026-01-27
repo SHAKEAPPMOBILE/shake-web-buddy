@@ -1,97 +1,88 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Send, User, Trash2, Mic } from "lucide-react";
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { ChevronLeft, Send, Users, User, Trash2, MapPin, Calendar, Clock, FileText } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
-import { VoiceRecorder } from "@/components/VoiceRecorder";
-import { AudioWaveform } from "@/components/AudioWaveform";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
-import { UserActivity } from "@/hooks/useUserActivities";
-import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useActivityVenue } from "@/contexts/VenueContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { LoadingSpinner } from "../LoadingSpinner";
+import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
 
-interface PlanGroupChatViewProps {
-  activity: UserActivity;
-  onBack: () => void;
-}
-
-interface Message {
+interface PlanMessage {
   id: string;
   activity_id: string;
   user_id: string;
   message: string;
-  audio_url?: string | null;
   created_at: string;
 }
 
+interface Activity {
+  id: string;
+  user_id: string;
+  activity_type: string;
+  city: string;
+  scheduled_for: string;
+  note?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PlanGroupChatViewProps {
+  activity: Activity;
+  onBack: () => void;
+  attendeeCount?: number;
+}
+
 const chatSuggestions = [
-  "Hey everyone! 👋",
-  "What time works for you?",
+  "What time works best?",
   "Where should we meet?",
   "Count me in!",
+  "See you there! 👋",
+  "I'm running late!",
   "On my way! 🏃",
-  "Running a bit late",
-  "See you there!",
 ];
 
 export function PlanGroupChatView({
   activity,
   onBack,
+  attendeeCount = 0,
 }: PlanGroupChatViewProps) {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
+  const [messages, setMessages] = useState<PlanMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
-  const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
-  const [audioResetTrigger, setAudioResetTrigger] = useState(0);
+  const [showParticipantsDialog, setShowParticipantsDialog] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
     userId: string;
     userName: string | null;
     avatarUrl: string | null;
   } | null>(null);
-  const [showParticipantsDialog, setShowParticipantsDialog] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user, isPremium } = useAuth();
-  const { showNotification } = usePushNotifications();
-  const isWindowFocused = useRef(true);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   
-  const { canSendAudio, remainingAudio, incrementAudioCount, FREE_AUDIO_LIMIT } = useAudioMessageLimit({
-    conversationType: 'plan',
-    conversationId: activity.id,
-  });
+  const { canSendText, addCharacters } = useTextMessageLimit();
   
-  const { canSendText, addCharacters, remainingCharacters, FREE_CHARACTER_LIMIT } = useTextMessageLimit();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user, isPremium } = useAuth();
+  const { location, mapsUrl } = useActivityVenue(activity.city, activity.activity_type);
 
-  // Track window focus
-  useEffect(() => {
-    const handleFocus = () => { isWindowFocused.current = true; };
-    const handleBlur = () => { isWindowFocused.current = false; };
-    
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("blur", handleBlur);
-    
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("blur", handleBlur);
-    };
-  }, []);
-
-  // Get unique user IDs from messages for profile fetching
+  // Get unique user IDs from messages
   const userIds = useMemo(() => {
-    return [...new Set(messages.map((msg) => msg.user_id))];
-  }, [messages]);
+    const ids = [...new Set(messages.map((msg) => msg.user_id))];
+    // Also include activity creator
+    if (!ids.includes(activity.user_id)) {
+      ids.push(activity.user_id);
+    }
+    return ids;
+  }, [messages, activity.user_id]);
 
   const { profiles } = useUserProfiles(userIds);
 
@@ -116,7 +107,7 @@ export function PlanGroupChatView({
 
     fetchMessages();
 
-    // Subscribe to message changes
+    // Subscribe to new messages
     const channel = supabase
       .channel(`plan-messages-${activity.id}`)
       .on(
@@ -127,33 +118,12 @@ export function PlanGroupChatView({
           table: "plan_messages",
           filter: `activity_id=eq.${activity.id}`,
         },
-        async (payload) => {
-          const newMessage = payload.new as Message;
+        (payload) => {
+          const newMessage = payload.new as PlanMessage;
           setMessages((prev) => [...prev, newMessage]);
-          
+          // Play notification sound for messages from others
           if (newMessage.user_id !== user?.id) {
             playNotificationSound();
-            
-            // Show browser notification if window is not focused
-            if (!isWindowFocused.current) {
-              const { data: senderProfile } = await supabase
-                .from("profiles")
-                .select("name")
-                .eq("user_id", newMessage.user_id)
-                .maybeSingle();
-              
-              const senderName = senderProfile?.name || "Someone";
-              const activityLabel = getActivityLabel(activity.activity_type);
-              const truncatedMessage = newMessage.message.length > 50
-                ? newMessage.message.substring(0, 50) + "..."
-                : newMessage.message;
-              
-              showNotification({
-                title: `${senderName} in ${activityLabel}`,
-                body: truncatedMessage,
-                tag: `plan-msg-${newMessage.id}`,
-              });
-            }
           }
         }
       )
@@ -163,11 +133,9 @@ export function PlanGroupChatView({
           event: "DELETE",
           schema: "public",
           table: "plan_messages",
-          filter: `activity_id=eq.${activity.id}`,
         },
         (payload) => {
-          const deletedMessage = payload.old as Message;
-          setMessages((prev) => prev.filter((msg) => msg.id !== deletedMessage.id));
+          setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
         }
       )
       .subscribe();
@@ -175,149 +143,15 @@ export function PlanGroupChatView({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activity.id, user?.id, showNotification, activity.activity_type]);
+  }, [activity.id, user?.id]);
 
-  // Fetch participants
-  useEffect(() => {
-    if (!activity.id) return;
-
-    const fetchParticipants = async () => {
-      // Get the owner's profile
-      const { data: ownerProfile } = await supabase
-        .from("profiles")
-        .select("user_id, name, avatar_url")
-        .eq("user_id", activity.user_id)
-        .maybeSingle();
-
-      const owner = {
-        user_id: activity.user_id,
-        name: ownerProfile?.name || null,
-        avatar_url: ownerProfile?.avatar_url || null,
-      };
-
-      // Get activity joins for this specific plan
-      const { data: joins } = await supabase
-        .from("activity_joins")
-        .select("user_id")
-        .eq("activity_id", activity.id);
-
-      if (!joins || joins.length === 0) {
-        setParticipants([owner]);
-        return;
-      }
-
-      // Get unique user IDs (excluding owner)
-      const uniqueUserIds = [...new Set(joins.map((j) => j.user_id))].filter(
-        (id) => id !== activity.user_id
-      );
-
-      // Fetch profiles for these users
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, name, avatar_url")
-        .in("user_id", uniqueUserIds);
-
-      const joinedParticipants = uniqueUserIds.map((userId) => {
-        const profile = profiles?.find((p) => p.user_id === userId);
-        return {
-          user_id: userId,
-          name: profile?.name || null,
-          avatar_url: profile?.avatar_url || null,
-        };
-      });
-
-      // Owner first, then joined participants
-      setParticipants([owner, ...joinedParticipants]);
-    };
-
-    fetchParticipants();
-
-    // Subscribe to joins changes
-    const channel = supabase
-      .channel(`plan-joins-${activity.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "activity_joins",
-          filter: `activity_id=eq.${activity.id}`,
-        },
-        () => fetchParticipants()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [activity.id, activity.user_id]);
-
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = useCallback(async () => {
-    // Handle audio message
-    if (pendingAudio) {
-      if (!user) {
-        toast.error("Please sign in to send messages");
-        return;
-      }
-      
-      if (!canSendAudio) {
-        setShowPremiumDialog(true);
-        toast.error(`You've reached the ${FREE_AUDIO_LIMIT} audio message limit. Upgrade to Super-Human for unlimited audio!`);
-        return;
-      }
-
-      setIsSending(true);
-      try {
-        const fileName = `plans/${activity.id}/${user.id}/${Date.now()}.webm`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("voice-notes")
-          .upload(fileName, pendingAudio.blob, {
-            contentType: "audio/webm",
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from("voice-notes")
-          .getPublicUrl(fileName);
-
-        const { error: messageError } = await supabase
-          .from("plan_messages")
-          .insert({
-            activity_id: activity.id,
-            user_id: user.id,
-            message: "🎤 Voice note",
-            audio_url: urlData.publicUrl,
-          });
-
-        if (messageError) throw messageError;
-
-        setPendingAudio(null);
-        setAudioResetTrigger(prev => prev + 1);
-        incrementAudioCount();
-        toast.success("Voice note sent!");
-      } catch (error) {
-        console.error("Error sending voice note:", error);
-        toast.error("Failed to send voice note");
-      } finally {
-        setIsSending(false);
-      }
-      return;
-    }
-
-    // Handle text message
-    if (!message.trim() || !user) {
-      if (!user) {
-        toast.error("Please sign in to send messages");
-      }
-      return;
-    }
+  const handleSendMessage = async () => {
+    if (!message.trim() || !user || isSending) return;
 
     // Check text character limit for free users
     if (!isPremium && !canSendText) {
@@ -328,57 +162,30 @@ export function PlanGroupChatView({
 
     setIsSending(true);
 
-    const messageText = message.trim();
-    const { error } = await supabase.from("plan_messages").insert({
-      activity_id: activity.id,
-      user_id: user.id,
-      message: messageText,
-    });
+    try {
+      const { error } = await supabase.from("plan_messages").insert({
+        activity_id: activity.id,
+        user_id: user.id,
+        message: message.trim(),
+      });
 
-    if (error) {
+      if (error) throw error;
+
+      addCharacters(message.trim().length);
+      setMessage("");
+    } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
-    } else {
-      addCharacters(messageText.length);
-      setMessage("");
-      
-      // Send SMS notification to plan owner (if not the owner sending)
-      if (activity.user_id !== user.id) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("name")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        
-        try {
-          await supabase.functions.invoke("send-plan-sms", {
-            body: {
-              notificationType: "plan_message",
-              activityId: activity.id,
-              senderName: profile?.name || "Someone",
-              messagePreview: messageText.substring(0, 50),
-            },
-          });
-        } catch (smsError) {
-          console.error("Failed to send SMS notification:", smsError);
-        }
-      }
+    } finally {
+      setIsSending(false);
     }
-
-    setIsSending(false);
-  }, [user, message, pendingAudio, activity.id, activity.user_id, isPremium, canSendAudio, canSendText, incrementAudioCount, addCharacters, FREE_AUDIO_LIMIT]);
+  };
 
   const handleDeleteMessage = async (messageId: string) => {
-    const { error } = await supabase
-      .from("plan_messages")
-      .delete()
-      .eq("id", messageId);
+    const { error } = await supabase.from("plan_messages").delete().eq("id", messageId);
 
     if (error) {
-      console.error("Error deleting message:", error);
       toast.error("Failed to delete message");
-    } else {
-      toast.success("Message deleted");
     }
   };
 
@@ -389,90 +196,75 @@ export function PlanGroupChatView({
     }
   };
 
-  const { location, mapsUrl } = useActivityVenue(activity.city, activity.activity_type);
+  const scheduledDate = new Date(activity.scheduled_for);
+  const formattedDate = format(scheduledDate, "EEEE, MMMM d");
+  const formattedTime = format(scheduledDate, "h:mm a");
+  const creatorProfile = profiles[activity.user_id];
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50">
-      {/* Minimal Header */}
+      {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <button onClick={onBack} className="shrink-0 p-1 hover:opacity-70 transition-opacity">
           <ChevronLeft className="w-6 h-6 text-black" />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-display flex items-center gap-2 text-black">
-            <span>{getActivityEmoji(activity.activity_type)}</span>
-            <span className="truncate">{getActivityLabel(activity.activity_type)}</span>
+          <h1 className="text-lg font-display text-black truncate">
+            {getActivityEmoji(activity.activity_type)} {getActivityLabel(activity.activity_type)}
           </h1>
-          <p className="text-sm text-black/60">
-            {format(new Date(activity.scheduled_for), "EEEE")} • {activity.note ? `"${activity.note}"` : (
-              mapsUrl ? (
-                <a
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  📍 {location}
-                </a>
-              ) : `📍 ${location}`
-            )}
+          <p className="text-sm text-black/60 truncate">
+            Created by {creatorProfile?.name || "Shaker"}
           </p>
         </div>
+        <button
+          onClick={() => setShowParticipantsDialog(true)}
+          className="flex items-center gap-1 px-2 py-1 text-xs bg-muted rounded-full hover:bg-muted/80 transition-colors"
+        >
+          <Users className="w-3 h-3" />
+          <span>{attendeeCount}</span>
+        </button>
       </div>
 
-      {/* Attendees section */}
-      {participants.length > 0 ? (
-        <div className="w-full px-4 py-3 border-b border-black/5">
-          <button 
-            onClick={() => setShowParticipantsDialog(true)}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-          >
-            <div className="flex -space-x-2 overflow-hidden">
-              {participants.slice(0, 6).map((participant) => (
-                <div
-                  key={participant.user_id}
-                  className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-[hsl(50,40%,92%)] shrink-0"
-                >
-                  {participant.avatar_url ? (
-                    <img
-                      src={participant.avatar_url}
-                      alt={participant.name || "User"}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  <User className={`w-4 h-4 text-muted-foreground ${participant.avatar_url ? 'hidden' : ''}`} />
-                </div>
-              ))}
-              {participants.length > 6 && (
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border-2 border-[hsl(50,40%,92%)] text-xs font-medium text-muted-foreground shrink-0">
-                  +{participants.length - 6}
-                </div>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {participants.length} {participants.length === 1 ? 'person' : 'people'} joined
-            </p>
-          </button>
+      {/* Activity Details Card */}
+      <div className="mx-4 mt-1 p-3 bg-white/50 rounded-lg border border-border/30 shrink-0">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+          <Calendar className="w-4 h-4" />
+          <span>{formattedDate}</span>
+          <Clock className="w-4 h-4 ml-2" />
+          <span>{formattedTime}</span>
         </div>
-      ) : (
-        <div className="w-full px-4 py-3 border-b border-black/5">
-          <p className="text-sm text-muted-foreground/70">
-            You're the first one here!
-          </p>
-        </div>
-      )}
+        {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "brunch") && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+            <MapPin className="w-4 h-4" />
+            {mapsUrl ? (
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                {location}
+              </a>
+            ) : (
+              <span>{location}</span>
+            )}
+          </div>
+        )}
+        {activity.note && (
+          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <FileText className="w-4 h-4 mt-0.5" />
+            <span>{activity.note}</span>
+          </div>
+        )}
+      </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50">
             <p className="text-center text-sm">
-              Start the conversation!<br />
-              Coordinate with other participants here.
+              Start planning!<br />
+              Coordinate with others joining this plan.
             </p>
           </div>
         ) : (
@@ -487,17 +279,25 @@ export function PlanGroupChatView({
                 key={msg.id}
                 className={`group flex gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}
               >
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0 overflow-hidden border border-border">
+                <button
+                  onClick={() => {
+                    if (!isOwnMessage) {
+                      setSelectedUserProfile({
+                        userId: msg.user_id,
+                        userName: profile?.name || null,
+                        avatarUrl: profile?.avatar_url || null,
+                      });
+                    }
+                  }}
+                  className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0 overflow-hidden border border-border"
+                  disabled={isOwnMessage}
+                >
                   {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt={displayName}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-4 h-4 text-muted-foreground" />
                   )}
-                </div>
+                </button>
                 <div className={`flex-1 max-w-[70%] ${isOwnMessage ? "text-right" : ""}`}>
                   <div className={`flex items-baseline gap-2 ${isOwnMessage ? "justify-end" : ""}`}>
                     <button
@@ -527,11 +327,7 @@ export function PlanGroupChatView({
                           : "bg-blue-500 text-white"
                       }`}
                     >
-                      {msg.audio_url ? (
-                        <AudioWaveform audioUrl={msg.audio_url} isCompact />
-                      ) : (
-                        <span>{msg.message}</span>
-                      )}
+                      <span>{msg.message}</span>
                     </div>
                     {isOwnMessage && (
                       <button
@@ -552,7 +348,7 @@ export function PlanGroupChatView({
       </div>
 
       {/* Quick suggestions */}
-      {user && !message.trim() && !pendingAudio && (
+      {user && !message.trim() && (
         <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
           <div className="flex gap-2 w-max">
             {chatSuggestions.map((suggestion) => (
@@ -568,56 +364,21 @@ export function PlanGroupChatView({
         </div>
       )}
 
-      {/* Audio limit indicator */}
-      {user && !isPremium && remainingAudio <= 5 && (
-        <div className="px-4 py-1 text-xs text-muted-foreground text-center">
-          <span className="flex items-center justify-center gap-1">
-            <Mic className="w-3 h-3" />
-            {remainingAudio} voice notes remaining
-          </span>
-        </div>
-      )}
-
       {/* Input area */}
       <div className="p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-        {pendingAudio ? (
-          <div className="flex items-center gap-2">
-            <div className="flex-1 p-2 bg-muted rounded-lg">
-              <AudioWaveform audioUrl={pendingAudio.url} isCompact />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Button variant="ghost" size="icon" onClick={() => setPendingAudio(null)}>
-                <Trash2 className="w-4 h-4" />
-              </Button>
-              <Button onClick={handleSendMessage} disabled={isSending} variant="shake">
-                {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder={user ? (canSendText ? "Type a message..." : "Character limit reached") : "Sign in to chat"}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={!user || (!isPremium && !canSendText)}
-              className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
-            />
-            <div className="flex flex-col gap-1">
-              <VoiceRecorder
-                onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
-                onAudioClear={() => setPendingAudio(null)}
-                disabled={!user}
-                highlighted={true}
-                resetTrigger={audioResetTrigger}
-              />
-              <Button onClick={handleSendMessage} disabled={(!message.trim() && !pendingAudio) || isSending || !user} variant="shake">
-                {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
-              </Button>
-            </div>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder={user ? (canSendText ? "Type a message..." : "Character limit reached") : "Sign in to chat"}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={!user || (!isPremium && !canSendText)}
+            className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
+          />
+          <Button onClick={handleSendMessage} disabled={!message.trim() || isSending || !user} variant="shake">
+            {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
+          </Button>
+        </div>
       </div>
 
       {/* User Profile Dialog */}

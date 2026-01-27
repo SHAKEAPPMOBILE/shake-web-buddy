@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Globe, MapPin, Trash2, Mic, Plane } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Globe, MapPin, Trash2, Plane } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,19 +12,15 @@ import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
-import { VoiceRecorder } from "@/components/VoiceRecorder";
-import { AudioWaveform } from "@/components/AudioWaveform";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { useActivityVenue } from "@/contexts/VenueContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
-import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { CheckInButton } from "./CheckInButton";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -43,7 +39,6 @@ interface Message {
   activity_type: string;
   city: string;
   message: string;
-  audio_url?: string | null;
   created_at: string;
 }
 
@@ -121,10 +116,6 @@ const chatSuggestions: Record<string, string[]> = {
   ],
 };
 
-// Location is now dynamic based on activity type and city
-// Lunch/Dinner: Show venue from venues.ts
-// Drinks/Hike: Show "TBD - Vote in chat!"
-
 export function GroupChatDialog({ 
   open, 
   onOpenChange, 
@@ -140,8 +131,6 @@ export function GroupChatDialog({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
-  const [audioResetTrigger, setAudioResetTrigger] = useState(0);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showParticipantsList, setShowParticipantsList] = useState(false);
   const [isChatExpanded, setIsChatExpanded] = useState(false);
@@ -158,12 +147,7 @@ export function GroupChatDialog({
   const { onlineCount } = useOnlinePresence();
   const isMobile = useIsMobile();
   
-  const { canSendAudio, remainingAudio, incrementAudioCount, FREE_AUDIO_LIMIT } = useAudioMessageLimit({
-    conversationType: 'activity',
-    conversationId: `${city}::${activityType}`,
-  });
-  
-  const { canSendText, addCharacters, remainingCharacters, FREE_CHARACTER_LIMIT } = useTextMessageLimit();
+  const { canSendText, addCharacters } = useTextMessageLimit();
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -305,60 +289,6 @@ export function GroupChatDialog({
   }, [messages]);
 
   const handleSendMessage = async () => {
-    // Handle audio message
-    if (pendingAudio) {
-      if (!user) {
-        toast.error("Please sign in to send messages");
-        return;
-      }
-      
-      if (!canSendAudio) {
-        setShowPremiumDialog(true);
-        toast.error(`You've reached the ${FREE_AUDIO_LIMIT} audio message limit. Upgrade to Super-Human for unlimited audio!`);
-        return;
-      }
-      
-      setIsSending(true);
-      try {
-        const fileName = `${user.id}/${Date.now()}.webm`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from("voice-notes")
-          .upload(fileName, pendingAudio.blob, {
-            contentType: "audio/webm",
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from("voice-notes")
-          .getPublicUrl(fileName);
-
-        const { error: messageError } = await supabase
-          .from("activity_messages")
-          .insert({
-            user_id: user.id,
-            activity_type: activityType,
-            city: city,
-            message: "🎤 Voice note",
-            audio_url: urlData.publicUrl,
-          });
-
-        if (messageError) throw messageError;
-        
-        setPendingAudio(null);
-        setAudioResetTrigger(prev => prev + 1);
-        incrementAudioCount();
-        toast.success("Voice note sent!");
-      } catch (error) {
-        console.error("Error sending voice note:", error);
-        toast.error("Failed to send voice note");
-      } finally {
-        setIsSending(false);
-      }
-      return;
-    }
-
     // Handle text message
     if (!message.trim() || !user) {
       if (!user) {
@@ -499,331 +429,238 @@ export function GroupChatDialog({
               )}
             </div>
 
-            {/* Attendees preview */}
+            {/* Attendees */}
             {showAttendees ? (
-              <button 
+              <button
                 onClick={() => setShowParticipantsList(true)}
-                className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                <div className="flex -space-x-2 overflow-hidden">
-                  {participants.slice(0, 6).map((participant) => (
+                <div className="flex -space-x-2">
+                  {participants.slice(0, 4).map((p) => (
                     <div
-                      key={participant.user_id}
-                      className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-[hsl(50,40%,92%)] shrink-0"
+                      key={p.user_id}
+                      className="w-7 h-7 rounded-full bg-muted border-2 border-white overflow-hidden"
                     >
-                      {participant.avatar_url ? (
-                        <img
-                          src={participant.avatar_url}
-                          alt={participant.name || "User"}
-                          className="w-full h-full object-cover"
-                        />
+                      {p.avatar_url ? (
+                        <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <User className="w-5 h-5 text-muted-foreground" />
+                        <div className="w-full h-full flex items-center justify-center">
+                          <User className="w-3.5 h-3.5 text-muted-foreground" />
+                        </div>
                       )}
                     </div>
                   ))}
-                  {participants.length > 6 && (
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center border-2 border-[hsl(50,40%,92%)] text-xs font-medium text-muted-foreground shrink-0">
-                      +{participants.length - 6}
-                    </div>
-                  )}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} attending
-                </p>
+                <span>{attendeeCount} joined today</span>
               </button>
             ) : (
-              <p className="text-sm text-muted-foreground/70">
-                You're the first one here today!
+              <p className="text-sm text-muted-foreground">
+                Be the first to join today!
               </p>
             )}
 
-            {/* Enter Group Chat button */}
-            <Button
-              onClick={() => setIsChatExpanded(true)}
-              className="w-full max-w-xs bg-black text-white hover:bg-black/80 text-sm px-6 py-3 h-auto font-semibold"
-            >
-              Enter Group Chat
-            </Button>
+            {/* Action buttons */}
+            <div className="flex flex-col gap-2 w-full max-w-xs">
+              <Button
+                onClick={() => setIsChatExpanded(true)}
+                variant="shake"
+                className="w-full"
+              >
+                Open Chat
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleMuteToggle}
+                  className="flex-1"
+                >
+                  {isMuted ? (
+                    <>
+                      <BellOff className="w-4 h-4 mr-1" />
+                      Unmute
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-4 h-4 mr-1" />
+                      Mute
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLeaveActivity}
+                  className="flex-1 text-destructive hover:text-destructive"
+                >
+                  <LogOut className="w-4 h-4 mr-1" />
+                  Leave
+                </Button>
+              </div>
+            </div>
           </div>
         ) : (
-          /* Header - only show when expanded */
-          <DialogHeader className="p-4">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 text-black hover:bg-black/10">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex-1 min-w-0">
-                <DialogTitle className="text-lg font-display text-black flex items-center gap-2">
-                  <span className="truncate">{title}</span>
-                  {isCrossCity && (
-                    <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full shrink-0">
-                      <Plane className="w-3 h-3" />
-                      {city}
-                    </span>
-                  )}
-                </DialogTitle>
-                <p className="text-sm text-black/60">{getActivityDay(activityType) || formattedTime}</p>
-                {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && (
-                  mapsUrl ? (
-                    <a
-                      href={mapsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline"
-                    >
-                      📍 {location}
-                    </a>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">📍 {location}</span>
-                  )
-                )}
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleMuteToggle}
-                className="shrink-0 text-black/70 hover:text-black hover:bg-black/10"
-                title={isMuted ? "Unmute notifications" : "Mute notifications"}
-              >
-                {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleLeaveActivity}
-                className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                title="Leave activity"
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
-          </DialogHeader>
-        )}
-
-        {/* Attendees section with avatars and Check-in button - only show when expanded */}
-        {isChatExpanded && showAttendees && (
-          <div className="w-full px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <button 
-                onClick={() => setShowParticipantsList(true)}
-                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-              >
-                <div className="flex -space-x-2 overflow-hidden">
-                  {participants.slice(0, 6).map((participant) => (
-                    <div
-                      key={participant.user_id}
-                      className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-[hsl(50,40%,92%)] shrink-0"
-                    >
-                      {participant.avatar_url ? (
-                        <img
-                          src={participant.avatar_url}
-                          alt={participant.name || "User"}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-4 h-4 text-muted-foreground" />
-                      )}
-                    </div>
-                  ))}
-                  {participants.length > 6 && (
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border-2 border-[hsl(50,40%,92%)] text-xs font-medium text-muted-foreground shrink-0">
-                      +{participants.length - 6}
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined
-                </p>
-              </button>
-              {/* Check-in button for venue activities - only show on the day of the activity */}
-              {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && location && location !== "TBD - Vote in chat!" && (() => {
-                // Check if this activity is scheduled for today
-                const nextOccurrence = getNextOccurrenceDate(activityType);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const occurrenceDay = new Date(nextOccurrence);
-                occurrenceDay.setHours(0, 0, 0, 0);
-                const isToday = occurrenceDay.getTime() === today.getTime();
-                
-                return isToday ? (
-                  <CheckInButton
-                    activityType={activityType}
-                    city={city}
-                    venueName={location}
-                  />
-                ) : null;
-              })()}
-            </div>
-          </div>
-        )}
-        {isChatExpanded && !showAttendees && (
-          <div className="w-full px-4 py-3">
-            <p className="text-sm text-muted-foreground/70">
-              You're the first one here today!
-            </p>
-          </div>
-        )}
-
-        {/* Messages - only show when expanded */}
-        {isChatExpanded && (
-        <>
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
-          {!user && messages.length > 0 && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-              <div className="text-center p-4">
-                <div className="flex items-center justify-center gap-2 text-shake-yellow mb-3">
-                  <Globe className="w-4 h-4" />
-                  <span className="text-sm font-medium">{onlineCount} {onlineCount === 1 ? 'person' : 'people'} online worldwide</span>
-                </div>
-                <p className="font-semibold text-foreground mb-2">Sign in to view messages</p>
-                <p className="text-sm text-muted-foreground">Join the conversation by signing in</p>
-              </div>
-            </div>
-          )}
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50">
-              <p className="text-center text-sm">
-                Start the conversation!<br />
-                Messages from today will appear here.
-              </p>
-            </div>
-          ) : (
-            messages.map((msg) => {
-              const isOwnMessage = msg.user_id === user?.id;
-              const profile = profiles[msg.user_id];
-              const displayName = isOwnMessage 
-                ? 'You' 
-                : profile?.name || 'Shaker';
-              const avatarUrl = profile?.avatar_url;
-              
-              return (
-                <div 
-                  key={msg.id} 
-                  className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${!user ? 'blur-sm select-none pointer-events-none' : ''}`}
+          <>
+            {/* Expanded Chat Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsChatExpanded(false)}
+                  className="p-1 hover:bg-muted rounded-md transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0 overflow-hidden border border-border">
-                    {avatarUrl ? (
-                      <img 
-                        src={avatarUrl} 
-                        alt={displayName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
-                    <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
-                      <button 
-                        className={`font-semibold text-sm text-black ${!isOwnMessage ? 'hover:underline cursor-pointer' : ''}`}
-                        onClick={() => {
-                          if (!isOwnMessage) {
-                            setSelectedUserProfile({
-                              userId: msg.user_id,
-                              userName: profile?.name || null,
-                              avatarUrl: profile?.avatar_url || null,
-                            });
-                          }
-                        }}
-                        disabled={isOwnMessage}
-                      >
-                        {displayName}
-                      </button>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(msg.created_at), 'h:mm a')}
-                      </span>
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h3 className="font-display font-semibold text-foreground">{title}</h3>
+                  {isCrossCity && (
+                    <div className="flex items-center gap-1 text-xs text-primary">
+                      <Plane className="w-3 h-3" />
+                      <span>in {city}</span>
                     </div>
-                    <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                      <div className={`text-sm mt-1 p-2 rounded-lg inline-block ${
-                        isOwnMessage 
-                          ? 'bg-black text-white'
-                          : 'bg-blue-500 text-white'
-                      }`}>
-                        {msg.audio_url ? (
-                          <AudioWaveform audioUrl={msg.audio_url} isCompact />
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                {showAttendees && (
+                  <button
+                    onClick={() => setShowParticipantsList(true)}
+                    className="flex items-center gap-1 px-2 py-1 text-xs bg-muted rounded-full hover:bg-muted/80 transition-colors"
+                  >
+                    <Users className="w-3 h-3" />
+                    <span>{attendeeCount}</span>
+                  </button>
+                )}
+                {/* Check-in button removed - no venueName available in this context */}
+                <button
+                  onClick={handleMuteToggle}
+                  className="p-2 hover:bg-muted rounded-md transition-colors"
+                  title={isMuted ? "Unmute" : "Mute"}
+                >
+                  {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50">
+                  <p className="text-center text-sm">
+                    Start the conversation!<br />
+                    Messages from today will appear here.
+                  </p>
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isOwnMessage = msg.user_id === user?.id;
+                  const profile = profiles[msg.user_id];
+                  const displayName = isOwnMessage 
+                    ? 'You' 
+                    : profile?.name || 'Shaker';
+                  const avatarUrl = profile?.avatar_url;
+                  
+                  return (
+                    <div 
+                      key={msg.id} 
+                      className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${!user ? 'blur-sm select-none pointer-events-none' : ''}`}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0 overflow-hidden border border-border">
+                        {avatarUrl ? (
+                          <img 
+                            src={avatarUrl} 
+                            alt={displayName}
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
-                          <span>{msg.message}</span>
+                          <User className="w-4 h-4 text-muted-foreground" />
                         )}
                       </div>
-                      {isOwnMessage && (
-                        <button
-                          onClick={() => handleDeleteMessage(msg.id)}
-                          className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all"
-                          title="Delete message"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
+                      <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
+                        <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
+                          <button 
+                            className={`font-semibold text-sm text-black ${!isOwnMessage ? 'hover:underline cursor-pointer' : ''}`}
+                            onClick={() => {
+                              if (!isOwnMessage) {
+                                setSelectedUserProfile({
+                                  userId: msg.user_id,
+                                  userName: profile?.name || null,
+                                  avatarUrl: profile?.avatar_url || null,
+                                });
+                              }
+                            }}
+                            disabled={isOwnMessage}
+                          >
+                            {displayName}
+                          </button>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(msg.created_at), 'h:mm a')}
+                          </span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                          <div className={`text-sm mt-1 p-2 rounded-lg inline-block ${
+                            isOwnMessage 
+                              ? 'bg-black text-white'
+                              : 'bg-blue-500 text-white'
+                          }`}>
+                            <span>{msg.message}</span>
+                          </div>
+                          {isOwnMessage && (
+                            <button
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all"
+                              title="Delete message"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  );
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Chat Suggestions - show when input is empty */}
+            {user && !message.trim() && (
+              <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-2 w-max">
+                  {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setMessage(suggestion)}
+                      className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20 whitespace-nowrap shrink-0"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
                 </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Chat Suggestions - show when input is empty */}
-        {user && !message.trim() && (
-          <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2 w-max">
-              {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => setMessage(suggestion)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20 whitespace-nowrap shrink-0"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Audio limit indicator for free users - only show when 5 or fewer remaining */}
-        {user && !isPremium && remainingAudio <= 5 && (
-          <div className="px-4 py-1 text-xs text-muted-foreground text-center">
-            <span className="flex items-center justify-center gap-1">
-              <Mic className="w-3 h-3" />
-              {remainingAudio} voice notes remaining
-            </span>
-          </div>
-        )}
-
-        {/* Input */}
-        <div className="p-4">
-          <div className="flex items-center gap-2">
-            {!pendingAudio && (
-              <Input
-                placeholder={canSendText ? "Type a message..." : "Character limit reached"}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
-                disabled={isSending || (!isPremium && !canSendText)}
-              />
+              </div>
             )}
-            <div className="flex flex-col gap-1">
-              <VoiceRecorder 
-                onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
-                onAudioClear={() => setPendingAudio(null)}
-                disabled={isSending}
-                highlighted={true}
-                resetTrigger={audioResetTrigger}
-              />
-              <Button 
-                variant="shake" 
-                size="icon" 
-                onClick={handleSendMessage}
-                disabled={isSending || (!message.trim() && !pendingAudio)}
-              >
-                {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
-              </Button>
+
+            {/* Input */}
+            <div className="p-4">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder={canSendText ? "Type a message..." : "Character limit reached"}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
+                  disabled={isSending || (!isPremium && !canSendText)}
+                />
+                <Button 
+                  variant="shake" 
+                  size="icon" 
+                  onClick={handleSendMessage}
+                  disabled={isSending || !message.trim()}
+                >
+                  {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
-        </>
+          </>
         )}
 
         {/* Premium Dialog */}
