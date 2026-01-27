@@ -216,10 +216,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             {/* Date display - Above the circle */}
             <div className="mb-8 animate-fade-in text-center">
               <div className="text-5xl md:text-6xl font-handwritten text-foreground">
-                {currentActivity?.dayNumber}
-              </div>
-              <div className="text-2xl font-handwritten text-muted-foreground mt-1">
-                {currentActivity?.nextDate ? DAY_NAMES[currentActivity.nextDate.getDay()] : ''}
+                {currentActivity?.dayNumber}, {currentActivity?.nextDate ? DAY_NAMES[currentActivity.nextDate.getDay()] : ''}
               </div>
             </div>
 
