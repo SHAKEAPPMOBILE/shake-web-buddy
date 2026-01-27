@@ -57,7 +57,7 @@ export const getNextOccurrenceDate = (activityId: string): Date => {
 // Get activity with its next occurrence date
 export interface ActivityWithDate extends ActivityType {
   nextDate: Date;
-  dayNumber: string; // Formatted with leading zero (e.g., "01", "28")
+  dayNumber: number;
   dayNameShort: string;
 }
 
@@ -65,11 +65,10 @@ export interface ActivityWithDate extends ActivityType {
 export function getActivitiesWithDates(): ActivityWithDate[] {
   return ACTIVITY_TYPES.map(activity => {
     const nextDate = getNextOccurrenceDate(activity.id);
-    const day = nextDate.getDate();
     return {
       ...activity,
       nextDate,
-      dayNumber: day < 10 ? `0${day}` : `${day}`, // Pad single digits with leading zero
+      dayNumber: nextDate.getDate(),
       dayNameShort: DAY_NAMES_SHORT[nextDate.getDay()],
     };
   }).sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime());
