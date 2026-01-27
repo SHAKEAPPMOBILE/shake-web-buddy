@@ -58,13 +58,13 @@ export function ActivityJoinedConfirmation({
         </div>
 
         {/* Venue info */}
-        <div className="px-6 pb-4">
+        <div className="px-6 pb-6">
           <div className="rounded-2xl bg-muted/50 p-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <MapPin className="w-5 h-5 text-primary" />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 overflow-hidden">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
                   {isTBD ? "Location" : "Today's Venue"}
                 </p>
@@ -77,12 +77,12 @@ export function ActivityJoinedConfirmation({
                     href={mapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-primary hover:underline block truncate"
+                    className="text-sm font-medium text-primary hover:underline break-words"
                   >
                     {venueInfo}
                   </a>
                 ) : (
-                  <p className="text-sm font-medium text-foreground truncate">
+                  <p className="text-sm font-medium text-foreground break-words">
                     {venueInfo}
                   </p>
                 )}
