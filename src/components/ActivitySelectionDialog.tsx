@@ -108,7 +108,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     const scheduledFor = new Date();
     scheduledFor.setHours(scheduledFor.getHours() + 2);
 
-    const success = await createActivity(pendingActivity.id, scheduledFor);
+    const success = await createActivity(pendingActivity.id, scheduledFor, undefined, selectedCity);
 
     if (success) {
       setSuccessActivity(pendingActivity);
