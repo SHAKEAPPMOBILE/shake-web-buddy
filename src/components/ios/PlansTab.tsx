@@ -522,26 +522,28 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                     )}
                   </div>
 
-                  {plan.note && (
+                  {plan.isCarouselJoin && plan.note && (
                     <p className="text-xs text-white/60 italic mt-1 line-clamp-1">"{plan.note}"</p>
                   )}
 
-                  <div className="flex items-center gap-2 mt-1">
-                    <Calendar className="w-3.5 h-3.5 text-white/70" />
-                    <span className="text-sm text-white/70">
-                      {format(new Date(plan.scheduled_for), "EEEE, d MMM")}
-                    </span>
-                    {isToday(new Date(plan.scheduled_for)) && (
-                      <span className="text-xs bg-shake-yellow text-black font-semibold px-2 py-0.5 rounded-full animate-pulse">
-                        Today
+                  {!plan.isCarouselJoin && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Calendar className="w-3.5 h-3.5 text-white/70" />
+                      <span className="text-sm text-white/70">
+                        {format(new Date(plan.scheduled_for), "d MMM")}
                       </span>
-                    )}
-                    {isTomorrow(new Date(plan.scheduled_for)) && (
-                      <span className="text-xs bg-primary/80 text-white font-semibold px-2 py-0.5 rounded-full">
-                        Tomorrow
-                      </span>
-                    )}
-                  </div>
+                      {isToday(new Date(plan.scheduled_for)) && (
+                        <span className="text-xs bg-shake-yellow text-black font-semibold px-2 py-0.5 rounded-full animate-pulse">
+                          Today
+                        </span>
+                      )}
+                      {isTomorrow(new Date(plan.scheduled_for)) && (
+                        <span className="text-xs bg-primary/80 text-white font-semibold px-2 py-0.5 rounded-full">
+                          Tomorrow
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Delete button for own plans */}
