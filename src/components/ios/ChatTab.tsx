@@ -214,7 +214,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
           activity_type: plan.activity_type,
           city: plan.city,
           scheduled_for: plan.scheduled_for,
-          participant_count: (count || 0) + 1,
+          participant_count: (count || 0),
           unread_count: unreadPlanCount || 0,
           is_plan: true,
           plan_id: plan.id,
