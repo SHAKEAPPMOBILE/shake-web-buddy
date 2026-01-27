@@ -358,16 +358,17 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
         />
       )}
 
-      {/* Points Dialog */}
       <Dialog open={showPointsDialog} onOpenChange={setShowPointsDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <img src={shakeCoin} alt="Points" className="w-6 h-6" />
               My Points
             </DialogTitle>
           </DialogHeader>
-          <PointsDashboard userId={user?.id} />
+          <div className="flex-1 overflow-y-auto -mx-6 px-6 pb-2">
+            <PointsDashboard userId={user?.id} />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
