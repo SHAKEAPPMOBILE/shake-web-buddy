@@ -46,7 +46,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 mt-0.5 text-shake-green shrink-0" />
             <span>
-              <strong className="text-foreground">Check in at venues</strong> — Earn +5 points when you check in at activity venues on the day of the activity
+              <strong className="text-foreground">Check in at venues</strong> — Earn +5 points when you check in at the venues of your activity
             </span>
           </div>
           <div className="flex items-start gap-2">
@@ -57,11 +57,6 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
           </div>
         </div>
 
-        <div className="pt-2 border-t border-border/50">
-          <p className="text-xs text-muted-foreground italic">
-            You only earn points by attending activities and checking in at venues.
-          </p>
-        </div>
       </div>
     </div>
   );
