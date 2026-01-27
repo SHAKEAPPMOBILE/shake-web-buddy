@@ -226,6 +226,40 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           </div>
         </button>
 
+        {isPremium ? (
+          <button
+            onClick={() => setShowPremiumDialog(true)}
+            className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-shake-green/30 rounded-xl"
+          >
+            <div className="w-10 h-10 rounded-full bg-shake-green/10 flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-shake-green" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="font-medium">Manage Subscription</span>
+              <p className="text-xs text-muted-foreground">Cancel or update your plan</p>
+            </div>
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowPremiumDialog(true)}
+            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl"
+            style={{
+              background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+            }}
+          >
+            <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
+              <SuperHumanIcon size={24} />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="font-medium text-white">Upgrade to Premium</span>
+              <p className="text-xs text-white/70">Unlimited messages & more</p>
+            </div>
+            <span className="text-xs font-medium text-white bg-white/20 px-2 py-1 rounded-full">
+              Subscribe now
+            </span>
+          </button>
+        )}
+
         {/* Share Referral Link */}
         <div className="w-full bg-card border border-primary/30 rounded-xl overflow-hidden">
           <button
@@ -260,40 +294,6 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
             </div>
           )}
         </div>
-
-        {isPremium ? (
-          <button
-            onClick={() => setShowPremiumDialog(true)}
-            className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-shake-green/30 rounded-xl"
-          >
-            <div className="w-10 h-10 rounded-full bg-shake-green/10 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-shake-green" />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="font-medium">Manage Subscription</span>
-              <p className="text-xs text-muted-foreground">Cancel or update your plan</p>
-            </div>
-          </button>
-        ) : (
-          <button
-            onClick={() => setShowPremiumDialog(true)}
-            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl"
-            style={{
-              background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
-            }}
-          >
-            <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
-              <SuperHumanIcon size={24} />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="font-medium text-white">Upgrade to Premium</span>
-              <p className="text-xs text-white/70">Unlimited messages & more</p>
-            </div>
-            <span className="text-xs font-medium text-white bg-white/20 px-2 py-1 rounded-full">
-              Subscribe now
-            </span>
-          </button>
-        )}
 
         <button
           onClick={handleSignOutClick}
