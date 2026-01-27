@@ -327,6 +327,7 @@ export type Database = {
           sms_notifications_enabled: boolean
           updated_at: string
           user_id: string
+          welcome_bonus_claimed: boolean
         }
         Insert: {
           billing_email?: string | null
@@ -339,6 +340,7 @@ export type Database = {
           sms_notifications_enabled?: boolean
           updated_at?: string
           user_id: string
+          welcome_bonus_claimed?: boolean
         }
         Update: {
           billing_email?: string | null
@@ -351,6 +353,7 @@ export type Database = {
           sms_notifications_enabled?: boolean
           updated_at?: string
           user_id?: string
+          welcome_bonus_claimed?: boolean
         }
         Relationships: []
       }
@@ -521,9 +524,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_welcome_bonus: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       generate_referral_code: { Args: { user_name: string }; Returns: string }
       get_user_age: { Args: { target_user_id: string }; Returns: number }
       get_user_points: { Args: { target_user_id: string }; Returns: number }
+      is_profile_complete: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       users_matched: {
         Args: { user1: string; user2: string }
         Returns: boolean
