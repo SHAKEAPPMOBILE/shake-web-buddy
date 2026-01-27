@@ -253,159 +253,134 @@ export const CITY_BRUNCH_VENUES: Record<string, BrunchVenue[]> = {
   ],
 };
 
-// Map city names to their venues (for lunch/dinner)
-export const CITY_VENUES: Record<string, Venue> = {
+// Map city names to their venues (for lunch/dinner) - multiple venues per city, rotates weekly
+export const CITY_VENUES: Record<string, Venue[]> = {
   // Portugal
-  "Lisbon": {
-    name: "Honest Greens",
-    address: "Avenida da Liberdade, 180 B"
-  },
-  "Porto": {
-    name: "Honest Greens Porto - Boavista",
-    address: "Avenida da Boavista, 3431"
-  },
+  "Lisbon": [
+    { name: "Honest Greens", address: "Avenida da Liberdade, 180 B" },
+  ],
+  "Porto": [
+    { name: "Honest Greens Porto - Boavista", address: "Avenida da Boavista, 3431" },
+  ],
   
   // Spain
-  "Madrid": {
-    name: "Honest Greens Castellana",
-    address: "Paseo de la Castellana, 89"
-  },
-  "Barcelona": {
-    name: "Honest Greens Rambla Catalunya",
-    address: "Rambla de Catalunya, 3"
-  },
+  "Madrid": [
+    { name: "Honest Greens Castellana", address: "Paseo de la Castellana, 89" },
+  ],
+  "Barcelona": [
+    { name: "Honest Greens Rambla Catalunya", address: "Rambla de Catalunya, 3" },
+  ],
   
   // Italy
-  "Rome": {
-    name: "Ginger Sapori e Salute",
-    address: "Via Borgognona, 43-46"
-  },
-  "Milan": {
-    name: "That's Vapore",
-    address: "Piazza Gae Aulenti, 20154 Milano"
-  },
-  "Florence": {
-    name: "Shake Café",
-    address: "Via Camilo Cavour, 67/69R, 50121 Firenze"
-  },
+  "Rome": [
+    { name: "Ginger Sapori e Salute", address: "Via Borgognona, 43-46" },
+  ],
+  "Milan": [
+    { name: "That's Vapore", address: "Piazza Gae Aulenti, 20154 Milano" },
+  ],
+  "Florence": [
+    { name: "Shake Café", address: "Via Camilo Cavour, 67/69R, 50121 Firenze" },
+  ],
   
   // France
-  "Paris": {
-    name: "Wild & The Moon",
-    address: "55 Rue Charlot, 75003 Paris"
-  },
-  "Lyon": {
-    name: "Le Kitchen Café",
-    address: "36 Rue de la Charité, 69002 Lyon"
-  },
+  "Paris": [
+    { name: "Wild & The Moon", address: "55 Rue Charlot, 75003 Paris" },
+  ],
+  "Lyon": [
+    { name: "Le Kitchen Café", address: "36 Rue de la Charité, 69002 Lyon" },
+  ],
   
   // Germany
-  "Berlin": {
-    name: "The Green Market",
-    address: "Rosenthaler Str. 39, 10178 Berlin"
-  },
-  "Munich": {
-    name: "OhJulia (Marienplatz)",
-    address: "Sendlinger Str. 12, 80331 München"
-  },
-  "Hamburg": {
-    name: "Dean & David",
-    address: "Mönckebergstraße 11, 20095 Hamburg"
-  },
+  "Berlin": [
+    { name: "The Green Market", address: "Rosenthaler Str. 39, 10178 Berlin" },
+  ],
+  "Munich": [
+    { name: "OhJulia (Marienplatz)", address: "Sendlinger Str. 12, 80331 München" },
+  ],
+  "Hamburg": [
+    { name: "Dean & David", address: "Mönckebergstraße 11, 20095 Hamburg" },
+  ],
   
   // United Kingdom
-  "London": {
-    name: "Farmacy",
-    address: "74-76 Portobello Rd, W11 2QB"
-  },
-  "Manchester": {
-    name: "Evelyn's Café Bar",
-    address: "Manchester"
-  },
-  "Birmingham": {
-    name: "Natural Bar & Kitchen",
-    address: "24 Suffolk Street, Queensway, B1 1LT"
-  },
-  "Edinburgh": {
-    name: "Hula Juice Bar & Café",
-    address: "103-105 West Bow, Edinburgh EH1 2JP"
-  },
+  "London": [
+    { name: "Farmacy", address: "74-76 Portobello Rd, W11 2QB" },
+  ],
+  "Manchester": [
+    { name: "Evelyn's Café Bar", address: "Manchester" },
+  ],
+  "Birmingham": [
+    { name: "Natural Bar & Kitchen", address: "24 Suffolk Street, Queensway, B1 1LT" },
+  ],
+  "Edinburgh": [
+    { name: "Hula Juice Bar & Café", address: "103-105 West Bow, Edinburgh EH1 2JP" },
+  ],
   
   // Ireland
-  "Dublin": {
-    name: "Brother Hubbard (North)",
-    address: "153 Capel St, Dublin 1"
-  },
-  "Cork": {
-    name: "Paradiso",
-    address: "16 Lancaster Quay, Cork"
-  },
+  "Dublin": [
+    { name: "Brother Hubbard (North)", address: "153 Capel St, Dublin 1" },
+  ],
+  "Cork": [
+    { name: "Paradiso", address: "16 Lancaster Quay, Cork" },
+  ],
   
   // Switzerland
-  "Zurich": {
-    name: "Beetnut",
-    address: "Sihlstrasse 37, 8001 Zürich"
-  },
-  "Geneva": {
-    name: "Birdie Food & Coffee",
-    address: "Rue des Bains 40, 1205 Geneva"
-  },
-  "Basel": {
-    name: "La Manufacture",
-    address: "Falknerstrasse 12, 4051 Basel"
-  },
+  "Zurich": [
+    { name: "Beetnut", address: "Sihlstrasse 37, 8001 Zürich" },
+  ],
+  "Geneva": [
+    { name: "Birdie Food & Coffee", address: "Rue des Bains 40, 1205 Geneva" },
+  ],
+  "Basel": [
+    { name: "La Manufacture", address: "Falknerstrasse 12, 4051 Basel" },
+  ],
   
   // Austria
-  "Vienna": {
-    name: "Karma Food",
-    address: "Vienna"
-  },
-  "Innsbruck": {
-    name: "Ludwig Das Burger Restaurant",
-    address: "Innsbruck"
-  },
+  "Vienna": [
+    { name: "Karma Food", address: "Vienna" },
+  ],
+  "Innsbruck": [
+    { name: "Ludwig Das Burger Restaurant", address: "Innsbruck" },
+  ],
   
   // Poland
-  "Warsaw": {
-    name: "Tel Aviv Urban Food",
-    address: "Warsaw"
-  },
+  "Warsaw": [
+    { name: "Tel Aviv Urban Food", address: "Warsaw" },
+  ],
   
   // USA
-  "New York City": {
-    name: "Sweetgreen Broadway",
-    address: "New York, NY"
-  },
-  "San Francisco": {
-    name: "Souvla",
-    address: "San Francisco, CA"
-  },
-  "Los Angeles": {
-    name: "The Butcher's Daughter",
-    address: "Los Angeles, CA"
-  },
-  "San Diego": {
-    name: "Sweetgreen",
-    address: "4309 La Jolla Village Dr Suite 2040, San Diego, CA 92122"
-  },
-  "Austin": {
-    name: "Sweetgreen Downtown",
-    address: "Austin, TX"
-  },
+  "New York City": [
+    { name: "Sweetgreen Broadway", address: "New York, NY" },
+  ],
+  "San Francisco": [
+    { name: "Souvla", address: "San Francisco, CA" },
+  ],
+  "Los Angeles": [
+    { name: "The Butcher's Daughter", address: "Los Angeles, CA" },
+  ],
+  "San Diego": [
+    { name: "Sweetgreen", address: "4309 La Jolla Village Dr Suite 2040, San Diego, CA 92122" },
+  ],
+  "Austin": [
+    { name: "Sweetgreen Downtown", address: "Austin, TX" },
+  ],
   
   // Colombia
-  "Bogotá": {
-    name: "Crepes & Waffles",
-    address: "Carrera 9 No. 73-33, Bogotá"
-  },
-  "Medellín": {
-    name: "Pergamino Café",
-    address: "Carrera 37 No. 8A-37, El Poblado, Medellín"
-  },
-  "Cartagena": {
-    name: "Juan del Mar",
-    address: "Calle del Santísimo, Cartagena"
-  },
+  "Bogotá": [
+    { name: "Harvest", address: "Cra. 11 #93a-27, Bogotá, Colombia" },
+    { name: "Fresh on Pots", address: "Cl. 45 #27-45, Bogotá, Colombia" },
+    { name: "Viva Mejor - Green Food", address: "Cra. 24 #47-07, Teusaquillo, Bogotá, Colombia" },
+    { name: "Go Green Restaurante", address: "Ak 15 #82-12, Bogotá, Colombia" },
+    { name: "Go Green San Martin", address: "Ak 7 #32-84, Santa Fé, Bogotá, Colombia" },
+  ],
+  "Medellín": [
+    { name: "Café Zeppelin", address: "Dg 75 #76-12, Laureles-Estadio, Medellín, Antioquia, Colombia" },
+    { name: "Café Revolución", address: "Carrera 73 |, Cq. 4 #6, Laureles, Medellín, Antioquia, Colombia" },
+    { name: "Brunch & Lunch By Zoé Jasmin", address: "Av. 33 #78-17, Laureles-Estadio, Medellín, Antioquia, Colombia" },
+    { name: "Café Primavera", address: "Tv. 39A #71-10, Laureles-Estadio, Medellín, Antioquia, Colombia" },
+  ],
+  "Cartagena": [
+    { name: "Juan del Mar", address: "Calle del Santísimo, Cartagena" },
+  ],
 };
 
 // Bars list per city - rotates daily
@@ -892,6 +867,28 @@ export function getTodaysBar(city: string): Bar | null {
 }
 
 /**
+ * Get the weekly lunch/dinner venue for a specific city
+ * Rotates through venues weekly, cycling through the list
+ */
+export function getWeeklyVenue(city: string): Venue | null {
+  const venues = CITY_VENUES[city];
+  if (!venues || venues.length === 0) {
+    return null;
+  }
+  
+  // Calculate which week of the year (0-51)
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const diff = now.getTime() - start.getTime();
+  const oneWeek = 1000 * 60 * 60 * 24 * 7;
+  const weekOfYear = Math.floor(diff / oneWeek);
+  
+  // Rotate through venues based on week of year
+  const venueIndex = weekOfYear % venues.length;
+  return venues[venueIndex];
+}
+
+/**
  * Get the weekly brunch venue for a specific city
  * Rotates through 3 venues weekly, cycling each month
  */
@@ -1007,9 +1004,9 @@ function findNearestCityWithBars(city: string): string | null {
  * For hike: returns "TBD - Vote in chat!"
  */
 export function getActivityLocation(activityType: string, city: string): string {
-  // Lunch and dinner have pre-set venues - no fallback to other cities
+  // Lunch and dinner have weekly rotating venues - no fallback to other cities
   if (activityType === "lunch" || activityType === "dinner") {
-    const venue = CITY_VENUES[city];
+    const venue = getWeeklyVenue(city);
     if (venue) {
       return `${venue.name}, ${venue.address}`;
     }
@@ -1043,9 +1040,9 @@ export function getActivityLocation(activityType: string, city: string): string 
  * Returns null if no venue is available for the activity/city
  */
 export function getVenueMapsUrl(activityType: string, city: string): string | null {
-  // Lunch and dinner - no fallback to other cities
+  // Lunch and dinner - weekly rotating venues, no fallback to other cities
   if (activityType === "lunch" || activityType === "dinner") {
-    const venue = CITY_VENUES[city];
+    const venue = getWeeklyVenue(city);
     if (!venue) {
       return null;
     }
