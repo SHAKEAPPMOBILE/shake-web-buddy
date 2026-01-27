@@ -7,7 +7,7 @@ import { PremiumDialog } from "../PremiumDialog";
 import { CreateActivityDialog } from "../CreateActivityDialog";
 import { PlanGroupChatView } from "./PlanGroupChatView";
 import { GroupChatView } from "./GroupChatView";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -515,6 +515,11 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                     <span className="text-sm text-white/70">
                       {format(new Date(plan.scheduled_for), "EEEE, d MMM")}
                     </span>
+                    {isToday(new Date(plan.scheduled_for)) && (
+                      <span className="text-xs bg-shake-yellow text-black font-semibold px-2 py-0.5 rounded-full animate-pulse">
+                        Today
+                      </span>
+                    )}
                   </div>
                 </div>
 
