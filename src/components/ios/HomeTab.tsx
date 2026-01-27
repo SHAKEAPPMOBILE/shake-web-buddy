@@ -215,10 +215,10 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           >
             {/* Date display - Above the circle */}
             <div className="mb-8 animate-fade-in text-center">
-              <div className="text-5xl md:text-6xl font-bold text-foreground">
+              <div className="text-5xl md:text-6xl font-handwritten text-foreground">
                 {currentActivity?.dayNumber}
               </div>
-              <div className="text-xl text-muted-foreground font-medium mt-1">
+              <div className="text-2xl font-handwritten text-muted-foreground mt-1">
                 {currentActivity?.dayNameShort}
               </div>
             </div>
