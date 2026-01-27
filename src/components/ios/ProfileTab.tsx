@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Coins } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,8 @@ import { useStatusVideo } from "@/hooks/useStatusVideo";
 import { StatusVideoRecorder } from "../StatusVideoRecorder";
 import { cn } from "@/lib/utils";
 import { PointsDashboard } from "../PointsDashboard";
+import { useUserPoints } from "@/hooks/useUserPoints";
+import shakeCoin from "@/assets/shake-coin-transparent.png";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +23,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ProfileTabProps {
   onSignOut?: () => void;
@@ -35,8 +43,10 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
+  const [showPointsDialog, setShowPointsDialog] = useState(false);
   const { statusVideo, hasActiveStatus } = useStatusVideo(user?.id);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
+  const { points } = useUserPoints(user?.id);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -146,13 +156,23 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
         
       </button>
 
-      {/* Points Dashboard */}
-      <div className="px-4 py-4">
-        <PointsDashboard userId={user?.id} />
-      </div>
-
       {/* Menu Items */}
       <div className="flex-1 px-4 py-4 space-y-2">
+        {/* My Points */}
+        <button
+          onClick={() => setShowPointsDialog(true)}
+          className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-shake-yellow/30 rounded-xl"
+        >
+          <div className="w-10 h-10 rounded-full bg-shake-yellow/10 flex items-center justify-center">
+            <img src={shakeCoin} alt="Points" className="w-6 h-6" />
+          </div>
+          <div className="flex-1 text-left">
+            <span className="font-medium">My Points</span>
+            <p className="text-xs text-muted-foreground">{points.toLocaleString()} points earned</p>
+          </div>
+        </button>
+
+        {/* Edit Profile */}
         <button
           onClick={() => navigate("/profile")}
           className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-border rounded-xl"
@@ -259,6 +279,19 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           onVideoUploaded={() => setStatusRefreshKey((prev) => prev + 1)}
         />
       )}
+
+      {/* Points Dialog */}
+      <Dialog open={showPointsDialog} onOpenChange={setShowPointsDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <img src={shakeCoin} alt="Points" className="w-6 h-6" />
+              My Points
+            </DialogTitle>
+          </DialogHeader>
+          <PointsDashboard userId={user?.id} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
