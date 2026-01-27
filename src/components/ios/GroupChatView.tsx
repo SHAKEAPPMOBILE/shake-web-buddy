@@ -15,7 +15,7 @@ import { AudioWaveform } from "@/components/AudioWaveform";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
-import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
+import { useActivityVenue } from "@/contexts/VenueContext";
 import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { LoadingSpinner } from "../LoadingSpinner";
@@ -402,8 +402,7 @@ export function GroupChatView({
 
   const formattedTime = format(currentTime, "EEEE, MMMM d • h:mm a");
   const title = `${getActivityEmoji(activityType)} ${getActivityLabel(activityType)}`;
-  const location = getActivityLocation(activityType, city);
-  const mapsUrl = getVenueMapsUrl(activityType, city);
+  const { location, mapsUrl } = useActivityVenue(city, activityType);
   const showAttendees = attendeeCount > 0;
 
   return (

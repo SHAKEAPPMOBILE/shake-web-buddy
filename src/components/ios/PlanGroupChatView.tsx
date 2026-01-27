@@ -14,7 +14,7 @@ import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
-import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
+import { useActivityVenue } from "@/contexts/VenueContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
@@ -313,8 +313,7 @@ export function PlanGroupChatView({
     }
   };
 
-  const location = getActivityLocation(activity.activity_type, activity.city);
-  const mapsUrl = getVenueMapsUrl(activity.activity_type, activity.city);
+  const { location, mapsUrl } = useActivityVenue(activity.city, activity.activity_type);
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50">

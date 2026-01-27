@@ -1,7 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MapPin, MessageSquare, X } from "lucide-react";
-import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
+import { useActivityVenue } from "@/contexts/VenueContext";
 import { getActivityLabel, getActivityEmoji, getActivityDay } from "@/data/activityTypes";
 
 interface ActivityJoinedConfirmationProps {
@@ -22,9 +22,7 @@ export function ActivityJoinedConfirmation({
   const emoji = getActivityEmoji(activityType);
   const label = getActivityLabel(activityType);
   const activityDay = getActivityDay(activityType);
-  const venueInfo = getActivityLocation(activityType, city);
-  const mapsUrl = getVenueMapsUrl(activityType, city);
-  const isTBD = venueInfo === "TBD - Vote in chat!";
+  const { location: venueInfo, mapsUrl, isTBD } = useActivityVenue(city, activityType);
 
   const handleJoinChat = () => {
     onOpenChange(false);
