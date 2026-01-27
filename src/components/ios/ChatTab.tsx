@@ -506,8 +506,23 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                     )}
                   </div>
 
-                  {!activity.is_plan && activity.note && (
-                    <p className="text-xs text-white/60 italic mt-1 line-clamp-1">"{activity.note}"</p>
+                  {!activity.is_plan && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Calendar className="w-3.5 h-3.5 text-white/70" />
+                      <span className="text-sm text-white/70">
+                        {format(new Date(activity.scheduled_for), "EEE, d MMM")}
+                      </span>
+                      {isToday(new Date(activity.scheduled_for)) && (
+                        <span className="text-xs bg-shake-yellow text-black font-semibold px-2 py-0.5 rounded-full animate-pulse">
+                          Today
+                        </span>
+                      )}
+                      {isTomorrow(new Date(activity.scheduled_for)) && (
+                        <span className="text-xs bg-primary/80 text-white font-semibold px-2 py-0.5 rounded-full">
+                          Tomorrow
+                        </span>
+                      )}
+                    </div>
                   )}
 
                   <div className="flex items-center gap-3 mt-1">
@@ -521,7 +536,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                       <div className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5 text-white/70" />
                         <span className="text-sm text-white/70">
-                          {format(new Date(activity.scheduled_for), "d MMM")}
+                          {format(new Date(activity.scheduled_for), "EEE, d MMM")}
                         </span>
                         {isToday(new Date(activity.scheduled_for)) && (
                           <span className="text-xs bg-shake-yellow text-black font-semibold px-2 py-0.5 rounded-full animate-pulse">
