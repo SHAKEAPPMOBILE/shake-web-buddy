@@ -195,10 +195,26 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     // Combine real activities with virtual carousel plans
     const allPlans = [...activitiesWithDetails, ...virtualPlans];
 
-    // Sort chronologically by date (earliest first)
-    allPlans.sort((a, b) => 
-      new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime()
-    );
+    // Sort with Today first, Tomorrow second, then chronologically
+    allPlans.sort((a, b) => {
+      const dateA = new Date(a.scheduled_for);
+      const dateB = new Date(b.scheduled_for);
+      const isTodayA = isToday(dateA);
+      const isTodayB = isToday(dateB);
+      const isTomorrowA = isTomorrow(dateA);
+      const isTomorrowB = isTomorrow(dateB);
+      
+      // Today first
+      if (isTodayA && !isTodayB) return -1;
+      if (!isTodayA && isTodayB) return 1;
+      
+      // Tomorrow second
+      if (isTomorrowA && !isTomorrowB) return -1;
+      if (!isTomorrowA && isTomorrowB) return 1;
+      
+      // Then chronologically
+      return dateA.getTime() - dateB.getTime();
+    });
 
     setActivities(allPlans);
     setIsLoading(false);
