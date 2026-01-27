@@ -73,12 +73,12 @@ export const VENUE_COORDINATES: Record<string, Record<string, VenueCoordinates>>
     "California Bakery": { lat: 45.4700, lng: 9.1950 },
   },
   "Florence": {
-    "Shake Café": { lat: 41.7740, lng: 11.2581 },
-    "Rasputin Speakeasy": { lat: 41.7620, lng: 11.2470 },
-    "Locale Firenze": { lat: 41.7700, lng: 11.2560 },
-    "Love Craft Cocktail Bar": { lat: 41.7730, lng: 11.2620 },
-    "Ditta Artigianale": { lat: 41.7690, lng: 11.2500 },
-    "Melaleuca Bakery": { lat: 41.7710, lng: 11.2530 },
+    "Shake Café": { lat: 43.7740, lng: 11.2581 },
+    "Rasputin Speakeasy": { lat: 43.7620, lng: 11.2470 },
+    "Locale Firenze": { lat: 43.7700, lng: 11.2560 },
+    "Love Craft Cocktail Bar": { lat: 43.7730, lng: 11.2620 },
+    "Ditta Artigianale": { lat: 43.7690, lng: 11.2500 },
+    "Melaleuca Bakery": { lat: 43.7710, lng: 11.2530 },
   },
   
   // ========== FRANCE ==========
@@ -145,6 +145,23 @@ export const VENUE_COORDINATES: Record<string, Record<string, VenueCoordinates>>
     "The Pantry": { lat: 55.9500, lng: -3.1950 },
     "Urban Angel": { lat: 55.9520, lng: -3.1980 },
   },
+  "Birmingham": {
+    "Natural Bar & Kitchen": { lat: 52.4775, lng: -1.8992 },
+    "Cherry Reds Café Bar": { lat: 52.4785, lng: -1.8970 },
+    "Medicine Bakery": { lat: 52.4780, lng: -1.9010 },
+  },
+  "Liverpool": {
+    "Berry & Rye": { lat: 53.4020, lng: -2.9780 },
+    "The Merchant": { lat: 53.4030, lng: -2.9770 },
+    "Present Company": { lat: 53.4040, lng: -2.9790 },
+    "The Alchemist": { lat: 53.4050, lng: -2.9800 },
+  },
+  "Bristol": {
+    "Hyde & Co": { lat: 51.4545, lng: -2.6210 },
+    "The Milk Thistle": { lat: 51.4535, lng: -2.5950 },
+    "The Rummer Hotel": { lat: 51.4540, lng: -2.5970 },
+    "The Apple": { lat: 51.4510, lng: -2.5960 },
+  },
   
   // ========== IRELAND ==========
   "Dublin": {
@@ -191,6 +208,11 @@ export const VENUE_COORDINATES: Record<string, Record<string, VenueCoordinates>>
     "Café Motto am Fluss": { lat: 48.2100, lng: 16.3800 },
     "Blue Orange": { lat: 48.2070, lng: 16.3750 },
   },
+  "Innsbruck": {
+    "Ludwig Das Burger Restaurant": { lat: 47.2620, lng: 11.3940 },
+    "Café Munding": { lat: 47.2630, lng: 11.3950 },
+    "Breakfast Club": { lat: 47.2640, lng: 11.3960 },
+  },
   
   // ========== NETHERLANDS ==========
   "Amsterdam": {
@@ -199,6 +221,15 @@ export const VENUE_COORDINATES: Record<string, Record<string, VenueCoordinates>>
     "Flying Dutchmen Cocktails": { lat: 52.3680, lng: 4.8890 },
     "CT Coffee & Coconuts": { lat: 52.3500, lng: 4.9100 },
     "The Avocado Show": { lat: 52.3620, lng: 4.8820 },
+  },
+  
+  // ========== BELGIUM ==========
+  "Brussels": {
+    "Delirium Café": { lat: 50.8482, lng: 4.3540 },
+    "A La Mort Subite": { lat: 50.8500, lng: 4.3550 },
+    "Café Belga": { lat: 50.8270, lng: 4.3720 },
+    "Madame Moustache": { lat: 50.8530, lng: 4.3480 },
+    "Moeder Lambic Fontainas": { lat: 50.8430, lng: 4.3470 },
   },
   
   // ========== POLAND ==========
@@ -210,31 +241,91 @@ export const VENUE_COORDINATES: Record<string, Record<string, VenueCoordinates>>
     "Charlotte Menora": { lat: 52.2350, lng: 21.0220 },
   },
   
+  // ========== ROMANIA ==========
+  "Bucharest": {
+    "Line Bar": { lat: 44.4350, lng: 26.0970 },
+    "Fix Me a Drink": { lat: 44.4320, lng: 26.1020 },
+    "Control Club Bar": { lat: 44.4360, lng: 26.0990 },
+    "Nomad Skybar": { lat: 44.4330, lng: 26.1000 },
+  },
+  
+  // ========== SERBIA ==========
+  "Belgrade": {
+    "Bar Central": { lat: 44.8180, lng: 20.4570 },
+    "Blaznavac Bar": { lat: 44.8170, lng: 20.4580 },
+    "Ludost Bar": { lat: 44.8150, lng: 20.4510 },
+    "Rakija Bar": { lat: 44.8190, lng: 20.4620 },
+  },
+  
+  // ========== CROATIA ==========
+  "Zagreb": {
+    "Swanky Monkey Garden Bar": { lat: 45.8130, lng: 15.9770 },
+    "Program Bar": { lat: 45.8120, lng: 15.9820 },
+    "Amost Bar": { lat: 45.8100, lng: 15.9740 },
+    "The Garden Brewery Taproom": { lat: 45.8070, lng: 15.9580 },
+  },
+  
+  // ========== GREECE ==========
+  "Athens": {
+    "The Clumsies": { lat: 37.9778, lng: 23.7280 },
+    "Baba au Rum": { lat: 37.9785, lng: 23.7290 },
+    "360 Cocktail Bar": { lat: 37.9755, lng: 23.7260 },
+    "Six d.o.g.s": { lat: 37.9762, lng: 23.7275 },
+    "A for Athens Bar": { lat: 37.9750, lng: 23.7255 },
+  },
+  
+  // ========== FINLAND ==========
+  "Helsinki": {
+    "Liberty or Death": { lat: 60.1670, lng: 24.9400 },
+    "Trillby & Chadwick": { lat: 60.1680, lng: 24.9520 },
+    "Ateljee Bar": { lat: 60.1695, lng: 24.9380 },
+    "Bier-Bier": { lat: 60.1675, lng: 24.9410 },
+  },
+  
+  // ========== SLOVAKIA ==========
+  "Bratislava": {
+    "Michalská Cocktail Room": { lat: 48.1450, lng: 17.1080 },
+    "Urban House": { lat: 48.1440, lng: 17.1090 },
+    "The Old Fashioned Bar": { lat: 48.1445, lng: 17.1085 },
+    "Lemontree Sky Bar": { lat: 48.1420, lng: 17.1100 },
+  },
+  
   // ========== USA ==========
   "New York City": {
     "Sweetgreen Broadway": { lat: 40.7589, lng: -73.9851 },
     "Jack's Wife Freda": { lat: 40.7230, lng: -73.9980 },
     "Bubby's": { lat: 40.7170, lng: -74.0080 },
+    "Superbueno": { lat: 40.7280, lng: -73.9870 },
+    "Dante": { lat: 40.7300, lng: -74.0020 },
+    "Katana Kitten": { lat: 40.7350, lng: -74.0010 },
   },
   "San Francisco": {
     "Souvla": { lat: 37.7850, lng: -122.4080 },
     "Foreign Cinema": { lat: 37.7580, lng: -122.4200 },
     "Plow": { lat: 37.7620, lng: -122.4110 },
+    "Smuggler's Cove": { lat: 37.7760, lng: -122.4220 },
+    "The View Lounge": { lat: 37.7850, lng: -122.4040 },
   },
   "Los Angeles": {
     "The Butcher's Daughter": { lat: 34.0490, lng: -118.4470 },
     "Great White": { lat: 33.9970, lng: -118.4800 },
     "Gracias Madre": { lat: 34.0840, lng: -118.3880 },
+    "The Lincoln": { lat: 33.9920, lng: -118.4650 },
+    "The Brig": { lat: 33.9930, lng: -118.4660 },
   },
   "San Diego": {
     "Sweetgreen": { lat: 32.8700, lng: -117.2120 },
     "The Cottage La Jolla": { lat: 32.8500, lng: -117.2700 },
     "Breakfast Republic": { lat: 32.7600, lng: -117.1300 },
+    "Polite Provisions": { lat: 32.7480, lng: -117.1290 },
+    "False Idol": { lat: 32.7490, lng: -117.1285 },
   },
   "Austin": {
     "Sweetgreen Downtown": { lat: 30.2672, lng: -97.7431 },
     "Josephine House": { lat: 30.2950, lng: -97.7550 },
     "Paperboy": { lat: 30.2700, lng: -97.7350 },
+    "Seven Grand": { lat: 30.2680, lng: -97.7400 },
+    "Midnight Cowboy": { lat: 30.2685, lng: -97.7410 },
   },
   "Miami": {
     "Sweetgreen Coral Gables": { lat: 25.7400, lng: -80.2600 },
@@ -245,11 +336,27 @@ export const VENUE_COORDINATES: Record<string, Record<string, VenueCoordinates>>
     "Sweetgreen Back Bay": { lat: 42.3510, lng: -71.0760 },
     "Tatte Bakery & Café": { lat: 42.3540, lng: -71.0700 },
     "The Friendly Toast": { lat: 42.3620, lng: -71.0560 },
+    "Farmacia": { lat: 42.3660, lng: -71.0530 },
+    "Yvonne's": { lat: 42.3560, lng: -71.0610 },
   },
   "Dallas": {
     "Sweetgreen Uptown": { lat: 32.7950, lng: -96.8020 },
     "Yolk": { lat: 32.7870, lng: -96.7990 },
     "Bread Winners Café": { lat: 32.8100, lng: -96.8100 },
+    "The Tipsy Alchemist": { lat: 32.8040, lng: -96.8010 },
+    "HIDE Bar": { lat: 32.8250, lng: -96.7860 },
+  },
+  "Chicago": {
+    "Kumiko": { lat: 41.8850, lng: -87.6480 },
+    "The Meadowlark": { lat: 41.9140, lng: -87.6690 },
+    "Best Intentions": { lat: 41.9200, lng: -87.6880 },
+    "Tre Dita": { lat: 41.8930, lng: -87.6340 },
+  },
+  "Sacramento": {
+    "The Snug": { lat: 38.5770, lng: -121.4930 },
+    "Shady Lady Saloon": { lat: 38.5815, lng: -121.4850 },
+    "Tack Room": { lat: 38.5790, lng: -121.4890 },
+    "Flamingo House Social Club": { lat: 38.5760, lng: -121.4780 },
   },
   
   // ========== SCANDINAVIA ==========
