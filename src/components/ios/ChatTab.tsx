@@ -505,7 +505,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                       <div className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5 text-white/70" />
                         <span className="text-sm text-white/70">
-                          {format(new Date(activity.scheduled_for), "MMM d, h:mm a")}
+                          {format(new Date(activity.scheduled_for), "EEEE, d MMM")}
                         </span>
                       </div>
                     )}
