@@ -18,6 +18,7 @@ export interface ActivityType {
 
 // Day names for display
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+export const DAY_NAMES_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // Get the day name for an activity
 export const getActivityDay = (id: string): string => {
@@ -27,6 +28,51 @@ export const getActivityDay = (id: string): string => {
   }
   return '';
 };
+
+// Get the next occurrence date for an activity based on its default day
+export const getNextOccurrenceDate = (activityId: string): Date => {
+  const activity = ACTIVITY_TYPES.find(a => a.id === activityId);
+  const today = new Date();
+  today.setHours(12, 0, 0, 0); // Normalize to noon
+  
+  if (activity?.defaultDay === undefined) {
+    return today;
+  }
+  
+  const targetDay = activity.defaultDay;
+  const currentDay = today.getDay();
+  
+  // Calculate days until target day
+  let daysUntil = targetDay - currentDay;
+  if (daysUntil < 0) {
+    daysUntil += 7; // Next week
+  }
+  // If it's the same day, it's today (daysUntil = 0)
+  
+  const nextDate = new Date(today);
+  nextDate.setDate(today.getDate() + daysUntil);
+  return nextDate;
+};
+
+// Get activity with its next occurrence date
+export interface ActivityWithDate extends ActivityType {
+  nextDate: Date;
+  dayNumber: number;
+  dayNameShort: string;
+}
+
+// Get activities ordered by next occurrence date (chronological)
+export function getActivitiesWithDates(): ActivityWithDate[] {
+  return ACTIVITY_TYPES.map(activity => {
+    const nextDate = getNextOccurrenceDate(activity.id);
+    return {
+      ...activity,
+      nextDate,
+      dayNumber: nextDate.getDate(),
+      dayNameShort: DAY_NAMES_SHORT[nextDate.getDay()],
+    };
+  }).sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime());
+}
 
 // Carousel activities with specific days (lunch, dinner, drinks, hike)
 export const ACTIVITY_TYPES: ActivityType[] = [
