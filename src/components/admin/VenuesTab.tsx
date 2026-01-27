@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Database, FileText } from "lucide-react";
+import { MapPin, Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Database, FileText, Globe, Loader2 } from "lucide-react";
 import { useVenues, useDeleteVenue, getWeeklyVenueFromList, getDailyVenueFromList, DbVenue } from "@/hooks/useVenues";
 import { VenueForm } from "./VenueForm";
 import { toast } from "@/hooks/use-toast";
 import { CITY_VENUES, CITY_BARS, CITY_BRUNCH_VENUES } from "@/data/venues";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface VenueSummary {
   city: string;
@@ -27,9 +29,49 @@ export function VenuesTab() {
   const [editingVenue, setEditingVenue] = useState<DbVenue | null>(null);
   const [defaultType, setDefaultType] = useState<'lunch_dinner' | 'brunch' | 'drinks'>('lunch_dinner');
   const [viewMode, setViewMode] = useState<'database' | 'hardcoded'>('database');
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const { data: dbVenues = [], isLoading } = useVenues();
   const deleteVenue = useDeleteVenue();
+  const queryClient = useQueryClient();
+
+  // Count venues missing coordinates
+  const venuesMissingCoords = useMemo(() => {
+    return dbVenues.filter(v => v.latitude === null || v.longitude === null).length;
+  }, [dbVenues]);
+
+  const handleBulkGeocode = async () => {
+    if (venuesMissingCoords === 0) {
+      toast({ title: "All venues already have coordinates!" });
+      return;
+    }
+
+    setIsGeocoding(true);
+    toast({ title: "Starting bulk geocoding...", description: `Processing ${venuesMissingCoords} venues` });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('bulk-geocode-venues');
+
+      if (error) throw error;
+
+      toast({
+        title: "Bulk geocoding complete!",
+        description: `${data.success} succeeded, ${data.failed} failed`,
+      });
+
+      // Refresh venues
+      queryClient.invalidateQueries({ queryKey: ['venues'] });
+    } catch (error: any) {
+      console.error('Bulk geocode error:', error);
+      toast({
+        title: "Bulk geocoding failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
 
   // Calculate venue counts per city from database
   const venueSummaries = useMemo(() => {
@@ -236,7 +278,7 @@ export function VenuesTab() {
       )}
 
       {/* View Mode Toggle */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Button
           variant={viewMode === 'database' ? 'default' : 'outline'}
           size="sm"
@@ -254,10 +296,25 @@ export function VenuesTab() {
           Hardcoded (Legacy)
         </Button>
         {viewMode === 'database' && (
-          <Button size="sm" onClick={() => handleAddVenue('lunch_dinner')}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Venue
-          </Button>
+          <>
+            <Button size="sm" onClick={() => handleAddVenue('lunch_dinner')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Venue
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={handleBulkGeocode}
+              disabled={isGeocoding || venuesMissingCoords === 0}
+            >
+              {isGeocoding ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Globe className="w-4 h-4 mr-2" />
+              )}
+              Bulk Geocode {venuesMissingCoords > 0 && `(${venuesMissingCoords})`}
+            </Button>
+          </>
         )}
       </div>
 
