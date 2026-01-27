@@ -112,6 +112,42 @@ export type Database = {
         }
         Relationships: []
       }
+      check_ins: {
+        Row: {
+          activity_type: string
+          check_in_date: string
+          checked_in_at: string
+          city: string
+          created_at: string
+          id: string
+          points_earned: number
+          user_id: string
+          venue_name: string
+        }
+        Insert: {
+          activity_type: string
+          check_in_date?: string
+          checked_in_at?: string
+          city: string
+          created_at?: string
+          id?: string
+          points_earned?: number
+          user_id: string
+          venue_name: string
+        }
+        Update: {
+          activity_type?: string
+          check_in_date?: string
+          checked_in_at?: string
+          city?: string
+          created_at?: string
+          id?: string
+          points_earned?: number
+          user_id?: string
+          venue_name?: string
+        }
+        Relationships: []
+      }
       greetings: {
         Row: {
           created_at: string
@@ -417,6 +453,7 @@ export type Database = {
     }
     Functions: {
       get_user_age: { Args: { target_user_id: string }; Returns: number }
+      get_user_points: { Args: { target_user_id: string }; Returns: number }
       users_matched: {
         Args: { user1: string; user2: string }
         Returns: boolean
