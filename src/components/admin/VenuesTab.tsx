@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Database, FileText, Globe, Loader2 } from "lucide-react";
+import { MapPin, Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Database, FileText, Globe, Loader2, AlertTriangle } from "lucide-react";
 import { useVenues, useDeleteVenue, getWeeklyVenueFromList, getDailyVenueFromList, DbVenue } from "@/hooks/useVenues";
 import { VenueForm } from "./VenueForm";
 import { toast } from "@/hooks/use-toast";
@@ -580,17 +580,22 @@ interface VenueCardProps {
 }
 
 function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete, canEdit }: VenueCardProps) {
+  const missingCoords = venue.latitude === null || venue.longitude === null;
+  
   return (
-    <div className={`p-3 rounded-lg border ${isCurrent ? 'border-primary bg-primary/5' : 'border-border'}`}>
+    <div className={`p-3 rounded-lg border ${isCurrent ? 'border-primary bg-primary/5' : missingCoords ? 'border-amber-500/50 bg-amber-500/5' : 'border-border'}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">
+          <p className="font-medium text-sm truncate flex items-center gap-1">
             {isCurrent && '⭐ '}
+            {missingCoords && <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />}
             {venue.name}
           </p>
           <p className="text-xs text-muted-foreground truncate">{venue.address}</p>
-          {venue.latitude && venue.longitude && (
+          {venue.latitude && venue.longitude ? (
             <p className="text-xs text-green-600">📍 GPS: {venue.latitude.toFixed(4)}, {venue.longitude.toFixed(4)}</p>
+          ) : (
+            <p className="text-xs text-amber-500">⚠️ Missing GPS coordinates</p>
           )}
         </div>
         <div className="flex items-center gap-1">
