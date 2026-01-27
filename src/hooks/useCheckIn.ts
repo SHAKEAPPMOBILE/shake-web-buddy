@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
-import { SHAKE_CITIES, getDistanceFromLatLng } from "@/data/cities";
+import { getDistanceFromLatLng, SHAKE_CITIES } from "@/data/cities";
+import { getVenueCoordinates } from "@/data/venueCoordinates";
 
 const POINTS_PER_CHECKIN = 5;
-const MAX_DISTANCE_METERS = 500; // Maximum distance in meters to allow check-in
+const MAX_DISTANCE_METERS = 50; // Maximum distance in meters to allow check-in (50m from venue)
 
 interface GeolocationResult {
   success: boolean;
@@ -54,6 +55,7 @@ async function getCurrentPosition(): Promise<GeolocationResult> {
   });
 }
 
+// Fallback to city center if venue coordinates not found
 function getCityCoordinates(cityName: string): { lat: number; lng: number } | null {
   const city = SHAKE_CITIES.find((c) => c.name === cityName);
   return city ? { lat: city.lat, lng: city.lng } : null;
@@ -114,30 +116,40 @@ export function useCheckIn() {
         return false;
       }
 
-      // Step 2: Get city coordinates
-      const cityCoords = getCityCoordinates(city);
+      // Step 2: Get venue coordinates (try specific venue first, fallback to city center)
+      let venueCoords = getVenueCoordinates(city, venueName);
+      let usingCityFallback = false;
       
-      if (!cityCoords) {
-        toast.error("Unable to verify venue location");
-        return false;
+      if (!venueCoords) {
+        // Fallback to city center with larger radius if venue coords not found
+        const cityCoords = getCityCoordinates(city);
+        if (!cityCoords) {
+          toast.error("Unable to verify venue location");
+          return false;
+        }
+        venueCoords = cityCoords;
+        usingCityFallback = true;
       }
 
-      // Step 3: Calculate distance between user and city center
+      // Step 3: Calculate distance between user and venue
       const distanceKm = getDistanceFromLatLng(
         locationResult.latitude!,
         locationResult.longitude!,
-        cityCoords.lat,
-        cityCoords.lng
+        venueCoords.lat,
+        venueCoords.lng
       );
       const distanceMeters = distanceKm * 1000;
+      
+      // Use larger radius for city fallback, strict 50m for known venues
+      const maxDistance = usingCityFallback ? 500 : MAX_DISTANCE_METERS;
 
       // Step 4: Validate proximity
-      if (distanceMeters > MAX_DISTANCE_METERS) {
+      if (distanceMeters > maxDistance) {
         const distanceDisplay = distanceKm >= 1 
           ? `${distanceKm.toFixed(1)} km` 
           : `${Math.round(distanceMeters)} meters`;
-        toast.error(`You're ${distanceDisplay} away from ${city}`, {
-          description: `You need to be within ${MAX_DISTANCE_METERS}m to check in`,
+        toast.error(`You're ${distanceDisplay} away from ${venueName}`, {
+          description: `You need to be within ${maxDistance}m to check in`,
         });
         return false;
       }
