@@ -8,18 +8,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, User, Mic, Lock } from "lucide-react";
+import { Send, User } from "lucide-react";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
-import { VoiceRecorder } from "@/components/VoiceRecorder";
-import { AudioWaveform } from "@/components/AudioWaveform";
-import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LoadingSpinner } from "./LoadingSpinner";
 
@@ -52,17 +48,11 @@ export function PrivateChatDialog({
   );
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   
-  const { canSendAudio, remainingAudio, incrementAudioCount, FREE_AUDIO_LIMIT } = useAudioMessageLimit({
-    conversationType: 'private',
-    conversationId: otherUserId,
-  });
-  
-  const { canSendText, addCharacters, remainingCharacters, FREE_CHARACTER_LIMIT } = useTextMessageLimit();
+  const { canSendText, addCharacters } = useTextMessageLimit();
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -84,54 +74,8 @@ export function PrivateChatDialog({
     }
   }, [open, markAsRead]);
 
-  const handleSendAudio = async () => {
-    if (!pendingAudio || !user) return;
-    
-    if (!canSendAudio) {
-      setShowPremiumDialog(true);
-      toast.error(`You've reached the ${FREE_AUDIO_LIMIT} audio message limit. Upgrade to Super-Human for unlimited audio!`);
-      return;
-    }
-    
-    setIsSending(true);
-    try {
-      const fileName = `${user.id}/${Date.now()}.webm`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from("voice-notes")
-        .upload(fileName, pendingAudio.blob, {
-          contentType: "audio/webm",
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("voice-notes")
-        .getPublicUrl(fileName);
-
-      const { error } = await sendMessage("🎤 Voice note", urlData.publicUrl);
-      
-      if (!error) {
-        setPendingAudio(null);
-        incrementAudioCount();
-        toast.success("Voice note sent!");
-      }
-    } catch (error) {
-      console.error("Error sending voice note:", error);
-      toast.error("Failed to send voice note");
-    } finally {
-      setIsSending(false);
-    }
-  };
-
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Handle audio message
-    if (pendingAudio) {
-      await handleSendAudio();
-      return;
-    }
     
     if (!newMessage.trim() || isSending) return;
 
@@ -191,7 +135,7 @@ export function PrivateChatDialog({
           ) : messages.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p className="text-sm">No messages yet.</p>
-              <p className="text-xs mt-1">Send a voice note to start the conversation!</p>
+              <p className="text-xs mt-1">Send a message to start the conversation!</p>
             </div>
           ) : (
             <div className="space-y-3 px-1">
@@ -209,11 +153,7 @@ export function PrivateChatDialog({
                           : "bg-blue-500 text-white rounded-bl-sm"
                       }`}
                     >
-                      {msg.audio_url ? (
-                        <AudioWaveform audioUrl={msg.audio_url} isCompact />
-                      ) : (
-                        <p className="text-sm break-words">{msg.message}</p>
-                      )}
+                      <p className="text-sm break-words">{msg.message}</p>
                       <p
                         className={`text-[10px] mt-1 ${
                           isMe ? "text-white/60" : "text-white/60"
@@ -246,64 +186,29 @@ export function PrivateChatDialog({
           </div>
         )}
 
-        {/* Audio limit indicator for free users - only show when 5 or fewer remaining */}
-        {user && !isPremium && remainingAudio <= 5 && (
-          <div className="px-4 py-1 text-xs text-muted-foreground text-center">
-            <span className="flex items-center justify-center gap-1">
-              <Mic className="w-3 h-3" />
-              {remainingAudio} voice notes remaining
-            </span>
-          </div>
-        )}
-
         {/* Input */}
         <form onSubmit={handleSend} className="pt-4 px-4 pb-4">
-          {pendingAudio ? (
-            <div className="flex items-center gap-2">
-              <div className="flex-1 p-2 bg-muted rounded-lg">
-                <AudioWaveform audioUrl={pendingAudio.url} isCompact />
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setPendingAudio(null)}>
-                <Lock className="w-4 h-4" />
-              </Button>
-              <Button 
-                type="button"
-                onClick={handleSendAudio}
-                disabled={isSending}
-                variant="shake"
-              >
-                {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <VoiceRecorder
-                onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
-                onAudioClear={() => setPendingAudio(null)}
-                disabled={isSending}
-                highlighted={true}
-              />
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={canSendText ? "Type a message..." : "Character limit reached"}
-                className="flex-1"
-                disabled={isSending || (!isPremium && !canSendText)}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                disabled={(!newMessage.trim() && !pendingAudio) || isSending}
-                variant="shake"
-              >
-                {isSending ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={canSendText ? "Type a message..." : "Character limit reached"}
+              className="flex-1"
+              disabled={isSending || (!isPremium && !canSendText)}
+            />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!newMessage.trim() || isSending}
+              variant="shake"
+            >
+              {isSending ? (
+                <LoadingSpinner size="sm" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
         </form>
       </DialogContent>
       

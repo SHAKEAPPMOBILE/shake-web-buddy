@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Send, Users, User, BellOff, Bell, LogOut, MapPin, Trash2, Mic, Plane } from "lucide-react";
+import { ChevronLeft, Send, Users, User, BellOff, Bell, LogOut, MapPin, Trash2, Plane } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,13 +10,10 @@ import { useActivityMute } from "@/hooks/useActivityMute";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
-import { VoiceRecorder } from "@/components/VoiceRecorder";
-import { AudioWaveform } from "@/components/AudioWaveform";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { useActivityVenue } from "@/contexts/VenueContext";
-import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityLabel, getActivityEmoji, getActivityDay } from "@/data/activityTypes";
@@ -35,7 +32,6 @@ interface Message {
   activity_type: string;
   city: string;
   message: string;
-  audio_url?: string | null;
   created_at: string;
 }
 
@@ -123,8 +119,6 @@ export function GroupChatView({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
-  const [audioResetTrigger, setAudioResetTrigger] = useState(0);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showParticipantsList, setShowParticipantsList] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
@@ -138,12 +132,7 @@ export function GroupChatView({
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
   const { leaveActivity } = useActivityJoins(city);
   
-  const { canSendAudio, remainingAudio, incrementAudioCount, FREE_AUDIO_LIMIT } = useAudioMessageLimit({
-    conversationType: 'activity',
-    conversationId: `${city}::${activityType}`,
-  });
-  
-  const { canSendText, addCharacters, remainingCharacters, FREE_CHARACTER_LIMIT } = useTextMessageLimit();
+  const { canSendText, addCharacters } = useTextMessageLimit();
   
   // Get unique user IDs from messages for profile fetching
   const userIds = useMemo(() => {
@@ -301,16 +290,10 @@ export function GroupChatView({
     if (!user || isSending) return;
     
     // Check if there's something to send
-    if (!message.trim() && !pendingAudio) return;
+    if (!message.trim()) return;
 
     // Check text limit for non-premium users
-    if (message.trim() && !isPremium && !canSendText) {
-      setShowPremiumDialog(true);
-      return;
-    }
-
-    // Check audio limit for non-premium users
-    if (pendingAudio && !isPremium && !canSendAudio) {
+    if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
       return;
     }
@@ -318,35 +301,10 @@ export function GroupChatView({
     setIsSending(true);
     
     try {
-      let audioUrl: string | null = null;
-      
-      // If there's pending audio, upload it
-      if (pendingAudio) {
-        const fileName = `${user.id}/${Date.now()}.webm`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("voice-notes")
-          .upload(fileName, pendingAudio.blob, {
-            contentType: "audio/webm",
-          });
-          
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from("voice-notes")
-          .getPublicUrl(fileName);
-          
-        audioUrl = publicUrl;
-        
-        // Increment audio count for free users
-        if (!isPremium) {
-          incrementAudioCount();
-        }
-      }
-      
-      const messageText = pendingAudio ? "🎤 Voice note" : message.trim();
+      const messageText = message.trim();
       
       // Track character usage for free users
-      if (!pendingAudio && !isPremium) {
+      if (!isPremium) {
         addCharacters(messageText.length);
       }
       
@@ -355,21 +313,18 @@ export function GroupChatView({
         activity_type: activityType,
         city: city,
         message: messageText,
-        audio_url: audioUrl,
       });
 
       if (error) throw error;
       
       setMessage("");
-      setPendingAudio(null);
-      setAudioResetTrigger((prev) => prev + 1);
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
     } finally {
       setIsSending(false);
     }
-  }, [user, isSending, message, pendingAudio, isPremium, canSendText, canSendAudio, activityType, city, incrementAudioCount, addCharacters]);
+  }, [user, isSending, message, isPremium, canSendText, activityType, city, addCharacters]);
 
   const handleDeleteMessage = async (messageId: string) => {
     const { error } = await supabase
@@ -564,11 +519,7 @@ export function GroupChatView({
                         ? 'bg-black text-white'
                         : 'bg-blue-500 text-white'
                     }`}>
-                      {msg.audio_url ? (
-                        <AudioWaveform audioUrl={msg.audio_url} isCompact />
-                      ) : (
-                        <span>{msg.message}</span>
-                      )}
+                      <span>{msg.message}</span>
                     </div>
                     {isOwnMessage && (
                       <button
@@ -589,7 +540,7 @@ export function GroupChatView({
       </div>
 
       {/* Chat Suggestions */}
-      {user && !message.trim() && !pendingAudio && (
+      {user && !message.trim() && (
         <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
           <div className="flex gap-2 w-max">
             {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
@@ -605,60 +556,25 @@ export function GroupChatView({
         </div>
       )}
 
-      {/* Audio limit indicator */}
-      {user && !isPremium && remainingAudio <= 5 && (
-        <div className="px-4 py-1 text-xs text-muted-foreground text-center">
-          <span className="flex items-center justify-center gap-1">
-            <Mic className="w-3 h-3" />
-            {remainingAudio} voice notes remaining
-          </span>
-        </div>
-      )}
-
       {/* Input */}
       <div className="p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
-          {!pendingAudio && (
-            <Input
-              placeholder={canSendText ? "Type a message..." : "Character limit reached"}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
-              disabled={isSending || (!isPremium && !canSendText)}
-            />
-          )}
-          {pendingAudio && (
-            <div className="flex-1 flex items-center gap-2 p-2 bg-blue-500/10 rounded-md border border-blue-500/30">
-              <AudioWaveform audioUrl={pendingAudio.url} isCompact />
-              <button
-                onClick={() => {
-                  setPendingAudio(null);
-                  setAudioResetTrigger((prev) => prev + 1);
-                }}
-                className="text-xs text-muted-foreground hover:text-destructive"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-          <div className="flex flex-col gap-1">
-            <VoiceRecorder 
-              onAudioReady={(blob, url) => setPendingAudio({ blob, url })}
-              onAudioClear={() => setPendingAudio(null)}
-              disabled={isSending}
-              highlighted={true}
-              resetTrigger={audioResetTrigger}
-            />
-            <Button 
-              variant="shake" 
-              size="icon" 
-              onClick={handleSendMessage}
-              disabled={isSending || (!message.trim() && !pendingAudio)}
-            >
-              {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
-            </Button>
-          </div>
+          <Input
+            placeholder={canSendText ? "Type a message..." : "Character limit reached"}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
+            disabled={isSending || (!isPremium && !canSendText)}
+          />
+          <Button 
+            variant="shake" 
+            size="icon" 
+            onClick={handleSendMessage}
+            disabled={isSending || !message.trim()}
+          >
+            {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
+          </Button>
         </div>
       </div>
 
