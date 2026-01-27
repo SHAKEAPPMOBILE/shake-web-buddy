@@ -42,7 +42,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
           <span>How to earn points</span>
         </div>
         
-        <div className="space-y-2 text-sm text-muted-foreground">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 mt-0.5 text-shake-green shrink-0" />
             <span>
@@ -52,9 +52,15 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
           <div className="flex items-start gap-2">
             <TrendingUp className="w-4 h-4 mt-0.5 text-primary shrink-0" />
             <span>
-              <strong className="text-foreground">Attend activities</strong> — Join activities and be present to earn rewards
+              <strong className="text-foreground">Create popular activities</strong> — Earn +5 points for every 5 attendees on activities you create (10 attendees = +10 points, etc.)
             </span>
           </div>
+        </div>
+
+        <div className="pt-2 border-t border-border/50">
+          <p className="text-xs text-muted-foreground italic">
+            You only earn points by attending activities and checking in at venues.
+          </p>
         </div>
       </div>
     </div>
