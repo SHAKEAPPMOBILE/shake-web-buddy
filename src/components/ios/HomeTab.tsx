@@ -122,7 +122,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     
     const dateStr = format(currentActivity.nextDate, "EEE, d MMM");
     const shareText = `${currentActivity.emoji} Join me for ${currentActivity.label} in ${selectedCity || "my city"} on ${dateStr}! Let's SHAKE up our social life together.`;
-    const shareUrl = "https://shake-web-buddy.lovable.app";
+    const shareUrl = "https://shakeapp.today";
     
     if (navigator.share) {
       try {

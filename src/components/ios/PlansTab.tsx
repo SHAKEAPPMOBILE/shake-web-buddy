@@ -354,7 +354,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     const dateStr = format(new Date(plan.scheduled_for), "EEE, d MMM");
     
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
-    const shareUrl = "https://shake-web-buddy.lovable.app";
+    const shareUrl = "https://shakeapp.today";
     
     if (navigator.share) {
       try {
