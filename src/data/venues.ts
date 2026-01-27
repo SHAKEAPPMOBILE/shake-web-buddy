@@ -392,6 +392,20 @@ export const CITY_VENUES: Record<string, Venue> = {
     name: "Sweetgreen Downtown",
     address: "Austin, TX"
   },
+  
+  // Colombia
+  "Bogotá": {
+    name: "Crepes & Waffles",
+    address: "Carrera 9 No. 73-33, Bogotá"
+  },
+  "Medellín": {
+    name: "Pergamino Café",
+    address: "Carrera 37 No. 8A-37, El Poblado, Medellín"
+  },
+  "Cartagena": {
+    name: "Juan del Mar",
+    address: "Calle del Santísimo, Cartagena"
+  },
 };
 
 // Bars list per city - rotates daily
