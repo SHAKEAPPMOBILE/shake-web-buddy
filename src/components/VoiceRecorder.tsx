@@ -62,10 +62,31 @@ export function VoiceRecorder({ onAudioReady, onAudioClear, disabled, highlighte
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error("Your browser doesn't support audio recording");
+        return;
+      }
+
+      // Request microphone access with iOS-friendly constraints
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        } 
+      });
       
       // Set up audio context for live visualization
-      audioContextRef.current = new AudioContext();
+      // Use webkitAudioContext for older iOS versions
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      audioContextRef.current = new AudioContextClass();
+      
+      // Resume AudioContext if suspended (required on iOS after user gesture)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+      
       const source = audioContextRef.current.createMediaStreamSource(stream);
       analyserRef.current = audioContextRef.current.createAnalyser();
       analyserRef.current.fftSize = 64;
@@ -142,7 +163,25 @@ export function VoiceRecorder({ onAudioReady, onAudioClear, disabled, highlighte
       updateWaveform();
     } catch (error) {
       console.error("Error starting recording:", error);
-      toast.error("Could not access microphone");
+      
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          toast.error("Microphone access denied. Please enable it in your device settings.");
+        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+          toast.error("No microphone found on this device");
+        } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+          toast.error("Microphone is in use by another app");
+        } else if (error.name === 'OverconstrainedError') {
+          toast.error("Microphone settings not supported");
+        } else if (error.name === 'SecurityError') {
+          toast.error("Microphone access requires a secure connection (HTTPS)");
+        } else {
+          toast.error("Could not access microphone. Check your settings.");
+        }
+      } else {
+        toast.error("Could not access microphone");
+      }
     }
   };
 
