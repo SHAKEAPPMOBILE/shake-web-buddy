@@ -21,3 +21,6 @@ verify_jwt = false
 
 [functions.seed-test-users]
 verify_jwt = false
+
+[functions.geocode-address]
+verify_jwt = false
