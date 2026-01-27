@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { isSmsEnabledForCountry, getSmsAvailabilityMessage } from "@/data/smsEnabledCountries";
+import { countryCodes } from "@/data/countryCodes";
 
 import {
   Dialog,
@@ -23,6 +25,25 @@ const otpSchema = z
   .string()
   .trim()
   .regex(/^\d{6}$/, { message: "Enter the 6-digit code" });
+
+// Helper to detect country from phone number
+function detectCountryFromPhone(phone: string): string | null {
+  const cleaned = phone.replace(/\D/g, '');
+  if (!cleaned) return null;
+  
+  // Sort by dial code length (longest first) to match more specific codes first
+  const sortedCodes = [...countryCodes].sort((a, b) => 
+    b.dialCode.length - a.dialCode.length
+  );
+  
+  for (const country of sortedCodes) {
+    const dialDigits = country.dialCode.replace(/\D/g, '');
+    if (cleaned.startsWith(dialDigits)) {
+      return country.code;
+    }
+  }
+  return null;
+}
 
 type Props = {
   open: boolean;
@@ -140,6 +161,17 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
             <p className="text-xs text-muted-foreground">
               Include country code. Example: +351…, +1…, +44…
             </p>
+            {(() => {
+              const detectedCountry = detectCountryFromPhone(phone);
+              if (detectedCountry && !isSmsEnabledForCountry(detectedCountry)) {
+                return (
+                  <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-md">
+                    ⚠️ {getSmsAvailabilityMessage(detectedCountry)}
+                  </p>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           {step === "verify" && (
