@@ -1007,56 +1007,27 @@ function findNearestCityWithBars(city: string): string | null {
  * For hike: returns "TBD - Vote in chat!"
  */
 export function getActivityLocation(activityType: string, city: string): string {
-  // Lunch and dinner have pre-set venues
+  // Lunch and dinner have pre-set venues - no fallback to other cities
   if (activityType === "lunch" || activityType === "dinner") {
-    let venue = CITY_VENUES[city];
-    let usedCity = city;
-    
-    // If no venue for this city, find the nearest city with a venue
-    if (!venue) {
-      const nearestCity = findNearestCityWithVenue(city);
-      if (nearestCity) {
-        venue = CITY_VENUES[nearestCity];
-        usedCity = nearestCity;
-      }
-    }
-    
+    const venue = CITY_VENUES[city];
     if (venue) {
       return `${venue.name}, ${venue.address}`;
     }
     return "TBD - Vote in chat!";
   }
   
-  // Brunch has weekly rotating venues
+  // Brunch has weekly rotating venues - no fallback to other cities
   if (activityType === "brunch") {
-    let brunchVenue = getWeeklyBrunchVenue(city);
-    
-    // If no brunch venue for this city, find the nearest city with brunch venues
-    if (!brunchVenue) {
-      const nearestCity = findNearestCityWithBrunchVenues(city);
-      if (nearestCity) {
-        brunchVenue = getWeeklyBrunchVenue(nearestCity);
-      }
-    }
-    
+    const brunchVenue = getWeeklyBrunchVenue(city);
     if (brunchVenue) {
       return `${brunchVenue.name} – ${brunchVenue.description}`;
     }
     return "TBD - Vote in chat!";
   }
   
-  // Drinks have rotating bars
+  // Drinks have rotating bars - no fallback to other cities
   if (activityType === "drinks") {
-    let bar = getTodaysBar(city);
-    
-    // If no bar for this city, find the nearest city with bars
-    if (!bar) {
-      const nearestCity = findNearestCityWithBars(city);
-      if (nearestCity) {
-        bar = getTodaysBar(nearestCity);
-      }
-    }
-    
+    const bar = getTodaysBar(city);
     if (bar) {
       return `${bar.name}, ${bar.address}`;
     }
@@ -1072,17 +1043,9 @@ export function getActivityLocation(activityType: string, city: string): string 
  * Returns null if no venue is available for the activity/city
  */
 export function getVenueMapsUrl(activityType: string, city: string): string | null {
+  // Lunch and dinner - no fallback to other cities
   if (activityType === "lunch" || activityType === "dinner") {
-    let venue = CITY_VENUES[city];
-    
-    // If no venue for this city, find the nearest city with a venue
-    if (!venue) {
-      const nearestCity = findNearestCityWithVenue(city);
-      if (nearestCity) {
-        venue = CITY_VENUES[nearestCity];
-      }
-    }
-    
+    const venue = CITY_VENUES[city];
     if (!venue) {
       return null;
     }
@@ -1090,18 +1053,9 @@ export function getVenueMapsUrl(activityType: string, city: string): string | nu
     return `https://www.google.com/maps/search/?api=1&query=${query}`;
   }
   
-  // Brunch venues
+  // Brunch venues - no fallback to other cities
   if (activityType === "brunch") {
-    let brunchVenue = getWeeklyBrunchVenue(city);
-    
-    // If no brunch venue for this city, find the nearest city with brunch venues
-    if (!brunchVenue) {
-      const nearestCity = findNearestCityWithBrunchVenues(city);
-      if (nearestCity) {
-        brunchVenue = getWeeklyBrunchVenue(nearestCity);
-      }
-    }
-    
+    const brunchVenue = getWeeklyBrunchVenue(city);
     if (!brunchVenue) {
       return null;
     }
@@ -1109,17 +1063,9 @@ export function getVenueMapsUrl(activityType: string, city: string): string | nu
     return `https://www.google.com/maps/search/?api=1&query=${query}`;
   }
   
+  // Drinks - no fallback to other cities
   if (activityType === "drinks") {
-    let bar = getTodaysBar(city);
-    
-    // If no bar for this city, find the nearest city with bars
-    if (!bar) {
-      const nearestCity = findNearestCityWithBars(city);
-      if (nearestCity) {
-        bar = getTodaysBar(nearestCity);
-      }
-    }
-    
+    const bar = getTodaysBar(city);
     if (!bar) {
       return null;
     }
