@@ -47,7 +47,7 @@ interface Message {
   created_at: string;
 }
 
-import { getActivityLabel, getActivityEmoji, getActivityDay } from "@/data/activityTypes";
+import { getActivityLabel, getActivityEmoji, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
 
 const defaultSuggestions = [
   "What time works best?",
@@ -636,14 +636,24 @@ export function GroupChatDialog({
                   {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined
                 </p>
               </button>
-              {/* Check-in button for venue activities */}
-              {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && location && location !== "TBD - Vote in chat!" && (
-                <CheckInButton
-                  activityType={activityType}
-                  city={city}
-                  venueName={location}
-                />
-              )}
+              {/* Check-in button for venue activities - only show on the day of the activity */}
+              {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && location && location !== "TBD - Vote in chat!" && (() => {
+                // Check if this activity is scheduled for today
+                const nextOccurrence = getNextOccurrenceDate(activityType);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const occurrenceDay = new Date(nextOccurrence);
+                occurrenceDay.setHours(0, 0, 0, 0);
+                const isToday = occurrenceDay.getTime() === today.getTime();
+                
+                return isToday ? (
+                  <CheckInButton
+                    activityType={activityType}
+                    city={city}
+                    venueName={location}
+                  />
+                ) : null;
+              })()}
             </div>
           </div>
         )}

@@ -51,11 +51,23 @@ export function IOSAppLayout() {
   const navigate = useNavigate();
   const { joinActivity, getActivityJoinCount, activeJoins, hasUserJoined } = useActivityJoins(selectedCity);
   
-  // Get active activity types the user has joined today (for proximity detection)
+  // Get active activity types the user has joined that are SCHEDULED FOR TODAY (for proximity detection)
   const userActiveActivityTypes = useMemo(() => {
     if (!user) return [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     return activeJoins
-      .filter(join => join.user_id === user.id)
+      .filter(join => {
+        if (join.user_id !== user.id) return false;
+        
+        // Check if this activity type is scheduled for today
+        const nextOccurrence = getNextOccurrenceDate(join.activity_type);
+        const occurrenceDay = new Date(nextOccurrence);
+        occurrenceDay.setHours(0, 0, 0, 0);
+        
+        return occurrenceDay.getTime() === today.getTime();
+      })
       .map(join => join.activity_type);
   }, [activeJoins, user]);
   
