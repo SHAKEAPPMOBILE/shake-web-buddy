@@ -369,27 +369,32 @@ export function UserProfileDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Enlarged Avatar Modal */}
+      {/* Enlarged Avatar Modal - rendered via portal to avoid Dialog event interference */}
       {showEnlargedAvatar && avatarUrl && (
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowEnlargedAvatar(false);
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
+          onClick={() => setShowEnlargedAvatar(false)}
+          onPointerDown={(e) => {
+            // Immediately close on any pointer interaction with backdrop
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              setShowEnlargedAvatar(false);
+            }
           }}
+          role="dialog"
+          aria-modal="true"
         >
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
+            onClick={() => setShowEnlargedAvatar(false)}
+            onPointerDown={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               setShowEnlargedAvatar(false);
             }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-            }}
-            className="absolute top-4 right-4 p-3 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 transition-colors z-[110] touch-manipulation"
+            className="absolute top-4 right-4 p-3 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 transition-colors z-[210] touch-manipulation"
             aria-label="Close enlarged avatar"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             <X className="w-6 h-6 text-white" />
           </button>
@@ -398,6 +403,7 @@ export function UserProfileDialog({
             alt={userName || "User"}
             className="max-w-[90vw] max-h-[90vh] rounded-2xl shadow-2xl object-contain animate-scale-in"
             onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
           />
         </div>
       )}
