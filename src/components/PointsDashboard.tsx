@@ -46,7 +46,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 mt-0.5 text-shake-green shrink-0" />
             <span>
-              <strong className="text-foreground">Check in at venues</strong> — Earn +5 points when you check in at the venues of your activity
+              <strong className="text-foreground">Check in at venues</strong> — Earn +5 points when you check in at the venues of your activities
             </span>
           </div>
           <div className="flex items-start gap-2">

@@ -158,6 +158,17 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
 
       {/* Menu Items */}
       <div className="flex-1 px-4 py-4 space-y-2">
+        {/* Edit Profile */}
+        <button
+          onClick={() => navigate("/profile")}
+          className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-border rounded-xl"
+        >
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <Settings className="w-5 h-5 text-primary" />
+          </div>
+          <span className="font-medium">Edit Profile</span>
+        </button>
+
         {/* My Points */}
         <button
           onClick={() => setShowPointsDialog(true)}
@@ -170,17 +181,6 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
             <span className="font-medium">My Points</span>
             <p className="text-xs text-muted-foreground">{points.toLocaleString()} points earned</p>
           </div>
-        </button>
-
-        {/* Edit Profile */}
-        <button
-          onClick={() => navigate("/profile")}
-          className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-border rounded-xl"
-        >
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Settings className="w-5 h-5 text-primary" />
-          </div>
-          <span className="font-medium">Edit Profile</span>
         </button>
 
         {isPremium ? (
