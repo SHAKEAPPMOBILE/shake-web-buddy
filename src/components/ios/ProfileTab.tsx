@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +51,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const { points } = useUserPoints(user?.id);
   const { referralCode } = useReferralCode(user?.id);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showReferralLink, setShowReferralLink] = useState(false);
 
   const handleCopyReferralLink = async () => {
     const link = getReferralLink(referralCode);
@@ -263,7 +264,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
         {/* Share Referral Link */}
         <div className="w-full bg-card border border-primary/30 rounded-xl overflow-hidden">
           <button
-            onClick={handleShareReferralLink}
+            onClick={() => setShowReferralLink(!showReferralLink)}
             className="w-full flex items-center gap-4 px-4 py-3"
           >
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -273,9 +274,15 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               <span className="font-medium">Share Referral Link</span>
               <p className="text-xs text-muted-foreground">Earn +5 points per signup</p>
             </div>
+            <ChevronDown 
+              className={cn(
+                "w-5 h-5 text-muted-foreground transition-transform duration-200",
+                showReferralLink && "rotate-180"
+              )} 
+            />
           </button>
-          {referralCode && (
-            <div className="px-4 pb-3 pt-0">
+          {showReferralLink && referralCode && (
+            <div className="px-4 pb-3 pt-0 animate-fade-in">
               <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
                 <span className="flex-1 text-sm text-muted-foreground truncate">
                   {getReferralLink(referralCode)}
@@ -283,12 +290,20 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                 <button
                   onClick={handleCopyReferralLink}
                   className="p-1.5 hover:bg-muted rounded-md transition-colors"
+                  title="Copy link"
                 >
                   {copiedLink ? (
                     <Check className="w-4 h-4 text-shake-green" />
                   ) : (
                     <Copy className="w-4 h-4 text-muted-foreground" />
                   )}
+                </button>
+                <button
+                  onClick={handleShareReferralLink}
+                  className="p-1.5 hover:bg-muted rounded-md transition-colors"
+                  title="Share link"
+                >
+                  <Share2 className="w-4 h-4 text-primary" />
                 </button>
               </div>
             </div>
