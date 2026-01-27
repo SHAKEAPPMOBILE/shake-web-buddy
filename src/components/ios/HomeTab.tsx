@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
-import { ChevronLeft, ChevronRight, Share2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getActivitiesWithDates, DAY_NAMES } from "@/data/activityTypes";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -9,9 +9,6 @@ import shakeLogo from "@/assets/shake-logo-new.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LandingCarousel } from "@/components/LandingCarousel";
 import { useCity } from "@/contexts/CityContext";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
@@ -22,9 +19,7 @@ interface HomeTabProps {
 
 export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false }: HomeTabProps) {
   const { user } = useAuth();
-  const { selectedCity } = useCity();
   const navigate = useNavigate();
-  const { referralCode } = useReferralCode(user?.id);
 
   // Rotating text for "Meet new..." phrases
   const meetPhrases = useMemo(() => [
@@ -115,39 +110,6 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       }
     }
   }, [goToNext, goToPrevious]);
-
-  // Share activity handler
-  const handleShareActivity = async (e: MouseEvent) => {
-    e.stopPropagation();
-    
-    if (!currentActivity) return;
-    
-    const dateStr = format(currentActivity.nextDate, "EEE, d MMM");
-    const shareUrl = getReferralLink(referralCode);
-    const shareText = `${currentActivity.emoji} Join me for ${currentActivity.label} in ${selectedCity || "my city"} on ${dateStr}! Let's SHAKE up our social life together.`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `SHAKE - ${currentActivity.label}`,
-          text: shareText,
-          url: shareUrl,
-        });
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          console.error("Error sharing:", err);
-        }
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        toast.success("Link copied to clipboard!");
-      } catch (err) {
-        console.error("Failed to copy:", err);
-        toast.error("Failed to share");
-      }
-    }
-  };
 
   // Handle backdrop click to close activities
   // IMPORTANT: must be declared before any conditional returns to keep hook order stable.
@@ -304,14 +266,6 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
               <div className="text-xl font-semibold text-foreground">{currentActivity?.label}</div>
             </div>
 
-            {/* Share button */}
-            <button
-              onClick={handleShareActivity}
-              className="mt-4 flex items-center gap-2 px-4 py-2 bg-card/50 hover:bg-card border border-border rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Share2 className="w-4 h-4" />
-              <span>Share with friends</span>
-            </button>
 
             {/* Dot Indicators */}
             <div className="flex justify-center gap-2 mt-6">
