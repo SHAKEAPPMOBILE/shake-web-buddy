@@ -3,8 +3,61 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { SHAKE_CITIES, getDistanceFromLatLng } from "@/data/cities";
 
 const POINTS_PER_CHECKIN = 5;
+const MAX_DISTANCE_METERS = 500; // Maximum distance in meters to allow check-in
+
+interface GeolocationResult {
+  success: boolean;
+  latitude?: number;
+  longitude?: number;
+  error?: string;
+}
+
+async function getCurrentPosition(): Promise<GeolocationResult> {
+  return new Promise((resolve) => {
+    if (!("geolocation" in navigator)) {
+      resolve({ success: false, error: "Geolocation not supported" });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          success: true,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      (error) => {
+        let errorMessage = "Unable to get your location";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location permission denied. Please enable location access to check in.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out";
+            break;
+        }
+        resolve({ success: false, error: errorMessage });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000, // Cache for 1 minute
+      }
+    );
+  });
+}
+
+function getCityCoordinates(cityName: string): { lat: number; lng: number } | null {
+  const city = SHAKE_CITIES.find((c) => c.name === cityName);
+  return city ? { lat: city.lat, lng: city.lng } : null;
+}
 
 export function useCheckIn() {
   const { user } = useAuth();
@@ -53,6 +106,43 @@ export function useCheckIn() {
     setIsCheckingIn(true);
 
     try {
+      // Step 1: Get user's current location
+      const locationResult = await getCurrentPosition();
+      
+      if (!locationResult.success) {
+        toast.error(locationResult.error || "Unable to verify your location");
+        return false;
+      }
+
+      // Step 2: Get city coordinates
+      const cityCoords = getCityCoordinates(city);
+      
+      if (!cityCoords) {
+        toast.error("Unable to verify venue location");
+        return false;
+      }
+
+      // Step 3: Calculate distance between user and city center
+      const distanceKm = getDistanceFromLatLng(
+        locationResult.latitude!,
+        locationResult.longitude!,
+        cityCoords.lat,
+        cityCoords.lng
+      );
+      const distanceMeters = distanceKm * 1000;
+
+      // Step 4: Validate proximity
+      if (distanceMeters > MAX_DISTANCE_METERS) {
+        const distanceDisplay = distanceKm >= 1 
+          ? `${distanceKm.toFixed(1)} km` 
+          : `${Math.round(distanceMeters)} meters`;
+        toast.error(`You're ${distanceDisplay} away from ${city}`, {
+          description: `You need to be within ${MAX_DISTANCE_METERS}m to check in`,
+        });
+        return false;
+      }
+
+      // Step 5: Proceed with check-in
       const today = new Date().toISOString().split('T')[0];
       
       const { error } = await supabase
