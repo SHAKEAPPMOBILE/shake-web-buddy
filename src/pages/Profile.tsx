@@ -510,8 +510,12 @@ export default function Profile() {
                 }
               }}
               onUploadClick={() => {
-                fileInputRef.current?.click();
+                // Close dialog first, then trigger file input after a delay
+                // This prevents iOS/iPadOS crash from simultaneous dialog close + file picker
                 setShowAvatarPicker(false);
+                setTimeout(() => {
+                  fileInputRef.current?.click();
+                }, 100);
               }}
               customAvatarPreview={avatarUrl}
             />
