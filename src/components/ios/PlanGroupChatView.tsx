@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Send, Users, User, Trash2, Mic } from "lucide-react";
+import { ChevronLeft, Send, User, Trash2, Mic } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +51,7 @@ export function PlanGroupChatView({
 }: PlanGroupChatViewProps) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null);
   const [audioResetTrigger, setAudioResetTrigger] = useState(0);
@@ -175,6 +176,81 @@ export function PlanGroupChatView({
       supabase.removeChannel(channel);
     };
   }, [activity.id, user?.id, showNotification, activity.activity_type]);
+
+  // Fetch participants
+  useEffect(() => {
+    if (!activity.id) return;
+
+    const fetchParticipants = async () => {
+      // Get the owner's profile
+      const { data: ownerProfile } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .eq("user_id", activity.user_id)
+        .maybeSingle();
+
+      const owner = {
+        user_id: activity.user_id,
+        name: ownerProfile?.name || null,
+        avatar_url: ownerProfile?.avatar_url || null,
+      };
+
+      // Get activity joins for this specific plan
+      const { data: joins } = await supabase
+        .from("activity_joins")
+        .select("user_id")
+        .eq("activity_id", activity.id);
+
+      if (!joins || joins.length === 0) {
+        setParticipants([owner]);
+        return;
+      }
+
+      // Get unique user IDs (excluding owner)
+      const uniqueUserIds = [...new Set(joins.map((j) => j.user_id))].filter(
+        (id) => id !== activity.user_id
+      );
+
+      // Fetch profiles for these users
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", uniqueUserIds);
+
+      const joinedParticipants = uniqueUserIds.map((userId) => {
+        const profile = profiles?.find((p) => p.user_id === userId);
+        return {
+          user_id: userId,
+          name: profile?.name || null,
+          avatar_url: profile?.avatar_url || null,
+        };
+      });
+
+      // Owner first, then joined participants
+      setParticipants([owner, ...joinedParticipants]);
+    };
+
+    fetchParticipants();
+
+    // Subscribe to joins changes
+    const channel = supabase
+      .channel(`plan-joins-${activity.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "activity_joins",
+          filter: `activity_id=eq.${activity.id}`,
+        },
+        () => fetchParticipants()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activity.id, activity.user_id]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -342,14 +418,53 @@ export function PlanGroupChatView({
             )}
           </p>
         </div>
-        <button
-          className="flex items-center gap-1 text-black/50 shrink-0 hover:text-black transition-colors"
-          onClick={() => setShowParticipantsDialog(true)}
-        >
-          <Users className="w-4 h-4" />
-          <span className="text-sm">{activity.participant_count}</span>
-        </button>
       </div>
+
+      {/* Attendees section */}
+      {participants.length > 0 ? (
+        <div className="w-full px-4 py-3 border-b border-black/5">
+          <button 
+            onClick={() => setShowParticipantsDialog(true)}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
+            <div className="flex -space-x-2 overflow-hidden">
+              {participants.slice(0, 6).map((participant) => (
+                <div
+                  key={participant.user_id}
+                  className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-[hsl(50,40%,92%)] shrink-0"
+                >
+                  {participant.avatar_url ? (
+                    <img
+                      src={participant.avatar_url}
+                      alt={participant.name || "User"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <User className={`w-4 h-4 text-muted-foreground ${participant.avatar_url ? 'hidden' : ''}`} />
+                </div>
+              ))}
+              {participants.length > 6 && (
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border-2 border-[hsl(50,40%,92%)] text-xs font-medium text-muted-foreground shrink-0">
+                  +{participants.length - 6}
+                </div>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {participants.length} {participants.length === 1 ? 'person' : 'people'} joined
+            </p>
+          </button>
+        </div>
+      ) : (
+        <div className="w-full px-4 py-3 border-b border-black/5">
+          <p className="text-sm text-muted-foreground/70">
+            You're the first one here!
+          </p>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
