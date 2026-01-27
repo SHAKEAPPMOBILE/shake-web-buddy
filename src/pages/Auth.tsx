@@ -12,6 +12,7 @@ import { BirthdayPicker } from "@/components/BirthdayPicker";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { countryCodes, CountryCode } from "@/data/countryCodes";
+import { isSmsEnabledForCountry, getSmsAvailabilityMessage } from "@/data/smsEnabledCountries";
 import { z } from "zod";
 import {
   Popover,
@@ -833,10 +834,15 @@ export default function Auth() {
                               }}
                               className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-accent ${
                                 selectedCountry.code === country.code ? "bg-accent" : ""
-                              }`}
+                              } ${!isSmsEnabledForCountry(country.code) ? "opacity-60" : ""}`}
                             >
                               <span className="text-lg">{country.flag}</span>
-                              <span className="flex-1 text-left">{country.name}</span>
+                              <span className="flex-1 text-left flex items-center gap-1">
+                                {country.name}
+                                {isSmsEnabledForCountry(country.code) && (
+                                  <span className="text-xs text-green-600">✓</span>
+                                )}
+                              </span>
                               <span className="text-muted-foreground">{country.dialCode}</span>
                             </button>
                           ))}
@@ -862,6 +868,11 @@ export default function Auth() {
                 <p className="text-xs text-muted-foreground">
                   We'll send you a verification code via SMS
                 </p>
+                {!isSmsEnabledForCountry(selectedCountry.code) && (
+                  <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-md mt-2">
+                    ⚠️ {getSmsAvailabilityMessage(selectedCountry.code)}
+                  </p>
+                )}
               </div>
 
               {/* Password fields for signup */}
@@ -980,10 +991,15 @@ export default function Auth() {
                               }}
                               className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-accent ${
                                 selectedCountry.code === country.code ? "bg-accent" : ""
-                              }`}
+                              } ${!isSmsEnabledForCountry(country.code) ? "opacity-60" : ""}`}
                             >
                               <span className="text-lg">{country.flag}</span>
-                              <span className="flex-1 text-left">{country.name}</span>
+                              <span className="flex-1 text-left flex items-center gap-1">
+                                {country.name}
+                                {isSmsEnabledForCountry(country.code) && (
+                                  <span className="text-xs text-green-600">✓</span>
+                                )}
+                              </span>
                               <span className="text-muted-foreground">{country.dialCode}</span>
                             </button>
                           ))}
