@@ -168,7 +168,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
           participant_count: count || 1,
           unread_count: unreadCount || 0,
           is_plan: false,
-          note: getActivityDay(join.activity_type) ? `Every ${getActivityDay(join.activity_type)}` : null,
+          note: getActivityDay(join.activity_type) ? `This ${getActivityDay(join.activity_type)}` : null,
         });
       }
 
