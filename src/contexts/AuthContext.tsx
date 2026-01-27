@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { getStoredReferralCode, clearStoredReferralCode } from "@/hooks/useReferralTracking";
 
 interface AuthContextType {
   user: User | null;
@@ -72,6 +73,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       // Never block app load on this; we just want best-effort stability.
       console.log("ensureProfilesExist failed:", e);
+    }
+  };
+
+  // Process referral after signup - award points to the referrer
+  const processReferral = async (newUserId: string) => {
+    try {
+      const referralCode = getStoredReferralCode();
+      if (!referralCode) return;
+
+      console.log("Processing referral code:", referralCode);
+
+      // Find the referrer by their referral code
+      const { data: referrer, error: referrerError } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("referral_code", referralCode)
+        .maybeSingle();
+
+      if (referrerError || !referrer) {
+        console.log("Referrer not found for code:", referralCode);
+        clearStoredReferralCode();
+        return;
+      }
+
+      // Don't allow self-referral
+      if (referrer.user_id === newUserId) {
+        console.log("Self-referral not allowed");
+        clearStoredReferralCode();
+        return;
+      }
+
+      // Check if this user was already referred
+      const { data: existingReferral } = await supabase
+        .from("referrals")
+        .select("id")
+        .eq("referred_user_id", newUserId)
+        .maybeSingle();
+
+      if (existingReferral) {
+        console.log("User already has a referral");
+        clearStoredReferralCode();
+        return;
+      }
+
+      // Create the referral record
+      const { error: insertError } = await supabase
+        .from("referrals")
+        .insert({
+          referrer_user_id: referrer.user_id,
+          referred_user_id: newUserId,
+          points_awarded: 5,
+        });
+
+      if (insertError) {
+        console.error("Failed to create referral:", insertError);
+      } else {
+        console.log("Referral created successfully! Referrer gets +5 points");
+      }
+
+      clearStoredReferralCode();
+    } catch (e) {
+      console.error("Error processing referral:", e);
+      clearStoredReferralCode();
     }
   };
 
@@ -156,6 +220,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => {
           ensureProfilesExist(currentSession.user);
         }, 0);
+
+        // Process any pending referral
+        setTimeout(() => {
+          processReferral(currentSession.user.id);
+        }, 500); // Slight delay to ensure profile exists first
       }
 
       // Defer subscription check with the current session

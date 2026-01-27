@@ -11,6 +11,7 @@ import { LandingCarousel } from "@/components/LandingCarousel";
 import { useCity } from "@/contexts/CityContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
@@ -23,6 +24,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   const { user } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
+  const { referralCode } = useReferralCode(user?.id);
 
   // Rotating text for "Meet new..." phrases
   const meetPhrases = useMemo(() => [
@@ -121,8 +123,8 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     if (!currentActivity) return;
     
     const dateStr = format(currentActivity.nextDate, "EEE, d MMM");
+    const shareUrl = getReferralLink(referralCode);
     const shareText = `${currentActivity.emoji} Join me for ${currentActivity.label} in ${selectedCity || "my city"} on ${dateStr}! Let's SHAKE up our social life together.`;
-    const shareUrl = "https://shakeapp.today";
     
     if (navigator.share) {
       try {

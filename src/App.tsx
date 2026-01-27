@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { VenueProvider } from "@/contexts/VenueContext";
 import { IOSAppLayout } from "@/components/IOSAppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useReferralTracking } from "@/hooks/useReferralTracking";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
@@ -23,6 +24,12 @@ import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
+// Component to track referral codes from URLs
+function ReferralTracker() {
+  useReferralTracking();
+  return null;
+}
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -34,6 +41,7 @@ const App = () => (
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
+                  <ReferralTracker />
                   <Routes>
                     <Route path="/*" element={<IOSAppLayout />} />
                     <Route path="/auth" element={<Auth />} />
