@@ -5,6 +5,66 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Random first names for test users
+const FIRST_NAMES = [
+  "Emma", "Liam", "Olivia", "Noah", "Ava", "Ethan", "Sophia", "Mason",
+  "Isabella", "William", "Mia", "James", "Charlotte", "Oliver", "Amelia",
+  "Benjamin", "Harper", "Elijah", "Evelyn", "Lucas", "Luna", "Leo", "Aria",
+  "Jack", "Chloe", "Henry", "Ella", "Sebastian", "Lily", "Alexander",
+  "Sofia", "Michael", "Layla", "Daniel", "Riley", "Matthew", "Zoey",
+  "Jackson", "Nora", "David", "Victoria", "Samuel", "Scarlett", "Joseph",
+  "Hannah", "Carter", "Addison", "Owen", "Aubrey", "Wyatt", "Ellie"
+];
+
+const LAST_NAMES = [
+  "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller",
+  "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez",
+  "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin",
+  "Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark",
+  "Ramirez", "Lewis", "Robinson", "Walker", "Young", "Allen", "King"
+];
+
+// Available avatar URLs from the app's assets
+const AVATAR_URLS = [
+  "/src/assets/avatar-new-1.png",
+  "/src/assets/avatar-new-2.png",
+  "/src/assets/avatar-new-3.png",
+  "/src/assets/avatar-new-4.png",
+  "/src/assets/avatar-new-5.png",
+  "/src/assets/avatar-new-6.png",
+  "/src/assets/avatar-new-7.png",
+  "/src/assets/avatar-new-8.png",
+  "/src/assets/avatar-new-9.png",
+  "/src/assets/avatar-new-11.png",
+  "/src/assets/avatar-new-12.png",
+  "/src/assets/avatar-new-13.png",
+  "/src/assets/avatar-new-14.png",
+  "/src/assets/avatar-new-15.png",
+  "/src/assets/avatar-new-16.png",
+  "/src/assets/avatar-new-17.png",
+  "/src/assets/avatar-new-18.png",
+  "/src/assets/avatar-new-20.png",
+  "/src/assets/avatar-new-21.png",
+  "/src/assets/avatar-new-22.png",
+  "/src/assets/avatar-new-23.png",
+  "/src/assets/avatar-new-24.png",
+  "/src/assets/avatar-new-25.png",
+  "/src/assets/avatar-new-26.png",
+  "/src/assets/avatar-new-27.png",
+  "/src/assets/avatar-new-28.png",
+  "/src/assets/avatar-new-30.png"
+];
+
+function getRandomName(): string {
+  const firstName = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+  const lastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+  return `${firstName} ${lastName}`;
+}
+
+function getRandomAvatar(): string {
+  return AVATAR_URLS[Math.floor(Math.random() * AVATAR_URLS.length)];
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -120,12 +180,16 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Generate random name and avatar if not provided
+      const userName = name?.trim() || getRandomName();
+      const userAvatar = getRandomAvatar();
+
       // Create new user with phone and password - phone verified!
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         phone: cleanPhone,
         password: userPassword,
         phone_confirm: true, // Skip phone verification - user can login immediately
-        user_metadata: { name: name || null, admin_password: userPassword }
+        user_metadata: { name: userName, admin_password: userPassword }
       });
 
       if (createError) {
@@ -137,12 +201,13 @@ Deno.serve(async (req) => {
       }
 
       if (newUser?.user) {
-        console.log(`[ADMIN] Created user ${cleanPhone} with ID: ${newUser.user.id}`);
+        console.log(`[ADMIN] Created user ${cleanPhone} with ID: ${newUser.user.id}, name: ${userName}`);
 
-        // Create minimal profile (user will complete on first login)
+        // Create profile with random name and avatar
         await supabaseAdmin.from("profiles").upsert({
           user_id: newUser.user.id,
-          name: name || null,
+          name: userName,
+          avatar_url: userAvatar,
         }, { onConflict: "user_id" });
 
         // Create private profile with phone and premium status
