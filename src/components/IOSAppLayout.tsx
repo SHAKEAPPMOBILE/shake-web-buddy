@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { IOSTabBar } from "./IOSTabBar";
 import { HomeTab } from "./ios/HomeTab";
 import { PlansTab } from "./ios/PlansTab";
@@ -10,16 +10,18 @@ import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { PlansMapDialog } from "./PlansMapDialog";
 import { PremiumDialog } from "./PremiumDialog";
+import { ProximityCheckInPopup } from "./ProximityCheckInPopup";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { usePrivateMessageNotifications } from "@/hooks/usePrivateMessageNotifications";
+import { useProximityCheckIn } from "@/hooks/useProximityCheckIn";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { getOrderedActivities } from "@/data/activityTypes";
+import { getOrderedActivities, getNextOccurrenceDate } from "@/data/activityTypes";
 
 export function IOSAppLayout() {
   const [activeTab, setActiveTab] = useState("home");
@@ -42,11 +44,36 @@ export function IOSAppLayout() {
   
   // Track the city used for the current activity/chat (for cross-city joins)
   const [activityCity, setActivityCity] = useState<string>("");
+  const [showProximityPopup, setShowProximityPopup] = useState(false);
 
   const { user, isLoading } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
-  const { joinActivity, getActivityJoinCount } = useActivityJoins(selectedCity);
+  const { joinActivity, getActivityJoinCount, activeJoins, hasUserJoined } = useActivityJoins(selectedCity);
+  
+  // Get active activity types the user has joined today (for proximity detection)
+  const userActiveActivityTypes = useMemo(() => {
+    if (!user) return [];
+    return activeJoins
+      .filter(join => join.user_id === user.id)
+      .map(join => join.activity_type);
+  }, [activeJoins, user]);
+  
+  // Proximity check-in hook
+  const {
+    isNearVenue,
+    venueName,
+    activityType: proximityActivityType,
+    distance,
+    dismissProximity,
+  } = useProximityCheckIn(selectedCity, userActiveActivityTypes);
+  
+  // Show proximity popup when near a venue
+  useEffect(() => {
+    if (isNearVenue && venueName && !showProximityPopup) {
+      setShowProximityPopup(true);
+    }
+  }, [isNearVenue, venueName, showProximityPopup]);
   
   // Initialize push notifications for private messages
   usePrivateMessageNotifications();
@@ -304,6 +331,21 @@ export function IOSAppLayout() {
         open={showPremiumDialog}
         onOpenChange={setShowPremiumDialog}
       />
+
+      {/* Proximity Check-in Popup */}
+      {venueName && proximityActivityType && distance !== null && (
+        <ProximityCheckInPopup
+          open={showProximityPopup}
+          onOpenChange={(open) => {
+            setShowProximityPopup(open);
+            if (!open) dismissProximity();
+          }}
+          venueName={venueName}
+          city={selectedCity}
+          activityType={proximityActivityType}
+          distance={distance}
+        />
+      )}
     </div>
   );
 }

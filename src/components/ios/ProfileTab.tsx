@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { useStatusVideo } from "@/hooks/useStatusVideo";
 import { StatusVideoRecorder } from "../StatusVideoRecorder";
 import { cn } from "@/lib/utils";
+import { PointsDashboard } from "../PointsDashboard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -144,6 +145,11 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
         )}
         
       </button>
+
+      {/* Points Dashboard */}
+      <div className="px-4 py-4">
+        <PointsDashboard userId={user?.id} />
+      </div>
 
       {/* Menu Items */}
       <div className="flex-1 px-4 py-4 space-y-2">
