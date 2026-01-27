@@ -182,7 +182,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
           city: join.city,
           scheduled_for: join.joined_at,
           is_active: true,
-          note: dayLabel ? `Every ${dayLabel}` : null,
+          note: dayLabel ? `This ${dayLabel}` : null,
           creator_name: profile?.name || "You",
           creator_avatar: profile?.avatar_url,
           participant_count: count || 1,
