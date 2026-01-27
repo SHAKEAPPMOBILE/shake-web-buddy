@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, ChevronDown } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -274,12 +274,6 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               <span className="font-medium">Share Referral Link</span>
               <p className="text-xs text-muted-foreground">Earn +5 points per signup</p>
             </div>
-            <ChevronDown 
-              className={cn(
-                "w-5 h-5 text-muted-foreground transition-transform duration-200",
-                showReferralLink && "rotate-180"
-              )} 
-            />
           </button>
           {showReferralLink && referralCode && (
             <div className="px-4 pb-3 pt-0 animate-fade-in">
