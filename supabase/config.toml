@@ -24,3 +24,6 @@ verify_jwt = false
 
 [functions.geocode-address]
 verify_jwt = false
+
+[functions.bulk-geocode-venues]
+verify_jwt = false
