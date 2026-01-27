@@ -6,11 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Database, FileText, Globe, Loader2, AlertTriangle } from "lucide-react";
+import { MapPin, Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Globe, Loader2, AlertTriangle } from "lucide-react";
 import { useVenues, useDeleteVenue, getWeeklyVenueFromList, getDailyVenueFromList, DbVenue } from "@/hooks/useVenues";
 import { VenueForm } from "./VenueForm";
 import { toast } from "@/hooks/use-toast";
-import { CITY_VENUES, CITY_BARS, CITY_BRUNCH_VENUES } from "@/data/venues";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -28,7 +27,6 @@ export function VenuesTab() {
   const [showForm, setShowForm] = useState(false);
   const [editingVenue, setEditingVenue] = useState<DbVenue | null>(null);
   const [defaultType, setDefaultType] = useState<'lunch_dinner' | 'brunch' | 'drinks'>('lunch_dinner');
-  const [viewMode, setViewMode] = useState<'database' | 'hardcoded'>('database');
   const [isGeocoding, setIsGeocoding] = useState(false);
 
   const { data: dbVenues = [], isLoading } = useVenues();
@@ -75,34 +73,6 @@ export function VenuesTab() {
 
   // Calculate venue counts per city from database
   const venueSummaries = useMemo(() => {
-    if (viewMode === 'hardcoded') {
-      // Use hardcoded data
-      const allCities = new Set([
-        ...Object.keys(CITY_VENUES),
-        ...Object.keys(CITY_BARS),
-        ...Object.keys(CITY_BRUNCH_VENUES),
-      ]);
-
-      const summaries: VenueSummary[] = [];
-      
-      allCities.forEach(city => {
-        const lunchDinner = CITY_VENUES[city]?.length || 0;
-        const brunch = CITY_BRUNCH_VENUES[city]?.length || 0;
-        const drinks = CITY_BARS[city]?.length || 0;
-        
-        summaries.push({
-          city,
-          lunchDinner,
-          brunch,
-          drinks,
-          total: lunchDinner + brunch + drinks,
-        });
-      });
-
-      return summaries.sort((a, b) => b.total - a.total);
-    }
-
-    // Use database data
     const cityMap = new Map<string, VenueSummary>();
     
     dbVenues.forEach(venue => {
@@ -123,7 +93,7 @@ export function VenuesTab() {
     });
 
     return Array.from(cityMap.values()).sort((a, b) => b.total - a.total);
-  }, [dbVenues, viewMode]);
+  }, [dbVenues]);
 
   // Filter summaries by search
   const filteredSummaries = useMemo(() => {
@@ -137,57 +107,13 @@ export function VenuesTab() {
   const selectedCityVenues = useMemo(() => {
     if (!selectedCity) return { lunchDinner: [], brunch: [], drinks: [] };
     
-    if (viewMode === 'hardcoded') {
-      return {
-        lunchDinner: (CITY_VENUES[selectedCity] || []).map((v, i) => ({
-          id: `hardcoded-ld-${i}`,
-          city: selectedCity,
-          name: v.name,
-          address: v.address,
-          venue_type: 'lunch_dinner' as const,
-          latitude: null,
-          longitude: null,
-          sort_order: i,
-          is_active: true,
-          created_at: '',
-          updated_at: '',
-        })),
-        brunch: (CITY_BRUNCH_VENUES[selectedCity] || []).map((v, i) => ({
-          id: `hardcoded-br-${i}`,
-          city: selectedCity,
-          name: v.name,
-          address: v.description,
-          venue_type: 'brunch' as const,
-          latitude: null,
-          longitude: null,
-          sort_order: i,
-          is_active: true,
-          created_at: '',
-          updated_at: '',
-        })),
-        drinks: (CITY_BARS[selectedCity] || []).map((v, i) => ({
-          id: `hardcoded-dr-${i}`,
-          city: selectedCity,
-          name: v.name,
-          address: v.address,
-          venue_type: 'drinks' as const,
-          latitude: null,
-          longitude: null,
-          sort_order: i,
-          is_active: true,
-          created_at: '',
-          updated_at: '',
-        })),
-      };
-    }
-    
     const cityVenues = dbVenues.filter(v => v.city === selectedCity);
     return {
       lunchDinner: cityVenues.filter(v => v.venue_type === 'lunch_dinner'),
       brunch: cityVenues.filter(v => v.venue_type === 'brunch'),
       drinks: cityVenues.filter(v => v.venue_type === 'drinks'),
     };
-  }, [selectedCity, dbVenues, viewMode]);
+  }, [selectedCity, dbVenues]);
 
   // Current rotation
   const currentVenues = useMemo(() => {
@@ -200,24 +126,6 @@ export function VenuesTab() {
 
   // Calculate totals
   const totals = useMemo(() => {
-    if (viewMode === 'hardcoded') {
-      let lunchDinner = 0;
-      let brunch = 0;
-      let drinks = 0;
-      
-      Object.values(CITY_VENUES).forEach(venues => lunchDinner += venues.length);
-      Object.values(CITY_BRUNCH_VENUES).forEach(venues => brunch += venues.length);
-      Object.values(CITY_BARS).forEach(bars => drinks += bars.length);
-      
-      return {
-        lunchDinner,
-        brunch,
-        drinks,
-        total: lunchDinner + brunch + drinks,
-        cities: venueSummaries.length,
-      };
-    }
-
     const lunchDinner = dbVenues.filter(v => v.venue_type === 'lunch_dinner').length;
     const brunch = dbVenues.filter(v => v.venue_type === 'brunch').length;
     const drinks = dbVenues.filter(v => v.venue_type === 'drinks').length;
@@ -229,14 +137,9 @@ export function VenuesTab() {
       total: dbVenues.length,
       cities: venueSummaries.length,
     };
-  }, [dbVenues, venueSummaries, viewMode]);
+  }, [dbVenues, venueSummaries]);
 
   const handleDelete = async (venue: DbVenue) => {
-    if (venue.id.startsWith('hardcoded-')) {
-      toast({ title: "Cannot delete hardcoded venues", variant: "destructive" });
-      return;
-    }
-    
     if (!confirm(`Delete "${venue.name}" from ${venue.city}?`)) return;
     
     try {
@@ -254,10 +157,6 @@ export function VenuesTab() {
   };
 
   const handleEditVenue = (venue: DbVenue) => {
-    if (venue.id.startsWith('hardcoded-')) {
-      toast({ title: "Cannot edit hardcoded venues. Switch to Database view.", variant: "destructive" });
-      return;
-    }
     setEditingVenue(venue);
     setShowForm(true);
   };
@@ -277,45 +176,25 @@ export function VenuesTab() {
         />
       )}
 
-      {/* View Mode Toggle */}
+      {/* Action Buttons */}
       <div className="flex items-center gap-2 flex-wrap">
-        <Button
-          variant={viewMode === 'database' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewMode('database')}
-        >
-          <Database className="w-4 h-4 mr-2" />
-          Database ({dbVenues.length})
+        <Button size="sm" onClick={() => handleAddVenue('lunch_dinner')}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Venue
         </Button>
-        <Button
-          variant={viewMode === 'hardcoded' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewMode('hardcoded')}
+        <Button 
+          size="sm" 
+          variant="outline"
+          onClick={handleBulkGeocode}
+          disabled={isGeocoding || venuesMissingCoords === 0}
         >
-          <FileText className="w-4 h-4 mr-2" />
-          Hardcoded (Legacy)
+          {isGeocoding ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Globe className="w-4 h-4 mr-2" />
+          )}
+          Bulk Geocode {venuesMissingCoords > 0 && `(${venuesMissingCoords})`}
         </Button>
-        {viewMode === 'database' && (
-          <>
-            <Button size="sm" onClick={() => handleAddVenue('lunch_dinner')}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Venue
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={handleBulkGeocode}
-              disabled={isGeocoding || venuesMissingCoords === 0}
-            >
-              {isGeocoding ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Globe className="w-4 h-4 mr-2" />
-              )}
-              Bulk Geocode {venuesMissingCoords > 0 && `(${venuesMissingCoords})`}
-            </Button>
-          </>
-        )}
       </div>
 
       {/* Stats Cards */}
@@ -390,7 +269,7 @@ export function VenuesTab() {
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[400px]">
-              {isLoading && viewMode === 'database' ? (
+              {isLoading ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
                   Loading venues...
                 </div>
@@ -489,11 +368,9 @@ export function VenuesTab() {
                   </TabsList>
                   
                   <TabsContent value="lunchDinner" className="mt-4 space-y-2">
-                    {viewMode === 'database' && (
-                      <Button size="sm" variant="outline" className="w-full mb-2" onClick={() => handleAddVenue('lunch_dinner')}>
-                        <Plus className="w-4 h-4 mr-2" /> Add Lunch/Dinner Venue
-                      </Button>
-                    )}
+                    <Button size="sm" variant="outline" className="w-full mb-2" onClick={() => handleAddVenue('lunch_dinner')}>
+                      <Plus className="w-4 h-4 mr-2" /> Add Lunch/Dinner Venue
+                    </Button>
                     {selectedCityVenues.lunchDinner.length === 0 ? (
                       <p className="text-sm text-muted-foreground italic">No venues - shows "TBD - Vote in chat!"</p>
                     ) : (
@@ -506,18 +383,15 @@ export function VenuesTab() {
                           rotationType="Week"
                           onEdit={() => handleEditVenue(venue)}
                           onDelete={() => handleDelete(venue)}
-                          canEdit={viewMode === 'database'}
                         />
                       ))
                     )}
                   </TabsContent>
                   
                   <TabsContent value="brunch" className="mt-4 space-y-2">
-                    {viewMode === 'database' && (
-                      <Button size="sm" variant="outline" className="w-full mb-2" onClick={() => handleAddVenue('brunch')}>
-                        <Plus className="w-4 h-4 mr-2" /> Add Brunch Venue
-                      </Button>
-                    )}
+                    <Button size="sm" variant="outline" className="w-full mb-2" onClick={() => handleAddVenue('brunch')}>
+                      <Plus className="w-4 h-4 mr-2" /> Add Brunch Venue
+                    </Button>
                     {selectedCityVenues.brunch.length === 0 ? (
                       <p className="text-sm text-muted-foreground italic">No venues - shows "TBD - Vote in chat!"</p>
                     ) : (
@@ -530,18 +404,15 @@ export function VenuesTab() {
                           rotationType="Week"
                           onEdit={() => handleEditVenue(venue)}
                           onDelete={() => handleDelete(venue)}
-                          canEdit={viewMode === 'database'}
                         />
                       ))
                     )}
                   </TabsContent>
                   
                   <TabsContent value="drinks" className="mt-4 space-y-2">
-                    {viewMode === 'database' && (
-                      <Button size="sm" variant="outline" className="w-full mb-2" onClick={() => handleAddVenue('drinks')}>
-                        <Plus className="w-4 h-4 mr-2" /> Add Drinks Venue
-                      </Button>
-                    )}
+                    <Button size="sm" variant="outline" className="w-full mb-2" onClick={() => handleAddVenue('drinks')}>
+                      <Plus className="w-4 h-4 mr-2" /> Add Drinks Venue
+                    </Button>
                     {selectedCityVenues.drinks.length === 0 ? (
                       <p className="text-sm text-muted-foreground italic">No venues - shows "TBD - Vote in chat!"</p>
                     ) : (
@@ -554,7 +425,6 @@ export function VenuesTab() {
                           rotationType="Day"
                           onEdit={() => handleEditVenue(venue)}
                           onDelete={() => handleDelete(venue)}
-                          canEdit={viewMode === 'database'}
                         />
                       ))
                     )}
@@ -569,49 +439,53 @@ export function VenuesTab() {
   );
 }
 
+// Venue Card Component
 interface VenueCardProps {
   venue: DbVenue;
   isCurrent: boolean;
   index: number;
-  rotationType: 'Week' | 'Day';
+  rotationType: "Week" | "Day";
   onEdit: () => void;
   onDelete: () => void;
-  canEdit: boolean;
 }
 
-function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete, canEdit }: VenueCardProps) {
-  const missingCoords = venue.latitude === null || venue.longitude === null;
+function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete }: VenueCardProps) {
+  const hasMissingCoords = venue.latitude === null || venue.longitude === null;
   
   return (
-    <div className={`p-3 rounded-lg border ${isCurrent ? 'border-primary bg-primary/5' : missingCoords ? 'border-amber-500/50 bg-amber-500/5' : 'border-border'}`}>
+    <div className={`p-3 rounded-lg border ${isCurrent ? 'bg-primary/10 border-primary' : hasMissingCoords ? 'bg-amber-500/10 border-amber-500/50' : 'bg-muted/50'}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate flex items-center gap-1">
-            {isCurrent && '⭐ '}
-            {missingCoords && <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />}
-            {venue.name}
-          </p>
-          <p className="text-xs text-muted-foreground truncate">{venue.address}</p>
-          {venue.latitude && venue.longitude ? (
-            <p className="text-xs text-green-600">📍 GPS: {venue.latitude.toFixed(4)}, {venue.longitude.toFixed(4)}</p>
-          ) : (
-            <p className="text-xs text-amber-500">⚠️ Missing GPS coordinates</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {isCurrent && <span className="text-sm">⭐</span>}
+            <span className="font-medium text-sm truncate">{venue.name}</span>
+            <Badge variant="outline" className="text-xs shrink-0">
+              #{index + 1}
+            </Badge>
+            {hasMissingCoords && (
+              <Badge variant="outline" className="text-xs shrink-0 border-amber-500 text-amber-600">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                No GPS
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground truncate mt-1">{venue.address}</p>
+          {venue.latitude && venue.longitude && (
+            <p className="text-xs text-green-600 mt-0.5">
+              📍 {venue.latitude.toFixed(4)}, {venue.longitude.toFixed(4)}
+            </p>
+          )}
+          {isCurrent && (
+            <p className="text-xs text-primary mt-1">Currently active this {rotationType.toLowerCase()}</p>
           )}
         </div>
-        <div className="flex items-center gap-1">
-          <Badge variant="outline" className="text-xs shrink-0">
-            {rotationType} {index + 1}
-          </Badge>
-          {canEdit && (
-            <>
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
-                <Pencil className="w-3 h-3" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}>
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </>
-          )}
+        <div className="flex gap-1 shrink-0">
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
+            <Pencil className="w-3 h-3" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}>
+            <Trash2 className="w-3 h-3" />
+          </Button>
         </div>
       </div>
     </div>
