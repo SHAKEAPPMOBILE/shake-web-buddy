@@ -8,7 +8,7 @@ import { CreateActivityDialog } from "../CreateActivityDialog";
 import { PlanGroupChatView } from "./PlanGroupChatView";
 import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay } from "@/data/activityTypes";
+import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -172,15 +172,17 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
           .gt("expires_at", new Date().toISOString());
 
         // Get the day for this activity type
-        const activityDef = ACTIVITY_TYPES.find(a => a.id === join.activity_type);
         const dayLabel = getActivityDay(join.activity_type);
+        
+        // Calculate the actual next occurrence date for this activity
+        const nextOccurrence = getNextOccurrenceDate(join.activity_type);
 
         return {
           id: `carousel-${join.activity_type}-${join.city}`,
           user_id: user!.id,
           activity_type: join.activity_type,
           city: join.city,
-          scheduled_for: join.joined_at,
+          scheduled_for: nextOccurrence.toISOString(),
           is_active: true,
           note: dayLabel ? `This ${dayLabel}` : null,
           creator_name: profile?.name || "You",

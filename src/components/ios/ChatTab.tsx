@@ -8,7 +8,7 @@ import { PlanGroupChatView } from "./PlanGroupChatView";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay } from "@/data/activityTypes";
+import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingSpinner } from "../LoadingSpinner";
 import {
@@ -160,11 +160,14 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
           .gt("created_at", lastReadAt)
           .neq("user_id", user.id);
 
+        // Calculate the actual next occurrence date for this activity
+        const nextOccurrence = getNextOccurrenceDate(join.activity_type);
+
         chatActivities.push({
           id: `carousel-${join.activity_type}-${join.city}`,
           activity_type: join.activity_type,
           city: join.city,
-          scheduled_for: join.joined_at,
+          scheduled_for: nextOccurrence.toISOString(),
           participant_count: count || 1,
           unread_count: unreadCount || 0,
           is_plan: false,

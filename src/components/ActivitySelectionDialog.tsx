@@ -9,7 +9,7 @@ import {
   CarouselApi,
 } from "@/components/ui/carousel";
 import { Check, Clock } from "lucide-react";
-import { getOrderedActivities, getTodayDefaultIndex } from "@/data/activityTypes";
+import { getActivitiesWithDates, getTodayDefaultIndex } from "@/data/activityTypes";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { ActivityConfirmationDialog } from "@/components/ActivityConfirmationDialog";
@@ -63,7 +63,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   }, [api, triggerHaptic]);
 
   // Get ordered activities (consistent with HomeTab)
-  const orderedActivities = getOrderedActivities();
+  const orderedActivities = getActivitiesWithDates();
 
   // Handle activity selection - shows confirmation dialog
   const handleActivityClick = useCallback((activityId: string) => {

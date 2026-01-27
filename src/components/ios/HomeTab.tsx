@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEve
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DAY_NAMES, getTodayDefaultIndex, getOrderedActivities } from "@/data/activityTypes";
+import { getActivitiesWithDates, DAY_NAMES_SHORT } from "@/data/activityTypes";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import shakeLogo from "@/assets/shake-logo-new.png";
@@ -30,7 +30,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   ], []);
   
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
-  const [currentActivityIndex, setCurrentActivityIndex] = useState(getTodayDefaultIndex());
+  const [currentActivityIndex, setCurrentActivityIndex] = useState(0); // Always start at 0 (first by date)
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -47,8 +47,8 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     };
   }, [meetPhrases.length]);
 
-  // Get ordered activities starting from today
-  const orderedActivities = useMemo(() => getOrderedActivities(), []);
+  // Get activities sorted by next occurrence date (chronological)
+  const orderedActivities = useMemo(() => getActivitiesWithDates(), []);
 
   // Reset to first item when activities are shown
   useEffect(() => {
@@ -87,9 +87,6 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   }, [orderedActivities.length]);
 
   const currentActivity = orderedActivities[currentActivityIndex];
-  const dayName = currentActivity?.defaultDay !== undefined 
-    ? DAY_NAMES[currentActivity.defaultDay] 
-    : '';
 
   // Swipe handlers
   const handleTouchStart = useCallback((e: TouchEvent) => {
@@ -216,10 +213,13 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            {/* Day Name - Above the circle */}
+            {/* Date display - Above the circle */}
             <div className="mb-8 animate-fade-in text-center">
-              <div className="text-4xl md:text-5xl font-handwritten text-foreground">
-                This {dayName}
+              <div className="text-5xl md:text-6xl font-bold text-foreground">
+                {currentActivity?.dayNumber}
+              </div>
+              <div className="text-xl text-muted-foreground font-medium mt-1">
+                {currentActivity?.dayNameShort}
               </div>
             </div>
 
