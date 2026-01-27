@@ -1,10 +1,13 @@
 import { useUserPoints } from "@/hooks/useUserPoints";
+import { useWelcomeBonus } from "@/hooks/useWelcomeBonus";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Sparkles, TrendingUp, UserPlus, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Sparkles, TrendingUp, UserPlus, Users, Gift, CheckCircle2, AlertCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
 
 interface PointsDashboardProps {
@@ -23,7 +26,20 @@ interface ReferralWithProfile {
 }
 
 export function PointsDashboard({ userId }: PointsDashboardProps) {
-  const { points, isLoading } = useUserPoints(userId);
+  const { points, isLoading, refetch: refetchPoints } = useUserPoints(userId);
+  const { isComplete, isClaimed, isLoading: bonusLoading, missingFields, claimBonus } = useWelcomeBonus(userId);
+
+  const handleClaimBonus = async () => {
+    const success = await claimBonus();
+    if (success) {
+      refetchPoints();
+      toast({
+        title: "🎉 Welcome Bonus Claimed!",
+        description: "You earned +10 points for completing your profile!",
+        duration: 3000,
+      });
+    }
+  };
 
   const { data: referrals = [], isLoading: referralsLoading } = useQuery({
     queryKey: ["referrals", userId],
@@ -90,6 +106,45 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
           <span className="text-muted-foreground">points</span>
         </div>
 
+        {/* Welcome Bonus Section */}
+        <div className={`rounded-xl p-4 border ${isClaimed ? 'bg-shake-green/10 border-shake-green/30' : isComplete ? 'bg-shake-yellow/10 border-shake-yellow/30' : 'bg-muted/50 border-border'}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {isClaimed ? (
+                <CheckCircle2 className="w-5 h-5 text-shake-green" />
+              ) : isComplete ? (
+                <Gift className="w-5 h-5 text-shake-yellow" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-muted-foreground" />
+              )}
+              <div>
+                <p className="font-medium text-sm">Welcome Bonus</p>
+                <p className="text-xs text-muted-foreground">
+                  {isClaimed 
+                    ? "Claimed! +10 points" 
+                    : isComplete 
+                      ? "Ready to claim!" 
+                      : `Complete your profile (${missingFields.length} fields missing)`}
+                </p>
+              </div>
+            </div>
+            {!isClaimed && isComplete && (
+              <Button 
+                size="sm" 
+                onClick={handleClaimBonus}
+                className="bg-shake-yellow hover:bg-shake-yellow/90 text-black"
+              >
+                Claim +10
+              </Button>
+            )}
+          </div>
+          {!isClaimed && !isComplete && missingFields.length > 0 && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              Missing: {missingFields.join(", ")}
+            </div>
+          )}
+        </div>
+
         {/* How to earn section */}
         <div className="bg-card/50 rounded-xl p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -98,6 +153,12 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
           </div>
           
           <div className="space-y-3 text-sm text-muted-foreground">
+            <div className="flex items-start gap-2">
+              <Gift className="w-4 h-4 mt-0.5 text-shake-yellow shrink-0" />
+              <span>
+                <strong className="text-foreground">Complete your profile</strong> — Earn +10 points when you fill out all profile fields
+              </span>
+            </div>
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 mt-0.5 text-shake-green shrink-0" />
               <span>
