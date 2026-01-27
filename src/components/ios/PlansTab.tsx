@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MapPin, Calendar, Users, Plus, Trash2, Plane } from "lucide-react";
+import { MapPin, Calendar, Users, Plus, Trash2, Plane, Share2 } from "lucide-react";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlansMapDialog } from "../PlansMapDialog";
@@ -346,6 +346,41 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     }
   };
 
+  const handleSharePlan = async (plan: PlanActivity, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const activityLabel = getActivityLabel(plan.activity_type);
+    const activityEmoji = getActivityEmoji(plan.activity_type);
+    const dateStr = format(new Date(plan.scheduled_for), "EEE, d MMM");
+    
+    const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
+    const shareUrl = "https://shake-web-buddy.lovable.app";
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `SHAKE - ${activityLabel} in ${plan.city}`,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        // User cancelled or error
+        if ((err as Error).name !== "AbortError") {
+          console.error("Error sharing:", err);
+        }
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        toast.success("Link copied to clipboard!");
+      } catch (err) {
+        console.error("Failed to copy:", err);
+        toast.error("Failed to share");
+      }
+    }
+  };
+
   // Show full-page PlanGroupChatView when a plan is selected
   if (selectedPlan && showChatView) {
     return (
@@ -563,21 +598,35 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                   )}
                 </div>
 
-                {/* Delete button for own plans */}
-                {plan.user_id === user?.id && !plan.isCarouselJoin && (
+                {/* Action buttons */}
+                <div className="flex items-center gap-2">
+                  {/* Share button - available for all plans */}
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPlanToDelete(plan);
-                    }}
-                    className="p-2.5 bg-white/20 hover:bg-destructive/80 text-white hover:text-white rounded-full transition-all shadow-sm"
-                    title="Delete plan"
-                    aria-label="Delete plan"
+                    onClick={(e) => handleSharePlan(plan, e)}
+                    className="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full transition-all shadow-sm"
+                    title="Share with friends"
+                    aria-label="Share plan"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Share2 className="w-5 h-5" />
                   </button>
-                )}
+
+                  {/* Delete button for own plans */}
+                  {plan.user_id === user?.id && !plan.isCarouselJoin && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPlanToDelete(plan);
+                      }}
+                      className="p-2.5 bg-white/20 hover:bg-destructive/80 text-white hover:text-white rounded-full transition-all shadow-sm"
+                      title="Delete plan"
+                      aria-label="Delete plan"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Show creator avatar + participant count if someone joined */}
