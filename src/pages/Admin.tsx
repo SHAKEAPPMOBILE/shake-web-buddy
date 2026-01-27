@@ -259,15 +259,15 @@ export default function Admin() {
           <p className="opacity-90 mt-1">Manage test users and venues</p>
         </div>
 
-        <Tabs defaultValue="users" className="w-full">
+        <Tabs defaultValue="venues" className="w-full">
           <TabsList className="grid w-full grid-cols-2 max-w-md">
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Test Users
-            </TabsTrigger>
             <TabsTrigger value="venues" className="flex items-center gap-2">
               <MapPin className="w-4 h-4" />
               Venues
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Test Users
             </TabsTrigger>
           </TabsList>
 
