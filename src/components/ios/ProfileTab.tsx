@@ -213,19 +213,29 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           <span className="font-medium">Edit Profile</span>
         </button>
 
-        {/* My Points */}
-        <button
-          onClick={() => setShowPointsDialog(true)}
-          className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-shake-yellow/30 rounded-xl"
-        >
-          <div className="w-10 h-10 rounded-full bg-shake-yellow/10 flex items-center justify-center">
-            <img src={shakeCoin} alt="Points" className="w-6 h-6" />
-          </div>
-          <div className="flex-1 text-left">
-            <span className="font-medium">My Points</span>
-            <p className="text-xs text-muted-foreground">{points.toLocaleString()} points earned</p>
-          </div>
-        </button>
+        {/* Separator Line */}
+        <div className="h-px bg-border my-2" />
+
+        {/* My Points - Dropdown */}
+        <div className="w-full bg-card border border-shake-yellow/30 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowPointsDialog(!showPointsDialog)}
+            className="w-full flex items-center gap-4 px-4 py-3"
+          >
+            <div className="w-10 h-10 rounded-full bg-shake-yellow/10 flex items-center justify-center">
+              <img src={shakeCoin} alt="Points" className="w-6 h-6" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="font-medium">My Points</span>
+              <p className="text-xs text-muted-foreground">{points.toLocaleString()} points earned</p>
+            </div>
+          </button>
+          {showPointsDialog && (
+            <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
+              <PointsDashboard userId={user?.id} />
+            </div>
+          )}
+        </div>
 
         {isPremium ? (
           <button
@@ -367,19 +377,6 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
         />
       )}
 
-      <Dialog open={showPointsDialog} onOpenChange={setShowPointsDialog}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader className="shrink-0">
-            <DialogTitle className="flex items-center gap-2">
-              <img src={shakeCoin} alt="Points" className="w-6 h-6" />
-              My Points
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto -mx-6 px-6 pb-2">
-            <PointsDashboard userId={user?.id} />
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
