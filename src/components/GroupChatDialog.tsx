@@ -24,6 +24,7 @@ import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { CheckInButton } from "./CheckInButton";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -601,10 +602,10 @@ export function GroupChatDialog({
           </DialogHeader>
         )}
 
-        {/* Attendees section with avatars - only show when expanded */}
+        {/* Attendees section with avatars and Check-in button - only show when expanded */}
         {isChatExpanded && showAttendees && (
           <div className="w-full px-4 py-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-3">
               <button 
                 onClick={() => setShowParticipantsList(true)}
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity"
@@ -636,6 +637,14 @@ export function GroupChatDialog({
                   {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined
                 </p>
               </button>
+              {/* Check-in button for venue activities */}
+              {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && location && location !== "TBD - Vote in chat!" && (
+                <CheckInButton
+                  activityType={activityType}
+                  city={city}
+                  venueName={location}
+                />
+              )}
             </div>
           </div>
         )}

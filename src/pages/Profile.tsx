@@ -16,6 +16,7 @@ import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
 import { Switch } from "@/components/ui/switch";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { ChangePhoneDialog } from "@/components/ChangePhoneDialog";
+import { PointsDisplay } from "@/components/PointsDisplay";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -289,6 +290,9 @@ export default function Profile() {
                 className="hidden"
               />
             </div>
+
+            {/* Points Display */}
+            <PointsDisplay userId={user?.id} size="lg" />
 
             {/* Premium Badge */}
             {isPremium && (
