@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { format } from "date-fns";
 import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown, Check, Search, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
+import { useVenueContext } from "@/contexts/VenueContext";
 import { WorldMap, WorldMapHandle } from "@/components/WorldMap";
 import { useAllActivities } from "@/hooks/useAllActivities";
 import { UserActivity } from "@/hooks/useUserActivities";
@@ -34,6 +34,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
   const { user, isPremium } = useAuth();
   const { activities, isLoading, refetch: refetchActivities } = useAllActivities();
   const { joinActivity, hasJoinedActivity, myActivities } = useUserActivities(city);
+  const { getLocationString, getMapsUrl } = useVenueContext();
   const isMobile = useIsMobile();
   const mapRef = useRef<WorldMapHandle>(null);
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
@@ -409,14 +410,14 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                                 </p>
                                 {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks" || activity.activity_type === "brunch") && (
                                   <a
-                                    href={getVenueMapsUrl(activity.activity_type, activity.city) || "/"}
+                                    href={getMapsUrl(activity.city, activity.activity_type) || "/"}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
                                     className="text-xs text-white/60 truncate flex items-center gap-1 hover:text-white/90 transition-colors underline-offset-2 hover:underline"
                                   >
                                     <MapPin className="w-3 h-3 shrink-0" />
-                                    {getActivityLocation(activity.activity_type, activity.city)}
+                                    {getLocationString(activity.city, activity.activity_type)}
                                   </a>
                                 )}
                               </div>
@@ -518,14 +519,14 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                               </p>
                               {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks" || activity.activity_type === "brunch") && (
                                 <a
-                                  href={getVenueMapsUrl(activity.activity_type, activity.city) || "/"}
+                                  href={getMapsUrl(activity.city, activity.activity_type) || "/"}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
                                   className="text-xs text-white/60 truncate flex items-center gap-1 hover:text-white/90 transition-colors underline-offset-2 hover:underline"
                                 >
                                   <MapPin className="w-3 h-3 shrink-0" />
-                                  {getActivityLocation(activity.activity_type, activity.city)}
+                                  {getLocationString(activity.city, activity.activity_type)}
                                 </a>
                               )}
                             </div>

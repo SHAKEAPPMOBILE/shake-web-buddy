@@ -17,7 +17,7 @@ import { AudioWaveform } from "@/components/AudioWaveform";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
-import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
+import { useActivityVenue } from "@/contexts/VenueContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useAudioMessageLimit } from "@/hooks/useAudioMessageLimit";
@@ -433,8 +433,7 @@ export function GroupChatDialog({
   };
 
   const title = `${getActivityLabel(activityType)} ${getActivityEmoji(activityType)}`;
-  const location = getActivityLocation(activityType, city);
-  const mapsUrl = getVenueMapsUrl(activityType, city);
+  const { location, mapsUrl } = useActivityVenue(city, activityType);
   const formattedDate = format(currentTime, "EEEE, MMMM d");
   const formattedTime = format(currentTime, "h:mm a");
 

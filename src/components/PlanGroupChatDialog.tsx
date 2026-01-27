@@ -15,7 +15,7 @@ import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
-import { getActivityLocation, getVenueMapsUrl } from "@/data/venues";
+import { useActivityVenue } from "@/contexts/VenueContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
@@ -56,6 +56,7 @@ export function PlanGroupChatDialog({
   activity,
   onBack,
 }: PlanGroupChatDialogProps) {
+  const { location, mapsUrl } = useActivityVenue(activity.city, activity.activity_type);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -357,18 +358,18 @@ export function PlanGroupChatDialog({
                 {activity.city} • {format(new Date(activity.scheduled_for), "EEE, MMM d")}
               </p>
               {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "brunch") && (
-                getVenueMapsUrl(activity.activity_type, activity.city) ? (
+                mapsUrl ? (
                   <a
-                    href={getVenueMapsUrl(activity.activity_type, activity.city)!}
+                    href={mapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-primary hover:underline"
                   >
-                    📍 {getActivityLocation(activity.activity_type, activity.city)}
+                    📍 {location}
                   </a>
                 ) : (
                   <span className="text-xs text-muted-foreground">
-                    📍 {getActivityLocation(activity.activity_type, activity.city)}
+                    📍 {location}
                   </span>
                 )
               )}

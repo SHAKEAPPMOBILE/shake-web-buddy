@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CityProvider } from "@/contexts/CityContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { VenueProvider } from "@/contexts/VenueContext";
 import { IOSAppLayout } from "@/components/IOSAppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Auth from "./pages/Auth";
@@ -28,25 +29,27 @@ const App = () => (
       <ThemeProvider>
         <AuthProvider>
           <CityProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/*" element={<IOSAppLayout />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/welcome" element={<Welcome />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/community-guidelines" element={<CommunityGuidelines />} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                  <Route path="/terms-of-service" element={<TermsOfService />} />
-                  <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-                  <Route path="/admin" element={<Admin />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
+            <VenueProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/*" element={<IOSAppLayout />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/welcome" element={<Welcome />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/terms-of-service" element={<TermsOfService />} />
+                    <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+                    <Route path="/admin" element={<Admin />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </VenueProvider>
           </CityProvider>
         </AuthProvider>
       </ThemeProvider>

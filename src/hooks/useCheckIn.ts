@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { getDistanceFromLatLng, SHAKE_CITIES } from "@/data/cities";
-import { getVenueCoordinates } from "@/data/venueCoordinates";
+import { useVenueContext } from "@/contexts/VenueContext";
 
 const POINTS_PER_CHECKIN = 5;
 const MAX_DISTANCE_METERS = 50; // Maximum distance in meters to allow check-in (50m from venue)
@@ -63,6 +63,7 @@ function getCityCoordinates(cityName: string): { lat: number; lng: number } | nu
 
 export function useCheckIn() {
   const { user } = useAuth();
+  const { getVenueCoordinates } = useVenueContext();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [hasCheckedInToday, setHasCheckedInToday] = useState<Record<string, boolean>>({});
 
@@ -116,7 +117,7 @@ export function useCheckIn() {
         return false;
       }
 
-      // Step 2: Get venue coordinates (try specific venue first, fallback to city center)
+      // Step 2: Get venue coordinates from database (try specific venue first, fallback to city center)
       let venueCoords = getVenueCoordinates(city, venueName);
       let usingCityFallback = false;
       
