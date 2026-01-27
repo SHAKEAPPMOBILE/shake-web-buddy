@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEve
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getActivitiesWithDates, DAY_NAMES_SHORT } from "@/data/activityTypes";
+import { getActivitiesWithDates, DAY_NAMES } from "@/data/activityTypes";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import shakeLogo from "@/assets/shake-logo-new.png";
@@ -219,7 +219,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
                 {currentActivity?.dayNumber}
               </div>
               <div className="text-2xl font-handwritten text-muted-foreground mt-1">
-                {currentActivity?.dayNameShort}
+                {currentActivity?.nextDate ? DAY_NAMES[currentActivity.nextDate.getDay()] : ''}
               </div>
             </div>
 
