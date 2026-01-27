@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ArrowLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail } from "lucide-react";
+import { Camera, ChevronLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
@@ -226,7 +226,7 @@ export default function Profile() {
             onClick={() => navigate("/")}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ChevronLeft className="w-6 h-6" />
             <span className="text-sm font-medium">Back</span>
           </button>
           <button
