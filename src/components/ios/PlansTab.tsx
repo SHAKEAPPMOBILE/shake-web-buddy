@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LoadingSpinner } from "../LoadingSpinner";
+import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +53,7 @@ interface PlansTabProps {
 export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
   const { selectedCity } = useCity();
   const { user, isPremium } = useAuth();
+  const { referralCode } = useReferralCode(user?.id);
   const [activities, setActivities] = useState<PlanActivity[]>([]);
   const [cityFilter, setCityFilter] = useState<string>(() => {
     return localStorage.getItem("plans-city-filter") || "all";
@@ -353,8 +355,8 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     const activityEmoji = getActivityEmoji(plan.activity_type);
     const dateStr = format(new Date(plan.scheduled_for), "EEE, d MMM");
     
+    const shareUrl = getReferralLink(referralCode);
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
-    const shareUrl = "https://shakeapp.today";
     
     if (navigator.share) {
       try {

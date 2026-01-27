@@ -1,6 +1,6 @@
 import { useUserPoints } from "@/hooks/useUserPoints";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Sparkles, TrendingUp } from "lucide-react";
+import { MapPin, Sparkles, TrendingUp, UserPlus } from "lucide-react";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
 
 interface PointsDashboardProps {
@@ -53,6 +53,12 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
             <TrendingUp className="w-4 h-4 mt-0.5 text-primary shrink-0" />
             <span>
               <strong className="text-foreground">Create popular activities</strong> — Earn +5 points for every 5 attendees on activities you create (10 attendees = +10 points, etc.)
+            </span>
+          </div>
+          <div className="flex items-start gap-2">
+            <UserPlus className="w-4 h-4 mt-0.5 text-purple-500 shrink-0" />
+            <span>
+              <strong className="text-foreground">Invite friends</strong> — Earn +5 points when someone signs up using your referral link
             </span>
           </div>
         </div>
