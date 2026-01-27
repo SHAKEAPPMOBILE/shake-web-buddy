@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mic, Square, X, MicOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { AudioWaveform } from "./AudioWaveform";
+import { OceanWaveAudio } from "./OceanWaveAudio";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -198,24 +198,34 @@ export function VoiceRecorder({ onAudioReady, onAudioClear, disabled, highlighte
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        const url = URL.createObjectURL(blob);
-        setAudioBlob(blob);
-        setAudioUrl(url);
-        onAudioReady?.(blob, url);
-        stream.getTracks().forEach((track) => track.stop());
-        
-        // Stop animation
+        // Stop animation and cleanup first
         if (animationRef.current) {
           cancelAnimationFrame(animationRef.current);
+          animationRef.current = null;
         }
         if (durationIntervalRef.current) {
           clearInterval(durationIntervalRef.current);
+          durationIntervalRef.current = null;
         }
         if (audioContextRef.current) {
           audioContextRef.current.close();
           audioContextRef.current = null;
         }
+        
+        // Stop stream tracks
+        stream.getTracks().forEach((track) => track.stop());
+        
+        // Create audio blob only once
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const url = URL.createObjectURL(blob);
+        
+        // Clear chunks to prevent duplicates
+        chunksRef.current = [];
+        
+        // Set state and notify parent
+        setAudioBlob(blob);
+        setAudioUrl(url);
+        onAudioReady?.(blob, url);
       };
 
       mediaRecorder.start();
@@ -301,11 +311,11 @@ export function VoiceRecorder({ onAudioReady, onAudioClear, disabled, highlighte
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Show recorded audio preview with waveform (no send button - parent handles sending)
+  // Show recorded audio preview with ocean wave animation
   if (audioBlob && audioUrl) {
     return (
       <div className="flex items-center gap-2 flex-1 bg-muted/50 rounded-lg px-3 py-2">
-        <AudioWaveform audioUrl={audioUrl} isCompact className="flex-1" />
+        <OceanWaveAudio audioUrl={audioUrl} isCompact className="flex-1" />
         <Button
           variant="ghost"
           size="icon"
