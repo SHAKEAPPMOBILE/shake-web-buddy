@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAddVenue, useUpdateVenue, DbVenue, VenueInsert } from "@/hooks/useVenues";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Save, X } from "lucide-react";
+import { Plus, Save, X, MapPin, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VenueFormProps {
   venue?: DbVenue;
@@ -25,9 +26,54 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
   const [latitude, setLatitude] = useState(venue?.latitude?.toString() || "");
   const [longitude, setLongitude] = useState(venue?.longitude?.toString() || "");
   const [sortOrder, setSortOrder] = useState(venue?.sort_order?.toString() || "0");
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const addVenue = useAddVenue();
   const updateVenue = useUpdateVenue();
+
+  const handleGeocode = async () => {
+    if (!address.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an address first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeocoding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('geocode-address', {
+        body: { address: address.trim() }
+      });
+
+      if (error) throw error;
+
+      if (data.latitude && data.longitude) {
+        setLatitude(data.latitude.toString());
+        setLongitude(data.longitude.toString());
+        toast({
+          title: "Coordinates found!",
+          description: `Lat: ${data.latitude.toFixed(6)}, Lng: ${data.longitude.toFixed(6)}`,
+        });
+      } else {
+        toast({
+          title: "Address not found",
+          description: "Could not find coordinates for this address. Try a more specific address.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Geocoding error:', error);
+      toast({
+        title: "Geocoding failed",
+        description: error.message || "Failed to fetch coordinates",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,13 +168,30 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
 
           <div className="space-y-2">
             <Label htmlFor="address">Address *</Label>
-            <Input
-              id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="e.g. Cra. 11 #93a-27, Bogotá, Colombia"
-              required
-            />
+            <div className="flex gap-2">
+              <Input
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g. Cra. 11 #93a-27, Bogotá, Colombia"
+                required
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGeocode}
+                disabled={isGeocoding || !address.trim()}
+                className="shrink-0"
+              >
+                {isGeocoding ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <MapPin className="w-4 h-4" />
+                )}
+                <span className="ml-1 hidden sm:inline">Get GPS</span>
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
