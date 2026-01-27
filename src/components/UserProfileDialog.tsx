@@ -369,44 +369,31 @@ export function UserProfileDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Enlarged Avatar Modal - rendered via portal to avoid Dialog event interference */}
-      {showEnlargedAvatar && avatarUrl && (
-        <div 
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
-          onClick={() => setShowEnlargedAvatar(false)}
-          onPointerDown={(e) => {
-            // Immediately close on any pointer interaction with backdrop
-            if (e.target === e.currentTarget) {
-              e.preventDefault();
-              setShowEnlargedAvatar(false);
-            }
-          }}
-          role="dialog"
-          aria-modal="true"
+      {/* Enlarged Avatar Modal - using Dialog for proper close behavior */}
+      <Dialog open={showEnlargedAvatar} onOpenChange={setShowEnlargedAvatar}>
+        <DialogContent 
+          className="p-0 bg-transparent border-none shadow-none max-w-[90vw] max-h-[90vh] w-auto"
+          style={{ background: 'transparent' }}
         >
-          <button
-            type="button"
-            onClick={() => setShowEnlargedAvatar(false)}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setShowEnlargedAvatar(false);
-            }}
-            className="absolute top-4 right-4 p-3 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 transition-colors z-[210] touch-manipulation"
-            aria-label="Close enlarged avatar"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            <X className="w-6 h-6 text-white" />
-          </button>
-          <img 
-            src={avatarUrl} 
-            alt={userName || "User"}
-            className="max-w-[90vw] max-h-[90vh] rounded-2xl shadow-2xl object-contain animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowEnlargedAvatar(false)}
+              className="absolute -top-12 right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 transition-colors touch-manipulation"
+              aria-label="Close enlarged avatar"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+            {avatarUrl && (
+              <img 
+                src={avatarUrl} 
+                alt={userName || "User"}
+                className="max-w-[90vw] max-h-[80vh] rounded-2xl shadow-2xl object-contain"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <PrivateChatDialog
         open={showChatDialog}
