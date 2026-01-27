@@ -447,6 +447,48 @@ export type Database = {
         }
         Relationships: []
       }
+      venues: {
+        Row: {
+          address: string
+          city: string
+          created_at: string
+          id: string
+          is_active: boolean
+          latitude: number | null
+          longitude: number | null
+          name: string
+          sort_order: number
+          updated_at: string
+          venue_type: string
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          sort_order?: number
+          updated_at?: string
+          venue_type: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          venue_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
