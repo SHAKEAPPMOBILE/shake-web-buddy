@@ -127,8 +127,10 @@ export function useUserActivities(city: string) {
   const createActivity = async (
     activityType: string,
     scheduledFor: Date,
-    note?: string
+    note?: string,
+    cityOverride?: string
   ): Promise<boolean> => {
+    const targetCity = cityOverride || city;
     if (!user) {
       toast.error("Please sign in to create an activity");
       return false;
@@ -167,7 +169,7 @@ export function useUserActivities(city: string) {
     const { data: newActivity, error } = await supabase.from("user_activities").insert({
       user_id: user.id,
       activity_type: activityType,
-      city: city,
+      city: targetCity,
       scheduled_for: scheduledFor.toISOString(),
       note: note?.trim() || null,
     }).select().maybeSingle();
@@ -188,7 +190,7 @@ export function useUserActivities(city: string) {
       user_id: user.id,
       activity_id: newActivity.id,
       activity_type: activityType,
-      city: city,
+      city: targetCity,
     });
 
     await Promise.all([fetchActivities(), fetchMyActivities(), fetchMonthlyCount()]);
