@@ -34,18 +34,29 @@ export const smsEnabledCountryCodes: string[] = [
 ];
 
 /**
- * Check if SMS is enabled for a given country code
+ * African country codes - SMS delivery may be unreliable in these regions
  */
-export function isSmsEnabledForCountry(countryCode: string): boolean {
-  return smsEnabledCountryCodes.includes(countryCode);
+export const africanCountryCodes: string[] = [
+  "DZ", "AO", "BJ", "BW", "BF", "BI", "CV", "CM", "CF", "TD", "KM", "CG", "CD",
+  "DJ", "EG", "GQ", "ER", "SZ", "ET", "GA", "GM", "GH", "GN", "GW", "CI", "KE",
+  "LS", "LR", "LY", "MG", "MW", "ML", "MR", "MU", "MA", "MZ", "NA", "NE", "NG",
+  "RW", "ST", "SN", "SC", "SL", "SO", "ZA", "SS", "SD", "TZ", "TG", "TN", "UG",
+  "ZM", "ZW"
+];
+
+/**
+ * Check if a country is in Africa
+ */
+export function isAfricanCountry(countryCode: string): boolean {
+  return africanCountryCodes.includes(countryCode);
 }
 
 /**
- * Get a user-friendly message about SMS availability
+ * Get a user-friendly message about SMS availability (only for African countries)
  */
 export function getSmsAvailabilityMessage(countryCode: string): string | null {
-  if (isSmsEnabledForCountry(countryCode)) {
-    return null; // No message needed
+  if (isAfricanCountry(countryCode)) {
+    return "SMS verification may not be available in your region. If you don't receive a code, please try again later or contact support.";
   }
-  return "SMS verification may not be available in your region. If you don't receive a code, please try again later or contact support.";
+  return null;
 }
