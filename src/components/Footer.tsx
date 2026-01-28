@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Instagram, Linkedin, Mail, MapPin } from "lucide-react";
+import { Instagram, Linkedin, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,7 +8,6 @@ import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
-import { PlansMapDialog } from "./PlansMapDialog";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { toast } from "sonner";
 import logoShake from "@/assets/logo_shake_original_color.png";
@@ -18,7 +17,6 @@ export function Footer() {
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showClockAnimation, setShowClockAnimation] = useState(false);
-  const [showPlansMap, setShowPlansMap] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
   const { user } = useAuth();
   const { selectedCity } = useCity();
@@ -58,9 +56,8 @@ export function Footer() {
     }
   };
 
-  const handlePlanCreated = (activityType: string) => {
-    setSelectedActivity(activityType);
-    setShowPlansMap(true);
+  const handlePlanCreated = () => {
+    // Plan created - no map navigation
   };
 
   const handleClockAnimationComplete = () => {
@@ -141,22 +138,12 @@ export function Footer() {
               © {new Date().getFullYear()} SHAKEapp Inc. All rights reserved.
             </p>
             
-            {/* CTA Buttons */}
+            {/* CTA Button */}
             <div className="flex items-center gap-3">
               <Button variant="shake" size="sm" onClick={handleShake} className={isShaking ? "animate-shake" : ""}>
                 <span className="text-shake-green">🤝</span>
                 Let's Shake!
               </Button>
-              <button 
-                onClick={() => setShowPlansMap(true)} 
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
-                style={{
-                  background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
-                }}
-              >
-                <MapPin className="w-4 h-4" />
-                Explore Plans
-              </button>
             </div>
 
             <p className="text-sm text-muted-foreground">
@@ -169,7 +156,7 @@ export function Footer() {
       <ActivitySelectionDialog open={showActivityDialog} onOpenChange={setShowActivityDialog} onSelectActivity={handleSelectActivity} onPlanCreated={handlePlanCreated} city={selectedCity} />
       <ShakingClockAnimation open={showClockAnimation} onOpenChange={setShowClockAnimation} onComplete={handleClockAnimationComplete} />
       <GroupChatDialog open={showChatDialog} onOpenChange={setShowChatDialog} activityType={selectedActivity} onBack={handleBackToActivities} attendeeCount={getActivityJoinCount(selectedActivity)} city={selectedCity} />
-      <PlansMapDialog open={showPlansMap} onOpenChange={setShowPlansMap} city={selectedCity} />
+      
     </>
   );
 }

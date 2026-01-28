@@ -8,7 +8,7 @@ import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { ActivityConfirmationDialog } from "./ActivityConfirmationDialog";
 import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
-import { PlansMapDialog } from "./PlansMapDialog";
+
 import { PremiumDialog } from "./PremiumDialog";
 import { ProximityCheckInPopup } from "./ProximityCheckInPopup";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,7 +28,7 @@ export function IOSAppLayout() {
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showClockAnimation, setShowClockAnimation] = useState(false);
   const [showJoinedConfirmation, setShowJoinedConfirmation] = useState(false);
-  const [showPlansMap, setShowPlansMap] = useState(false);
+  
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
   const [showHomeActivities, setShowHomeActivities] = useState(false);
@@ -208,9 +208,8 @@ export function IOSAppLayout() {
     await actuallyJoinActivity(activity);
   };
 
-  const handlePlanCreated = useCallback((activityType: string) => {
-    setSelectedActivity(activityType);
-    setShowPlansMap(true);
+  const handlePlanCreated = useCallback(() => {
+    // Plan created - just close the dialog, no map
   }, []);
 
   const handleClockAnimationComplete = useCallback(() => {
@@ -354,11 +353,6 @@ export function IOSAppLayout() {
         onJoinGroupChat={handleJoinGroupChatFromConfirmation}
       />
 
-      <PlansMapDialog
-        open={showPlansMap}
-        onOpenChange={setShowPlansMap}
-        city={selectedCity}
-      />
 
       <PremiumDialog
         open={showPremiumDialog}
