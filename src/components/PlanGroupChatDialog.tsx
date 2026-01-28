@@ -73,6 +73,7 @@ export function PlanGroupChatDialog({
     avatarUrl: string | null;
   } | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
   
   const { canSendText, addCharacters } = useTextMessageLimit();
   
@@ -98,6 +99,70 @@ export function PlanGroupChatDialog({
   }, [messages, activity.user_id]);
 
   const { profiles } = useUserProfiles(userIds);
+
+  // Fetch participants (creator + joined users)
+  useEffect(() => {
+    if (!open || !activity.id) return;
+
+    const fetchParticipants = async () => {
+      // Get activity joins for this activity
+      const { data: joins, error: joinsError } = await supabase
+        .from("activity_joins")
+        .select("user_id")
+        .eq("activity_id", activity.id)
+        .gt("expires_at", new Date().toISOString());
+
+      // Collect unique user IDs (creator + joiners)
+      const participantUserIds = [activity.user_id];
+      if (joins && !joinsError) {
+        joins.forEach((j) => {
+          if (!participantUserIds.includes(j.user_id)) {
+            participantUserIds.push(j.user_id);
+          }
+        });
+      }
+
+      // Fetch profiles for all participants
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", participantUserIds);
+
+      const participantsList = participantUserIds.map((userId) => {
+        const profile = profilesData?.find((p) => p.user_id === userId);
+        return {
+          user_id: userId,
+          name: profile?.name || null,
+          avatar_url: profile?.avatar_url || null,
+        };
+      });
+
+      setParticipants(participantsList);
+    };
+
+    fetchParticipants();
+
+    // Subscribe to activity_joins changes for this activity
+    const channel = supabase
+      .channel(`plan-participants-${activity.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "activity_joins",
+          filter: `activity_id=eq.${activity.id}`,
+        },
+        () => {
+          fetchParticipants();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [open, activity.id, activity.user_id]);
 
   // Fetch messages
   useEffect(() => {
@@ -239,12 +304,37 @@ export function PlanGroupChatDialog({
               Created by {creatorProfile?.name || "Shaker"}
             </p>
           </div>
+          {/* Participant avatars or count */}
           <button
             onClick={() => setShowParticipantsDialog(true)}
-            className="flex items-center gap-1 px-2 py-1 text-xs bg-muted rounded-full hover:bg-muted/80 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1 text-xs bg-muted rounded-full hover:bg-muted/80 transition-colors"
           >
-            <Users className="w-3 h-3" />
-            <span>{attendeeCount}</span>
+            {participants.length > 0 ? (
+              <>
+                <div className="flex -space-x-1.5">
+                  {participants.slice(0, 4).map((p) => (
+                    <div
+                      key={p.user_id}
+                      className="w-5 h-5 rounded-full bg-muted border border-white overflow-hidden"
+                    >
+                      {p.avatar_url ? (
+                        <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted">
+                          <User className="w-2.5 h-2.5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <span>{attendeeCount > 0 ? attendeeCount : participants.length}</span>
+              </>
+            ) : (
+              <>
+                <Users className="w-3 h-3" />
+                <span>{attendeeCount}</span>
+              </>
+            )}
           </button>
         </div>
 
