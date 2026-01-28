@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Users, FlaskConical, UserCheck, Loader2, Eye, EyeOff, Crown, Key, Plus, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 
@@ -136,43 +135,22 @@ export function UsersTab({ adminPassword }: { adminPassword: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
-  // Fetch all users from profiles
+  // Fetch all users via edge function (bypasses RLS)
   const { data: allUsers = [], isLoading, refetch } = useQuery({
     queryKey: ['admin-all-users'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          user_id,
-          name,
-          created_at
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch phone numbers separately (profiles_private has RLS)
-      const userIds = data.map(u => u.user_id);
-      const usersWithPhones: UserData[] = [];
-
-      // For each user, try to get their phone from profiles_private
-      for (const user of data) {
-        const { data: privateData } = await supabase
-          .from('profiles_private')
-          .select('phone_number, premium_override')
-          .eq('user_id', user.user_id)
-          .maybeSingle();
-
-        usersWithPhones.push({
-          user_id: user.user_id,
-          name: user.name,
-          phone_number: privateData?.phone_number || null,
-          created_at: user.created_at,
-          isPremium: privateData?.premium_override || false,
-        });
+      const response = await fetch(
+        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=list-users`
+      );
+      
+      const data = await response.json();
+      
+      if (!data.success || !data.users) {
+        console.error("Failed to fetch users:", data.error);
+        return [];
       }
-
-      return usersWithPhones;
+      
+      return data.users as UserData[];
     },
   });
 

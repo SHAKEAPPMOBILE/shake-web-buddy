@@ -337,6 +337,50 @@ Deno.serve(async (req) => {
     );
   }
   
+  // Handle list-users action - returns all users with profile data
+  if (action === "list-users") {
+    try {
+      // Get all users from auth
+      const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
+      const users = usersData?.users || [];
+      
+      // Get profiles for names
+      const { data: profiles } = await supabaseAdmin.from("profiles").select("user_id, name, created_at");
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      
+      // Get private profiles for phone and premium status
+      const { data: privateProfiles } = await supabaseAdmin.from("profiles_private").select("user_id, phone_number, premium_override");
+      const privateProfileMap = new Map(privateProfiles?.map(p => [p.user_id, p]) || []);
+      
+      // Build user list with all data
+      const allUsers = users.map(user => {
+        const profile = profileMap.get(user.id);
+        const privateProfile = privateProfileMap.get(user.id);
+        return {
+          user_id: user.id,
+          name: profile?.name || user.user_metadata?.name || null,
+          phone_number: privateProfile?.phone_number || (user.phone ? (user.phone.startsWith('+') ? user.phone : '+' + user.phone) : null),
+          created_at: profile?.created_at || user.created_at,
+          isPremium: privateProfile?.premium_override || false,
+          password: user.user_metadata?.admin_password || null,
+        };
+      });
+      
+      console.log(`[ADMIN] list-users: returning ${allUsers.length} users`);
+      
+      return new Response(
+        JSON.stringify({ success: true, users: allUsers }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (err) {
+      console.error("[ADMIN] list-users error:", err);
+      return new Response(
+        JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
   if (action === "search" && query) {
     const searchQuery = query.toLowerCase();
     
