@@ -46,7 +46,8 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [showChangePhone, setShowChangePhone] = useState(false);
@@ -199,14 +200,23 @@ export default function Profile() {
     }
   };
 
-  const handleSignOutClick = () => {
-    setShowSignOutConfirm(true);
-  };
-
-  const handleConfirmSignOut = async () => {
-    await signOut();
-    setShowSignOutConfirm(false);
-    navigate("/");
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.functions.invoke("delete-account");
+      
+      if (error) throw error;
+      
+      toast.success("Account deleted. Goodbye! 👋");
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error("Failed to delete account. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   if (authLoading || isLoading) {
@@ -456,17 +466,21 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Antisocial (Sign Out) Button */}
+          {/* Delete Account Button */}
           <div className="pt-6 border-t border-border">
             <button
-              onClick={handleSignOutClick}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isDeleting}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors disabled:opacity-50"
             >
               <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
                 <LogOut className="w-5 h-5 text-destructive" />
               </div>
-              <span className="font-medium text-destructive">Antisocial</span>
+              <span className="font-medium text-destructive">Delete Account</span>
             </button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Permanently delete your account and all data
+            </p>
           </div>
         </div>
       </main>
@@ -478,19 +492,24 @@ export default function Profile() {
         </p>
       </footer>
 
-      {/* Sign Out Confirmation Dialog */}
-      <AlertDialog open={showSignOutConfirm} onOpenChange={setShowSignOutConfirm}>
+      {/* Delete Account Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Going antisocial? 😢</AlertDialogTitle>
+            <AlertDialogTitle>Delete your account? 😢</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to sign out? You'll miss all the fun activities!
+              This action cannot be undone. This will permanently delete your account, 
+              profile, messages, activities, and all associated data from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Stay Social</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSignOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Sign Out
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteAccount} 
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete Account"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
