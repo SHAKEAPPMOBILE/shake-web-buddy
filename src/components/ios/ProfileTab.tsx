@@ -47,6 +47,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
   const [showPointsDialog, setShowPointsDialog] = useState(false);
   const [showSubscriptionDropdown, setShowSubscriptionDropdown] = useState(false);
+  const [showEditProfileDropdown, setShowEditProfileDropdown] = useState(false);
   const { statusVideo, hasActiveStatus } = useStatusVideo(user?.id);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
   const { points } = useUserPoints(user?.id);
@@ -203,16 +204,39 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
 
       {/* Menu Items */}
       <div className="flex-1 px-4 py-4 space-y-2">
-        {/* Edit Profile */}
-        <button
-          onClick={() => navigate("/profile")}
-          className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-border rounded-xl"
-        >
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Settings className="w-5 h-5 text-primary" />
-          </div>
-          <span className="font-medium">Edit Profile</span>
-        </button>
+        {/* Edit Profile - Dropdown */}
+        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowEditProfileDropdown(!showEditProfileDropdown)}
+            className="w-full flex items-center gap-4 px-4 py-3"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Settings className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="font-medium">Edit Profile</span>
+              <p className="text-xs text-muted-foreground">Update your info</p>
+            </div>
+          </button>
+          {showEditProfileDropdown && (
+            <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
+              <div className="space-y-3 pt-3">
+                <p className="text-xs text-muted-foreground">
+                  Update your name, avatar, nationality, occupation, and social links.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowEditProfileDropdown(false);
+                    navigate("/profile");
+                  }}
+                  className="w-full py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
+                >
+                  Go to Edit Profile
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Separator Line */}
         <div className="h-px bg-border my-2" />
