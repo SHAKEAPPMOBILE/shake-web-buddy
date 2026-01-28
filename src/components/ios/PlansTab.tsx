@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Calendar, Users, Plus, Trash2, Plane, Share2, MapPin } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Calendar, Users, Plus, Trash2, Plane, Share2, MapPin, Search, X } from "lucide-react";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "../PremiumDialog";
@@ -13,12 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { SHAKE_CITIES } from "@/data/cities";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,25 +50,46 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
   const { user, isPremium } = useAuth();
   const { referralCode } = useReferralCode(user?.id);
   const [activities, setActivities] = useState<PlanActivity[]>([]);
-  const [cityFilter, setCityFilter] = useState<string>(() => {
-    return localStorage.getItem("plans-city-filter") || "all";
+  const [searchCity, setSearchCity] = useState<string>(() => {
+    return localStorage.getItem("plans-city-filter") || selectedCity || "";
   });
+  const [showCitySearch, setShowCitySearch] = useState(false);
+  const [citySearchQuery, setCitySearchQuery] = useState("");
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch all plans: activities in city + activities user has joined
+  // Sync searchCity with selectedCity when it changes (initial load)
+  useEffect(() => {
+    if (selectedCity && !localStorage.getItem("plans-city-filter")) {
+      setSearchCity(selectedCity);
+    }
+  }, [selectedCity]);
+
+  // Filter city suggestions based on search query
+  const citySuggestions = useMemo(() => {
+    if (!citySearchQuery.trim()) return SHAKE_CITIES.slice(0, 10);
+    const query = citySearchQuery.toLowerCase();
+    return SHAKE_CITIES.filter(city => 
+      city.name.toLowerCase().includes(query) ||
+      city.country.toLowerCase().includes(query)
+    ).slice(0, 10);
+  }, [citySearchQuery]);
+
+  // Fetch all plans for the searched city
   const fetchPlans = useCallback(async () => {
-    if (!selectedCity) return;
+    if (!searchCity) return;
     
     setIsLoading(true);
     
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     
-    // Fetch activities in the current city
+    // Fetch all active activities in the searched city
     const { data: cityActivities, error: cityError } = await supabase
       .from("user_activities")
       .select("*")
-      .eq("city", selectedCity)
+      .eq("city", searchCity)
       .eq("is_active", true)
       .gte("scheduled_for", startOfToday.toISOString())
       .order("scheduled_for", { ascending: true });
@@ -95,20 +112,21 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
       joinedActivityIds = (joins || []).map(j => j.activity_id).filter(Boolean) as string[];
     }
 
-    // Fetch carousel joins (without activity_id) for the current user
+    // Fetch carousel joins (without activity_id) for the current user in searched city
     let carouselJoins: { activity_type: string; city: string; joined_at: string }[] = [];
     if (user) {
       const { data: cJoins } = await supabase
         .from("activity_joins")
         .select("activity_type, city, joined_at")
         .eq("user_id", user.id)
+        .eq("city", searchCity)
         .is("activity_id", null)
         .gt("expires_at", new Date().toISOString());
       
       carouselJoins = cJoins || [];
     }
 
-    // Get joined activities that might be in other cities or not in current list
+    // Get joined activities that might be in other cities (for the user's own joined plans)
     let joinedActivities: typeof cityActivities = [];
     if (joinedActivityIds.length > 0) {
       const { data: joinedData } = await supabase
@@ -118,7 +136,8 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
         .eq("is_active", true)
         .gte("scheduled_for", startOfToday.toISOString());
       
-      joinedActivities = joinedData || [];
+      // Only include joined activities from the searched city
+      joinedActivities = (joinedData || []).filter(a => a.city === searchCity);
     }
 
     // Combine and deduplicate
@@ -221,14 +240,14 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
 
     setActivities(allPlans);
     setIsLoading(false);
-  }, [selectedCity, user]);
+  }, [searchCity, user]);
 
   // Initial fetch and realtime subscription
   useEffect(() => {
     fetchPlans();
 
     const channel = supabase
-      .channel(`plans-tab-${selectedCity}`)
+      .channel(`plans-tab-${searchCity}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "user_activities" },
@@ -244,7 +263,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchPlans]);
+  }, [fetchPlans, searchCity]);
   
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -261,22 +280,35 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     onChatViewChange?.(isInChat);
   }, [showChatView, showCarouselChatView, onChatViewChange]);
 
-  // Get unique cities from all activities for the filter
-  const availableCities = useMemo(() => {
-    const cities = [...new Set(activities.map(a => a.city))];
-    return cities.sort();
-  }, [activities]);
+  // Handle city selection from search
+  const handleSelectCity = (cityName: string) => {
+    // Premium gate: only Super-Human users can explore other cities
+    if (!isPremium && cityName.toLowerCase() !== selectedCity.toLowerCase()) {
+      setShowPremiumDialog(true);
+      return;
+    }
+    setSearchCity(cityName);
+    setCitySearchQuery("");
+    setShowCitySuggestions(false);
+    setShowCitySearch(false);
+    localStorage.setItem("plans-city-filter", cityName);
+  };
 
-  // Filter activities based on selected city
-  const filteredActivities = useMemo(() => {
-    if (cityFilter === "all") return activities;
-    return activities.filter(a => a.city === cityFilter);
-  }, [activities, cityFilter]);
+  // Reset to user's city
+  const handleResetToMyCity = () => {
+    setSearchCity(selectedCity);
+    setCitySearchQuery("");
+    setShowCitySuggestions(false);
+    setShowCitySearch(false);
+    localStorage.removeItem("plans-city-filter");
+  };
 
-  // Persist city filter to localStorage
+  // Focus search input when opened
   useEffect(() => {
-    localStorage.setItem("plans-city-filter", cityFilter);
-  }, [cityFilter]);
+    if (showCitySearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [showCitySearch]);
 
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
@@ -413,38 +445,22 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h2 className="text-lg font-display font-bold">Your Plans</h2>
-        <div className="flex items-center gap-2">
-          {/* City Filter */}
-          {availableCities.length > 1 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1 px-2.5 py-1.5 bg-muted text-foreground rounded-full text-sm font-medium">
-                  <Plane className="w-4 h-4" />
-                  {cityFilter !== "all" && <span>{cityFilter}</span>}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-card border-border z-50">
-                <DropdownMenuItem 
-                  onClick={() => setCityFilter("all")}
-                  className={cityFilter === "all" ? "bg-primary/10" : ""}
-                >
-                  All cities
-                </DropdownMenuItem>
-                {availableCities.map((city) => (
-                  <DropdownMenuItem 
-                    key={city} 
-                    onClick={() => setCityFilter(city)}
-                    className={cityFilter === city ? "bg-primary/10" : ""}
-                  >
-                    {city}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          {activities.length > 0 && (
+      <div className="flex flex-col px-4 py-3 border-b border-border gap-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-display font-bold">Your Plans</h2>
+          <div className="flex items-center gap-2">
+            {/* City Search Toggle */}
+            <button
+              onClick={() => setShowCitySearch(!showCitySearch)}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium transition-all ${
+                searchCity !== selectedCity 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-foreground"
+              }`}
+            >
+              <Plane className="w-4 h-4" />
+              {searchCity !== selectedCity && <span>{searchCity}</span>}
+            </button>
             <button
               onClick={handleCreatePlan}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
@@ -455,8 +471,73 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
               <Plus className="w-4 h-4" />
               Create
             </button>
-          )}
+          </div>
         </div>
+
+        {/* City Search Input */}
+        {showCitySearch && (
+          <div className="relative">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search city..."
+                  value={citySearchQuery}
+                  onChange={(e) => {
+                    setCitySearchQuery(e.target.value);
+                    setShowCitySuggestions(true);
+                  }}
+                  onFocus={() => setShowCitySuggestions(true)}
+                  className="pl-9 pr-9 bg-muted border-none"
+                />
+                {citySearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCitySearchQuery("");
+                      searchInputRef.current?.focus();
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+              {searchCity !== selectedCity && (
+                <button
+                  onClick={handleResetToMyCity}
+                  className="text-xs text-primary whitespace-nowrap"
+                >
+                  Reset to my city
+                </button>
+              )}
+            </div>
+
+            {/* City Suggestions Dropdown */}
+            {showCitySuggestions && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                {citySuggestions.length > 0 ? (
+                  citySuggestions.map((city) => (
+                    <button
+                      key={`${city.name}-${city.country}`}
+                      onClick={() => handleSelectCity(city.name)}
+                      className="w-full px-4 py-2.5 text-left hover:bg-muted flex items-center justify-between text-sm"
+                    >
+                      <span>{city.name}</span>
+                      <span className="text-muted-foreground text-xs">{city.country}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-sm text-muted-foreground">
+                    No cities found
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Plans List */}
@@ -465,39 +546,33 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
           </div>
-        ) : filteredActivities.length === 0 ? (
+        ) : activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <MapPin className="w-8 h-8 text-muted-foreground" />
             </div>
-            {activities.length === 0 ? (
-              <>
-                <p className="text-muted-foreground">No plans yet</p>
-                <button
-                  onClick={handleCreatePlan}
-                  className="mt-3 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
-                  style={{
-                    background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
-                  }}
-                >
-                  <Plus className="w-4 h-4" />
-                  Create
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-muted-foreground">No plans in {cityFilter}</p>
-                <button
-                  onClick={() => setCityFilter("all")}
-                  className="mt-3 text-sm text-primary hover:underline"
-                >
-                  Show all cities
-                </button>
-              </>
+            <p className="text-muted-foreground">No plans in {searchCity}</p>
+            {searchCity !== selectedCity && (
+              <button
+                onClick={handleResetToMyCity}
+                className="mt-3 text-sm text-primary hover:underline"
+              >
+                Back to {selectedCity}
+              </button>
             )}
+            <button
+              onClick={handleCreatePlan}
+              className="mt-3 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
+              style={{
+                background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Create
+            </button>
           </div>
         ) : (
-          filteredActivities.map((plan) => (
+          activities.map((plan) => (
             <div
               key={plan.id}
               role="button"
