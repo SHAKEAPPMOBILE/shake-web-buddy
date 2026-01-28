@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { isSmsEnabledForCountry, getSmsAvailabilityMessage } from "@/data/smsEnabledCountries";
+import { isAfricanCountry, getSmsAvailabilityMessage } from "@/data/smsEnabledCountries";
 import { countryCodes } from "@/data/countryCodes";
 
 import {
@@ -163,10 +163,11 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
             </p>
             {(() => {
               const detectedCountry = detectCountryFromPhone(phone);
-              if (detectedCountry && !isSmsEnabledForCountry(detectedCountry)) {
+              const message = detectedCountry ? getSmsAvailabilityMessage(detectedCountry) : null;
+              if (message) {
                 return (
                   <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-md">
-                    ⚠️ {getSmsAvailabilityMessage(detectedCountry)}
+                    ⚠️ {message}
                   </p>
                 );
               }
