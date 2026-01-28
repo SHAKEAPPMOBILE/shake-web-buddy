@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MapPin, Calendar, Users, Plus, Trash2, Plane, Share2 } from "lucide-react";
+import { Calendar, Users, Plus, Trash2, Plane, Share2, MapPin } from "lucide-react";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { PlansMapDialog } from "../PlansMapDialog";
 import { PremiumDialog } from "../PremiumDialog";
 import { CreateActivityDialog } from "../CreateActivityDialog";
 import { PlanGroupChatView } from "./PlanGroupChatView";
@@ -246,7 +245,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
       supabase.removeChannel(channel);
     };
   }, [fetchPlans]);
-  const [showMap, setShowMap] = useState(false);
+  
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
@@ -254,7 +253,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
   const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
   const [selectedCarouselActivity, setSelectedCarouselActivity] = useState<PlanActivity | null>(null);
   const [showCarouselChatView, setShowCarouselChatView] = useState(false);
-  const [mapOnlyMode, setMapOnlyMode] = useState(true); // Default to map-only view
+  
 
   // Notify parent when entering/leaving chat view
   useEffect(() => {
@@ -457,13 +456,6 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
               Create
             </button>
           )}
-          <button
-            onClick={() => setShowMap(true)}
-            className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
-          >
-            <MapPin className="w-4 h-4" />
-            Map
-          </button>
         </div>
       </div>
 
@@ -629,12 +621,6 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
         )}
       </div>
 
-      <PlansMapDialog 
-        open={showMap} 
-        onOpenChange={setShowMap} 
-        city={selectedCity}
-        mapOnlyMode={mapOnlyMode}
-      />
 
       <PremiumDialog 
         open={showPremiumDialog} 

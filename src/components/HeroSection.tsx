@@ -1,10 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Zap, MapPin } from "lucide-react";
+import { Zap } from "lucide-react";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
-import { PlansMapDialog } from "./PlansMapDialog";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
@@ -22,7 +21,6 @@ export function HeroSection() {
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showClockAnimation, setShowClockAnimation] = useState(false);
   const [showJoinedConfirmation, setShowJoinedConfirmation] = useState(false);
-  const [showPlansMap, setShowPlansMap] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
   const [phoneInitialShake, setPhoneInitialShake] = useState(true);
   const [phoneHovered, setPhoneHovered] = useState(false);
@@ -86,10 +84,8 @@ export function HeroSection() {
   };
 
   // Called when a plan is created via ActivitySelectionDialog
-  const handlePlanCreated = useCallback((activityType: string) => {
-    setSelectedActivity(activityType);
-    // Open the plans map to show the new plan
-    setShowPlansMap(true);
+  const handlePlanCreated = useCallback(() => {
+    // Plan created - no map navigation
   }, []);
   const handleClockAnimationComplete = useCallback(() => {
     setShowClockAnimation(false);
@@ -184,16 +180,6 @@ export function HeroSection() {
                   <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-border rounded-full" />
                 </div>
 
-                {/* Explore Plans Icon - Bottom right of phone */}
-                <div className="flex flex-col items-center gap-1 md:gap-2 absolute -right-12 md:-right-16 -bottom-6 md:-bottom-8">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-card/80 border border-border/50 backdrop-blur flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={e => {
-                  e.stopPropagation();
-                  setShowPlansMap(true);
-                }}>
-                    <MapPin className="w-5 h-5 md:w-6 md:h-6 text-shake-green" />
-                  </div>
-                  <span className="text-[10px] md:text-xs text-muted-foreground font-medium">Explore Plans</span>
-                </div>
               </div>
             </div>
 
@@ -264,6 +250,6 @@ export function HeroSection() {
         }}
       />
 
-      <PlansMapDialog open={showPlansMap} onOpenChange={setShowPlansMap} city={selectedCity} />
+      
     </>;
 }
