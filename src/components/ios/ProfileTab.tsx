@@ -281,13 +281,8 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                 <div className="space-y-3 pt-3">
                   <div className="flex items-center gap-2">
                     <SuperHumanIcon size={16} />
-                    <span className="text-sm font-medium text-shake-yellow">Super-Human Benefits</span>
+                    <span className="text-sm font-medium text-shake-yellow">Super-Human Active</span>
                   </div>
-                  <ul className="text-xs text-muted-foreground space-y-1.5 ml-6">
-                    <li>• Unlimited private messages</li>
-                    <li>• Video status updates</li>
-                    <li>• Priority in activity feeds</li>
-                  </ul>
                   <button
                     onClick={() => {
                       setShowSubscriptionDropdown(false);
