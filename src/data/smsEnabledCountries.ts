@@ -24,8 +24,10 @@ export const smsEnabledCountryCodes: string[] = [
   "AT",  // Austria
   "IE",  // Ireland
   
+  // Latin America
+  "CO",  // Colombia
+  
   // Add more countries as you enable them in Twilio Geo Permissions:
-  // "CO",  // Colombia - Enable in Twilio first
   // "BR",  // Brazil
   // "MX",  // Mexico
   // etc.
