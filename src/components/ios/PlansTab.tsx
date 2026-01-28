@@ -69,9 +69,9 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     }
   }, [selectedCity]);
 
-  // Filter city suggestions based on search query
+  // Filter city suggestions based on search query - only show when user types
   const citySuggestions = useMemo(() => {
-    if (!citySearchQuery.trim()) return SHAKE_CITIES.slice(0, 10);
+    if (!citySearchQuery.trim()) return [];
     const query = citySearchQuery.toLowerCase();
     return SHAKE_CITIES.filter(city => 
       city.name.toLowerCase().includes(query) ||
