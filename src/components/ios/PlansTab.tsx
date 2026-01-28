@@ -622,7 +622,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
               }}
             >
               <Plus className="w-4 h-4" />
-              Create
+              Create one
             </button>
           </div>
         ) : (
@@ -739,7 +739,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
       <CreateActivityDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        city={selectedCity}
+        city={searchCity}
       />
 
 
