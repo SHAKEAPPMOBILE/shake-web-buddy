@@ -97,10 +97,19 @@ export function IOSAppLayout() {
     if (isLoading || !user) return;
 
     let cancelled = false;
+    let retryCount = 0;
+    const maxRetries = 3;
 
     const checkProfileCompletion = async () => {
       try {
-        const [{ data: profile }, { data: profilePrivate }] = await Promise.all([
+        // First verify we have a valid session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.log("No valid session during profile check, skipping");
+          return;
+        }
+
+        const [{ data: profile, error: profileError }, { data: profilePrivate, error: privateError }] = await Promise.all([
           supabase
             .from("profiles")
             .select("name")
@@ -115,19 +124,31 @@ export function IOSAppLayout() {
 
         if (cancelled) return;
 
-        const needsProfile = !profile?.name || !profilePrivate?.date_of_birth;
+        // If we got errors or null results, it might be a timing issue - retry
+        if ((profileError || privateError || (!profile && !profilePrivate)) && retryCount < maxRetries) {
+          retryCount++;
+          console.log(`Profile check retry ${retryCount}/${maxRetries}`);
+          setTimeout(checkProfileCompletion, 500 * retryCount);
+          return;
+        }
 
-        if (needsProfile) {
-          // Redirect to auth page to complete profile
-          navigate("/auth");
+        // Only redirect if we actually got results and they're incomplete
+        // Don't redirect if we couldn't fetch the data (network issues, etc.)
+        if (profile !== null || profilePrivate !== null) {
+          const needsProfile = !profile?.name || !profilePrivate?.date_of_birth;
+
+          if (needsProfile) {
+            // Redirect to auth page to complete profile
+            navigate("/auth");
+          }
         }
       } catch (error) {
         console.log("Profile check failed:", error);
       }
     };
 
-    // Small delay to ensure auth state is fully settled
-    setTimeout(checkProfileCompletion, 100);
+    // Longer delay to ensure auth state and session are fully settled
+    setTimeout(checkProfileCompletion, 300);
 
     return () => {
       cancelled = true;
