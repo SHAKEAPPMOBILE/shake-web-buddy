@@ -46,6 +46,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
   const [showPointsDialog, setShowPointsDialog] = useState(false);
+  const [showSubscriptionDropdown, setShowSubscriptionDropdown] = useState(false);
   const { statusVideo, hasActiveStatus } = useStatusVideo(user?.id);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
   const { points } = useUserPoints(user?.id);
@@ -238,18 +239,44 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
         </div>
 
         {isPremium ? (
-          <button
-            onClick={() => setShowPremiumDialog(true)}
-            className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-shake-green/30 rounded-xl"
-          >
-            <div className="w-10 h-10 rounded-full bg-shake-green/10 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-shake-green" />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="font-medium">Manage Subscription</span>
-              <p className="text-xs text-muted-foreground">Cancel or update your plan</p>
-            </div>
-          </button>
+          <div className="w-full bg-card border border-shake-green/30 rounded-xl overflow-hidden">
+            <button
+              onClick={() => setShowSubscriptionDropdown(!showSubscriptionDropdown)}
+              className="w-full flex items-center gap-4 px-4 py-3"
+            >
+              <div className="w-10 h-10 rounded-full bg-shake-green/10 flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-shake-green" />
+              </div>
+              <div className="flex-1 text-left">
+                <span className="font-medium">Manage Subscription</span>
+                <p className="text-xs text-muted-foreground">Super-Human active</p>
+              </div>
+            </button>
+            {showSubscriptionDropdown && (
+              <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
+                <div className="space-y-3 pt-3">
+                  <div className="flex items-center gap-2">
+                    <SuperHumanIcon size={16} />
+                    <span className="text-sm font-medium text-shake-yellow">Super-Human Benefits</span>
+                  </div>
+                  <ul className="text-xs text-muted-foreground space-y-1.5 ml-6">
+                    <li>• Unlimited private messages</li>
+                    <li>• Video status updates</li>
+                    <li>• Priority in activity feeds</li>
+                  </ul>
+                  <button
+                    onClick={() => {
+                      setShowSubscriptionDropdown(false);
+                      setShowPremiumDialog(true);
+                    }}
+                    className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-lg hover:bg-shake-green/10 transition-colors"
+                  >
+                    Manage in Billing Portal
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <button
             onClick={() => setShowPremiumDialog(true)}
