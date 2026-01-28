@@ -28,17 +28,18 @@ interface PlansMapDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   city: string;
+  mapOnlyMode?: boolean;
 }
 
-export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps) {
+export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }: PlansMapDialogProps) {
   const { user, isPremium } = useAuth();
   const { activities, isLoading, refetch: refetchActivities } = useAllActivities();
   const { joinActivity, hasJoinedActivity, myActivities } = useUserActivities(city);
   const { getLocationString, getMapsUrl } = useVenueContext();
   const isMobile = useIsMobile();
   const mapRef = useRef<WorldMapHandle>(null);
-  const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
-  const [showList, setShowList] = useState(true);
+  const [mobileView, setMobileView] = useState<'list' | 'map'>(mapOnlyMode ? 'map' : 'list');
+  const [showList, setShowList] = useState(!mapOnlyMode);
   const [selectedActivity, setSelectedActivity] = useState<UserActivity | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
@@ -109,6 +110,14 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
       setNotificationsEnabled(Notification.permission === "granted");
     }
   }, []);
+
+  // Reset view state when dialog opens based on mapOnlyMode
+  useEffect(() => {
+    if (open) {
+      setMobileView(mapOnlyMode ? 'map' : 'list');
+      setShowList(!mapOnlyMode);
+    }
+  }, [open, mapOnlyMode]);
 
   const handleEnableNotifications = async () => {
     const granted = await requestPermission();
@@ -305,7 +314,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
             {/* Mobile: Show either list or map */}
             {isMobile ? (
               <>
-                {mobileView === 'map' && (
+                {(mobileView === 'map' || mapOnlyMode) && (
                   <div className="flex-1 h-full">
                     <WorldMap
                       ref={mapRef}
@@ -316,7 +325,7 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                     />
                   </div>
                 )}
-                {mobileView === 'list' && (
+                {mobileView === 'list' && !mapOnlyMode && (
                   <div className="flex-1 flex flex-col bg-card/95">
                     {/* Mobile search bar with autocomplete */}
                     <div className="p-2 border-b border-border/30">
@@ -437,9 +446,9 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                 )}
               </>
             ) : (
-              /* Desktop: Map with side panel */
+              /* Desktop: Map with optional side panel */
               <>
-                <div className={cn("flex-1 h-full transition-all duration-300", showList && "mr-80")}>
+                <div className={cn("flex-1 h-full transition-all duration-300", showList && !mapOnlyMode && "mr-80")}>
                   <WorldMap
                     ref={mapRef}
                     activities={activities}
@@ -449,100 +458,102 @@ export function PlansMapDialog({ open, onOpenChange, city }: PlansMapDialogProps
                   />
                 </div>
 
-                {/* List overlay */}
-                <div
-                  className={cn(
-                    "absolute top-0 right-0 h-full w-80 bg-card/95 backdrop-blur-xl border-l border-border/50 transition-transform duration-300 flex flex-col",
-                    showList ? "translate-x-0" : "translate-x-full"
-                  )}
-                >
-                  <div className="flex items-center justify-between p-3 border-b border-border/50 shrink-0">
-                    <h3 className="font-semibold text-sm">All Plans</h3>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowList(false)}>
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
+                {/* List overlay - hidden in mapOnlyMode */}
+                {!mapOnlyMode && (
+                  <div
+                    className={cn(
+                      "absolute top-0 right-0 h-full w-80 bg-card/95 backdrop-blur-xl border-l border-border/50 transition-transform duration-300 flex flex-col",
+                      showList ? "translate-x-0" : "translate-x-full"
+                    )}
+                  >
+                    <div className="flex items-center justify-between p-3 border-b border-border/50 shrink-0">
+                      <h3 className="font-semibold text-sm">All Plans</h3>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowList(false)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
 
-                  <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                    {filteredActivities.length === 0 ? (
-                      <div className="text-center py-8">
-                        <p className="text-sm text-muted-foreground">
-                          {searchQuery ? "No plans found" : "No plans yet"}
-                        </p>
-                        <p className="text-xs text-muted-foreground/70 mt-1">
-                          {searchQuery ? "Try a different city name" : "Be the first to create one!"}
-                        </p>
-                      </div>
-                    ) : (
-                      filteredActivities.map((activity) => {
-                        const isOwner = activity.user_id === user?.id;
+                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                      {filteredActivities.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-sm text-muted-foreground">
+                            {searchQuery ? "No plans found" : "No plans yet"}
+                          </p>
+                          <p className="text-xs text-muted-foreground/70 mt-1">
+                            {searchQuery ? "Try a different city name" : "Be the first to create one!"}
+                          </p>
+                        </div>
+                      ) : (
+                        filteredActivities.map((activity) => {
+                          const isOwner = activity.user_id === user?.id;
 
-                        return (
-                          <button
-                            key={activity.id}
-                            onClick={() => handleActivityClick(activity)}
-                            className={cn(
-                              "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
-                              selectedActivity?.id === activity.id
-                                ? "border border-primary/30"
-                                : ""
-                            )}
-                            style={{
-                              background: selectedActivity?.id === activity.id
-                                ? "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))"
-                                : "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
-                            }}
-                          >
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 bg-white shadow-md">
-                              {(() => {
-                                const activityData = ACTIVITY_TYPES.find(a => a.id === activity.activity_type);
-                                return activityData?.icon ? (
-                                  <img src={activityData.icon} alt={activityData.label} className="w-6 h-6 object-contain" />
-                                ) : (
-                                  <span>{getActivityEmoji(activity.activity_type)}</span>
-                                );
-                              })()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1">
-                                <p className="font-medium text-sm truncate text-white">
-                                  {getActivityLabel(activity.activity_type)}
+                          return (
+                            <button
+                              key={activity.id}
+                              onClick={() => handleActivityClick(activity)}
+                              className={cn(
+                                "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
+                                selectedActivity?.id === activity.id
+                                  ? "border border-primary/30"
+                                  : ""
+                              )}
+                              style={{
+                                background: selectedActivity?.id === activity.id
+                                  ? "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))"
+                                  : "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+                              }}
+                            >
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 bg-white shadow-md">
+                                {(() => {
+                                  const activityData = ACTIVITY_TYPES.find(a => a.id === activity.activity_type);
+                                  return activityData?.icon ? (
+                                    <img src={activityData.icon} alt={activityData.label} className="w-6 h-6 object-contain" />
+                                  ) : (
+                                    <span>{getActivityEmoji(activity.activity_type)}</span>
+                                  );
+                                })()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1">
+                                  <p className="font-medium text-sm truncate text-white">
+                                    {getActivityLabel(activity.activity_type)}
+                                  </p>
+                                  {isOwner && (
+                                    <span className="text-[10px] px-1 py-0.5 bg-primary/10 text-primary rounded">
+                                      You
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-white/70">
+                                  {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
                                 </p>
-                                {isOwner && (
-                                  <span className="text-[10px] px-1 py-0.5 bg-primary/10 text-primary rounded">
-                                    You
-                                  </span>
+                                {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks" || activity.activity_type === "brunch") && (
+                                  <a
+                                    href={getMapsUrl(activity.city, activity.activity_type) || "/"}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-xs text-white/60 truncate flex items-center gap-1 hover:text-white/90 transition-colors underline-offset-2 hover:underline"
+                                  >
+                                    <MapPin className="w-3 h-3 shrink-0" />
+                                    {getLocationString(activity.city, activity.activity_type)}
+                                  </a>
                                 )}
                               </div>
-                              <p className="text-xs text-white/70">
-                                {format(new Date(activity.scheduled_for), "EEEE")} ({format(new Date(activity.scheduled_for), "dd-MM")})
-                              </p>
-                              {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "drinks" || activity.activity_type === "brunch") && (
-                                <a
-                                  href={getMapsUrl(activity.city, activity.activity_type) || "/"}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-xs text-white/60 truncate flex items-center gap-1 hover:text-white/90 transition-colors underline-offset-2 hover:underline"
-                                >
-                                  <MapPin className="w-3 h-3 shrink-0" />
-                                  {getLocationString(activity.city, activity.activity_type)}
-                                </a>
-                              )}
-                            </div>
-                            <div className="flex flex-col items-end gap-1 shrink-0">
-                              <div className="flex items-center gap-1 text-xs text-white/70">
-                                <Users className="w-3 h-3" />
-                                <span>{activity.participant_count}</span>
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                <div className="flex items-center gap-1 text-xs text-white/70">
+                                  <Users className="w-3 h-3" />
+                                  <span>{activity.participant_count}</span>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-white/50" />
                               </div>
-                              <ChevronRight className="w-4 h-4 text-white/50" />
-                            </div>
-                          </button>
-                        );
-                      })
-                    )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             )}
           </div>
