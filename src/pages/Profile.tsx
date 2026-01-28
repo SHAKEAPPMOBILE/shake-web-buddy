@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Camera, ChevronLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail } from "lucide-react";
+import { Camera, ChevronLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Profile() {
-  const { user, isLoading: authLoading, isPremium, signOut } = useAuth();
+  const { user, isLoading: authLoading, isPremium, signOut, updatePassword } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -51,6 +51,12 @@ export default function Profile() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [showChangePhone, setShowChangePhone] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -197,6 +203,41 @@ export default function Profile() {
       toast.error("Failed to save profile");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error("Please fill in both password fields");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error } = await updatePassword(newPassword);
+      
+      if (error) throw error;
+      
+      toast.success("Password updated successfully!");
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowChangePassword(false);
+      triggerConfettiWaterfall();
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      toast.error(error?.message || "Failed to update password");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -463,6 +504,89 @@ export default function Profile() {
                   onCheckedChange={setPushNotificationsEnabled}
                 />
               </div>
+            </div>
+
+            {/* Change Password Section */}
+            <div className="pt-4 border-t border-border">
+              <h3 className="text-sm font-medium mb-4">Security</h3>
+              
+              <button
+                onClick={() => setShowChangePassword(!showChangePassword)}
+                className="w-full flex items-center justify-between p-3 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="font-medium text-sm">Change Password</span>
+                </div>
+                <ChevronLeft className={`w-5 h-5 text-muted-foreground transition-transform ${showChangePassword ? 'rotate-[-90deg]' : 'rotate-180'}`} />
+              </button>
+
+              {showChangePassword && (
+                <div className="mt-4 space-y-4 p-4 bg-card border border-border rounded-xl animate-fade-in">
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="newPassword"
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm new password"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={isChangingPassword || !newPassword || !confirmPassword}
+                    className="w-full"
+                  >
+                    {isChangingPassword ? (
+                      <>
+                        <LoadingSpinner size="sm" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Update Password"
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-muted-foreground text-center">
+                    Password must be at least 6 characters
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
