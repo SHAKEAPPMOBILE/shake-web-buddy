@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { SuperHumanIcon } from "../SuperHumanIcon";
 import { Calendar, Users, Plus, Trash2, Plane, Share2, MapPin, Search, X } from "lucide-react";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -57,6 +58,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
   const [citySearchQuery, setCitySearchQuery] = useState("");
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const citySearchContainerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Sync searchCity with selectedCity when it changes (initial load)
@@ -310,6 +312,28 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     }
   }, [showCitySearch]);
 
+  // Click outside to close city search
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        citySearchContainerRef.current &&
+        !citySearchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowCitySearch(false);
+        setShowCitySuggestions(false);
+        setCitySearchQuery("");
+      }
+    };
+
+    if (showCitySearch) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showCitySearch]);
+
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
     return activity?.emoji || "📍";
@@ -476,64 +500,93 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
 
         {/* City Search Input */}
         {showCitySearch && (
-          <div className="relative">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search city..."
-                  value={citySearchQuery}
-                  onChange={(e) => {
-                    setCitySearchQuery(e.target.value);
-                    setShowCitySuggestions(true);
-                  }}
-                  onFocus={() => setShowCitySuggestions(true)}
-                  className="pl-9 pr-9 bg-muted border-none"
-                />
-                {citySearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCitySearchQuery("");
-                      searchInputRef.current?.focus();
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                  >
-                    <X className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                )}
-              </div>
-              {searchCity !== selectedCity && (
-                <button
-                  onClick={handleResetToMyCity}
-                  className="text-xs text-primary whitespace-nowrap"
-                >
-                  Reset to my city
-                </button>
-              )}
-            </div>
-
-            {/* City Suggestions Dropdown */}
-            {showCitySuggestions && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
-                {citySuggestions.length > 0 ? (
-                  citySuggestions.map((city) => (
+          <div ref={citySearchContainerRef} className="relative">
+            {isPremium ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Search city..."
+                      value={citySearchQuery}
+                      onChange={(e) => {
+                        setCitySearchQuery(e.target.value);
+                        setShowCitySuggestions(true);
+                      }}
+                      onFocus={() => setShowCitySuggestions(true)}
+                      className="pl-9 pr-9 bg-muted border-none"
+                    />
+                    {citySearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCitySearchQuery("");
+                          searchInputRef.current?.focus();
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                      >
+                        <X className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    )}
+                  </div>
+                  {searchCity !== selectedCity && (
                     <button
-                      key={`${city.name}-${city.country}`}
-                      onClick={() => handleSelectCity(city.name)}
-                      className="w-full px-4 py-2.5 text-left hover:bg-muted flex items-center justify-between text-sm"
+                      onClick={handleResetToMyCity}
+                      className="text-xs text-primary whitespace-nowrap"
                     >
-                      <span>{city.name}</span>
-                      <span className="text-muted-foreground text-xs">{city.country}</span>
+                      Reset to my city
                     </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-3 text-sm text-muted-foreground">
-                    No cities found
+                  )}
+                </div>
+
+                {/* City Suggestions Dropdown */}
+                {showCitySuggestions && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                    {citySuggestions.length > 0 ? (
+                      citySuggestions.map((city) => (
+                        <button
+                          key={`${city.name}-${city.country}`}
+                          onClick={() => handleSelectCity(city.name)}
+                          className="w-full px-4 py-2.5 text-left hover:bg-muted flex items-center justify-between text-sm"
+                        >
+                          <span>{city.name}</span>
+                          <span className="text-muted-foreground text-xs">{city.country}</span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-muted-foreground">
+                        No cities found
+                      </div>
+                    )}
                   </div>
                 )}
+              </>
+            ) : (
+              /* Non-premium: Show subscribe prompt */
+              <div className="bg-card border border-border rounded-xl p-4 shadow-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-shake-yellow/20 flex items-center justify-center">
+                    <SuperHumanIcon size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm">Explore Plans Worldwide</h4>
+                    <p className="text-xs text-muted-foreground">Super-Human feature</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Become a Super-Human to browse and join plans in any city around the world!
+                </p>
+                <button
+                  onClick={() => {
+                    setShowCitySearch(false);
+                    setShowPremiumDialog(true);
+                  }}
+                  className="w-full py-2 bg-shake-yellow text-black rounded-lg text-sm font-medium hover:opacity-90 transition-all"
+                >
+                  Become a Super-Human
+                </button>
               </div>
             )}
           </div>
