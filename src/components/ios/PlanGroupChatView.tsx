@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Send, Users, User, Trash2, MapPin, Calendar, Clock, FileText } from "lucide-react";
+import { ChevronLeft, Send, Users, User, Trash2, MapPin, FileText } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -196,9 +196,6 @@ export function PlanGroupChatView({
     }
   };
 
-  const scheduledDate = new Date(activity.scheduled_for);
-  const formattedDate = format(scheduledDate, "EEEE, MMMM d");
-  const formattedTime = format(scheduledDate, "h:mm a");
   const creatorProfile = profiles[activity.user_id];
 
   return (
@@ -225,38 +222,34 @@ export function PlanGroupChatView({
         </button>
       </div>
 
-      {/* Activity Details Card */}
-      <div className="mx-4 mt-1 p-3 bg-white/50 rounded-lg border border-border/30 shrink-0">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-          <Calendar className="w-4 h-4" />
-          <span>{formattedDate}</span>
-          <Clock className="w-4 h-4 ml-2" />
-          <span>{formattedTime}</span>
+      {/* Activity Details Card - only show if there's a note or venue info */}
+      {(activity.note || (activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "brunch")) && (
+        <div className="mx-4 mt-1 p-3 bg-white/50 rounded-lg border border-border/30 shrink-0">
+          {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "brunch") && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <MapPin className="w-4 h-4" />
+              {mapsUrl ? (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  {location}
+                </a>
+              ) : (
+                <span>{location}</span>
+              )}
+            </div>
+          )}
+          {activity.note && (
+            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+              <FileText className="w-4 h-4 mt-0.5" />
+              <span>{activity.note}</span>
+            </div>
+          )}
         </div>
-        {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "brunch") && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <MapPin className="w-4 h-4" />
-            {mapsUrl ? (
-              <a
-                href={mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                {location}
-              </a>
-            ) : (
-              <span>{location}</span>
-            )}
-          </div>
-        )}
-        {activity.note && (
-          <div className="flex items-start gap-2 text-sm text-muted-foreground">
-            <FileText className="w-4 h-4 mt-0.5" />
-            <span>{activity.note}</span>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
