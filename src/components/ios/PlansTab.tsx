@@ -254,6 +254,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
   const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
   const [selectedCarouselActivity, setSelectedCarouselActivity] = useState<PlanActivity | null>(null);
   const [showCarouselChatView, setShowCarouselChatView] = useState(false);
+  const [mapOnlyMode, setMapOnlyMode] = useState(true); // Default to map-only view
 
   // Notify parent when entering/leaving chat view
   useEffect(() => {
@@ -631,7 +632,8 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
       <PlansMapDialog 
         open={showMap} 
         onOpenChange={setShowMap} 
-        city={selectedCity} 
+        city={selectedCity}
+        mapOnlyMode={mapOnlyMode}
       />
 
       <PremiumDialog 
