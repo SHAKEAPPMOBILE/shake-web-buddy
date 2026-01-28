@@ -296,16 +296,55 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              <button
-                onClick={() => setShowCreateDialog(true)}
-                className="px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all flex items-center gap-1"
-                style={{
-                  background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
-                }}
-              >
-                <Plus className="w-4 h-4 sm:mr-1" />
-                <span className="hidden sm:inline">Create Plan</span>
-              </button>
+              {mapOnlyMode ? (
+                /* City search for map-only mode */
+                <div className="relative">
+                  <div className="flex items-center gap-1">
+                    <Search className="w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search city..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setShowCitySuggestions(true);
+                      }}
+                      onFocus={() => setShowCitySuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowCitySuggestions(false), 150)}
+                      className="h-8 w-32 sm:w-48 text-sm bg-background"
+                    />
+                  </div>
+                  {/* City suggestions dropdown */}
+                  {showCitySuggestions && citySuggestions.length > 0 && (
+                    <div className="absolute top-full right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                      {citySuggestions.map((cityItem) => (
+                        <button
+                          key={cityItem.name}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelectCity(cityItem.name);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors flex items-center justify-between"
+                        >
+                          <span className="font-medium">{cityItem.name}</span>
+                          <span className="text-xs text-muted-foreground">{cityItem.country}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowCreateDialog(true)}
+                  className="px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all flex items-center gap-1"
+                  style={{
+                    background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+                  }}
+                >
+                  <Plus className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Create Plan</span>
+                </button>
+              )}
             </div>
           </div>
 
