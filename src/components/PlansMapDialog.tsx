@@ -354,7 +354,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
             {isMobile ? (
               <>
                 {(mobileView === 'map' || mapOnlyMode) && (
-                  <div className="flex-1 h-full">
+                  <div className="flex-1 h-full relative">
                     <WorldMap
                       ref={mapRef}
                       activities={activities}
@@ -362,6 +362,20 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                       selectedActivityId={selectedActivity?.id}
                       initialCity={city}
                     />
+                    {/* Floating Action Button for creating plans in map-only mode */}
+                    {mapOnlyMode && (
+                      <button
+                        onClick={() => setShowCreateDialog(true)}
+                        className="absolute bottom-6 right-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white hover:scale-105 transition-transform z-20"
+                        style={{
+                          background: "linear-gradient(135deg, rgba(88, 28, 135, 0.95), rgba(67, 56, 202, 0.9))",
+                          boxShadow: "0 4px 20px rgba(88, 28, 135, 0.4)",
+                        }}
+                        aria-label="Create new plan"
+                      >
+                        <Plus className="w-6 h-6" />
+                      </button>
+                    )}
                   </div>
                 )}
                 {mobileView === 'list' && !mapOnlyMode && (
