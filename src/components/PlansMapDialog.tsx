@@ -62,6 +62,12 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
 
   // Handle city selection from suggestions
   const handleSelectCity = (cityName: string) => {
+    // Premium gate: only Super-Human users can explore other cities
+    if (!isPremium && cityName.toLowerCase() !== city.toLowerCase()) {
+      setShowPremiumDialog(true);
+      return;
+    }
+    
     setSearchQuery(cityName);
     setShowCitySuggestions(false);
     // Fly to the city on the map
@@ -362,20 +368,6 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                       selectedActivityId={selectedActivity?.id}
                       initialCity={city}
                     />
-                    {/* Floating Action Button for creating plans in map-only mode */}
-                    {mapOnlyMode && (
-                      <button
-                        onClick={() => setShowCreateDialog(true)}
-                        className="absolute bottom-6 right-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white hover:scale-105 transition-transform z-20"
-                        style={{
-                          background: "linear-gradient(135deg, rgba(88, 28, 135, 0.95), rgba(67, 56, 202, 0.9))",
-                          boxShadow: "0 4px 20px rgba(88, 28, 135, 0.4)",
-                        }}
-                        aria-label="Create new plan"
-                      >
-                        <Plus className="w-6 h-6" />
-                      </button>
-                    )}
                   </div>
                 )}
                 {mobileView === 'list' && !mapOnlyMode && (
