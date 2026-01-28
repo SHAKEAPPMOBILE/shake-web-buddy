@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SuperHumanIcon } from "../SuperHumanIcon";
-import { Calendar, Users, Plus, Trash2, Plane, Share2, MapPin, Search, X } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Share2, MapPin, Search, X } from "lucide-react";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "../PremiumDialog";
@@ -16,6 +16,7 @@ import { LoadingSpinner } from "../LoadingSpinner";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import { Input } from "@/components/ui/input";
 import { SHAKE_CITIES } from "@/data/cities";
+import { SwipeableCard } from "../SwipeableCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -626,18 +627,12 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
           </div>
         ) : (
           activities.map((plan) => (
-            <div
+            <SwipeableCard
               key={plan.id}
-              role="button"
-              tabIndex={0}
+              canDelete={plan.user_id === user?.id && !plan.isCarouselJoin}
+              onDelete={() => setPlanToDelete(plan)}
               onClick={() => handlePlanClick(plan)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handlePlanClick(plan);
-                }
-              }}
-              className="w-full text-left rounded-2xl p-4 space-y-3 hover:opacity-90 transition-all cursor-pointer"
+              className="w-full text-left p-4 space-y-3 hover:opacity-90 cursor-pointer"
               style={{
                 background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
               }}
@@ -701,34 +696,20 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                   )}
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex items-center gap-2">
-                  {/* Share button - available for all plans */}
+                {/* Share button */}
+                <div className="flex items-center">
                   <button
                     type="button"
-                    onClick={(e) => handleSharePlan(plan, e)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSharePlan(plan, e);
+                    }}
                     className="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full transition-all shadow-sm"
                     title="Share with friends"
                     aria-label="Share plan"
                   >
                     <Share2 className="w-5 h-5" />
                   </button>
-
-                  {/* Delete button for own plans */}
-                  {plan.user_id === user?.id && !plan.isCarouselJoin && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPlanToDelete(plan);
-                      }}
-                      className="p-2.5 bg-white/20 hover:bg-destructive/80 text-white hover:text-white rounded-full transition-all shadow-sm"
-                      title="Delete plan"
-                      aria-label="Delete plan"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -744,7 +725,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                   <span className="text-sm text-white/70">+{plan.participant_count} joined</span>
                 )}
               </div>
-            </div>
+            </SwipeableCard>
           ))
         )}
       </div>
