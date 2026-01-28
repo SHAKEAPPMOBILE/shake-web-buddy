@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +54,8 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const { referralCode } = useReferralCode(user?.id);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showReferralLink, setShowReferralLink] = useState(false);
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleCopyReferralLink = async () => {
     const link = getReferralLink(referralCode);
@@ -128,6 +130,36 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
     await signOut();
     setShowSignOutConfirm(false);
     onSignOut?.();
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-account");
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Account deleted",
+        description: "Your account and all data have been permanently deleted.",
+      });
+      
+      // Sign out and redirect
+      await signOut();
+      onSignOut?.();
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast({
+        title: "Failed to delete account",
+        description: "Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteAccountConfirm(false);
+    }
   };
 
   return (
@@ -233,6 +265,20 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                 >
                   Go to Edit Profile
                 </button>
+                
+                {/* Delete Account Option */}
+                <div className="pt-3 border-t border-border/50">
+                  <button
+                    onClick={() => setShowDeleteAccountConfirm(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Account
+                  </button>
+                  <p className="text-xs text-muted-foreground text-center mt-1">
+                    Permanently delete your account and all data
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -407,6 +453,29 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
             <AlertDialogCancel>Stay Social</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmSignOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Sign Out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Account Confirmation */}
+      <AlertDialog open={showDeleteAccountConfirm} onOpenChange={setShowDeleteAccountConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your account, 
+              profile, messages, activities, and all associated data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteAccount} 
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete Account"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
