@@ -9,6 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
+import { useTranslation } from "react-i18next";
 
 interface PointsDashboardProps {
   userId: string | undefined;
@@ -26,6 +27,7 @@ interface ReferralWithProfile {
 }
 
 export function PointsDashboard({ userId }: PointsDashboardProps) {
+  const { t } = useTranslation();
   const { points, isLoading, refetch: refetchPoints } = useUserPoints(userId);
   const { isComplete, isClaimed, isLoading: bonusLoading, missingFields, claimBonus } = useWelcomeBonus(userId);
 
@@ -34,8 +36,8 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
     if (success) {
       refetchPoints();
       toast({
-        title: "🎉 Welcome Bonus Claimed!",
-        description: "You earned +10 points for completing your profile!",
+        title: t('points.bonusClaimedTitle', '🎉 Welcome Bonus Claimed!'),
+        description: t('points.bonusClaimedDesc', 'You earned +10 points for completing your profile!'),
         duration: 3000,
       });
     }
@@ -95,7 +97,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
         {/* Header */}
         <div className="flex items-center gap-2 mb-4">
           <img src={shakeCoin} alt="Points" className="w-8 h-8" />
-          <h3 className="text-lg font-display font-bold">My Points</h3>
+          <h3 className="text-lg font-display font-bold">{t('points.title', 'My Points')}</h3>
         </div>
 
         {/* Points display */}
@@ -103,7 +105,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
           <span className="text-4xl font-bold text-shake-yellow">
             {points.toLocaleString()}
           </span>
-          <span className="text-muted-foreground">points</span>
+          <span className="text-muted-foreground">{t('profile.points', 'points')}</span>
         </div>
 
         {/* Welcome Bonus Section */}
@@ -118,13 +120,13 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
                 <AlertCircle className="w-5 h-5 text-muted-foreground" />
               )}
               <div>
-                <p className="font-medium text-sm">Welcome Bonus</p>
+                <p className="font-medium text-sm">{t('points.welcomeBonus', 'Welcome Bonus')}</p>
                 <p className="text-xs text-muted-foreground">
                   {isClaimed 
-                    ? "Claimed! +10 points" 
+                    ? t('points.claimed', 'Claimed! +10 points')
                     : isComplete 
-                      ? "Ready to claim!" 
-                      : `Complete your profile (${missingFields.length} fields missing)`}
+                      ? t('points.readyToClaim', 'Ready to claim!')
+                      : t('points.completeProfile', 'Complete your profile ({{count}} fields missing)', { count: missingFields.length })}
                 </p>
               </div>
             </div>
@@ -134,13 +136,13 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
                 onClick={handleClaimBonus}
                 className="bg-shake-yellow hover:bg-shake-yellow/90 text-black"
               >
-                Claim +10
+                {t('points.claimButton', 'Claim +10')}
               </Button>
             )}
           </div>
           {!isClaimed && !isComplete && missingFields.length > 0 && (
             <div className="mt-2 text-xs text-muted-foreground">
-              Missing: {missingFields.join(", ")}
+              {t('points.missing', 'Missing')}: {missingFields.join(", ")}
             </div>
           )}
         </div>
@@ -149,32 +151,32 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
         <div className="bg-card/50 rounded-xl p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Sparkles className="w-4 h-4 text-shake-yellow" />
-            <span>How to earn points</span>
+            <span>{t('points.howToEarn', 'How to earn points')}</span>
           </div>
           
           <div className="space-y-3 text-sm text-muted-foreground">
             <div className="flex items-start gap-2">
               <Gift className="w-4 h-4 mt-0.5 text-shake-yellow shrink-0" />
               <span>
-                <strong className="text-foreground">Complete your profile</strong> — Earn +10 points when you fill out all profile fields
+                <strong className="text-foreground">{t('points.completeProfileDesc', 'Complete your profile')}</strong> — {t('points.completeProfilePoints', 'Earn +10 points when you fill out all profile fields')}
               </span>
             </div>
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 mt-0.5 text-shake-green shrink-0" />
               <span>
-                <strong className="text-foreground">Check in at venues</strong> — Earn +5 points when you check in at the venues of your activities
+                <strong className="text-foreground">{t('points.checkInVenues', 'Check in at venues')}</strong> — {t('points.checkInPoints', 'Earn +5 points when you check in at the venues of your activities')}
               </span>
             </div>
             <div className="flex items-start gap-2">
               <TrendingUp className="w-4 h-4 mt-0.5 text-primary shrink-0" />
               <span>
-                <strong className="text-foreground">Create popular activities</strong> — Earn +5 points for every 5 attendees on activities you create (10 attendees = +10 points, etc.)
+                <strong className="text-foreground">{t('points.createActivities', 'Create popular activities')}</strong> — {t('points.createActivitiesPoints', 'Earn +5 points for every 5 attendees on activities you create (10 attendees = +10 points, etc.)')}
               </span>
             </div>
             <div className="flex items-start gap-2">
               <UserPlus className="w-4 h-4 mt-0.5 text-purple-500 shrink-0" />
               <span>
-                <strong className="text-foreground">Invite friends</strong> — Earn +5 points when someone signs up using your referral link
+                <strong className="text-foreground">{t('points.inviteFriends', 'Invite friends')}</strong> — {t('points.inviteFriendsPoints', 'Earn +5 points when someone signs up using your referral link')}
               </span>
             </div>
           </div>
@@ -186,10 +188,10 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-purple-500" />
-            <h4 className="font-medium">Referrals</h4>
+            <h4 className="font-medium">{t('points.referrals', 'Referrals')}</h4>
           </div>
           <div className="flex items-center gap-1.5 text-sm">
-            <span className="text-muted-foreground">{referrals.length} friends</span>
+            <span className="text-muted-foreground">{referrals.length} {t('points.friends', 'friends')}</span>
             {totalReferralPoints > 0 && (
               <>
                 <span className="text-muted-foreground">•</span>
@@ -214,8 +216,8 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
         ) : referrals.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <UserPlus className="w-10 h-10 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No referrals yet</p>
-            <p className="text-xs mt-1">Share your link to earn +5 points per signup!</p>
+            <p className="text-sm">{t('points.noReferrals', 'No referrals yet')}</p>
+            <p className="text-xs mt-1">{t('points.shareToEarn', 'Share your link to earn +5 points per signup!')}</p>
           </div>
         ) : (
           <div className="space-y-3 max-h-48 overflow-y-auto">
