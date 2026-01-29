@@ -2,9 +2,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { startOfDay } from "date-fns";
-import { Plus } from "lucide-react";
+import { Plus, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +16,7 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { detectActivityFromText } from "@/lib/activityDetection";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
+import { supabase } from "@/integrations/supabase/client";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -43,8 +44,25 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const { isConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const isMobile = useIsMobile();
+  
+  // Fetch current user's avatar
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setUserAvatarUrl(data.avatar_url);
+      }
+    };
+    fetchUserProfile();
+  }, [user]);
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -72,7 +90,10 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
     });
   }, [myActivities]);
   
+  // For paid activities without Stripe connected, we still allow creation but will prompt for Stripe
   const isValid = planText.trim().length > 0 && !hasExistingActivityToday;
+  const isPaidActivity = priceAmount.trim().length > 0;
+  const needsStripeSetup = isPaidActivity && (!isConnected || connectStatus !== "complete");
 
   const handleCreate = async () => {
     if (!isValid || !detectedActivity) return;
@@ -249,7 +270,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             </div>
 
             {/* Preview - shows detected activity or warning */}
-            {detectedActivity && planText.trim() && (
+            {planText.trim() && (
               <div className={cn(
                 "p-4 rounded-xl space-y-2",
                 hasExistingActivityToday ? "bg-destructive/10 border border-destructive/30" : "bg-muted/50"
@@ -262,9 +283,24 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   <>
                     <p className="text-sm font-medium text-foreground">Preview:</p>
                     <div className="flex items-center gap-3">
-                      <span className={cn("text-4xl p-3 rounded-xl", detectedActivity.color)}>
-                        {detectedActivity.emoji}
-                      </span>
+                      {/* Show emoji only if activity detected, otherwise show user avatar */}
+                      {detectedActivity ? (
+                        <span className={cn("text-4xl p-3 rounded-xl", detectedActivity.color)}>
+                          {detectedActivity.emoji}
+                        </span>
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                          {userAvatarUrl ? (
+                            <img 
+                              src={userAvatarUrl} 
+                              alt="Your avatar" 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-6 h-6 text-muted-foreground" />
+                          )}
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -285,17 +321,19 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             {/* Create Button */}
             <button
               onClick={handleCreate}
-              disabled={!isValid || isLoading}
+              disabled={!isValid || isLoading || connectLoading}
               className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50"
               style={{
                 background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
               }}
             >
-              {isLoading ? (
+              {isLoading || connectLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <LoadingSpinner size="sm" />
-                  Creating...
+                  {connectLoading ? "Checking payment setup..." : "Creating..."}
                 </span>
+              ) : needsStripeSetup ? (
+                "Set Up Payments & Create"
               ) : (
                 "Create Plan"
               )}
