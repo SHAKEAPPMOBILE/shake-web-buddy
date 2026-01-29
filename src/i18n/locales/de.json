@@ -1,0 +1,115 @@
+{
+  "common": {
+    "loading": "Laden...",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "close": "Schließen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "search": "Suchen",
+    "noResults": "Keine Ergebnisse gefunden",
+    "error": "Ein Fehler ist aufgetreten",
+    "success": "Erfolg!",
+    "welcome": "Willkommen",
+    "signIn": "Anmelden",
+    "signUp": "Registrieren",
+    "signOut": "Abmelden",
+    "or": "oder",
+    "and": "und"
+  },
+  "home": {
+    "title": "Shake",
+    "subtitle": "Lerne Leute kennen. Finde Freunde.",
+    "joinActivity": "Aktivität beitreten",
+    "createActivity": "Aktivität erstellen",
+    "noActivities": "Noch keine Aktivitäten",
+    "beFirstToCreate": "Sei der Erste und erstelle eine!",
+    "peopleJoined": "{{count}} Personen sind dabei",
+    "expiresIn": "Läuft ab in {{time}}"
+  },
+  "activities": {
+    "brunch": "Brunch",
+    "lunch": "Mittagessen",
+    "dinner": "Abendessen",
+    "drinks": "Drinks",
+    "coffee": "Kaffee",
+    "hiking": "Wandern",
+    "fitness": "Fitness",
+    "tennisPadel": "Tennis/Padel",
+    "culture": "Kultur",
+    "games": "Spiele",
+    "party": "Party",
+    "selectActivity": "Wähle eine Aktivität",
+    "whatDoYouWantToDo": "Was möchtest du machen?"
+  },
+  "chat": {
+    "title": "Chat",
+    "noMessages": "Noch keine Nachrichten",
+    "startConversation": "Starte eine Unterhaltung",
+    "typeMessage": "Nachricht eingeben...",
+    "send": "Senden",
+    "groupChat": "Gruppenchat",
+    "privateMessage": "Private Nachricht"
+  },
+  "plans": {
+    "title": "Pläne",
+    "myPlans": "Meine Pläne",
+    "upcomingPlans": "Kommende Pläne",
+    "noPlanYet": "Noch keine Pläne",
+    "createPlan": "Plan erstellen",
+    "joinPlan": "Plan beitreten",
+    "participants": "Teilnehmer",
+    "scheduledFor": "Geplant für"
+  },
+  "profile": {
+    "title": "Profil",
+    "editProfile": "Profil bearbeiten",
+    "myPoints": "Meine Punkte",
+    "manageSubscription": "Abonnement verwalten",
+    "shareReferral": "Empfehlungslink teilen",
+    "settings": "Einstellungen",
+    "name": "Name",
+    "occupation": "Beruf",
+    "nationality": "Nationalität",
+    "birthday": "Geburtstag",
+    "phone": "Telefon",
+    "socialLinks": "Soziale Medien",
+    "deleteAccount": "Konto löschen",
+    "superHuman": "Super-Mensch",
+    "premium": "Premium",
+    "points": "Punkte",
+    "referralCode": "Empfehlungscode",
+    "copyLink": "Link kopieren",
+    "linkCopied": "Link kopiert!"
+  },
+  "auth": {
+    "enterPhone": "Gib deine Telefonnummer ein",
+    "verifyCode": "Gib den Bestätigungscode ein",
+    "codeSent": "Code gesendet an {{phone}}",
+    "resendCode": "Code erneut senden",
+    "continueWithPhone": "Mit Telefon fortfahren",
+    "termsAgreement": "Durch Fortfahren stimmst du unseren Nutzungsbedingungen und Datenschutzrichtlinien zu"
+  },
+  "languageSelector": {
+    "swipeToSelect": "Wische, um deine Sprache auszuwählen",
+    "detecting": "Erkennung..."
+  },
+  "citySelector": {
+    "selectCity": "Wähle eine Stadt",
+    "currentCity": "Aktuelle Stadt"
+  },
+  "notifications": {
+    "newMessage": "Neue Nachricht",
+    "activityUpdate": "Aktivitäts-Update",
+    "planReminder": "Plan-Erinnerung"
+  },
+  "errors": {
+    "networkError": "Netzwerkfehler. Bitte versuche es erneut.",
+    "unauthorized": "Du musst dich anmelden.",
+    "notFound": "Seite nicht gefunden",
+    "serverError": "Serverfehler. Bitte versuche es später erneut."
+  }
+}

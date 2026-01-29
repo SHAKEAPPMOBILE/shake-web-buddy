@@ -11,6 +11,7 @@ import { format, isToday, isTomorrow } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingSpinner } from "../LoadingSpinner";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +40,7 @@ interface ChatTabProps {
 }
 
 export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHandled }: ChatTabProps = {}) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
@@ -343,9 +345,9 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
         <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
           <MessageSquare className="w-10 h-10 text-muted-foreground" />
         </div>
-        <h2 className="text-xl font-display font-bold mb-2">Sign in to chat</h2>
+        <h2 className="text-xl font-display font-bold mb-2">{t('common.signIn')}</h2>
         <p className="text-muted-foreground mb-6">
-          Join activities and connect with others
+          {t('chat.startConversation')}
         </p>
         <button
           onClick={() => navigate("/auth")}
@@ -354,7 +356,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
             background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
           }}
         >
-          Sign In
+          {t('common.signIn')}
         </button>
       </div>
     );
@@ -387,7 +389,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h2 className="text-lg font-display font-bold">My Chats</h2>
+        <h2 className="text-lg font-display font-bold">{t('chat.title')}</h2>
         <div className="flex items-center gap-2">
           {/* City Filter */}
           {availableCities.length > 1 && (

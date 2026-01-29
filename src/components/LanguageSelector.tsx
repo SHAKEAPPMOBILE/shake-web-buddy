@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLanguage, supportedLanguages, Language } from "@/contexts/LanguageContext";
+import { useLanguage, supportedLanguages, translatedLanguages, Language } from "@/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 
 interface LanguageSelectorProps {
   className?: string;
@@ -9,6 +10,7 @@ interface LanguageSelectorProps {
 }
 
 export function LanguageSelector({ className, showLabel = true }: LanguageSelectorProps) {
+  const { t } = useTranslation();
   const { selectedLanguage, setSelectedLanguage, isDetecting } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -83,7 +85,7 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
     return (
       <div className={cn("flex items-center justify-center gap-2 text-muted-foreground", className)}>
         <Globe className="h-4 w-4 animate-pulse" />
-        <span className="text-sm">Detecting...</span>
+        <span className="text-sm">{t('languageSelector.detecting')}</span>
       </div>
     );
   }
@@ -128,7 +130,7 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
             )}
           >
           <p className="text-xs text-muted-foreground text-center mb-2">
-            Swipe to select your language
+            {t('languageSelector.swipeToSelect')}
           </p>
           
           {/* Scrollable Flag Carousel */}

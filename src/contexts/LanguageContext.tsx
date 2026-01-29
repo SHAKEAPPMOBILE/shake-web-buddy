@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface Language {
   code: string;
@@ -6,6 +7,9 @@ export interface Language {
   flag: string;
   nativeName: string;
 }
+
+// Languages with full translation support
+export const translatedLanguages = ["en", "es", "pt", "fr", "de"];
 
 export const supportedLanguages: Language[] = [
   { code: "en", name: "English", flag: "🇺🇸", nativeName: "English" },
@@ -84,6 +88,8 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const { i18n } = useTranslation();
+  
   const [selectedLanguage, setSelectedLanguageState] = useState<Language>(
     () => {
       // Try to load from localStorage
@@ -170,6 +176,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const setSelectedLanguage = (language: Language) => {
     setSelectedLanguageState(language);
     localStorage.setItem("shake-language", JSON.stringify({ code: language.code }));
+    
+    // Update i18n language - use the language if translated, otherwise fallback to English
+    const i18nLang = translatedLanguages.includes(language.code) ? language.code : 'en';
+    i18n.changeLanguage(i18nLang);
   };
 
   return (

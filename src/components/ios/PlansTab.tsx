@@ -17,6 +17,7 @@ import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import { Input } from "@/components/ui/input";
 import { SHAKE_CITIES } from "@/data/cities";
 import { SwipeableCard } from "../SwipeableCard";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +49,7 @@ interface PlansTabProps {
 }
 
 export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
+  const { t } = useTranslation();
   const { selectedCity } = useCity();
   const { user, isPremium } = useAuth();
   const { referralCode } = useReferralCode(user?.id);
@@ -472,7 +474,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
       {/* Header */}
       <div className="flex flex-col px-4 py-3 border-b border-border gap-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-display font-bold">Your Plans</h2>
+          <h2 className="text-lg font-display font-bold">{t('plans.myPlans')}</h2>
           <div className="flex items-center gap-2">
             {/* City Search Toggle */}
             <button

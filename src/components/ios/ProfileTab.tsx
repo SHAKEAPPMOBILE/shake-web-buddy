@@ -16,6 +16,7 @@ import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
 import { LanguageSelector } from "../LanguageSelector";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +39,7 @@ interface ProfileTabProps {
 }
 
 export function ProfileTab({ onSignOut }: ProfileTabProps) {
+  const { t } = useTranslation();
   const { user, isPremium, signOut } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
       await navigator.clipboard.writeText(link);
       setCopiedLink(true);
       toast({
-        title: "Link copied!",
+        title: t('profile.linkCopied'),
         description: "Share it with friends to earn points",
       });
       setTimeout(() => setCopiedLink(false), 2000);
@@ -216,7 +218,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               <Settings className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 text-left">
-              <span className="font-medium">Edit Profile</span>
+              <span className="font-medium">{t('profile.editProfile')}</span>
               <p className="text-xs text-muted-foreground">Update your info</p>
             </div>
           </button>
@@ -233,7 +235,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                   }}
                   className="w-full py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
                 >
-                  Go to Edit Profile
+                  {t('profile.editProfile')}
                 </button>
                 
               </div>
@@ -254,8 +256,8 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               <img src={shakeCoin} alt="Points" className="w-6 h-6" />
             </div>
             <div className="flex-1 text-left">
-              <span className="font-medium">My Points</span>
-              <p className="text-xs text-muted-foreground">{points.toLocaleString()} points earned</p>
+              <span className="font-medium">{t('profile.myPoints')}</span>
+              <p className="text-xs text-muted-foreground">{points.toLocaleString()} {t('profile.points')} earned</p>
             </div>
           </button>
           {showPointsDialog && (
@@ -274,10 +276,10 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               <div className="w-10 h-10 rounded-full bg-shake-green/10 flex items-center justify-center">
                 <CreditCard className="w-5 h-5 text-shake-green" />
               </div>
-              <div className="flex-1 text-left">
-                <span className="font-medium">Manage Subscription</span>
-                <p className="text-xs text-muted-foreground">Super-Human active</p>
-              </div>
+            <div className="flex-1 text-left">
+              <span className="font-medium">{t('profile.manageSubscription')}</span>
+              <p className="text-xs text-muted-foreground">{t('profile.superHuman')} active</p>
+            </div>
             </button>
             {showSubscriptionDropdown && (
               <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
@@ -330,8 +332,8 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               <Share2 className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 text-left">
-              <span className="font-medium">Share Referral Link</span>
-              <p className="text-xs text-muted-foreground">Earn +5 points per signup</p>
+              <span className="font-medium">{t('profile.shareReferral')}</span>
+              <p className="text-xs text-muted-foreground">Earn +5 {t('profile.points')} per signup</p>
             </div>
           </button>
           {showReferralLink && referralCode && (
@@ -384,7 +386,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
             <LogOut className="w-5 h-5 text-destructive" />
           </div>
-          <span className="font-medium text-destructive">Antisocial</span>
+          <span className="font-medium text-destructive">{t('common.signOut')}</span>
         </button>
       </div>
 
