@@ -226,7 +226,20 @@ export function PlanGroupChatView({
             {activity.note || t('plans.untitledPlan', 'Untitled Plan')}
           </h1>
           <p className="text-sm text-black/60 truncate">
-            {t('chat.createdBy', 'Created by')} {creatorProfile?.name || "Shaker"}
+            {t('chat.createdBy', 'Created by')}{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedUserProfile({
+                  userId: activity.user_id,
+                  userName: creatorProfile?.name || null,
+                  avatarUrl: creatorProfile?.avatar_url || null,
+                });
+              }}
+              className="underline hover:text-black/80 transition-colors font-medium"
+            >
+              {creatorProfile?.name || "Shaker"}
+            </button>
           </p>
         </div>
         <button
