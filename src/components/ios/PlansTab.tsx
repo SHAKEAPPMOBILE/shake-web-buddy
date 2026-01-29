@@ -9,6 +9,8 @@ import { PlanGroupChatView } from "./PlanGroupChatView";
 import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
+import { formatDateWithTranslation } from "@/lib/date-utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -49,7 +51,8 @@ interface PlansTabProps {
 }
 
 export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { selectedLanguage } = useLanguage();
   const { selectedCity } = useCity();
   const { user, isPremium } = useAuth();
   const { referralCode } = useReferralCode(user?.id);
@@ -342,7 +345,28 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     return activity?.emoji || "📍";
   };
 
+  // Map activity type to translation key
+  const activityKeyMap: Record<string, string> = {
+    lunch: "lunch",
+    dinner: "dinner",
+    drinks: "drinks",
+    brunch: "brunch",
+    hike: "hike",
+    surf: "surf",
+    run: "run",
+    "co-working": "coWorking",
+    basketball: "basketball",
+    "tennis-padel": "tennisPadel",
+    football: "football",
+    shopping: "shopping",
+    arts: "arts",
+  };
+
   const getActivityLabel = (type: string) => {
+    const key = activityKeyMap[type];
+    if (key) {
+      return t(`activities.${key}`, type);
+    }
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
     return activity?.label || type;
   };
@@ -412,7 +436,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     
     const activityLabel = getActivityLabel(plan.activity_type);
     const activityEmoji = getActivityEmoji(plan.activity_type);
-    const dateStr = format(new Date(plan.scheduled_for), "EEE, d MMM");
+    const dateStr = formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code);
     
     const shareUrl = getReferralLink(referralCode);
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
@@ -496,7 +520,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
               }}
             >
               <Plus className="w-4 h-4" />
-              Create
+              {t('common.create')}
             </button>
           </div>
         </div>
@@ -512,9 +536,9 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                     <Input
                       ref={searchInputRef}
                       type="text"
-                      placeholder="Search city..."
-                      value={citySearchQuery}
-                      onChange={(e) => {
+                    placeholder={t('plans.searchCity')}
+                    value={citySearchQuery}
+                    onChange={(e) => {
                         setCitySearchQuery(e.target.value);
                         setShowCitySuggestions(true);
                       }}
@@ -539,7 +563,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                       onClick={handleResetToMyCity}
                       className="text-xs text-primary whitespace-nowrap"
                     >
-                      Reset to my city
+                      {t('plans.resetToMyCity')}
                     </button>
                   )}
                 </div>
@@ -560,7 +584,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                       ))
                     ) : (
                       <div className="px-4 py-3 text-sm text-muted-foreground">
-                        No cities found
+                        {t('plans.noCitiesFound')}
                       </div>
                     )}
                   </div>
@@ -574,12 +598,12 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                     <SuperHumanIcon size={20} />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm">Explore Plans Worldwide</h4>
-                    <p className="text-xs text-muted-foreground">Super-Human feature</p>
+                    <h4 className="font-semibold text-sm">{t('plans.explorePlansWorldwide')}</h4>
+                    <p className="text-xs text-muted-foreground">{t('plans.superHumanFeature')}</p>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Become a Super-Human to browse and join plans in any city around the world!
+                  {t('plans.browseAndJoinPlans')}
                 </p>
                 <button
                   onClick={() => {
@@ -588,7 +612,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                   }}
                   className="w-full py-2 bg-shake-yellow text-black rounded-lg text-sm font-medium hover:opacity-90 transition-all"
                 >
-                  Become a Super-Human
+                  {t('plans.becomeaSuperHuman')}
                 </button>
               </div>
             )}
@@ -607,13 +631,13 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <MapPin className="w-8 h-8 text-muted-foreground" />
             </div>
-            <p className="text-muted-foreground">No plans in {searchCity}</p>
+            <p className="text-muted-foreground">{t('plans.noPlansInCity', { city: searchCity })}</p>
             {searchCity !== selectedCity && (
               <button
                 onClick={handleResetToMyCity}
                 className="mt-3 text-sm text-primary hover:underline"
               >
-                Back to {selectedCity}
+                {t('plans.backTo', { city: selectedCity })}
               </button>
             )}
             <button
@@ -624,7 +648,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
               }}
             >
               <Plus className="w-4 h-4" />
-              Create one
+              {t('plans.createOne')}
             </button>
           </div>
         ) : (
@@ -660,7 +684,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                     <h3 className="font-semibold text-white">{getActivityLabel(plan.activity_type)}</h3>
                     {plan.isJoined && (
                       <span className="text-xs bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">
-                        Joined
+                        {t('common.joined')}
                       </span>
                     )}
                   </div>
@@ -669,7 +693,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                     <MapPin className="w-3 h-3 text-white/60" />
                     <span className="text-xs text-white/70">{plan.city}</span>
                     {!plan.isCarouselJoin && (
-                      <span className="text-xs text-white/50">• by {plan.creator_name || "Anonymous"}</span>
+                      <span className="text-xs text-white/50">• {t('common.by')} {plan.creator_name || "Anonymous"}</span>
                     )}
                   </div>
 
@@ -677,16 +701,16 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                     <div className="flex items-center gap-2 mt-1">
                       <Calendar className="w-3.5 h-3.5 text-white/70" />
                       <span className="text-sm text-white/70">
-                        {format(new Date(plan.scheduled_for), "EEE, d MMM")}
+                        {formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
                       </span>
                       {isToday(new Date(plan.scheduled_for)) && (
                         <span className="text-xs bg-shake-yellow text-black font-semibold px-2 py-0.5 rounded-full animate-pulse">
-                          Today
+                          {t('common.today')}
                         </span>
                       )}
                       {isTomorrow(new Date(plan.scheduled_for)) && (
                         <span className="text-xs bg-primary/80 text-white font-semibold px-2 py-0.5 rounded-full">
-                          Tomorrow
+                          {t('common.tomorrow')}
                         </span>
                       )}
                     </div>
@@ -724,7 +748,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                   </AvatarFallback>
                 </Avatar>
                 {plan.participant_count > 0 && (
-                  <span className="text-sm text-white/70">+{plan.participant_count} joined</span>
+                  <span className="text-sm text-white/70">+{plan.participant_count} {t('common.joined').toLowerCase()}</span>
                 )}
               </div>
             </SwipeableCard>
