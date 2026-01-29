@@ -113,10 +113,10 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
       {isOpen && (
         <div 
           className={cn(
-            "absolute left-1/2 -translate-x-1/2 mt-2 z-50",
+            "absolute right-0 mt-2 z-50",
             "bg-card border border-border rounded-2xl shadow-xl",
             "p-3 animate-scale-in",
-            "w-[280px] max-w-[90vw]"
+            "w-[280px]"
           )}
         >
           <p className="text-xs text-muted-foreground text-center mb-2">
