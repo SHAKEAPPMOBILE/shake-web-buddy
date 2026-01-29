@@ -23,6 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { SHAKE_CITIES } from "@/data/cities";
+import { useActivityPayment } from "@/hooks/useActivityPayment";
 
 interface PlansMapDialogProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
   const { user, isPremium } = useAuth();
   const { activities, isLoading, refetch: refetchActivities } = useAllActivities();
   const { joinActivity, hasJoinedActivity, myActivities } = useUserActivities(city);
+  const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
   const { getLocationString, getMapsUrl } = useVenueContext();
   const isMobile = useIsMobile();
   const mapRef = useRef<WorldMapHandle>(null);
@@ -50,6 +52,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
   const [joinedActivityInfo, setJoinedActivityInfo] = useState<{ label: string; emoji: string; city: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [processingActivityId, setProcessingActivityId] = useState<string | null>(null);
 
   // Get city suggestions based on search query
   const citySuggestions = useMemo(() => {
@@ -155,6 +158,19 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
 
   const handleJoin = async (activity: UserActivity) => {
     const result = await joinActivity(activity.id, isPremium);
+    
+    // Handle paid activity - redirect to payment
+    if (result.requiresPayment) {
+      setProcessingActivityId(activity.id);
+      const success = await redirectToPayment(activity.id);
+      setProcessingActivityId(null);
+      // Don't set as joined - that will happen after payment success webhook
+      if (!success) {
+        toast.error("Could not start payment process");
+      }
+      return;
+    }
+    
     if (result.requiresPremium) {
       setShowPremiumDialog(true);
       return;
@@ -640,8 +656,17 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                       Open Chat
                     </Button>
                   ) : (
-                    <Button onClick={() => handleJoin(selectedActivity)}>
-                      Join Plan
+                    <Button 
+                      onClick={() => handleJoin(selectedActivity)}
+                      disabled={processingActivityId === selectedActivity.id || paymentLoading}
+                    >
+                      {processingActivityId === selectedActivity.id ? (
+                        "Processing..."
+                      ) : selectedActivity.price_amount ? (
+                        `Pay ${selectedActivity.price_amount} to Join`
+                      ) : (
+                        "Join Plan"
+                      )}
                     </Button>
                   )}
                 </div>
