@@ -9,6 +9,8 @@ import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
+import { formatDateWithTranslation } from "@/lib/date-utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { useTranslation } from "react-i18next";
@@ -40,7 +42,8 @@ interface ChatTabProps {
 }
 
 export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHandled }: ChatTabProps = {}) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { selectedLanguage } = useLanguage();
   const { user } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
@@ -307,7 +310,28 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
     return activity?.emoji || "📍";
   };
 
+  // Map activity type to translation key
+  const activityKeyMap: Record<string, string> = {
+    lunch: "lunch",
+    dinner: "dinner",
+    drinks: "drinks",
+    brunch: "brunch",
+    hike: "hike",
+    surf: "surf",
+    run: "run",
+    "co-working": "coWorking",
+    basketball: "basketball",
+    "tennis-padel": "tennisPadel",
+    football: "football",
+    shopping: "shopping",
+    arts: "arts",
+  };
+
   const getActivityLabel = (type: string) => {
+    const key = activityKeyMap[type];
+    if (key) {
+      return t(`activities.${key}`, type);
+    }
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
     return activity?.label || type;
   };
@@ -405,7 +429,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                   onClick={() => setCityFilter("all")}
                   className={cityFilter === "all" ? "bg-primary/10" : ""}
                 >
-                  All cities
+                  {t('common.allCities')}
                 </DropdownMenuItem>
                 {availableCities.map((city) => (
                   <DropdownMenuItem 
@@ -435,19 +459,19 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
             </div>
             {activities.length === 0 ? (
               <>
-                <p className="text-muted-foreground mb-1">No active chats</p>
+                <p className="text-muted-foreground mb-1">{t('common.noActiveChats')}</p>
                 <p className="text-sm text-muted-foreground">
-                  Join an activity to start chatting
+                  {t('common.joinActivityToChat')}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-muted-foreground">No chats in {cityFilter}</p>
+                <p className="text-muted-foreground">{t('common.noChatsInCity', { city: cityFilter })}</p>
                 <button
                   onClick={() => setCityFilter("all")}
                   className="mt-3 text-sm text-primary hover:underline"
                 >
-                  Show all cities
+                  {t('common.showAllCities')}
                 </button>
               </>
             )}
@@ -498,7 +522,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                     <h3 className="font-semibold text-white">{getActivityLabel(activity.activity_type)}</h3>
                     {activity.is_plan && (
                       <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
-                        Plan
+                        {t('common.plan')}
                       </span>
                     )}
                   </div>
@@ -507,7 +531,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                     <MapPin className="w-3 h-3 text-white/60" />
                     <span className="text-xs text-white/70">{activity.city}</span>
                     {activity.is_plan && activity.creator_name && (
-                      <span className="text-xs text-white/50">• by {activity.creator_name}</span>
+                      <span className="text-xs text-white/50">• {t('common.by')} {activity.creator_name}</span>
                     )}
                   </div>
 
@@ -515,16 +539,16 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                     <div className="flex items-center gap-2 mt-1">
                       <Calendar className="w-3.5 h-3.5 text-white/70" />
                       <span className="text-sm text-white/70">
-                        {format(new Date(activity.scheduled_for), "EEE, d MMM")}
+                        {formatDateWithTranslation(new Date(activity.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
                       </span>
                       {isToday(new Date(activity.scheduled_for)) && (
                         <span className="text-xs bg-shake-yellow text-black font-semibold px-2 py-0.5 rounded-full animate-pulse">
-                          Today
+                          {t('common.today')}
                         </span>
                       )}
                       {isTomorrow(new Date(activity.scheduled_for)) && (
                         <span className="text-xs bg-primary/80 text-white font-semibold px-2 py-0.5 rounded-full">
-                          Tomorrow
+                          {t('common.tomorrow')}
                         </span>
                       )}
                     </div>
@@ -533,7 +557,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                   <div className="flex items-center gap-1 mt-1">
                     <Users className="w-3.5 h-3.5 text-white/70" />
                     <span className="text-sm text-white/70">
-                      {activity.participant_count} {activity.participant_count === 1 ? "person" : "people"}
+                      {activity.participant_count} {activity.participant_count === 1 ? t('common.person') : t('common.people')}
                     </span>
                   </div>
                 </div>

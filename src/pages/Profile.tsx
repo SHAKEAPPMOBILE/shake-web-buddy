@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { ChangePhoneDialog } from "@/components/ChangePhoneDialog";
 import { PointsDisplay } from "@/components/PointsDisplay";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { user, isLoading: authLoading, isPremium, signOut, updatePassword } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -278,7 +280,7 @@ export default function Profile() {
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
-            <span className="text-sm font-medium">Back</span>
+            <span className="text-sm font-medium">{t('common.back')}</span>
           </button>
           <button
             onClick={handleSaveProfile}
@@ -293,7 +295,7 @@ export default function Profile() {
             ) : (
               <Save className="w-4 h-4" />
             )}
-            Save
+            {t('common.save')}
           </button>
         </div>
       </header>
@@ -358,18 +360,18 @@ export default function Profile() {
           <div className="space-y-4">
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">{t('profile.name')}</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
+                placeholder={t('profile.name')}
               />
             </div>
 
             {/* Phone */}
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">{t('profile.phone')}</Label>
               <div className="space-y-2">
                 <Input
                   id="phone"
@@ -415,12 +417,12 @@ export default function Profile() {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <span className="text-lg">🌍</span>
-                Nationality
+                {t('profile.nationality')}
               </Label>
               <NationalitySelector
                 value={nationality}
                 onChange={setNationality}
-                placeholder="Select your nationality"
+                placeholder={t('profile.nationality')}
               />
             </div>
 
@@ -428,19 +430,19 @@ export default function Profile() {
             <div className="space-y-2">
               <Label htmlFor="occupation" className="flex items-center gap-2">
                 <span className="text-lg">💼</span>
-                Occupation
+                {t('profile.occupation')}
               </Label>
               <Input
                 id="occupation"
                 value={occupation}
                 onChange={(e) => setOccupation(e.target.value)}
-                placeholder="e.g. Software Engineer, Designer, Student"
+                placeholder={t('profile.occupation')}
               />
             </div>
 
             {/* Social Links Section */}
             <div className="pt-4 border-t border-border">
-              <h3 className="text-sm font-medium mb-4">Social Links</h3>
+              <h3 className="text-sm font-medium mb-4">{t('profile.socialLinks')}</h3>
               
               {/* Instagram */}
               <div className="space-y-2 mb-4">
@@ -600,7 +602,7 @@ export default function Profile() {
               <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
                 <LogOut className="w-5 h-5 text-destructive" />
               </div>
-              <span className="font-medium text-destructive">Delete Account</span>
+              <span className="font-medium text-destructive">{t('profile.deleteAccount')}</span>
             </button>
             <p className="text-xs text-muted-foreground text-center mt-2">
               Permanently delete your account and all data
