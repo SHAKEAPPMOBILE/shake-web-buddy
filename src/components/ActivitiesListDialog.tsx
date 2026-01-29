@@ -151,14 +151,14 @@ export function ActivitiesListDialog({
                   const activityConfig = getActivityConfig(activity.activity_type);
                   const hasMatchedActivity = activityConfig.emoji !== '📍';
                   
-                  // Truncate title to max 3 words
+                  // Truncate title to max 3 words - always use note, never fallback to activity type label
                   const truncateToThreeWords = (text: string | null): string => {
                     if (!text) return '';
                     const words = text.trim().split(/\s+/);
                     if (words.length <= 3) return text;
                     return words.slice(0, 3).join(' ') + '...';
                   };
-                  const displayTitle = truncateToThreeWords(activity.note) || getActivityLabel(activity.activity_type);
+                  const displayTitle = truncateToThreeWords(activity.note) || 'Untitled Plan';
 
                     return (
                       <button
