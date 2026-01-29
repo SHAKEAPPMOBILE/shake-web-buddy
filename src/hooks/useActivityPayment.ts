@@ -34,7 +34,8 @@ export function useActivityPayment() {
   const redirectToPayment = useCallback(async (activityId: string) => {
     const url = await createPaymentSession(activityId);
     if (url) {
-      window.open(url, "_blank");
+      // Use location.href instead of window.open to avoid popup blockers on iOS/iPad
+      window.location.href = url;
     }
     return !!url;
   }, [createPaymentSession]);
