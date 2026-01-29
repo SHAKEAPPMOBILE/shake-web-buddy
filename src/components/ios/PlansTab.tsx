@@ -738,18 +738,12 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                 </div>
               </div>
 
-              {/* Show creator avatar + participant count if someone joined */}
-              <div className="flex items-center gap-1.5 mt-2">
-                <Avatar className="w-5 h-5 border border-white/30">
-                  <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
-                  <AvatarFallback className="bg-white/20 text-white text-[10px] font-medium">
-                    {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                  </AvatarFallback>
-                </Avatar>
-                {plan.participant_count > 0 && (
+              {/* Show participant count if someone joined */}
+              {plan.participant_count > 0 && (
+                <div className="flex items-center gap-1.5 mt-2">
                   <span className="text-sm text-white/70">+{plan.participant_count} {t('common.joined').toLowerCase()}</span>
-                )}
-              </div>
+                </div>
+              )}
             </SwipeableCard>
           ))
         )}
