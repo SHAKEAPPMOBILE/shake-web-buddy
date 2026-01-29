@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLanguage, supportedLanguages, translatedLanguages, Language } from "@/contexts/LanguageContext";
+import { useLanguage, supportedLanguages, Language } from "@/contexts/LanguageContext";
 import { useTranslation } from "react-i18next";
 
 interface LanguageSelectorProps {
@@ -19,16 +19,21 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
+  // Filter to only translated languages
+  const translatedLanguagesList = supportedLanguages.filter(l => 
+    ['en', 'es', 'pt', 'fr', 'de'].includes(l.code)
+  );
+
   // Center the selected language on mount
   useEffect(() => {
     if (scrollRef.current && isOpen) {
-      const selectedIndex = supportedLanguages.findIndex(l => l.code === selectedLanguage.code);
+      const selectedIndex = translatedLanguagesList.findIndex(l => l.code === selectedLanguage.code);
       const itemWidth = 56; // 48px width + 8px gap
       const containerWidth = scrollRef.current.clientWidth;
       const scrollPosition = (selectedIndex * itemWidth) - (containerWidth / 2) + (itemWidth / 2);
       scrollRef.current.scrollLeft = Math.max(0, scrollPosition);
     }
-  }, [isOpen, selectedLanguage.code]);
+  }, [isOpen, selectedLanguage.code, translatedLanguagesList]);
 
   // Handle click outside to close
   useEffect(() => {
@@ -154,7 +159,7 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
             onTouchMove={handleTouchMove}
             onTouchEnd={handleMouseUp}
           >
-            {supportedLanguages.map((language) => (
+            {translatedLanguagesList.map((language) => (
               <button
                 key={language.code}
                 onClick={() => handleLanguageSelect(language)}
