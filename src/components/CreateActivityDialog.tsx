@@ -17,6 +17,7 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { detectActivityFromText } from "@/lib/activityDetection";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { supabase } from "@/integrations/supabase/client";
+import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -45,6 +46,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const [priceCurrency, setPriceCurrency] = useState("USD");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
   const { isConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const isMobile = useIsMobile();
   
@@ -95,12 +97,17 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const isPaidActivity = priceAmount.trim().length > 0;
   const needsStripeSetup = isPaidActivity && (!isConnected || connectStatus !== "complete");
 
+  const handleStartOnboardingWithCountry = (countryCode: string) => {
+    setShowStripeCountrySelector(false);
+    startOnboarding(countryCode);
+  };
+
   const handleCreate = async () => {
     if (!isValid || !detectedActivity) return;
 
     // If setting a price, require Stripe Connect
     if (priceAmount.trim() && (!isConnected || connectStatus !== "complete")) {
-      startOnboarding();
+      setShowStripeCountrySelector(true);
       return;
     }
 
@@ -255,7 +262,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   To receive payments,{" "}
                   <button 
                     type="button"
-                    onClick={() => startOnboarding()}
+                    onClick={() => setShowStripeCountrySelector(true)}
                     className="underline hover:text-amber-700 font-medium"
                   >
                     connect your payout account
@@ -343,6 +350,15 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
       </DialogContent>
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+      {/* Stripe country selector (always choose country before onboarding) */}
+      <StripeCountrySelectorDialog
+        open={showStripeCountrySelector}
+        onOpenChange={setShowStripeCountrySelector}
+        onSelectCountry={handleStartOnboardingWithCountry}
+        isLoading={connectLoading}
+        isReset={false}
+      />
     </Dialog>
   );
 }
