@@ -148,6 +148,8 @@ export function ActivitiesListDialog({
                 {activities.map((activity) => {
                   const isOwner = isMyActivity(activity);
                   const hasJoined = joinedActivities.has(activity.id);
+                  const activityConfig = getActivityConfig(activity.activity_type);
+                  const hasMatchedActivity = activityConfig.emoji !== '📍';
 
                     return (
                       <button
@@ -158,9 +160,18 @@ export function ActivitiesListDialog({
                           background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
                         }}
                       >
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 bg-white shadow-md">
-                          <span>{getActivityConfig(activity.activity_type).emoji}</span>
-                        </div>
+                        {hasMatchedActivity ? (
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 bg-white shadow-md">
+                            <span>{activityConfig.emoji}</span>
+                          </div>
+                        ) : (
+                          <Avatar className="w-12 h-12 shrink-0 border-2 border-white shadow-md">
+                            <AvatarImage src={activity.creator_avatar || ""} />
+                            <AvatarFallback className="text-lg bg-white text-primary">
+                              {activity.creator_name?.charAt(0) || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
 
                         <div className="flex-1 min-w-0 overflow-hidden">
                           <div className="flex items-center gap-2 flex-wrap">
