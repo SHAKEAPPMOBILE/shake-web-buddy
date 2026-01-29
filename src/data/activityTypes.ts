@@ -61,17 +61,39 @@ export interface ActivityWithDate extends ActivityType {
   dayNameShort: string;
 }
 
-// Get activities ordered by next occurrence date (chronological)
+// Get activities ordered by next occurrence date (chronological from today)
 export function getActivitiesWithDates(): ActivityWithDate[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const currentDayOfWeek = today.getDay();
+  
   return ACTIVITY_TYPES.map(activity => {
     const nextDate = getNextOccurrenceDate(activity.id);
+    const targetDay = activity.defaultDay ?? 0;
+    
+    // Calculate days until this activity (0 = today, 1 = tomorrow, etc.)
+    let daysUntil = targetDay - currentDayOfWeek;
+    if (daysUntil < 0) {
+      daysUntil += 7; // Next week
+    }
+    
     return {
       ...activity,
       nextDate,
       dayNumber: nextDate.getDate(),
       dayNameShort: DAY_NAMES_SHORT[nextDate.getDay()],
+      _daysUntil: daysUntil, // Internal sorting key
     };
-  }).sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime());
+  })
+  // Sort by days until (closest first), then by activity order for same-day ties
+  .sort((a, b) => {
+    if (a._daysUntil !== b._daysUntil) {
+      return a._daysUntil - b._daysUntil;
+    }
+    // For same day, maintain original array order
+    return ACTIVITY_TYPES.indexOf(a) - ACTIVITY_TYPES.indexOf(b);
+  })
+  .map(({ _daysUntil, ...rest }) => rest); // Remove internal key
 }
 
 // Carousel activities with specific days (lunch, dinner, drinks, hike)

@@ -40,8 +40,7 @@ const App = () => (
             <CityProvider>
               <VenueProvider>
                 <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
+                  {/* Toast notifications disabled */}
                 <BrowserRouter>
                   <ReferralTracker />
                   <Routes>
