@@ -133,8 +133,8 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       }
 
       if (data?.url) {
-        window.open(data.url, "_blank");
-        onOpenChange(false);
+        // Use location.href instead of window.open to avoid popup blockers on iOS/iPad
+        window.location.href = data.url;
       }
     } catch (error) {
       console.error("Error opening customer portal:", error);
