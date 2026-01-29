@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoShake from "@/assets/shake-logo-new.png";
 import { ArrowLeft, ChevronDown, Phone, User, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff, Mail } from "lucide-react";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { BirthdayPicker } from "@/components/BirthdayPicker";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -729,6 +730,11 @@ export default function Auth() {
                   <User className="w-5 h-5" />
                   <span className="font-medium">Create an Account</span>
                 </button>
+
+                {/* Language Selector */}
+                <div className="pt-4">
+                  <LanguageSelector showLabel={true} />
+                </div>
               </div>
             )}
 

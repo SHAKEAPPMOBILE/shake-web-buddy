@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CityProvider } from "@/contexts/CityContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { VenueProvider } from "@/contexts/VenueContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { IOSAppLayout } from "@/components/IOSAppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useReferralTracking } from "@/hooks/useReferralTracking";
@@ -34,12 +35,13 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <CityProvider>
-            <VenueProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
+        <LanguageProvider>
+          <AuthProvider>
+            <CityProvider>
+              <VenueProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
                 <BrowserRouter>
                   <ReferralTracker />
                   <Routes>
@@ -60,8 +62,9 @@ const App = () => (
             </VenueProvider>
           </CityProvider>
         </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+      </LanguageProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
   </ErrorBoundary>
 );
 
