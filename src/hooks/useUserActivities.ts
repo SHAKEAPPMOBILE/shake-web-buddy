@@ -260,7 +260,7 @@ export function useUserActivities(city: string) {
   const joinActivity = async (
     activityId: string,
     isPremium: boolean
-  ): Promise<{ success: boolean; requiresPremium?: boolean }> => {
+  ): Promise<{ success: boolean; requiresPremium?: boolean; requiresPayment?: boolean; priceAmount?: string }> => {
     if (!user) {
       toast.error("Please sign in to join an activity");
       return { success: false };
@@ -291,6 +291,16 @@ export function useUserActivities(city: string) {
       console.error("Error fetching activity:", fetchError);
       toast.error("Activity not found");
       return { success: false };
+    }
+
+    // Check if activity has a price - require payment first
+    // Don't allow join for paid activities - redirect to payment instead
+    if (activity.price_amount && activity.user_id !== user.id) {
+      return { 
+        success: false, 
+        requiresPayment: true, 
+        priceAmount: activity.price_amount 
+      };
     }
 
     // Cross-city join is premium. If frontend premium state is stale, double-check backend override.

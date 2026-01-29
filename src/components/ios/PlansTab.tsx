@@ -22,6 +22,7 @@ import { SHAKE_CITIES } from "@/data/cities";
 import { SwipeableCard } from "../SwipeableCard";
 import { useTranslation } from "react-i18next";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { useActivityPayment } from "@/hooks/useActivityPayment";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +42,7 @@ interface PlanActivity {
   scheduled_for: string;
   is_active: boolean;
   note?: string | null;
+  price_amount?: string | null;
   creator_name?: string;
   creator_avatar?: string;
   participant_count?: number;
@@ -58,6 +60,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
   const { selectedCity } = useCity();
   const { user, isPremium } = useAuth();
   const { referralCode } = useReferralCode(user?.id);
+  const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
   const isMobile = useIsMobile();
   const [activities, setActivities] = useState<PlanActivity[]>([]);
   const [searchCity, setSearchCity] = useState<string>(() => {
@@ -387,12 +390,22 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     setShowCreateDialog(true);
   };
 
-  const handlePlanClick = (plan: PlanActivity) => {
+  const handlePlanClick = async (plan: PlanActivity) => {
     if (plan.isCarouselJoin) {
       setSelectedCarouselActivity(plan);
       setShowCarouselChatView(true);
       return;
     }
+    
+    // If it's a paid plan and user hasn't joined and is not the creator, redirect to payment
+    if (plan.price_amount && !plan.isJoined && plan.user_id !== user?.id) {
+      const success = await redirectToPayment(plan.id);
+      if (!success) {
+        toast.error("Could not start payment process");
+      }
+      return;
+    }
+    
     setSelectedPlan(plan);
     setShowChatView(true);
   };
