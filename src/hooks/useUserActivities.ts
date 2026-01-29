@@ -449,5 +449,6 @@ export function useUserActivities(city: string) {
     leaveActivity,
     hasJoinedActivity,
     fetchActivities,
+    fetchMyActivities,
   };
 }
