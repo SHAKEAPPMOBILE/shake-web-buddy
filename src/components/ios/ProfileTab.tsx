@@ -186,7 +186,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           }}
           className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          {hasActiveStatus ? "View Status" : "Add Status"}
+          {hasActiveStatus ? t('profile.viewStatus', 'View Status') : t('profile.addStatus', 'Add Status')}
         </button>
 
         <h2 className="mt-2 text-xl font-display font-bold">{userName || "User"}</h2>
@@ -200,7 +200,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
             className="flex items-center gap-1.5 mt-2 px-3 py-1 bg-shake-yellow/10 rounded-full cursor-pointer hover:bg-shake-yellow/20 transition-colors"
           >
             <SuperHumanIcon size={14} />
-            <span className="text-sm font-medium text-shake-yellow">Super-Human</span>
+            <span className="text-sm font-medium text-shake-yellow">{t('profile.superHuman')}</span>
           </div>
         )}
         
@@ -219,14 +219,14 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.editProfile')}</span>
-              <p className="text-xs text-muted-foreground">Update your info</p>
+              <p className="text-xs text-muted-foreground">{t('profile.updateYourInfo', 'Update your info')}</p>
             </div>
           </button>
           {showEditProfileDropdown && (
             <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
               <div className="space-y-3 pt-3">
                 <p className="text-xs text-muted-foreground">
-                  Update your name, avatar, nationality, occupation, and social links.
+                  {t('profile.updateDescription', 'Update your name, avatar, nationality, occupation, and social links.')}
                 </p>
                 <button
                   onClick={() => {
@@ -286,7 +286,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                 <div className="space-y-3 pt-3">
                   <div className="flex items-center gap-2">
                     <SuperHumanIcon size={16} />
-                    <span className="text-sm font-medium text-shake-yellow">Super-Human Active</span>
+                    <span className="text-sm font-medium text-shake-yellow">{t('profile.superHumanActive', 'Super-Human Active')}</span>
                   </div>
                   <button
                     onClick={() => {
@@ -295,7 +295,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                     }}
                     className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-lg hover:bg-shake-green/10 transition-colors"
                   >
-                    Manage in Billing Portal
+                    {t('profile.manageBilling', 'Manage in Billing Portal')}
                   </button>
                 </div>
               </div>
@@ -313,11 +313,11 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               <SuperHumanIcon size={24} />
             </div>
             <div className="flex-1 text-left">
-              <span className="font-medium text-white">Upgrade to Premium</span>
-              <p className="text-xs text-white/70">Unlimited messages & more</p>
+              <span className="font-medium text-white">{t('profile.upgradeToPremium', 'Upgrade to Premium')}</span>
+              <p className="text-xs text-white/70">{t('profile.unlimitedMessages', 'Unlimited messages & more')}</p>
             </div>
             <span className="text-xs font-medium text-white bg-white/20 px-2 py-1 rounded-full">
-              Subscribe now
+              {t('profile.subscribeNow', 'Subscribe now')}
             </span>
           </button>
         )}
@@ -333,7 +333,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.shareReferral')}</span>
-              <p className="text-xs text-muted-foreground">Earn +5 {t('profile.points')} per signup</p>
+              <p className="text-xs text-muted-foreground">{t('profile.earnPoints', 'Earn +5 points per signup')}</p>
             </div>
           </button>
           {showReferralLink && referralCode && (
@@ -372,8 +372,8 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               <Globe className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1">
-              <span className="font-medium">Language</span>
-              <p className="text-xs text-muted-foreground">Select your preferred language</p>
+              <span className="font-medium">{t('profile.language', 'Language')}</span>
+              <p className="text-xs text-muted-foreground">{t('profile.selectLanguage', 'Select your preferred language')}</p>
             </div>
             <LanguageSelector showLabel={false} />
           </div>
@@ -393,9 +393,9 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
       {/* Footer Links */}
       <div className="px-4 pb-6 space-y-2">
         <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
-          <Link to="/community-guidelines" className="hover:text-foreground">Community Guidelines</Link>
-          <Link to="/privacy-policy" className="hover:text-foreground">Privacy Policy</Link>
-          <Link to="/terms-of-service" className="hover:text-foreground">Terms of Service</Link>
+          <Link to="/community-guidelines" className="hover:text-foreground">{t('common.communityGuidelines', 'Community Guidelines')}</Link>
+          <Link to="/privacy-policy" className="hover:text-foreground">{t('common.privacyPolicy', 'Privacy Policy')}</Link>
+          <Link to="/terms-of-service" className="hover:text-foreground">{t('common.termsOfService', 'Terms of Service')}</Link>
         </div>
         <p className="text-center text-xs text-muted-foreground/70">
           © {new Date().getFullYear()} SHAKEapp Inc.
@@ -417,13 +417,13 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
       <AlertDialog open={showSignOutConfirm} onOpenChange={setShowSignOutConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Going antisocial? 😢</AlertDialogTitle>
+            <AlertDialogTitle>{t('profile.signOutTitle', 'Going antisocial? 😢')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to sign out? You'll miss all the fun activities!
+              {t('profile.signOutDescription', "Are you sure you want to sign out? You'll miss all the fun activities!")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Stay Social</AlertDialogCancel>
+            <AlertDialogCancel>{t('profile.staySocial', 'Stay Social')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmSignOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Sign Out
             </AlertDialogAction>

@@ -18,17 +18,30 @@
     "signUp": "Cadastrar",
     "signOut": "Sair",
     "or": "ou",
-    "and": "e"
+    "and": "e",
+    "terms": "termos",
+    "privacyPolicy": "política de privacidade",
+    "communityGuidelines": "Diretrizes da Comunidade",
+    "termsOfService": "Termos de Serviço"
   },
   "home": {
     "title": "Shake",
     "subtitle": "Conheça pessoas. Faça amigos.",
-    "joinActivity": "Participar da Atividade",
-    "createActivity": "Criar Atividade",
+    "joinActivity": "Participar da atividade",
+    "createActivity": "Criar atividade",
     "noActivities": "Nenhuma atividade ainda",
     "beFirstToCreate": "Seja o primeiro a criar uma!",
-    "peopleJoined": "{{count}} pessoas participando",
-    "expiresIn": "Expira em {{time}}"
+    "peopleJoined": "{{count}} pessoas participaram",
+    "expiresIn": "Expira em {{time}}",
+    "meetPeople": "Conheça pessoas novas.",
+    "meetFriends": "Faça novos amigos.",
+    "meetBuddy": "Encontre um parceiro.",
+    "meetPartner": "Conheça alguém especial.",
+    "meetLove": "Encontre um novo amor.",
+    "tagline": "A conexão acontece offline.",
+    "letsShake": "Vamos Shakear!",
+    "realConnections": "Conexões reais, vida real.",
+    "shakeUpYourLife": "AGITE sua vida."
   },
   "activities": {
     "brunch": "Brunch",
@@ -51,8 +64,8 @@
     "startConversation": "Inicie uma conversa",
     "typeMessage": "Digite uma mensagem...",
     "send": "Enviar",
-    "groupChat": "Chat em Grupo",
-    "privateMessage": "Mensagem Privada"
+    "groupChat": "Chat em grupo",
+    "privateMessage": "Mensagem privada"
   },
   "plans": {
     "title": "Planos",
@@ -83,7 +96,22 @@
     "points": "pontos",
     "referralCode": "Código de Indicação",
     "copyLink": "Copiar Link",
-    "linkCopied": "Link copiado!"
+    "linkCopied": "Link copiado!",
+    "viewStatus": "Ver Status",
+    "addStatus": "Adicionar Status",
+    "updateYourInfo": "Atualize suas informações",
+    "updateDescription": "Atualize seu nome, avatar, nacionalidade, ocupação e redes sociais.",
+    "superHumanActive": "Super-Humano Ativo",
+    "manageBilling": "Gerenciar Cobrança",
+    "upgradeToPremium": "Upgrade para Premium",
+    "unlimitedMessages": "Mensagens ilimitadas e mais",
+    "subscribeNow": "Assine agora",
+    "earnPoints": "Ganhe +5 pontos por cadastro",
+    "language": "Idioma",
+    "selectLanguage": "Selecione seu idioma preferido",
+    "signOutTitle": "Ficando antissocial? 😢",
+    "signOutDescription": "Tem certeza que quer sair? Você vai perder todas as atividades divertidas!",
+    "staySocial": "Ficar Social"
   },
   "auth": {
     "enterPhone": "Digite seu número de telefone",
@@ -91,7 +119,8 @@
     "codeSent": "Código enviado para {{phone}}",
     "resendCode": "Reenviar código",
     "continueWithPhone": "Continuar com telefone",
-    "termsAgreement": "Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade"
+    "termsAgreement": "Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade",
+    "byContinuing": "Ao continuar, você concorda com nossos"
   },
   "languageSelector": {
     "swipeToSelect": "Deslize para selecionar seu idioma",
@@ -108,7 +137,7 @@
   },
   "errors": {
     "networkError": "Erro de rede. Por favor tente novamente.",
-    "unauthorized": "Você precisa fazer login.",
+    "unauthorized": "Você precisa entrar.",
     "notFound": "Página não encontrada",
     "serverError": "Erro do servidor. Por favor tente mais tarde."
   }

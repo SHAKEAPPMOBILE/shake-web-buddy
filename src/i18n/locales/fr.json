@@ -18,7 +18,11 @@
     "signUp": "S'inscrire",
     "signOut": "Se déconnecter",
     "or": "ou",
-    "and": "et"
+    "and": "et",
+    "terms": "conditions",
+    "privacyPolicy": "politique de confidentialité",
+    "communityGuidelines": "Règles de la Communauté",
+    "termsOfService": "Conditions d'Utilisation"
   },
   "home": {
     "title": "Shake",
@@ -28,13 +32,22 @@
     "noActivities": "Pas encore d'activités",
     "beFirstToCreate": "Soyez le premier à en créer une !",
     "peopleJoined": "{{count}} personnes ont rejoint",
-    "expiresIn": "Expire dans {{time}}"
+    "expiresIn": "Expire dans {{time}}",
+    "meetPeople": "Rencontrez de nouvelles personnes.",
+    "meetFriends": "Faites-vous de nouveaux amis.",
+    "meetBuddy": "Trouvez un compagnon.",
+    "meetPartner": "Rencontrez un partenaire.",
+    "meetLove": "Trouvez un nouvel amour.",
+    "tagline": "La connexion se fait hors ligne.",
+    "letsShake": "Allons Shaker !",
+    "realConnections": "Connexions réelles, vie réelle.",
+    "shakeUpYourLife": "SECOUE ta vie."
   },
   "activities": {
     "brunch": "Brunch",
     "lunch": "Déjeuner",
     "dinner": "Dîner",
-    "drinks": "Boissons",
+    "drinks": "Apéro",
     "coffee": "Café",
     "hiking": "Randonnée",
     "fitness": "Fitness",
@@ -46,12 +59,12 @@
     "whatDoYouWantToDo": "Que voulez-vous faire ?"
   },
   "chat": {
-    "title": "Discussion",
+    "title": "Messages",
     "noMessages": "Pas encore de messages",
-    "startConversation": "Commencez une conversation",
+    "startConversation": "Commencer une conversation",
     "typeMessage": "Tapez un message...",
     "send": "Envoyer",
-    "groupChat": "Discussion de groupe",
+    "groupChat": "Chat de groupe",
     "privateMessage": "Message privé"
   },
   "plans": {
@@ -83,7 +96,22 @@
     "points": "points",
     "referralCode": "Code de Parrainage",
     "copyLink": "Copier le Lien",
-    "linkCopied": "Lien copié !"
+    "linkCopied": "Lien copié !",
+    "viewStatus": "Voir le Statut",
+    "addStatus": "Ajouter un Statut",
+    "updateYourInfo": "Mettez à jour vos informations",
+    "updateDescription": "Mettez à jour votre nom, avatar, nationalité, profession et réseaux sociaux.",
+    "superHumanActive": "Super-Humain Actif",
+    "manageBilling": "Gérer la Facturation",
+    "upgradeToPremium": "Passer à Premium",
+    "unlimitedMessages": "Messages illimités et plus",
+    "subscribeNow": "S'abonner maintenant",
+    "earnPoints": "Gagnez +5 points par inscription",
+    "language": "Langue",
+    "selectLanguage": "Sélectionnez votre langue préférée",
+    "signOutTitle": "Vous devenez antisocial ? 😢",
+    "signOutDescription": "Êtes-vous sûr de vouloir vous déconnecter ? Vous allez manquer toutes les activités amusantes !",
+    "staySocial": "Rester Social"
   },
   "auth": {
     "enterPhone": "Entrez votre numéro de téléphone",
@@ -91,7 +119,8 @@
     "codeSent": "Code envoyé à {{phone}}",
     "resendCode": "Renvoyer le code",
     "continueWithPhone": "Continuer avec le téléphone",
-    "termsAgreement": "En continuant, vous acceptez nos Conditions d'Utilisation et notre Politique de Confidentialité"
+    "termsAgreement": "En continuant, vous acceptez nos Conditions d'Utilisation et Politique de Confidentialité",
+    "byContinuing": "En continuant, vous acceptez nos"
   },
   "languageSelector": {
     "swipeToSelect": "Glissez pour sélectionner votre langue",
@@ -107,9 +136,9 @@
     "planReminder": "Rappel de plan"
   },
   "errors": {
-    "networkError": "Erreur réseau. Veuillez réessayer.",
+    "networkError": "Erreur de réseau. Veuillez réessayer.",
     "unauthorized": "Vous devez vous connecter.",
     "notFound": "Page non trouvée",
-    "serverError": "Erreur serveur. Veuillez réessayer plus tard."
+    "serverError": "Erreur du serveur. Veuillez réessayer plus tard."
   }
 }
