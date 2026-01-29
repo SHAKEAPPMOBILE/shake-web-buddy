@@ -15,11 +15,13 @@ import { SuperHumanIcon } from "./SuperHumanIcon";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { detectActivityFromText } from "@/lib/activityDetection";
+import { checkProfanity } from "@/lib/profanity-filter";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { usePayPalConnect } from "@/hooks/usePayPalConnect";
 import { supabase } from "@/integrations/supabase/client";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
 import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
+import { useToast } from "@/hooks/use-toast";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -42,6 +44,7 @@ const MAX_CHARACTERS = 50;
 export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivityDialogProps) {
   const { user, isPremium } = useAuth();
   const { createActivity, isLoading, remainingActivities, myActivities } = useUserActivities(city);
+  const { toast } = useToast();
   
   const [planText, setPlanText] = useState("");
   const [priceAmount, setPriceAmount] = useState("");
@@ -50,6 +53,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
+  const [profanityError, setProfanityError] = useState<string | null>(null);
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
   const isMobile = useIsMobile();
@@ -96,8 +100,14 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
     });
   }, [myActivities]);
   
+  // Check for profanity
+  const hasProfanity = useMemo(() => {
+    if (!planText.trim()) return false;
+    return checkProfanity(planText).hasProfanity;
+  }, [planText]);
+
   // For paid activities without Stripe connected, we still allow creation but will prompt for Stripe
-  const isValid = planText.trim().length > 0 && !hasExistingActivityToday;
+  const isValid = planText.trim().length > 0 && !hasExistingActivityToday && !hasProfanity;
   const isPaidActivity = priceAmount.trim().length > 0;
   const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
   const needsPayoutSetup = isPaidActivity && !hasPayoutMethod;
@@ -144,12 +154,21 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
     setPlanText("");
     setPriceAmount("");
     setPriceCurrency("USD");
+    setProfanityError(null);
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     if (text.length <= MAX_CHARACTERS) {
       setPlanText(text);
+      
+      // Check for profanity and show/hide error
+      const result = checkProfanity(text);
+      if (result.hasProfanity) {
+        setProfanityError("Please use appropriate language for your activity description.");
+      } else {
+        setProfanityError(null);
+      }
     }
   };
 
@@ -233,6 +252,14 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   {planText.length}/{MAX_CHARACTERS}
                 </span>
               </div>
+              
+              {/* Profanity error message */}
+              {profanityError && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-destructive" />
+                  {profanityError}
+                </p>
+              )}
             </div>
 
             {/* Price Input (optional) */}
