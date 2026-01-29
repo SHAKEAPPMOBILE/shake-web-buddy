@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,7 @@ import { useUserPoints } from "@/hooks/useUserPoints";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
+import { LanguageSelector } from "../LanguageSelector";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -360,6 +361,20 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Language Selector */}
+        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center gap-4 px-4 py-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Globe className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <span className="font-medium">Language</span>
+              <p className="text-xs text-muted-foreground">Select your preferred language</p>
+            </div>
+            <LanguageSelector showLabel={false} />
+          </div>
         </div>
 
         <button
