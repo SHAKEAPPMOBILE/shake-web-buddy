@@ -376,26 +376,31 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           >
             <div className={cn(
               "w-10 h-10 rounded-full flex items-center justify-center",
-              stripeConnected ? "bg-shake-green/10" : "bg-primary/10"
+              stripeConnected && stripeStatus === "complete" ? "bg-shake-green/10" : "bg-primary/10"
             )}>
-              <Wallet className={cn("w-5 h-5", stripeConnected ? "text-shake-green" : "text-primary")} />
+              <Wallet className={cn("w-5 h-5", stripeConnected && stripeStatus === "complete" ? "text-shake-green" : "text-primary")} />
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.stripeConnect', 'Creator Payouts')}</span>
               <p className="text-xs text-muted-foreground">
-                {stripeConnected 
-                  ? t('profile.stripeConnected', 'Connected to Stripe')
+                {stripeConnected && stripeStatus === "complete"
+                  ? t('profile.stripeConnected', 'Ready to receive payments')
+                  : stripeConnected && stripeStatus === "pending"
+                  ? t('profile.stripePending', 'Verification pending')
                   : t('profile.stripeNotConnected', 'Set up to receive payments')}
               </p>
             </div>
-            {stripeConnected && (
+            {stripeConnected && stripeStatus === "complete" && (
               <div className="w-2 h-2 rounded-full bg-shake-green" />
+            )}
+            {stripeConnected && stripeStatus === "pending" && (
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
             )}
           </button>
           {showStripeConnect && (
             <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
               <div className="space-y-3 pt-3">
-                {stripeConnected ? (
+                {stripeConnected && stripeStatus === "complete" ? (
                   <>
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-shake-green" />
@@ -406,6 +411,33 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                     <p className="text-xs text-muted-foreground">
                       {t('profile.stripeConnectedDesc', 'Your Stripe account is connected. You\'ll receive 90% of payments from your paid activities.')}
                     </p>
+                  </>
+                ) : stripeConnected && stripeStatus === "pending" ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                      <span className="text-sm text-amber-500 font-medium">
+                        {t('profile.stripePendingTitle', 'Verification in progress')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t('profile.stripePendingDesc', 'Stripe is verifying your account. This usually takes a few minutes. Click below to complete any remaining steps.')}
+                    </p>
+                    <button
+                      onClick={() => {
+                        startOnboarding();
+                        setShowStripeConnect(false);
+                      }}
+                      disabled={stripeLoading}
+                      className="w-full py-2 text-sm font-medium text-amber-600 border border-amber-500/30 rounded-lg hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {stripeLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ExternalLink className="w-4 h-4" />
+                      )}
+                      {t('profile.stripeCompletePending', 'Complete verification')}
+                    </button>
                   </>
                 ) : (
                   <>
