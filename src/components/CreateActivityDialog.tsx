@@ -43,7 +43,7 @@ const MAX_CHARACTERS = 50;
 
 export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivityDialogProps) {
   const { user, isPremium } = useAuth();
-  const { createActivity, isLoading, remainingActivities, myActivities } = useUserActivities(city);
+  const { createActivity, isLoading, remainingActivities, myActivities, fetchMyActivities } = useUserActivities(city);
   const { toast } = useToast();
   
   const [planText, setPlanText] = useState("");
@@ -57,6 +57,13 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
   const isMobile = useIsMobile();
+  
+  // Refetch myActivities when dialog opens to ensure fresh data after deletions
+  useEffect(() => {
+    if (open && user) {
+      fetchMyActivities();
+    }
+  }, [open, user, fetchMyActivities]);
   
   // Fetch current user's avatar
   useEffect(() => {
