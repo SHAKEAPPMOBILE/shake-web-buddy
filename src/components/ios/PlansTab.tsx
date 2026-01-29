@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { SHAKE_CITIES } from "@/data/cities";
 import { SwipeableCard } from "../SwipeableCard";
 import { useTranslation } from "react-i18next";
+import { UserProfileDialog } from "@/components/UserProfileDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -280,6 +281,11 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
   const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
   const [selectedCarouselActivity, setSelectedCarouselActivity] = useState<PlanActivity | null>(null);
   const [showCarouselChatView, setShowCarouselChatView] = useState(false);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<{
+    userId: string;
+    userName: string | null;
+    avatarUrl: string | null;
+  } | null>(null);
   
 
   // Notify parent when entering/leaving chat view
@@ -696,7 +702,23 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                     <MapPin className="w-3 h-3 text-white/60" />
                     <span className="text-xs text-white/70">{plan.city}</span>
                     {!plan.isCarouselJoin && (
-                      <span className="text-xs text-white/50">• {t('common.by')} {plan.creator_name || "Anonymous"}</span>
+                      <span className="text-xs text-white/50">
+                        • {t('common.by')}{' '}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedUserProfile({
+                              userId: plan.user_id,
+                              userName: plan.creator_name || null,
+                              avatarUrl: plan.creator_avatar || null,
+                            });
+                          }}
+                          className="underline hover:text-white/80 transition-colors"
+                        >
+                          {plan.creator_name || "Anonymous"}
+                        </button>
+                      </span>
                     )}
                   </div>
 
@@ -779,6 +801,17 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* User Profile Dialog */}
+      {selectedUserProfile && (
+        <UserProfileDialog
+          open={!!selectedUserProfile}
+          onOpenChange={(open) => !open && setSelectedUserProfile(null)}
+          userId={selectedUserProfile.userId}
+          userName={selectedUserProfile.userName}
+          avatarUrl={selectedUserProfile.avatarUrl}
+        />
+      )}
     </div>
   );
 }
