@@ -97,10 +97,13 @@ serve(async (req) => {
       const account = await stripe.accounts.retrieve(accountId);
       
       if (account.charges_enabled && account.payouts_enabled) {
-        // Account is fully set up
+        // Account is fully set up - set as preferred payout method
         await supabaseClient
           .from("profiles_private")
-          .update({ stripe_account_status: "complete" })
+          .update({ 
+            stripe_account_status: "complete",
+            preferred_payout_method: "stripe"
+          })
           .eq("user_id", user.id);
         
         return new Response(JSON.stringify({ 

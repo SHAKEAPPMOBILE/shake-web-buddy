@@ -44,20 +44,26 @@ export function usePayPalConnect() {
   /**
    * Connect PayPal account with email
    * @param email - PayPal email address
+   * @param setAsPreferred - Whether to set PayPal as the preferred payout method
    */
-  const connectPayPal = useCallback(async (email: string): Promise<boolean> => {
+  const connectPayPal = useCallback(async (email: string, setAsPreferred: boolean = true): Promise<boolean> => {
     if (!user || !email) return false;
 
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
+      const updateData: Record<string, unknown> = { 
+        paypal_email: email,
+        paypal_connected: true,
+      };
+      
+      if (setAsPreferred) {
+        updateData.preferred_payout_method = "paypal";
+      }
+      
       const { error } = await supabase
         .from("profiles_private")
-        .update({ 
-          paypal_email: email,
-          paypal_connected: true,
-          preferred_payout_method: "paypal"
-        })
+        .update(updateData)
         .eq("user_id", user.id);
       
       if (error) throw error;
