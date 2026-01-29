@@ -719,10 +719,6 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                     </div>
                   )}
 
-                  {/* Show note for user-created plans instead of date */}
-                  {!plan.isCarouselJoin && plan.note && (
-                    <p className="text-sm text-white/70 mt-1 italic">"{plan.note}"</p>
-                  )}
                 </div>
 
                 {/* Share button */}
