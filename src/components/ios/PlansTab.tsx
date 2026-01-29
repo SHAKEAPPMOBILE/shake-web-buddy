@@ -664,15 +664,16 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
               }}
             >
               <div className="flex items-start gap-3">
-                {/* Activity Icon */}
+                {/* Profile Picture or Activity Emoji */}
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-2xl">
-                    {getActivityEmoji(plan.activity_type)}
-                  </div>
-                  {!plan.isCarouselJoin && (
-                    <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-white/50">
+                  {plan.isCarouselJoin ? (
+                    <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-2xl">
+                      {getActivityEmoji(plan.activity_type)}
+                    </div>
+                  ) : (
+                    <Avatar className="w-12 h-12 border-2 border-white/50 shadow-md">
                       <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
-                      <AvatarFallback className="bg-white/80 text-muted-foreground text-xs font-semibold">
+                      <AvatarFallback className="bg-white text-muted-foreground text-lg font-semibold">
                         {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
                       </AvatarFallback>
                     </Avatar>
@@ -681,7 +682,9 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
 
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-white">{getActivityLabel(plan.activity_type)}</h3>
+                    <h3 className="font-semibold text-white">
+                      {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || t('plans.untitledPlan', 'Untitled Plan'))}
+                    </h3>
                     {plan.isJoined && (
                       <span className="text-xs bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">
                         {t('common.joined')}

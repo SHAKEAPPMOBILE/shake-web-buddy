@@ -207,9 +207,23 @@ export function PlanGroupChatView({
         <button onClick={onBack} className="shrink-0 p-1 hover:opacity-70 transition-opacity">
           <ChevronLeft className="w-6 h-6 text-black" />
         </button>
+        
+        {/* Creator Avatar */}
+        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-black/20 shadow-sm shrink-0">
+          {creatorProfile?.avatar_url ? (
+            <img
+              src={creatorProfile.avatar_url}
+              alt={creatorProfile?.name || "Creator"}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-lg">{getActivityEmoji(activity.activity_type)}</span>
+          )}
+        </div>
+        
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-display text-black truncate">
-            {getActivityEmoji(activity.activity_type)} {getActivityLabel(activity.activity_type)}
+            {activity.note || t('plans.untitledPlan', 'Untitled Plan')}
           </h1>
           <p className="text-sm text-black/60 truncate">
             {t('chat.createdBy', 'Created by')} {creatorProfile?.name || "Shaker"}
