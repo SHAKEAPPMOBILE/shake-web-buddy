@@ -66,6 +66,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [showResetCountrySelector, setShowResetCountrySelector] = useState(false);
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showPayPalDisconnectConfirm, setShowPayPalDisconnectConfirm] = useState(false);
+  const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
   const { isConnected: stripeConnected, status: stripeStatus, email: stripeEmail, isLoading: stripeLoading, startOnboarding, checkStatus: checkStripeStatus, resetAndRecreate } = useStripeConnect();
   const { isConnected: paypalConnected, paypalEmail, isLoading: paypalLoading, connectPayPal, disconnectPayPal } = usePayPalConnect();
 
@@ -77,6 +78,33 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const handleResetAndRecreate = (countryCode: string) => {
     setShowResetCountrySelector(false);
     resetAndRecreate(countryCode);
+  };
+
+  const handleSetPreferredMethod = async (method: "stripe" | "paypal") => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from("profiles_private")
+        .update({ preferred_payout_method: method })
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+      setPreferredMethod(method);
+      toast({
+        title: t('profile.payoutMethodUpdated', 'Payout method updated'),
+        description: method === "stripe" 
+          ? t('profile.stripeIsNowActive', 'Stripe is now your active payout method')
+          : t('profile.paypalIsNowActive', 'PayPal is now your active payout method'),
+      });
+    } catch (error) {
+      console.error("Error updating preferred method:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update payout method",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCopyReferralLink = async () => {
@@ -122,15 +150,25 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
     const fetchProfile = async () => {
       if (!user) return;
       
-      const { data } = await supabase
-        .from("profiles")
-        .select("avatar_url, name")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const [publicProfile, privateProfile] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("avatar_url, name")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("profiles_private")
+          .select("preferred_payout_method")
+          .eq("user_id", user.id)
+          .maybeSingle()
+      ]);
       
-      if (data) {
-        setAvatarUrl(data.avatar_url);
-        setUserName(data.name);
+      if (publicProfile.data) {
+        setAvatarUrl(publicProfile.data.avatar_url);
+        setUserName(publicProfile.data.name);
+      }
+      if (privateProfile.data) {
+        setPreferredMethod(privateProfile.data.preferred_payout_method);
       }
     };
     
@@ -429,13 +467,16 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                 )}
 
                 {/* Stripe Section */}
-                <div className="border border-border rounded-lg p-3 space-y-2">
+                <div className={`border rounded-lg p-3 space-y-2 ${preferredMethod === "stripe" ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-[#635BFF] rounded flex items-center justify-center">
                         <span className="text-white text-[10px] font-bold">S</span>
                       </div>
                       <span className="text-sm font-medium">Stripe</span>
+                      {preferredMethod === "stripe" && stripeConnected && stripeStatus === "complete" && (
+                        <span className="text-[10px] text-shake-green font-medium uppercase">Active</span>
+                      )}
                     </div>
                     {stripeConnected && stripeStatus === "complete" && (
                       <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">Connected</span>
@@ -453,9 +494,14 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                           <span className="truncate">{stripeEmail}</span>
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">
-                        {t('profile.stripeConnectedDesc', 'Your Stripe account is connected. You\'ll receive 90% of payments from your paid activities.')}
-                      </p>
+                      {preferredMethod !== "stripe" && paypalConnected && (
+                        <button
+                          onClick={() => handleSetPreferredMethod("stripe")}
+                          className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-lg hover:bg-[#635BFF]/10 transition-colors"
+                        >
+                          {t('profile.useStripe', 'Use Stripe for payouts')}
+                        </button>
+                      )}
                     </>
                   ) : stripeConnected && stripeStatus === "pending" ? (
                     <>
@@ -514,13 +560,16 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                 </div>
 
                 {/* PayPal Section */}
-                <div className="border border-border rounded-lg p-3 space-y-2">
+                <div className={`border rounded-lg p-3 space-y-2 ${preferredMethod === "paypal" ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-[#0070BA] rounded flex items-center justify-center">
                         <span className="text-white text-[10px] font-bold">PP</span>
                       </div>
                       <span className="text-sm font-medium">PayPal</span>
+                      {preferredMethod === "paypal" && paypalConnected && (
+                        <span className="text-[10px] text-shake-green font-medium uppercase">Active</span>
+                      )}
                     </div>
                     {paypalConnected && (
                       <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">Connected</span>
@@ -533,6 +582,14 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                         <Mail className="w-3 h-3" />
                         <span className="truncate">{paypalEmail}</span>
                       </div>
+                      {preferredMethod !== "paypal" && stripeConnected && stripeStatus === "complete" && (
+                        <button
+                          onClick={() => handleSetPreferredMethod("paypal")}
+                          className="w-full py-2 text-xs font-medium text-[#0070BA] border border-[#0070BA]/30 rounded-lg hover:bg-[#0070BA]/10 transition-colors"
+                        >
+                          {t('profile.usePayPal', 'Use PayPal for payouts')}
+                        </button>
+                      )}
                       <button
                         onClick={() => setShowPayPalDisconnectConfirm(true)}
                         disabled={paypalLoading}

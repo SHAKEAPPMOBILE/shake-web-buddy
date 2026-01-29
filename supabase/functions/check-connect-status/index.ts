@@ -67,11 +67,18 @@ serve(async (req) => {
     // Get email from Stripe account
     const accountEmail = account.email || null;
     
-    // Update status if changed
+    // Update status if changed, and set as preferred method if newly complete
     if (newStatus !== privateProfile.stripe_account_status) {
+      const updateData: Record<string, string> = { stripe_account_status: newStatus };
+      
+      // Auto-set as preferred method when first becoming complete
+      if (newStatus === "complete" && privateProfile.stripe_account_status !== "complete") {
+        updateData.preferred_payout_method = "stripe";
+      }
+      
       await supabaseClient
         .from("profiles_private")
-        .update({ stripe_account_status: newStatus })
+        .update(updateData)
         .eq("user_id", user.id);
     }
 
