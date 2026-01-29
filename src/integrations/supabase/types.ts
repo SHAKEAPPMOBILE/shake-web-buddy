@@ -325,6 +325,8 @@ export type Database = {
           premium_override: boolean
           push_notifications_enabled: boolean
           sms_notifications_enabled: boolean
+          stripe_account_id: string | null
+          stripe_account_status: string | null
           updated_at: string
           user_id: string
           welcome_bonus_claimed: boolean
@@ -338,6 +340,8 @@ export type Database = {
           premium_override?: boolean
           push_notifications_enabled?: boolean
           sms_notifications_enabled?: boolean
+          stripe_account_id?: string | null
+          stripe_account_status?: string | null
           updated_at?: string
           user_id: string
           welcome_bonus_claimed?: boolean
@@ -351,6 +355,8 @@ export type Database = {
           premium_override?: boolean
           push_notifications_enabled?: boolean
           sms_notifications_enabled?: boolean
+          stripe_account_id?: string | null
+          stripe_account_status?: string | null
           updated_at?: string
           user_id?: string
           welcome_bonus_claimed?: boolean
@@ -413,6 +419,7 @@ export type Database = {
           id: string
           is_active: boolean
           note: string | null
+          price_amount: string | null
           scheduled_for: string
           updated_at: string
           user_id: string
@@ -424,6 +431,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           note?: string | null
+          price_amount?: string | null
           scheduled_for: string
           updated_at?: string
           user_id: string
@@ -435,6 +443,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           note?: string | null
+          price_amount?: string | null
           scheduled_for?: string
           updated_at?: string
           user_id?: string

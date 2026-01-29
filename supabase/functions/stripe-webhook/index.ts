@@ -1,13 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
@@ -51,6 +52,55 @@ serve(async (req) => {
     }
 
     logStep("Event received", { type: event.type });
+
+    // Handle checkout session completed for activity payments
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      
+      // Check if this is an activity payment (has activity_id in metadata)
+      const activityId = session.metadata?.activity_id;
+      const payerUserId = session.metadata?.payer_user_id;
+      
+      if (activityId && payerUserId) {
+        logStep("Processing activity payment completion", { activityId, payerUserId });
+        
+        const supabaseClient = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+          { auth: { persistSession: false } }
+        );
+        
+        // Get activity details
+        const { data: activity } = await supabaseClient
+          .from("user_activities")
+          .select("activity_type, city")
+          .eq("id", activityId)
+          .maybeSingle();
+        
+        if (activity) {
+          // Add user to activity_joins
+          const { error: joinError } = await supabaseClient
+            .from("activity_joins")
+            .insert({
+              user_id: payerUserId,
+              activity_id: activityId,
+              activity_type: activity.activity_type,
+              city: activity.city,
+            });
+          
+          if (joinError) {
+            logStep("Error joining activity after payment", { error: joinError.message });
+          } else {
+            logStep("User joined activity after payment", { activityId, payerUserId });
+          }
+        }
+      }
+      
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     // Handle subscription cancellation events
     if (event.type === "customer.subscription.deleted" || 

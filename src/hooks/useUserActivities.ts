@@ -13,6 +13,7 @@ export interface UserActivity {
   updated_at: string;
   is_active: boolean;
   note?: string | null;
+  price_amount?: string | null;
   creator_name?: string;
   creator_avatar?: string;
   participant_count?: number;
@@ -128,7 +129,8 @@ export function useUserActivities(city: string) {
     activityType: string,
     scheduledFor: Date,
     note?: string,
-    cityOverride?: string
+    cityOverride?: string,
+    priceAmount?: string
   ): Promise<boolean> => {
     const targetCity = cityOverride || city;
     if (!user) {
@@ -172,6 +174,7 @@ export function useUserActivities(city: string) {
       city: targetCity,
       scheduled_for: scheduledFor.toISOString(),
       note: note?.trim() || null,
+      price_amount: priceAmount || null,
     }).select().maybeSingle();
 
     if (error || !newActivity) {
