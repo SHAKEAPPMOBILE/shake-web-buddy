@@ -21,6 +21,7 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { useTranslation } from "react-i18next";
 
 interface GroupChatDialogProps {
   open: boolean;
@@ -44,77 +45,86 @@ interface Message {
 
 import { getActivityLabel, getActivityEmoji, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
 
-const defaultSuggestions = [
-  "What time works best?",
-  "Where should we meet?",
-  "Count me in!",
-  "See you there! 👋",
-  "I'm running late!",
-  "On my way! 🏃",
-];
+// Helper function to get activity-specific suggestions using translations
+function useActivitySuggestions(activityType: string) {
+  const { t } = useTranslation();
+  
+  return useMemo(() => {
+    const defaultSuggestions = [
+      t('chat.suggestions.whatTime', 'What time works best?'),
+      t('chat.suggestions.whereMeet', 'Where should we meet?'),
+      t('chat.suggestions.countMeIn', 'Count me in!'),
+      t('chat.suggestions.seeYouThere', 'See you there! 👋'),
+      t('chat.suggestions.runningLate', "I'm running late!"),
+      t('chat.suggestions.onMyWay', 'On my way! 🏃'),
+    ];
 
-const chatSuggestions: Record<string, string[]> = {
-  lunch: defaultSuggestions,
-  dinner: [
-    "What cuisine are we feeling?",
-    "Should we make a reservation?",
-    "Count me in!",
-    "See you there! 👋",
-    "I'm running late!",
-    "Where should we meet?",
-  ],
-  drinks: [
-    "Who's ready for happy hour? 🍻",
-    "What time are we meeting up?",
-    "Any bar suggestions?",
-    "Count me in!",
-    "See you there! 👋",
-    "I'm running late!",
-    "On my way! 🏃",
-  ],
-  hike: [
-    "Morning everyone! Ready to hit the trail?",
-    "Where's the meeting point?",
-    "What should I bring?",
-    "Count me in!",
-    "See you there! 👋",
-    "I'm running late!",
-    "On my way! 🏃",
-  ],
-  surf: [
-    "What's the wave forecast? 🌊",
-    "Which beach are we hitting?",
-    "Count me in!",
-    "See you there! 👋",
-    "On my way! 🏃",
-  ],
-  run: [
-    "What pace are we thinking? 🏃",
-    "Where's the starting point?",
-    "Count me in!",
-    "See you there! 👋",
-    "On my way!",
-  ],
-  "co-working": [
-    "Which cafe/space are we at? ☕",
-    "What time are we starting?",
-    "Count me in!",
-    "See you there! 👋",
-    "On my way! 💻",
-  ],
-  sunset: [
-    "Best spot for sunset views? 🌅",
-    "What time should we meet?",
-    "Count me in!",
-    "See you there! 👋",
-  ],
-  dance: [
-    "Which club are we hitting? 💃",
-    "What time does it start?",
-    "Count me in!",
-    "See you there! 👋",
-  ],
-};
+    const activitySuggestions: Record<string, string[]> = {
+      lunch: defaultSuggestions,
+      dinner: [
+        t('chat.suggestions.whatCuisine', 'What cuisine are we feeling?'),
+        t('chat.suggestions.makeReservation', 'Should we make a reservation?'),
+        t('chat.suggestions.countMeIn', 'Count me in!'),
+        t('chat.suggestions.seeYouThere', 'See you there! 👋'),
+        t('chat.suggestions.runningLate', "I'm running late!"),
+        t('chat.suggestions.whereMeet', 'Where should we meet?'),
+      ],
+      drinks: [
+        t('chat.suggestions.happyHour', "Who's ready for happy hour? 🍻"),
+        t('chat.suggestions.whatTimeMeeting', 'What time are we meeting up?'),
+        t('chat.suggestions.barSuggestions', 'Any bar suggestions?'),
+        t('chat.suggestions.countMeIn', 'Count me in!'),
+        t('chat.suggestions.seeYouThere', 'See you there! 👋'),
+        t('chat.suggestions.runningLate', "I'm running late!"),
+        t('chat.suggestions.onMyWay', 'On my way! 🏃'),
+      ],
+      hike: [
+        t('chat.suggestions.readyForTrail', 'Morning everyone! Ready to hit the trail?'),
+        t('chat.suggestions.meetingPoint', "Where's the meeting point?"),
+        t('chat.suggestions.whatToBring', 'What should I bring?'),
+        t('chat.suggestions.countMeIn', 'Count me in!'),
+        t('chat.suggestions.seeYouThere', 'See you there! 👋'),
+        t('chat.suggestions.runningLate', "I'm running late!"),
+        t('chat.suggestions.onMyWay', 'On my way! 🏃'),
+      ],
+      surf: [
+        t('chat.suggestions.waveForecast', "What's the wave forecast? 🌊"),
+        t('chat.suggestions.whichBeach', 'Which beach are we hitting?'),
+        t('chat.suggestions.countMeIn', 'Count me in!'),
+        t('chat.suggestions.seeYouThere', 'See you there! 👋'),
+        t('chat.suggestions.onMyWay', 'On my way! 🏃'),
+      ],
+      run: [
+        t('chat.suggestions.whatPace', 'What pace are we thinking? 🏃'),
+        t('chat.suggestions.startingPoint', "Where's the starting point?"),
+        t('chat.suggestions.countMeIn', 'Count me in!'),
+        t('chat.suggestions.seeYouThere', 'See you there! 👋'),
+        t('chat.suggestions.onMyWay', 'On my way!'),
+      ],
+      "co-working": [
+        t('chat.suggestions.whichCafe', 'Which cafe/space are we at? ☕'),
+        t('chat.suggestions.whatTimeStarting', 'What time are we starting?'),
+        t('chat.suggestions.countMeIn', 'Count me in!'),
+        t('chat.suggestions.seeYouThere', 'See you there! 👋'),
+        t('chat.suggestions.onMyWay', 'On my way! 💻'),
+      ],
+      sunset: [
+        t('chat.suggestions.sunsetSpot', 'Best spot for sunset views? 🌅'),
+        t('chat.suggestions.whatTimeMeet', 'What time should we meet?'),
+        t('chat.suggestions.countMeIn', 'Count me in!'),
+        t('chat.suggestions.seeYouThere', 'See you there! 👋'),
+      ],
+      dance: [
+        t('chat.suggestions.whichClub', 'Which club are we hitting? 💃'),
+        t('chat.suggestions.whatTimeStart', 'What time does it start?'),
+        t('chat.suggestions.countMeIn', 'Count me in!'),
+        t('chat.suggestions.seeYouThere', 'See you there! 👋'),
+      ],
+    };
+
+    return activitySuggestions[activityType] || defaultSuggestions;
+  }, [activityType, t]);
+}
 
 export function GroupChatDialog({ 
   open, 
@@ -126,6 +136,7 @@ export function GroupChatDialog({
   city = "New York City",
   homeCity,
 }: GroupChatDialogProps) {
+  const { t } = useTranslation();
   const isCrossCity = homeCity && city !== homeCity;
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -148,6 +159,9 @@ export function GroupChatDialog({
   const isMobile = useIsMobile();
   
   const { canSendText, addCharacters } = useTextMessageLimit();
+  
+  // Get translated suggestions for this activity type
+  const chatSuggestions = useActivitySuggestions(activityType);
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -451,11 +465,11 @@ export function GroupChatDialog({
                     </div>
                   ))}
                 </div>
-                <span>{attendeeCount} joined today</span>
+                <span>{t('chat.joinedToday', '{{count}} joined today', { count: attendeeCount })}</span>
               </button>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Be the first to join today!
+                {t('chat.beFirstToJoin', 'Be the first to join today!')}
               </p>
             )}
 
@@ -466,7 +480,7 @@ export function GroupChatDialog({
                 variant="shake"
                 className="w-full"
               >
-                Open Chat
+                {t('chat.openChat', 'Open Chat')}
               </Button>
               <div className="flex gap-2">
                 <Button
@@ -478,12 +492,12 @@ export function GroupChatDialog({
                   {isMuted ? (
                     <>
                       <BellOff className="w-4 h-4 mr-1" />
-                      Unmute
+                      {t('chat.unmute', 'Unmute')}
                     </>
                   ) : (
                     <>
                       <Bell className="w-4 h-4 mr-1" />
-                      Mute
+                      {t('chat.mute', 'Mute')}
                     </>
                   )}
                 </Button>
@@ -494,7 +508,7 @@ export function GroupChatDialog({
                   className="flex-1 text-destructive hover:text-destructive"
                 >
                   <LogOut className="w-4 h-4 mr-1" />
-                  Leave
+                  {t('chat.leave', 'Leave')}
                 </Button>
               </div>
             </div>
@@ -546,8 +560,8 @@ export function GroupChatDialog({
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50">
                   <p className="text-center text-sm">
-                    Start the conversation!<br />
-                    Messages from today will appear here.
+                    {t('chat.startTheConversation', 'Start the conversation!')}<br />
+                    {t('chat.messagesFromToday', 'Messages from today will appear here.')}
                   </p>
                 </div>
               ) : (
@@ -555,8 +569,8 @@ export function GroupChatDialog({
                   const isOwnMessage = msg.user_id === user?.id;
                   const profile = profiles[msg.user_id];
                   const displayName = isOwnMessage 
-                    ? 'You' 
-                    : profile?.name || 'Shaker';
+                    ? t('chat.you', 'You') 
+                    : profile?.name || t('chat.shaker', 'Shaker');
                   const avatarUrl = profile?.avatar_url;
                   
                   return (
@@ -626,7 +640,7 @@ export function GroupChatDialog({
             {user && !message.trim() && (
               <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
                 <div className="flex gap-2 w-max">
-                  {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
+                  {chatSuggestions.map((suggestion, index) => (
                     <button
                       key={index}
                       onClick={() => setMessage(suggestion)}
@@ -643,7 +657,7 @@ export function GroupChatDialog({
             <div className="p-4">
               <div className="flex items-center gap-2">
                 <Input
-                  placeholder={canSendText ? "Type a message..." : "Character limit reached"}
+                  placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
