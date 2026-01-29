@@ -101,44 +101,64 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [detectedLanguage, setDetectedLanguage] = useState<Language | null>(null);
   const [isDetecting, setIsDetecting] = useState(true);
 
-  // Auto-detect language based on location
+  // Auto-detect language based on browser settings and location
   useEffect(() => {
     const detectLanguage = async () => {
+      // Check if user already has a saved preference
+      if (localStorage.getItem("shake-language")) {
+        setIsDetecting(false);
+        return;
+      }
+
+      // Get browser language as primary source (most reliable)
+      const browserLang = navigator.language.split('-')[0];
+      const browserLanguage = supportedLanguages.find(l => l.code === browserLang);
+      
+      // Also check navigator.languages for additional context
+      const browserLanguages = navigator.languages || [navigator.language];
+      let bestMatch: typeof supportedLanguages[0] | null = null;
+      
+      for (const lang of browserLanguages) {
+        const langCode = lang.split('-')[0];
+        const match = supportedLanguages.find(l => l.code === langCode);
+        if (match) {
+          bestMatch = match;
+          break;
+        }
+      }
+
+      // Use browser language immediately (fast, reliable)
+      if (bestMatch) {
+        setDetectedLanguage(bestMatch);
+        setSelectedLanguageState(bestMatch);
+      } else if (browserLanguage) {
+        setDetectedLanguage(browserLanguage);
+        setSelectedLanguageState(browserLanguage);
+      }
+
+      // Try IP-based detection as secondary confirmation
       try {
-        // First try browser language
-        const browserLang = navigator.language.split('-')[0];
-        const browserLanguage = supportedLanguages.find(l => l.code === browserLang);
+        const response = await fetch('https://ipapi.co/json/', {
+          signal: AbortSignal.timeout(3000) // 3 second timeout
+        });
         
-        // Then try IP-based detection
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        
-        if (data.country_code) {
-          const langCode = countryToLanguage[data.country_code];
-          const detected = supportedLanguages.find(l => l.code === langCode);
-          
-          if (detected) {
-            setDetectedLanguage(detected);
-            // Only auto-set if no saved preference
-            if (!localStorage.getItem("shake-language")) {
-              setSelectedLanguageState(detected);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.country_code) {
+            const langCode = countryToLanguage[data.country_code];
+            const ipLanguage = supportedLanguages.find(l => l.code === langCode);
+            
+            // If IP detection gives a different result than browser, prefer IP
+            // (user might be traveling but phone language unchanged)
+            if (ipLanguage && (!bestMatch || ipLanguage.code !== bestMatch.code)) {
+              setDetectedLanguage(ipLanguage);
+              setSelectedLanguageState(ipLanguage);
             }
-          } else if (browserLanguage && !localStorage.getItem("shake-language")) {
-            setSelectedLanguageState(browserLanguage);
-            setDetectedLanguage(browserLanguage);
           }
         }
       } catch (error) {
-        console.log('Could not detect language, using default');
-        // Fallback to browser language
-        const browserLang = navigator.language.split('-')[0];
-        const browserLanguage = supportedLanguages.find(l => l.code === browserLang);
-        if (browserLanguage) {
-          setDetectedLanguage(browserLanguage);
-          if (!localStorage.getItem("shake-language")) {
-            setSelectedLanguageState(browserLanguage);
-          }
-        }
+        // IP detection failed, browser language already set above
+        console.log('IP detection unavailable, using browser language');
       } finally {
         setIsDetecting(false);
       }
