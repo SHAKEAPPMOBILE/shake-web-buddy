@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Calendar, MapPin, Plus, Trash2, Users } from "lucide-react";
+import { Calendar, MapPin, Plus, Trash2, Users, DollarSign } from "lucide-react";
 import { useUserActivities, UserActivity } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
 import { getActivityEmoji, getActivityLabel, getActivityColor, ACTIVITY_TYPES } from "@/data/activityTypes";
@@ -23,6 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { useActivityPayment } from "@/hooks/useActivityPayment";
 
 interface ActivitiesListDialogProps {
   open: boolean;
@@ -41,9 +42,11 @@ export function ActivitiesListDialog({
 }: ActivitiesListDialogProps) {
   const { user, isPremium } = useAuth();
   const { activities, myActivities, isLoading, joinActivity, leaveActivity, deleteActivity, hasJoinedActivity } = useUserActivities(city);
+  const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
   const [joinedActivities, setJoinedActivities] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [processingActivityId, setProcessingActivityId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   
   const swipeHandlers = useSwipeToClose({
@@ -80,6 +83,15 @@ export function ActivitiesListDialog({
         return next;
       });
     } else {
+      // If activity has a price, redirect to payment
+      if (activity.price_amount) {
+        setProcessingActivityId(activity.id);
+        const success = await redirectToPayment(activity.id);
+        setProcessingActivityId(null);
+        // Don't set as joined - that will happen after payment success webhook
+        return;
+      }
+      
       const result = await joinActivity(activity.id, isPremium);
       if (result.requiresPremium) {
         setShowPremiumDialog(true);
@@ -180,6 +192,12 @@ export function ActivitiesListDialog({
                               <Users className="w-3 h-3" />
                               <span>{activity.participant_count}</span>
                             </div>
+                            {activity.price_amount && (
+                              <div className="flex items-center gap-1 text-xs text-green-300 font-medium shrink-0">
+                                <DollarSign className="w-3 h-3" />
+                                <span>{activity.price_amount}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -202,8 +220,17 @@ export function ActivitiesListDialog({
                               variant={hasJoined ? "secondary" : "default"}
                               className="h-8 px-3 text-xs"
                               onClick={(e) => handleJoinToggle(activity, e)}
+                              disabled={processingActivityId === activity.id}
                             >
-                              {hasJoined ? "Joined" : "Join"}
+                              {processingActivityId === activity.id ? (
+                                <LoadingSpinner size="sm" />
+                              ) : hasJoined ? (
+                                "Joined"
+                              ) : activity.price_amount ? (
+                                `Pay ${activity.price_amount}`
+                              ) : (
+                                "Join"
+                              )}
                             </Button>
                           )}
                         </div>

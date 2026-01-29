@@ -27,3 +27,12 @@ verify_jwt = false
 
 [functions.bulk-geocode-venues]
 verify_jwt = false
+
+[functions.create-connect-account]
+verify_jwt = false
+
+[functions.check-connect-status]
+verify_jwt = false
+
+[functions.create-activity-payment]
+verify_jwt = false

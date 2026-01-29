@@ -1,8 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { startOfDay } from "date-fns";
-import { Plus } from "lucide-react";
+import { Plus, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +14,7 @@ import { SuperHumanIcon } from "./SuperHumanIcon";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { detectActivityFromText } from "@/lib/activityDetection";
+import { useStripeConnect } from "@/hooks/useStripeConnect";
 
 interface CreateActivityDialogProps {
   open: boolean;
@@ -27,7 +29,9 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const { createActivity, isLoading, remainingActivities, myActivities } = useUserActivities(city);
   
   const [planText, setPlanText] = useState("");
+  const [priceAmount, setPriceAmount] = useState("");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const { isConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const isMobile = useIsMobile();
   
   const swipeHandlers = useSwipeToClose({
@@ -61,17 +65,31 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const handleCreate = async () => {
     if (!isValid || !detectedActivity) return;
 
-    const success = await createActivity(detectedActivity.type, today, planText.trim());
+    // If setting a price, require Stripe Connect
+    if (priceAmount.trim() && (!isConnected || connectStatus !== "complete")) {
+      startOnboarding();
+      return;
+    }
+
+    const success = await createActivity(
+      detectedActivity.type, 
+      today, 
+      planText.trim(),
+      undefined,
+      priceAmount.trim() || undefined
+    );
     if (success) {
       triggerConfettiWaterfall();
       // Reset form
       setPlanText("");
+      setPriceAmount("");
       onOpenChange(false);
     }
   };
 
   const resetForm = () => {
     setPlanText("");
+    setPriceAmount("");
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -161,6 +179,34 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               </div>
             </div>
 
+            {/* Price Input (optional) */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground" />
+                <label className="text-sm font-medium text-foreground">
+                  Set a price (optional)
+                </label>
+              </div>
+              <div className="relative">
+                <Input
+                  value={priceAmount}
+                  onChange={(e) => setPriceAmount(e.target.value)}
+                  placeholder="e.g., $5, €10, or leave empty for free"
+                  className="pl-3"
+                />
+              </div>
+              {priceAmount.trim() && (!isConnected || connectStatus !== "complete") && (
+                <p className="text-xs text-amber-600">
+                  You'll need to connect your Stripe account to receive payments
+                </p>
+              )}
+              {priceAmount.trim() && isConnected && connectStatus === "complete" && (
+                <p className="text-xs text-green-600">
+                  ✓ Stripe connected - You'll receive 90% of each payment
+                </p>
+              )}
+            </div>
+
             {/* Preview - shows detected activity or warning */}
             {detectedActivity && planText.trim() && (
               <div className={cn(
@@ -180,7 +226,12 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
-                        <p className="text-sm text-muted-foreground">{city} • Today</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>{city} • Today</span>
+                          {priceAmount.trim() && (
+                            <span className="text-green-600 font-medium">{priceAmount}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </>
