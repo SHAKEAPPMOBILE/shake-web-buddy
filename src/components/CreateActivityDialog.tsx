@@ -197,7 +197,14 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               </div>
               {priceAmount.trim() && (!isConnected || connectStatus !== "complete") && (
                 <p className="text-xs text-amber-600">
-                  You'll need to connect your Stripe account to receive payments
+                  To receive payments,{" "}
+                  <button 
+                    type="button"
+                    onClick={startOnboarding}
+                    className="underline hover:text-amber-700 font-medium"
+                  >
+                    connect your payout account
+                  </button>
                 </p>
               )}
               {priceAmount.trim() && isConnected && connectStatus === "complete" && (
