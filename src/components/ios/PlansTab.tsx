@@ -23,6 +23,7 @@ import { SwipeableCard } from "../SwipeableCard";
 import { useTranslation } from "react-i18next";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
+import { ActivityDetailDialog } from "@/components/ActivityDetailDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -291,6 +292,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     userName: string | null;
     avatarUrl: string | null;
   } | null>(null);
+  const [paidActivityDetail, setPaidActivityDetail] = useState<PlanActivity | null>(null);
   
 
   // Notify parent when entering/leaving chat view
@@ -397,12 +399,9 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
       return;
     }
     
-    // If it's a paid plan and user hasn't joined and is not the creator, redirect to payment
+    // If it's a paid plan and user hasn't joined and is not the creator, show detail dialog
     if (plan.price_amount && !plan.isJoined && plan.user_id !== user?.id) {
-      const success = await redirectToPayment(plan.id);
-      if (!success) {
-        toast.error("Could not start payment process");
-      }
+      setPaidActivityDetail(plan);
       return;
     }
     
@@ -702,13 +701,19 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
                 </div>
 
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-white">
                       {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || t('plans.untitledPlan', 'Untitled Plan'))}
                     </h3>
                     {plan.isJoined && (
                       <span className="text-xs bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">
                         {t('common.joined')}
+                      </span>
+                    )}
+                    {/* Price badge for paid activities */}
+                    {plan.price_amount && !plan.isCarouselJoin && (
+                      <span className="text-xs bg-green-500/80 text-white font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        {plan.price_amount}
                       </span>
                     )}
                   </div>
@@ -840,6 +845,23 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
           userId={selectedUserProfile.userId}
           userName={selectedUserProfile.userName}
           avatarUrl={selectedUserProfile.avatarUrl}
+        />
+      )}
+
+      {/* Paid Activity Detail Dialog */}
+      {paidActivityDetail && (
+        <ActivityDetailDialog
+          open={!!paidActivityDetail}
+          onOpenChange={(open) => !open && setPaidActivityDetail(null)}
+          activity={paidActivityDetail}
+          onCreatorClick={() => {
+            setPaidActivityDetail(null);
+            setSelectedUserProfile({
+              userId: paidActivityDetail.user_id,
+              userName: paidActivityDetail.creator_name || null,
+              avatarUrl: paidActivityDetail.creator_avatar || null,
+            });
+          }}
         />
       )}
     </div>
