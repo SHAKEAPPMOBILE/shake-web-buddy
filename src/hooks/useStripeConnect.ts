@@ -37,20 +37,27 @@ export function useStripeConnect() {
     }
   }, [user]);
 
-  const startOnboarding = useCallback(async () => {
+  /**
+   * Start Stripe Connect onboarding
+   * @param country - ISO 3166-1 alpha-2 country code (e.g., "US", "GB", "DE")
+   * @param reset - If true, deletes existing account and creates a new one
+   */
+  const startOnboarding = useCallback(async (country?: string, reset?: boolean) => {
     if (!user) return;
 
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const { data, error } = await supabase.functions.invoke("create-connect-account");
+      const { data, error } = await supabase.functions.invoke("create-connect-account", {
+        body: { country, reset }
+      });
       
       if (error) throw error;
 
-    if (data?.url) {
-      // Navigate to Stripe onboarding (using location.href to avoid popup blockers)
-      window.location.href = data.url;
-    } else if (data?.status === "complete") {
+      if (data?.url) {
+        // Navigate to Stripe onboarding (using location.href to avoid popup blockers)
+        window.location.href = data.url;
+      } else if (data?.status === "complete") {
         // Already connected
         setState(prev => ({ 
           ...prev, 
@@ -61,10 +68,17 @@ export function useStripeConnect() {
       }
     } catch (error) {
       console.error("Error starting Stripe Connect onboarding:", error);
-    } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
   }, [user]);
+
+  /**
+   * Reset and recreate Stripe Connect account with a new country
+   * @param country - ISO 3166-1 alpha-2 country code
+   */
+  const resetAndRecreate = useCallback(async (country: string) => {
+    return startOnboarding(country, true);
+  }, [startOnboarding]);
 
   // Check status on mount and when user changes
   useEffect(() => {
@@ -91,5 +105,6 @@ export function useStripeConnect() {
     ...state,
     checkStatus,
     startOnboarding,
+    resetAndRecreate,
   };
 }
