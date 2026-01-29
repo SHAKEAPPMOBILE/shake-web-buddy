@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface StripeConnectState {
   isConnected: boolean;
   status: "pending" | "complete" | null;
+  email: string | null;
   isLoading: boolean;
 }
 
@@ -13,6 +14,7 @@ export function useStripeConnect() {
   const [state, setState] = useState<StripeConnectState>({
     isConnected: false,
     status: null,
+    email: null,
     isLoading: false,
   });
 
@@ -29,6 +31,7 @@ export function useStripeConnect() {
       setState({
         isConnected: data?.connected || false,
         status: data?.status || null,
+        email: data?.email || null,
         isLoading: false,
       });
     } catch (error) {
