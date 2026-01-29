@@ -16,6 +16,7 @@ import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
+import { useTranslation } from "react-i18next";
 
 interface PlanMessage {
   id: string;
@@ -43,20 +44,12 @@ interface PlanGroupChatViewProps {
   attendeeCount?: number;
 }
 
-const chatSuggestions = [
-  "What time works best?",
-  "Where should we meet?",
-  "Count me in!",
-  "See you there! 👋",
-  "I'm running late!",
-  "On my way! 🏃",
-];
-
 export function PlanGroupChatView({
   activity,
   onBack,
   attendeeCount = 0,
 }: PlanGroupChatViewProps) {
+  const { t } = useTranslation();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<PlanMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -73,6 +66,15 @@ export function PlanGroupChatView({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user, isPremium } = useAuth();
   const { location, mapsUrl } = useActivityVenue(activity.city, activity.activity_type);
+
+  const chatSuggestions = useMemo(() => [
+    t('chat.suggestions.whatTime', 'What time works best?'),
+    t('chat.suggestions.whereMeet', 'Where should we meet?'),
+    t('chat.suggestions.countMeIn', 'Count me in!'),
+    t('chat.suggestions.seeYouThere', 'See you there! 👋'),
+    t('chat.suggestions.runningLate', "I'm running late!"),
+    t('chat.suggestions.onMyWay', 'On my way! 🏃'),
+  ], [t]);
 
   // Get unique user IDs from messages
   const userIds = useMemo(() => {
@@ -210,7 +212,7 @@ export function PlanGroupChatView({
             {getActivityEmoji(activity.activity_type)} {getActivityLabel(activity.activity_type)}
           </h1>
           <p className="text-sm text-black/60 truncate">
-            Created by {creatorProfile?.name || "Shaker"}
+            {t('chat.createdBy', 'Created by')} {creatorProfile?.name || "Shaker"}
           </p>
         </div>
         <button
@@ -256,8 +258,8 @@ export function PlanGroupChatView({
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50">
             <p className="text-center text-sm">
-              Start planning!<br />
-              Coordinate with others joining this plan.
+              {t('chat.startPlanning', 'Start planning!')}<br />
+              {t('chat.coordinateWithOthers', 'Coordinate with others joining this plan.')}
             </p>
           </div>
         ) : (
@@ -361,7 +363,7 @@ export function PlanGroupChatView({
       <div className="p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
           <Input
-            placeholder={user ? (canSendText ? "Type a message..." : "Character limit reached") : "Sign in to chat"}
+            placeholder={user ? (canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')) : t('chat.signInToChat', 'Sign in to chat')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}

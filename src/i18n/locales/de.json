@@ -99,11 +99,29 @@
   "chat": {
     "title": "Chat",
     "noMessages": "Noch keine Nachrichten",
-    "startConversation": "Starte ein Gespräch",
+    "startConversation": "Sende eine Nachricht, um das Gespräch zu starten!",
     "typeMessage": "Nachricht eingeben...",
+    "characterLimitReached": "Zeichenlimit erreicht",
+    "signInToChat": "Anmelden zum Chatten",
     "send": "Senden",
     "groupChat": "Gruppenchat",
-    "privateMessage": "Private Nachricht"
+    "privateMessage": "Private Nachricht",
+    "startPlanning": "Beginne mit der Planung!",
+    "coordinateWithOthers": "Koordiniere dich mit anderen, die diesem Plan beitreten.",
+    "createdBy": "Erstellt von",
+    "suggestions": {
+      "hey": "Hey! 👋",
+      "howAreYou": "Wie geht's?",
+      "niceToMeet": "Freut mich!",
+      "letsCatchUp": "Lass uns treffen!",
+      "seeYouSoon": "Bis bald! 😊",
+      "whatTime": "Welche Zeit passt am besten?",
+      "whereMeet": "Wo treffen wir uns?",
+      "countMeIn": "Ich bin dabei!",
+      "seeYouThere": "Bis dann! 👋",
+      "runningLate": "Ich komme zu spät!",
+      "onMyWay": "Bin unterwegs! 🏃"
+    }
   },
   "plans": {
     "title": "Pläne",
