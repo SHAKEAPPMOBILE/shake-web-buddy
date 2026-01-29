@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,7 @@ import shakeCoin from "@/assets/shake-coin-transparent.png";
 import { LanguageSelector } from "../LanguageSelector";
 import { useTranslation } from "react-i18next";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
+import { StripeCountrySelectorDialog } from "../StripeCountrySelectorDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,7 +60,19 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [copiedLink, setCopiedLink] = useState(false);
   const [showReferralLink, setShowReferralLink] = useState(false);
   const [showStripeConnect, setShowStripeConnect] = useState(false);
-  const { isConnected: stripeConnected, status: stripeStatus, isLoading: stripeLoading, startOnboarding, checkStatus: checkStripeStatus } = useStripeConnect();
+  const [showCountrySelector, setShowCountrySelector] = useState(false);
+  const [showResetCountrySelector, setShowResetCountrySelector] = useState(false);
+  const { isConnected: stripeConnected, status: stripeStatus, isLoading: stripeLoading, startOnboarding, checkStatus: checkStripeStatus, resetAndRecreate } = useStripeConnect();
+
+  const handleStartOnboarding = (countryCode: string) => {
+    setShowCountrySelector(false);
+    startOnboarding(countryCode);
+  };
+
+  const handleResetAndRecreate = (countryCode: string) => {
+    setShowResetCountrySelector(false);
+    resetAndRecreate(countryCode);
+  };
 
   const handleCopyReferralLink = async () => {
     const link = getReferralLink(referralCode);
@@ -450,6 +463,18 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                       )}
                       {t('profile.stripeRefreshStatus', 'Refresh status')}
                     </button>
+                    {/* Reset option for wrong country */}
+                    <button
+                      onClick={() => {
+                        setShowStripeConnect(false);
+                        setShowResetCountrySelector(true);
+                      }}
+                      disabled={stripeLoading}
+                      className="w-full py-2 text-sm font-medium text-destructive border border-destructive/30 rounded-lg hover:bg-destructive/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      {t('profile.stripeResetAccount', 'Wrong country? Reset account')}
+                    </button>
                   </>
                 ) : (
                   <>
@@ -458,8 +483,8 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                     </p>
                     <button
                       onClick={() => {
-                        startOnboarding();
                         setShowStripeConnect(false);
+                        setShowCountrySelector(true);
                       }}
                       disabled={stripeLoading}
                       className="w-full py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
@@ -557,6 +582,24 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           onVideoUploaded={() => setStatusRefreshKey((prev) => prev + 1)}
         />
       )}
+
+      {/* Country Selector for New Stripe Connect */}
+      <StripeCountrySelectorDialog
+        open={showCountrySelector}
+        onOpenChange={setShowCountrySelector}
+        onSelectCountry={handleStartOnboarding}
+        isLoading={stripeLoading}
+        isReset={false}
+      />
+
+      {/* Country Selector for Reset/Recreate Stripe Connect */}
+      <StripeCountrySelectorDialog
+        open={showResetCountrySelector}
+        onOpenChange={setShowResetCountrySelector}
+        onSelectCountry={handleResetAndRecreate}
+        isLoading={stripeLoading}
+        isReset={true}
+      />
 
     </div>
   );

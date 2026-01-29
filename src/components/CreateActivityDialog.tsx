@@ -255,7 +255,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   To receive payments,{" "}
                   <button 
                     type="button"
-                    onClick={startOnboarding}
+                    onClick={() => startOnboarding()}
                     className="underline hover:text-amber-700 font-medium"
                   >
                     connect your payout account

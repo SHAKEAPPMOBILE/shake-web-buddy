@@ -39,6 +39,20 @@ serve(async (req) => {
 
     logStep("User authenticated", { userId: user.id });
 
+    // Parse request body for country and reset flag
+    let country: string | undefined;
+    let reset = false;
+    
+    try {
+      const body = await req.json();
+      country = body.country; // ISO 3166-1 alpha-2 country code (e.g., "US", "GB", "DE")
+      reset = body.reset === true;
+      logStep("Request body parsed", { country, reset });
+    } catch {
+      // No body or invalid JSON - that's fine, we'll use defaults
+      logStep("No request body or invalid JSON");
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
@@ -52,7 +66,31 @@ serve(async (req) => {
 
     let accountId = privateProfile?.stripe_account_id;
 
-    if (accountId) {
+    // If reset is requested and there's an existing account, delete it from Stripe and clear from DB
+    if (reset && accountId) {
+      logStep("Reset requested, deleting existing Stripe account", { accountId });
+      try {
+        await stripe.accounts.del(accountId);
+        logStep("Deleted Stripe account successfully");
+      } catch (deleteError) {
+        // Account might already be deleted or not exist
+        logStep("Could not delete Stripe account (may not exist)", { error: String(deleteError) });
+      }
+      
+      // Clear the account ID from the database
+      await supabaseClient
+        .from("profiles_private")
+        .update({ 
+          stripe_account_id: null,
+          stripe_account_status: null
+        })
+        .eq("user_id", user.id);
+      
+      accountId = null;
+      logStep("Cleared Stripe account from database");
+    }
+
+    if (accountId && !reset) {
       logStep("Found existing Stripe account", { accountId });
       
       // Check account status
@@ -73,9 +111,12 @@ serve(async (req) => {
           status: 200,
         });
       }
-    } else {
+    }
+    
+    if (!accountId) {
       // Create a new Stripe Connect account (Express type for easier onboarding)
-      const account = await stripe.accounts.create({
+      // Pass the country if provided
+      const accountParams: Stripe.AccountCreateParams = {
         type: "express",
         email: privateProfile?.billing_email || user.email || undefined,
         capabilities: {
@@ -85,10 +126,18 @@ serve(async (req) => {
         metadata: {
           user_id: user.id,
         },
-      });
+      };
+
+      // Only set country if provided (Stripe requires valid ISO 3166-1 alpha-2 code)
+      if (country) {
+        accountParams.country = country;
+        logStep("Setting account country", { country });
+      }
+
+      const account = await stripe.accounts.create(accountParams);
 
       accountId = account.id;
-      logStep("Created new Stripe Connect account", { accountId });
+      logStep("Created new Stripe Connect account", { accountId, country: account.country });
 
       // Save the account ID
       await supabaseClient
