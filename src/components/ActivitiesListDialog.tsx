@@ -150,6 +150,15 @@ export function ActivitiesListDialog({
                   const hasJoined = joinedActivities.has(activity.id);
                   const activityConfig = getActivityConfig(activity.activity_type);
                   const hasMatchedActivity = activityConfig.emoji !== '📍';
+                  
+                  // Truncate title to max 3 words
+                  const truncateToThreeWords = (text: string | null): string => {
+                    if (!text) return '';
+                    const words = text.trim().split(/\s+/);
+                    if (words.length <= 3) return text;
+                    return words.slice(0, 3).join(' ') + '...';
+                  };
+                  const displayTitle = truncateToThreeWords(activity.note) || getActivityLabel(activity.activity_type);
 
                     return (
                       <button
@@ -176,7 +185,7 @@ export function ActivitiesListDialog({
                         <div className="flex-1 min-w-0 overflow-hidden">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold text-white truncate">
-                              {activity.note || getActivityLabel(activity.activity_type)}
+                              {displayTitle}
                             </p>
                             {isOwner && (
                               <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full whitespace-nowrap">
