@@ -321,7 +321,10 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           id: string
+          paypal_connected: boolean | null
+          paypal_email: string | null
           phone_number: string | null
+          preferred_payout_method: string | null
           premium_override: boolean
           push_notifications_enabled: boolean
           sms_notifications_enabled: boolean
@@ -336,7 +339,10 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           id?: string
+          paypal_connected?: boolean | null
+          paypal_email?: string | null
           phone_number?: string | null
+          preferred_payout_method?: string | null
           premium_override?: boolean
           push_notifications_enabled?: boolean
           sms_notifications_enabled?: boolean
@@ -351,7 +357,10 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           id?: string
+          paypal_connected?: boolean | null
+          paypal_email?: string | null
           phone_number?: string | null
+          preferred_payout_method?: string | null
           premium_override?: boolean
           push_notifications_enabled?: boolean
           sms_notifications_enabled?: boolean

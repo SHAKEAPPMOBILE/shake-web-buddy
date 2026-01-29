@@ -16,8 +16,10 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { detectActivityFromText } from "@/lib/activityDetection";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
+import { usePayPalConnect } from "@/hooks/usePayPalConnect";
 import { supabase } from "@/integrations/supabase/client";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
+import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -47,7 +49,9 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
-  const { isConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
+  const [showPayPalDialog, setShowPayPalDialog] = useState(false);
+  const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
+  const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
   const isMobile = useIsMobile();
   
   // Fetch current user's avatar
@@ -95,7 +99,8 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   // For paid activities without Stripe connected, we still allow creation but will prompt for Stripe
   const isValid = planText.trim().length > 0 && !hasExistingActivityToday;
   const isPaidActivity = priceAmount.trim().length > 0;
-  const needsStripeSetup = isPaidActivity && (!isConnected || connectStatus !== "complete");
+  const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
+  const needsPayoutSetup = isPaidActivity && !hasPayoutMethod;
 
   const handleStartOnboardingWithCountry = (countryCode: string) => {
     setShowStripeCountrySelector(false);
@@ -105,8 +110,9 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const handleCreate = async () => {
     if (!isValid || !detectedActivity) return;
 
-    // If setting a price, require Stripe Connect
-    if (priceAmount.trim() && (!isConnected || connectStatus !== "complete")) {
+    // If setting a price, require a payout method (Stripe or PayPal)
+    if (priceAmount.trim() && !hasPayoutMethod) {
+      // Show option to connect - default to showing Stripe country selector
       setShowStripeCountrySelector(true);
       return;
     }
@@ -257,21 +263,31 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   className="flex-1"
                 />
               </div>
-              {priceAmount.trim() && (!isConnected || connectStatus !== "complete") && (
-                <p className="text-xs text-amber-600">
-                  To receive payments,{" "}
-                  <button 
-                    type="button"
-                    onClick={() => setShowStripeCountrySelector(true)}
-                    className="underline hover:text-amber-700 font-medium"
-                  >
-                    connect your payout account
-                  </button>
-                </p>
+              {priceAmount.trim() && !hasPayoutMethod && (
+                <div className="text-xs text-amber-600 space-y-1">
+                  <p>To receive payments, connect a payout method:</p>
+                  <div className="flex gap-2">
+                    <button 
+                      type="button"
+                      onClick={() => setShowStripeCountrySelector(true)}
+                      className="underline hover:text-amber-700 font-medium"
+                    >
+                      Stripe
+                    </button>
+                    <span>or</span>
+                    <button 
+                      type="button"
+                      onClick={() => setShowPayPalDialog(true)}
+                      className="underline hover:text-amber-700 font-medium"
+                    >
+                      PayPal
+                    </button>
+                  </div>
+                </div>
               )}
-              {priceAmount.trim() && isConnected && connectStatus === "complete" && (
+              {priceAmount.trim() && hasPayoutMethod && (
                 <p className="text-xs text-green-600">
-                  ✓ Stripe connected - You'll receive 90% of each payment
+                  ✓ {paypalConnected ? "PayPal" : "Stripe"} connected - You'll receive 90% of each payment
                 </p>
               )}
             </div>
@@ -339,7 +355,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   <LoadingSpinner size="sm" />
                   {connectLoading ? "Checking payment setup..." : "Creating..."}
                 </span>
-              ) : needsStripeSetup ? (
+              ) : needsPayoutSetup ? (
                 "Set Up Payments & Create"
               ) : (
                 "Create Plan"
@@ -358,6 +374,14 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
         onSelectCountry={handleStartOnboardingWithCountry}
         isLoading={connectLoading}
         isReset={false}
+      />
+
+      {/* PayPal connect dialog */}
+      <PayPalConnectDialog
+        open={showPayPalDialog}
+        onOpenChange={setShowPayPalDialog}
+        onConnect={connectPayPal}
+        isLoading={paypalLoading}
       />
     </Dialog>
   );
