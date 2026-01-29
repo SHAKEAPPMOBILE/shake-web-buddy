@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2 } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,7 +59,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [copiedLink, setCopiedLink] = useState(false);
   const [showReferralLink, setShowReferralLink] = useState(false);
   const [showStripeConnect, setShowStripeConnect] = useState(false);
-  const { isConnected: stripeConnected, status: stripeStatus, isLoading: stripeLoading, startOnboarding } = useStripeConnect();
+  const { isConnected: stripeConnected, status: stripeStatus, isLoading: stripeLoading, startOnboarding, checkStatus: checkStripeStatus } = useStripeConnect();
 
   const handleCopyReferralLink = async () => {
     const link = getReferralLink(referralCode);
@@ -437,6 +437,18 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                         <ExternalLink className="w-4 h-4" />
                       )}
                       {t('profile.stripeCompletePending', 'Complete verification')}
+                    </button>
+                    <button
+                      onClick={checkStripeStatus}
+                      disabled={stripeLoading}
+                      className="w-full py-2 text-sm font-medium text-muted-foreground border border-border rounded-lg hover:bg-muted/50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {stripeLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      {t('profile.stripeRefreshStatus', 'Refresh status')}
                     </button>
                   </>
                 ) : (
