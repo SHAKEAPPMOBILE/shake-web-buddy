@@ -1,0 +1,115 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "noResults": "No results found",
+    "error": "An error occurred",
+    "success": "Success!",
+    "welcome": "Welcome",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "or": "or",
+    "and": "and"
+  },
+  "home": {
+    "title": "Shake",
+    "subtitle": "Meet people. Make friends.",
+    "joinActivity": "Join Activity",
+    "createActivity": "Create Activity",
+    "noActivities": "No activities yet",
+    "beFirstToCreate": "Be the first to create one!",
+    "peopleJoined": "{{count}} people joined",
+    "expiresIn": "Expires in {{time}}"
+  },
+  "activities": {
+    "brunch": "Brunch",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "drinks": "Drinks",
+    "coffee": "Coffee",
+    "hiking": "Hiking",
+    "fitness": "Fitness",
+    "tennisPadel": "Tennis/Padel",
+    "culture": "Culture",
+    "games": "Games",
+    "party": "Party",
+    "selectActivity": "Select an activity",
+    "whatDoYouWantToDo": "What do you want to do?"
+  },
+  "chat": {
+    "title": "Chat",
+    "noMessages": "No messages yet",
+    "startConversation": "Start a conversation",
+    "typeMessage": "Type a message...",
+    "send": "Send",
+    "groupChat": "Group Chat",
+    "privateMessage": "Private Message"
+  },
+  "plans": {
+    "title": "Plans",
+    "myPlans": "My Plans",
+    "upcomingPlans": "Upcoming Plans",
+    "noPlanYet": "No plans yet",
+    "createPlan": "Create a Plan",
+    "joinPlan": "Join Plan",
+    "participants": "Participants",
+    "scheduledFor": "Scheduled for"
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "myPoints": "My Points",
+    "manageSubscription": "Manage Subscription",
+    "shareReferral": "Share Referral Link",
+    "settings": "Settings",
+    "name": "Name",
+    "occupation": "Occupation",
+    "nationality": "Nationality",
+    "birthday": "Birthday",
+    "phone": "Phone",
+    "socialLinks": "Social Links",
+    "deleteAccount": "Delete Account",
+    "superHuman": "Super-Human",
+    "premium": "Premium",
+    "points": "points",
+    "referralCode": "Referral Code",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link copied!"
+  },
+  "auth": {
+    "enterPhone": "Enter your phone number",
+    "verifyCode": "Enter verification code",
+    "codeSent": "Code sent to {{phone}}",
+    "resendCode": "Resend code",
+    "continueWithPhone": "Continue with phone",
+    "termsAgreement": "By continuing, you agree to our Terms of Service and Privacy Policy"
+  },
+  "languageSelector": {
+    "swipeToSelect": "Swipe to select your language",
+    "detecting": "Detecting..."
+  },
+  "citySelector": {
+    "selectCity": "Select a city",
+    "currentCity": "Current city"
+  },
+  "notifications": {
+    "newMessage": "New message",
+    "activityUpdate": "Activity update",
+    "planReminder": "Plan reminder"
+  },
+  "errors": {
+    "networkError": "Network error. Please try again.",
+    "unauthorized": "You need to sign in.",
+    "notFound": "Page not found",
+    "serverError": "Server error. Please try again later."
+  }
+}

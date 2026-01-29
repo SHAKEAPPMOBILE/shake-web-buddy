@@ -1,0 +1,115 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "search": "Rechercher",
+    "noResults": "Aucun résultat trouvé",
+    "error": "Une erreur s'est produite",
+    "success": "Succès !",
+    "welcome": "Bienvenue",
+    "signIn": "Se connecter",
+    "signUp": "S'inscrire",
+    "signOut": "Se déconnecter",
+    "or": "ou",
+    "and": "et"
+  },
+  "home": {
+    "title": "Shake",
+    "subtitle": "Rencontrez des gens. Faites-vous des amis.",
+    "joinActivity": "Rejoindre l'activité",
+    "createActivity": "Créer une activité",
+    "noActivities": "Pas encore d'activités",
+    "beFirstToCreate": "Soyez le premier à en créer une !",
+    "peopleJoined": "{{count}} personnes ont rejoint",
+    "expiresIn": "Expire dans {{time}}"
+  },
+  "activities": {
+    "brunch": "Brunch",
+    "lunch": "Déjeuner",
+    "dinner": "Dîner",
+    "drinks": "Boissons",
+    "coffee": "Café",
+    "hiking": "Randonnée",
+    "fitness": "Fitness",
+    "tennisPadel": "Tennis/Padel",
+    "culture": "Culture",
+    "games": "Jeux",
+    "party": "Fête",
+    "selectActivity": "Sélectionnez une activité",
+    "whatDoYouWantToDo": "Que voulez-vous faire ?"
+  },
+  "chat": {
+    "title": "Discussion",
+    "noMessages": "Pas encore de messages",
+    "startConversation": "Commencez une conversation",
+    "typeMessage": "Tapez un message...",
+    "send": "Envoyer",
+    "groupChat": "Discussion de groupe",
+    "privateMessage": "Message privé"
+  },
+  "plans": {
+    "title": "Plans",
+    "myPlans": "Mes Plans",
+    "upcomingPlans": "Plans à venir",
+    "noPlanYet": "Pas encore de plans",
+    "createPlan": "Créer un Plan",
+    "joinPlan": "Rejoindre le Plan",
+    "participants": "Participants",
+    "scheduledFor": "Prévu pour"
+  },
+  "profile": {
+    "title": "Profil",
+    "editProfile": "Modifier le Profil",
+    "myPoints": "Mes Points",
+    "manageSubscription": "Gérer l'Abonnement",
+    "shareReferral": "Partager le Lien de Parrainage",
+    "settings": "Paramètres",
+    "name": "Nom",
+    "occupation": "Profession",
+    "nationality": "Nationalité",
+    "birthday": "Anniversaire",
+    "phone": "Téléphone",
+    "socialLinks": "Réseaux Sociaux",
+    "deleteAccount": "Supprimer le Compte",
+    "superHuman": "Super-Humain",
+    "premium": "Premium",
+    "points": "points",
+    "referralCode": "Code de Parrainage",
+    "copyLink": "Copier le Lien",
+    "linkCopied": "Lien copié !"
+  },
+  "auth": {
+    "enterPhone": "Entrez votre numéro de téléphone",
+    "verifyCode": "Entrez le code de vérification",
+    "codeSent": "Code envoyé à {{phone}}",
+    "resendCode": "Renvoyer le code",
+    "continueWithPhone": "Continuer avec le téléphone",
+    "termsAgreement": "En continuant, vous acceptez nos Conditions d'Utilisation et notre Politique de Confidentialité"
+  },
+  "languageSelector": {
+    "swipeToSelect": "Glissez pour sélectionner votre langue",
+    "detecting": "Détection..."
+  },
+  "citySelector": {
+    "selectCity": "Sélectionnez une ville",
+    "currentCity": "Ville actuelle"
+  },
+  "notifications": {
+    "newMessage": "Nouveau message",
+    "activityUpdate": "Mise à jour d'activité",
+    "planReminder": "Rappel de plan"
+  },
+  "errors": {
+    "networkError": "Erreur réseau. Veuillez réessayer.",
+    "unauthorized": "Vous devez vous connecter.",
+    "notFound": "Page non trouvée",
+    "serverError": "Erreur serveur. Veuillez réessayer plus tard."
+  }
+}

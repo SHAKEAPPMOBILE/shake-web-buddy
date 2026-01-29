@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTotalUnreadChats } from "@/hooks/useTotalUnreadChats";
+import { useTranslation } from "react-i18next";
 
 interface IOSTabBarProps {
   activeTab: string;
@@ -12,17 +13,18 @@ interface IOSTabBarProps {
 }
 
 export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { totalUnread } = useTotalUnreadChats();
   const navigate = useNavigate();
   const [isShaking, setIsShaking] = useState(false);
 
   const tabs = [
-    { id: "home", icon: Home, label: "Home" },
-    { id: "plans", icon: MapPin, label: "Plans" },
+    { id: "home", icon: Home, label: t('home.title', 'Home') },
+    { id: "plans", icon: MapPin, label: t('plans.title') },
     { id: "shake", icon: Plus, label: "Shake", isCenter: true },
-    { id: "chat", icon: MessageSquare, label: "Chat" },
-    { id: "profile", icon: User, label: "Profile" },
+    { id: "chat", icon: MessageSquare, label: t('chat.title') },
+    { id: "profile", icon: User, label: t('profile.title') },
   ];
 
   const handleShakeAnimation = () => {
