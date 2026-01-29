@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SuperHumanIcon } from "../SuperHumanIcon";
-import { Calendar, Users, Plus, Plane, Share2, MapPin, Search, X } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Share2, MapPin, Search, X, Trash2 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "../PremiumDialog";
@@ -57,6 +58,7 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
   const { selectedCity } = useCity();
   const { user, isPremium } = useAuth();
   const { referralCode } = useReferralCode(user?.id);
+  const isMobile = useIsMobile();
   const [activities, setActivities] = useState<PlanActivity[]>([]);
   const [searchCity, setSearchCity] = useState<string>(() => {
     return localStorage.getItem("plans-city-filter") || selectedCity || "";
@@ -743,8 +745,23 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
 
                 </div>
 
-                {/* Share button */}
-                <div className="flex items-center">
+                {/* Action buttons */}
+                <div className="flex items-center gap-2">
+                  {/* Delete button - desktop only, for owner's plans */}
+                  {!isMobile && plan.user_id === user?.id && !plan.isCarouselJoin && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPlanToDelete(plan);
+                      }}
+                      className="p-2.5 bg-destructive/80 hover:bg-destructive text-white rounded-full transition-all shadow-sm"
+                      title="Delete plan"
+                      aria-label="Delete plan"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={(e) => {
