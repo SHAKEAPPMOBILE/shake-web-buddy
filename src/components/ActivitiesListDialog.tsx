@@ -159,7 +159,7 @@ export function ActivitiesListDialog({
                         <div className="flex-1 min-w-0 overflow-hidden">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold text-white truncate">
-                              {getActivityLabel(activity.activity_type)}
+                              {activity.note || getActivityLabel(activity.activity_type)}
                             </p>
                             {isOwner && (
                               <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full whitespace-nowrap">
