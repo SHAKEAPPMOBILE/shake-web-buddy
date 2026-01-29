@@ -111,19 +111,22 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
 
       {/* Carousel Dropdown */}
       {isOpen && (
-        <div 
-          className={cn(
-            "fixed z-50",
-            "bg-card border border-border rounded-2xl shadow-xl",
-            "p-3 animate-scale-in",
-            "w-[280px]"
-          )}
-          style={{ 
-            top: containerRef.current ? containerRef.current.getBoundingClientRect().bottom + 8 : 'auto',
-            left: '50%',
-            transform: 'translateX(-50%)'
+        <div
+          className="fixed left-1/2 z-50"
+          style={{
+            top: containerRef.current
+              ? containerRef.current.getBoundingClientRect().bottom + 8
+              : "auto",
+            transform: "translateX(-50%)",
           }}
         >
+          <div
+            className={cn(
+              "bg-card border border-border rounded-2xl shadow-xl",
+              "p-3 animate-scale-in",
+              "w-[280px]"
+            )}
+          >
           <p className="text-xs text-muted-foreground text-center mb-2">
             Swipe to select your language
           </p>
@@ -175,6 +178,7 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
             <span className="text-sm font-medium text-foreground">
               {selectedLanguage.flag} {selectedLanguage.nativeName}
             </span>
+          </div>
           </div>
         </div>
       )}
