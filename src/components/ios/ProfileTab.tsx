@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
 import { LanguageSelector } from "../LanguageSelector";
 import { useTranslation } from "react-i18next";
+import { useStripeConnect } from "@/hooks/useStripeConnect";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +58,8 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const { referralCode } = useReferralCode(user?.id);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showReferralLink, setShowReferralLink] = useState(false);
+  const [showStripeConnect, setShowStripeConnect] = useState(false);
+  const { isConnected: stripeConnected, status: stripeStatus, isLoading: stripeLoading, startOnboarding } = useStripeConnect();
 
   const handleCopyReferralLink = async () => {
     const link = getReferralLink(referralCode);
@@ -360,6 +363,74 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                 >
                   <Share2 className="w-4 h-4 text-primary" />
                 </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Connect Stripe for Payouts */}
+        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowStripeConnect(!showStripeConnect)}
+            className="w-full flex items-center gap-4 px-4 py-3"
+          >
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center",
+              stripeConnected ? "bg-shake-green/10" : "bg-primary/10"
+            )}>
+              <Wallet className={cn("w-5 h-5", stripeConnected ? "text-shake-green" : "text-primary")} />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="font-medium">{t('profile.stripeConnect', 'Creator Payouts')}</span>
+              <p className="text-xs text-muted-foreground">
+                {stripeConnected 
+                  ? t('profile.stripeConnected', 'Connected to Stripe')
+                  : t('profile.stripeNotConnected', 'Set up to receive payments')}
+              </p>
+            </div>
+            {stripeConnected && (
+              <div className="w-2 h-2 rounded-full bg-shake-green" />
+            )}
+          </button>
+          {showStripeConnect && (
+            <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
+              <div className="space-y-3 pt-3">
+                {stripeConnected ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-shake-green" />
+                      <span className="text-sm text-shake-green font-medium">
+                        {t('profile.stripeReady', 'Ready to receive payouts')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t('profile.stripeConnectedDesc', 'Your Stripe account is connected. You\'ll receive 90% of payments from your paid activities.')}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      {t('profile.stripeConnectDesc', 'Connect your Stripe account to receive payments when people join your paid activities. You\'ll keep 90% of each payment.')}
+                    </p>
+                    <button
+                      onClick={() => {
+                        startOnboarding();
+                        setShowStripeConnect(false);
+                      }}
+                      disabled={stripeLoading}
+                      className="w-full py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {stripeLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <ExternalLink className="w-4 h-4" />
+                          {t('profile.connectStripe', 'Connect Stripe Account')}
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}
