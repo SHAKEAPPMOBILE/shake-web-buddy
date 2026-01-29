@@ -47,10 +47,10 @@ export function useStripeConnect() {
       
       if (error) throw error;
 
-      if (data?.url) {
-        // Open Stripe onboarding in new tab
-        window.open(data.url, "_blank");
-      } else if (data?.status === "complete") {
+    if (data?.url) {
+      // Navigate to Stripe onboarding (using location.href to avoid popup blockers)
+      window.location.href = data.url;
+    } else if (data?.status === "complete") {
         // Already connected
         setState(prev => ({ 
           ...prev, 
