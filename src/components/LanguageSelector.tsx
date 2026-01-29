@@ -113,12 +113,16 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
       {isOpen && (
         <div 
           className={cn(
-            "fixed left-1/2 -translate-x-1/2 mt-2 z-50",
+            "fixed z-50",
             "bg-card border border-border rounded-2xl shadow-xl",
             "p-3 animate-scale-in",
             "w-[280px]"
           )}
-          style={{ top: containerRef.current ? containerRef.current.getBoundingClientRect().bottom + 8 : 'auto' }}
+          style={{ 
+            top: containerRef.current ? containerRef.current.getBoundingClientRect().bottom + 8 : 'auto',
+            left: '50%',
+            transform: 'translateX(-50%)'
+          }}
         >
           <p className="text-xs text-muted-foreground text-center mb-2">
             Swipe to select your language
