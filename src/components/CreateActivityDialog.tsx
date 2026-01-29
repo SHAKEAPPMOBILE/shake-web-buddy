@@ -24,7 +24,7 @@ const MAX_CHARACTERS = 50;
 
 export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivityDialogProps) {
   const { user, isPremium } = useAuth();
-  const { createActivity, isLoading, remainingActivities } = useUserActivities(city);
+  const { createActivity, isLoading, remainingActivities, myActivities } = useUserActivities(city);
   
   const [planText, setPlanText] = useState("");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
@@ -45,7 +45,19 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
     return detectActivityFromText(planText);
   }, [planText]);
   
-  const isValid = planText.trim().length > 0;
+  // Check if user already has an activity of this type today
+  const hasExistingActivityToday = useMemo(() => {
+    if (!detectedActivity || !myActivities.length) return false;
+    
+    const todayStart = startOfDay(new Date());
+    return myActivities.some(activity => {
+      const activityDate = startOfDay(new Date(activity.scheduled_for));
+      return activity.activity_type === detectedActivity.type && 
+             activityDate.getTime() === todayStart.getTime();
+    });
+  }, [detectedActivity, myActivities]);
+  
+  const isValid = planText.trim().length > 0 && !hasExistingActivityToday;
 
   const handleCreate = async () => {
     if (!isValid || !detectedActivity) return;
@@ -150,19 +162,33 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               </div>
             </div>
 
-            {/* Preview - shows detected activity */}
+            {/* Preview - shows detected activity or warning */}
             {detectedActivity && planText.trim() && (
-              <div className="p-4 rounded-xl bg-muted/50 space-y-2">
-                <p className="text-sm font-medium text-foreground">Preview:</p>
-                <div className="flex items-center gap-3">
-                  <span className={cn("text-4xl p-3 rounded-xl", detectedActivity.color)}>
-                    {detectedActivity.emoji}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
-                    <p className="text-sm text-muted-foreground">{city} • Today</p>
-                  </div>
-                </div>
+              <div className={cn(
+                "p-4 rounded-xl space-y-2",
+                hasExistingActivityToday ? "bg-destructive/10 border border-destructive/30" : "bg-muted/50"
+              )}>
+                {hasExistingActivityToday ? (
+                  <>
+                    <p className="text-sm font-medium text-destructive">⚠️ You already have a similar plan today</p>
+                    <p className="text-xs text-muted-foreground">
+                      You can only create one plan of each type per day. Try a different activity or wait until tomorrow.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-foreground">Preview:</p>
+                    <div className="flex items-center gap-3">
+                      <span className={cn("text-4xl p-3 rounded-xl", detectedActivity.color)}>
+                        {detectedActivity.emoji}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
+                        <p className="text-sm text-muted-foreground">{city} • Today</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
