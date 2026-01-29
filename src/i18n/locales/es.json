@@ -18,7 +18,11 @@
     "signUp": "Registrarse",
     "signOut": "Cerrar sesión",
     "or": "o",
-    "and": "y"
+    "and": "y",
+    "terms": "términos",
+    "privacyPolicy": "política de privacidad",
+    "communityGuidelines": "Normas de la Comunidad",
+    "termsOfService": "Términos de Servicio"
   },
   "home": {
     "title": "Shake",
@@ -28,7 +32,16 @@
     "noActivities": "No hay actividades aún",
     "beFirstToCreate": "¡Sé el primero en crear una!",
     "peopleJoined": "{{count}} personas unidas",
-    "expiresIn": "Expira en {{time}}"
+    "expiresIn": "Expira en {{time}}",
+    "meetPeople": "Conoce gente nueva.",
+    "meetFriends": "Haz nuevos amigos.",
+    "meetBuddy": "Encuentra un compañero.",
+    "meetPartner": "Conoce a una pareja.",
+    "meetLove": "Encuentra un nuevo amor.",
+    "tagline": "La conexión sucede en persona.",
+    "letsShake": "¡Vamos a Shakear!",
+    "realConnections": "Conexiones reales, vida real.",
+    "shakeUpYourLife": "AGITA tu vida."
   },
   "activities": {
     "brunch": "Brunch",
@@ -83,7 +96,22 @@
     "points": "puntos",
     "referralCode": "Código de Referido",
     "copyLink": "Copiar Enlace",
-    "linkCopied": "¡Enlace copiado!"
+    "linkCopied": "¡Enlace copiado!",
+    "viewStatus": "Ver Estado",
+    "addStatus": "Agregar Estado",
+    "updateYourInfo": "Actualiza tu información",
+    "updateDescription": "Actualiza tu nombre, avatar, nacionalidad, ocupación y redes sociales.",
+    "superHumanActive": "Super-Humano Activo",
+    "manageBilling": "Gestionar Facturación",
+    "upgradeToPremium": "Actualizar a Premium",
+    "unlimitedMessages": "Mensajes ilimitados y más",
+    "subscribeNow": "Suscríbete ahora",
+    "earnPoints": "Gana +5 puntos por registro",
+    "language": "Idioma",
+    "selectLanguage": "Selecciona tu idioma preferido",
+    "signOutTitle": "¿Te vas antisocial? 😢",
+    "signOutDescription": "¿Estás seguro de cerrar sesión? ¡Te perderás todas las actividades divertidas!",
+    "staySocial": "Quedarme Social"
   },
   "auth": {
     "enterPhone": "Ingresa tu número de teléfono",
@@ -91,7 +119,8 @@
     "codeSent": "Código enviado a {{phone}}",
     "resendCode": "Reenviar código",
     "continueWithPhone": "Continuar con teléfono",
-    "termsAgreement": "Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad"
+    "termsAgreement": "Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad",
+    "byContinuing": "Al continuar, aceptas nuestros"
   },
   "languageSelector": {
     "swipeToSelect": "Desliza para seleccionar tu idioma",

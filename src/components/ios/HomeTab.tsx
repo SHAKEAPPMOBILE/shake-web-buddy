@@ -9,6 +9,7 @@ import shakeLogo from "@/assets/shake-logo-new.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LandingCarousel } from "@/components/LandingCarousel";
 import { useCity } from "@/contexts/CityContext";
+import { useTranslation } from "react-i18next";
 
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
@@ -18,17 +19,18 @@ interface HomeTabProps {
 }
 
 export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false }: HomeTabProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
 
   // Rotating text for "Meet new..." phrases
   const meetPhrases = useMemo(() => [
-    "Meet new people.",
-    "Meet new friends.",
-    "Meet a new buddy.",
-    "Meet a partner.",
-    "Meet a new love."
-  ], []);
+    t('home.meetPeople', 'Meet new people.'),
+    t('home.meetFriends', 'Meet new friends.'),
+    t('home.meetBuddy', 'Meet a new buddy.'),
+    t('home.meetPartner', 'Meet a partner.'),
+    t('home.meetLove', 'Meet a new love.')
+  ], [t]);
   
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0); // Always start at 0 (first by date)
@@ -160,7 +162,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
               fontFamily: "'Sue Ellen Francisco', cursive"
             }}
           >
-            Connection happens offline.
+            {t('home.tagline', 'Connection happens offline.')}
           </p>
 
           {/* Let's Shake! button */}
@@ -173,7 +175,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
               background: "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))",
             }}
           >
-            Let's Shake!
+            {t('home.letsShake', "Let's Shake!")}
           </button>
 
           {/* Terms and Privacy disclaimer */}
@@ -181,14 +183,14 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             className="text-sm text-muted-foreground mt-6 animate-fade-in opacity-0"
             style={{ animationDelay: "450ms", animationFillMode: "forwards" }}
           >
-            <p>By continuing, you agree to our</p>
+            <p>{t('auth.byContinuing', 'By continuing, you agree to our')}</p>
             <p>
               <Link to="/terms-of-service" className="underline hover:text-foreground">
-                terms
+                {t('common.terms', 'terms')}
               </Link>{" "}
-              and{" "}
+              {t('common.and', 'and')}{" "}
               <Link to="/privacy-policy" className="underline hover:text-foreground">
-                privacy policy
+                {t('common.privacyPolicy', 'privacy policy')}
               </Link>
               .
             </p>
@@ -296,7 +298,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border mb-6">
             <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
             <span className="text-sm text-muted-foreground">
-              Real connections, real life.
+              {t('home.realConnections', 'Real connections, real life.')}
             </span>
           </div>
 
@@ -304,7 +306,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             <span className="transition-opacity duration-500 block">
               {meetPhrases[currentPhraseIndex]}
             </span>
-            <span className="text-gradient block mt-2">SHAKE up your life.</span>
+            <span className="text-gradient block mt-2">{t('home.shakeUpYourLife', 'SHAKE up your life.')}</span>
           </h1>
         </div>
 

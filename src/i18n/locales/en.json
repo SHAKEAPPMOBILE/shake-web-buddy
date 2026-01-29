@@ -18,7 +18,11 @@
     "signUp": "Sign Up",
     "signOut": "Sign Out",
     "or": "or",
-    "and": "and"
+    "and": "and",
+    "terms": "terms",
+    "privacyPolicy": "privacy policy",
+    "communityGuidelines": "Community Guidelines",
+    "termsOfService": "Terms of Service"
   },
   "home": {
     "title": "Shake",
@@ -28,7 +32,16 @@
     "noActivities": "No activities yet",
     "beFirstToCreate": "Be the first to create one!",
     "peopleJoined": "{{count}} people joined",
-    "expiresIn": "Expires in {{time}}"
+    "expiresIn": "Expires in {{time}}",
+    "meetPeople": "Meet new people.",
+    "meetFriends": "Meet new friends.",
+    "meetBuddy": "Meet a new buddy.",
+    "meetPartner": "Meet a partner.",
+    "meetLove": "Meet a new love.",
+    "tagline": "Connection happens offline.",
+    "letsShake": "Let's Shake!",
+    "realConnections": "Real connections, real life.",
+    "shakeUpYourLife": "SHAKE up your life."
   },
   "activities": {
     "brunch": "Brunch",
@@ -83,7 +96,22 @@
     "points": "points",
     "referralCode": "Referral Code",
     "copyLink": "Copy Link",
-    "linkCopied": "Link copied!"
+    "linkCopied": "Link copied!",
+    "viewStatus": "View Status",
+    "addStatus": "Add Status",
+    "updateYourInfo": "Update your info",
+    "updateDescription": "Update your name, avatar, nationality, occupation, and social links.",
+    "superHumanActive": "Super-Human Active",
+    "manageBilling": "Manage in Billing Portal",
+    "upgradeToPremium": "Upgrade to Premium",
+    "unlimitedMessages": "Unlimited messages & more",
+    "subscribeNow": "Subscribe now",
+    "earnPoints": "Earn +5 points per signup",
+    "language": "Language",
+    "selectLanguage": "Select your preferred language",
+    "signOutTitle": "Going antisocial? 😢",
+    "signOutDescription": "Are you sure you want to sign out? You'll miss all the fun activities!",
+    "staySocial": "Stay Social"
   },
   "auth": {
     "enterPhone": "Enter your phone number",
@@ -91,7 +119,8 @@
     "codeSent": "Code sent to {{phone}}",
     "resendCode": "Resend code",
     "continueWithPhone": "Continue with phone",
-    "termsAgreement": "By continuing, you agree to our Terms of Service and Privacy Policy"
+    "termsAgreement": "By continuing, you agree to our Terms of Service and Privacy Policy",
+    "byContinuing": "By continuing, you agree to our"
   },
   "languageSelector": {
     "swipeToSelect": "Swipe to select your language",

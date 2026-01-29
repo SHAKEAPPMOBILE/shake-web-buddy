@@ -18,23 +18,36 @@
     "signUp": "Registrieren",
     "signOut": "Abmelden",
     "or": "oder",
-    "and": "und"
+    "and": "und",
+    "terms": "Bedingungen",
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "communityGuidelines": "Community-Richtlinien",
+    "termsOfService": "Nutzungsbedingungen"
   },
   "home": {
     "title": "Shake",
-    "subtitle": "Lerne Leute kennen. Finde Freunde.",
+    "subtitle": "Triff Leute. Finde Freunde.",
     "joinActivity": "Aktivität beitreten",
     "createActivity": "Aktivität erstellen",
     "noActivities": "Noch keine Aktivitäten",
-    "beFirstToCreate": "Sei der Erste und erstelle eine!",
-    "peopleJoined": "{{count}} Personen sind dabei",
-    "expiresIn": "Läuft ab in {{time}}"
+    "beFirstToCreate": "Sei der Erste, der eine erstellt!",
+    "peopleJoined": "{{count}} Personen haben teilgenommen",
+    "expiresIn": "Läuft ab in {{time}}",
+    "meetPeople": "Triff neue Leute.",
+    "meetFriends": "Finde neue Freunde.",
+    "meetBuddy": "Finde einen Kumpel.",
+    "meetPartner": "Triff einen Partner.",
+    "meetLove": "Finde eine neue Liebe.",
+    "tagline": "Verbindung passiert offline.",
+    "letsShake": "Los Shaken!",
+    "realConnections": "Echte Verbindungen, echtes Leben.",
+    "shakeUpYourLife": "SCHÜTTEL dein Leben auf."
   },
   "activities": {
     "brunch": "Brunch",
     "lunch": "Mittagessen",
     "dinner": "Abendessen",
-    "drinks": "Drinks",
+    "drinks": "Getränke",
     "coffee": "Kaffee",
     "hiking": "Wandern",
     "fitness": "Fitness",
@@ -43,12 +56,12 @@
     "games": "Spiele",
     "party": "Party",
     "selectActivity": "Wähle eine Aktivität",
-    "whatDoYouWantToDo": "Was möchtest du machen?"
+    "whatDoYouWantToDo": "Was möchtest du tun?"
   },
   "chat": {
     "title": "Chat",
     "noMessages": "Noch keine Nachrichten",
-    "startConversation": "Starte eine Unterhaltung",
+    "startConversation": "Starte ein Gespräch",
     "typeMessage": "Nachricht eingeben...",
     "send": "Senden",
     "groupChat": "Gruppenchat",
@@ -68,7 +81,7 @@
     "title": "Profil",
     "editProfile": "Profil bearbeiten",
     "myPoints": "Meine Punkte",
-    "manageSubscription": "Abonnement verwalten",
+    "manageSubscription": "Abo verwalten",
     "shareReferral": "Empfehlungslink teilen",
     "settings": "Einstellungen",
     "name": "Name",
@@ -76,14 +89,29 @@
     "nationality": "Nationalität",
     "birthday": "Geburtstag",
     "phone": "Telefon",
-    "socialLinks": "Soziale Medien",
+    "socialLinks": "Soziale Netzwerke",
     "deleteAccount": "Konto löschen",
     "superHuman": "Super-Mensch",
     "premium": "Premium",
     "points": "Punkte",
     "referralCode": "Empfehlungscode",
     "copyLink": "Link kopieren",
-    "linkCopied": "Link kopiert!"
+    "linkCopied": "Link kopiert!",
+    "viewStatus": "Status anzeigen",
+    "addStatus": "Status hinzufügen",
+    "updateYourInfo": "Aktualisiere deine Infos",
+    "updateDescription": "Aktualisiere deinen Namen, Avatar, Nationalität, Beruf und soziale Netzwerke.",
+    "superHumanActive": "Super-Mensch Aktiv",
+    "manageBilling": "Abrechnung verwalten",
+    "upgradeToPremium": "Auf Premium upgraden",
+    "unlimitedMessages": "Unbegrenzte Nachrichten & mehr",
+    "subscribeNow": "Jetzt abonnieren",
+    "earnPoints": "+5 Punkte pro Anmeldung verdienen",
+    "language": "Sprache",
+    "selectLanguage": "Wähle deine bevorzugte Sprache",
+    "signOutTitle": "Wirst du unsozial? 😢",
+    "signOutDescription": "Bist du sicher, dass du dich abmelden möchtest? Du wirst alle lustigen Aktivitäten verpassen!",
+    "staySocial": "Sozial bleiben"
   },
   "auth": {
     "enterPhone": "Gib deine Telefonnummer ein",
@@ -91,11 +119,12 @@
     "codeSent": "Code gesendet an {{phone}}",
     "resendCode": "Code erneut senden",
     "continueWithPhone": "Mit Telefon fortfahren",
-    "termsAgreement": "Durch Fortfahren stimmst du unseren Nutzungsbedingungen und Datenschutzrichtlinien zu"
+    "termsAgreement": "Durch Fortfahren akzeptierst du unsere Nutzungsbedingungen und Datenschutzrichtlinie",
+    "byContinuing": "Durch Fortfahren akzeptierst du unsere"
   },
   "languageSelector": {
     "swipeToSelect": "Wische, um deine Sprache auszuwählen",
-    "detecting": "Erkennung..."
+    "detecting": "Erkennen..."
   },
   "citySelector": {
     "selectCity": "Wähle eine Stadt",
@@ -107,9 +136,9 @@
     "planReminder": "Plan-Erinnerung"
   },
   "errors": {
-    "networkError": "Netzwerkfehler. Bitte versuche es erneut.",
+    "networkError": "Netzwerkfehler. Bitte erneut versuchen.",
     "unauthorized": "Du musst dich anmelden.",
     "notFound": "Seite nicht gefunden",
-    "serverError": "Serverfehler. Bitte versuche es später erneut."
+    "serverError": "Serverfehler. Bitte später erneut versuchen."
   }
 }
