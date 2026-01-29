@@ -1,9 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useMemo } from "react";
 import { startOfDay } from "date-fns";
-import { Plus, DollarSign } from "lucide-react";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +16,16 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { detectActivityFromText } from "@/lib/activityDetection";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
+
+const CURRENCIES = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "BRL", symbol: "R$", name: "Brazilian Real" },
+  { code: "MXN", symbol: "$", name: "Mexican Peso" },
+  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+];
 
 interface CreateActivityDialogProps {
   open: boolean;
@@ -30,6 +41,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   
   const [planText, setPlanText] = useState("");
   const [priceAmount, setPriceAmount] = useState("");
+  const [priceCurrency, setPriceCurrency] = useState("USD");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const { isConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const isMobile = useIsMobile();
@@ -71,18 +83,25 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
       return;
     }
 
+    // Format price with currency symbol
+    const selectedCurrency = CURRENCIES.find(c => c.code === priceCurrency);
+    const formattedPrice = priceAmount.trim() 
+      ? `${selectedCurrency?.symbol || '$'}${priceAmount.trim()} ${priceCurrency}`
+      : undefined;
+
     const success = await createActivity(
       detectedActivity.type, 
       today, 
       planText.trim(),
       undefined,
-      priceAmount.trim() || undefined
+      formattedPrice
     );
     if (success) {
       triggerConfettiWaterfall();
       // Reset form
       setPlanText("");
       setPriceAmount("");
+      setPriceCurrency("USD");
       onOpenChange(false);
     }
   };
@@ -90,6 +109,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const resetForm = () => {
     setPlanText("");
     setPriceAmount("");
+    setPriceCurrency("USD");
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -98,6 +118,8 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
       setPlanText(text);
     }
   };
+
+  const selectedCurrencySymbol = CURRENCIES.find(c => c.code === priceCurrency)?.symbol || '$';
 
   return (
     <Dialog open={open} onOpenChange={(open) => {
@@ -181,18 +203,30 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
 
             {/* Price Input (optional) */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-muted-foreground" />
-                <label className="text-sm font-medium text-foreground">
-                  Set a price (optional)
-                </label>
-              </div>
-              <div className="relative">
+              <label className="text-sm font-medium text-foreground">
+                Set a price (optional)
+              </label>
+              <div className="flex gap-2">
+                <Select value={priceCurrency} onValueChange={setPriceCurrency}>
+                  <SelectTrigger className="w-24 shrink-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.symbol} {currency.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
                   value={priceAmount}
                   onChange={(e) => setPriceAmount(e.target.value)}
-                  placeholder="e.g., $5, €10, or leave empty for free"
-                  className="pl-3"
+                  placeholder="Amount (e.g., 5)"
+                  className="flex-1"
                 />
               </div>
               {priceAmount.trim() && (!isConnected || connectStatus !== "complete") && (
@@ -236,7 +270,9 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <span>{city} • Today</span>
                           {priceAmount.trim() && (
-                            <span className="text-green-600 font-medium">{priceAmount}</span>
+                            <span className="text-green-600 font-medium">
+                              {selectedCurrencySymbol}{priceAmount}
+                            </span>
                           )}
                         </div>
                       </div>
