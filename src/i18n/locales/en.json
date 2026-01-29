@@ -99,11 +99,29 @@
   "chat": {
     "title": "Chat",
     "noMessages": "No messages yet",
-    "startConversation": "Start a conversation",
+    "startConversation": "Send a message to start the conversation!",
     "typeMessage": "Type a message...",
+    "characterLimitReached": "Character limit reached",
+    "signInToChat": "Sign in to chat",
     "send": "Send",
     "groupChat": "Group Chat",
-    "privateMessage": "Private Message"
+    "privateMessage": "Private Message",
+    "startPlanning": "Start planning!",
+    "coordinateWithOthers": "Coordinate with others joining this plan.",
+    "createdBy": "Created by",
+    "suggestions": {
+      "hey": "Hey! 👋",
+      "howAreYou": "How are you?",
+      "niceToMeet": "Nice to meet you!",
+      "letsCatchUp": "Let's catch up!",
+      "seeYouSoon": "See you soon! 😊",
+      "whatTime": "What time works best?",
+      "whereMeet": "Where should we meet?",
+      "countMeIn": "Count me in!",
+      "seeYouThere": "See you there! 👋",
+      "runningLate": "I'm running late!",
+      "onMyWay": "On my way! 🏃"
+    }
   },
   "plans": {
     "title": "Plans",

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { toast } from "sonner";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { useTranslation } from "react-i18next";
 
 interface PrivateChatDialogProps {
   open: boolean;
@@ -27,14 +28,6 @@ interface PrivateChatDialogProps {
   otherUserAvatar: string | null;
 }
 
-const chatSuggestions = [
-  "Hey! 👋",
-  "How are you?",
-  "Nice to meet you!",
-  "Let's catch up!",
-  "See you soon! 😊",
-];
-
 export function PrivateChatDialog({
   open,
   onOpenChange,
@@ -42,6 +35,7 @@ export function PrivateChatDialog({
   otherUserName,
   otherUserAvatar,
 }: PrivateChatDialogProps) {
+  const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const { messages, isLoading, sendMessage, markAsRead } = usePrivateMessages(
     open ? otherUserId : null
@@ -53,6 +47,14 @@ export function PrivateChatDialog({
   const isMobile = useIsMobile();
   
   const { canSendText, addCharacters } = useTextMessageLimit();
+  
+  const chatSuggestions = useMemo(() => [
+    t('chat.suggestions.hey', 'Hey! 👋'),
+    t('chat.suggestions.howAreYou', 'How are you?'),
+    t('chat.suggestions.niceToMeet', 'Nice to meet you!'),
+    t('chat.suggestions.letsCatchUp', "Let's catch up!"),
+    t('chat.suggestions.seeYouSoon', 'See you soon! 😊'),
+  ], [t]);
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -134,8 +136,8 @@ export function PrivateChatDialog({
             </div>
           ) : messages.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p className="text-sm">No messages yet.</p>
-              <p className="text-xs mt-1">Send a message to start the conversation!</p>
+              <p className="text-sm">{t('chat.noMessages', 'No messages yet.')}</p>
+              <p className="text-xs mt-1">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
             </div>
           ) : (
             <div className="space-y-3 px-1">
@@ -192,7 +194,7 @@ export function PrivateChatDialog({
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={canSendText ? "Type a message..." : "Character limit reached"}
+              placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
               className="flex-1"
               disabled={isSending || (!isPremium && !canSendText)}
             />
