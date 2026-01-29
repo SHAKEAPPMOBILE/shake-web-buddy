@@ -64,6 +64,9 @@ serve(async (req) => {
     const isComplete = account.charges_enabled && account.payouts_enabled;
     const newStatus = isComplete ? "complete" : "pending";
     
+    // Get email from Stripe account
+    const accountEmail = account.email || null;
+    
     // Update status if changed
     if (newStatus !== privateProfile.stripe_account_status) {
       await supabaseClient
@@ -76,14 +79,16 @@ serve(async (req) => {
       accountId: privateProfile.stripe_account_id,
       chargesEnabled: account.charges_enabled,
       payoutsEnabled: account.payouts_enabled,
-      status: newStatus
+      status: newStatus,
+      email: accountEmail
     });
 
     return new Response(JSON.stringify({ 
       connected: true,
       status: newStatus,
       chargesEnabled: account.charges_enabled,
-      payoutsEnabled: account.payouts_enabled
+      payoutsEnabled: account.payouts_enabled,
+      email: accountEmail
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

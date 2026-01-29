@@ -66,7 +66,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [showResetCountrySelector, setShowResetCountrySelector] = useState(false);
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showPayPalDisconnectConfirm, setShowPayPalDisconnectConfirm] = useState(false);
-  const { isConnected: stripeConnected, status: stripeStatus, isLoading: stripeLoading, startOnboarding, checkStatus: checkStripeStatus, resetAndRecreate } = useStripeConnect();
+  const { isConnected: stripeConnected, status: stripeStatus, email: stripeEmail, isLoading: stripeLoading, startOnboarding, checkStatus: checkStripeStatus, resetAndRecreate } = useStripeConnect();
   const { isConnected: paypalConnected, paypalEmail, isLoading: paypalLoading, connectPayPal, disconnectPayPal } = usePayPalConnect();
 
   const handleStartOnboarding = (countryCode: string) => {
@@ -446,9 +446,17 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                   </div>
                   
                   {stripeConnected && stripeStatus === "complete" ? (
-                    <p className="text-xs text-muted-foreground">
-                      {t('profile.stripeConnectedDesc', 'Your Stripe account is connected. You\'ll receive 90% of payments from your paid activities.')}
-                    </p>
+                    <>
+                      {stripeEmail && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Mail className="w-3 h-3" />
+                          <span className="truncate">{stripeEmail}</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {t('profile.stripeConnectedDesc', 'Your Stripe account is connected. You\'ll receive 90% of payments from your paid activities.')}
+                      </p>
+                    </>
                   ) : stripeConnected && stripeStatus === "pending" ? (
                     <>
                       <p className="text-xs text-muted-foreground">
