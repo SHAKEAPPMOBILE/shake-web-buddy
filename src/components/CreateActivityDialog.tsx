@@ -45,17 +45,16 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
     return detectActivityFromText(planText);
   }, [planText]);
   
-  // Check if user already has an activity of this type today
+  // Check if user already has any activity today
   const hasExistingActivityToday = useMemo(() => {
-    if (!detectedActivity || !myActivities.length) return false;
+    if (!myActivities.length) return false;
     
     const todayStart = startOfDay(new Date());
     return myActivities.some(activity => {
       const activityDate = startOfDay(new Date(activity.scheduled_for));
-      return activity.activity_type === detectedActivity.type && 
-             activityDate.getTime() === todayStart.getTime();
+      return activityDate.getTime() === todayStart.getTime();
     });
-  }, [detectedActivity, myActivities]);
+  }, [myActivities]);
   
   const isValid = planText.trim().length > 0 && !hasExistingActivityToday;
 
@@ -170,10 +169,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               )}>
                 {hasExistingActivityToday ? (
                   <>
-                    <p className="text-sm font-medium text-destructive">⚠️ You already have a similar plan today</p>
-                    <p className="text-xs text-muted-foreground">
-                      You can only create one plan of each type per day. Try a different activity or wait until tomorrow.
-                    </p>
+                    <p className="text-sm font-medium text-destructive">You can't create two activities in the same day</p>
                   </>
                 ) : (
                   <>
