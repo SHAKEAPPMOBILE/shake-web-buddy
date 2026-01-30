@@ -2,9 +2,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState, useMemo, useEffect } from "react";
-import { startOfDay } from "date-fns";
-import { Plus, User, Shield } from "lucide-react";
+import { startOfDay, format } from "date-fns";
+import { Plus, User, Shield, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,6 +54,8 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const [planText, setPlanText] = useState("");
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
@@ -118,8 +123,9 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   }, [planText]);
 
   // For paid activities without Stripe connected, we still allow creation but will prompt for Stripe
-  const isValid = planText.trim().length > 0 && !hasExistingActivityToday && !hasProfanity;
+  // For paid activities, we require a date to be selected
   const isPaidActivity = priceAmount.trim().length > 0;
+  const isValid = planText.trim().length > 0 && !hasExistingActivityToday && !hasProfanity && (!isPaidActivity || selectedDate);
   const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
   const needsPayoutSetup = isPaidActivity && !hasPayoutMethod;
   const needsIDVerification = isPaidActivity && !isVerified && !isVerificationPending;
@@ -151,9 +157,12 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
       ? `${selectedCurrency?.symbol || '$'}${priceAmount.trim()} ${priceCurrency}`
       : undefined;
 
+    // Use selected date for paid activities, today for free activities
+    const activityDate = isPaidActivity && selectedDate ? selectedDate : today;
+
     const success = await createActivity(
       detectedActivity.type, 
-      today, 
+      activityDate, 
       planText.trim(),
       undefined,
       formattedPrice
@@ -164,6 +173,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
       setPlanText("");
       setPriceAmount("");
       setPriceCurrency("USD");
+      setSelectedDate(undefined);
       onOpenChange(false);
     }
   };
@@ -172,6 +182,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
     setPlanText("");
     setPriceAmount("");
     setPriceCurrency("USD");
+    setSelectedDate(undefined);
     setProfanityError(null);
   };
 
@@ -362,6 +373,45 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   ✓ {paypalConnected ? "PayPal" : "Stripe"} connected - You'll receive 85% of each payment
                 </p>
               )}
+              
+              {/* Date picker for paid activities */}
+              {priceAmount.trim() && (
+                <div className="space-y-2 pt-2 border-t border-border/50">
+                  <label className="text-sm font-medium text-foreground">
+                    Select event date
+                  </label>
+                  <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !selectedDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          setSelectedDate(date);
+                          setDatePopoverOpen(false);
+                        }}
+                        disabled={(date) => date < today}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-xs text-muted-foreground">
+                    The activity will be visible until this date, then removed automatically.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Preview - shows detected activity or warning */}
@@ -399,7 +449,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{city} • Today</span>
+                          <span>{city} • {isPaidActivity && selectedDate ? format(selectedDate, "MMM d") : "Today"}</span>
                           {priceAmount.trim() && (
                             <span className="text-green-600 font-medium">
                               {selectedCurrencySymbol}{priceAmount}
