@@ -95,7 +95,7 @@ export function IDVerificationDialog({
           </div>
           <h3 className="text-lg font-semibold text-yellow-500">Under Review</h3>
           <p className="text-sm text-muted-foreground mt-2">
-            Your ID is being reviewed. You'll be verified within 1 hour.
+            Your ID is being reviewed by our team. We'll notify you once approved.
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             Submitted: {new Date(verification!.submitted_at).toLocaleString()}

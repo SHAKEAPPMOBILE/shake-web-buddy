@@ -136,12 +136,7 @@ export function useCreatorVerification() {
         if (insertError) throw insertError;
       }
 
-      // Schedule auto-approval via edge function
-      await supabase.functions.invoke("schedule-verification-approval", {
-        body: { userId: user.id },
-      });
-
-      toast.success("ID submitted for verification. You'll be verified within 1 hour!");
+      toast.success("ID submitted! Our team will review it shortly.");
       await fetchVerification();
       return true;
     } catch (error) {
