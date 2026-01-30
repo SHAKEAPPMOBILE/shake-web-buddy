@@ -381,6 +381,148 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Handle list-payouts action - returns creator payout information
+  if (action === "list-payouts") {
+    try {
+      console.log("[ADMIN] list-payouts: fetching creator payout data");
+      
+      // Get all paid activities
+      const { data: activities, error: activitiesError } = await supabaseAdmin
+        .from("user_activities")
+        .select("id, user_id, activity_type, price_amount")
+        .not("price_amount", "is", null)
+        .eq("is_active", true);
+
+      if (activitiesError) throw activitiesError;
+
+      if (!activities || activities.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, payouts: [] }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get activity joins for participant counts
+      const activityIds = activities.map(a => a.id);
+      const { data: joins } = await supabaseAdmin
+        .from("activity_joins")
+        .select("activity_id")
+        .in("activity_id", activityIds);
+
+      // Count participants per activity
+      const participantCounts: Record<string, number> = {};
+      (joins || []).forEach(join => {
+        if (join.activity_id) {
+          participantCounts[join.activity_id] = (participantCounts[join.activity_id] || 0) + 1;
+        }
+      });
+
+      // Get unique creator user IDs
+      const creatorIds = [...new Set(activities.map(a => a.user_id))];
+
+      // Get profiles for names
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, name")
+        .in("user_id", creatorIds);
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      // Get private profiles for payout info
+      const { data: privateProfiles } = await supabaseAdmin
+        .from("profiles_private")
+        .select("user_id, phone_number, preferred_payout_method, stripe_account_id, stripe_account_status, billing_email, paypal_connected, paypal_email")
+        .in("user_id", creatorIds);
+      const privateProfileMap = new Map(privateProfiles?.map(p => [p.user_id, p]) || []);
+
+      // Parse price string
+      function parsePriceString(priceString: string): { amount: number; currency: string } {
+        const match = priceString.match(/([€$£¥R])?(\d+(?:\.\d+)?)\s*(\w+)?/);
+        if (match) {
+          const amount = parseFloat(match[2]);
+          let currency = match[3] || "USD";
+          if (!match[3]) {
+            const symbolMap: Record<string, string> = { "$": "USD", "€": "EUR", "£": "GBP", "¥": "JPY", "R": "BRL" };
+            if (match[1] && symbolMap[match[1]]) currency = symbolMap[match[1]];
+          }
+          return { amount, currency };
+        }
+        return { amount: 0, currency: "USD" };
+      }
+
+      // Calculate earnings per creator
+      const creatorEarnings: Record<string, {
+        total_gross: number;
+        total_net: number;
+        currency: string;
+        activity_count: number;
+        participant_count: number;
+      }> = {};
+
+      activities.forEach(activity => {
+        const participants = participantCounts[activity.id] || 0;
+        const { amount, currency } = parsePriceString(activity.price_amount || "");
+        const gross = amount * participants;
+        const net = gross * 0.85; // 85% after platform fee
+
+        if (!creatorEarnings[activity.user_id]) {
+          creatorEarnings[activity.user_id] = {
+            total_gross: 0,
+            total_net: 0,
+            currency,
+            activity_count: 0,
+            participant_count: 0,
+          };
+        }
+
+        creatorEarnings[activity.user_id].total_gross += gross;
+        creatorEarnings[activity.user_id].total_net += net;
+        creatorEarnings[activity.user_id].activity_count += 1;
+        creatorEarnings[activity.user_id].participant_count += participants;
+      });
+
+      // Build payout list
+      const payouts = creatorIds.map(userId => {
+        const profile = profileMap.get(userId);
+        const privateProfile = privateProfileMap.get(userId);
+        const earnings = creatorEarnings[userId] || { total_gross: 0, total_net: 0, currency: "USD", activity_count: 0, participant_count: 0 };
+
+        return {
+          user_id: userId,
+          name: profile?.name || null,
+          phone_number: privateProfile?.phone_number || null,
+          preferred_payout_method: privateProfile?.preferred_payout_method || null,
+          stripe_account_id: privateProfile?.stripe_account_id || null,
+          stripe_account_status: privateProfile?.stripe_account_status || null,
+          stripe_email: privateProfile?.billing_email || null,
+          paypal_connected: privateProfile?.paypal_connected || false,
+          paypal_email: privateProfile?.paypal_email || null,
+          total_gross: earnings.total_gross,
+          total_net: earnings.total_net,
+          pending_payout: privateProfile?.preferred_payout_method === "paypal" ? earnings.total_net : 0,
+          currency: earnings.currency,
+          activity_count: earnings.activity_count,
+          participant_count: earnings.participant_count,
+        };
+      });
+
+      // Sort by total earnings (descending)
+      payouts.sort((a, b) => b.total_gross - a.total_gross);
+
+      console.log(`[ADMIN] list-payouts: returning ${payouts.length} creators`);
+
+      return new Response(
+        JSON.stringify({ success: true, payouts }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (err) {
+      console.error("[ADMIN] list-payouts error:", err);
+      return new Response(
+        JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
   if (action === "search" && query) {
     const searchQuery = query.toLowerCase();
     
