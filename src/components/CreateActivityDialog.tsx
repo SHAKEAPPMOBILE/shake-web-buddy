@@ -204,9 +204,9 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             {isPremium ? (
               <span className="text-shake-yellow">Unlimited plans as a Super-Human ✨</span>
             ) : canCreate ? (
-              <>You have <span className="font-bold text-primary">{remainingActivities}</span> plans left this month</>
+              <>You have <span className="font-bold text-primary">{remainingActivities}</span> free plan{remainingActivities !== 1 ? 's' : ''} left this month</>
             ) : (
-              <span className="text-destructive">You have used all 3 free plans this month</span>
+              <span className="text-destructive">You have used your free plan this month</span>
             )}
           </p>
         </DialogHeader>
@@ -226,7 +226,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               <SuperHumanIcon size={32} className="text-white" />
             </div>
             <div>
-              <p className="font-semibold text-foreground">You've used all 3 free plans this month</p>
+              <p className="font-semibold text-foreground">You've used your free plan this month</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Become a Super-Human for unlimited plans
               </p>
@@ -321,7 +321,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               )}
               {priceAmount.trim() && hasPayoutMethod && (
                 <p className="text-xs text-green-600">
-                  ✓ {paypalConnected ? "PayPal" : "Stripe"} connected - You'll receive 90% of each payment
+                  ✓ {paypalConnected ? "PayPal" : "Stripe"} connected - You'll receive 85% of each payment
                 </p>
               )}
             </div>

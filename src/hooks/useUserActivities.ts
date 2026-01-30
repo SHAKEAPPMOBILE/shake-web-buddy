@@ -19,7 +19,8 @@ export interface UserActivity {
   participant_count?: number;
 }
 
-const MAX_ACTIVITIES_PER_MONTH = 3;
+const MAX_ACTIVITIES_PER_MONTH = 1;
+const SIX_HOURS_MS = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
 export function useUserActivities(city: string) {
   const { user, isPremium } = useAuth();
@@ -98,7 +99,8 @@ export function useUserActivities(city: string) {
     setMyActivities(data || []);
   }, [user]);
 
-  // Check how many activities user has created this month
+  // Check how many activities user has created this month that count toward the limit
+  // Activities only count if they've been online for 6+ hours before being deleted
   const fetchMonthlyCount = useCallback(async () => {
     if (!user) return;
 
@@ -109,9 +111,10 @@ export function useUserActivities(city: string) {
     const endOfMonth = new Date(startOfMonth);
     endOfMonth.setMonth(endOfMonth.getMonth() + 1);
 
-    const { count, error } = await supabase
+    // Get all activities created this month (both active and deleted/inactive)
+    const { data, error } = await supabase
       .from("user_activities")
-      .select("*", { count: "exact", head: true })
+      .select("id, created_at, is_active")
       .eq("user_id", user.id)
       .gte("created_at", startOfMonth.toISOString())
       .lt("created_at", endOfMonth.toISOString());
@@ -121,7 +124,20 @@ export function useUserActivities(city: string) {
       return;
     }
 
-    setActivitiesThisMonth(count || 0);
+    // Count activities that are either:
+    // 1. Still active (is_active = true), OR
+    // 2. Were online for at least 6 hours (created more than 6 hours ago)
+    const now = Date.now();
+    const countedActivities = (data || []).filter(activity => {
+      if (activity.is_active) return true; // Active activities always count
+      
+      // For inactive/deleted activities, check if they were online for 6+ hours
+      const createdAt = new Date(activity.created_at).getTime();
+      const wasOnlineFor6Hours = (now - createdAt) >= SIX_HOURS_MS;
+      return wasOnlineFor6Hours;
+    });
+
+    setActivitiesThisMonth(countedActivities.length);
   }, [user]);
 
   // Create a new activity
