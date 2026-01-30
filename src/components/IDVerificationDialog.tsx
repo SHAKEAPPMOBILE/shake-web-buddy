@@ -164,13 +164,6 @@ export function IDVerificationDialog({
           </p>
         </div>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,application/pdf"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
 
         <div className="flex items-start gap-2 text-xs text-muted-foreground">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -211,6 +204,15 @@ export function IDVerificationDialog({
         </DialogHeader>
 
         {renderStatus()}
+        
+        {/* Hidden file input - always present for rejected state reupload */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
       </DialogContent>
     </Dialog>
   );
