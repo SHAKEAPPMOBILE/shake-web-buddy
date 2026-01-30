@@ -90,14 +90,23 @@ export function useStripeConnect() {
     }
   }, [user, checkStatus]);
 
-  // Listen for connect success/refresh URL params
+  // Listen for connect success/error/refresh URL params
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     
     if (urlParams.get("connect_success") === "true" || urlParams.get("connect_refresh") === "true") {
-      // Refresh status after returning from Stripe
+      // Refresh status after returning from Stripe OAuth
       checkStatus();
       
+      // Clean up URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+    
+    // Handle OAuth errors
+    const connectError = urlParams.get("connect_error");
+    if (connectError) {
+      console.error("Stripe Connect OAuth error:", connectError);
       // Clean up URL
       const newUrl = window.location.pathname;
       window.history.replaceState({}, "", newUrl);
