@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, MapPin, DollarSign, ArrowLeft, Mail } from "lucide-react";
+import { Loader2, Users, MapPin, DollarSign, ArrowLeft, Mail, Shield } from "lucide-react";
 import { VenuesTab } from "@/components/admin/VenuesTab";
 import { UsersTab } from "@/components/admin/UsersTab";
 import { PayoutsTab } from "@/components/admin/PayoutsTab";
+import { VerificationsTab } from "@/components/admin/VerificationsTab";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 export default function Admin() {
@@ -281,10 +282,14 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-lg">
+          <TabsList className="grid w-full grid-cols-4 max-w-2xl">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
+            </TabsTrigger>
+            <TabsTrigger value="verifications" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              IDs
             </TabsTrigger>
             <TabsTrigger value="payouts" className="flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
@@ -298,6 +303,10 @@ export default function Admin() {
 
           <TabsContent value="users" className="mt-6">
             <UsersTab adminPassword={password} />
+          </TabsContent>
+
+          <TabsContent value="verifications" className="mt-6">
+            <VerificationsTab />
           </TabsContent>
 
           <TabsContent value="payouts" className="mt-6">

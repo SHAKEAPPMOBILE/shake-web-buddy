@@ -615,6 +615,139 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Handle list-verifications action - returns all ID verifications with user info
+  if (action === "list-verifications") {
+    try {
+      console.log("[ADMIN] list-verifications: fetching verification data");
+      
+      // Get all verifications
+      const { data: verifications, error: verError } = await supabaseAdmin
+        .from("creator_verifications")
+        .select("*")
+        .order("submitted_at", { ascending: false });
+
+      if (verError) throw verError;
+
+      if (!verifications || verifications.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, verifications: [] }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get user info for each verification
+      const userIds = [...new Set(verifications.map(v => v.user_id))];
+      
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, name")
+        .in("user_id", userIds);
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      const { data: privateProfiles } = await supabaseAdmin
+        .from("profiles_private")
+        .select("user_id, billing_email")
+        .in("user_id", userIds);
+      const privateProfileMap = new Map(privateProfiles?.map(p => [p.user_id, p]) || []);
+
+      const verificationsWithUsers = verifications.map(v => ({
+        ...v,
+        user_name: profileMap.get(v.user_id)?.name || null,
+        user_email: privateProfileMap.get(v.user_id)?.billing_email || null,
+      }));
+
+      console.log(`[ADMIN] list-verifications: returning ${verificationsWithUsers.length} verifications`);
+
+      return new Response(
+        JSON.stringify({ success: true, verifications: verificationsWithUsers }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (err) {
+      console.error("[ADMIN] list-verifications error:", err);
+      return new Response(
+        JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  // Handle get-verification-document action - returns signed URL for document
+  if (action === "get-verification-document") {
+    try {
+      const body = await req.json();
+      const { documentPath } = body;
+
+      if (!documentPath) {
+        return new Response(
+          JSON.stringify({ error: "Document path required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data, error } = await supabaseAdmin.storage
+        .from("id-verifications")
+        .createSignedUrl(documentPath, 3600); // 1 hour expiry
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify({ success: true, signedUrl: data?.signedUrl }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (err) {
+      console.error("[ADMIN] get-verification-document error:", err);
+      return new Response(
+        JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  // Handle update-verification action - approve or reject verification
+  if (action === "update-verification") {
+    try {
+      const body = await req.json();
+      const { verificationId, status, rejectionReason } = body;
+
+      if (!verificationId || !status) {
+        return new Response(
+          JSON.stringify({ error: "Verification ID and status required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const updateData: Record<string, unknown> = {
+        status,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: "admin",
+      };
+
+      if (status === "rejected" && rejectionReason) {
+        updateData.rejection_reason = rejectionReason;
+      }
+
+      const { error } = await supabaseAdmin
+        .from("creator_verifications")
+        .update(updateData)
+        .eq("id", verificationId);
+
+      if (error) throw error;
+
+      console.log(`[ADMIN] update-verification: ${verificationId} -> ${status}`);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (err) {
+      console.error("[ADMIN] update-verification error:", err);
+      return new Response(
+        JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
   if (action === "search" && query) {
     const searchQuery = query.toLowerCase();
     
