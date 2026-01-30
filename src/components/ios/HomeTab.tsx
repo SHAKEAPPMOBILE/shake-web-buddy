@@ -33,6 +33,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   ], [t]);
   
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+  const [showTapInstruction, setShowTapInstruction] = useState(false);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0); // Always start at 0 (first by date)
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number>(0);
@@ -59,6 +60,13 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       setCurrentActivityIndex(0);
     }
   }, [showActivities]);
+
+  const handleHandshakeClick = () => {
+    setShowTapInstruction(true);
+    setTimeout(() => {
+      setShowTapInstruction(false);
+    }, 4000);
+  };
 
   const handleActivitySelect = () => {
     // On iOS Safari, `onClick` can fire after touch handlers and state updates.
@@ -304,7 +312,9 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
           <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">
             <span className="transition-opacity duration-500 block">
-              {meetPhrases[currentPhraseIndex]}
+              {showTapInstruction 
+                ? t('home.tapInstruction', 'Tap on the blue + below to start shaking.') 
+                : meetPhrases[currentPhraseIndex]}
             </span>
             <span className="text-gradient block mt-2">{t('home.shakeUpYourLife', 'SHAKE up your life.')}</span>
           </h1>
@@ -313,6 +323,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         {/* Center Area - Circle with Handshake */}
         <div className="relative mb-8 flex flex-col items-center justify-center">
           <div 
+            onClick={handleHandshakeClick}
             className={cn(
               "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
               isShaking && "animate-shake-center"
