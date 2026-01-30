@@ -53,9 +53,11 @@ interface PlanActivity {
 
 interface PlansTabProps {
   onChatViewChange?: (isInChat: boolean) => void;
+  pendingPaidActivityId?: string | null;
+  onPendingPaidActivityHandled?: () => void;
 }
 
-export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
+export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled }: PlansTabProps = {}) {
   const { t, i18n } = useTranslation();
   const { selectedLanguage } = useLanguage();
   const { selectedCity } = useCity();
@@ -302,6 +304,56 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     const isInChat = showChatView || showCarouselChatView;
     onChatViewChange?.(isInChat);
   }, [showChatView, showCarouselChatView, onChatViewChange]);
+
+  // Handle pending paid activity (after payment success redirect)
+  useEffect(() => {
+    if (pendingPaidActivityId && activities.length > 0 && !isLoading) {
+      // Find the activity in our list
+      const paidActivity = activities.find(a => a.id === pendingPaidActivityId);
+      if (paidActivity) {
+        // Open the chat directly (user has paid and is now joined)
+        setSelectedPlan(paidActivity);
+        setShowChatView(true);
+        onPendingPaidActivityHandled?.();
+      } else {
+        // Activity not in current city's list - fetch it directly
+        const fetchAndOpenActivity = async () => {
+          const { data: activity } = await supabase
+            .from("user_activities")
+            .select("*")
+            .eq("id", pendingPaidActivityId)
+            .eq("is_active", true)
+            .maybeSingle();
+          
+          if (activity) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("name, avatar_url")
+              .eq("user_id", activity.user_id)
+              .maybeSingle();
+            
+            const { count } = await supabase
+              .from("activity_joins")
+              .select("*", { count: "exact", head: true })
+              .eq("activity_id", activity.id);
+            
+            const activityWithDetails: PlanActivity = {
+              ...activity,
+              creator_name: profile?.name || "Anonymous",
+              creator_avatar: profile?.avatar_url || undefined,
+              participant_count: count || 0,
+              isJoined: true, // User just paid, so they're joined
+            };
+            
+            setSelectedPlan(activityWithDetails);
+            setShowChatView(true);
+          }
+          onPendingPaidActivityHandled?.();
+        };
+        fetchAndOpenActivity();
+      }
+    }
+  }, [pendingPaidActivityId, activities, isLoading, onPendingPaidActivityHandled]);
 
   // Handle city selection from search
   const handleSelectCity = (cityName: string) => {

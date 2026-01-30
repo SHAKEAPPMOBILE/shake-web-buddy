@@ -16,6 +16,7 @@ import { useCity } from "@/contexts/CityContext";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { usePrivateMessageNotifications } from "@/hooks/usePrivateMessageNotifications";
 import { useProximityCheckIn } from "@/hooks/useProximityCheckIn";
+import { usePaymentSuccessHandler } from "@/hooks/usePaymentSuccessHandler";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -45,11 +46,27 @@ export function IOSAppLayout() {
   // Track the city used for the current activity/chat (for cross-city joins)
   const [activityCity, setActivityCity] = useState<string>("");
   const [showProximityPopup, setShowProximityPopup] = useState(false);
+  
+  // State for pending paid activity to open after verification
+  const [pendingPaidActivityId, setPendingPaidActivityId] = useState<string | null>(null);
 
   const { user, isLoading } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
   const { joinActivity, getActivityJoinCount, activeJoins, hasUserJoined } = useActivityJoins(selectedCity);
+  
+  // Handle payment success from Stripe redirect
+  const { isVerifying, wasSuccessful, verifiedActivityId, resetPaymentState } = usePaymentSuccessHandler();
+  
+  // When payment is verified, navigate to plans tab to open the activity chat
+  useEffect(() => {
+    if (wasSuccessful && verifiedActivityId) {
+      // Switch to plans tab and set the pending activity to open
+      setPendingPaidActivityId(verifiedActivityId);
+      setActiveTab("plans");
+      resetPaymentState();
+    }
+  }, [wasSuccessful, verifiedActivityId, resetPaymentState]);
   
   // Get active activity types the user has joined that are SCHEDULED FOR TODAY (for proximity detection)
   const userActiveActivityTypes = useMemo(() => {
@@ -265,7 +282,13 @@ export function IOSAppLayout() {
           />
         );
       case "plans":
-        return <PlansTab onChatViewChange={handleChatViewChange} />;
+        return (
+          <PlansTab 
+            onChatViewChange={handleChatViewChange}
+            pendingPaidActivityId={pendingPaidActivityId}
+            onPendingPaidActivityHandled={() => setPendingPaidActivityId(null)}
+          />
+        );
       case "chat":
         return (
           <ChatTab 
