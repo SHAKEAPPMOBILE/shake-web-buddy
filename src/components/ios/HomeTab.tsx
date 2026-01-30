@@ -142,23 +142,30 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center">
-          {/* SHAKE Logo */}
+          {/* SHAKE Logo - clickable to show instruction */}
           <img
             src={shakeLogo}
             alt="SHAKE"
-            className="w-32 h-32 object-contain mb-4 animate-fade-in opacity-0"
+            onClick={handleHandshakeClick}
+            className="w-32 h-32 object-contain mb-4 animate-fade-in opacity-0 cursor-pointer hover:scale-105 transition-transform"
             style={{ animationDelay: "0ms", animationFillMode: "forwards" }}
           />
 
-          {/* SHAKE-SOCIAL text */}
+          {/* SHAKE-SOCIAL text - shows instruction when tapped */}
           <div
             className="mb-6 text-center animate-fade-in opacity-0"
             style={{ animationDelay: "200ms", animationFillMode: "forwards" }}
           >
-            <h1 className="text-3xl font-display font-bold text-foreground tracking-wider">SHAKE</h1>
-            <p className="text-lg font-display font-medium text-muted-foreground tracking-[0.3em] mt-1">
-              SOCIAL
-            </p>
+            <h1 className="text-3xl font-display font-bold text-foreground tracking-wider">
+              {showTapInstruction 
+                ? t('home.tapInstruction', 'Tap on the blue + below to start shaking.') 
+                : 'SHAKE'}
+            </h1>
+            {!showTapInstruction && (
+              <p className="text-lg font-display font-medium text-muted-foreground tracking-[0.3em] mt-1">
+                SOCIAL
+              </p>
+            )}
           </div>
 
           {/* Tagline */}
