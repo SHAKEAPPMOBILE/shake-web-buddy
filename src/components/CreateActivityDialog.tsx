@@ -105,16 +105,6 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
     return detectActivityFromText(planText);
   }, [planText]);
   
-  // Check if user already has any activity today
-  const hasExistingActivityToday = useMemo(() => {
-    if (!myActivities.length) return false;
-    
-    const todayStart = startOfDay(new Date());
-    return myActivities.some(activity => {
-      const activityDate = startOfDay(new Date(activity.scheduled_for));
-      return activityDate.getTime() === todayStart.getTime();
-    });
-  }, [myActivities]);
   
   // Check for profanity
   const hasProfanity = useMemo(() => {
@@ -125,7 +115,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   // For paid activities without Stripe connected, we still allow creation but will prompt for Stripe
   // For paid activities, we require a date to be selected
   const isPaidActivity = priceAmount.trim().length > 0;
-  const isValid = planText.trim().length > 0 && !hasExistingActivityToday && !hasProfanity && (!isPaidActivity || selectedDate);
+  const isValid = planText.trim().length > 0 && !hasProfanity && (!isPaidActivity || selectedDate);
   const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
   const needsPayoutSetup = isPaidActivity && !hasPayoutMethod;
   const needsIDVerification = isPaidActivity && !isVerified && !isVerificationPending;
@@ -416,50 +406,39 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
 
             {/* Preview - shows detected activity or warning */}
             {planText.trim() && (
-              <div className={cn(
-                "p-4 rounded-xl space-y-2",
-                hasExistingActivityToday ? "bg-destructive/10 border border-destructive/30" : "bg-muted/50"
-              )}>
-                {hasExistingActivityToday ? (
-                  <>
-                    <p className="text-sm font-medium text-destructive">You can't create two activities in the same day</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm font-medium text-foreground">Preview:</p>
-                    <div className="flex items-center gap-3">
-                      {/* Show emoji only if activity detected, otherwise show user avatar */}
-                      {detectedActivity ? (
-                        <span className={cn("text-4xl p-3 rounded-xl", detectedActivity.color)}>
-                          {detectedActivity.emoji}
-                        </span>
+              <div className="p-4 rounded-xl space-y-2 bg-muted/50">
+                <p className="text-sm font-medium text-foreground">Preview:</p>
+                <div className="flex items-center gap-3">
+                  {/* Show emoji only if activity detected, otherwise show user avatar */}
+                  {detectedActivity ? (
+                    <span className={cn("text-4xl p-3 rounded-xl", detectedActivity.color)}>
+                      {detectedActivity.emoji}
+                    </span>
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                      {userAvatarUrl ? (
+                        <img 
+                          src={userAvatarUrl} 
+                          alt="Your avatar" 
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
-                        <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
-                          {userAvatarUrl ? (
-                            <img 
-                              src={userAvatarUrl} 
-                              alt="Your avatar" 
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="w-6 h-6 text-muted-foreground" />
-                          )}
-                        </div>
+                        <User className="w-6 h-6 text-muted-foreground" />
                       )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{city} • {isPaidActivity && selectedDate ? format(selectedDate, "MMM d") : "Today"}</span>
-                          {priceAmount.trim() && (
-                            <span className="text-green-600 font-medium">
-                              {selectedCurrencySymbol}{priceAmount}
-                            </span>
-                          )}
-                        </div>
-                      </div>
                     </div>
-                  </>
-                )}
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>{city} • {isPaidActivity && selectedDate ? format(selectedDate, "MMM d") : "Today"}</span>
+                      {priceAmount.trim() && (
+                        <span className="text-green-600 font-medium">
+                          {selectedCurrencySymbol}{priceAmount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
