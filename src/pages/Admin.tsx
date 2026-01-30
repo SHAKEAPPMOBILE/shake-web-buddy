@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, MapPin } from "lucide-react";
+import { Loader2, Users, MapPin, DollarSign } from "lucide-react";
 import { VenuesTab } from "@/components/admin/VenuesTab";
 import { UsersTab } from "@/components/admin/UsersTab";
+import { PayoutsTab } from "@/components/admin/PayoutsTab";
 
 export default function Admin() {
   const [password, setPassword] = useState("");
@@ -80,14 +81,18 @@ export default function Admin() {
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 text-white">
           <h1 className="text-3xl font-bold">🎯 SHAKE Admin</h1>
-          <p className="opacity-90 mt-1">Manage users and venues</p>
+          <p className="opacity-90 mt-1">Manage users, venues, and payouts</p>
         </div>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
+            </TabsTrigger>
+            <TabsTrigger value="payouts" className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Payouts
             </TabsTrigger>
             <TabsTrigger value="venues" className="flex items-center gap-2">
               <MapPin className="w-4 h-4" />
@@ -97,6 +102,10 @@ export default function Admin() {
 
           <TabsContent value="users" className="mt-6">
             <UsersTab adminPassword={password} />
+          </TabsContent>
+
+          <TabsContent value="payouts" className="mt-6">
+            <PayoutsTab adminPassword={password} />
           </TabsContent>
 
           <TabsContent value="venues" className="mt-6">
