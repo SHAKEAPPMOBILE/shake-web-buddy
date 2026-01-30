@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, MapPin, Globe, User, Mic, MessageSquare, Sparkles, Settings } from "lucide-react";
+import { Check, MapPin, Globe, User, MessageSquare, Sparkles, Settings } from "lucide-react";
 import shakeCoin from "@/assets/shake-coin.png";
 import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
@@ -74,7 +74,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     { icon: Globe, text: "Access to 100+ cities worldwide" },
     { icon: MapPin, text: "Join activities in any city" },
     { icon: User, text: "See other users' profiles unlimited" },
-    { icon: Mic, text: "Unlimited voice messages" },
     { icon: MessageSquare, text: "Unlimited text messages" },
   ];
 
@@ -305,7 +304,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
         <div className="text-center py-2">
           <div className="text-3xl font-display font-bold text-foreground">
-            $2.80<span className="text-base font-normal text-muted-foreground">/month</span>
+            $3.88<span className="text-base font-normal text-muted-foreground">/month</span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">Cancel anytime • Best value!</p>
         </div>
