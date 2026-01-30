@@ -39,3 +39,6 @@ verify_jwt = false
 
 [functions.stripe-connect-callback]
 verify_jwt = false
+
+[functions.admin-otp]
+verify_jwt = false
