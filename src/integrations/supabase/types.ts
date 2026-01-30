@@ -148,6 +148,51 @@ export type Database = {
         }
         Relationships: []
       }
+      creator_payouts: {
+        Row: {
+          activity_ids: string[] | null
+          amount: number
+          created_at: string
+          creator_user_id: string
+          currency: string
+          id: string
+          notes: string | null
+          paid_at: string
+          paid_by: string | null
+          payout_email: string | null
+          payout_method: string
+          stripe_account_id: string | null
+        }
+        Insert: {
+          activity_ids?: string[] | null
+          amount: number
+          created_at?: string
+          creator_user_id: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string
+          paid_by?: string | null
+          payout_email?: string | null
+          payout_method: string
+          stripe_account_id?: string | null
+        }
+        Update: {
+          activity_ids?: string[] | null
+          amount?: number
+          created_at?: string
+          creator_user_id?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string
+          paid_by?: string | null
+          payout_email?: string | null
+          payout_method?: string
+          stripe_account_id?: string | null
+        }
+        Relationships: []
+      }
       greetings: {
         Row: {
           created_at: string
