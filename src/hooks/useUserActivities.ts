@@ -19,7 +19,9 @@ export interface UserActivity {
   participant_count?: number;
 }
 
-const MAX_ACTIVITIES_PER_MONTH = 1;
+// Dynamic limits - set by database function based on signup date
+const DEFAULT_FIRST_MONTH_LIMIT = 3; // First 30 days after signup
+const DEFAULT_REGULAR_LIMIT = 2; // After first month
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
 export function useUserActivities(city: string) {
@@ -28,6 +30,7 @@ export function useUserActivities(city: string) {
   const [myActivities, setMyActivities] = useState<UserActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activitiesThisMonth, setActivitiesThisMonth] = useState(0);
+  const [maxActivitiesLimit, setMaxActivitiesLimit] = useState(DEFAULT_REGULAR_LIMIT);
   const [hasFetched, setHasFetched] = useState(false);
 
   // Fetch all active activities for the city
@@ -140,6 +143,26 @@ export function useUserActivities(city: string) {
     setActivitiesThisMonth(countedActivities.length);
   }, [user]);
 
+  // Fetch the user's activity limit based on signup date
+  const fetchActivityLimit = useCallback(async () => {
+    if (!user) return;
+
+    // Call the database function to get the dynamic limit
+    const { data, error } = await supabase.rpc('get_user_activity_limit', {
+      target_user_id: user.id
+    });
+
+    if (error) {
+      console.error("Error fetching activity limit:", error);
+      return;
+    }
+
+    // Premium users get a very high number, others get their actual limit
+    if (data && data < 999999) {
+      setMaxActivitiesLimit(data);
+    }
+  }, [user]);
+
   // Create a new activity
   const createActivity = async (
     activityType: string,
@@ -155,8 +178,8 @@ export function useUserActivities(city: string) {
     }
 
     // Premium users have unlimited activities
-    if (!isPremium && activitiesThisMonth >= MAX_ACTIVITIES_PER_MONTH) {
-      toast.error(`You can only create ${MAX_ACTIVITIES_PER_MONTH} activities per month`);
+    if (!isPremium && activitiesThisMonth >= maxActivitiesLimit) {
+      toast.error(`You can only create ${maxActivitiesLimit} activities per month`);
       return false;
     }
 
@@ -194,7 +217,7 @@ export function useUserActivities(city: string) {
     if (error || !newActivity) {
       console.error("Error creating activity:", error);
       if (error?.message.includes("row-level security")) {
-        toast.error(`You've reached your limit of ${MAX_ACTIVITIES_PER_MONTH} activities this month`);
+        toast.error(`You've reached your limit of ${maxActivitiesLimit} activities this month`);
       } else {
         toast.error("Failed to create activity");
       }
@@ -413,7 +436,7 @@ export function useUserActivities(city: string) {
 
     const loadData = async () => {
       setIsLoading(true);
-      await Promise.all([fetchActivities(), fetchMyActivities(), fetchMonthlyCount()]);
+      await Promise.all([fetchActivities(), fetchMyActivities(), fetchMonthlyCount(), fetchActivityLimit()]);
       setIsLoading(false);
       setHasFetched(true);
     };
@@ -450,14 +473,15 @@ export function useUserActivities(city: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [city, user?.id, fetchActivities, fetchMyActivities, fetchMonthlyCount]);
+  }, [city, user?.id, fetchActivities, fetchMyActivities, fetchMonthlyCount, fetchActivityLimit]);
 
   return {
     activities,
     myActivities,
     isLoading,
     activitiesThisMonth,
-    remainingActivities: isPremium ? Infinity : MAX_ACTIVITIES_PER_MONTH - activitiesThisMonth,
+    remainingActivities: isPremium ? Infinity : Math.max(0, maxActivitiesLimit - activitiesThisMonth),
+    maxActivitiesLimit,
     createActivity,
     updateActivity,
     deleteActivity,

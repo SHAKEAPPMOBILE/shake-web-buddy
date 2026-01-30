@@ -547,6 +547,10 @@ export type Database = {
         Returns: boolean
       }
       generate_referral_code: { Args: { user_name: string }; Returns: string }
+      get_user_activity_limit: {
+        Args: { target_user_id: string }
+        Returns: number
+      }
       get_user_age: { Args: { target_user_id: string }; Returns: number }
       get_user_points: { Args: { target_user_id: string }; Returns: number }
       is_profile_complete: {
