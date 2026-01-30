@@ -306,7 +306,7 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="verifications" className="mt-6">
-            <VerificationsTab />
+            <VerificationsTab adminPassword={password} />
           </TabsContent>
 
           <TabsContent value="payouts" className="mt-6">
