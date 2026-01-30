@@ -389,7 +389,7 @@ Deno.serve(async (req) => {
       // Get all paid activities
       const { data: activities, error: activitiesError } = await supabaseAdmin
         .from("user_activities")
-        .select("id, user_id, activity_type, price_amount")
+        .select("id, user_id, activity_type, city, note, price_amount, scheduled_for, created_at")
         .not("price_amount", "is", null)
         .eq("is_active", true);
 
@@ -397,7 +397,7 @@ Deno.serve(async (req) => {
 
       if (!activities || activities.length === 0) {
         return new Response(
-          JSON.stringify({ success: true, payouts: [] }),
+          JSON.stringify({ success: true, payouts: [], payout_history: [] }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -406,14 +406,17 @@ Deno.serve(async (req) => {
       const activityIds = activities.map(a => a.id);
       const { data: joins } = await supabaseAdmin
         .from("activity_joins")
-        .select("activity_id")
+        .select("activity_id, user_id, joined_at")
         .in("activity_id", activityIds);
 
       // Count participants per activity
       const participantCounts: Record<string, number> = {};
+      const joinDetails: Record<string, Array<{ user_id: string; joined_at: string }>> = {};
       (joins || []).forEach(join => {
         if (join.activity_id) {
           participantCounts[join.activity_id] = (participantCounts[join.activity_id] || 0) + 1;
+          if (!joinDetails[join.activity_id]) joinDetails[join.activity_id] = [];
+          joinDetails[join.activity_id].push({ user_id: join.user_id, joined_at: join.joined_at });
         }
       });
 
@@ -434,6 +437,12 @@ Deno.serve(async (req) => {
         .in("user_id", creatorIds);
       const privateProfileMap = new Map(privateProfiles?.map(p => [p.user_id, p]) || []);
 
+      // Get payout history
+      const { data: payoutHistory } = await supabaseAdmin
+        .from("creator_payouts")
+        .select("*")
+        .order("paid_at", { ascending: false });
+
       // Parse price string
       function parsePriceString(priceString: string): { amount: number; currency: string } {
         const match = priceString.match(/([€$£¥R])?(\d+(?:\.\d+)?)\s*(\w+)?/);
@@ -449,6 +458,12 @@ Deno.serve(async (req) => {
         return { amount: 0, currency: "USD" };
       }
 
+      // Calculate already paid amounts per creator
+      const paidAmounts: Record<string, number> = {};
+      (payoutHistory || []).forEach(payout => {
+        paidAmounts[payout.creator_user_id] = (paidAmounts[payout.creator_user_id] || 0) + Number(payout.amount);
+      });
+
       // Calculate earnings per creator
       const creatorEarnings: Record<string, {
         total_gross: number;
@@ -456,6 +471,18 @@ Deno.serve(async (req) => {
         currency: string;
         activity_count: number;
         participant_count: number;
+        activities: Array<{
+          id: string;
+          type: string;
+          city: string;
+          note: string | null;
+          price: string;
+          participants: number;
+          gross: number;
+          net: number;
+          scheduled_for: string;
+          created_at: string;
+        }>;
       }> = {};
 
       activities.forEach(activity => {
@@ -471,6 +498,7 @@ Deno.serve(async (req) => {
             currency,
             activity_count: 0,
             participant_count: 0,
+            activities: [],
           };
         }
 
@@ -478,13 +506,29 @@ Deno.serve(async (req) => {
         creatorEarnings[activity.user_id].total_net += net;
         creatorEarnings[activity.user_id].activity_count += 1;
         creatorEarnings[activity.user_id].participant_count += participants;
+        creatorEarnings[activity.user_id].activities.push({
+          id: activity.id,
+          type: activity.activity_type,
+          city: activity.city,
+          note: activity.note,
+          price: activity.price_amount || "",
+          participants,
+          gross,
+          net,
+          scheduled_for: activity.scheduled_for,
+          created_at: activity.created_at,
+        });
       });
 
       // Build payout list
       const payouts = creatorIds.map(userId => {
         const profile = profileMap.get(userId);
         const privateProfile = privateProfileMap.get(userId);
-        const earnings = creatorEarnings[userId] || { total_gross: 0, total_net: 0, currency: "USD", activity_count: 0, participant_count: 0 };
+        const earnings = creatorEarnings[userId] || { 
+          total_gross: 0, total_net: 0, currency: "USD", activity_count: 0, participant_count: 0, activities: [] 
+        };
+        const alreadyPaid = paidAmounts[userId] || 0;
+        const pendingPayout = Math.max(0, earnings.total_net - alreadyPaid);
 
         return {
           user_id: userId,
@@ -498,24 +542,72 @@ Deno.serve(async (req) => {
           paypal_email: privateProfile?.paypal_email || null,
           total_gross: earnings.total_gross,
           total_net: earnings.total_net,
-          pending_payout: privateProfile?.preferred_payout_method === "paypal" ? earnings.total_net : 0,
+          already_paid: alreadyPaid,
+          pending_payout: pendingPayout,
           currency: earnings.currency,
           activity_count: earnings.activity_count,
           participant_count: earnings.participant_count,
+          activities: earnings.activities,
         };
       });
 
-      // Sort by total earnings (descending)
-      payouts.sort((a, b) => b.total_gross - a.total_gross);
+      // Sort by pending payout (descending)
+      payouts.sort((a, b) => b.pending_payout - a.pending_payout);
 
       console.log(`[ADMIN] list-payouts: returning ${payouts.length} creators`);
 
       return new Response(
-        JSON.stringify({ success: true, payouts }),
+        JSON.stringify({ success: true, payouts, payout_history: payoutHistory || [] }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } catch (err) {
       console.error("[ADMIN] list-payouts error:", err);
+      return new Response(
+        JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  // Handle mark-paid action - record a manual payout
+  if (action === "mark-paid" && req.method === "POST") {
+    try {
+      const body = await req.json();
+      const { creator_user_id, amount, payout_method, payout_email, stripe_account_id, notes, activity_ids } = body;
+
+      if (!creator_user_id || !amount || !payout_method) {
+        return new Response(
+          JSON.stringify({ error: "creator_user_id, amount, and payout_method are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: payout, error: insertError } = await supabaseAdmin
+        .from("creator_payouts")
+        .insert({
+          creator_user_id,
+          amount: Number(amount),
+          currency: "USD",
+          payout_method,
+          payout_email: payout_email || null,
+          stripe_account_id: stripe_account_id || null,
+          notes: notes || null,
+          activity_ids: activity_ids || [],
+          paid_by: "admin",
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      console.log(`[ADMIN] mark-paid: recorded payout of ${amount} to ${creator_user_id} via ${payout_method}`);
+
+      return new Response(
+        JSON.stringify({ success: true, payout }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (err) {
+      console.error("[ADMIN] mark-paid error:", err);
       return new Response(
         JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

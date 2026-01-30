@@ -90,19 +90,6 @@ serve(async (req) => {
       priceInCents 
     });
 
-    // Get creator's Stripe Connect account
-    const { data: creatorProfile } = await supabaseClient
-      .from("profiles_private")
-      .select("stripe_account_id, stripe_account_status")
-      .eq("user_id", activity.user_id)
-      .maybeSingle();
-
-    if (!creatorProfile?.stripe_account_id || creatorProfile.stripe_account_status !== "complete") {
-      throw new Error("Creator has not completed Stripe onboarding");
-    }
-
-    logStep("Creator Stripe account found", { stripeAccountId: creatorProfile.stripe_account_id });
-
     // Get payer's email for Stripe
     const { data: payerPrivate } = await supabaseClient
       .from("profiles_private")
@@ -115,17 +102,14 @@ serve(async (req) => {
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
-
-    // Calculate the 85/15 split
-    // Platform fee is 15% of the total
-    const platformFee = Math.round(priceInCents * 0.15);
     
     const origin = req.headers.get("origin") || "https://shake-web-buddy.lovable.app";
     
     // Get activity description for checkout
     const activityDescription = activity.note || activity.activity_type;
 
-    // Create Stripe Checkout Session with destination charge
+    // All payments go to SHAKE's main Stripe account
+    // Manual payouts will be done to creators via admin panel
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -145,27 +129,16 @@ serve(async (req) => {
       success_url: `${origin}/?payment_success=true&activity_id=${activityId}`,
       cancel_url: `${origin}/?payment_cancelled=true`,
       customer_email: payerEmail || undefined,
-      payment_intent_data: {
-        application_fee_amount: platformFee,
-        transfer_data: {
-          destination: creatorProfile.stripe_account_id,
-        },
-        metadata: {
-          activity_id: activityId,
-          payer_user_id: user.id,
-          creator_user_id: activity.user_id,
-        },
-      },
       metadata: {
         activity_id: activityId,
         payer_user_id: user.id,
+        creator_user_id: activity.user_id,
       },
     });
 
     logStep("Checkout session created", { 
       sessionId: session.id, 
-      platformFee,
-      creatorAmount: priceInCents - platformFee
+      amount: priceInCents,
     });
 
     return new Response(JSON.stringify({ 
