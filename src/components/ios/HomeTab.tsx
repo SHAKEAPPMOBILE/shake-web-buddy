@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { LandingCarousel } from "@/components/LandingCarousel";
 import { useCity } from "@/contexts/CityContext";
 import { useTranslation } from "react-i18next";
-
+import { CreateActivityDialog } from "@/components/CreateActivityDialog";
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
   showActivities?: boolean;
@@ -18,11 +18,14 @@ interface HomeTabProps {
   isShaking?: boolean;
 }
 
+// Separate dialog state for "Propose a plan" flow
+
 export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false }: HomeTabProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-
+  const { selectedCity } = useCity();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   // Rotating text for "Meet new..." phrases
   const meetPhrases = useMemo(() => [
     t('home.meetPeople', 'Meet new people.'),
@@ -38,7 +41,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
-  const tappedActivityRef = useRef<{ id: string; label: string; emoji: string } | null>(null);
+  const tappedActivityRef = useRef<CarouselItem | null>(null);
 
   useEffect(() => {
     phraseIntervalRef.current = setInterval(() => {
@@ -103,6 +106,14 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     // On iOS Safari, `onClick` can fire after touch handlers and state updates.
     // So we lock the chosen activity on pointer/touch start and use it here.
     const activityToSelect = tappedActivityRef.current ?? orderedActivities[currentActivityIndex];
+
+    if (activityToSelect?.isProposePlan) {
+      // Open the create activity dialog for "Propose a plan"
+      onCloseActivities?.();
+      tappedActivityRef.current = null;
+      setShowCreateDialog(true);
+      return;
+    }
 
     if (activityToSelect) {
       onSelectActivity?.({
@@ -265,7 +276,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             {/* Date display - Above the circle (or "Propose a plan" text) */}
             <div className="mb-8 animate-fade-in text-center">
               {currentActivity?.isProposePlan ? (
-                <div className="text-2xl md:text-3xl font-semibold text-foreground">
+                <div className="text-5xl md:text-6xl font-handwritten text-foreground">
                   {t('home.proposePlan', 'Propose a plan')}
                 </div>
               ) : (
@@ -290,16 +301,10 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
                 className="w-40 h-40 mx-6 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
                 onTouchStart={(e) => {
                   e.stopPropagation();
-                  const a = orderedActivities[currentActivityIndex];
-                  tappedActivityRef.current = a
-                    ? { id: a.id, label: a.label, emoji: a.emoji }
-                    : null;
+                  tappedActivityRef.current = orderedActivities[currentActivityIndex] ?? null;
                 }}
                 onPointerDown={() => {
-                  const a = orderedActivities[currentActivityIndex];
-                  tappedActivityRef.current = a
-                    ? { id: a.id, label: a.label, emoji: a.emoji }
-                    : null;
+                  tappedActivityRef.current = orderedActivities[currentActivityIndex] ?? null;
                 }}
                 onClick={handleActivitySelect}
               >
@@ -317,7 +322,11 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
             {/* Activity Label - Below the circle */}
             <div className="mt-8 animate-fade-in text-center">
-              <div className="text-xl font-semibold text-foreground">{currentActivity?.label}</div>
+              <div className="text-xl font-semibold text-foreground">
+                {currentActivity?.isProposePlan 
+                  ? t('home.anytimeAnywhere', 'Anytime, Anywhere.')
+                  : currentActivity?.label}
+              </div>
             </div>
 
 
@@ -393,6 +402,13 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           <ThemeToggle />
         </div>
       </div>
+
+      {/* Create Activity Dialog for "Propose a plan" */}
+      <CreateActivityDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        city={selectedCity}
+      />
     </>
   );
 }
