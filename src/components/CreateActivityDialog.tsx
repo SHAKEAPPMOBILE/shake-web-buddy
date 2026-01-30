@@ -330,7 +330,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   ) : isVerificationPending ? (
                     <p className="text-xs text-amber-600 flex items-center gap-1">
                       <Shield className="w-3 h-3" />
-                      ID verification pending (auto-approves in 1 hour)
+                      ID verification pending
                     </p>
                   ) : (
                     <button
