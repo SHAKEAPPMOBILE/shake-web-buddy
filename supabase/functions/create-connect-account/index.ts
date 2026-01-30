@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -18,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    logStep("Function started");
+    logStep("Function started - Stripe Connect Standard OAuth");
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -39,152 +38,68 @@ serve(async (req) => {
 
     logStep("User authenticated", { userId: user.id });
 
-    // Parse request body for country and reset flag
-    let country: string | undefined;
-    let reset = false;
-    
-    try {
-      const body = await req.json();
-      country = body.country; // ISO 3166-1 alpha-2 country code (e.g., "US", "GB", "DE")
-      reset = body.reset === true;
-      logStep("Request body parsed", { country, reset });
-    } catch {
-      // No body or invalid JSON - that's fine, we'll use defaults
-      logStep("No request body or invalid JSON");
+    // Get Stripe Client ID for OAuth
+    const stripeClientId = Deno.env.get("STRIPE_CLIENT_ID");
+    if (!stripeClientId) {
+      throw new Error("STRIPE_CLIENT_ID is not configured");
     }
-
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
 
     // Check if user already has a connected account
     const { data: privateProfile } = await supabaseClient
       .from("profiles_private")
-      .select("stripe_account_id, stripe_account_status, billing_email")
+      .select("stripe_account_id, stripe_account_status")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    let accountId = privateProfile?.stripe_account_id;
-
-    // If reset is requested and there's an existing account, delete it from Stripe and clear from DB
-    if (reset && accountId) {
-      logStep("Reset requested, deleting existing Stripe account", { accountId });
-      try {
-        await stripe.accounts.del(accountId);
-        logStep("Deleted Stripe account successfully");
-      } catch (deleteError) {
-        // Account might already be deleted or not exist
-        logStep("Could not delete Stripe account (may not exist)", { error: String(deleteError) });
-      }
-      
-      // Clear the account ID from the database
-      await supabaseClient
-        .from("profiles_private")
-        .update({ 
-          stripe_account_id: null,
-          stripe_account_status: null
-        })
-        .eq("user_id", user.id);
-      
-      accountId = null;
-      logStep("Cleared Stripe account from database");
+    if (privateProfile?.stripe_account_id && privateProfile?.stripe_account_status === "complete") {
+      logStep("User already has a connected Stripe account", { 
+        accountId: privateProfile.stripe_account_id 
+      });
+      return new Response(JSON.stringify({ 
+        status: "complete",
+        message: "Your Stripe account is already connected" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
-    if (accountId && !reset) {
-      logStep("Found existing Stripe account", { accountId });
-      
-      try {
-        // Check account status
-        const account = await stripe.accounts.retrieve(accountId);
-        
-        if (account.charges_enabled && account.payouts_enabled) {
-          // Account is fully set up - set as preferred payout method
-          await supabaseClient
-            .from("profiles_private")
-            .update({ 
-              stripe_account_status: "complete",
-              preferred_payout_method: "stripe"
-            })
-            .eq("user_id", user.id);
-          
-          return new Response(JSON.stringify({ 
-            status: "complete",
-            message: "Your Stripe account is already connected" 
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          });
-        }
-      } catch (retrieveError) {
-        // Account doesn't exist or we don't have access - clear it and create a new one
-        logStep("Cannot access existing Stripe account, clearing and creating new", { 
-          accountId, 
-          error: String(retrieveError) 
-        });
-        
-        await supabaseClient
-          .from("profiles_private")
-          .update({ 
-            stripe_account_id: null,
-            stripe_account_status: null
-          })
-          .eq("user_id", user.id);
-        
-        accountId = null;
-      }
-    }
-    
-    if (!accountId) {
-      // Create a new Stripe Connect account (Express type for easier onboarding)
-      // Pass the country if provided
-      const accountParams: Stripe.AccountCreateParams = {
-        type: "express",
-        email: privateProfile?.billing_email || user.email || undefined,
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
-        metadata: {
-          user_id: user.id,
-        },
-      };
-
-      // Only set country if provided (Stripe requires valid ISO 3166-1 alpha-2 code)
-      if (country) {
-        accountParams.country = country;
-        logStep("Setting account country", { country });
-      }
-
-      const account = await stripe.accounts.create(accountParams);
-
-      accountId = account.id;
-      logStep("Created new Stripe Connect account", { accountId, country: account.country });
-
-      // Save the account ID
-      await supabaseClient
-        .from("profiles_private")
-        .update({ 
-          stripe_account_id: accountId,
-          stripe_account_status: "pending"
-        })
-        .eq("user_id", user.id);
-    }
-
-    // Create an account link for onboarding
+    // Build Stripe OAuth authorization URL for Standard accounts
     const origin = req.headers.get("origin") || "https://shake-web-buddy.lovable.app";
+    const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/stripe-connect-callback`;
     
-    const accountLink = await stripe.accountLinks.create({
-      account: accountId,
-      refresh_url: `${origin}/?connect_refresh=true`,
-      return_url: `${origin}/?connect_success=true`,
-      type: "account_onboarding",
+    // Create a state parameter to prevent CSRF and pass user info
+    const state = btoa(JSON.stringify({ 
+      userId: user.id,
+      origin: origin
+    }));
+
+    const oauthUrl = new URL("https://connect.stripe.com/oauth/authorize");
+    oauthUrl.searchParams.set("response_type", "code");
+    oauthUrl.searchParams.set("client_id", stripeClientId);
+    oauthUrl.searchParams.set("scope", "read_write");
+    oauthUrl.searchParams.set("redirect_uri", redirectUri);
+    oauthUrl.searchParams.set("state", state);
+    
+    // Pre-fill user email if available
+    const { data: profileData } = await supabaseClient
+      .from("profiles_private")
+      .select("billing_email")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    
+    if (profileData?.billing_email || user.email) {
+      oauthUrl.searchParams.set("stripe_user[email]", profileData?.billing_email || user.email || "");
+    }
+
+    logStep("Generated OAuth URL", { 
+      clientId: stripeClientId.substring(0, 10) + "...",
+      redirectUri 
     });
 
-    logStep("Created account link", { url: accountLink.url });
-
     return new Response(JSON.stringify({ 
-      url: accountLink.url,
-      status: "pending"
+      url: oauthUrl.toString(),
+      status: "redirect"
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
