@@ -93,26 +93,44 @@ serve(async (req) => {
     if (accountId && !reset) {
       logStep("Found existing Stripe account", { accountId });
       
-      // Check account status
-      const account = await stripe.accounts.retrieve(accountId);
-      
-      if (account.charges_enabled && account.payouts_enabled) {
-        // Account is fully set up - set as preferred payout method
+      try {
+        // Check account status
+        const account = await stripe.accounts.retrieve(accountId);
+        
+        if (account.charges_enabled && account.payouts_enabled) {
+          // Account is fully set up - set as preferred payout method
+          await supabaseClient
+            .from("profiles_private")
+            .update({ 
+              stripe_account_status: "complete",
+              preferred_payout_method: "stripe"
+            })
+            .eq("user_id", user.id);
+          
+          return new Response(JSON.stringify({ 
+            status: "complete",
+            message: "Your Stripe account is already connected" 
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+      } catch (retrieveError) {
+        // Account doesn't exist or we don't have access - clear it and create a new one
+        logStep("Cannot access existing Stripe account, clearing and creating new", { 
+          accountId, 
+          error: String(retrieveError) 
+        });
+        
         await supabaseClient
           .from("profiles_private")
           .update({ 
-            stripe_account_status: "complete",
-            preferred_payout_method: "stripe"
+            stripe_account_id: null,
+            stripe_account_status: null
           })
           .eq("user_id", user.id);
         
-        return new Response(JSON.stringify({ 
-          status: "complete",
-          message: "Your Stripe account is already connected" 
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
+        accountId = null;
       }
     }
     
