@@ -293,6 +293,8 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
     avatarUrl: string | null;
   } | null>(null);
   const [paidActivityDetail, setPaidActivityDetail] = useState<PlanActivity | null>(null);
+  // Store the activity to restore when closing user profile opened from ActivityDetailDialog
+  const [activityDetailToRestore, setActivityDetailToRestore] = useState<PlanActivity | null>(null);
   
 
   // Notify parent when entering/leaving chat view
@@ -841,7 +843,16 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
       {selectedUserProfile && (
         <UserProfileDialog
           open={!!selectedUserProfile}
-          onOpenChange={(open) => !open && setSelectedUserProfile(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedUserProfile(null);
+              // Restore ActivityDetailDialog if it was open before
+              if (activityDetailToRestore) {
+                setPaidActivityDetail(activityDetailToRestore);
+                setActivityDetailToRestore(null);
+              }
+            }
+          }}
           userId={selectedUserProfile.userId}
           userName={selectedUserProfile.userName}
           avatarUrl={selectedUserProfile.avatarUrl}
@@ -855,6 +866,8 @@ export function PlansTab({ onChatViewChange }: PlansTabProps = {}) {
           onOpenChange={(open) => !open && setPaidActivityDetail(null)}
           activity={paidActivityDetail}
           onCreatorClick={() => {
+            // Store activity to restore when profile is closed
+            setActivityDetailToRestore(paidActivityDetail);
             setPaidActivityDetail(null);
             setSelectedUserProfile({
               userId: paidActivityDetail.user_id,

@@ -35,7 +35,14 @@
     "joinActivityToChat": "Rejoignez une activité pour discuter",
     "noChatsInCity": "Pas de chats à {{city}}",
     "showAllCities": "Afficher toutes les villes",
-    "by": "par"
+    "by": "par",
+    "going": "y vont",
+    "location": "Lieu",
+    "participants": "Participants",
+    "entryFee": "Frais d'entrée",
+    "payToJoin": "Payer pour rejoindre",
+    "processing": "Traitement",
+    "paymentGateInfo": "Après le paiement, vous aurez accès au chat de groupe et pourrez vous coordonner avec les autres participants."
   },
   "days": {
     "sunday": "Dimanche",
