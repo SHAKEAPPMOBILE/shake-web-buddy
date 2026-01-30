@@ -147,18 +147,24 @@ Deno.serve(async (req) => {
     return new Response(html, { headers: { "Content-Type": "text/html" } });
   }
 
-  // Handle POST - create a new user
-  if (req.method === "POST") {
-    try {
-      const body = await req.json();
-      const { phone, userPassword, name, isPremium } = body;
+  // Get action from query params first
+  const action = url.searchParams.get("action");
+  
+  // If there's an action in query params, skip the generic POST/DELETE handlers
+  // and let the action-specific handlers below process it
+  if (!action) {
+    // Handle POST - create a new user (only if no action specified)
+    if (req.method === "POST") {
+      try {
+        const body = await req.json();
+        const { phone, userPassword, name, isPremium } = body;
 
-      if (!phone || !userPassword) {
-        return new Response(
-          JSON.stringify({ error: "Phone and password are required" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+        if (!phone || !userPassword) {
+          return new Response(
+            JSON.stringify({ error: "Phone and password are required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
 
       const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
@@ -239,47 +245,48 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-  }
-
-  // Handle DELETE - delete a user
-  if (req.method === "DELETE") {
-    try {
-      const body = await req.json();
-      const { userId } = body;
-
-      if (!userId) {
-        return new Response(
-          JSON.stringify({ error: "User ID is required" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-        { auth: { autoRefreshToken: false, persistSession: false } }
-      );
-
-      const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-
-      if (error) {
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ success: true, message: "User deleted" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } catch (err) {
-      return new Response(
-        JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
-  }
+
+    // Handle DELETE - delete a user (only if no action specified)
+    if (req.method === "DELETE") {
+      try {
+        const body = await req.json();
+        const { userId } = body;
+
+        if (!userId) {
+          return new Response(
+            JSON.stringify({ error: "User ID is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const supabaseAdmin = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+          { auth: { autoRefreshToken: false, persistSession: false } }
+        );
+
+        const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+        if (error) {
+          return new Response(
+            JSON.stringify({ error: error.message }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, message: "User deleted" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (err) {
+        return new Response(
+          JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+  } // End of if (!action) block
 
   // Initialize admin client for GET operations
   const supabaseAdmin = createClient(
@@ -289,7 +296,6 @@ Deno.serve(async (req) => {
   );
 
   // Handle search action
-  const action = url.searchParams.get("action");
   const query = url.searchParams.get("query");
   
   // Handle bulk password update for all users
@@ -691,20 +697,27 @@ Deno.serve(async (req) => {
   if (requestAction === "get-verification-document") {
     try {
       const documentPath = requestBody.documentPath as string;
+      console.log("[ADMIN] get-verification-document: requested path =", documentPath);
 
       if (!documentPath) {
+        console.error("[ADMIN] get-verification-document: no document path provided");
         return new Response(
           JSON.stringify({ error: "Document path required" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      console.log("[ADMIN] get-verification-document: creating signed URL for", documentPath);
       const { data, error } = await supabaseAdmin.storage
         .from("id-verifications")
         .createSignedUrl(documentPath, 3600); // 1 hour expiry
 
-      if (error) throw error;
+      if (error) {
+        console.error("[ADMIN] get-verification-document: storage error", error);
+        throw error;
+      }
 
+      console.log("[ADMIN] get-verification-document: success, returning signed URL");
       return new Response(
         JSON.stringify({ success: true, signedUrl: data?.signedUrl }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }

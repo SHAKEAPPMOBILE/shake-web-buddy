@@ -74,6 +74,8 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
     setPreviewUrl(null); // Reset preview URL when opening new document
     
     try {
+      console.log("[VerificationsTab] Fetching document:", verification.document_url);
+      
       // Get signed URL for the document using password in query params
       const response = await fetch(
         `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=get-verification-document`,
@@ -84,13 +86,23 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
         }
       );
       
-      if (!response.ok) throw new Error("Failed to get document");
       const data = await response.json();
-      setPreviewUrl(data?.signedUrl || null);
+      console.log("[VerificationsTab] Response:", data);
+      
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to get document");
+      }
+      
+      if (data?.signedUrl) {
+        console.log("[VerificationsTab] Got signed URL");
+        setPreviewUrl(data.signedUrl);
+      } else {
+        throw new Error("No signed URL returned");
+      }
     } catch (error) {
       console.error("Error getting document URL:", error);
-      toast.error("Failed to load document");
-      setPreviewUrl(null);
+      toast.error("Failed to load document: " + (error instanceof Error ? error.message : "Unknown error"));
+      setPreviewUrl("error"); // Set to error state instead of null to stop loading spinner
     }
   };
 
@@ -298,8 +310,15 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
 
             {/* Document Preview */}
             <div className="border rounded-lg p-4 bg-muted/30">
-              {previewUrl ? (
-                previewUrl.includes(".pdf") ? (
+              {previewUrl === "error" ? (
+                <div className="text-center py-8">
+                  <p className="text-destructive">Failed to load document</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    The document could not be retrieved from storage.
+                  </p>
+                </div>
+              ) : previewUrl ? (
+                previewUrl.toLowerCase().includes(".pdf") ? (
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-2">PDF Document</p>
                     <a 
@@ -317,6 +336,10 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
                     src={previewUrl}
                     alt="ID Document"
                     className="max-w-full max-h-96 mx-auto rounded-lg object-contain"
+                    onError={() => {
+                      console.error("Image failed to load");
+                      setPreviewUrl("error");
+                    }}
                   />
                 )
               ) : (
