@@ -63,7 +63,7 @@ export function ActivityDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50 p-0 overflow-hidden [&>button.dialog-close]:text-white [&>button.dialog-close]:bg-black/50 [&>button.dialog-close]:hover:bg-black/70"
+        className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50 p-0 overflow-hidden [&>button.dialog-close]:text-black [&>button.dialog-close]:bg-black/20 [&>button.dialog-close]:hover:bg-black/30"
         {...(isMobile ? swipeHandlers : {})}
       >
         {isMobile && (
@@ -72,18 +72,14 @@ export function ActivityDetailDialog({
           </div>
         )}
 
-        {/* Hero Section */}
+        {/* Hero Section - Yellow Banner */}
         <div
-          className="p-6 text-white"
-          style={{
-            background:
-              "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
-          }}
+          className="p-6 text-black bg-shake-yellow"
         >
           <div className="flex items-start gap-4">
             {/* Creator Avatar or Activity Emoji */}
             <div className="relative">
-              <Avatar className="w-16 h-16 border-2 border-white/50 shadow-lg">
+              <Avatar className="w-16 h-16 border-2 border-black/20 shadow-lg">
                 <AvatarImage
                   src={activity.creator_avatar || undefined}
                   alt={activity.creator_name}
@@ -107,7 +103,7 @@ export function ActivityDetailDialog({
                   e.stopPropagation();
                   onCreatorClick?.();
                 }}
-                className="text-sm text-white/80 hover:text-white underline transition-colors"
+                className="text-sm text-black/70 hover:text-black underline transition-colors"
               >
                 {t("common.by")} {activity.creator_name || "Anonymous"}
               </button>
@@ -162,16 +158,12 @@ export function ActivityDetailDialog({
             </div>
           )}
 
-          {/* Pay to Join Button */}
+          {/* Pay to Join Button - Blue */}
           {activity.price_amount && (
             <button
               onClick={handlePayToJoin}
               disabled={isProcessing || paymentLoading}
-              className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50 mt-4"
-              style={{
-                background:
-                  "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
-              }}
+              className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50 mt-4 bg-blue-500 hover:bg-blue-600"
             >
               {isProcessing || paymentLoading ? (
                 <span className="flex items-center justify-center gap-2">
