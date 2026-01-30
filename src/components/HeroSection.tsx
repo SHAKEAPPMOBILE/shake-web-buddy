@@ -147,7 +147,7 @@ export function HeroSection() {
             animationDelay: "100ms"
           }}>
               <span className="transition-opacity duration-500">
-                {showTapInstruction ? "Tap on the blue + below to start shaking." : (
+                {showTapInstruction ? <span className="text-2xl md:text-3xl lg:text-4xl">Tap on the blue + below to start shaking.</span> : (
                   <>
                     {meetPhrases[currentPhraseIndex].text}{" "}
                     <span className="text-gradient">{meetPhrases[currentPhraseIndex].highlight}</span>
