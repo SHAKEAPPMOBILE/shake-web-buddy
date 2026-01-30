@@ -615,14 +615,22 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                       </p>
                       <button
                         onClick={() => {
-                          setShowPayoutOptions(false);
                           startOnboarding();
                         }}
                         disabled={stripeLoading}
                         className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-lg hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
-                        {stripeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
-                        {t('profile.connectStripe', 'Connect Stripe')}
+                        {stripeLoading ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            {t('profile.connecting', 'Connecting to Stripe...')}
+                          </>
+                        ) : (
+                          <>
+                            <ExternalLink className="w-3 h-3" />
+                            {t('profile.connectStripe', 'Connect Stripe')}
+                          </>
+                        )}
                       </button>
                     </>
                   )}
