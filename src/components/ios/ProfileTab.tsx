@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2 } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ import { LanguageSelector } from "../LanguageSelector";
 import { useTranslation } from "react-i18next";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { usePayPalConnect } from "@/hooks/usePayPalConnect";
+import { useCreatorEarnings } from "@/hooks/useCreatorEarnings";
 import { StripeCountrySelectorDialog } from "../StripeCountrySelectorDialog";
 import { PayPalConnectDialog } from "../PayPalConnectDialog";
 import {
@@ -67,8 +68,9 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showPayPalDisconnectConfirm, setShowPayPalDisconnectConfirm] = useState(false);
   const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
-  const { isConnected: stripeConnected, status: stripeStatus, email: stripeEmail, isLoading: stripeLoading, startOnboarding, checkStatus: checkStripeStatus, resetAndRecreate } = useStripeConnect();
+  const { isConnected: stripeConnected, status: stripeStatus, email: stripeEmail, isLoading: stripeLoading, error: stripeError, startOnboarding, checkStatus: checkStripeStatus, resetAndRecreate } = useStripeConnect();
   const { isConnected: paypalConnected, paypalEmail, isLoading: paypalLoading, connectPayPal, disconnectPayPal } = usePayPalConnect();
+  const { totalNet, currency, activities, isLoading: earningsLoading } = useCreatorEarnings();
 
   const handleStartOnboarding = (countryCode: string) => {
     setShowCountrySelector(false);
@@ -456,6 +458,49 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           {showPayoutOptions && (
             <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
               <div className="space-y-4 pt-3">
+                {/* Earnings Summary */}
+                <div className="border rounded-lg p-3 bg-gradient-to-r from-shake-yellow/10 to-shake-green/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-shake-green" />
+                      <span className="text-sm font-medium">{t('profile.yourEarnings', 'Your Earnings')}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">85% {t('profile.afterFee', 'after platform fee')}</span>
+                  </div>
+                  {earningsLoading ? (
+                    <div className="flex items-center justify-center py-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : activities.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="flex items-end justify-between">
+                        <span className="text-2xl font-bold text-shake-green">
+                          {currency === "USD" ? "$" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : currency === "BRL" ? "R$" : "$"}
+                          {totalNet.toFixed(2)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{currency}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {t('profile.fromPaidActivities', 'From {{count}} paid activities', { count: activities.length })}
+                      </p>
+                      {activities.some(a => a.participants > 0) && (
+                        <div className="text-xs text-muted-foreground border-t border-border pt-2 mt-2">
+                          {activities.filter(a => a.participants > 0).map(a => (
+                            <div key={a.activityId} className="flex justify-between py-0.5">
+                              <span>{a.activityType} ({a.participants} {t('profile.participants', 'participants')})</span>
+                              <span className="text-shake-green">{a.currency === "USD" ? "$" : a.currency === "EUR" ? "€" : a.currency === "GBP" ? "£" : "$"}{a.netAmount.toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {t('profile.noEarningsYet', 'Create paid activities to start earning!')}
+                    </p>
+                  )}
+                </div>
+
                 {/* Connected Status Summary */}
                 {((stripeConnected && stripeStatus === "complete") || paypalConnected) && (
                   <div className="flex items-center gap-2 p-2 bg-shake-green/10 rounded-lg">
@@ -481,8 +526,10 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                     {stripeConnected && stripeStatus === "complete" && (
                       <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">Connected</span>
                     )}
-                    {stripeConnected && stripeStatus === "pending" && (
-                      <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Pending</span>
+                    {stripeConnected && (stripeStatus === "pending" || stripeStatus === "verification_pending") && (
+                      <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                        {stripeStatus === "verification_pending" ? "Verifying" : "Pending"}
+                      </span>
                     )}
                   </div>
                   
@@ -503,10 +550,32 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                         </button>
                       )}
                     </>
+                  ) : stripeConnected && stripeStatus === "verification_pending" ? (
+                    <>
+                      <p className="text-xs text-muted-foreground">
+                        {t('profile.stripeVerificationPending', 'Stripe is reviewing your account. This usually takes 1-3 business days.')}
+                      </p>
+                      {stripeEmail && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Mail className="w-3 h-3" />
+                          <span className="truncate">{stripeEmail}</span>
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={checkStripeStatus}
+                          disabled={stripeLoading}
+                          className="flex-1 py-2 text-xs font-medium text-amber-600 border border-amber-500/30 rounded-lg hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                        >
+                          {stripeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                          {t('profile.checkStatus', 'Check Status')}
+                        </button>
+                      </div>
+                    </>
                   ) : stripeConnected && stripeStatus === "pending" ? (
                     <>
                       <p className="text-xs text-muted-foreground">
-                        {t('profile.stripePendingDesc', 'Stripe is verifying your account. This usually takes a few minutes.')}
+                        {t('profile.stripePendingDesc', 'Complete your Stripe onboarding to receive payments.')}
                       </p>
                       <div className="flex gap-2">
                         <button
@@ -517,8 +586,8 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                           disabled={stripeLoading}
                           className="flex-1 py-2 text-xs font-medium text-amber-600 border border-amber-500/30 rounded-lg hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                         >
-                          <ExternalLink className="w-3 h-3" />
-                          Complete
+                          {stripeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
+                          {t('profile.completeOnboarding', 'Complete Setup')}
                         </button>
                         <button
                           onClick={checkStripeStatus}
