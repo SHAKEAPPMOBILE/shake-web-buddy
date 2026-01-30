@@ -108,6 +108,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [isDetecting, setIsDetecting] = useState(true);
 
   // Auto-detect language based on browser settings and location
+  // IMPORTANT: Only auto-select from languages we have translations for
   useEffect(() => {
     const detectLanguage = async () => {
       // Check if user already has a saved preference
@@ -116,9 +117,14 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Get translated languages only for auto-detection
+      const availableLanguages = supportedLanguages.filter(l => 
+        translatedLanguages.includes(l.code)
+      );
+
       // Get browser language as primary source (most reliable)
       const browserLang = navigator.language.split('-')[0];
-      const browserLanguage = supportedLanguages.find(l => l.code === browserLang);
+      const browserLanguage = availableLanguages.find(l => l.code === browserLang);
       
       // Also check navigator.languages for additional context
       const browserLanguages = navigator.languages || [navigator.language];
@@ -126,7 +132,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       
       for (const lang of browserLanguages) {
         const langCode = lang.split('-')[0];
-        const match = supportedLanguages.find(l => l.code === langCode);
+        // Only match against translated languages
+        const match = availableLanguages.find(l => l.code === langCode);
         if (match) {
           bestMatch = match;
           break;
@@ -141,6 +148,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         setDetectedLanguage(browserLanguage);
         setSelectedLanguageState(browserLanguage);
       }
+      // If no translated language matches browser, default English is already set
 
       // Try IP-based detection as secondary confirmation
       try {
@@ -152,7 +160,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
           const data = await response.json();
           if (data.country_code) {
             const langCode = countryToLanguage[data.country_code];
-            const ipLanguage = supportedLanguages.find(l => l.code === langCode);
+            // Only use IP language if we have translations for it
+            const ipLanguage = availableLanguages.find(l => l.code === langCode);
             
             // If IP detection gives a different result than browser, prefer IP
             // (user might be traveling but phone language unchanged)
