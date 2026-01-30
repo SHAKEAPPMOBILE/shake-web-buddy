@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useMemo, useEffect } from "react";
 import { startOfDay } from "date-fns";
-import { Plus, User } from "lucide-react";
+import { Plus, User, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,9 +18,11 @@ import { detectActivityFromText } from "@/lib/activityDetection";
 import { checkProfanity } from "@/lib/profanity-filter";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { usePayPalConnect } from "@/hooks/usePayPalConnect";
+import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { supabase } from "@/integrations/supabase/client";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
 import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
+import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { useToast } from "@/hooks/use-toast";
 
 const CURRENCIES = [
@@ -53,9 +55,11 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
+  const [showIDVerification, setShowIDVerification] = useState(false);
   const [profanityError, setProfanityError] = useState<string | null>(null);
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
+  const { isVerified, isPending: isVerificationPending, isLoading: verificationLoading } = useCreatorVerification();
   const isMobile = useIsMobile();
   
   // Refetch myActivities when dialog opens to ensure fresh data after deletions
@@ -118,6 +122,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const isPaidActivity = priceAmount.trim().length > 0;
   const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
   const needsPayoutSetup = isPaidActivity && !hasPayoutMethod;
+  const needsIDVerification = isPaidActivity && !isVerified && !isVerificationPending;
 
   const handleStartOnboardingWithCountry = (countryCode: string) => {
     setShowStripeCountrySelector(false);
@@ -126,6 +131,12 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
 
   const handleCreate = async () => {
     if (!isValid || !detectedActivity) return;
+
+    // If setting a price, require ID verification first
+    if (isPaidActivity && !isVerified && !isVerificationPending) {
+      setShowIDVerification(true);
+      return;
+    }
 
     // If setting a price, require a payout method (Stripe or PayPal)
     if (priceAmount.trim() && !hasPayoutMethod) {
@@ -297,6 +308,33 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   className="flex-1"
                 />
               </div>
+              {/* ID Verification status */}
+              {priceAmount.trim() && (
+                <div className="space-y-2">
+                  {isVerified ? (
+                    <p className="text-xs text-green-600 flex items-center gap-1">
+                      <Shield className="w-3 h-3" />
+                      ✓ ID verified
+                    </p>
+                  ) : isVerificationPending ? (
+                    <p className="text-xs text-amber-600 flex items-center gap-1">
+                      <Shield className="w-3 h-3" />
+                      ID verification pending (auto-approves in 1 hour)
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowIDVerification(true)}
+                      className="text-xs text-amber-600 flex items-center gap-1 hover:text-amber-700"
+                    >
+                      <Shield className="w-3 h-3" />
+                      ID verification required for paid activities
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              {/* Payout method status */}
               {priceAmount.trim() && !hasPayoutMethod && (
                 <div className="text-xs text-amber-600 space-y-1">
                   <p>To receive payments, connect a payout method:</p>
@@ -416,6 +454,15 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
         onOpenChange={setShowPayPalDialog}
         onConnect={connectPayPal}
         isLoading={paypalLoading}
+      />
+
+      {/* ID Verification dialog */}
+      <IDVerificationDialog
+        open={showIDVerification}
+        onOpenChange={setShowIDVerification}
+        onVerificationComplete={() => {
+          // Verification submitted, dialog will close and show pending status
+        }}
       />
     </Dialog>
   );
