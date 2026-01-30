@@ -51,8 +51,39 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     };
   }, [meetPhrases.length]);
 
-  // Get activities sorted by next occurrence date (chronological)
-  const orderedActivities = useMemo(() => getActivitiesWithDates(), []);
+  // Extended type for carousel items including "propose plan"
+  type CarouselItem = {
+    id: string;
+    label: string;
+    emoji: string;
+    dayNumber: number | null;
+    nextDate: Date | null;
+    isProposePlan?: boolean;
+  };
+
+  // Get activities sorted by next occurrence date (chronological) + propose a plan option
+  const orderedActivities = useMemo((): CarouselItem[] => {
+    const activities = getActivitiesWithDates();
+    // Add "Propose a plan" as the last option
+    return [
+      ...activities.map(a => ({
+        id: a.id,
+        label: a.label,
+        emoji: a.emoji,
+        dayNumber: a.dayNumber,
+        nextDate: a.nextDate,
+        isProposePlan: false,
+      })),
+      {
+        id: 'propose-plan',
+        label: t('home.proposePlan', 'Propose a plan'),
+        emoji: '😎',
+        dayNumber: null,
+        nextDate: null,
+        isProposePlan: true,
+      }
+    ];
+  }, [t]);
 
   // Reset to first item when activities are shown
   useEffect(() => {
@@ -231,11 +262,17 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            {/* Date display - Above the circle */}
+            {/* Date display - Above the circle (or "Propose a plan" text) */}
             <div className="mb-8 animate-fade-in text-center">
-              <div className="text-5xl md:text-6xl font-handwritten text-foreground">
-                {currentActivity?.dayNumber}, {currentActivity?.nextDate ? DAY_NAMES[currentActivity.nextDate.getDay()] : ''}
-              </div>
+              {currentActivity?.isProposePlan ? (
+                <div className="text-2xl md:text-3xl font-semibold text-foreground">
+                  {t('home.proposePlan', 'Propose a plan')}
+                </div>
+              ) : (
+                <div className="text-5xl md:text-6xl font-handwritten text-foreground">
+                  {currentActivity?.dayNumber}, {currentActivity?.nextDate ? DAY_NAMES[currentActivity.nextDate.getDay()] : ''}
+                </div>
+              )}
             </div>
 
             {/* Activity circle with arrows on sides */}
