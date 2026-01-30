@@ -322,7 +322,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
               {showTapInstruction ? (
                 <span className="flex items-center justify-center gap-2 flex-wrap">
                   {t('home.tapOnThe', 'Tap on')} 
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-lg font-bold">+</span> 
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-foreground text-background text-lg font-bold">+</span> 
                   {t('home.toStartShaking', 'to start shaking!')}
                 </span>
               ) : meetPhrases[currentPhraseIndex]}
