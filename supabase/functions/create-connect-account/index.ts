@@ -83,92 +83,72 @@ serve(async (req) => {
         })
         .eq("user_id", user.id);
     } else if (privateProfile?.stripe_account_id) {
-      // If user has an existing account that's pending, check if we should send them to Stripe dashboard
-      if (privateProfile.stripe_account_status === "pending") {
-        // Check the actual account status with Stripe
-        const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-          apiVersion: "2025-08-27.basil",
-        });
+      // Check if this is an existing account
+      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+        apiVersion: "2025-08-27.basil",
+      });
+      
+      try {
+        const account = await stripe.accounts.retrieve(privateProfile.stripe_account_id);
         
-        try {
-          const account = await stripe.accounts.retrieve(privateProfile.stripe_account_id);
-          
-          // If account exists and has started onboarding, send them to the account link
-          // to continue/complete their onboarding rather than OAuth
-          if (account) {
-            // Check if they need to complete requirements
-            const requirements = account.requirements;
-            const hasOutstandingRequirements = 
-              (requirements?.currently_due?.length ?? 0) > 0 ||
-              (requirements?.eventually_due?.length ?? 0) > 0 ||
-              (requirements?.past_due?.length ?? 0) > 0;
-            
-            if (hasOutstandingRequirements) {
-              // Create an account link for them to complete onboarding
-              const origin = req.headers.get("origin") || "https://shake-web-buddy.lovable.app";
-              const accountLink = await stripe.accountLinks.create({
-                account: privateProfile.stripe_account_id,
-                refresh_url: `${origin}/?connect_refresh=true`,
-                return_url: `${origin}/?connect_success=true`,
-                type: "account_onboarding",
-              });
-              
-              logStep("Created account link for pending account", { 
-                accountId: privateProfile.stripe_account_id,
-                hasRequirements: true
-              });
-              
-              return new Response(JSON.stringify({ 
-                url: accountLink.url,
-                status: "redirect",
-                message: "Continue your Stripe onboarding"
-              }), {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-                status: 200,
-              });
-            }
-            
+        // Check if this is an Express account (old flow) vs Standard account (OAuth)
+        // Express accounts have type "express", Standard accounts have type "standard"
+        // If it's an Express account with pending requirements, clear it and start OAuth
+        if (account.type === "express") {
+          logStep("Found old Express account, clearing for OAuth Standard", { 
+            accountId: privateProfile.stripe_account_id,
+            type: account.type
+          });
+          await supabaseClient
+            .from("profiles_private")
+            .update({ 
+              stripe_account_id: null, 
+              stripe_account_status: null 
+            })
+            .eq("user_id", user.id);
+          // Continue to OAuth flow below
+        } else if (account.type === "standard") {
+          // This is a Standard account from OAuth - check its status
+          if (account.charges_enabled && account.payouts_enabled) {
             // Account is complete
-            if (account.charges_enabled && account.payouts_enabled) {
-              // Update status in database
-              await supabaseClient
-                .from("profiles_private")
-                .update({ 
-                  stripe_account_status: "complete",
-                  preferred_payout_method: "stripe"
-                })
-                .eq("user_id", user.id);
-                
-              return new Response(JSON.stringify({ 
-                status: "complete",
-                message: "Your Stripe account is already connected and verified" 
-              }), {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-                status: 200,
-              });
-            }
-            
-            // Account is under verification - nothing to do but wait
-            logStep("Account is under Stripe verification", { 
-              accountId: privateProfile.stripe_account_id,
-              chargesEnabled: account.charges_enabled,
-              payoutsEnabled: account.payouts_enabled
-            });
-            
+            await supabaseClient
+              .from("profiles_private")
+              .update({ 
+                stripe_account_status: "complete",
+                preferred_payout_method: "stripe"
+              })
+              .eq("user_id", user.id);
+              
             return new Response(JSON.stringify({ 
-              status: "verification_pending",
-              message: "Stripe is still verifying your account. This can take 1-3 business days.",
-              chargesEnabled: account.charges_enabled,
-              payoutsEnabled: account.payouts_enabled
+              status: "complete",
+              message: "Your Stripe account is already connected and verified" 
             }), {
               headers: { ...corsHeaders, "Content-Type": "application/json" },
               status: 200,
             });
           }
-        } catch (stripeError) {
-          // Account might be invalid or deleted, clear it
-          logStep("Existing account is invalid, clearing", { 
-            error: stripeError instanceof Error ? stripeError.message : String(stripeError)
+          
+          // Standard account but not fully enabled - Stripe is verifying
+          logStep("Standard account is under Stripe verification", { 
+            accountId: privateProfile.stripe_account_id,
+            chargesEnabled: account.charges_enabled,
+            payoutsEnabled: account.payouts_enabled
+          });
+          
+          return new Response(JSON.stringify({ 
+            status: "verification_pending",
+            message: "Stripe is still verifying your account. This can take 1-3 business days.",
+            chargesEnabled: account.charges_enabled,
+            payoutsEnabled: account.payouts_enabled
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        } else {
+          // Unknown account type, clear and restart
+          logStep("Unknown account type, clearing", { 
+            accountId: privateProfile.stripe_account_id,
+            type: account.type
           });
           await supabaseClient
             .from("profiles_private")
@@ -178,17 +158,18 @@ serve(async (req) => {
             })
             .eq("user_id", user.id);
         }
-      } else if (privateProfile.stripe_account_status === "complete") {
-        logStep("User already has a connected Stripe account", { 
-          accountId: privateProfile.stripe_account_id 
+      } catch (stripeError) {
+        // Account might be invalid or deleted, clear it
+        logStep("Existing account is invalid, clearing", { 
+          error: stripeError instanceof Error ? stripeError.message : String(stripeError)
         });
-        return new Response(JSON.stringify({ 
-          status: "complete",
-          message: "Your Stripe account is already connected" 
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
+        await supabaseClient
+          .from("profiles_private")
+          .update({ 
+            stripe_account_id: null, 
+            stripe_account_status: null 
+          })
+          .eq("user_id", user.id);
       }
     }
 
