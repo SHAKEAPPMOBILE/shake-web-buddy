@@ -35,7 +35,14 @@
     "joinActivityToChat": "Join an activity to start chatting",
     "noChatsInCity": "No chats in {{city}}",
     "showAllCities": "Show all cities",
-    "by": "by"
+    "by": "by",
+    "going": "going",
+    "location": "Location",
+    "participants": "Participants",
+    "entryFee": "Entry Fee",
+    "payToJoin": "Pay to Join",
+    "processing": "Processing",
+    "paymentGateInfo": "After payment, you'll have access to the group chat and can coordinate with other participants."
   },
   "days": {
     "sunday": "Sunday",

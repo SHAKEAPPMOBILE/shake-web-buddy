@@ -35,7 +35,14 @@
     "joinActivityToChat": "Tritt einer Aktivität bei um zu chatten",
     "noChatsInCity": "Keine Chats in {{city}}",
     "showAllCities": "Alle Städte anzeigen",
-    "by": "von"
+    "by": "von",
+    "going": "dabei",
+    "location": "Ort",
+    "participants": "Teilnehmer",
+    "entryFee": "Eintrittsgebühr",
+    "payToJoin": "Bezahlen zum Beitreten",
+    "processing": "Verarbeitung",
+    "paymentGateInfo": "Nach der Zahlung haben Sie Zugang zum Gruppenchat und können sich mit anderen Teilnehmern abstimmen."
   },
   "days": {
     "sunday": "Sonntag",
