@@ -116,9 +116,9 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Calculate the 90/10 split
-    // Platform fee is 10% of the total
-    const platformFee = Math.round(priceInCents * 0.10);
+    // Calculate the 85/15 split
+    // Platform fee is 15% of the total
+    const platformFee = Math.round(priceInCents * 0.15);
     
     const origin = req.headers.get("origin") || "https://shake-web-buddy.lovable.app";
     
