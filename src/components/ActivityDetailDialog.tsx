@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Users, DollarSign, AlertCircle } from "lucide-react";
+import { MapPin, Users, DollarSign, AlertCircle, Calendar } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -8,6 +8,7 @@ import { useActivityPayment } from "@/hooks/useActivityPayment";
 import { ALL_ACTIVITY_TYPES } from "@/data/activityTypes";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
+import { format } from "date-fns";
 
 interface ActivityDetailDialogProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface ActivityDetailDialogProps {
     city: string;
     note?: string | null;
     price_amount?: string | null;
+    scheduled_for?: string;
     creator_name?: string;
     creator_avatar?: string;
     participant_count?: number;
@@ -72,19 +74,17 @@ export function ActivityDetailDialog({
           </div>
         )}
 
-        {/* Hero Section - Yellow Banner */}
-        <div
-          className="p-6 text-black bg-shake-yellow"
-        >
+        {/* Hero Section - Background with Rainbow */}
+        <div className="p-6 text-foreground bg-card">
           <div className="flex items-start gap-4">
             {/* Creator Avatar or Activity Emoji */}
             <div className="relative">
-              <Avatar className="w-16 h-16 border-2 border-black/20 shadow-lg">
+              <Avatar className="w-16 h-16 border-2 border-border shadow-lg">
                 <AvatarImage
                   src={activity.creator_avatar || undefined}
                   alt={activity.creator_name}
                 />
-                <AvatarFallback className="bg-white text-muted-foreground text-xl font-semibold">
+                <AvatarFallback className="bg-muted text-muted-foreground text-xl font-semibold">
                   {activity.creator_name?.charAt(0)?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
@@ -94,8 +94,9 @@ export function ActivityDetailDialog({
             </div>
 
             <div className="flex-1">
-              <h2 className="text-xl font-bold">
+              <h2 className="text-xl font-bold flex items-center gap-2">
                 {activity.note || t("plans.untitledPlan", "Untitled Plan")}
+                <span className="text-lg">🌈</span>
               </h2>
               <button
                 type="button"
@@ -103,7 +104,7 @@ export function ActivityDetailDialog({
                   e.stopPropagation();
                   onCreatorClick?.();
                 }}
-                className="text-sm text-black/70 hover:text-black underline transition-colors"
+                className="text-sm text-muted-foreground hover:text-foreground underline transition-colors"
               >
                 {t("common.by")} {activity.creator_name || "Anonymous"}
               </button>
@@ -123,6 +124,19 @@ export function ActivityDetailDialog({
               <p className="font-medium">{activity.city}</p>
             </div>
           </div>
+
+          {/* Date */}
+          {activity.scheduled_for && (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">{t("common.date", "Date")}</p>
+                <p className="font-medium">{format(new Date(activity.scheduled_for), "EEEE, MMMM d, yyyy")}</p>
+              </div>
+            </div>
+          )}
 
           {/* Participants */}
           <div className="flex items-center gap-3">
