@@ -37,8 +37,14 @@ export function HeroSection() {
     getActivityJoinCount
   } = useActivityJoins(selectedCity);
 
-  // Rotating text for "Meet new..." phrases
-  const meetPhrases = useMemo(() => ["Meet new people.", "Meet new friends.", "Meet a new buddy.", "Meet a partner.", "Meet a new love."], []);
+  // Rotating text for "Meet new..." phrases - last word gets gradient
+  const meetPhrases = useMemo(() => [
+    { text: "Meet new", highlight: "people." },
+    { text: "Meet new", highlight: "friends." },
+    { text: "Meet a new", highlight: "buddy." },
+    { text: "Meet a", highlight: "partner." },
+    { text: "Meet a new", highlight: "love." }
+  ], []);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
@@ -141,7 +147,12 @@ export function HeroSection() {
             animationDelay: "100ms"
           }}>
               <span className="transition-opacity duration-500">
-                {showTapInstruction ? "Tap on the blue + below to start shaking." : meetPhrases[currentPhraseIndex]}
+                {showTapInstruction ? "Tap on the blue + below to start shaking." : (
+                  <>
+                    {meetPhrases[currentPhraseIndex].text}{" "}
+                    <span className="text-gradient">{meetPhrases[currentPhraseIndex].highlight}</span>
+                  </>
+                )}
               </span>
               <br />
               <span className="text-gradient">SHAKE up your life.</span>
