@@ -616,7 +616,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                       <button
                         onClick={() => {
                           setShowPayoutOptions(false);
-                          setShowCountrySelector(true);
+                          startOnboarding();
                         }}
                         disabled={stripeLoading}
                         className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-lg hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
