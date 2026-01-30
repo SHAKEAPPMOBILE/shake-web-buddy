@@ -24,6 +24,7 @@ export function HeroSection() {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [phoneInitialShake, setPhoneInitialShake] = useState(true);
   const [phoneHovered, setPhoneHovered] = useState(false);
+  const [showTapInstruction, setShowTapInstruction] = useState(false);
   const {
     user
   } = useAuth();
@@ -50,6 +51,14 @@ export function HeroSection() {
       }
     };
   }, [meetPhrases.length]);
+  const handlePhoneClick = () => {
+    // Show instruction text for 4 seconds
+    setShowTapInstruction(true);
+    setTimeout(() => {
+      setShowTapInstruction(false);
+    }, 4000);
+  };
+
   const handleShake = () => {
     if (!user) {
       navigate("/auth");
@@ -131,7 +140,9 @@ export function HeroSection() {
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold leading-tight animate-fade-up" style={{
             animationDelay: "100ms"
           }}>
-              <span className="transition-opacity duration-500">{meetPhrases[currentPhraseIndex]}</span>
+              <span className="transition-opacity duration-500">
+                {showTapInstruction ? "Tap on the blue + below to start shaking." : meetPhrases[currentPhraseIndex]}
+              </span>
               <br />
               <span className="text-gradient">SHAKE up your life.</span>
             </h1>
@@ -140,7 +151,7 @@ export function HeroSection() {
             <div className="relative flex items-center justify-center animate-fade-up py-8 md:py-12" style={{
             animationDelay: "150ms"
           }}>
-              <div className="relative cursor-pointer" onClick={handleShake} onMouseEnter={() => setPhoneHovered(true)} onMouseLeave={() => setPhoneHovered(false)}>
+              <div className="relative cursor-pointer" onClick={handlePhoneClick} onMouseEnter={() => setPhoneHovered(true)} onMouseLeave={() => setPhoneHovered(false)}>
                 {/* Motion lines - left side */}
                 <div className={`absolute -left-10 md:-left-14 top-1/2 -translate-y-1/2 flex flex-col gap-3 transition-opacity duration-300 ${isPhoneShaking ? 'opacity-100' : 'opacity-30'}`}>
                   <div className={`w-8 h-1 bg-primary/70 rounded-full ${isPhoneShaking ? 'animate-pulse' : ''}`} style={{
