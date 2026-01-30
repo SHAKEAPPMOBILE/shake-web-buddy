@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,8 @@ import { usePayPalConnect } from "@/hooks/usePayPalConnect";
 import { useCreatorEarnings } from "@/hooks/useCreatorEarnings";
 import { StripeCountrySelectorDialog } from "../StripeCountrySelectorDialog";
 import { PayPalConnectDialog } from "../PayPalConnectDialog";
+import { useCreatorVerification } from "@/hooks/useCreatorVerification";
+import { IDVerificationDialog } from "../IDVerificationDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +73,8 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const { isConnected: stripeConnected, status: stripeStatus, email: stripeEmail, isLoading: stripeLoading, error: stripeError, startOnboarding, checkStatus: checkStripeStatus, resetAndRecreate } = useStripeConnect();
   const { isConnected: paypalConnected, paypalEmail, isLoading: paypalLoading, connectPayPal, disconnectPayPal } = usePayPalConnect();
   const { totalNet, currency, activities, isLoading: earningsLoading } = useCreatorEarnings();
+  const { isVerified, isPending, isRejected, isLoading: verificationLoading } = useCreatorVerification();
+  const [showIDVerificationDialog, setShowIDVerificationDialog] = useState(false);
 
   const handleStartOnboarding = (countryCode: string) => {
     setShowCountrySelector(false);
@@ -501,6 +505,77 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                   )}
                 </div>
 
+                {/* ID Verification Status */}
+                <button
+                  onClick={() => setShowIDVerificationDialog(true)}
+                  className={cn(
+                    "w-full border rounded-lg p-3 text-left transition-colors hover:bg-muted/30",
+                    isVerified 
+                      ? "border-shake-green/30 bg-shake-green/5" 
+                      : isPending 
+                        ? "border-amber-500/30 bg-amber-500/5"
+                        : isRejected
+                          ? "border-destructive/30 bg-destructive/5"
+                          : "border-border"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-6 h-6 rounded flex items-center justify-center",
+                        isVerified 
+                          ? "bg-shake-green/20" 
+                          : isPending 
+                            ? "bg-amber-500/20" 
+                            : isRejected
+                              ? "bg-destructive/20"
+                              : "bg-primary/10"
+                      )}>
+                        {isVerified ? (
+                          <CheckCircle className="w-4 h-4 text-shake-green" />
+                        ) : isPending ? (
+                          <Clock className="w-4 h-4 text-amber-500" />
+                        ) : isRejected ? (
+                          <XCircle className="w-4 h-4 text-destructive" />
+                        ) : (
+                          <Shield className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                      <span className="text-sm font-medium">
+                        {t('profile.idVerification', 'ID Verification')}
+                      </span>
+                    </div>
+                    {verificationLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                    ) : isVerified ? (
+                      <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">
+                        {t('profile.verified', 'Verified')}
+                      </span>
+                    ) : isPending ? (
+                      <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                        {t('profile.pending', 'Pending')}
+                      </span>
+                    ) : isRejected ? (
+                      <span className="text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+                        {t('profile.rejected', 'Rejected')}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        {t('profile.notVerified', 'Not verified')}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 ml-8">
+                    {isVerified 
+                      ? t('profile.idVerifiedDesc', 'You can create paid activities')
+                      : isPending 
+                        ? t('profile.idPendingDesc', 'Under review - usually within 1 hour')
+                        : isRejected
+                          ? t('profile.idRejectedDesc', 'Please resubmit your ID')
+                          : t('profile.idRequiredDesc', 'Required to create paid activities')}
+                  </p>
+                </button>
+
                 {/* Connected Status Summary */}
                 {((stripeConnected && stripeStatus === "complete") || paypalConnected) && (
                   <div className="flex items-center gap-2 p-2 bg-shake-green/10 rounded-lg">
@@ -831,6 +906,12 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ID Verification Dialog */}
+      <IDVerificationDialog
+        open={showIDVerificationDialog}
+        onOpenChange={setShowIDVerificationDialog}
+      />
 
     </div>
   );
