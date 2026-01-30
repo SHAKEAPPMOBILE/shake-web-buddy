@@ -319,11 +319,17 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
           <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">
             <span className="transition-opacity duration-500 block">
-              {showTapInstruction 
-                ? t('home.tapInstruction', 'Tap on the blue + below to start shaking.') 
-                : meetPhrases[currentPhraseIndex]}
+              {showTapInstruction ? (
+                <span className="flex items-center justify-center gap-2 flex-wrap">
+                  {t('home.tapOnThe', 'Tap on')} 
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-lg font-bold">+</span> 
+                  {t('home.toStartShaking', 'to start shaking!')}
+                </span>
+              ) : meetPhrases[currentPhraseIndex]}
             </span>
-            <span className="text-gradient block mt-2">{t('home.shakeUpYourLife', 'SHAKE up your life.')}</span>
+            {!showTapInstruction && (
+              <span className="text-gradient block mt-2">{t('home.shakeUpYourLife', 'SHAKE up your life.')}</span>
+            )}
           </h1>
         </div>
 
