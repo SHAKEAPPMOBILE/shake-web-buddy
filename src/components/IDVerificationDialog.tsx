@@ -107,7 +107,7 @@ export function IDVerificationDialog({
       );
     }
 
-    if (isRejected) {
+    if (isRejected && !selectedFile) {
       return (
         <div className="flex flex-col items-center text-center py-6">
           <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mb-4">
