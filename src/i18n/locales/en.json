@@ -42,7 +42,8 @@
     "entryFee": "Entry Fee",
     "payToJoin": "Pay to Join",
     "processing": "Processing",
-    "paymentGateInfo": "After payment, you'll have access to the group chat and can coordinate with other participants."
+    "paymentGateInfo": "After payment, you'll have access to the group chat and can coordinate with other participants.",
+    "creatorPaymentNotSetup": "The activity creator hasn't set up payments yet. Please contact them directly or try again later."
   },
   "days": {
     "sunday": "Sunday",

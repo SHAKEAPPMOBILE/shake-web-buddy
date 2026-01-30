@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Users, DollarSign, Calendar } from "lucide-react";
+import { MapPin, Users, DollarSign, AlertCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -36,6 +36,7 @@ export function ActivityDetailDialog({
   const isMobile = useIsMobile();
   const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -50,9 +51,11 @@ export function ActivityDetailDialog({
 
   const handlePayToJoin = async () => {
     setIsProcessing(true);
+    setPaymentError(null);
     const success = await redirectToPayment(activity.id);
     if (!success) {
       setIsProcessing(false);
+      setPaymentError(t("common.creatorPaymentNotSetup", "The activity creator hasn't set up payments yet. Please contact them directly or try again later."));
     }
     // If successful, user will be redirected to Stripe
   };
@@ -148,6 +151,14 @@ export function ActivityDetailDialog({
                 <p className="text-sm text-muted-foreground">{t("common.entryFee")}</p>
                 <p className="font-medium text-green-600">{activity.price_amount}</p>
               </div>
+            </div>
+          )}
+
+          {/* Payment Error */}
+          {paymentError && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              <p className="text-sm text-destructive">{paymentError}</p>
             </div>
           )}
 
