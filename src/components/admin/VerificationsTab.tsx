@@ -71,6 +71,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
   const handleViewDocument = async (verification: Verification) => {
     setSelectedVerification(verification);
     setRejectionReason("");
+    setPreviewUrl(null); // Reset preview URL when opening new document
     
     try {
       // Get signed URL for the document using password in query params
@@ -267,7 +268,12 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
       )}
 
       {/* Document Preview Dialog */}
-      <Dialog open={!!selectedVerification} onOpenChange={() => setSelectedVerification(null)}>
+      <Dialog open={!!selectedVerification} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedVerification(null);
+          setPreviewUrl(null);
+        }
+      }}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
