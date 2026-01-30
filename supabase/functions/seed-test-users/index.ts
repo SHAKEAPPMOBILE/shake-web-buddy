@@ -615,8 +615,24 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Handle list-verifications action - returns all ID verifications with user info
-  if (action === "list-verifications") {
+  // Handle verification actions - these support both GET query param and POST body for action
+  let requestAction = action;
+  let requestBody: Record<string, unknown> = {};
+  
+  // For POST requests, parse body for additional data
+  if (req.method === "POST") {
+    try {
+      requestBody = await req.json().catch(() => ({}));
+      // If action not in query params, check body
+      if (!requestAction) {
+        requestAction = requestBody.action as string || null;
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
+  if (requestAction === "list-verifications") {
     try {
       console.log("[ADMIN] list-verifications: fetching verification data");
       
@@ -671,11 +687,10 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Handle get-verification-document action - returns signed URL for document
-  if (action === "get-verification-document") {
+  // Handle get-verification-document action (via POST body)
+  if (requestAction === "get-verification-document") {
     try {
-      const body = await req.json();
-      const { documentPath } = body;
+      const documentPath = requestBody.documentPath as string;
 
       if (!documentPath) {
         return new Response(
@@ -703,11 +718,12 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Handle update-verification action - approve or reject verification
-  if (action === "update-verification") {
+  // Handle update-verification action (via POST body)
+  if (requestAction === "update-verification") {
     try {
-      const body = await req.json();
-      const { verificationId, status, rejectionReason } = body;
+      const verificationId = requestBody.verificationId as string;
+      const status = requestBody.status as string;
+      const rejectionReason = requestBody.rejectionReason as string;
 
       if (!verificationId || !status) {
         return new Response(
@@ -747,7 +763,6 @@ Deno.serve(async (req) => {
       );
     }
   }
-
   if (action === "search" && query) {
     const searchQuery = query.toLowerCase();
     

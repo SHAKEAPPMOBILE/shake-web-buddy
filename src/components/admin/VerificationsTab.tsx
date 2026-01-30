@@ -32,7 +32,11 @@ interface Verification {
   user_email?: string;
 }
 
-export function VerificationsTab() {
+interface VerificationsTabProps {
+  adminPassword: string;
+}
+
+export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
   const [verifications, setVerifications] = useState<Verification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,12 +48,13 @@ export function VerificationsTab() {
   const fetchVerifications = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch verifications using edge function to bypass RLS
-      const { data, error } = await supabase.functions.invoke("seed-test-users", {
-        body: { action: "list-verifications" },
-      });
-
-      if (error) throw error;
+      // Fetch verifications using edge function with password in query params
+      const response = await fetch(
+        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=list-verifications`
+      );
+      
+      if (!response.ok) throw new Error("Failed to fetch verifications");
+      const data = await response.json();
       setVerifications(data?.verifications || []);
     } catch (error) {
       console.error("Error fetching verifications:", error);
@@ -57,7 +62,7 @@ export function VerificationsTab() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [adminPassword]);
 
   useEffect(() => {
     fetchVerifications();
@@ -68,15 +73,18 @@ export function VerificationsTab() {
     setRejectionReason("");
     
     try {
-      // Get signed URL for the document
-      const { data, error } = await supabase.functions.invoke("seed-test-users", {
-        body: { 
-          action: "get-verification-document",
-          documentPath: verification.document_url,
-        },
-      });
-
-      if (error) throw error;
+      // Get signed URL for the document using password in query params
+      const response = await fetch(
+        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=get-verification-document`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documentPath: verification.document_url }),
+        }
+      );
+      
+      if (!response.ok) throw new Error("Failed to get document");
+      const data = await response.json();
       setPreviewUrl(data?.signedUrl || null);
     } catch (error) {
       console.error("Error getting document URL:", error);
@@ -88,15 +96,19 @@ export function VerificationsTab() {
   const handleApprove = async (verification: Verification) => {
     setIsProcessing(true);
     try {
-      const { error } = await supabase.functions.invoke("seed-test-users", {
-        body: { 
-          action: "update-verification",
-          verificationId: verification.id,
-          status: "approved",
-        },
-      });
+      const response = await fetch(
+        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=update-verification`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            verificationId: verification.id,
+            status: "approved",
+          }),
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) throw new Error("Failed to approve");
       
       toast.success("Verification approved!");
       setSelectedVerification(null);
@@ -117,16 +129,20 @@ export function VerificationsTab() {
     
     setIsProcessing(true);
     try {
-      const { error } = await supabase.functions.invoke("seed-test-users", {
-        body: { 
-          action: "update-verification",
-          verificationId: verification.id,
-          status: "rejected",
-          rejectionReason: rejectionReason.trim(),
-        },
-      });
+      const response = await fetch(
+        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=update-verification`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            verificationId: verification.id,
+            status: "rejected",
+            rejectionReason: rejectionReason.trim(),
+          }),
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) throw new Error("Failed to reject");
       
       toast.success("Verification rejected");
       setSelectedVerification(null);
