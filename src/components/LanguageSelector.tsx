@@ -15,9 +15,6 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
 
   // Filter to only translated languages
   const translatedLanguagesList = supportedLanguages.filter(l => 
@@ -46,39 +43,6 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!scrollRef.current) return;
-    setIsDragging(true);
-    setStartX(e.pageX - scrollRef.current.offsetLeft);
-    setScrollLeft(scrollRef.current.scrollLeft);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !scrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 1.5;
-    scrollRef.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!scrollRef.current) return;
-    setIsDragging(true);
-    setStartX(e.touches[0].pageX - scrollRef.current.offsetLeft);
-    setScrollLeft(scrollRef.current.scrollLeft);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || !scrollRef.current) return;
-    const x = e.touches[0].pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 1.5;
-    scrollRef.current.scrollLeft = scrollLeft - walk;
-  };
 
   const handleLanguageSelect = (language: Language) => {
     setSelectedLanguage(language);
@@ -134,58 +98,52 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
               "w-[280px]"
             )}
           >
-          <p className="text-xs text-muted-foreground text-center mb-2">
-            {t('languageSelector.swipeToSelect')}
-          </p>
-          
-          {/* Scrollable Flag Carousel */}
-          <div
-            ref={scrollRef}
-            className={cn(
-              "flex gap-2 overflow-x-auto scrollbar-hide",
-              "cursor-grab active:cursor-grabbing",
-              "py-2 px-1",
-              "-mx-1"
-            )}
-            style={{ 
-              scrollBehavior: isDragging ? 'auto' : 'smooth',
-              WebkitOverflowScrolling: 'touch'
-            }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleMouseUp}
-          >
-            {translatedLanguagesList.map((language) => (
-              <button
-                key={language.code}
-                onClick={() => handleLanguageSelect(language)}
-                className={cn(
-                  "flex-shrink-0 flex flex-col items-center gap-1",
-                  "w-12 p-2 rounded-xl transition-all duration-200",
-                  "hover:bg-primary/10",
-                  selectedLanguage.code === language.code
-                    ? "bg-primary/20 ring-2 ring-primary scale-110"
-                    : "bg-muted/30"
-                )}
-              >
-                <span className="text-2xl">{language.flag}</span>
-                <span className="text-[10px] text-muted-foreground truncate w-full text-center">
-                  {language.code.toUpperCase()}
-                </span>
-              </button>
-            ))}
-          </div>
+            <p className="text-xs text-muted-foreground text-center mb-2">
+              {t('languageSelector.swipeToSelect')}
+            </p>
+            
+            {/* Scrollable Flag Carousel - Native iOS scrolling */}
+            <div
+              ref={scrollRef}
+              className={cn(
+                "flex gap-2 overflow-x-auto scrollbar-hide",
+                "py-2 px-1",
+                "-mx-1",
+                "touch-pan-x" // Enable native touch scrolling on iOS
+              )}
+              style={{ 
+                WebkitOverflowScrolling: 'touch', // Smooth momentum scrolling on iOS
+                scrollSnapType: 'x mandatory' // Snap to items
+              }}
+            >
+              {translatedLanguagesList.map((language) => (
+                <button
+                  key={language.code}
+                  onClick={() => handleLanguageSelect(language)}
+                  className={cn(
+                    "flex-shrink-0 flex flex-col items-center gap-1",
+                    "w-12 p-2 rounded-xl transition-all duration-200",
+                    "hover:bg-primary/10",
+                    selectedLanguage.code === language.code
+                      ? "bg-primary/20 ring-2 ring-primary scale-110"
+                      : "bg-muted/30"
+                  )}
+                  style={{ scrollSnapAlign: 'center' }}
+                >
+                  <span className="text-2xl">{language.flag}</span>
+                  <span className="text-[10px] text-muted-foreground truncate w-full text-center">
+                    {language.code.toUpperCase()}
+                  </span>
+                </button>
+              ))}
+            </div>
 
-          {/* Selected Language Display */}
-          <div className="mt-2 pt-2 border-t border-border/50 text-center">
-            <span className="text-sm font-medium text-foreground">
-              {selectedLanguage.flag} {selectedLanguage.nativeName}
-            </span>
-          </div>
+            {/* Selected Language Display */}
+            <div className="mt-2 pt-2 border-t border-border/50 text-center">
+              <span className="text-sm font-medium text-foreground">
+                {selectedLanguage.flag} {selectedLanguage.nativeName}
+              </span>
+            </div>
           </div>
         </div>
       )}
