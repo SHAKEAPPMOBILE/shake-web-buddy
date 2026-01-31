@@ -9,7 +9,7 @@ export interface Language {
 }
 
 // Languages with full translation support
-export const translatedLanguages = ["en", "es", "pt", "fr", "de"];
+export const translatedLanguages = ["en", "es", "pt", "fr", "de", "it", "nl", "ja", "zh", "uk", "pl"];
 
 export const supportedLanguages: Language[] = [
   { code: "en", name: "English", flag: "🇺🇸", nativeName: "English" },

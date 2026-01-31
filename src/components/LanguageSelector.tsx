@@ -21,7 +21,7 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
 
   // Filter to only translated languages
   const translatedLanguagesList = supportedLanguages.filter(l => 
-    ['en', 'es', 'pt', 'fr', 'de'].includes(l.code)
+    ['en', 'es', 'pt', 'fr', 'de', 'it', 'nl', 'ja', 'zh', 'uk', 'pl'].includes(l.code)
   );
 
   // Center the selected language on mount
