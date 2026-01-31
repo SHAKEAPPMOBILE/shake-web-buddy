@@ -267,5 +267,25 @@
     "unauthorized": "You need to sign in.",
     "notFound": "Page not found",
     "serverError": "Server error. Please try again later."
+  },
+  "idVerification": {
+    "title": "ID Verification",
+    "description": "Verify your identity to create paid activities",
+    "verified": "Verified",
+    "verifiedMessage": "Your identity has been verified. You can now create paid activities.",
+    "continue": "Continue",
+    "underReview": "Under Review",
+    "underReviewMessage": "Your ID is being reviewed by our team. We'll notify you once approved.",
+    "submitted": "Submitted",
+    "rejected": "Verification Rejected",
+    "rejectedMessage": "Your ID could not be verified. Please resubmit.",
+    "uploadNewId": "Upload New ID",
+    "securityNote": "To create paid activities, we need to verify your identity. This helps keep our community safe.",
+    "clickToUpload": "Click to upload your ID",
+    "acceptedDocuments": "Passport, driver's license, or national ID",
+    "fileFormats": "JPG, PNG, WebP, or PDF (max 10MB)",
+    "privacyNote": "Your ID is stored securely and only accessible to our admin team for verification purposes.",
+    "submitButton": "Submit for Verification",
+    "uploading": "Uploading..."
   }
 }

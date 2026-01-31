@@ -266,5 +266,25 @@
     "unauthorized": "Você precisa entrar.",
     "notFound": "Página não encontrada",
     "serverError": "Erro do servidor. Por favor tente mais tarde."
+  },
+  "idVerification": {
+    "title": "Verificação de Identidade",
+    "description": "Verifique sua identidade para criar atividades pagas",
+    "verified": "Verificado",
+    "verifiedMessage": "Sua identidade foi verificada. Agora você pode criar atividades pagas.",
+    "continue": "Continuar",
+    "underReview": "Em Análise",
+    "underReviewMessage": "Seu documento está sendo analisado pela nossa equipe. Você será notificado quando aprovado.",
+    "submitted": "Enviado",
+    "rejected": "Verificação Rejeitada",
+    "rejectedMessage": "Seu documento não pôde ser verificado. Por favor, envie novamente.",
+    "uploadNewId": "Enviar Novo Documento",
+    "securityNote": "Para criar atividades pagas, precisamos verificar sua identidade. Isso ajuda a manter nossa comunidade segura.",
+    "clickToUpload": "Clique para enviar seu documento",
+    "acceptedDocuments": "Passaporte, carteira de motorista ou documento de identidade",
+    "fileFormats": "JPG, PNG, WebP ou PDF (máx. 10MB)",
+    "privacyNote": "Seu documento é armazenado com segurança e acessível apenas à nossa equipe de administração para fins de verificação.",
+    "submitButton": "Enviar para Verificação",
+    "uploading": "Enviando..."
   }
 }
