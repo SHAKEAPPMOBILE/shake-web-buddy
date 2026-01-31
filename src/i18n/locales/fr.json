@@ -266,5 +266,25 @@
     "unauthorized": "Vous devez vous connecter.",
     "notFound": "Page non trouvée",
     "serverError": "Erreur du serveur. Veuillez réessayer plus tard."
+  },
+  "idVerification": {
+    "title": "Vérification d'Identité",
+    "description": "Vérifiez votre identité pour créer des activités payantes",
+    "verified": "Vérifié",
+    "verifiedMessage": "Votre identité a été vérifiée. Vous pouvez maintenant créer des activités payantes.",
+    "continue": "Continuer",
+    "underReview": "En Cours de Révision",
+    "underReviewMessage": "Votre pièce d'identité est en cours de révision par notre équipe. Vous serez notifié une fois approuvé.",
+    "submitted": "Soumis",
+    "rejected": "Vérification Rejetée",
+    "rejectedMessage": "Votre pièce d'identité n'a pas pu être vérifiée. Veuillez la soumettre à nouveau.",
+    "uploadNewId": "Télécharger une Nouvelle Pièce",
+    "securityNote": "Pour créer des activités payantes, nous devons vérifier votre identité. Cela aide à garder notre communauté en sécurité.",
+    "clickToUpload": "Cliquez pour télécharger votre pièce d'identité",
+    "acceptedDocuments": "Passeport, permis de conduire ou carte d'identité",
+    "fileFormats": "JPG, PNG, WebP ou PDF (max 10Mo)",
+    "privacyNote": "Votre pièce d'identité est stockée de manière sécurisée et accessible uniquement à notre équipe d'administration à des fins de vérification.",
+    "submitButton": "Soumettre pour Vérification",
+    "uploading": "Téléchargement..."
   }
 }

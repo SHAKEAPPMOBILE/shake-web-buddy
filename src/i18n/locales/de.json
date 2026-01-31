@@ -266,5 +266,25 @@
     "unauthorized": "Du musst dich anmelden.",
     "notFound": "Seite nicht gefunden",
     "serverError": "Serverfehler. Bitte später erneut versuchen."
+  },
+  "idVerification": {
+    "title": "Identitätsprüfung",
+    "description": "Verifiziere deine Identität, um kostenpflichtige Aktivitäten zu erstellen",
+    "verified": "Verifiziert",
+    "verifiedMessage": "Deine Identität wurde verifiziert. Du kannst jetzt kostenpflichtige Aktivitäten erstellen.",
+    "continue": "Weiter",
+    "underReview": "In Prüfung",
+    "underReviewMessage": "Dein Dokument wird von unserem Team überprüft. Du wirst benachrichtigt, sobald es genehmigt wurde.",
+    "submitted": "Eingereicht",
+    "rejected": "Verifizierung Abgelehnt",
+    "rejectedMessage": "Dein Dokument konnte nicht verifiziert werden. Bitte erneut einreichen.",
+    "uploadNewId": "Neues Dokument Hochladen",
+    "securityNote": "Um kostenpflichtige Aktivitäten zu erstellen, müssen wir deine Identität verifizieren. Dies hilft, unsere Community sicher zu halten.",
+    "clickToUpload": "Klicke, um dein Dokument hochzuladen",
+    "acceptedDocuments": "Reisepass, Führerschein oder Personalausweis",
+    "fileFormats": "JPG, PNG, WebP oder PDF (max. 10MB)",
+    "privacyNote": "Dein Dokument wird sicher gespeichert und ist nur für unser Administrationsteam zu Verifizierungszwecken zugänglich.",
+    "submitButton": "Zur Verifizierung Einreichen",
+    "uploading": "Wird hochgeladen..."
   }
 }

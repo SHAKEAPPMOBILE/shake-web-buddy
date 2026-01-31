@@ -76,12 +76,12 @@ export function IDVerificationDialog({
           <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
             <CheckCircle className="w-8 h-8 text-green-500" />
           </div>
-          <h3 className="text-lg font-semibold text-green-500">Verified</h3>
+          <h3 className="text-lg font-semibold text-green-500">{t("idVerification.verified")}</h3>
           <p className="text-sm text-muted-foreground mt-2">
-            Your identity has been verified. You can now create paid activities.
+            {t("idVerification.verifiedMessage")}
           </p>
           <Button onClick={() => onOpenChange(false)} className="mt-4">
-            Continue
+            {t("idVerification.continue")}
           </Button>
         </div>
       );
@@ -93,15 +93,15 @@ export function IDVerificationDialog({
           <div className="w-16 h-16 rounded-full bg-yellow-500/20 flex items-center justify-center mb-4">
             <Clock className="w-8 h-8 text-yellow-500" />
           </div>
-          <h3 className="text-lg font-semibold text-yellow-500">Under Review</h3>
+          <h3 className="text-lg font-semibold text-yellow-500">{t("idVerification.underReview")}</h3>
           <p className="text-sm text-muted-foreground mt-2">
-            Your ID is being reviewed by our team. We'll notify you once approved.
+            {t("idVerification.underReviewMessage")}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Submitted: {new Date(verification!.submitted_at).toLocaleString()}
+            {t("idVerification.submitted")}: {new Date(verification!.submitted_at).toLocaleString()}
           </p>
           <Button variant="outline" onClick={() => onOpenChange(false)} className="mt-4">
-            Close
+            {t("common.close")}
           </Button>
         </div>
       );
@@ -113,15 +113,15 @@ export function IDVerificationDialog({
           <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mb-4">
             <XCircle className="w-8 h-8 text-destructive" />
           </div>
-          <h3 className="text-lg font-semibold text-destructive">Verification Rejected</h3>
+          <h3 className="text-lg font-semibold text-destructive">{t("idVerification.rejected")}</h3>
           <p className="text-sm text-muted-foreground mt-2">
-            {verification?.rejection_reason || "Your ID could not be verified. Please resubmit."}
+            {verification?.rejection_reason || t("idVerification.rejectedMessage")}
           </p>
           <Button 
             onClick={() => fileInputRef.current?.click()} 
             className="mt-4"
           >
-            Upload New ID
+            {t("idVerification.uploadNewId")}
           </Button>
         </div>
       );
@@ -133,7 +133,7 @@ export function IDVerificationDialog({
         <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
           <Shield className="w-5 h-5 text-primary shrink-0" />
           <p className="text-sm text-muted-foreground">
-            To create paid activities, we need to verify your identity. This helps keep our community safe.
+            {t("idVerification.securityNote")}
           </p>
         </div>
 
@@ -154,13 +154,13 @@ export function IDVerificationDialog({
           )}
           
           <p className="font-medium">
-            {selectedFile ? selectedFile.name : "Click to upload your ID"}
+            {selectedFile ? selectedFile.name : t("idVerification.clickToUpload")}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Passport, driver's license, or national ID
+            {t("idVerification.acceptedDocuments")}
           </p>
           <p className="text-xs text-muted-foreground">
-            JPG, PNG, WebP, or PDF (max 10MB)
+            {t("idVerification.fileFormats")}
           </p>
         </div>
 
@@ -168,7 +168,7 @@ export function IDVerificationDialog({
         <div className="flex items-start gap-2 text-xs text-muted-foreground">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <p>
-            Your ID is stored securely and only accessible to our admin team for verification purposes.
+            {t("idVerification.privacyNote")}
           </p>
         </div>
 
@@ -180,10 +180,10 @@ export function IDVerificationDialog({
           {isUploading ? (
             <>
               <LoadingSpinner size="sm" />
-              <span className="ml-2">Uploading...</span>
+              <span className="ml-2">{t("idVerification.uploading")}</span>
             </>
           ) : (
-            "Submit for Verification"
+            t("idVerification.submitButton")
           )}
         </Button>
       </div>
@@ -192,14 +192,14 @@ export function IDVerificationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5" />
-            ID Verification
+            {t("idVerification.title")}
           </DialogTitle>
           <DialogDescription>
-            Verify your identity to create paid activities
+            {t("idVerification.description")}
           </DialogDescription>
         </DialogHeader>
 
