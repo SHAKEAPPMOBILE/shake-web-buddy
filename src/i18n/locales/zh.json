@@ -127,6 +127,9 @@
     "messagesFromToday": "今天的消息将显示在这里。",
     "you": "你",
     "shaker": "Shaker",
+    "suggestVenue": "建议地点",
+    "suggest": "建议",
+    "suggestedVenue": "📍 {{name}} 建议:",
     "suggestions": {
       "hey": "嗨！👋",
       "howAreYou": "你好吗？",
