@@ -400,7 +400,7 @@ export function GroupChatView({
   const handleSuggestVenue = async (venue: DbVenue) => {
     if (!user) return;
     
-    const suggestionMessage = `📍 ${ownProfile?.name || "Someone"} suggested: ${venue.name}, ${venue.address}`;
+    const suggestionMessage = `${ownProfile?.name || "Someone"} suggested: ${venue.name}, ${venue.address}`;
     
     const { error } = await supabase.from("activity_messages").insert({
       user_id: user.id,
