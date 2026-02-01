@@ -129,14 +129,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       joinedActivityIds = (joins || []).map(j => j.activity_id).filter(Boolean) as string[];
     }
 
-    // Fetch carousel joins (without activity_id) for the current user in searched city
+    // Fetch carousel joins (without activity_id) for the current user - ALL cities they've joined
     let carouselJoins: { activity_type: string; city: string; joined_at: string }[] = [];
     if (user) {
       const { data: cJoins } = await supabase
         .from("activity_joins")
         .select("activity_type, city, joined_at")
         .eq("user_id", user.id)
-        .eq("city", searchCity)
         .is("activity_id", null)
         .gt("expires_at", new Date().toISOString());
       
