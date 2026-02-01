@@ -126,6 +126,9 @@
     "messagesFromToday": "Nachrichten von heute erscheinen hier.",
     "you": "Du",
     "shaker": "Shaker",
+    "suggestVenue": "Ort vorschlagen",
+    "suggest": "Vorschlagen",
+    "suggestedVenue": "📍 {{name}} hat vorgeschlagen:",
     "suggestions": {
       "hey": "Hey! 👋",
       "howAreYou": "Wie geht's?",

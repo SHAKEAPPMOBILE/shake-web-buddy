@@ -22,7 +22,8 @@ import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useTranslation } from "react-i18next";
-
+import { VenueSuggestionCarousel } from "./VenueSuggestionCarousel";
+import { DbVenue } from "@/hooks/useDatabaseVenues";
 interface GroupChatDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -157,11 +158,16 @@ export function GroupChatDialog({
   const { leaveActivity } = useActivityJoins(city);
   const { onlineCount } = useOnlinePresence();
   const isMobile = useIsMobile();
+  const [showVenueSuggestions, setShowVenueSuggestions] = useState(false);
   
   const { canSendText, addCharacters } = useTextMessageLimit();
   
   // Get translated suggestions for this activity type
   const chatSuggestions = useActivitySuggestions(activityType);
+  
+  // Get user's own profile for venue suggestion messages
+  const { profiles: ownProfiles } = useUserProfiles(user ? [user.id] : []);
+  const ownProfile = user ? ownProfiles[user.id] : null;
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -376,6 +382,36 @@ export function GroupChatDialog({
     }
   };
 
+  const handleSuggestVenue = async (venue: DbVenue) => {
+    if (!user) {
+      toast.error("Please sign in to suggest venues");
+      return;
+    }
+
+    const userName = ownProfile?.name || "Someone";
+    const suggestionMessage = `📍 ${userName} suggested: ${venue.name}, ${venue.address}`;
+
+    setIsSending(true);
+    const { error } = await supabase
+      .from("activity_messages")
+      .insert({
+        user_id: user.id,
+        activity_type: activityType,
+        city: city,
+        message: suggestionMessage,
+      });
+
+    if (error) {
+      console.error("Error sending venue suggestion:", error);
+      toast.error("Failed to suggest venue");
+    } else {
+      addCharacters(suggestionMessage.length);
+      setShowVenueSuggestions(false);
+      toast.success(`Suggested ${venue.name}!`);
+    }
+    setIsSending(false);
+  };
+
   const title = `${getActivityLabel(activityType)} ${getActivityEmoji(activityType)}`;
   const { location, mapsUrl } = useActivityVenue(city, activityType);
   const formattedDate = format(currentTime, "EEEE, MMMM d");
@@ -544,7 +580,16 @@ export function GroupChatDialog({
                     <span>{attendeeCount}</span>
                   </button>
                 )}
-                {/* Check-in button removed - no venueName available in this context */}
+                {/* Venue suggestion toggle for activities with venues */}
+                {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch" || activityType === "drinks") && (
+                  <button
+                    onClick={() => setShowVenueSuggestions(!showVenueSuggestions)}
+                    className={`p-2 rounded-md transition-colors ${showVenueSuggestions ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                    title={t('chat.suggestVenue', 'Suggest a venue')}
+                  >
+                    <MapPin className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   onClick={handleMuteToggle}
                   className="p-2 hover:bg-muted rounded-md transition-colors"
@@ -554,6 +599,15 @@ export function GroupChatDialog({
                 </button>
               </div>
             </div>
+
+            {/* Venue Suggestion Carousel */}
+            {showVenueSuggestions && (
+              <VenueSuggestionCarousel
+                city={city}
+                activityType={activityType}
+                onSuggestVenue={handleSuggestVenue}
+              />
+            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">

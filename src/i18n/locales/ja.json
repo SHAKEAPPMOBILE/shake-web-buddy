@@ -127,6 +127,9 @@
     "messagesFromToday": "今日のメッセージがここに表示されます。",
     "you": "あなた",
     "shaker": "シェイカー",
+    "suggestVenue": "場所を提案",
+    "suggest": "提案",
+    "suggestedVenue": "📍 {{name}}さんが提案:",
     "suggestions": {
       "hey": "こんにちは！👋",
       "howAreYou": "お元気ですか？",

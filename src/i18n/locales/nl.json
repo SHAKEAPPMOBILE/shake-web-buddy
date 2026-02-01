@@ -127,6 +127,9 @@
     "messagesFromToday": "Berichten van vandaag verschijnen hier.",
     "you": "Jij",
     "shaker": "Shaker",
+    "suggestVenue": "Locatie voorstellen",
+    "suggest": "Voorstellen",
+    "suggestedVenue": "📍 {{name}} stelde voor:",
     "suggestions": {
       "hey": "Hoi! 👋",
       "howAreYou": "Hoe gaat het?",
