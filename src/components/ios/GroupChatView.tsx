@@ -139,10 +139,12 @@ export function GroupChatView({
   
   const { canSendText, addCharacters } = useTextMessageLimit();
   
-  // Get unique user IDs from messages for profile fetching
+  // Get unique user IDs from messages for profile fetching (include current user)
   const userIds = useMemo(() => {
-    return [...new Set(messages.map((msg) => msg.user_id))];
-  }, [messages]);
+    const ids = new Set(messages.map((msg) => msg.user_id));
+    if (user?.id) ids.add(user.id);
+    return [...ids];
+  }, [messages, user?.id]);
   
   const { profiles } = useUserProfiles(userIds);
   
