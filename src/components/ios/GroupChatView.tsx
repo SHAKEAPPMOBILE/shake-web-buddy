@@ -475,13 +475,27 @@ export function GroupChatView({
               </button>
             )}
             
-            {/* Venue pill button */}
-            <div className="flex-1 flex items-center justify-center">
+            {/* Venue pill with external MapPin */}
+            <div className="flex-1 flex items-center justify-center gap-1.5">
+              {/* MapPin outside pill - opens Google Maps */}
+              <button
+                onClick={() => {
+                  const venueUrl = currentVenue.latitude && currentVenue.longitude
+                    ? `https://www.google.com/maps/search/?api=1&query=${currentVenue.latitude},${currentVenue.longitude}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentVenue.name}, ${currentVenue.address}`)}`;
+                  window.location.href = venueUrl;
+                }}
+                className="p-1.5 rounded-full hover:bg-shake-yellow/20 transition-colors"
+                title="Open in Google Maps"
+              >
+                <MapPin className="w-5 h-5 text-shake-yellow" />
+              </button>
+              
+              {/* Venue pill button - suggests venue in chat */}
               <button
                 onClick={() => handleSuggestVenue(currentVenue)}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-shake-yellow text-shake-yellow-foreground rounded-full font-medium text-sm shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
               >
-                <MapPin className="w-4 h-4" />
                 <span className="truncate max-w-[180px]">{currentVenue.name}</span>
                 <span className="text-xs opacity-75">({t('chat.suggest', 'Suggest')})</span>
               </button>
