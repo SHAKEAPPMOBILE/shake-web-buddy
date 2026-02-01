@@ -161,7 +161,7 @@
   },
   "plans": {
     "title": "プラン",
-    "myPlans": "あなたのプラン",
+    "myPlans": "プラン",
     "upcomingPlans": "今後のプラン",
     "noPlanYet": "まだプランはありません",
     "noPlansInCity": "{{city}}にプランはありません",

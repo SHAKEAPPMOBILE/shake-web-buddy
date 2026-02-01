@@ -161,7 +161,7 @@
   },
   "plans": {
     "title": "计划",
-    "myPlans": "你的计划",
+    "myPlans": "计划",
     "upcomingPlans": "即将到来的计划",
     "noPlanYet": "还没有计划",
     "noPlansInCity": "{{city}}没有计划",
