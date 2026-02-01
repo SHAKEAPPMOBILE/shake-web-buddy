@@ -488,7 +488,7 @@ export function GroupChatView({
                 className="p-1.5 rounded-full hover:bg-shake-yellow/20 transition-colors"
                 title="Open in Google Maps"
               >
-                <MapPin className="w-5 h-5 text-shake-yellow" />
+                <MapPin className="w-5 h-5 text-destructive" />
               </button>
               
               {/* Venue pill button - suggests venue in chat */}
