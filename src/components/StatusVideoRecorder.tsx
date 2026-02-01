@@ -190,7 +190,7 @@ export function StatusVideoRecorder({
             className="flex flex-col items-center gap-4 p-8 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
           >
             <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center">
-              <FileVideo className="w-10 h-10 text-white" />
+              <span className="text-5xl">😎</span>
             </div>
             <div className="text-center">
               <p className="text-white font-medium">Upload Video</p>
