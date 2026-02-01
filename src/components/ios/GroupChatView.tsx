@@ -134,7 +134,7 @@ export function GroupChatView({
   const { user, isPremium } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
   const { leaveActivity } = useActivityJoins(city);
-  const { venues, getLocationString, getMapsUrl } = useVenueContext();
+  const { venues, getLocationString, getMapsUrl, getVenueForActivity } = useVenueContext();
   const { t } = useTranslation();
   
   const { canSendText, addCharacters } = useTextMessageLimit();
@@ -149,12 +149,21 @@ export function GroupChatView({
   // Get own profile for venue suggestions
   const ownProfile = user ? profiles[user.id] : null;
   
-  // Get venues for this city and activity type
+  // Get the assigned venue (from weekly rotation) and all venues for this city/activity
   const venueType = getVenueTypeForActivity(activityType);
+  const assignedVenue = getVenueForActivity(city, activityType);
+  
   const cityVenues = useMemo(() => {
     if (!venueType) return [];
-    return venues.filter(v => v.city === city && v.venue_type === venueType);
-  }, [venues, city, venueType]);
+    const allVenues = venues.filter(v => v.city === city && v.venue_type === venueType);
+    
+    // Ensure assigned venue is first in the list
+    if (assignedVenue) {
+      const withoutAssigned = allVenues.filter(v => v.id !== assignedVenue.id);
+      return [assignedVenue, ...withoutAssigned];
+    }
+    return allVenues;
+  }, [venues, city, venueType, assignedVenue]);
   
   const currentVenue = cityVenues[currentVenueIndex];
   const hasMultipleVenues = cityVenues.length > 1;
@@ -450,9 +459,9 @@ export function GroupChatView({
         </div>
       </div>
 
-      {/* Yellow Venue Suggestion Bar */}
+      {/* Venue Suggestion Bar */}
       {hasVenues && currentVenue && (
-        <div className="px-4 py-2 bg-shake-yellow/20 border-b border-shake-yellow/30">
+        <div className="px-4 py-2 border-b border-black/5">
           <div className="flex items-center gap-2">
             {/* Left arrow */}
             {hasMultipleVenues && (
