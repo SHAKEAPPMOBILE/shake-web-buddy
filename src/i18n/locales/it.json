@@ -161,7 +161,7 @@
   },
   "plans": {
     "title": "Piani",
-    "myPlans": "I Tuoi Piani",
+    "myPlans": "Piani",
     "upcomingPlans": "Piani in Arrivo",
     "noPlanYet": "Nessun piano ancora",
     "noPlansInCity": "Nessun piano a {{city}}",

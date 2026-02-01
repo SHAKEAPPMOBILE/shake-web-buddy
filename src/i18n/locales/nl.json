@@ -161,7 +161,7 @@
   },
   "plans": {
     "title": "Plannen",
-    "myPlans": "Jouw Plannen",
+    "myPlans": "Plannen",
     "upcomingPlans": "Aankomende Plannen",
     "noPlanYet": "Nog geen plannen",
     "noPlansInCity": "Geen plannen in {{city}}",

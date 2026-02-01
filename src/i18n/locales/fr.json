@@ -160,7 +160,7 @@
   },
   "plans": {
     "title": "Plans",
-    "myPlans": "Vos Plans",
+    "myPlans": "Plans",
     "upcomingPlans": "Plans à venir",
     "noPlanYet": "Pas encore de plans",
     "noPlansInCity": "Pas de plans à {{city}}",
