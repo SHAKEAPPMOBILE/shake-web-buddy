@@ -404,29 +404,23 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               )}
             </div>
 
-            {/* Preview - shows detected activity or warning */}
+            {/* Preview - always shows user avatar */}
             {planText.trim() && (
               <div className="p-4 rounded-xl space-y-2 bg-muted/50">
                 <p className="text-sm font-medium text-foreground">Preview:</p>
                 <div className="flex items-center gap-3">
-                  {/* Show emoji only if activity detected, otherwise show user avatar */}
-                  {detectedActivity ? (
-                    <span className={cn("text-4xl p-3 rounded-xl", detectedActivity.color)}>
-                      {detectedActivity.emoji}
-                    </span>
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
-                      {userAvatarUrl ? (
-                        <img 
-                          src={userAvatarUrl} 
-                          alt="Your avatar" 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-6 h-6 text-muted-foreground" />
-                      )}
-                    </div>
-                  )}
+                  {/* Always show user avatar */}
+                  <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                    {userAvatarUrl ? (
+                      <img 
+                        src={userAvatarUrl} 
+                        alt="Your avatar" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-6 h-6 text-muted-foreground" />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
