@@ -206,9 +206,21 @@ export function IOSAppLayout() {
         triggerConfettiWaterfall();
         setShowClockAnimation(true);
       } else {
-        // Navigate to chat tab with the activity - full screen chat view
-        setPendingChatActivity({ activityType: activity, city: targetCity });
-        setActiveTab("chat");
+        // Already joined - check if there are messages in this activity
+        const { count } = await supabase
+          .from("activity_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_type", activity)
+          .eq("city", targetCity);
+        
+        if (count && count > 0) {
+          // Has conversation - navigate to chat tab
+          setPendingChatActivity({ activityType: activity, city: targetCity });
+          setActiveTab("chat");
+        } else {
+          // No conversation yet - navigate to plans tab
+          setActiveTab("plans");
+        }
         setShowHomeActivities(false);
       }
     }
@@ -231,8 +243,9 @@ export function IOSAppLayout() {
 
   const handleClockAnimationComplete = useCallback(() => {
     setShowClockAnimation(false);
-    // Show the joined confirmation with venue info and option to join chat
-    setShowJoinedConfirmation(true);
+    // Navigate to Plans tab after joining
+    setActiveTab("plans");
+    setShowHomeActivities(false);
   }, []);
 
   const handleJoinGroupChatFromConfirmation = useCallback(() => {
