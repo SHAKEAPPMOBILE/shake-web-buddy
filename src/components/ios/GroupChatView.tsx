@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Send, Users, User, BellOff, Bell, LogOut, MapPin, Trash2, Plane } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, Users, User, BellOff, Bell, LogOut, MapPin, Trash2, Plane } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,10 +13,12 @@ import { playNotificationSound } from "@/lib/notification-sound";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
-import { useActivityVenue } from "@/contexts/VenueContext";
+import { useVenueContext } from "@/contexts/VenueContext";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityLabel, getActivityEmoji, getActivityDay } from "@/data/activityTypes";
+import { getVenueTypeForActivity, DbVenue } from "@/hooks/useDatabaseVenues";
+import { useTranslation } from "react-i18next";
 
 interface GroupChatViewProps {
   activityType: string;
@@ -127,10 +129,13 @@ export function GroupChatView({
     avatarUrl: string | null;
   } | null>(null);
   const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
+  const [currentVenueIndex, setCurrentVenueIndex] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user, isPremium } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
   const { leaveActivity } = useActivityJoins(city);
+  const { venues, getLocationString, getMapsUrl } = useVenueContext();
+  const { t } = useTranslation();
   
   const { canSendText, addCharacters } = useTextMessageLimit();
   
@@ -140,6 +145,24 @@ export function GroupChatView({
   }, [messages]);
   
   const { profiles } = useUserProfiles(userIds);
+  
+  // Get own profile for venue suggestions
+  const ownProfile = user ? profiles[user.id] : null;
+  
+  // Get venues for this city and activity type
+  const venueType = getVenueTypeForActivity(activityType);
+  const cityVenues = useMemo(() => {
+    if (!venueType) return [];
+    return venues.filter(v => v.city === city && v.venue_type === venueType);
+  }, [venues, city, venueType]);
+  
+  const currentVenue = cityVenues[currentVenueIndex];
+  const hasMultipleVenues = cityVenues.length > 1;
+  const hasVenues = cityVenues.length > 0;
+  
+  // Current venue location info
+  const location = getLocationString(city, activityType);
+  const mapsUrl = getMapsUrl(city, activityType);
 
   // Fetch participants
   useEffect(() => {
@@ -354,10 +377,36 @@ export function GroupChatView({
       handleSendMessage();
     }
   };
+  
+  const handlePrevVenue = () => {
+    setCurrentVenueIndex((prev) => (prev === 0 ? cityVenues.length - 1 : prev - 1));
+  };
+  
+  const handleNextVenue = () => {
+    setCurrentVenueIndex((prev) => (prev === cityVenues.length - 1 ? 0 : prev + 1));
+  };
+  
+  const handleSuggestVenue = async (venue: DbVenue) => {
+    if (!user) return;
+    
+    const suggestionMessage = `📍 ${ownProfile?.name || "Someone"} suggested: ${venue.name}, ${venue.address}`;
+    
+    const { error } = await supabase.from("activity_messages").insert({
+      user_id: user.id,
+      activity_type: activityType,
+      city: city,
+      message: suggestionMessage,
+    });
+    
+    if (error) {
+      toast.error("Failed to suggest venue");
+    } else {
+      toast.success(t('chat.venueSuggested', 'Venue suggested!'));
+    }
+  };
 
   const formattedTime = format(currentTime, "EEEE, MMMM d • h:mm a");
   const title = `${getActivityEmoji(activityType)} ${getActivityLabel(activityType)}`;
-  const { location, mapsUrl } = useActivityVenue(city, activityType);
   const showAttendees = attendeeCount > 0;
 
   return (
@@ -378,23 +427,9 @@ export function GroupChatView({
             )}
           </h1>
           <p className="text-sm text-black/60">{getActivityDay(activityType) || formattedTime}</p>
-          {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && (
-            mapsUrl ? (
-              <a
-                href={mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-primary hover:underline"
-              >
-                📍 {location}
-              </a>
-            ) : (
-              <span className="text-xs text-muted-foreground">📍 {location}</span>
-            )
-          )}
         </div>
         <div className="flex items-center gap-1">
-          <Button 
+          <Button
             variant="ghost" 
             size="icon" 
             onClick={handleMuteToggle}
@@ -414,6 +449,59 @@ export function GroupChatView({
           </Button>
         </div>
       </div>
+
+      {/* Yellow Venue Suggestion Bar */}
+      {hasVenues && currentVenue && (
+        <div className="px-4 py-2 bg-shake-yellow/20 border-b border-shake-yellow/30">
+          <div className="flex items-center gap-2">
+            {/* Left arrow */}
+            {hasMultipleVenues && (
+              <button
+                onClick={handlePrevVenue}
+                className="p-1 rounded-full bg-shake-yellow/30 hover:bg-shake-yellow/50 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 text-shake-yellow-foreground" />
+              </button>
+            )}
+            
+            {/* Venue pill button */}
+            <div className="flex-1 flex items-center justify-center">
+              <button
+                onClick={() => handleSuggestVenue(currentVenue)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-shake-yellow text-shake-yellow-foreground rounded-full font-medium text-sm shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+              >
+                <MapPin className="w-4 h-4" />
+                <span className="truncate max-w-[180px]">{currentVenue.name}</span>
+                <span className="text-xs opacity-75">({t('chat.suggest', 'Suggest')})</span>
+              </button>
+            </div>
+            
+            {/* Right arrow */}
+            {hasMultipleVenues && (
+              <button
+                onClick={handleNextVenue}
+                className="p-1 rounded-full bg-shake-yellow/30 hover:bg-shake-yellow/50 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4 text-shake-yellow-foreground" />
+              </button>
+            )}
+          </div>
+          
+          {/* Dots indicator */}
+          {hasMultipleVenues && (
+            <div className="flex justify-center gap-1 mt-1.5">
+              {cityVenues.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                    idx === currentVenueIndex ? 'bg-shake-yellow' : 'bg-shake-yellow/30'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Attendees section */}
       {showAttendees ? (
