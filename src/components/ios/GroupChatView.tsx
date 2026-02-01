@@ -485,10 +485,10 @@ export function GroupChatView({
                     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentVenue.name}, ${currentVenue.address}`)}`;
                   window.location.href = venueUrl;
                 }}
-                className="p-1.5 rounded-full hover:bg-shake-yellow/20 transition-colors"
+                className="text-xl hover:scale-110 transition-transform"
                 title="Open in Google Maps"
               >
-                <MapPin className="w-5 h-5 text-destructive" />
+                📍
               </button>
               
               {/* Venue pill button - suggests venue in chat */}
