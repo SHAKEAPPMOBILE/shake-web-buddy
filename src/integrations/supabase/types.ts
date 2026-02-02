@@ -235,6 +235,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_sms_tracking: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          notification_date: string
+          notification_type: string
+          triggered_by_user_id: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          id?: string
+          notification_date?: string
+          notification_type: string
+          triggered_by_user_id: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          notification_date?: string
+          notification_type?: string
+          triggered_by_user_id?: string
+        }
+        Relationships: []
+      }
       greetings: {
         Row: {
           created_at: string

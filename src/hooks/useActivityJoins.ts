@@ -84,8 +84,30 @@ export function useActivityJoins(city: string) {
 
     toast.success("You've joined the activity!");
     
-    // Send SMS notifications to other users in the same activity (fire and forget)
+    // Get user name for notifications
     const userName = user.user_metadata?.name || user.email?.split('@')[0] || "Someone";
+    
+    // Send two types of SMS notifications (fire and forget):
+    // 1. Daily city SMS - first join of the day notifies all users in the city
+    // 2. Activity-specific SMS - notifies users already in the same activity
+    
+    // First: Try to send daily city SMS (only succeeds if first join of the day)
+    supabase.functions.invoke('send-daily-city-sms', {
+      body: {
+        notificationType: 'first_activity_join',
+        city: targetCity,
+        triggerUserName: userName,
+        activityType,
+      }
+    }).then(({ data, error }) => {
+      if (error) {
+        console.error("Failed to send daily city SMS:", error);
+      } else {
+        console.log("Daily city SMS result:", data);
+      }
+    });
+    
+    // Second: Send SMS to users already in the same specific activity
     supabase.functions.invoke('send-sms-notification', {
       body: {
         activityType,
@@ -95,9 +117,9 @@ export function useActivityJoins(city: string) {
       }
     }).then(({ error }) => {
       if (error) {
-        console.error("Failed to send SMS notifications:", error);
+        console.error("Failed to send activity SMS notifications:", error);
       } else {
-        console.log("SMS notifications sent");
+        console.log("Activity SMS notifications sent");
       }
     });
     

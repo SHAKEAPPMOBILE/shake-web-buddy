@@ -233,6 +233,23 @@ export function useUserActivities(city: string) {
       city: targetCity,
     });
 
+    // Send daily city SMS for first plan of the day (fire and forget)
+    const userName = user.user_metadata?.name || user.email?.split('@')[0] || "Someone";
+    supabase.functions.invoke('send-daily-city-sms', {
+      body: {
+        notificationType: 'first_plan',
+        city: targetCity,
+        triggerUserName: userName,
+        activityType,
+      }
+    }).then(({ data, error }) => {
+      if (error) {
+        console.error("Failed to send daily city SMS for new plan:", error);
+      } else {
+        console.log("Daily city SMS for new plan result:", data);
+      }
+    });
+
     await Promise.all([fetchActivities(), fetchMyActivities(), fetchMonthlyCount()]);
     setIsLoading(false);
     return true;
