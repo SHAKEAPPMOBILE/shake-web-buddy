@@ -290,5 +290,63 @@
     "privacyNote": "你的证件安全存储，仅供我们的管理团队用于验证目的。",
     "submitButton": "提交验证",
     "uploading": "上传中..."
+  },
+  "onboarding": {
+    "skip": "跳过",
+    "next": "下一步",
+    "getStarted": "开始使用",
+    "welcomeTitle": "欢迎来到SHAKE",
+    "welcomeDescription": "通过共同活动认识新朋友，建立真正的联系",
+    "joinActivitiesTitle": "加入活动",
+    "joinActivitiesDescription": "选择晚餐、小酌、徒步等活动，或提出建议，与你城市的其他人一起参加",
+    "chatConnectTitle": "聊天和连接",
+    "chatConnectDescription": "给你的群组发消息，制定计划，在见面前认识大家",
+    "meetInPersonTitle": "线下见面",
+    "meetInPersonDescription": "到达地点，签到，享受真实的连接"
+  },
+  "donation": {
+    "kindHuman": "善良的人",
+    "supportShake": "支持SHAKE",
+    "supportMessage": "喜欢我们正在做的事情吗？用任意金额帮助SHAKE社区成长。💚",
+    "enterCustomAmount": "输入自定义金额",
+    "support": "支持",
+    "processing": "处理中...",
+    "oneTimeSupport": "一次性支持 • 通过Stripe安全支付",
+    "minAmountError": "请输入至少$1的金额",
+    "maxAmountError": "最高捐款金额为$999",
+    "thankYouTitle": "感谢你的支持！",
+    "thankYouMessage": "看到其他人希望我们蓬勃发展真是太美好了。💚",
+    "goBackToShake": "返回SHAKE"
+  },
+  "subscription": {
+    "complete": "订阅完成",
+    "youreASuperHuman": "你是超级人类！",
+    "subscriptionActive": "你的订阅现已激活。享受全球100多个城市的访问权限！",
+    "confirmingSubscription": "确认订阅中...",
+    "subscriptionConfirmed": "订阅已确认！",
+    "processingSubscription": "正在处理你的订阅...",
+    "startExploringCities": "开始探索城市",
+    "goToProfile": "前往个人资料",
+    "cancelAnytime": "随时取消 • 最佳价值！",
+    "perMonth": "/月",
+    "subscribeNow": "立即订阅",
+    "signInToSubscribe": "登录以订阅",
+    "emailForReceipt": "收据邮箱",
+    "phoneLoginEmailNote": "你的账户使用电话登录，我们需要一个邮箱用于账单。",
+    "bySubscribingAgree": "订阅即表示你同意我们的服务条款",
+    "cancelOrUpdate": "随时取消或更新你的订阅",
+    "premiumAccessManaged": "你的高级访问权限由管理员管理",
+    "hasAllFeatures": "你可以使用所有高级功能",
+    "manageSubscription": "管理订阅",
+    "loading": "加载中..."
+  },
+  "premium": {
+    "becomeSuperHuman": "成为超级人类",
+    "exploreJoinActivities": "在任何城市探索和加入活动",
+    "createUnlimited": "无限制创建你自己的活动",
+    "accessCities": "访问全球100多个城市",
+    "joinAnyCity": "加入任何城市的活动",
+    "seeProfiles": "无限制查看其他用户的资料",
+    "unlimitedMessages": "无限制文字消息"
   }
 }

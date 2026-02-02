@@ -290,5 +290,63 @@
     "privacyNote": "あなたの身分証明書は安全に保管され、確認目的でのみ管理チームがアクセスできます。",
     "submitButton": "確認のために提出",
     "uploading": "アップロード中..."
+  },
+  "onboarding": {
+    "skip": "スキップ",
+    "next": "次へ",
+    "getStarted": "始めましょう",
+    "welcomeTitle": "SHAKEへようこそ",
+    "welcomeDescription": "共有アクティビティを通じて新しい人と出会い、本物のつながりを作りましょう",
+    "joinActivitiesTitle": "アクティビティに参加",
+    "joinActivitiesDescription": "ディナー、飲み会、ハイキングなどのアクティビティを選ぶか、提案して、あなたの街の他の人と一緒に参加しましょう",
+    "chatConnectTitle": "チャット＆つながり",
+    "chatConnectDescription": "グループにメッセージを送り、計画を立て、会う前に皆と知り合いましょう",
+    "meetInPersonTitle": "実際に会う",
+    "meetInPersonDescription": "会場に来て、チェックインして、リアルなつながりを楽しみましょう"
+  },
+  "donation": {
+    "kindHuman": "優しい人",
+    "supportShake": "SHAKEをサポート",
+    "supportMessage": "私たちが作っているものを気に入っていますか？お好きな金額でSHAKEコミュニティの成長を助けてください。💚",
+    "enterCustomAmount": "カスタム金額を入力",
+    "support": "サポート",
+    "processing": "処理中...",
+    "oneTimeSupport": "一回限りのサポート • Stripeによる安全な支払い",
+    "minAmountError": "$1以上の金額を入力してください",
+    "maxAmountError": "最大寄付額は$999です",
+    "thankYouTitle": "サポートありがとうございます！",
+    "thankYouMessage": "私たちの成長を望んでくれる人がいるのは本当に素敵なことです。💚",
+    "goBackToShake": "SHAKEに戻る"
+  },
+  "subscription": {
+    "complete": "サブスクリプション完了",
+    "youreASuperHuman": "あなたはスーパーヒューマンです！",
+    "subscriptionActive": "サブスクリプションが有効になりました。世界中の100以上の都市へのアクセスをお楽しみください！",
+    "confirmingSubscription": "サブスクリプションを確認中...",
+    "subscriptionConfirmed": "サブスクリプション確認完了！",
+    "processingSubscription": "サブスクリプションを処理中...",
+    "startExploringCities": "都市の探索を始める",
+    "goToProfile": "プロフィールへ",
+    "cancelAnytime": "いつでもキャンセル可能 • 最高の価値！",
+    "perMonth": "/月",
+    "subscribeNow": "今すぐ登録",
+    "signInToSubscribe": "登録するにはログイン",
+    "emailForReceipt": "領収書用メール",
+    "phoneLoginEmailNote": "あなたのアカウントは電話ログインを使用しているため、請求用のメールが必要です。",
+    "bySubscribingAgree": "登録することで、利用規約に同意します",
+    "cancelOrUpdate": "いつでもサブスクリプションをキャンセルまたは更新できます",
+    "premiumAccessManaged": "あなたのプレミアムアクセスは管理者によって管理されています",
+    "hasAllFeatures": "すべてのプレミアム機能にアクセスできます",
+    "manageSubscription": "サブスクリプションを管理",
+    "loading": "読み込み中..."
+  },
+  "premium": {
+    "becomeSuperHuman": "スーパーヒューマンになる",
+    "exploreJoinActivities": "どの都市でもアクティビティを探索して参加",
+    "createUnlimited": "無制限に自分のアクティビティを作成",
+    "accessCities": "世界中100以上の都市へのアクセス",
+    "joinAnyCity": "どの都市のアクティビティにも参加",
+    "seeProfiles": "他のユーザーのプロフィールを無制限に閲覧",
+    "unlimitedMessages": "無制限のテキストメッセージ"
   }
 }

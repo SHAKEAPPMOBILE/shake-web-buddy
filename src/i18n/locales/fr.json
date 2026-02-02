@@ -42,7 +42,8 @@
     "entryFee": "Frais d'entrée",
     "payToJoin": "Payer pour rejoindre",
     "processing": "Traitement",
-    "paymentGateInfo": "Après le paiement, vous aurez accès au chat de groupe et pourrez vous coordonner avec les autres participants."
+    "paymentGateInfo": "Après le paiement, vous aurez accès au chat de groupe et pourrez vous coordonner avec les autres participants.",
+    "creatorPaymentNotSetup": "Le créateur de l'activité n'a pas encore configuré les paiements. Contactez-le directement ou réessayez plus tard."
   },
   "days": {
     "sunday": "Dimanche",
@@ -289,5 +290,63 @@
     "privacyNote": "Votre pièce d'identité est stockée de manière sécurisée et accessible uniquement à notre équipe d'administration à des fins de vérification.",
     "submitButton": "Soumettre pour Vérification",
     "uploading": "Téléchargement..."
+  },
+  "onboarding": {
+    "skip": "Passer",
+    "next": "Suivant",
+    "getStarted": "Commencer",
+    "welcomeTitle": "Bienvenue sur SHAKE",
+    "welcomeDescription": "Rencontrez de nouvelles personnes et créez de vraies connexions à travers des activités partagées",
+    "joinActivitiesTitle": "Rejoignez des Activités",
+    "joinActivitiesDescription": "Choisissez une activité comme Dîner, Apéro, Randonnée, ou proposez-en une, et rejoignez d'autres dans votre ville",
+    "chatConnectTitle": "Discutez et Connectez",
+    "chatConnectDescription": "Envoyez des messages à votre groupe, faites des plans et apprenez à connaître tout le monde avant de vous rencontrer",
+    "meetInPersonTitle": "Rencontrez-vous en Personne",
+    "meetInPersonDescription": "Présentez-vous au lieu, enregistrez-vous et profitez de connexions dans la vraie vie"
+  },
+  "donation": {
+    "kindHuman": "Humain Gentil",
+    "supportShake": "Soutenez SHAKE",
+    "supportMessage": "Vous aimez ce que nous construisons? Aidez-nous à développer la communauté SHAKE avec le montant de votre choix. 💚",
+    "enterCustomAmount": "Entrez un montant personnalisé",
+    "support": "Soutenir",
+    "processing": "Traitement...",
+    "oneTimeSupport": "Soutien unique • Paiement sécurisé via Stripe",
+    "minAmountError": "Veuillez entrer un montant d'au moins 1$",
+    "maxAmountError": "Le don maximum est de 999$",
+    "thankYouTitle": "Merci pour votre soutien!",
+    "thankYouMessage": "C'est si beau de voir d'autres personnes vouloir nous voir prospérer. 💚",
+    "goBackToShake": "Retour à SHAKE"
+  },
+  "subscription": {
+    "complete": "Abonnement Terminé",
+    "youreASuperHuman": "Vous êtes un Super-Humain!",
+    "subscriptionActive": "Votre abonnement est maintenant actif. Profitez de l'accès à plus de 100 villes dans le monde!",
+    "confirmingSubscription": "Confirmation de l'abonnement...",
+    "subscriptionConfirmed": "Abonnement confirmé!",
+    "processingSubscription": "Traitement de votre abonnement...",
+    "startExploringCities": "Commencer à Explorer les Villes",
+    "goToProfile": "Aller au Profil",
+    "cancelAnytime": "Annulez quand vous voulez • Meilleure valeur!",
+    "perMonth": "/mois",
+    "subscribeNow": "S'abonner Maintenant",
+    "signInToSubscribe": "Connectez-vous pour Vous Abonner",
+    "emailForReceipt": "Email pour le reçu",
+    "phoneLoginEmailNote": "Votre compte utilise la connexion par téléphone, nous avons besoin d'un email pour la facturation.",
+    "bySubscribingAgree": "En vous abonnant, vous acceptez nos Conditions d'Utilisation",
+    "cancelOrUpdate": "Annulez ou mettez à jour votre abonnement à tout moment",
+    "premiumAccessManaged": "Votre accès premium est géré par un administrateur",
+    "hasAllFeatures": "Vous avez accès à toutes les fonctionnalités premium",
+    "manageSubscription": "Gérer l'Abonnement",
+    "loading": "Chargement..."
+  },
+  "premium": {
+    "becomeSuperHuman": "Devenez Super-Humain",
+    "exploreJoinActivities": "Explorez et rejoignez des activités dans n'importe quelle ville",
+    "createUnlimited": "Créez vos propres activités sans limite",
+    "accessCities": "Accès à plus de 100 villes dans le monde",
+    "joinAnyCity": "Rejoignez des activités dans n'importe quelle ville",
+    "seeProfiles": "Voyez les profils des autres utilisateurs sans limite",
+    "unlimitedMessages": "Messages texte illimités"
   }
 }

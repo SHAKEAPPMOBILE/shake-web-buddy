@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Users, MessageSquare, MapPin, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -7,39 +8,40 @@ interface OnboardingScreensProps {
   onComplete: () => void | Promise<void>;
 }
 
-const screens = [
-  {
-    emoji: "🎉",
-    title: "Welcome to SHAKE",
-    description: "Meet new people and make real connections through shared activities",
-    icon: Sparkles,
-    color: "from-primary/20 to-primary/5",
-  },
-  {
-    emoji: "🍽️",
-    title: "Join Activities",
-    description: "Pick an activity like Dinner, Drinks, Hike, or propose one, and join others in your city",
-    icon: Users,
-    color: "from-orange-500/20 to-orange-500/5",
-  },
-  {
-    emoji: "💬",
-    title: "Chat & Connect",
-    description: "Message your group, make plans, and get to know everyone before meeting up",
-    icon: MessageSquare,
-    color: "from-blue-500/20 to-blue-500/5",
-  },
-  {
-    emoji: "📍",
-    title: "Meet In Person",
-    description: "Show up at the venue, check in, and enjoy real-life connections",
-    icon: MapPin,
-    color: "from-green-500/20 to-green-500/5",
-  },
-];
-
 export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
+  const { t } = useTranslation();
   const [currentScreen, setCurrentScreen] = useState(0);
+
+  const screens = [
+    {
+      emoji: "🎉",
+      title: t("onboarding.welcomeTitle"),
+      description: t("onboarding.welcomeDescription"),
+      icon: Sparkles,
+      color: "from-primary/20 to-primary/5",
+    },
+    {
+      emoji: "🍽️",
+      title: t("onboarding.joinActivitiesTitle"),
+      description: t("onboarding.joinActivitiesDescription"),
+      icon: Users,
+      color: "from-orange-500/20 to-orange-500/5",
+    },
+    {
+      emoji: "💬",
+      title: t("onboarding.chatConnectTitle"),
+      description: t("onboarding.chatConnectDescription"),
+      icon: MessageSquare,
+      color: "from-blue-500/20 to-blue-500/5",
+    },
+    {
+      emoji: "📍",
+      title: t("onboarding.meetInPersonTitle"),
+      description: t("onboarding.meetInPersonDescription"),
+      icon: MapPin,
+      color: "from-green-500/20 to-green-500/5",
+    },
+  ];
 
   const handleNext = async () => {
     if (currentScreen < screens.length - 1) {
@@ -66,7 +68,7 @@ export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
           onClick={handleSkip}
           className="text-muted-foreground hover:text-foreground"
         >
-          Skip
+          {t("onboarding.skip")}
         </Button>
       </div>
 
@@ -124,10 +126,10 @@ export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
           size="lg"
         >
           {isLastScreen ? (
-            "Get Started"
+            t("onboarding.getStarted")
           ) : (
             <>
-              Next
+              {t("onboarding.next")}
               <ChevronRight className="w-5 h-5 ml-1" />
             </>
           )}
