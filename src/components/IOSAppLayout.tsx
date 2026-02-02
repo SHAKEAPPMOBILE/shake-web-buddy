@@ -52,11 +52,11 @@ export function IOSAppLayout() {
   // State for pending paid activity to open after verification
   const [pendingPaidActivityId, setPendingPaidActivityId] = useState<string | null>(null);
 
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, didJustSignUp } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
   const { joinActivity, getActivityJoinCount, activeJoins, hasUserJoined } = useActivityJoins(selectedCity);
-  const { showOnboarding, isChecking: isCheckingOnboarding, completeOnboarding } = useOnboarding(user?.id, user?.created_at);
+  const { showOnboarding, isChecking: isCheckingOnboarding, completeOnboarding } = useOnboarding(user?.id, didJustSignUp);
   
   // Handle payment success from Stripe redirect
   const { isVerifying, wasSuccessful, verifiedActivityId, resetPaymentState } = usePaymentSuccessHandler();

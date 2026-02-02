@@ -4,7 +4,7 @@ import { ChevronRight, Users, MessageSquare, MapPin, Sparkles } from "lucide-rea
 import { cn } from "@/lib/utils";
 
 interface OnboardingScreensProps {
-  onComplete: () => void;
+  onComplete: () => void | Promise<void>;
 }
 
 const screens = [
