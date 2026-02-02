@@ -290,5 +290,63 @@
     "privacyNote": "Your ID is stored securely and only accessible to our admin team for verification purposes.",
     "submitButton": "Submit for Verification",
     "uploading": "Uploading..."
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "getStarted": "Get Started",
+    "welcomeTitle": "Welcome to SHAKE",
+    "welcomeDescription": "Meet new people and make real connections through shared activities",
+    "joinActivitiesTitle": "Join Activities",
+    "joinActivitiesDescription": "Pick an activity like Dinner, Drinks, Hike, or propose one, and join others in your city",
+    "chatConnectTitle": "Chat & Connect",
+    "chatConnectDescription": "Message your group, make plans, and get to know everyone before meeting up",
+    "meetInPersonTitle": "Meet In Person",
+    "meetInPersonDescription": "Show up at the venue, check in, and enjoy real-life connections"
+  },
+  "donation": {
+    "kindHuman": "Kind Human",
+    "supportShake": "Support SHAKE",
+    "supportMessage": "Love what we're building? Help us grow the SHAKE community with any amount you'd like to give. 💚",
+    "enterCustomAmount": "Enter custom amount",
+    "support": "Support",
+    "processing": "Processing...",
+    "oneTimeSupport": "One-time support • Secure payment via Stripe",
+    "minAmountError": "Please enter an amount of at least $1",
+    "maxAmountError": "Maximum donation is $999",
+    "thankYouTitle": "Thank you for your support!",
+    "thankYouMessage": "It's so beautiful to see other people wanting us to thrive. 💚",
+    "goBackToShake": "Go back to SHAKE"
+  },
+  "subscription": {
+    "complete": "Subscription Complete",
+    "youreASuperHuman": "You're a Super-Human!",
+    "subscriptionActive": "Your subscription is now active. Enjoy access to 100+ cities worldwide!",
+    "confirmingSubscription": "Confirming subscription...",
+    "subscriptionConfirmed": "Subscription confirmed!",
+    "processingSubscription": "Processing your subscription...",
+    "startExploringCities": "Start Exploring Cities",
+    "goToProfile": "Go to Profile",
+    "cancelAnytime": "Cancel anytime • Best value!",
+    "perMonth": "/month",
+    "subscribeNow": "Subscribe Now",
+    "signInToSubscribe": "Sign In to Subscribe",
+    "emailForReceipt": "Email for receipt",
+    "phoneLoginEmailNote": "Your account uses phone login, so we need an email for billing.",
+    "bySubscribingAgree": "By subscribing, you agree to our Terms of Service",
+    "cancelOrUpdate": "Cancel or update your subscription anytime",
+    "premiumAccessManaged": "Your premium access is managed by an administrator",
+    "hasAllFeatures": "You have access to all premium features",
+    "manageSubscription": "Manage Subscription",
+    "loading": "Loading..."
+  },
+  "premium": {
+    "becomeSuperHuman": "Become a Super-Human",
+    "exploreJoinActivities": "Explore and join activities in any city",
+    "createUnlimited": "Create your own activities unlimited",
+    "accessCities": "Access to 100+ cities worldwide",
+    "joinAnyCity": "Join activities in any city",
+    "seeProfiles": "See other users' profiles unlimited",
+    "unlimitedMessages": "Unlimited text messages"
   }
 }

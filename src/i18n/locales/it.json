@@ -290,5 +290,63 @@
     "privacyNote": "Il tuo documento è conservato in modo sicuro ed è accessibile solo al nostro team amministrativo per scopi di verifica.",
     "submitButton": "Invia per la Verifica",
     "uploading": "Caricamento..."
+  },
+  "onboarding": {
+    "skip": "Salta",
+    "next": "Avanti",
+    "getStarted": "Inizia",
+    "welcomeTitle": "Benvenuto su SHAKE",
+    "welcomeDescription": "Conosci nuove persone e crea vere connessioni attraverso attività condivise",
+    "joinActivitiesTitle": "Unisciti alle Attività",
+    "joinActivitiesDescription": "Scegli un'attività come Cena, Aperitivo, Escursione, o proponi una, e unisciti ad altri nella tua città",
+    "chatConnectTitle": "Chatta e Connetti",
+    "chatConnectDescription": "Invia messaggi al tuo gruppo, fai piani e conosci tutti prima di incontrarvi",
+    "meetInPersonTitle": "Incontratevi di Persona",
+    "meetInPersonDescription": "Presentati al locale, fai il check-in e goditi connessioni nella vita reale"
+  },
+  "donation": {
+    "kindHuman": "Umano Gentile",
+    "supportShake": "Sostieni SHAKE",
+    "supportMessage": "Ami quello che stiamo costruendo? Aiutaci a far crescere la community SHAKE con qualsiasi importo. 💚",
+    "enterCustomAmount": "Inserisci importo personalizzato",
+    "support": "Sostieni",
+    "processing": "Elaborazione...",
+    "oneTimeSupport": "Sostegno una tantum • Pagamento sicuro via Stripe",
+    "minAmountError": "Inserisci un importo di almeno $1",
+    "maxAmountError": "La donazione massima è $999",
+    "thankYouTitle": "Grazie per il tuo sostegno!",
+    "thankYouMessage": "È così bello vedere altre persone che vogliono vederci prosperare. 💚",
+    "goBackToShake": "Torna a SHAKE"
+  },
+  "subscription": {
+    "complete": "Abbonamento Completato",
+    "youreASuperHuman": "Sei un Super-Umano!",
+    "subscriptionActive": "Il tuo abbonamento è ora attivo. Goditi l'accesso a oltre 100 città in tutto il mondo!",
+    "confirmingSubscription": "Conferma abbonamento...",
+    "subscriptionConfirmed": "Abbonamento confermato!",
+    "processingSubscription": "Elaborazione del tuo abbonamento...",
+    "startExploringCities": "Inizia a Esplorare le Città",
+    "goToProfile": "Vai al Profilo",
+    "cancelAnytime": "Annulla quando vuoi • Miglior valore!",
+    "perMonth": "/mese",
+    "subscribeNow": "Abbonati Ora",
+    "signInToSubscribe": "Accedi per Abbonarti",
+    "emailForReceipt": "Email per la ricevuta",
+    "phoneLoginEmailNote": "Il tuo account usa login telefonico, abbiamo bisogno di un'email per la fatturazione.",
+    "bySubscribingAgree": "Abbonandoti, accetti i nostri Termini di Servizio",
+    "cancelOrUpdate": "Annulla o aggiorna il tuo abbonamento in qualsiasi momento",
+    "premiumAccessManaged": "Il tuo accesso premium è gestito da un amministratore",
+    "hasAllFeatures": "Hai accesso a tutte le funzionalità premium",
+    "manageSubscription": "Gestisci Abbonamento",
+    "loading": "Caricamento..."
+  },
+  "premium": {
+    "becomeSuperHuman": "Diventa Super-Umano",
+    "exploreJoinActivities": "Esplora e unisciti ad attività in qualsiasi città",
+    "createUnlimited": "Crea le tue attività senza limiti",
+    "accessCities": "Accesso a oltre 100 città in tutto il mondo",
+    "joinAnyCity": "Unisciti ad attività in qualsiasi città",
+    "seeProfiles": "Vedi i profili degli altri utenti senza limiti",
+    "unlimitedMessages": "Messaggi di testo illimitati"
   }
 }

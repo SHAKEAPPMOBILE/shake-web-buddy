@@ -42,7 +42,8 @@
     "entryFee": "Taxa de entrada",
     "payToJoin": "Pagar para participar",
     "processing": "Processando",
-    "paymentGateInfo": "Após o pagamento, você terá acesso ao chat em grupo e poderá coordenar com outros participantes."
+    "paymentGateInfo": "Após o pagamento, você terá acesso ao chat em grupo e poderá coordenar com outros participantes.",
+    "creatorPaymentNotSetup": "O criador da atividade ainda não configurou pagamentos. Entre em contato diretamente ou tente novamente mais tarde."
   },
   "days": {
     "sunday": "Domingo",
@@ -289,5 +290,63 @@
     "privacyNote": "Seu documento é armazenado com segurança e acessível apenas à nossa equipe de administração para fins de verificação.",
     "submitButton": "Enviar para Verificação",
     "uploading": "Enviando..."
+  },
+  "onboarding": {
+    "skip": "Pular",
+    "next": "Próximo",
+    "getStarted": "Começar",
+    "welcomeTitle": "Bem-vindo ao SHAKE",
+    "welcomeDescription": "Conheça pessoas novas e crie conexões reais através de atividades compartilhadas",
+    "joinActivitiesTitle": "Participe de Atividades",
+    "joinActivitiesDescription": "Escolha uma atividade como Jantar, Drinks, Trilha, ou proponha uma, e junte-se a outros na sua cidade",
+    "chatConnectTitle": "Converse e Conecte",
+    "chatConnectDescription": "Envie mensagens para seu grupo, faça planos e conheça todos antes de se encontrarem",
+    "meetInPersonTitle": "Encontrem-se Pessoalmente",
+    "meetInPersonDescription": "Apareça no local, faça check-in e aproveite conexões na vida real"
+  },
+  "donation": {
+    "kindHuman": "Humano Gentil",
+    "supportShake": "Apoie o SHAKE",
+    "supportMessage": "Ama o que estamos construindo? Ajude a comunidade SHAKE a crescer com qualquer valor que quiser. 💚",
+    "enterCustomAmount": "Digite um valor personalizado",
+    "support": "Apoiar",
+    "processing": "Processando...",
+    "oneTimeSupport": "Apoio único • Pagamento seguro via Stripe",
+    "minAmountError": "Por favor, digite um valor de pelo menos $1",
+    "maxAmountError": "Doação máxima é $999",
+    "thankYouTitle": "Obrigado pelo seu apoio!",
+    "thankYouMessage": "É tão lindo ver outras pessoas querendo que prosperemos. 💚",
+    "goBackToShake": "Voltar ao SHAKE"
+  },
+  "subscription": {
+    "complete": "Assinatura Concluída",
+    "youreASuperHuman": "Você é um Super-Humano!",
+    "subscriptionActive": "Sua assinatura está ativa. Aproveite acesso a mais de 100 cidades no mundo!",
+    "confirmingSubscription": "Confirmando assinatura...",
+    "subscriptionConfirmed": "Assinatura confirmada!",
+    "processingSubscription": "Processando sua assinatura...",
+    "startExploringCities": "Comece a Explorar Cidades",
+    "goToProfile": "Ir para o Perfil",
+    "cancelAnytime": "Cancele quando quiser • Melhor valor!",
+    "perMonth": "/mês",
+    "subscribeNow": "Assinar Agora",
+    "signInToSubscribe": "Entre para Assinar",
+    "emailForReceipt": "Email para recibo",
+    "phoneLoginEmailNote": "Sua conta usa login por telefone, precisamos de um email para cobrança.",
+    "bySubscribingAgree": "Ao assinar, você concorda com nossos Termos de Serviço",
+    "cancelOrUpdate": "Cancele ou atualize sua assinatura a qualquer momento",
+    "premiumAccessManaged": "Seu acesso premium é gerenciado por um administrador",
+    "hasAllFeatures": "Você tem acesso a todos os recursos premium",
+    "manageSubscription": "Gerenciar Assinatura",
+    "loading": "Carregando..."
+  },
+  "premium": {
+    "becomeSuperHuman": "Torne-se Super-Humano",
+    "exploreJoinActivities": "Explore e participe de atividades em qualquer cidade",
+    "createUnlimited": "Crie suas próprias atividades sem limite",
+    "accessCities": "Acesso a mais de 100 cidades no mundo",
+    "joinAnyCity": "Participe de atividades em qualquer cidade",
+    "seeProfiles": "Veja perfis de outros usuários sem limite",
+    "unlimitedMessages": "Mensagens de texto ilimitadas"
   }
 }

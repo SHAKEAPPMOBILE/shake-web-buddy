@@ -290,5 +290,63 @@
     "privacyNote": "Je ID wordt veilig opgeslagen en is alleen toegankelijk voor ons beheerteam voor verificatiedoeleinden.",
     "submitButton": "Indienen ter Verificatie",
     "uploading": "Uploaden..."
+  },
+  "onboarding": {
+    "skip": "Overslaan",
+    "next": "Volgende",
+    "getStarted": "Aan de slag",
+    "welcomeTitle": "Welkom bij SHAKE",
+    "welcomeDescription": "Ontmoet nieuwe mensen en maak echte connecties door gedeelde activiteiten",
+    "joinActivitiesTitle": "Deelnemen aan Activiteiten",
+    "joinActivitiesDescription": "Kies een activiteit zoals Diner, Borrel, Wandeling, of stel er een voor, en sluit je aan bij anderen in je stad",
+    "chatConnectTitle": "Chatten & Verbinden",
+    "chatConnectDescription": "Stuur berichten naar je groep, maak plannen en leer iedereen kennen voordat je elkaar ontmoet",
+    "meetInPersonTitle": "Persoonlijk Ontmoeten",
+    "meetInPersonDescription": "Kom naar de locatie, check in en geniet van echte connecties"
+  },
+  "donation": {
+    "kindHuman": "Vriendelijk Mens",
+    "supportShake": "Ondersteun SHAKE",
+    "supportMessage": "Vind je het leuk wat we bouwen? Help ons de SHAKE-community te laten groeien met elk bedrag dat je wilt geven. 💚",
+    "enterCustomAmount": "Voer aangepast bedrag in",
+    "support": "Ondersteunen",
+    "processing": "Verwerken...",
+    "oneTimeSupport": "Eenmalige ondersteuning • Veilige betaling via Stripe",
+    "minAmountError": "Voer een bedrag van minimaal $1 in",
+    "maxAmountError": "Maximale donatie is $999",
+    "thankYouTitle": "Bedankt voor je ondersteuning!",
+    "thankYouMessage": "Het is zo mooi om te zien dat andere mensen willen dat we bloeien. 💚",
+    "goBackToShake": "Terug naar SHAKE"
+  },
+  "subscription": {
+    "complete": "Abonnement Voltooid",
+    "youreASuperHuman": "Je bent een Super-Mens!",
+    "subscriptionActive": "Je abonnement is nu actief. Geniet van toegang tot 100+ steden wereldwijd!",
+    "confirmingSubscription": "Abonnement bevestigen...",
+    "subscriptionConfirmed": "Abonnement bevestigd!",
+    "processingSubscription": "Je abonnement verwerken...",
+    "startExploringCities": "Begin met Steden Verkennen",
+    "goToProfile": "Naar Profiel",
+    "cancelAnytime": "Opzeggen wanneer je wilt • Beste waarde!",
+    "perMonth": "/maand",
+    "subscribeNow": "Nu Abonneren",
+    "signInToSubscribe": "Log in om te Abonneren",
+    "emailForReceipt": "Email voor bon",
+    "phoneLoginEmailNote": "Je account gebruikt telefoon-login, we hebben een email nodig voor facturering.",
+    "bySubscribingAgree": "Door te abonneren, ga je akkoord met onze Servicevoorwaarden",
+    "cancelOrUpdate": "Annuleer of update je abonnement wanneer je wilt",
+    "premiumAccessManaged": "Je premium toegang wordt beheerd door een beheerder",
+    "hasAllFeatures": "Je hebt toegang tot alle premium functies",
+    "manageSubscription": "Abonnement Beheren",
+    "loading": "Laden..."
+  },
+  "premium": {
+    "becomeSuperHuman": "Word Super-Mens",
+    "exploreJoinActivities": "Verken en neem deel aan activiteiten in elke stad",
+    "createUnlimited": "Maak onbeperkt je eigen activiteiten",
+    "accessCities": "Toegang tot 100+ steden wereldwijd",
+    "joinAnyCity": "Neem deel aan activiteiten in elke stad",
+    "seeProfiles": "Bekijk onbeperkt profielen van andere gebruikers",
+    "unlimitedMessages": "Onbeperkte tekstberichten"
   }
 }
