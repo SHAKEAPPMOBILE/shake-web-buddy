@@ -122,11 +122,28 @@ serve(async (req) => {
 
     console.log("SMS notification request validated:", { activityType, city, joinerName, joinerUserId });
 
-    // Get all users who joined ANY activity in the same city (excluding the current joiner)
+    // Check if this is the first activity join of the day for this city
+    // If so, we'll trigger the daily city SMS instead (handled separately)
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    const { data: existingDailyNotification } = await supabase
+      .from("daily_sms_tracking")
+      .select("id")
+      .eq("city", city)
+      .eq("notification_type", "first_activity_join")
+      .eq("notification_date", today)
+      .maybeSingle();
+
+    // If no daily notification has been sent yet, this is the first join of the day
+    // The daily notification will be handled by the calling code via send-daily-city-sms
+    // Here we just notify users who are ALREADY joined in the same activity
+    
+    // Get all users who joined THE SAME activity type in the same city (excluding the current joiner)
     const { data: activeJoins, error: joinsError } = await supabase
       .from("activity_joins")
       .select("user_id")
       .eq("city", city)
+      .eq("activity_type", activityType)
       .gt("expires_at", new Date().toISOString())
       .neq("user_id", joinerUserId);
 
@@ -136,7 +153,7 @@ serve(async (req) => {
     }
 
     if (!activeJoins || activeJoins.length === 0) {
-      console.log("No other users to notify");
+      console.log("No other users in the same activity to notify");
       return new Response(JSON.stringify({ success: true, notified: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
