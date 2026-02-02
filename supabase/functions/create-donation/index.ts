@@ -22,6 +22,12 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
 
+  // Use service role for admin queries (bypass RLS)
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+
   try {
     logStep("Function started");
 
@@ -52,7 +58,7 @@ serve(async (req) => {
     // Get billing email from profiles_private if no auth email
     let customerEmail = user.email;
     if (!customerEmail) {
-      const { data: privateProfile } = await supabaseClient
+      const { data: privateProfile } = await supabaseAdmin
         .from("profiles_private")
         .select("billing_email")
         .eq("user_id", user.id)
