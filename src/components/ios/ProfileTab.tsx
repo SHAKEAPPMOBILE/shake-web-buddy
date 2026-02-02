@@ -47,7 +47,7 @@ interface ProfileTabProps {
 
 export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const { t } = useTranslation();
-  const { user, isPremium, signOut } = useAuth();
+  const { user, isPremium, isManualOverride, signOut } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -70,11 +70,32 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showPayPalDisconnectConfirm, setShowPayPalDisconnectConfirm] = useState(false);
   const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
+  const [isBillingPortalLoading, setIsBillingPortalLoading] = useState(false);
   const { isConnected: stripeConnected, status: stripeStatus, email: stripeEmail, isLoading: stripeLoading, error: stripeError, startOnboarding, checkStatus: checkStripeStatus, resetAndRecreate } = useStripeConnect();
   const { isConnected: paypalConnected, paypalEmail, isLoading: paypalLoading, connectPayPal, disconnectPayPal } = usePayPalConnect();
   const { totalNet, currency, activities, isLoading: earningsLoading } = useCreatorEarnings();
   const { isVerified, isPending, isRejected, isLoading: verificationLoading } = useCreatorVerification();
   const [showIDVerificationDialog, setShowIDVerificationDialog] = useState(false);
+
+  const handleOpenBillingPortal = async () => {
+    setIsBillingPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Error opening customer portal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open billing portal. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBillingPortalLoading(false);
+    }
+  };
 
   const handleStartOnboarding = (countryCode: string) => {
     setShowCountrySelector(false);
@@ -353,14 +374,27 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                     <SuperHumanIcon size={16} />
                     <span className="text-sm font-medium text-shake-yellow">{t('profile.superHumanActive', 'Super-Human Active')}</span>
                   </div>
+                  {isManualOverride ? (
+                    <p className="text-xs text-muted-foreground">
+                      Your premium access is managed by an administrator
+                    </p>
+                  ) : (
+                    <button
+                      onClick={handleOpenBillingPortal}
+                      disabled={isBillingPortalLoading}
+                      className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-lg hover:bg-shake-green/10 transition-colors disabled:opacity-50"
+                    >
+                      {isBillingPortalLoading ? "Loading..." : t('profile.manageBilling', 'Manage in Billing Portal')}
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setShowSubscriptionDropdown(false);
                       setShowPremiumDialog(true);
                     }}
-                    className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-lg hover:bg-shake-green/10 transition-colors"
+                    className="w-full py-2 text-sm font-medium text-pink-500 border border-pink-500/30 rounded-lg hover:bg-pink-500/10 transition-colors"
                   >
-                    {t('profile.manageBilling', 'Manage in Billing Portal')}
+                    💚 Be a Kind Human (Donate)
                   </button>
                 </div>
               </div>
