@@ -41,16 +41,16 @@ const screens = [
 export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
   const [currentScreen, setCurrentScreen] = useState(0);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentScreen < screens.length - 1) {
       setCurrentScreen(currentScreen + 1);
     } else {
-      onComplete();
+      await onComplete();
     }
   };
 
-  const handleSkip = () => {
-    onComplete();
+  const handleSkip = async () => {
+    await onComplete();
   };
 
   const screen = screens[currentScreen];
