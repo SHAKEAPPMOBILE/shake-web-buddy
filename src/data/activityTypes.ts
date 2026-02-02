@@ -146,56 +146,9 @@ export const ACTIVITY_TYPES: ActivityType[] = [
 ];
 
 // Additional activities only for "create a plan" dialog (excludes carousel activities)
-export const PLAN_ONLY_ACTIVITY_TYPES: ActivityType[] = [
-  { 
-    id: "surf", 
-    label: "Surf", 
-    emoji: "🏄",
-    color: "bg-blue-500/20 hover:bg-blue-500/30",
-  },
-  { 
-    id: "run", 
-    label: "Run", 
-    emoji: "🏃",
-    color: "bg-shake-coral/20 hover:bg-shake-coral/30",
-  },
-  { 
-    id: "co-working", 
-    label: "Co-working", 
-    emoji: "💻",
-    color: "bg-slate-500/20 hover:bg-slate-500/30",
-  },
-  { 
-    id: "basketball", 
-    label: "Basketball", 
-    emoji: "🏀",
-    color: "bg-shake-coral/20 hover:bg-shake-coral/30",
-  },
-  { 
-    id: "tennis-padel", 
-    label: "Tennis/Padel", 
-    emoji: "🎾",
-    color: "bg-shake-yellow/20 hover:bg-shake-yellow/30",
-  },
-  { 
-    id: "football", 
-    label: "Football", 
-    emoji: "⚽",
-    color: "bg-green-600/20 hover:bg-green-600/30",
-  },
-  { 
-    id: "shopping", 
-    label: "Shopping", 
-    emoji: "🛍️",
-    color: "bg-pink-500/20 hover:bg-pink-500/30",
-  },
-  { 
-    id: "arts", 
-    label: "Arts", 
-    emoji: "🎨",
-    color: "bg-purple-500/20 hover:bg-purple-500/30",
-  },
-];
+// Note: Legacy activity types (surf, run, co-working, basketball, tennis-padel, football, shopping, arts) 
+// have been removed as they are no longer in use
+export const PLAN_ONLY_ACTIVITY_TYPES: ActivityType[] = [];
 
 // All activities combined (for lookups and helpers)
 export const ALL_ACTIVITY_TYPES: ActivityType[] = [...ACTIVITY_TYPES, ...PLAN_ONLY_ACTIVITY_TYPES];
