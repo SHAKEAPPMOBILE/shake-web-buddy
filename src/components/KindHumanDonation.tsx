@@ -63,7 +63,7 @@ export function KindHumanDonation({ onClose }: KindHumanDonationProps) {
         </div>
         <div>
           <h3 className="font-medium text-foreground">Kind Human</h3>
-          <p className="text-xs text-muted-foreground">Support SHAKE with a donation</p>
+          <p className="text-xs text-muted-foreground">Support SHAKE</p>
         </div>
       </div>
 
@@ -110,13 +110,13 @@ export function KindHumanDonation({ onClose }: KindHumanDonationProps) {
         ) : (
           <>
             <Heart className="w-4 h-4 mr-2" />
-            Donate {amount ? `$${amount}` : ""}
+            Support {amount ? `$${amount}` : ""}
           </>
         )}
       </Button>
 
       <p className="text-xs text-center text-muted-foreground">
-        One-time donation • Secure payment via Stripe
+        One-time support • Secure payment via Stripe
       </p>
     </div>
   );
