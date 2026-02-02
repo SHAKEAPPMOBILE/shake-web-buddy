@@ -408,6 +408,7 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           id: string
+          onboarding_completed: boolean
           paypal_connected: boolean | null
           paypal_email: string | null
           phone_number: string | null
@@ -426,6 +427,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           id?: string
+          onboarding_completed?: boolean
           paypal_connected?: boolean | null
           paypal_email?: string | null
           phone_number?: string | null
@@ -444,6 +446,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           id?: string
+          onboarding_completed?: boolean
           paypal_connected?: boolean | null
           paypal_email?: string | null
           phone_number?: string | null
