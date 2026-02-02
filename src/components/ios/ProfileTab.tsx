@@ -388,7 +388,7 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                     }}
                     className="w-full py-2 text-sm font-medium text-pink-500 border border-pink-500/30 rounded-lg hover:bg-pink-500/10 transition-colors"
                   >
-                    💚 Be a Kind Human (Donate)
+                    💚 Be a Kind Human (Support)
                   </button>
                 </div>
               </div>
