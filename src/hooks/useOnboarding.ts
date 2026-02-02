@@ -1,27 +1,44 @@
 import { useState, useEffect } from "react";
 
-const ONBOARDING_KEY = "shake_onboarding_completed";
+const ONBOARDING_KEY_PREFIX = "shake_onboarding_completed_";
 
-export function useOnboarding() {
+export function useOnboarding(userId: string | undefined) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const hasCompleted = localStorage.getItem(ONBOARDING_KEY);
+    // Only check onboarding if user is logged in
+    if (!userId) {
+      setShowOnboarding(false);
+      setIsChecking(false);
+      return;
+    }
+
+    const key = `${ONBOARDING_KEY_PREFIX}${userId}`;
+    const hasCompleted = localStorage.getItem(key);
+    
     if (!hasCompleted) {
       setShowOnboarding(true);
+    } else {
+      setShowOnboarding(false);
     }
     setIsChecking(false);
-  }, []);
+  }, [userId]);
 
   const completeOnboarding = () => {
-    localStorage.setItem(ONBOARDING_KEY, "true");
+    if (userId) {
+      const key = `${ONBOARDING_KEY_PREFIX}${userId}`;
+      localStorage.setItem(key, "true");
+    }
     setShowOnboarding(false);
   };
 
   const resetOnboarding = () => {
-    localStorage.removeItem(ONBOARDING_KEY);
-    setShowOnboarding(true);
+    if (userId) {
+      const key = `${ONBOARDING_KEY_PREFIX}${userId}`;
+      localStorage.removeItem(key);
+      setShowOnboarding(true);
+    }
   };
 
   return {
