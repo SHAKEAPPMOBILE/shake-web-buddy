@@ -35,13 +35,21 @@ export function KindHumanDonation({ onClose }: KindHumanDonationProps) {
       });
 
       if (error) throw error;
+      
+      // Check for error in response data
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
 
       if (data?.url) {
         window.location.href = data.url;
+      } else {
+        toast.error("Failed to create donation session");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating donation:", error);
-      toast.error("Failed to start donation. Please try again.");
+      toast.error(error?.message || "Failed to start donation. Please try again.");
     } finally {
       setIsLoading(false);
     }
