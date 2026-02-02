@@ -18,7 +18,7 @@ const screens = [
   {
     emoji: "🍽️",
     title: "Join Activities",
-    description: "Pick an activity like Dinner, Drinks, or a Hike and join others in your city",
+    description: "Pick an activity like Dinner, Drinks, Hike, or propose one, and join others in your city",
     icon: Users,
     color: "from-orange-500/20 to-orange-500/5",
   },
