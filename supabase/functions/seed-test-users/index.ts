@@ -776,6 +776,184 @@ Deno.serve(async (req) => {
       );
     }
   }
+  // Handle analytics action - returns comprehensive analytics data
+  if (action === "analytics") {
+    try {
+      console.log("[ADMIN] analytics: fetching comprehensive analytics data");
+      
+      // 1. Message statistics
+      const { count: activityMsgCount } = await supabaseAdmin
+        .from("activity_messages")
+        .select("*", { count: "exact", head: true });
+      
+      const { count: planMsgCount } = await supabaseAdmin
+        .from("plan_messages")
+        .select("*", { count: "exact", head: true });
+      
+      const { count: privateMsgCount } = await supabaseAdmin
+        .from("private_messages")
+        .select("*", { count: "exact", head: true });
+      
+      // Messages by month (last 12 months from all message types)
+      const { data: activityMsgs } = await supabaseAdmin
+        .from("activity_messages")
+        .select("created_at");
+      const { data: planMsgs } = await supabaseAdmin
+        .from("plan_messages")
+        .select("created_at");
+      const { data: privateMsgs } = await supabaseAdmin
+        .from("private_messages")
+        .select("created_at");
+      
+      const allMsgDates = [
+        ...(activityMsgs || []).map(m => m.created_at),
+        ...(planMsgs || []).map(m => m.created_at),
+        ...(privateMsgs || []).map(m => m.created_at),
+      ];
+      
+      const msgByMonth: Record<string, number> = {};
+      allMsgDates.forEach(dateStr => {
+        const date = new Date(dateStr);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        msgByMonth[monthKey] = (msgByMonth[monthKey] || 0) + 1;
+      });
+      
+      const messagesByMonth = Object.entries(msgByMonth)
+        .map(([month, count]) => ({ month, count }))
+        .sort((a, b) => b.month.localeCompare(a.month))
+        .slice(0, 12);
+      
+      // 2. User statistics
+      const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
+      const totalUsers = usersData?.users?.length || 0;
+      
+      // Users by country (nationality)
+      const { data: profilesNat } = await supabaseAdmin
+        .from("profiles")
+        .select("nationality");
+      
+      const countryCount: Record<string, number> = {};
+      (profilesNat || []).forEach(p => {
+        const country = p.nationality || "Not Set";
+        countryCount[country] = (countryCount[country] || 0) + 1;
+      });
+      
+      const usersByCountry = Object.entries(countryCount)
+        .map(([country, count]) => ({ country, count }))
+        .sort((a, b) => b.count - a.count);
+      
+      // Users by city (from activity_joins - where they're active)
+      const { data: joinsByCity } = await supabaseAdmin
+        .from("activity_joins")
+        .select("city, user_id");
+      
+      const cityUserSet: Record<string, Set<string>> = {};
+      (joinsByCity || []).forEach(j => {
+        if (!cityUserSet[j.city]) cityUserSet[j.city] = new Set();
+        cityUserSet[j.city].add(j.user_id);
+      });
+      
+      const usersByCity = Object.entries(cityUserSet)
+        .map(([city, users]) => ({ city, count: users.size }))
+        .sort((a, b) => b.count - a.count);
+      
+      // 3. Activity statistics
+      const { data: activities, count: totalActivities } = await supabaseAdmin
+        .from("user_activities")
+        .select("city, activity_type", { count: "exact" });
+      
+      const activitiesByCity: Record<string, number> = {};
+      const activitiesByType: Record<string, number> = {};
+      (activities || []).forEach(a => {
+        activitiesByCity[a.city] = (activitiesByCity[a.city] || 0) + 1;
+        activitiesByType[a.activity_type] = (activitiesByType[a.activity_type] || 0) + 1;
+      });
+      
+      // 4. Check-in statistics
+      const { data: checkIns, count: totalCheckIns } = await supabaseAdmin
+        .from("check_ins")
+        .select("id, user_id, venue_name, city, activity_type, check_in_date", { count: "exact" });
+      
+      const checkInsByCity: Record<string, number> = {};
+      const checkInsByVenue: Record<string, { venue: string; city: string; count: number }> = {};
+      (checkIns || []).forEach(c => {
+        checkInsByCity[c.city] = (checkInsByCity[c.city] || 0) + 1;
+        const key = `${c.venue_name}|${c.city}`;
+        if (!checkInsByVenue[key]) {
+          checkInsByVenue[key] = { venue: c.venue_name, city: c.city, count: 0 };
+        }
+        checkInsByVenue[key].count += 1;
+      });
+      
+      // Recent check-ins with user names
+      const recentCheckIns = (checkIns || [])
+        .sort((a, b) => new Date(b.check_in_date).getTime() - new Date(a.check_in_date).getTime())
+        .slice(0, 50);
+      
+      const checkInUserIds = [...new Set(recentCheckIns.map(c => c.user_id))];
+      const { data: checkInProfiles } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, name")
+        .in("user_id", checkInUserIds);
+      const checkInProfileMap = new Map(checkInProfiles?.map(p => [p.user_id, p]) || []);
+      
+      const recentCheckInsWithNames = recentCheckIns.map(c => ({
+        id: c.id,
+        venue_name: c.venue_name,
+        city: c.city,
+        activity_type: c.activity_type,
+        check_in_date: c.check_in_date,
+        user_name: checkInProfileMap.get(c.user_id)?.name || null,
+      }));
+      
+      const analyticsData = {
+        messages: {
+          total_messages: (activityMsgCount || 0) + (planMsgCount || 0) + (privateMsgCount || 0),
+          activity_messages: activityMsgCount || 0,
+          plan_messages: planMsgCount || 0,
+          private_messages: privateMsgCount || 0,
+          messages_by_month: messagesByMonth,
+        },
+        users: {
+          total_users: totalUsers,
+          users_by_country: usersByCountry,
+          users_by_city: usersByCity,
+        },
+        activities: {
+          total_activities: totalActivities || 0,
+          activities_by_city: Object.entries(activitiesByCity)
+            .map(([city, count]) => ({ city, count }))
+            .sort((a, b) => b.count - a.count),
+          activities_by_type: Object.entries(activitiesByType)
+            .map(([type, count]) => ({ type, count }))
+            .sort((a, b) => b.count - a.count),
+        },
+        check_ins: {
+          total_check_ins: totalCheckIns || 0,
+          check_ins_by_city: Object.entries(checkInsByCity)
+            .map(([city, count]) => ({ city, count }))
+            .sort((a, b) => b.count - a.count),
+          check_ins_by_venue: Object.values(checkInsByVenue)
+            .sort((a, b) => b.count - a.count),
+          recent_check_ins: recentCheckInsWithNames,
+        },
+      };
+      
+      console.log("[ADMIN] analytics: returning comprehensive data");
+      
+      return new Response(
+        JSON.stringify(analyticsData),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (err) {
+      console.error("[ADMIN] analytics error:", err);
+      return new Response(
+        JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
   if (action === "search" && query) {
     const searchQuery = query.toLowerCase();
     

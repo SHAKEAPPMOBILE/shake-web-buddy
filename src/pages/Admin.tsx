@@ -4,11 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, MapPin, DollarSign, ArrowLeft, Mail, Shield } from "lucide-react";
+import { Loader2, Users, MapPin, DollarSign, ArrowLeft, Mail, Shield, BarChart3 } from "lucide-react";
 import { VenuesTab } from "@/components/admin/VenuesTab";
 import { UsersTab } from "@/components/admin/UsersTab";
 import { PayoutsTab } from "@/components/admin/PayoutsTab";
 import { VerificationsTab } from "@/components/admin/VerificationsTab";
+import { AnalyticsTab } from "@/components/admin/AnalyticsTab";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 export default function Admin() {
@@ -281,8 +282,12 @@ export default function Admin() {
           <p className="opacity-90 mt-1">Manage users, venues, and payouts</p>
         </div>
 
-        <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+        <Tabs defaultValue="analytics" className="w-full">
+          <TabsList className="grid w-full grid-cols-5 max-w-3xl">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Analytics
+            </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -300,6 +305,10 @@ export default function Admin() {
               Venues
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics" className="mt-6">
+            <AnalyticsTab adminPassword={password} />
+          </TabsContent>
 
           <TabsContent value="users" className="mt-6">
             <UsersTab adminPassword={password} />
