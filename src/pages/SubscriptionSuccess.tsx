@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { CheckCircle, ArrowLeft } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { CheckCircle, ArrowLeft, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -9,41 +9,99 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { checkSubscription, isPremium } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
+
+  const isDonation = searchParams.get("donation") === "true";
 
   useEffect(() => {
     // Trigger confetti on mount
     triggerConfettiWaterfall();
 
-    // Auto-refresh subscription status
-    const refreshStatus = async () => {
-      setIsChecking(true);
-      await checkSubscription();
+    // Only check subscription status for non-donation flows
+    if (!isDonation) {
+      const refreshStatus = async () => {
+        setIsChecking(true);
+        await checkSubscription();
+        setIsChecking(false);
+      };
+
+      refreshStatus();
+
+      // Poll every 3 seconds for up to 30 seconds in case Stripe webhook is delayed
+      const interval = setInterval(() => {
+        checkSubscription();
+      }, 3000);
+
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+      }, 30000);
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
+    } else {
       setIsChecking(false);
-    };
-
-    refreshStatus();
-
-    // Poll every 3 seconds for up to 30 seconds in case Stripe webhook is delayed
-    const interval = setInterval(() => {
-      checkSubscription();
-    }, 3000);
-
-    const timeout = setTimeout(() => {
-      clearInterval(interval);
-    }, 30000);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [checkSubscription]);
+    }
+  }, [checkSubscription, isDonation]);
 
   const handleBack = () => {
     navigate("/", { replace: true });
   };
 
+  // Donation success view
+  if (isDonation) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Back navigation header */}
+        <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <button
+              onClick={handleBack}
+              className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <h1 className="font-semibold text-foreground">Thank You!</h1>
+          </div>
+        </header>
+
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="max-w-md w-full text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="w-20 h-20 rounded-full bg-pink-500/20 flex items-center justify-center">
+                <Heart className="w-10 h-10 text-pink-500" fill="currentColor" />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h2 className="text-3xl font-display font-bold text-foreground">
+                Thank you for your support!
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                It's so beautiful to see other people wanting us to thrive. 💚
+              </p>
+            </div>
+
+            <div className="pt-4">
+              <Button
+                onClick={() => navigate("/profile", { replace: true })}
+                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+                size="lg"
+              >
+                Go back to SHAKE
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Subscription success view (original)
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Back navigation header */}
