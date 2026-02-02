@@ -52,11 +52,6 @@ export function IOSAppLayout() {
   // State for pending paid activity to open after verification
   const [pendingPaidActivityId, setPendingPaidActivityId] = useState<string | null>(null);
 
-  // Demo onboarding for non-logged-in users
-  const [showDemoOnboarding, setShowDemoOnboarding] = useState(() => {
-    return !localStorage.getItem("shake_onboarding_demo_seen");
-  });
-
   const { user, isLoading } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
@@ -346,18 +341,6 @@ export function IOSAppLayout() {
   // Show onboarding for new users (after signup)
   if (showOnboarding && !isCheckingOnboarding && user) {
     return <OnboardingScreens onComplete={completeOnboarding} />;
-  }
-
-  // Demo onboarding for non-logged-in users (first visit)
-  if (showDemoOnboarding && !user) {
-    return (
-      <OnboardingScreens 
-        onComplete={() => {
-          localStorage.setItem("shake_onboarding_demo_seen", "true");
-          setShowDemoOnboarding(false);
-        }} 
-      />
-    );
   }
 
   return (
