@@ -238,6 +238,8 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           <p className="text-xs text-center text-muted-foreground">
             Your premium access is managed by an administrator
           </p>
+
+          <KindHumanDonation />
         </DialogContent>
       </Dialog>
     );
@@ -326,6 +328,8 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         <p className="text-xs text-center text-muted-foreground">
           By subscribing, you agree to our Terms of Service
         </p>
+
+        <KindHumanDonation />
       </DialogContent>
     </Dialog>
   );
