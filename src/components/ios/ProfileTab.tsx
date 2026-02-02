@@ -374,19 +374,13 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
                     <SuperHumanIcon size={16} />
                     <span className="text-sm font-medium text-shake-yellow">{t('profile.superHumanActive', 'Super-Human Active')}</span>
                   </div>
-                  {isManualOverride ? (
-                    <p className="text-xs text-muted-foreground">
-                      Your premium access is managed by an administrator
-                    </p>
-                  ) : (
-                    <button
-                      onClick={handleOpenBillingPortal}
-                      disabled={isBillingPortalLoading}
-                      className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-lg hover:bg-shake-green/10 transition-colors disabled:opacity-50"
-                    >
-                      {isBillingPortalLoading ? "Loading..." : t('profile.manageBilling', 'Manage in Billing Portal')}
-                    </button>
-                  )}
+                  <button
+                    onClick={handleOpenBillingPortal}
+                    disabled={isBillingPortalLoading}
+                    className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-lg hover:bg-shake-green/10 transition-colors disabled:opacity-50"
+                  >
+                    {isBillingPortalLoading ? "Loading..." : t('profile.manageBilling', 'Manage in Billing Portal')}
+                  </button>
                   <button
                     onClick={() => {
                       setShowSubscriptionDropdown(false);
