@@ -8,6 +8,7 @@ import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { ActivityConfirmationDialog } from "./ActivityConfirmationDialog";
 import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
+import { OnboardingScreens } from "./OnboardingScreens";
 
 import { PremiumDialog } from "./PremiumDialog";
 import { ProximityCheckInPopup } from "./ProximityCheckInPopup";
@@ -17,6 +18,7 @@ import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { usePrivateMessageNotifications } from "@/hooks/usePrivateMessageNotifications";
 import { useProximityCheckIn } from "@/hooks/useProximityCheckIn";
 import { usePaymentSuccessHandler } from "@/hooks/usePaymentSuccessHandler";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -54,6 +56,7 @@ export function IOSAppLayout() {
   const { selectedCity } = useCity();
   const navigate = useNavigate();
   const { joinActivity, getActivityJoinCount, activeJoins, hasUserJoined } = useActivityJoins(selectedCity);
+  const { showOnboarding, isChecking: isCheckingOnboarding, completeOnboarding } = useOnboarding();
   
   // Handle payment success from Stripe redirect
   const { isVerifying, wasSuccessful, verifiedActivityId, resetPaymentState } = usePaymentSuccessHandler();
@@ -334,6 +337,11 @@ export function IOSAppLayout() {
         );
     }
   };
+
+  // Show onboarding for new users (before anything else)
+  if (showOnboarding && !isCheckingOnboarding) {
+    return <OnboardingScreens onComplete={completeOnboarding} />;
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
