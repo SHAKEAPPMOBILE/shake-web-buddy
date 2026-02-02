@@ -10,6 +10,7 @@ interface AuthContextType {
   isPremium: boolean;
   isManualOverride: boolean;
   subscriptionEnd: string | null;
+  didJustSignUp: boolean;
   signUpWithPhone: (phone: string, name: string) => Promise<{ error: Error | null }>;
   verifyOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
   signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isPremium, setIsPremium] = useState(false);
   const [isManualOverride, setIsManualOverride] = useState(false);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [didJustSignUp, setDidJustSignUp] = useState(false);
 
   // New users can exist without rows in `profiles` / `profiles_private`.
   // Some parts of the app assume these rows exist; ensure they do right after login.
@@ -215,6 +217,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
 
+      // Detect "just signed up" without relying on a SIGNED_UP event.
+      // In this SDK, signup typically results in SIGNED_IN; we treat it as
+      // "new account" only when the user's first sign-in timestamp matches
+      // their creation timestamp (first-ever login).
+      const maybeUser = currentSession?.user;
+      const isFirstEverLogin =
+        event === "SIGNED_IN" &&
+        !!maybeUser?.created_at &&
+        !!maybeUser?.last_sign_in_at &&
+        maybeUser.created_at === maybeUser.last_sign_in_at;
+      // IMPORTANT: we deliberately do NOT persist this across refreshes.
+      setDidJustSignUp(isFirstEverLogin);
+
       if (currentSession?.user) {
         // Ensure required profile rows exist (avoids runtime crashes / 406s)
         setTimeout(() => {
@@ -244,6 +259,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
       setIsLoading(false);
+
+      // Restoring a session is not a signup flow.
+      setDidJustSignUp(false);
 
       if (existingSession?.user) {
         setTimeout(() => {
@@ -358,6 +376,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Always clear local state regardless of server response
     setUser(null);
     setSession(null);
+    setDidJustSignUp(false);
     setIsPremium(false);
     setIsManualOverride(false);
     setSubscriptionEnd(null);
@@ -372,6 +391,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isPremium,
         isManualOverride,
         subscriptionEnd,
+        didJustSignUp,
         signUpWithPhone,
         signInWithPhone,
         signInWithPassword,

@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const NEW_ACCOUNT_ONBOARDING_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
-
-export function useOnboarding(userId: string | undefined, userCreatedAt?: string) {
+export function useOnboarding(userId: string | undefined, didJustSignUp: boolean) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
@@ -15,15 +13,9 @@ export function useOnboarding(userId: string | undefined, userCreatedAt?: string
       return;
     }
 
-    // Only show onboarding immediately after signup (not on later logins)
-    const isNewAccount = (() => {
-      if (!userCreatedAt) return false;
-      const createdAtMs = new Date(userCreatedAt).getTime();
-      if (Number.isNaN(createdAtMs)) return false;
-      return Date.now() - createdAtMs < NEW_ACCOUNT_ONBOARDING_WINDOW_MS;
-    })();
-
-    if (!isNewAccount) {
+    // Only show onboarding right after a fresh signup flow.
+    // IMPORTANT: do not show it on refresh, normal login, or session restore.
+    if (!didJustSignUp) {
       setShowOnboarding(false);
       setIsChecking(false);
       return;
@@ -66,7 +58,7 @@ export function useOnboarding(userId: string | undefined, userCreatedAt?: string
     return () => {
       cancelled = true;
     };
-  }, [userId, userCreatedAt]);
+  }, [userId, didJustSignUp]);
 
   const completeOnboarding = useCallback(async () => {
     if (!userId) {
