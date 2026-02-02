@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { SuperHumanIcon } from "./SuperHumanIcon";
+import { KindHumanDonation } from "./KindHumanDonation";
 
 interface PremiumDialogProps {
   open: boolean;
@@ -191,6 +192,8 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           <p className="text-xs text-center text-muted-foreground">
             Cancel or update your subscription anytime
           </p>
+
+          <KindHumanDonation />
         </DialogContent>
       </Dialog>
     );
