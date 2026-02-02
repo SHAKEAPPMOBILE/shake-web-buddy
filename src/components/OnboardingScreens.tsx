@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Users, MessageCircle, MapPin, Sparkles } from "lucide-react";
+import { ChevronRight, Users, MessageSquare, MapPin, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface OnboardingScreensProps {
@@ -26,7 +26,7 @@ const screens = [
     emoji: "💬",
     title: "Chat & Connect",
     description: "Message your group, make plans, and get to know everyone before meeting up",
-    icon: MessageCircle,
+    icon: MessageSquare,
     color: "from-blue-500/20 to-blue-500/5",
   },
   {
