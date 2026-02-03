@@ -62,12 +62,14 @@ export interface ActivityWithDate extends ActivityType {
 }
 
 // Get activities ordered by next occurrence date (chronological from today)
+// Uses a stable sort based on the activity's defaultDay relative to current day
 export function getActivitiesWithDates(): ActivityWithDate[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const currentDayOfWeek = today.getDay();
   
-  return ACTIVITY_TYPES.map(activity => {
+  // First, calculate all the data with stable ordering
+  const activitiesWithData = ACTIVITY_TYPES.map((activity, originalIndex) => {
     const nextDate = getNextOccurrenceDate(activity.id);
     const targetDay = activity.defaultDay ?? 0;
     
@@ -82,18 +84,22 @@ export function getActivitiesWithDates(): ActivityWithDate[] {
       nextDate,
       dayNumber: nextDate.getDate(),
       dayNameShort: DAY_NAMES_SHORT[nextDate.getDay()],
-      _daysUntil: daysUntil, // Internal sorting key
+      _daysUntil: daysUntil,
+      _originalIndex: originalIndex, // Stable tie-breaker
     };
-  })
-  // Sort by days until (closest first), then by activity order for same-day ties
-  .sort((a, b) => {
+  });
+  
+  // Sort by days until (closest first), then by original index for same-day ties
+  activitiesWithData.sort((a, b) => {
     if (a._daysUntil !== b._daysUntil) {
       return a._daysUntil - b._daysUntil;
     }
-    // For same day, maintain original array order
-    return ACTIVITY_TYPES.indexOf(a) - ACTIVITY_TYPES.indexOf(b);
-  })
-  .map(({ _daysUntil, ...rest }) => rest); // Remove internal key
+    // For same day, use original array index for stable ordering
+    return a._originalIndex - b._originalIndex;
+  });
+  
+  // Remove internal keys and return
+  return activitiesWithData.map(({ _daysUntil, _originalIndex, ...rest }) => rest);
 }
 
 // Carousel activities with specific days (lunch, dinner, drinks, hike)
