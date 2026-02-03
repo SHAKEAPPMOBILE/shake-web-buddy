@@ -64,31 +64,36 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     isProposePlan?: boolean;
   };
 
-  // Get activities sorted by next occurrence date (chronological) + propose a plan option
-  // Memoized with no dependencies to ensure stable order within a session
-  const orderedActivities = useMemo((): CarouselItem[] => {
+  // FIXED ORDER - This order NEVER changes: Lunch → Drinks → Dinner → Hike → Brunch → Propose a plan
+  const CAROUSEL_ITEMS: CarouselItem[] = useMemo(() => {
     const activities = getActivitiesWithDates();
-    // Add "Propose a plan" as the last option
-    return [
-      ...activities.map(a => ({
-        id: a.id,
-        label: a.label,
-        emoji: a.emoji,
-        dayNumber: a.dayNumber,
-        nextDate: a.nextDate,
+    
+    // Map in strict fixed order
+    const fixedOrder = ['lunch', 'drinks', 'dinner', 'hike', 'brunch'];
+    const orderedItems: CarouselItem[] = fixedOrder.map(id => {
+      const activity = activities.find(a => a.id === id)!;
+      return {
+        id: activity.id,
+        label: activity.label,
+        emoji: activity.emoji,
+        dayNumber: activity.dayNumber,
+        nextDate: activity.nextDate,
         isProposePlan: false,
-      })),
-      {
-        id: 'propose-plan',
-        label: t('home.proposePlan', 'Propose a plan'),
-        emoji: '😎',
-        dayNumber: null,
-        nextDate: null,
-        isProposePlan: true,
-      }
-    ];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      };
+    });
+    
+    // Always add "Propose a plan" as the LAST item
+    orderedItems.push({
+      id: 'propose-plan',
+      label: t('home.proposePlan', 'Propose a plan'),
+      emoji: '😎',
+      dayNumber: null,
+      nextDate: null,
+      isProposePlan: true,
+    });
+    
+    return orderedItems;
+  }, [t]);
 
   // Reset to closest-by-proximity when activities are shown
   useEffect(() => {
@@ -107,7 +112,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   const handleActivitySelect = () => {
     // On iOS Safari, `onClick` can fire after touch handlers and state updates.
     // So we lock the chosen activity on pointer/touch start and use it here.
-    const activityToSelect = tappedActivityRef.current ?? orderedActivities[currentActivityIndex];
+    const activityToSelect = tappedActivityRef.current ?? CAROUSEL_ITEMS[currentActivityIndex];
 
     if (activityToSelect?.isProposePlan) {
       // Open the create activity dialog for "Propose a plan"
@@ -131,17 +136,17 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
   const goToPrevious = useCallback(() => {
     setCurrentActivityIndex(prev => 
-      prev === 0 ? orderedActivities.length - 1 : prev - 1
+      prev === 0 ? CAROUSEL_ITEMS.length - 1 : prev - 1
     );
-  }, [orderedActivities.length]);
+  }, [CAROUSEL_ITEMS.length]);
 
   const goToNext = useCallback(() => {
     setCurrentActivityIndex(prev => 
-      prev === orderedActivities.length - 1 ? 0 : prev + 1
+      prev === CAROUSEL_ITEMS.length - 1 ? 0 : prev + 1
     );
-  }, [orderedActivities.length]);
+  }, [CAROUSEL_ITEMS.length]);
 
-  const currentActivity = orderedActivities[currentActivityIndex];
+  const currentActivity = CAROUSEL_ITEMS[currentActivityIndex];
 
   // Swipe handlers
   const handleTouchStart = useCallback((e: TouchEvent) => {
@@ -303,10 +308,10 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
                 className="w-40 h-40 mx-6 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
                 onTouchStart={(e) => {
                   e.stopPropagation();
-                  tappedActivityRef.current = orderedActivities[currentActivityIndex] ?? null;
+                  tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
                 }}
                 onPointerDown={() => {
-                  tappedActivityRef.current = orderedActivities[currentActivityIndex] ?? null;
+                  tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
                 }}
                 onClick={handleActivitySelect}
               >
@@ -334,7 +339,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
             {/* Dot Indicators */}
             <div className="flex justify-center gap-2 mt-6">
-              {orderedActivities.map((_, index) => (
+              {CAROUSEL_ITEMS.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentActivityIndex(index)}
