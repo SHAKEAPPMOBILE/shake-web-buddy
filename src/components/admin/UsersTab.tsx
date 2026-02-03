@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Users, FlaskConical, UserCheck, Loader2, Eye, EyeOff, Crown, Key, Plus, Trash2 } from "lucide-react";
+import { Search, Users, FlaskConical, UserCheck, Loader2, Eye, EyeOff, Crown, Key, Plus, Trash2, UsersRound } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -133,7 +133,34 @@ function TestUserForm({ password, onUserCreated }: TestUserFormProps) {
 
 export function UsersTab({ adminPassword }: { adminPassword: string }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isBulkSeeding, setIsBulkSeeding] = useState(false);
   const { toast } = useToast();
+
+  const bulkSeedTestUsers = async () => {
+    if (!confirm("This will create 20 test users with avatars and nationalities. Continue?")) return;
+    
+    setIsBulkSeeding(true);
+    try {
+      const response = await fetch(
+        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=bulk-seed-test-users`
+      );
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({ 
+          title: "✅ Bulk seed complete!", 
+          description: `Created ${data.created} users, skipped ${data.skipped} existing` 
+        });
+        refetch();
+      } else {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error bulk seeding users", variant: "destructive" });
+    }
+    setIsBulkSeeding(false);
+  };
 
   // Fetch all users via edge function (bypasses RLS)
   const { data: allUsers = [], isLoading, refetch } = useQuery({
@@ -270,7 +297,42 @@ export function UsersTab({ adminPassword }: { adminPassword: string }) {
       </div>
 
       {/* Create Test User Form */}
-      <TestUserForm password={adminPassword} onUserCreated={() => refetch()} />
+      <div className="flex gap-4 items-start">
+        <div className="flex-1">
+          <TestUserForm password={adminPassword} onUserCreated={() => refetch()} />
+        </div>
+        <Card className="w-72">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <UsersRound className="w-4 h-4 text-indigo-600" />
+              Bulk Seed
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">
+              Create 20 test users with avatars & nationalities (USA, Colombia, Spain, France, Italy, UK, etc.)
+            </p>
+            <Button
+              onClick={bulkSeedTestUsers}
+              disabled={isBulkSeeding}
+              className="w-full bg-indigo-600 hover:bg-indigo-700"
+              size="sm"
+            >
+              {isBulkSeeding ? (
+                <>
+                  <Loader2 className="animate-spin mr-2 w-4 h-4" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <UsersRound className="mr-2 w-4 h-4" />
+                  Seed 20 Test Users
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Real Users List */}
