@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -33,7 +32,7 @@ interface ManagePlanDialogProps {
 export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) {
   const [isCanceling, setIsCanceling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const { subscriptionEnd, checkSubscription } = useAuth();
+  const { subscriptionEnd, isManualOverride, checkSubscription } = useAuth();
   const isMobile = useIsMobile();
 
   const swipeHandlers = useSwipeToClose({
@@ -96,9 +95,6 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
             <DialogTitle className="text-center text-xl font-display">
               Your Plan
             </DialogTitle>
-            <DialogDescription className="text-center text-muted-foreground text-sm">
-              Manage your Super-Human subscription
-            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -127,18 +123,29 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
               )}
             </div>
 
-            {/* Cancel button */}
-            <Button
-              variant="outline"
-              className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setShowCancelConfirm(true)}
-            >
-              Cancel Subscription
-            </Button>
+            {/* Cancel button - only show for Stripe-managed subscriptions */}
+            {!isManualOverride && (
+              <>
+                <Button
+                  variant="outline"
+                  className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setShowCancelConfirm(true)}
+                >
+                  Cancel Subscription
+                </Button>
 
-            <p className="text-xs text-center text-muted-foreground">
-              If you cancel, you'll keep access until your current billing period ends.
-            </p>
+                <p className="text-xs text-center text-muted-foreground">
+                  If you cancel, you'll keep access until your current billing period ends.
+                </p>
+              </>
+            )}
+
+            {/* Admin-managed message */}
+            {isManualOverride && (
+              <p className="text-xs text-center text-muted-foreground">
+                Your subscription is managed by an administrator.
+              </p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
