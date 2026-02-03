@@ -19,7 +19,7 @@ import { usePrivateMessageNotifications } from "@/hooks/usePrivateMessageNotific
 import { useProximityCheckIn } from "@/hooks/useProximityCheckIn";
 import { usePaymentSuccessHandler } from "@/hooks/usePaymentSuccessHandler";
 import { useOnboarding } from "@/hooks/useOnboarding";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,10 +51,14 @@ export function IOSAppLayout() {
   
   // State for pending paid activity to open after verification
   const [pendingPaidActivityId, setPendingPaidActivityId] = useState<string | null>(null);
+  
+  // State for opening subscription dropdown from navigation state
+  const [openSubscriptionOnMount, setOpenSubscriptionOnMount] = useState(false);
 
   const { user, isLoading, didJustSignUp } = useAuth();
   const { selectedCity } = useCity();
   const navigate = useNavigate();
+  const location = useLocation();
   const { joinActivity, getActivityJoinCount, activeJoins, hasUserJoined } = useActivityJoins(selectedCity);
   const { showOnboarding, isChecking: isCheckingOnboarding, completeOnboarding } = useOnboarding(user?.id, didJustSignUp);
   
@@ -70,6 +74,17 @@ export function IOSAppLayout() {
       resetPaymentState();
     }
   }, [wasSuccessful, verifiedActivityId, resetPaymentState]);
+  
+  // Handle navigation state for opening profile tab with subscription dialog
+  useEffect(() => {
+    const state = location.state as { openTab?: string; openSubscription?: boolean } | null;
+    if (state?.openTab === "profile" && state?.openSubscription) {
+      setActiveTab("profile");
+      setOpenSubscriptionOnMount(true);
+      // Clear the state to prevent re-triggering
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, navigate, location.pathname]);
   
   // Get active activity types the user has joined that are SCHEDULED FOR TODAY (for proximity detection)
   const userActiveActivityTypes = useMemo(() => {
@@ -325,7 +340,13 @@ export function IOSAppLayout() {
             />
           );
         }
-        return <ProfileTab onSignOut={handleSignOut} />;
+        return (
+          <ProfileTab 
+            onSignOut={handleSignOut} 
+            initialOpenSubscription={openSubscriptionOnMount}
+            onSubscriptionOpened={() => setOpenSubscriptionOnMount(false)}
+          />
+        );
       default:
         return (
           <HomeTab 
