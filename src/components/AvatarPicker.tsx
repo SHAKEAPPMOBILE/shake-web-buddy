@@ -60,20 +60,20 @@ const localAvatarOptions = [
   { id: "avatar-30", src: avatarNew30 },
 ];
 
-// Dicebear illustrated avatars (black & white style)
+// Dicebear illustrated avatars (colorful styles)
 const dicebearAvatarOptions = [
-  { id: "dicebear-1", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Emma" },
-  { id: "dicebear-2", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Carlos" },
-  { id: "dicebear-3", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Sofia" },
-  { id: "dicebear-4", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Lucas" },
-  { id: "dicebear-5", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Isabella" },
-  { id: "dicebear-6", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Diego" },
-  { id: "dicebear-7", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Valentina" },
-  { id: "dicebear-8", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Marco" },
-  { id: "dicebear-9", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Camila" },
-  { id: "dicebear-10", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Andre" },
-  { id: "dicebear-11", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Luna" },
-  { id: "dicebear-12", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Felix" },
+  { id: "dicebear-1", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Emma" },
+  { id: "dicebear-2", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Carlos" },
+  { id: "dicebear-3", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Sofia" },
+  { id: "dicebear-4", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Lucas" },
+  { id: "dicebear-5", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Isabella" },
+  { id: "dicebear-6", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Diego" },
+  { id: "dicebear-7", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Valentina" },
+  { id: "dicebear-8", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Marco" },
+  { id: "dicebear-9", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Camila" },
+  { id: "dicebear-10", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Andre" },
+  { id: "dicebear-11", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Luna" },
+  { id: "dicebear-12", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Felix" },
 ];
 
 // Combined avatar options for export
