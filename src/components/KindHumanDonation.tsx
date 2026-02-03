@@ -7,9 +7,10 @@ import { toast } from "sonner";
 
 interface KindHumanDonationProps {
   onClose?: () => void;
+  showHeader?: boolean;
 }
 
-export function KindHumanDonation({ onClose }: KindHumanDonationProps) {
+export function KindHumanDonation({ onClose, showHeader = false }: KindHumanDonationProps) {
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,18 +57,30 @@ export function KindHumanDonation({ onClose }: KindHumanDonationProps) {
   };
 
   return (
-    <div className="space-y-4 pt-4 border-t border-border">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center">
-          <Heart className="w-4 h-4 text-pink-500" />
+    <div className={`space-y-4 ${showHeader ? '' : 'pt-4 border-t border-border'}`}>
+      {showHeader && (
+        <div className="flex flex-col items-center gap-2 pb-2">
+          <div className="w-12 h-12 rounded-full bg-pink-500/20 flex items-center justify-center">
+            <Heart className="w-6 h-6 text-pink-500" />
+          </div>
+          <h2 className="text-xl font-display font-bold text-foreground">Kind Human</h2>
+          <p className="text-sm text-muted-foreground text-center">Support SHAKE</p>
         </div>
-        <div>
-          <h3 className="font-medium text-foreground">Kind Human</h3>
-          <p className="text-xs text-muted-foreground">Support SHAKE</p>
+      )}
+      
+      {!showHeader && (
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center">
+            <Heart className="w-4 h-4 text-pink-500" />
+          </div>
+          <div>
+            <h3 className="font-medium text-foreground">Kind Human</h3>
+            <p className="text-xs text-muted-foreground">Support SHAKE</p>
+          </div>
         </div>
-      </div>
+      )}
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground text-center">
         Love what we're building? Help us grow the SHAKE community with any amount you'd like to give. 💚
       </p>
 

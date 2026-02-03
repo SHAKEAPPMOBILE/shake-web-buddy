@@ -144,6 +144,23 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     }
   };
 
+  const { subscriptionEnd } = useAuth();
+  
+  // Format subscription end date for display
+  const formattedEndDate = useMemo(() => {
+    if (!subscriptionEnd) return null;
+    try {
+      const date = new Date(subscriptionEnd);
+      return date.toLocaleDateString(undefined, { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } catch {
+      return null;
+    }
+  }, [subscriptionEnd]);
+
   // If user is premium via Stripe subscription (not manual override), show management view
   if (isPremium && !isManualOverride) {
     return (
@@ -180,6 +197,12 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
             ))}
           </div>
 
+          {formattedEndDate && (
+            <p className="text-sm text-center text-muted-foreground py-2">
+              Your subscription renews on <span className="font-medium text-foreground">{formattedEndDate}</span>
+            </p>
+          )}
+
           <button
             onClick={handleManageSubscription}
             disabled={isManageLoading}
@@ -190,7 +213,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           </button>
 
           <p className="text-xs text-center text-muted-foreground">
-            Cancel or update your subscription anytime
+            Cancel anytime • You'll keep access until {formattedEndDate || "the end of your billing period"}
           </p>
 
           <KindHumanDonation />
@@ -199,7 +222,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     );
   }
 
-  // If user is premium via manual override, show special message
+  // If user is premium via manual override, show only Kind Human donation (no benefits list)
   if (isPremium && isManualOverride) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -212,34 +235,8 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
           )}
-          <DialogHeader className="pb-2">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <SuperHumanIcon size={48} />
-            </div>
-            <DialogTitle className="text-center text-xl font-display">
-              You're a Super-Human! 🎉
-            </DialogTitle>
-            <DialogDescription className="text-center text-muted-foreground text-sm">
-              You have premium access with all features unlocked
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2 py-4">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-shake-green/20 flex items-center justify-center shrink-0">
-                  <Check className="w-3.5 h-3.5 text-shake-green" />
-                </div>
-                <span className="text-foreground text-sm">{feature.text}</span>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-xs text-center text-muted-foreground">
-            Your premium access is managed by an administrator
-          </p>
-
-          <KindHumanDonation />
+          
+          <KindHumanDonation showHeader />
         </DialogContent>
       </Dialog>
     );
