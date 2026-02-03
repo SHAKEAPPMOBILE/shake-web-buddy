@@ -24,35 +24,35 @@ const LAST_NAMES = [
   "Ramirez", "Lewis", "Robinson", "Walker", "Young", "Allen", "King"
 ];
 
-// Available avatar URLs from the app's assets
-const AVATAR_URLS = [
-  "/src/assets/avatar-new-1.png",
-  "/src/assets/avatar-new-2.png",
-  "/src/assets/avatar-new-3.png",
-  "/src/assets/avatar-new-4.png",
-  "/src/assets/avatar-new-5.png",
-  "/src/assets/avatar-new-6.png",
-  "/src/assets/avatar-new-7.png",
-  "/src/assets/avatar-new-8.png",
-  "/src/assets/avatar-new-9.png",
-  "/src/assets/avatar-new-11.png",
-  "/src/assets/avatar-new-12.png",
-  "/src/assets/avatar-new-13.png",
-  "/src/assets/avatar-new-14.png",
-  "/src/assets/avatar-new-15.png",
-  "/src/assets/avatar-new-16.png",
-  "/src/assets/avatar-new-17.png",
-  "/src/assets/avatar-new-18.png",
-  "/src/assets/avatar-new-20.png",
-  "/src/assets/avatar-new-21.png",
-  "/src/assets/avatar-new-22.png",
-  "/src/assets/avatar-new-23.png",
-  "/src/assets/avatar-new-24.png",
-  "/src/assets/avatar-new-25.png",
-  "/src/assets/avatar-new-26.png",
-  "/src/assets/avatar-new-27.png",
-  "/src/assets/avatar-new-28.png",
-  "/src/assets/avatar-new-30.png"
+// Available avatar URLs - using publicly accessible Dicebear avatars with diverse styles
+const getAvatarUrl = (seed: string): string => {
+  const styles = ['adventurer', 'avataaars', 'big-smile', 'lorelei', 'micah', 'notionists', 'personas'];
+  const style = styles[Math.floor(Math.random() * styles.length)];
+  return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
+};
+
+// Predefined avatar URLs for the 20 test users
+const TEST_AVATARS = [
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Liam",
+  "https://api.dicebear.com/7.x/lorelei/svg?seed=Olivia",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Noah",
+  "https://api.dicebear.com/7.x/personas/svg?seed=Ava",
+  "https://api.dicebear.com/7.x/notionists/svg?seed=Ethan",
+  "https://api.dicebear.com/7.x/big-smile/svg?seed=Sophia",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Mason",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Isabella",
+  "https://api.dicebear.com/7.x/lorelei/svg?seed=James",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Charlotte",
+  "https://api.dicebear.com/7.x/personas/svg?seed=Oliver",
+  "https://api.dicebear.com/7.x/notionists/svg?seed=Amelia",
+  "https://api.dicebear.com/7.x/big-smile/svg?seed=Benjamin",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Harper",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Elijah",
+  "https://api.dicebear.com/7.x/lorelei/svg?seed=Luna",
+  "https://api.dicebear.com/7.x/micah/svg?seed=Leo",
+  "https://api.dicebear.com/7.x/personas/svg?seed=Aria",
+  "https://api.dicebear.com/7.x/notionists/svg?seed=Jack",
 ];
 
 function getRandomName(): string {
@@ -62,7 +62,10 @@ function getRandomName(): string {
 }
 
 function getRandomAvatar(): string {
-  return AVATAR_URLS[Math.floor(Math.random() * AVATAR_URLS.length)];
+  const styles = ['adventurer', 'avataaars', 'big-smile', 'lorelei', 'micah', 'notionists', 'personas'];
+  const style = styles[Math.floor(Math.random() * styles.length)];
+  const seed = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)] + Math.random().toString(36).substring(7);
+  return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
 }
 
 Deno.serve(async (req) => {
@@ -346,26 +349,26 @@ Deno.serve(async (req) => {
   // Handle bulk-seed-test-users action - creates 20 test users with avatars and nationalities
   if (action === "bulk-seed-test-users") {
     const testUsers = [
-      { phone: "+15552010001", name: "Emma Martinez", avatar: "/src/assets/avatar-new-1.png", nationality: "United States" },
-      { phone: "+15552010002", name: "Liam Rodriguez", avatar: "/src/assets/avatar-new-2.png", nationality: "Colombia" },
-      { phone: "+15552010003", name: "Olivia Silva", avatar: "/src/assets/avatar-new-3.png", nationality: "Portugal" },
-      { phone: "+15552010004", name: "Noah Garcia", avatar: "/src/assets/avatar-new-4.png", nationality: "Spain" },
-      { phone: "+15552010005", name: "Ava Dupont", avatar: "/src/assets/avatar-new-5.png", nationality: "France" },
-      { phone: "+15552010006", name: "Ethan Rossi", avatar: "/src/assets/avatar-new-6.png", nationality: "Italy" },
-      { phone: "+15552010007", name: "Sophia Williams", avatar: "/src/assets/avatar-new-7.png", nationality: "United Kingdom" },
-      { phone: "+15552010008", name: "Mason Brown", avatar: "/src/assets/avatar-new-8.png", nationality: "United States" },
-      { phone: "+15552010009", name: "Isabella Lopez", avatar: "/src/assets/avatar-new-9.png", nationality: "Mexico" },
-      { phone: "+15552010010", name: "James Schmidt", avatar: "/src/assets/avatar-new-11.png", nationality: "Germany" },
-      { phone: "+15552010011", name: "Charlotte Santos", avatar: "/src/assets/avatar-new-12.png", nationality: "Brazil" },
-      { phone: "+15552010012", name: "Oliver Fernandez", avatar: "/src/assets/avatar-new-13.png", nationality: "Argentina" },
-      { phone: "+15552010013", name: "Amelia van Berg", avatar: "/src/assets/avatar-new-14.png", nationality: "Netherlands" },
-      { phone: "+15552010014", name: "Benjamin Kowalski", avatar: "/src/assets/avatar-new-15.png", nationality: "Poland" },
-      { phone: "+15552010015", name: "Harper Tanaka", avatar: "/src/assets/avatar-new-16.png", nationality: "Japan" },
-      { phone: "+15552010016", name: "Elijah Torres", avatar: "/src/assets/avatar-new-17.png", nationality: "Chile" },
-      { phone: "+15552010017", name: "Luna O'Brien", avatar: "/src/assets/avatar-new-18.png", nationality: "Ireland" },
-      { phone: "+15552010018", name: "Leo Andersson", avatar: "/src/assets/avatar-new-20.png", nationality: "Sweden" },
-      { phone: "+15552010019", name: "Aria Patel", avatar: "/src/assets/avatar-new-21.png", nationality: "India" },
-      { phone: "+15552010020", name: "Jack Nguyen", avatar: "/src/assets/avatar-new-22.png", nationality: "Australia" },
+      { phone: "+15552010001", name: "Emma Martinez", avatar: TEST_AVATARS[0], nationality: "United States" },
+      { phone: "+15552010002", name: "Liam Rodriguez", avatar: TEST_AVATARS[1], nationality: "Colombia" },
+      { phone: "+15552010003", name: "Olivia Silva", avatar: TEST_AVATARS[2], nationality: "Portugal" },
+      { phone: "+15552010004", name: "Noah Garcia", avatar: TEST_AVATARS[3], nationality: "Spain" },
+      { phone: "+15552010005", name: "Ava Dupont", avatar: TEST_AVATARS[4], nationality: "France" },
+      { phone: "+15552010006", name: "Ethan Rossi", avatar: TEST_AVATARS[5], nationality: "Italy" },
+      { phone: "+15552010007", name: "Sophia Williams", avatar: TEST_AVATARS[6], nationality: "United Kingdom" },
+      { phone: "+15552010008", name: "Mason Brown", avatar: TEST_AVATARS[7], nationality: "United States" },
+      { phone: "+15552010009", name: "Isabella Lopez", avatar: TEST_AVATARS[8], nationality: "Mexico" },
+      { phone: "+15552010010", name: "James Schmidt", avatar: TEST_AVATARS[9], nationality: "Germany" },
+      { phone: "+15552010011", name: "Charlotte Santos", avatar: TEST_AVATARS[10], nationality: "Brazil" },
+      { phone: "+15552010012", name: "Oliver Fernandez", avatar: TEST_AVATARS[11], nationality: "Argentina" },
+      { phone: "+15552010013", name: "Amelia van Berg", avatar: TEST_AVATARS[12], nationality: "Netherlands" },
+      { phone: "+15552010014", name: "Benjamin Kowalski", avatar: TEST_AVATARS[13], nationality: "Poland" },
+      { phone: "+15552010015", name: "Harper Tanaka", avatar: TEST_AVATARS[14], nationality: "Japan" },
+      { phone: "+15552010016", name: "Elijah Torres", avatar: TEST_AVATARS[15], nationality: "Chile" },
+      { phone: "+15552010017", name: "Luna O'Brien", avatar: TEST_AVATARS[16], nationality: "Ireland" },
+      { phone: "+15552010018", name: "Leo Andersson", avatar: TEST_AVATARS[17], nationality: "Sweden" },
+      { phone: "+15552010019", name: "Aria Patel", avatar: TEST_AVATARS[18], nationality: "India" },
+      { phone: "+15552010020", name: "Jack Nguyen", avatar: TEST_AVATARS[19], nationality: "Australia" },
     ];
 
     const defaultPassword = "Test1234!";
