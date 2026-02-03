@@ -61,45 +61,47 @@ export interface ActivityWithDate extends ActivityType {
   dayNameShort: string;
 }
 
-// Get activities ordered by next occurrence date (chronological from today)
-// Uses a stable sort based on the activity's defaultDay relative to current day
+// Fixed order for carousel: Lunch, Drinks, Dinner, Hike, Brunch
+const FIXED_CAROUSEL_ORDER = ['lunch', 'drinks', 'dinner', 'hike', 'brunch'];
+
+// Get activities in FIXED order with their next occurrence dates
 export function getActivitiesWithDates(): ActivityWithDate[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const currentDayOfWeek = today.getDay();
-  
-  // First, calculate all the data with stable ordering
-  const activitiesWithData = ACTIVITY_TYPES.map((activity, originalIndex) => {
+  return FIXED_CAROUSEL_ORDER.map(id => {
+    const activity = ACTIVITY_TYPES.find(a => a.id === id)!;
     const nextDate = getNextOccurrenceDate(activity.id);
-    const targetDay = activity.defaultDay ?? 0;
-    
-    // Calculate days until this activity (0 = today, 1 = tomorrow, etc.)
-    let daysUntil = targetDay - currentDayOfWeek;
-    if (daysUntil < 0) {
-      daysUntil += 7; // Next week
-    }
-    
     return {
       ...activity,
       nextDate,
       dayNumber: nextDate.getDate(),
       dayNameShort: DAY_NAMES_SHORT[nextDate.getDay()],
-      _daysUntil: daysUntil,
-      _originalIndex: originalIndex, // Stable tie-breaker
     };
   });
+}
+
+// Get the starting index based on which activity is closest to today
+export function getStartingIndexByProximity(): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const currentDayOfWeek = today.getDay();
   
-  // Sort by days until (closest first), then by original index for same-day ties
-  activitiesWithData.sort((a, b) => {
-    if (a._daysUntil !== b._daysUntil) {
-      return a._daysUntil - b._daysUntil;
+  let closestIndex = 0;
+  let minDaysUntil = 7;
+  
+  FIXED_CAROUSEL_ORDER.forEach((id, index) => {
+    const activity = ACTIVITY_TYPES.find(a => a.id === id);
+    if (!activity) return;
+    
+    const targetDay = activity.defaultDay ?? 0;
+    let daysUntil = targetDay - currentDayOfWeek;
+    if (daysUntil < 0) daysUntil += 7;
+    
+    if (daysUntil < minDaysUntil) {
+      minDaysUntil = daysUntil;
+      closestIndex = index;
     }
-    // For same day, use original array index for stable ordering
-    return a._originalIndex - b._originalIndex;
   });
   
-  // Remove internal keys and return
-  return activitiesWithData.map(({ _daysUntil, _originalIndex, ...rest }) => rest);
+  return closestIndex;
 }
 
 // Carousel activities with specific days (lunch, dinner, drinks, hike)

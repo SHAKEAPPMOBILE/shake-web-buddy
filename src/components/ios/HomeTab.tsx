@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEve
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getActivitiesWithDates, DAY_NAMES } from "@/data/activityTypes";
+import { getActivitiesWithDates, getStartingIndexByProximity, DAY_NAMES } from "@/data/activityTypes";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import shakeLogo from "@/assets/shake-logo-new.png";
@@ -37,7 +37,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [showTapInstruction, setShowTapInstruction] = useState(false);
-  const [currentActivityIndex, setCurrentActivityIndex] = useState(0); // Always start at 0 (first by date)
+  const [currentActivityIndex, setCurrentActivityIndex] = useState(() => getStartingIndexByProximity());
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -90,10 +90,10 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reset to first item when activities are shown
+  // Reset to closest-by-proximity when activities are shown
   useEffect(() => {
     if (showActivities) {
-      setCurrentActivityIndex(0);
+      setCurrentActivityIndex(getStartingIndexByProximity());
     }
   }, [showActivities]);
 
