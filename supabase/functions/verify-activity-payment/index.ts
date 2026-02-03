@@ -65,10 +65,10 @@ serve(async (req) => {
       });
     }
 
-    // Get activity details
+    // Get activity details including scheduled_for date
     const { data: activity, error: activityError } = await supabaseClient
       .from("user_activities")
-      .select("activity_type, city, price_amount, user_id")
+      .select("activity_type, city, price_amount, user_id, scheduled_for")
       .eq("id", activityId)
       .eq("is_active", true)
       .maybeSingle();
@@ -76,6 +76,12 @@ serve(async (req) => {
     if (activityError || !activity) {
       throw new Error("Activity not found");
     }
+
+    // Calculate expiration: for paid activities, expire after the event date
+    // Add 24 hours buffer after the scheduled date
+    const expiresAt = activity.price_amount && activity.scheduled_for
+      ? new Date(new Date(activity.scheduled_for).getTime() + 24 * 60 * 60 * 1000).toISOString()
+      : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
     // If free activity, no payment needed
     if (!activity.price_amount) {
@@ -88,6 +94,7 @@ serve(async (req) => {
           activity_id: activityId,
           activity_type: activity.activity_type,
           city: activity.city,
+          expires_at: expiresAt,
         });
 
       if (joinError) {
@@ -130,7 +137,7 @@ serve(async (req) => {
 
     logStep("Payment verified", { sessionId: completedSession.id });
 
-    // Create activity join
+    // Create activity join with proper expiration for paid events
     const { error: joinError } = await supabaseClient
       .from("activity_joins")
       .insert({
@@ -138,6 +145,7 @@ serve(async (req) => {
         activity_id: activityId,
         activity_type: activity.activity_type,
         city: activity.city,
+        expires_at: expiresAt,
       });
 
     if (joinError) {
