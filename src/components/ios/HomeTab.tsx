@@ -65,6 +65,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   };
 
   // Get activities sorted by next occurrence date (chronological) + propose a plan option
+  // Memoized with no dependencies to ensure stable order within a session
   const orderedActivities = useMemo((): CarouselItem[] => {
     const activities = getActivitiesWithDates();
     // Add "Propose a plan" as the last option
@@ -86,7 +87,8 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         isProposePlan: true,
       }
     ];
-  }, [t]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Reset to first item when activities are shown
   useEffect(() => {
