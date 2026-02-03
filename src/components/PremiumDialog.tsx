@@ -132,13 +132,20 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         throw error;
       }
 
+      // Handle error returned in the response body (500 status with JSON error)
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
       if (data?.url) {
         // Use location.href instead of window.open to avoid popup blockers on iOS/iPad
         window.location.href = data.url;
+      } else {
+        throw new Error("No portal URL received");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error opening customer portal:", error);
-      toast.error("Failed to open subscription management. Please try again.");
+      toast.error(error?.message || "Failed to open subscription management. Please try again.");
     } finally {
       setIsManageLoading(false);
     }
