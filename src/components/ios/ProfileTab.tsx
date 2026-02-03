@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PremiumDialog } from "../PremiumDialog";
+import { ManagePlanDialog } from "../ManagePlanDialog";
 import { SuperHumanIcon } from "../SuperHumanIcon";
 import { UserProfileDialog } from "../UserProfileDialog";
 import { Link } from "react-router-dom";
@@ -72,31 +73,16 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showPayPalDisconnectConfirm, setShowPayPalDisconnectConfirm] = useState(false);
   const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
-  const [isBillingPortalLoading, setIsBillingPortalLoading] = useState(false);
+  const [showManagePlanDialog, setShowManagePlanDialog] = useState(false);
   const { isConnected: stripeConnected, status: stripeStatus, email: stripeEmail, isLoading: stripeLoading, error: stripeError, startOnboarding, checkStatus: checkStripeStatus, resetAndRecreate } = useStripeConnect();
   const { isConnected: paypalConnected, paypalEmail, isLoading: paypalLoading, connectPayPal, disconnectPayPal } = usePayPalConnect();
   const { totalNet, currency, activities, isLoading: earningsLoading } = useCreatorEarnings();
   const { isVerified, isPending, isRejected, isLoading: verificationLoading } = useCreatorVerification();
   const [showIDVerificationDialog, setShowIDVerificationDialog] = useState(false);
 
-  const handleOpenBillingPortal = async () => {
-    setIsBillingPortalLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error("Error opening customer portal:", error);
-      toast({
-        title: "Error",
-        description: "Failed to open billing portal. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsBillingPortalLoading(false);
-    }
+  const handleOpenManagePlan = () => {
+    setShowSubscriptionDropdown(false);
+    setShowManagePlanDialog(true);
   };
 
   const handleStartOnboarding = (countryCode: string) => {
@@ -385,11 +371,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     <span className="text-sm font-medium text-shake-yellow">{t('profile.superHumanActive', 'Super-Human Active')}</span>
                   </div>
                   <button
-                    onClick={handleOpenBillingPortal}
-                    disabled={isBillingPortalLoading}
-                    className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-lg hover:bg-shake-green/10 transition-colors disabled:opacity-50"
+                    onClick={handleOpenManagePlan}
+                    className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-lg hover:bg-shake-green/10 transition-colors"
                   >
-                    {isBillingPortalLoading ? "Loading..." : t('profile.manageBilling', 'Manage in Billing Portal')}
+                    {t('profile.managePlan', 'Manage Plan')}
                   </button>
                   <button
                     onClick={() => {
@@ -949,6 +934,12 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       <IDVerificationDialog
         open={showIDVerificationDialog}
         onOpenChange={setShowIDVerificationDialog}
+      />
+
+      {/* Manage Plan Dialog */}
+      <ManagePlanDialog
+        open={showManagePlanDialog}
+        onOpenChange={setShowManagePlanDialog}
       />
 
     </div>
