@@ -29,7 +29,8 @@ import { Check } from "lucide-react";
 import cameraIcon from "@/assets/camera-icon.png";
 import { cn } from "@/lib/utils";
 
-export const avatarOptions = [
+// Local asset avatars
+const localAvatarOptions = [
   { id: "avatar-1", src: avatarNew1 },
   { id: "avatar-2", src: avatarNew2 },
   { id: "avatar-3", src: avatarNew3 },
@@ -59,6 +60,25 @@ export const avatarOptions = [
   { id: "avatar-30", src: avatarNew30 },
 ];
 
+// Dicebear illustrated avatars (black & white style)
+const dicebearAvatarOptions = [
+  { id: "dicebear-1", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Emma" },
+  { id: "dicebear-2", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Carlos" },
+  { id: "dicebear-3", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Sofia" },
+  { id: "dicebear-4", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Lucas" },
+  { id: "dicebear-5", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Isabella" },
+  { id: "dicebear-6", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Diego" },
+  { id: "dicebear-7", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Valentina" },
+  { id: "dicebear-8", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Marco" },
+  { id: "dicebear-9", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Camila" },
+  { id: "dicebear-10", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Andre" },
+  { id: "dicebear-11", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Luna" },
+  { id: "dicebear-12", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Felix" },
+];
+
+// Combined avatar options for export
+export const avatarOptions = [...localAvatarOptions, ...dicebearAvatarOptions];
+
 interface AvatarPickerProps {
   selectedAvatar: string | null;
   onSelectAvatar: (avatarId: string) => void;
@@ -75,14 +95,14 @@ export function AvatarPicker({
   customAvatarPreview,
 }: AvatarPickerProps) {
   return (
-    <div className="grid grid-cols-6 gap-2 max-w-sm mx-auto">
-      {/* Camera/Upload button - spans 2 columns */}
-      <div className="col-span-2 flex items-center justify-center">
+    <div className="space-y-4">
+      {/* Camera/Upload button */}
+      <div className="flex justify-center">
         <button
           type="button"
           onClick={onUploadClick}
           className={cn(
-            "relative w-14 h-14 rounded-full border-2 transition-all duration-200 overflow-hidden hover:scale-110 active:scale-95",
+            "relative w-16 h-16 rounded-full border-2 transition-all duration-200 overflow-hidden hover:scale-110 active:scale-95",
             customAvatarPreview && selectedAvatar === "custom"
               ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
               : "border-border hover:border-primary/50"
@@ -99,34 +119,60 @@ export function AvatarPicker({
               )}
             </>
           ) : (
-            <div className="w-full h-full bg-muted rounded-full flex items-center justify-center p-1.5">
+            <div className="w-full h-full bg-muted rounded-full flex items-center justify-center p-2">
               <img src={cameraIcon} alt="Upload photo" className="w-full h-full object-contain" />
             </div>
           )}
         </button>
       </div>
 
-      {/* Preset avatars */}
-      {avatarOptions.map((avatar) => (
-        <button
-          key={avatar.id}
-          type="button"
-          onClick={() => onSelectAvatar(avatar.id)}
-          className={cn(
-            "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 hover:scale-110 active:scale-95",
-            selectedAvatar === avatar.id
-              ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
-              : "border-border hover:border-primary/50"
-          )}
-        >
-          <img src={avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
-          {selectedAvatar === avatar.id && (
-            <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
-              <Check className="w-4 h-4 text-shake-green" />
-            </div>
-          )}
-        </button>
-      ))}
+      {/* Local asset avatars */}
+      <div className="grid grid-cols-6 gap-2 max-w-sm mx-auto">
+        {localAvatarOptions.map((avatar) => (
+          <button
+            key={avatar.id}
+            type="button"
+            onClick={() => onSelectAvatar(avatar.id)}
+            className={cn(
+              "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 hover:scale-110 active:scale-95",
+              selectedAvatar === avatar.id
+                ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
+                : "border-border hover:border-primary/50"
+            )}
+          >
+            <img src={avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
+            {selectedAvatar === avatar.id && (
+              <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
+                <Check className="w-4 h-4 text-shake-green" />
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Dicebear illustrated avatars */}
+      <div className="grid grid-cols-6 gap-2 max-w-sm mx-auto">
+        {dicebearAvatarOptions.map((avatar) => (
+          <button
+            key={avatar.id}
+            type="button"
+            onClick={() => onSelectAvatar(avatar.id)}
+            className={cn(
+              "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 hover:scale-110 active:scale-95 bg-white",
+              selectedAvatar === avatar.id
+                ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
+                : "border-border hover:border-primary/50"
+            )}
+          >
+            <img src={avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
+            {selectedAvatar === avatar.id && (
+              <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
+                <Check className="w-4 h-4 text-shake-green" />
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
