@@ -519,7 +519,9 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
 
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-white">{getActivityLabel(activity.activity_type)}</h3>
+                    <h3 className="font-semibold text-white">
+                      {activity.is_plan && activity.note ? activity.note : getActivityLabel(activity.activity_type)}
+                    </h3>
                     {activity.is_plan && (
                       <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
                         {t('common.plan')}
