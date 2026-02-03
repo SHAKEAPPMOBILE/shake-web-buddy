@@ -60,23 +60,39 @@ const localAvatarOptions = [
   { id: "avatar-30", src: avatarNew30 },
 ];
 
-// Dicebear illustrated avatars (colorful styles)
+// Dicebear illustrated avatars (all styles used in the app)
 const dicebearAvatarOptions = [
-  { id: "dicebear-1", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Emma" },
-  { id: "dicebear-2", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Carlos" },
-  { id: "dicebear-3", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Sofia" },
-  { id: "dicebear-4", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Lucas" },
-  { id: "dicebear-5", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Isabella" },
-  { id: "dicebear-6", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Diego" },
-  { id: "dicebear-7", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Valentina" },
-  { id: "dicebear-8", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Marco" },
-  { id: "dicebear-9", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Camila" },
-  { id: "dicebear-10", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Andre" },
-  { id: "dicebear-11", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Luna" },
-  { id: "dicebear-12", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Felix" },
+  // Adventurer style (colorful illustrated)
+  { id: "dicebear-adv-1", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Emma" },
+  { id: "dicebear-adv-2", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Carlos" },
+  { id: "dicebear-adv-3", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Sofia" },
+  // Avataaars style (cartoon)
+  { id: "dicebear-ava-1", src: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas" },
+  { id: "dicebear-ava-2", src: "https://api.dicebear.com/7.x/avataaars/svg?seed=Isabella" },
+  { id: "dicebear-ava-3", src: "https://api.dicebear.com/7.x/avataaars/svg?seed=Diego" },
+  // Big Smile style
+  { id: "dicebear-big-1", src: "https://api.dicebear.com/7.x/big-smile/svg?seed=Valentina" },
+  { id: "dicebear-big-2", src: "https://api.dicebear.com/7.x/big-smile/svg?seed=Marco" },
+  { id: "dicebear-big-3", src: "https://api.dicebear.com/7.x/big-smile/svg?seed=Camila" },
+  // Lorelei style (illustrated portraits)
+  { id: "dicebear-lor-1", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Andre" },
+  { id: "dicebear-lor-2", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Luna" },
+  { id: "dicebear-lor-3", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Felix" },
+  // Micah style (minimalist colorful)
+  { id: "dicebear-mic-1", src: "https://api.dicebear.com/7.x/micah/svg?seed=Maria" },
+  { id: "dicebear-mic-2", src: "https://api.dicebear.com/7.x/micah/svg?seed=Pablo" },
+  { id: "dicebear-mic-3", src: "https://api.dicebear.com/7.x/micah/svg?seed=Elena" },
+  // Notionists style (black & white illustrated)
+  { id: "dicebear-not-1", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Oliver" },
+  { id: "dicebear-not-2", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Sophie" },
+  { id: "dicebear-not-3", src: "https://api.dicebear.com/7.x/notionists/svg?seed=James" },
+  // Personas style (illustrated personas)
+  { id: "dicebear-per-1", src: "https://api.dicebear.com/7.x/personas/svg?seed=Nina" },
+  { id: "dicebear-per-2", src: "https://api.dicebear.com/7.x/personas/svg?seed=Alex" },
+  { id: "dicebear-per-3", src: "https://api.dicebear.com/7.x/personas/svg?seed=Max" },
 ];
 
-// Combined avatar options for export
+// Combined avatar options for export (local first, then Dicebear)
 export const avatarOptions = [...localAvatarOptions, ...dicebearAvatarOptions];
 
 interface AvatarPickerProps {
