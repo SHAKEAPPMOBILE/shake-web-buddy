@@ -11,7 +11,7 @@ import avatarNew11 from "@/assets/avatar-new-11.png";
 import avatarNew12 from "@/assets/avatar-new-12.png";
 import avatarNew13 from "@/assets/avatar-new-13.png";
 import avatarNew14 from "@/assets/avatar-new-14.png";
-import avatarNew15 from "@/assets/avatar-new-15.png";
+// Removed avatar-new-15 import as it's a duplicate of avatar-new-6
 import avatarNew16 from "@/assets/avatar-new-16.png";
 import avatarNew17 from "@/assets/avatar-new-17.png";
 import avatarNew18 from "@/assets/avatar-new-18.png";
@@ -44,7 +44,7 @@ const localAvatarOptions = [
   { id: "avatar-12", src: avatarNew12 },
   { id: "avatar-13", src: avatarNew13 },
   { id: "avatar-14", src: avatarNew14 },
-  { id: "avatar-15", src: avatarNew15 },
+  // Removed avatar-15 as it's a duplicate of avatar-6
   { id: "avatar-16", src: avatarNew16 },
   { id: "avatar-17", src: avatarNew17 },
   { id: "avatar-18", src: avatarNew18 },
@@ -110,6 +110,9 @@ export function AvatarPicker({
   onCameraClick,
   customAvatarPreview,
 }: AvatarPickerProps) {
+  // All avatars combined for single continuous grid
+  const allAvatars = [...localAvatarOptions, ...dicebearAvatarOptions];
+
   return (
     <div className="space-y-4">
       {/* Camera/Upload button */}
@@ -142,39 +145,16 @@ export function AvatarPicker({
         </button>
       </div>
 
-      {/* Local asset avatars */}
+      {/* All avatars in one continuous grid */}
       <div className="grid grid-cols-6 gap-2 max-w-sm mx-auto">
-        {localAvatarOptions.map((avatar) => (
+        {allAvatars.map((avatar) => (
           <button
             key={avatar.id}
             type="button"
             onClick={() => onSelectAvatar(avatar.id)}
             className={cn(
               "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 hover:scale-110 active:scale-95",
-              selectedAvatar === avatar.id
-                ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
-                : "border-border hover:border-primary/50"
-            )}
-          >
-            <img src={avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
-            {selectedAvatar === avatar.id && (
-              <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
-                <Check className="w-4 h-4 text-shake-green" />
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Dicebear illustrated avatars */}
-      <div className="grid grid-cols-6 gap-2 max-w-sm mx-auto">
-        {dicebearAvatarOptions.map((avatar) => (
-          <button
-            key={avatar.id}
-            type="button"
-            onClick={() => onSelectAvatar(avatar.id)}
-            className={cn(
-              "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 hover:scale-110 active:scale-95 bg-white",
+              avatar.id.startsWith("dicebear-") ? "bg-white" : "",
               selectedAvatar === avatar.id
                 ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
                 : "border-border hover:border-primary/50"
