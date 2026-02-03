@@ -187,7 +187,6 @@ export function UserProfileDialog({
                     ? "ring-4 ring-shake-green ring-offset-2 ring-offset-background"
                     : "border-4 border-border"
                 )}
-                disabled={!avatarUrl && !hasActiveStatus}
               >
                 {avatarUrl ? (
                   <img 
