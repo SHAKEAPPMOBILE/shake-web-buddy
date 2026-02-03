@@ -51,50 +51,49 @@ export default function SubscriptionSuccess() {
     navigate("/", { replace: true });
   };
 
+  const handleDonationBack = () => {
+    // Navigate to home with state to open profile tab and subscription dialog
+    navigate("/", { replace: true, state: { openTab: "profile", openSubscription: true } });
+  };
+
+  // Auto-redirect for donation success after 5 seconds
+  useEffect(() => {
+    if (isDonation) {
+      const timer = setTimeout(() => {
+        handleDonationBack();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isDonation]);
+
   // Donation success view
   if (isDonation) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        {/* Back navigation header */}
-        <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <button
-              onClick={handleBack}
-              className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="w-5 h-5 text-foreground" />
-            </button>
-            <h1 className="font-semibold text-foreground">Thank You!</h1>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="w-20 h-20 rounded-full bg-pink-500/20 flex items-center justify-center">
+              <Heart className="w-10 h-10 text-pink-500" fill="currentColor" />
+            </div>
           </div>
-        </header>
 
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="max-w-md w-full text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-20 h-20 rounded-full bg-pink-500/20 flex items-center justify-center">
-                <Heart className="w-10 h-10 text-pink-500" fill="currentColor" />
-              </div>
-            </div>
+          <div className="space-y-3">
+            <h2 className="text-3xl font-display font-bold text-foreground">
+              Thank you for your support!
+            </h2>
+            <p className="text-muted-foreground text-lg">
+              It's so beautiful to see other people wanting us to thrive. 💚
+            </p>
+          </div>
 
-            <div className="space-y-3">
-              <h2 className="text-3xl font-display font-bold text-foreground">
-                Thank you for your support!
-              </h2>
-              <p className="text-muted-foreground text-lg">
-                It's so beautiful to see other people wanting us to thrive. 💚
-              </p>
-            </div>
-
-            <div className="pt-4">
-              <Button
-                onClick={() => navigate("/profile", { replace: true })}
-                className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
-                size="lg"
-              >
-                Go back to SHAKE
-              </Button>
-            </div>
+          <div className="pt-4">
+            <Button
+              onClick={handleDonationBack}
+              className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
+              size="lg"
+            >
+              Go back to SHAKE
+            </Button>
           </div>
         </div>
       </div>

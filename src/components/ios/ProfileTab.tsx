@@ -43,9 +43,11 @@ import {
 
 interface ProfileTabProps {
   onSignOut?: () => void;
+  initialOpenSubscription?: boolean;
+  onSubscriptionOpened?: () => void;
 }
 
-export function ProfileTab({ onSignOut }: ProfileTabProps) {
+export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionOpened }: ProfileTabProps) {
   const { t } = useTranslation();
   const { user, isPremium, isManualOverride, signOut } = useAuth();
   const navigate = useNavigate();
@@ -201,6 +203,14 @@ export function ProfileTab({ onSignOut }: ProfileTabProps) {
     
     fetchProfile();
   }, [user]);
+
+  // Open subscription dropdown when triggered from navigation state (e.g., after donation)
+  useEffect(() => {
+    if (initialOpenSubscription && isPremium) {
+      setShowSubscriptionDropdown(true);
+      onSubscriptionOpened?.();
+    }
+  }, [initialOpenSubscription, isPremium, onSubscriptionOpened]);
 
   // When not logged in, trigger onSignOut to go to home
   if (!user) {
