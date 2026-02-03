@@ -342,6 +342,108 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+
+  // Handle bulk-seed-test-users action - creates 20 test users with avatars and nationalities
+  if (action === "bulk-seed-test-users") {
+    const testUsers = [
+      { phone: "+15552010001", name: "Emma Martinez", avatar: "/src/assets/avatar-new-1.png", nationality: "United States" },
+      { phone: "+15552010002", name: "Liam Rodriguez", avatar: "/src/assets/avatar-new-2.png", nationality: "Colombia" },
+      { phone: "+15552010003", name: "Olivia Silva", avatar: "/src/assets/avatar-new-3.png", nationality: "Portugal" },
+      { phone: "+15552010004", name: "Noah Garcia", avatar: "/src/assets/avatar-new-4.png", nationality: "Spain" },
+      { phone: "+15552010005", name: "Ava Dupont", avatar: "/src/assets/avatar-new-5.png", nationality: "France" },
+      { phone: "+15552010006", name: "Ethan Rossi", avatar: "/src/assets/avatar-new-6.png", nationality: "Italy" },
+      { phone: "+15552010007", name: "Sophia Williams", avatar: "/src/assets/avatar-new-7.png", nationality: "United Kingdom" },
+      { phone: "+15552010008", name: "Mason Brown", avatar: "/src/assets/avatar-new-8.png", nationality: "United States" },
+      { phone: "+15552010009", name: "Isabella Lopez", avatar: "/src/assets/avatar-new-9.png", nationality: "Mexico" },
+      { phone: "+15552010010", name: "James Schmidt", avatar: "/src/assets/avatar-new-11.png", nationality: "Germany" },
+      { phone: "+15552010011", name: "Charlotte Santos", avatar: "/src/assets/avatar-new-12.png", nationality: "Brazil" },
+      { phone: "+15552010012", name: "Oliver Fernandez", avatar: "/src/assets/avatar-new-13.png", nationality: "Argentina" },
+      { phone: "+15552010013", name: "Amelia van Berg", avatar: "/src/assets/avatar-new-14.png", nationality: "Netherlands" },
+      { phone: "+15552010014", name: "Benjamin Kowalski", avatar: "/src/assets/avatar-new-15.png", nationality: "Poland" },
+      { phone: "+15552010015", name: "Harper Tanaka", avatar: "/src/assets/avatar-new-16.png", nationality: "Japan" },
+      { phone: "+15552010016", name: "Elijah Torres", avatar: "/src/assets/avatar-new-17.png", nationality: "Chile" },
+      { phone: "+15552010017", name: "Luna O'Brien", avatar: "/src/assets/avatar-new-18.png", nationality: "Ireland" },
+      { phone: "+15552010018", name: "Leo Andersson", avatar: "/src/assets/avatar-new-20.png", nationality: "Sweden" },
+      { phone: "+15552010019", name: "Aria Patel", avatar: "/src/assets/avatar-new-21.png", nationality: "India" },
+      { phone: "+15552010020", name: "Jack Nguyen", avatar: "/src/assets/avatar-new-22.png", nationality: "Australia" },
+    ];
+
+    const defaultPassword = "Test1234!";
+    let created = 0;
+    let skipped = 0;
+    const results: Array<{ phone: string; status: string; userId?: string; error?: string }> = [];
+
+    // Get existing users first
+    const { data: existingUsersData } = await supabaseAdmin.auth.admin.listUsers();
+    const existingPhones = new Set(
+      existingUsersData?.users?.map(u => u.phone?.replace(/\D/g, '')) || []
+    );
+
+    for (const testUser of testUsers) {
+      const cleanPhone = testUser.phone.replace(/\D/g, '');
+      
+      // Skip if user already exists
+      if (existingPhones.has(cleanPhone)) {
+        skipped++;
+        results.push({ phone: testUser.phone, status: "skipped", error: "User already exists" });
+        continue;
+      }
+
+      try {
+        // Create new user
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          phone: testUser.phone,
+          password: defaultPassword,
+          phone_confirm: true,
+          user_metadata: { name: testUser.name, admin_password: defaultPassword }
+        });
+
+        if (createError) {
+          results.push({ phone: testUser.phone, status: "error", error: createError.message });
+          continue;
+        }
+
+        if (newUser?.user) {
+          // Create profile with name, avatar, and nationality (no social links)
+          await supabaseAdmin.from("profiles").upsert({
+            user_id: newUser.user.id,
+            name: testUser.name,
+            avatar_url: testUser.avatar,
+            nationality: testUser.nationality,
+            instagram_url: null,
+            linkedin_url: null,
+            twitter_url: null,
+          }, { onConflict: "user_id" });
+
+          // Create private profile
+          await supabaseAdmin.from("profiles_private").upsert({
+            user_id: newUser.user.id,
+            phone_number: testUser.phone,
+            premium_override: false,
+            onboarding_completed: true,
+          }, { onConflict: "user_id" });
+
+          created++;
+          results.push({ phone: testUser.phone, status: "created", userId: newUser.user.id });
+        }
+      } catch (err) {
+        results.push({ phone: testUser.phone, status: "error", error: err instanceof Error ? err.message : "Unknown error" });
+      }
+    }
+
+    console.log(`[ADMIN] bulk-seed-test-users: created ${created}, skipped ${skipped}`);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: `Created ${created} users, skipped ${skipped} existing users`,
+        created,
+        skipped,
+        results
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
   
   // Handle list-users action - returns all users with profile data
   if (action === "list-users") {
