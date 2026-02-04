@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, MapPin, Globe, User, MessageSquare, Sparkles, Settings } from "lucide-react";
+import { Check, MapPin, Globe, User, MessageSquare, Sparkles, Settings, RotateCcw } from "lucide-react";
 import shakeCoin from "@/assets/shake-coin.png";
 import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
@@ -20,6 +20,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { SuperHumanIcon } from "./SuperHumanIcon";
 import { KindHumanDonation } from "./KindHumanDonation";
+import { useInAppPurchases } from "@/hooks/useInAppPurchases";
+import { shouldUseAppleIAP } from "@/lib/platform-utils";
 
 interface PremiumDialogProps {
   open: boolean;
@@ -35,6 +37,20 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const { user, isPremium, isManualOverride } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  
+  // In-app purchases hook for native iOS
+  const {
+    isNativePlatform,
+    isPurchasing,
+    packages,
+    purchaseSubscription,
+    restorePurchases,
+    getMonthlyPackage,
+    isInitialized: isIAPInitialized,
+  } = useInAppPurchases();
+  
+  // Determine if we should use Apple IAP or Stripe
+  const useAppleIAP = shouldUseAppleIAP();
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -78,7 +94,23 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     { icon: MessageSquare, text: "Unlimited text messages" },
   ];
 
-  const handleSubscribe = async () => {
+  // Handle Apple IAP subscription
+  const handleAppleSubscribe = async () => {
+    if (!user) {
+      onOpenChange(false);
+      navigate("/auth");
+      toast.info("Please sign in to subscribe");
+      return;
+    }
+
+    const success = await purchaseSubscription();
+    if (success) {
+      onOpenChange(false);
+    }
+  };
+
+  // Handle Stripe subscription (web)
+  const handleStripeSubscribe = async () => {
     if (!user) {
       onOpenChange(false);
       navigate("/auth");
@@ -121,6 +153,14 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Unified subscribe handler
+  const handleSubscribe = useAppleIAP ? handleAppleSubscribe : handleStripeSubscribe;
+
+  // Handle restore purchases (iOS only)
+  const handleRestorePurchases = async () => {
+    await restorePurchases();
   };
 
   const handleManageSubscription = async () => {
@@ -289,7 +329,8 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           ))}
         </div>
 
-        {needsEmail && (
+        {/* Email input only needed for Stripe (web) when user has no email */}
+        {!useAppleIAP && needsEmail && (
           <div className="space-y-2">
             <Label htmlFor="checkoutEmail">Email for receipt</Label>
             <div className="relative">
@@ -320,14 +361,30 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
         <button
           onClick={handleSubscribe}
-          disabled={isLoading || !hasValidEmail}
+          disabled={isLoading || isPurchasing || (!useAppleIAP && !hasValidEmail)}
           className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50"
           style={{
             background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
           }}
         >
-          {isLoading ? "Loading..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
+          {isLoading || isPurchasing 
+            ? "Loading..." 
+            : user 
+              ? (useAppleIAP ? "Subscribe with Apple" : "Subscribe Now") 
+              : "Sign In to Subscribe"}
         </button>
+
+        {/* Restore purchases button (iOS only) */}
+        {useAppleIAP && (
+          <button
+            onClick={handleRestorePurchases}
+            disabled={isPurchasing}
+            className="w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Restore Purchases
+          </button>
+        )}
 
         <p className="text-xs text-center text-muted-foreground">
           By subscribing, you agree to our Terms of Service
