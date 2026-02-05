@@ -78,7 +78,7 @@ export function GlobalParticipantsSection() {
   const fetchRecentParticipants = async () => {
     setIsLoading(true);
 
-    // Get all users who signed up (ordered by most recent)
+    // Get all users who signed up (ordered by most recent), excluding test users
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("user_id, name, avatar_url, created_at")
@@ -97,9 +97,18 @@ export function GlobalParticipantsSection() {
       return;
     }
 
-    setTotalCount(profiles.length);
+    // Filter out test users (those with dicebear avatars which are test seeded users)
+    const realProfiles = profiles.filter(profile => {
+      // Exclude users with dicebear avatar URLs (test users)
+      if (profile.avatar_url && profile.avatar_url.includes('api.dicebear.com')) {
+        return false;
+      }
+      return true;
+    });
 
-    const allParticipants: Participant[] = profiles.map((profile) => ({
+    setTotalCount(realProfiles.length);
+
+    const allParticipants: Participant[] = realProfiles.map((profile) => ({
       user_id: profile.user_id,
       name: profile.name || null,
       avatar_url: profile.avatar_url || null,
