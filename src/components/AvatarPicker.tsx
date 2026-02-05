@@ -60,40 +60,8 @@ const localAvatarOptions = [
   { id: "avatar-30", src: avatarNew30 },
 ];
 
-// Dicebear illustrated avatars (all styles used in the app)
-const dicebearAvatarOptions = [
-  // Adventurer style (colorful illustrated)
-  { id: "dicebear-adv-1", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Emma" },
-  { id: "dicebear-adv-2", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Carlos" },
-  { id: "dicebear-adv-3", src: "https://api.dicebear.com/7.x/adventurer/svg?seed=Sofia" },
-  // Avataaars style (cartoon)
-  { id: "dicebear-ava-1", src: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas" },
-  { id: "dicebear-ava-2", src: "https://api.dicebear.com/7.x/avataaars/svg?seed=Isabella" },
-  { id: "dicebear-ava-3", src: "https://api.dicebear.com/7.x/avataaars/svg?seed=Diego" },
-  // Big Smile style
-  { id: "dicebear-big-1", src: "https://api.dicebear.com/7.x/big-smile/svg?seed=Valentina" },
-  { id: "dicebear-big-2", src: "https://api.dicebear.com/7.x/big-smile/svg?seed=Marco" },
-  { id: "dicebear-big-3", src: "https://api.dicebear.com/7.x/big-smile/svg?seed=Camila" },
-  // Lorelei style (illustrated portraits)
-  { id: "dicebear-lor-1", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Andre" },
-  { id: "dicebear-lor-2", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Luna" },
-  { id: "dicebear-lor-3", src: "https://api.dicebear.com/7.x/lorelei/svg?seed=Felix" },
-  // Micah style (minimalist colorful)
-  { id: "dicebear-mic-1", src: "https://api.dicebear.com/7.x/micah/svg?seed=Maria" },
-  { id: "dicebear-mic-2", src: "https://api.dicebear.com/7.x/micah/svg?seed=Pablo" },
-  { id: "dicebear-mic-3", src: "https://api.dicebear.com/7.x/micah/svg?seed=Elena" },
-  // Notionists style (black & white illustrated)
-  { id: "dicebear-not-1", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Oliver" },
-  { id: "dicebear-not-2", src: "https://api.dicebear.com/7.x/notionists/svg?seed=Sophie" },
-  { id: "dicebear-not-3", src: "https://api.dicebear.com/7.x/notionists/svg?seed=James" },
-  // Personas style (illustrated personas)
-  { id: "dicebear-per-1", src: "https://api.dicebear.com/7.x/personas/svg?seed=Nina" },
-  { id: "dicebear-per-2", src: "https://api.dicebear.com/7.x/personas/svg?seed=Alex" },
-  { id: "dicebear-per-3", src: "https://api.dicebear.com/7.x/personas/svg?seed=Max" },
-];
-
-// Combined avatar options for export (local first, then Dicebear)
-export const avatarOptions = [...localAvatarOptions, ...dicebearAvatarOptions];
+// Export avatar options (local only)
+export const avatarOptions = [...localAvatarOptions];
 
 interface AvatarPickerProps {
   selectedAvatar: string | null;
@@ -110,9 +78,6 @@ export function AvatarPicker({
   onCameraClick,
   customAvatarPreview,
 }: AvatarPickerProps) {
-  // All avatars combined for single continuous grid
-  const allAvatars = [...localAvatarOptions, ...dicebearAvatarOptions];
-
   return (
     <div className="space-y-4">
       {/* Camera/Upload button */}
@@ -145,16 +110,15 @@ export function AvatarPicker({
         </button>
       </div>
 
-      {/* All avatars in one continuous grid */}
+      {/* Local avatars grid */}
       <div className="grid grid-cols-6 gap-2 max-w-sm mx-auto">
-        {allAvatars.map((avatar) => (
+        {localAvatarOptions.map((avatar) => (
           <button
             key={avatar.id}
             type="button"
             onClick={() => onSelectAvatar(avatar.id)}
             className={cn(
               "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 hover:scale-110 active:scale-95",
-              avatar.id.startsWith("dicebear-") ? "bg-white" : "",
               selectedAvatar === avatar.id
                 ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
                 : "border-border hover:border-primary/50"
