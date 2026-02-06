@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type ReportReason = "spam" | "harassment" | "inappropriate_content" | "fake_profile" | "underage" | "other";
 
@@ -25,13 +26,6 @@ interface ReportUserDialogProps {
   reportedUserId: string;
   reportedUserName: string | null;
 }
-
-const REPORT_REASONS: { value: ReportReason; label: string; description: string }[] = [
-  { value: "spam", label: "Spam", description: "Promotional content or repetitive messages" },
-  { value: "harassment", label: "Harassment", description: "Bullying, threats, or abusive behavior" },
-  { value: "inappropriate_content", label: "Inappropriate Content", description: "Offensive images, language, or behavior" },
-  { value: "other", label: "Other", description: "Something else not listed above" },
-];
 
 export function ReportUserDialog({
   open,
@@ -43,6 +37,14 @@ export function ReportUserDialog({
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
+
+  const REPORT_REASONS: { value: ReportReason; label: string; description: string }[] = [
+    { value: "spam", label: t("report.spam"), description: t("report.spamDesc") },
+    { value: "harassment", label: t("report.harassment"), description: t("report.harassmentDesc") },
+    { value: "inappropriate_content", label: t("report.inappropriateContent"), description: t("report.inappropriateContentDesc") },
+    { value: "other", label: t("report.other"), description: t("report.otherDesc") },
+  ];
 
   const swipeHandlers = useSwipeToClose({
     onClose: () => handleClose(false),
@@ -52,7 +54,7 @@ export function ReportUserDialog({
 
   const handleSubmit = async () => {
     if (!reason) {
-      toast.error("Please select a reason for your report");
+      toast.error(t("report.selectReason"));
       return;
     }
 
@@ -60,7 +62,7 @@ export function ReportUserDialog({
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
-        toast.error("You must be logged in to report a user");
+        toast.error(t("report.mustBeLoggedIn"));
         return;
       }
 
@@ -73,10 +75,10 @@ export function ReportUserDialog({
 
       if (error) {
         if (error.code === "23505") {
-          toast.error("You have already reported this user");
+          toast.error(t("report.alreadyReported"));
         } else {
           console.error("Error submitting report:", error);
-          toast.error("Failed to submit report. Please try again.");
+          toast.error(t("report.submitFailed"));
         }
         return;
       }
@@ -94,13 +96,13 @@ export function ReportUserDialog({
         // Don't show error to user - report was still saved
       });
 
-      toast.success("Report submitted successfully. We'll review it shortly.");
+      toast.success(t("report.submitSuccess"));
       setReason(null);
       setDescription("");
       onOpenChange(false);
     } catch (error) {
       console.error("Error submitting report:", error);
-      toast.error("Failed to submit report. Please try again.");
+      toast.error(t("report.submitFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -132,10 +134,10 @@ export function ReportUserDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <Flag className="w-5 h-5" />
-              Report User
+              {t("report.title")}
             </DialogTitle>
             <DialogDescription>
-              Report {reportedUserName || "this user"} for violating our community guidelines.
+              {t("report.description", { name: reportedUserName || "this user" })}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -147,13 +149,13 @@ export function ReportUserDialog({
             <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
               <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">
-                False reports may result in action against your account. Only submit if you genuinely believe this user violated our guidelines.
+                {t("report.warning")}
               </p>
             </div>
 
             {/* Reason selection */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Reason for report</Label>
+              <Label className="text-sm font-medium">{t("report.reasonLabel")}</Label>
               <RadioGroup
                 value={reason || ""}
                 onValueChange={(value) => setReason(value as ReportReason)}
@@ -184,11 +186,11 @@ export function ReportUserDialog({
             {/* Additional details */}
             <div className="space-y-2">
               <Label htmlFor="description" className="text-sm font-medium">
-                Additional details (optional)
+                {t("report.additionalDetails")}
               </Label>
               <Textarea
                 id="description"
-                placeholder="Provide any additional context that might help us review this report..."
+                placeholder={t("report.placeholder")}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
@@ -211,7 +213,7 @@ export function ReportUserDialog({
               className="flex-1"
               disabled={isSubmitting}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -219,7 +221,7 @@ export function ReportUserDialog({
               className="flex-1"
               disabled={isSubmitting || !reason}
             >
-              {isSubmitting ? "Submitting..." : "Submit Report"}
+              {isSubmitting ? t("report.submitting") : t("report.submit")}
             </Button>
           </div>
         </div>

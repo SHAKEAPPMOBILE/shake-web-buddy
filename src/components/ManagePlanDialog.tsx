@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { useTranslation } from "react-i18next";
 
 interface ManagePlanDialogProps {
   open: boolean;
@@ -34,6 +35,7 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const { subscriptionEnd, isManualOverride, checkSubscription } = useAuth();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
 
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -58,8 +60,8 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success("Subscription canceled", {
-        description: `You'll keep access until ${formattedEndDate || "the end of your billing period"}.`,
+      toast.success(t("managePlan.cancelSubscription"), {
+        description: t("managePlan.cancelNote"),
       });
       
       // Refresh subscription status
@@ -93,7 +95,7 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
               <SuperHumanIcon size={48} />
             </div>
             <DialogTitle className="text-center text-xl font-display">
-              Your Plan
+              {t("managePlan.yourPlan")}
             </DialogTitle>
           </DialogHeader>
 
@@ -105,8 +107,8 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
                   <CreditCard className="w-5 h-5 text-shake-yellow" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">Super-Human</p>
-                  <p className="text-sm text-muted-foreground">$3.88/month</p>
+                  <p className="font-medium text-foreground">{t("managePlan.superHuman")}</p>
+                  <p className="text-sm text-muted-foreground">{t("managePlan.pricePerMonth")}</p>
                 </div>
               </div>
 
@@ -116,7 +118,7 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
                     <Calendar className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">Next billing date</p>
+                    <p className="font-medium text-foreground">{t("managePlan.nextBilling")}</p>
                     <p className="text-sm text-muted-foreground">{formattedEndDate}</p>
                   </div>
                 </div>
@@ -131,11 +133,11 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
                   className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => setShowCancelConfirm(true)}
                 >
-                  Cancel Subscription
+                  {t("managePlan.cancelSubscription")}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  If you cancel, you'll keep access until your current billing period ends.
+                  {t("managePlan.cancelNote")}
                 </p>
               </>
             )}
@@ -143,7 +145,7 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
             {/* Admin-managed message */}
             {isManualOverride && (
               <p className="text-xs text-center text-muted-foreground">
-                Your subscription is managed by an administrator.
+                {t("managePlan.adminManaged")}
               </p>
             )}
           </div>
@@ -159,25 +161,24 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
                 <AlertTriangle className="w-6 h-6 text-destructive" />
               </div>
             </div>
-            <AlertDialogTitle className="text-center">Cancel subscription?</AlertDialogTitle>
+            <AlertDialogTitle className="text-center">{t("managePlan.cancelConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription className="text-center">
-              You'll lose access to Super-Human features after{" "}
-              <span className="font-medium text-foreground">{formattedEndDate || "your billing period ends"}</span>.
+              {t("managePlan.cancelConfirmDesc", { date: formattedEndDate || "your billing period ends" })}
               <br />
               <br />
-              You can always resubscribe later.
+              {t("managePlan.resubscribeLater")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <AlertDialogCancel className="w-full sm:w-auto" disabled={isCanceling}>
-              Keep Subscription
+              {t("managePlan.keepSubscription")}
             </AlertDialogCancel>
             <AlertDialogAction
               className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleCancelSubscription}
               disabled={isCanceling}
             >
-              {isCanceling ? "Canceling..." : "Yes, Cancel"}
+              {isCanceling ? t("managePlan.canceling") : t("managePlan.yesCancel")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

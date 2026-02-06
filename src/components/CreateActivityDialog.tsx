@@ -27,6 +27,7 @@ import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorD
 import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -50,6 +51,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const { user, isPremium } = useAuth();
   const { createActivity, isLoading, remainingActivities, myActivities, fetchMyActivities } = useUserActivities(city);
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   const [planText, setPlanText] = useState("");
   const [priceAmount, setPriceAmount] = useState("");
@@ -184,7 +186,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
       // Check for profanity and show/hide error
       const result = checkProfanity(text);
       if (result.hasProfanity) {
-        setProfanityError("Please use appropriate language for your activity description.");
+        setProfanityError(t("createPlan.profanityWarning"));
       } else {
         setProfanityError(null);
       }
@@ -210,22 +212,22 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
             <Plus className="w-6 h-6" />
-            Propose a Plan
+            {t("createPlan.title")}
           </DialogTitle>
           <p className="text-center text-sm text-muted-foreground mt-2">
             {isPremium ? (
-              <span className="text-shake-yellow">Unlimited plans as a Super-Human ✨</span>
+              <span className="text-shake-yellow">{t("createPlan.unlimitedPlans")}</span>
             ) : canCreate ? (
-              <>You have <span className="font-bold text-primary">{remainingActivities}</span> free plan{remainingActivities !== 1 ? 's' : ''} left this month</>
+              <>{t("createPlan.freePlansLeft", { count: remainingActivities })}</>
             ) : (
-              <span className="text-destructive">You have used your free plan this month</span>
+              <span className="text-destructive">{t("createPlan.usedFreePlan")}</span>
             )}
           </p>
         </DialogHeader>
 
         {!user ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Please sign in to create activities</p>
+            <p className="text-muted-foreground">{t("createPlan.signInToCreate")}</p>
           </div>
         ) : !canCreate ? (
           <div className="text-center py-8 space-y-4">
@@ -238,9 +240,9 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               <SuperHumanIcon size={32} className="text-white" />
             </div>
             <div>
-              <p className="font-semibold text-foreground">You've used your free plan this month</p>
+              <p className="font-semibold text-foreground">{t("createPlan.usedFreePlanTitle")}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Become a Super-Human for unlimited plans
+                {t("createPlan.becomeForUnlimited")}
               </p>
             </div>
             <button 
@@ -251,7 +253,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               }}
             >
               <SuperHumanIcon size={16} />
-              Become a Super-Human
+              {t("premium.becomeSuperHuman")}
             </button>
           </div>
         ) : (
@@ -262,7 +264,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                 <Textarea
                   value={planText}
                   onChange={handleTextChange}
-                  placeholder="What do you want to do? e.g., 'Surf session this weekend' or 'Coffee and co-working tomorrow'"
+                  placeholder={t("createPlan.placeholder")}
                   maxLength={MAX_CHARACTERS}
                   className="min-h-[100px] resize-none pr-16 text-base"
                   autoFocus
@@ -284,7 +286,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             {/* Price Input (optional) */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">
-                Set a price (optional)
+                {t("createPlan.setPrice")}
               </label>
               <div className="flex gap-2">
                 <Select value={priceCurrency} onValueChange={setPriceCurrency}>
@@ -305,7 +307,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   step="0.01"
                   value={priceAmount}
                   onChange={(e) => setPriceAmount(e.target.value)}
-                  placeholder="Amount (e.g., 5)"
+                  placeholder={t("createPlan.amountPlaceholder")}
                   className="flex-1"
                 />
               </div>
@@ -315,12 +317,12 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   {isVerified ? (
                     <p className="text-xs text-green-600 flex items-center gap-1">
                       <Shield className="w-3 h-3" />
-                      ✓ ID verified
+                      {t("createPlan.idVerified")}
                     </p>
                   ) : isVerificationPending ? (
                     <p className="text-xs text-amber-600 flex items-center gap-1">
                       <Shield className="w-3 h-3" />
-                      ID verification pending
+                      {t("createPlan.idPending")}
                     </p>
                   ) : (
                     <button
@@ -329,7 +331,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                       className="text-xs text-amber-600 flex items-center gap-1 hover:text-amber-700"
                     >
                       <Shield className="w-3 h-3" />
-                      ID verification required for paid activities
+                      {t("createPlan.idRequired")}
                     </button>
                   )}
                 </div>
@@ -338,7 +340,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               {/* Payout method status */}
               {priceAmount.trim() && !hasPayoutMethod && (
                 <div className="text-xs text-amber-600 space-y-1">
-                  <p>To receive payments, connect a payout method:</p>
+                  <p>{t("createPlan.connectPayout")}</p>
                   <div className="flex gap-2">
                     <button 
                       type="button"
@@ -347,7 +349,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                     >
                       Stripe
                     </button>
-                    <span>or</span>
+                    <span>{t("common.or")}</span>
                     <button 
                       type="button"
                       onClick={() => setShowPayPalDialog(true)}
@@ -360,7 +362,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               )}
               {priceAmount.trim() && hasPayoutMethod && (
                 <p className="text-xs text-green-600">
-                  ✓ {paypalConnected ? "PayPal" : "Stripe"} connected - You'll receive 85% of each payment
+                  {t("createPlan.payoutConnected", { method: paypalConnected ? "PayPal" : "Stripe" })}
                 </p>
               )}
               
@@ -368,7 +370,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               {priceAmount.trim() && (
                 <div className="space-y-2 pt-2 border-t border-border/50">
                   <label className="text-sm font-medium text-foreground">
-                    Select event date
+                    {t("createPlan.selectEventDate")}
                   </label>
                   <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
                     <PopoverTrigger asChild>
@@ -380,7 +382,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                        {selectedDate ? format(selectedDate, "PPP") : <span>{t("createPlan.pickADate")}</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -398,7 +400,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                     </PopoverContent>
                   </Popover>
                   <p className="text-xs text-muted-foreground">
-                    The activity will be visible until this date, then removed automatically.
+                    {t("createPlan.dateVisibleNote")}
                   </p>
                 </div>
               )}
@@ -407,7 +409,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             {/* Preview - always shows user avatar */}
             {planText.trim() && (
               <div className="p-4 rounded-xl space-y-2 bg-muted/50">
-                <p className="text-sm font-medium text-foreground">Preview:</p>
+                <p className="text-sm font-medium text-foreground">{t("createPlan.preview")}</p>
                 <div className="flex items-center gap-3">
                   {/* Always show user avatar */}
                   <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
@@ -424,7 +426,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{city} • {isPaidActivity && selectedDate ? format(selectedDate, "MMM d") : "Today"}</span>
+                      <span>{city} • {isPaidActivity && selectedDate ? format(selectedDate, "MMM d") : t("common.today")}</span>
                       {priceAmount.trim() && (
                         <span className="text-green-600 font-medium">
                           {selectedCurrencySymbol}{priceAmount}
@@ -448,12 +450,12 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               {isLoading || connectLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <LoadingSpinner size="sm" />
-                  {connectLoading ? "Checking payment setup..." : "Creating..."}
+                  {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
                 </span>
               ) : needsPayoutSetup ? (
-                "Set Up Payments & Create"
+                t("createPlan.setupPayments")
               ) : (
-                "Create Plan"
+                t("createPlan.createBtn")
               )}
             </button>
           </div>

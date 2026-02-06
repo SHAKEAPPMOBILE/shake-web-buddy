@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type PublicProfile = {
   name: string | null;
@@ -13,6 +14,7 @@ type PublicProfile = {
 export default function Welcome() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -65,7 +67,7 @@ export default function Welcome() {
         {isLoading ? (
           <div className="py-10 flex flex-col items-center gap-4">
             <LoadingSpinner size="lg" />
-            <p className="text-sm text-muted-foreground">Setting things up…</p>
+            <p className="text-sm text-muted-foreground">{t("welcome.settingUp")}</p>
           </div>
         ) : (
           <>
@@ -82,9 +84,9 @@ export default function Welcome() {
               )}
             </div>
 
-            <h1 className="text-2xl font-display font-bold text-foreground">Welcome, {displayName}.</h1>
+            <h1 className="text-2xl font-display font-bold text-foreground">{t("welcome.greeting", { name: displayName })}</h1>
             <p className="mt-2 text-base text-muted-foreground">
-              Welcome to SHAKE-SOCIAL, let&apos;s have some fun!
+              {t("welcome.message")}
             </p>
 
             <div className="mt-6 h-1.5 w-full rounded-full bg-muted overflow-hidden">

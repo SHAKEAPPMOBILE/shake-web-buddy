@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { isAfricanCountry, getSmsAvailabilityMessage } from "@/data/smsEnabledCountries";
 import { countryCodes } from "@/data/countryCodes";
+import { useTranslation } from "react-i18next";
 
 import {
   Dialog,
@@ -59,8 +60,9 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
+  const { t } = useTranslation();
 
-  const title = useMemo(() => (currentPhone ? "Change phone number" : "Add phone number"), [currentPhone]);
+  const title = useMemo(() => (currentPhone ? t("changePhone.changeTitle") : t("changePhone.addTitle")), [currentPhone, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -97,7 +99,7 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
         return;
       }
 
-      toast.success("Verification code sent!");
+      toast.success(t("changePhone.codeSent", { phone: parsed.data }));
       setResendCountdown(60);
       setStep("verify");
     } catch {
@@ -150,7 +152,7 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="new-phone">Phone (E.164)</Label>
+            <Label htmlFor="new-phone">{t("changePhone.phoneLabel")}</Label>
             <Input
               id="new-phone"
               value={phone}
@@ -159,7 +161,7 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
               autoComplete="tel"
             />
             <p className="text-xs text-muted-foreground">
-              Include country code. Example: +351…, +1…, +44…
+              {t("changePhone.includeCountryCode")}
             </p>
             {(() => {
               const detectedCountry = detectCountryFromPhone(phone);
@@ -177,7 +179,7 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
 
           {step === "verify" && (
             <div className="space-y-2">
-              <Label>Verification code</Label>
+              <Label>{t("changePhone.verificationCode")}</Label>
               <InputOTP maxLength={6} value={code} onChange={setCode}>
                 <InputOTPGroup>
                   <InputOTPSlot index={0} />
@@ -188,19 +190,19 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
                   <InputOTPSlot index={5} />
                 </InputOTPGroup>
               </InputOTP>
-              <p className="text-xs text-muted-foreground">Code expires in 10 minutes.</p>
+              <p className="text-xs text-muted-foreground">{t("changePhone.codeExpires")}</p>
             </div>
           )}
 
           <div className="flex gap-2">
             {step === "enter" ? (
               <Button className="w-full" onClick={handleSendCode} disabled={isSending}>
-                {isSending ? "Sending…" : "Send code"}
+                {isSending ? t("changePhone.sending") : t("changePhone.sendCode")}
               </Button>
             ) : (
               <>
                 <Button className="flex-1" onClick={handleVerify} disabled={isVerifying}>
-                  {isVerifying ? "Verifying…" : "Verify & save"}
+                  {isVerifying ? t("changePhone.verifying") : t("changePhone.verifyAndSave")}
                 </Button>
                 <Button
                   type="button"
@@ -209,7 +211,7 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
                   onClick={handleSendCode}
                   disabled={isSending || resendCountdown > 0}
                 >
-                  {resendCountdown > 0 ? `Resend in ${resendCountdown}s` : isSending ? "Sending…" : "Resend"}
+                  {resendCountdown > 0 ? t("changePhone.resendIn", { count: resendCountdown }) : isSending ? t("changePhone.sending") : t("changePhone.resend")}
                 </Button>
               </>
             )}

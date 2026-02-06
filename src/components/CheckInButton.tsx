@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MapPin, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCheckIn } from "@/hooks/useCheckIn";
+import { useTranslation } from "react-i18next";
 
 interface CheckInButtonProps {
   activityType: string;
@@ -19,6 +20,7 @@ export function CheckInButton({
   const { checkIn, isCheckingIn, checkIfAlreadyCheckedIn } = useCheckIn();
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -46,7 +48,7 @@ export function CheckInButton({
         className={`gap-2 ${className}`}
       >
         <Loader2 className="w-4 h-4 animate-spin" />
-        <span className="hidden sm:inline">Loading...</span>
+        <span className="hidden sm:inline">{t("common.loading")}</span>
       </Button>
     );
   }
@@ -60,7 +62,7 @@ export function CheckInButton({
         className={`gap-2 bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400 ${className}`}
       >
         <Check className="w-4 h-4" />
-        <span className="hidden sm:inline">Checked in!</span>
+        <span className="hidden sm:inline">{t("checkIn.checkedIn")}</span>
         <span className="sm:hidden">✓</span>
       </Button>
     );
@@ -79,7 +81,7 @@ export function CheckInButton({
       ) : (
         <MapPin className="w-4 h-4" />
       )}
-      <span className="hidden sm:inline">Check in (+5 pts)</span>
+      <span className="hidden sm:inline">{t("checkIn.checkInPts")}</span>
       <span className="sm:hidden">+5</span>
     </Button>
   );
