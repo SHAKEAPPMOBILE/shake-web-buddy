@@ -148,16 +148,24 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
   const currentActivity = CAROUSEL_ITEMS[currentActivityIndex];
 
-  // Swipe handlers
+  // Swipe handlers — track whether a real move occurred to prevent tap-induced skips
+  const didSwipe = useRef(false);
+
   const handleTouchStart = useCallback((e: TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = e.touches[0].clientX; // Reset so taps don't use stale value
+    didSwipe.current = false;
   }, []);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     touchEndX.current = e.touches[0].clientX;
+    didSwipe.current = true;
   }, []);
 
   const handleTouchEnd = useCallback(() => {
+    // Only process if user actually swiped (moved finger), not just tapped
+    if (!didSwipe.current) return;
+
     const diff = touchStartX.current - touchEndX.current;
     const threshold = 50; // minimum swipe distance
     
