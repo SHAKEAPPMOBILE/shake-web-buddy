@@ -18,6 +18,7 @@ import { useStatusVideo } from "@/hooks/useStatusVideo";
 import { StatusVideoRecorder } from "./StatusVideoRecorder";
 import { StatusVideoViewer } from "./StatusVideoViewer";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface UserProfileDialogProps {
   open: boolean;
@@ -42,17 +43,6 @@ interface SocialLinks {
   occupation: string | null;
 }
 
-const calculateAge = (birthDate: string): number => {
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
-  return age;
-};
-
 export function UserProfileDialog({ 
   open, 
   onOpenChange, 
@@ -74,6 +64,7 @@ export function UserProfileDialog({
   const isMobile = useIsMobile();
   const { statusVideo, hasActiveStatus } = useStatusVideo(userId);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
+  const { t } = useTranslation();
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -140,7 +131,6 @@ export function UserProfileDialog({
   }, [open, userId]);
 
   const hasSocialLinks = socialLinks.instagram_url || socialLinks.linkedin_url || socialLinks.twitter_url;
-  const matched = isMatched(userId);
   const isOwnProfile = user?.id === userId;
 
   const handleMatch = () => {
@@ -172,7 +162,7 @@ export function UserProfileDialog({
             </div>
           )}
           <DialogHeader>
-            <DialogTitle className="text-center text-xl font-display">User Profile</DialogTitle>
+            <DialogTitle className="text-center text-xl font-display">{t("userProfile.title")}</DialogTitle>
           </DialogHeader>
 
           {/* Avatar and Name */}
@@ -228,7 +218,7 @@ export function UserProfileDialog({
                 onClick={() => setShowStatusRecorder(true)}
                 className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                {hasActiveStatus ? "View Status" : "Add Status"}
+                {hasActiveStatus ? t("profile.viewStatus") : t("profile.addStatus")}
               </button>
             )}
 
@@ -312,7 +302,7 @@ export function UserProfileDialog({
           <div className="border-t border-border/50 pt-4">
             <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              Recent Activity
+              {t("userProfile.recentActivity")}
             </h4>
             
             {isLoading ? (
@@ -321,7 +311,7 @@ export function UserProfileDialog({
               </div>
             ) : activityHistory.length === 0 ? (
               <p className="text-sm text-muted-foreground/70 text-center py-4">
-                No recent activity
+                {t("userProfile.noRecentActivity")}
               </p>
             ) : (
               <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -335,7 +325,7 @@ export function UserProfileDialog({
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground capitalize">
-                        {activity.activity_type}
+                        {t(`activities.${activity.activity_type}`, activity.activity_type)}
                       </p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
@@ -361,7 +351,7 @@ export function UserProfileDialog({
                 className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
               >
                 <Flag className="w-4 h-4 mr-2" />
-                Report User
+                {t("userProfile.reportUser")}
               </Button>
             </div>
           )}

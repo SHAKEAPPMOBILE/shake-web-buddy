@@ -4,6 +4,7 @@ import { MapPin, X, Loader2, Check, Sparkles } from "lucide-react";
 import { useCheckIn } from "@/hooks/useCheckIn";
 import { useState } from "react";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
+import { useTranslation } from "react-i18next";
 
 interface ProximityCheckInPopupProps {
   open: boolean;
@@ -25,6 +26,7 @@ export function ProximityCheckInPopup({
   const { checkIn, isCheckingIn, checkIfAlreadyCheckedIn } = useCheckIn();
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
   const [alreadyCheckedIn, setAlreadyCheckedIn] = useState(false);
+  const { t } = useTranslation();
 
   // Check if already checked in when opening
   const handleOpenChange = async (isOpen: boolean) => {
@@ -53,7 +55,7 @@ export function ProximityCheckInPopup({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-center justify-center">
             <MapPin className="w-5 h-5 text-shake-green" />
-            You're at {venueName}!
+            {t("checkIn.youreAt", { venue: venueName })}
           </DialogTitle>
         </DialogHeader>
 
@@ -65,7 +67,7 @@ export function ProximityCheckInPopup({
 
           {/* Distance indicator */}
           <p className="text-sm text-muted-foreground">
-            You're {distance}m away from the venue
+            {t("checkIn.distanceAway", { distance })}
           </p>
 
           {hasCheckedIn ? (
@@ -73,10 +75,10 @@ export function ProximityCheckInPopup({
               <div className="w-16 h-16 rounded-full bg-shake-green/20 flex items-center justify-center">
                 <Check className="w-8 h-8 text-shake-green" />
               </div>
-              <p className="text-lg font-semibold text-shake-green">Checked in! 🎉</p>
+              <p className="text-lg font-semibold text-shake-green">{t("checkIn.checkedIn")}</p>
               <div className="flex items-center gap-2">
                 <img src={shakeCoin} alt="Points" className="w-6 h-6" />
-                <span className="text-xl font-bold text-shake-yellow">+5 points</span>
+                <span className="text-xl font-bold text-shake-yellow">{t("checkIn.plusPoints")}</span>
               </div>
             </div>
           ) : alreadyCheckedIn ? (
@@ -84,17 +86,17 @@ export function ProximityCheckInPopup({
               <div className="w-16 h-16 rounded-full bg-shake-green/20 flex items-center justify-center">
                 <Check className="w-8 h-8 text-shake-green" />
               </div>
-              <p className="text-lg font-semibold text-foreground">Already checked in today!</p>
-              <p className="text-sm text-muted-foreground">Come back tomorrow for more points</p>
+              <p className="text-lg font-semibold text-foreground">{t("checkIn.alreadyCheckedIn")}</p>
+              <p className="text-sm text-muted-foreground">{t("checkIn.comeBackTomorrow")}</p>
             </div>
           ) : (
             <>
               {/* Points incentive */}
               <div className="flex items-center gap-2 px-4 py-2 bg-shake-yellow/20 rounded-full">
                 <Sparkles className="w-4 h-4 text-shake-yellow" />
-                <span className="text-sm font-medium">Check in to earn</span>
+                <span className="text-sm font-medium">{t("checkIn.checkInToEarn")}</span>
                 <img src={shakeCoin} alt="Points" className="w-5 h-5" />
-                <span className="font-bold text-shake-yellow">+5 points</span>
+                <span className="font-bold text-shake-yellow">{t("checkIn.plusPoints")}</span>
               </div>
 
               {/* Action buttons */}
@@ -105,7 +107,7 @@ export function ProximityCheckInPopup({
                   className="flex-1"
                 >
                   <X className="w-4 h-4 mr-2" />
-                  Later
+                  {t("checkIn.later")}
                 </Button>
                 <Button
                   onClick={handleCheckIn}
@@ -117,7 +119,7 @@ export function ProximityCheckInPopup({
                   ) : (
                     <MapPin className="w-4 h-4 mr-2" />
                   )}
-                  Check In
+                  {t("checkIn.checkInBtn")}
                 </Button>
               </div>
             </>

@@ -348,5 +348,13 @@
     "joinAnyCity": "加入任何城市的活动",
     "seeProfiles": "无限制查看其他用户的资料",
     "unlimitedMessages": "无限制文字消息"
-  }
+  },
+  "welcome": { "settingUp": "正在设置…", "greeting": "欢迎，{{name}}。", "message": "欢迎来到SHAKE-SOCIAL，让我们一起玩！" },
+  "notFound": { "title": "404", "message": "哎呀！页面未找到", "returnHome": "返回首页" },
+  "checkIn": { "youreAt": "你在{{venue}}！", "distanceAway": "你距离场馆{{distance}}米", "checkedIn": "已签到！🎉", "plusPoints": "+5积分", "alreadyCheckedIn": "今天已经签到了！", "comeBackTomorrow": "明天再来获得更多积分", "checkInToEarn": "签到赚取", "later": "稍后", "checkInBtn": "签到", "checkInPts": "签到 (+5分)" },
+  "createPlan": { "title": "提出计划", "unlimitedPlans": "超级人类无限计划 ✨", "freePlansLeft": "本月还有{{count}}个免费计划", "usedFreePlan": "本月的免费计划已用完", "signInToCreate": "请登录以创建活动", "usedFreePlanTitle": "本月的免费计划已用完", "becomeForUnlimited": "成为超级人类获得无限计划", "placeholder": "你想做什么？例如，'周末冲浪'", "setPrice": "设置价格（可选）", "amountPlaceholder": "金额（例如，5）", "idVerified": "✓ 身份已验证", "idPending": "身份验证审核中", "idRequired": "付费活动需要身份验证", "connectPayout": "要接收付款，请连接支付方式：", "payoutConnected": "✓ {{method}} 已连接 - 您将收到每笔付款的85%", "selectEventDate": "选择活动日期", "pickADate": "选择日期", "dateVisibleNote": "活动将在此日期前可见，之后自动移除。", "preview": "预览：", "createBtn": "创建计划", "setupPayments": "设置支付并创建", "creating": "创建中...", "checkingPayment": "检查支付设置...", "profanityWarning": "请在活动描述中使用适当的语言。" },
+  "userProfile": { "title": "用户资料", "recentActivity": "最近活动", "noRecentActivity": "没有最近活动", "reportUser": "举报用户" },
+  "report": { "title": "举报用户", "description": "举报{{name}}违反社区准则。", "warning": "虚假举报可能导致对您账户的处罚。请仅在您确信该用户违反了我们的准则时才提交。", "reasonLabel": "举报原因", "spam": "垃圾信息", "spamDesc": "促销内容或重复消息", "harassment": "骚扰", "harassmentDesc": "欺凌、威胁或滥用行为", "inappropriateContent": "不当内容", "inappropriateContentDesc": "冒犯性图片、语言或行为", "other": "其他", "otherDesc": "上面未列出的其他内容", "additionalDetails": "附加详情（可选）", "placeholder": "提供任何可能帮助我们审核此举报的额外信息...", "submit": "提交举报", "submitting": "提交中...", "selectReason": "请选择举报原因", "mustBeLoggedIn": "您必须登录才能举报用户", "alreadyReported": "您已经举报过此用户", "submitFailed": "举报提交失败。请重试。", "submitSuccess": "举报提交成功。我们将尽快审核。" },
+  "changePhone": { "changeTitle": "更改电话号码", "addTitle": "添加电话号码", "phoneLabel": "电话（E.164）", "includeCountryCode": "包含国家代码。示例：+86…、+1…、+44…", "verificationCode": "验证码", "codeExpires": "验证码10分钟后过期。", "sendCode": "发送验证码", "sending": "发送中…", "verifyAndSave": "验证并保存", "verifying": "验证中…", "resend": "重新发送", "resendIn": "{{count}}秒后重新发送" },
+  "managePlan": { "yourPlan": "你的计划", "superHuman": "超级人类", "pricePerMonth": "$3.88/月", "nextBilling": "下次账单日期", "cancelSubscription": "取消订阅", "cancelNote": "如果取消，您将保留访问权限直到当前账单周期结束。", "adminManaged": "您的订阅由管理员管理。", "cancelConfirmTitle": "取消订阅？", "cancelConfirmDesc": "{{date}}之后您将失去超级人类功能的访问权限。", "resubscribeLater": "您可以随时重新订阅。", "keepSubscription": "保留订阅", "yesCancel": "是的，取消", "canceling": "取消中..." }
 }
