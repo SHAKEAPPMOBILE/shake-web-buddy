@@ -250,14 +250,24 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
             </p>
           )}
 
-          <button
-            onClick={handleManageSubscription}
-            disabled={isManageLoading}
-            className="w-full py-3 rounded-xl bg-muted text-foreground font-medium transition-all hover:bg-muted/80 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Settings className="w-4 h-4" />
-            {isManageLoading ? "Loading..." : "Manage Subscription"}
-          </button>
+          {useAppleIAP ? (
+            <button
+              onClick={() => { window.location.href = "https://apps.apple.com/account/subscriptions"; }}
+              className="w-full py-3 rounded-xl bg-muted text-foreground font-medium transition-all hover:bg-muted/80 flex items-center justify-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Manage in Apple Settings
+            </button>
+          ) : (
+            <button
+              onClick={handleManageSubscription}
+              disabled={isManageLoading}
+              className="w-full py-3 rounded-xl bg-muted text-foreground font-medium transition-all hover:bg-muted/80 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              {isManageLoading ? "Loading..." : "Manage Subscription"}
+            </button>
+          )}
 
           <p className="text-xs text-center text-muted-foreground">
             Cancel anytime • You'll keep access until {formattedEndDate || "the end of your billing period"}
