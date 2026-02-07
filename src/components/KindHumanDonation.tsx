@@ -4,19 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { shouldUseAppleIAP } from "@/lib/platform-utils";
+import { useInAppPurchases, PRODUCT_IDS } from "@/hooks/useInAppPurchases";
 
 interface KindHumanDonationProps {
   onClose?: () => void;
   showHeader?: boolean;
 }
 
+// Map quick amounts to RevenueCat product IDs for iOS
+const IOS_DONATION_TIERS = [
+  { amount: 1, label: "$1", productId: PRODUCT_IDS.KIND_HUMAN_TIER_1 },
+  { amount: 5, label: "$5", productId: PRODUCT_IDS.KIND_HUMAN_TIER_2 },
+  { amount: 10, label: "$10", productId: PRODUCT_IDS.KIND_HUMAN_TIER_3 },
+];
+
 export function KindHumanDonation({ onClose, showHeader = false }: KindHumanDonationProps) {
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const useAppleIAP = shouldUseAppleIAP();
+  const { makeDonation, isPurchasing } = useInAppPurchases();
 
-  const quickAmounts = [5, 10, 25, 50];
+  // Stripe quick amounts (web/Android)
+  const stripeQuickAmounts = [5, 10, 25, 50];
 
-  const handleDonate = async () => {
+  // Handle Stripe donation (web/Android)
+  const handleStripeDonate = async () => {
     const numAmount = parseFloat(amount);
     
     if (!numAmount || numAmount < 1) {
@@ -37,7 +50,6 @@ export function KindHumanDonation({ onClose, showHeader = false }: KindHumanDona
 
       if (error) throw error;
       
-      // Check for error in response data
       if (data?.error) {
         toast.error(data.error);
         return;
@@ -56,9 +68,18 @@ export function KindHumanDonation({ onClose, showHeader = false }: KindHumanDona
     }
   };
 
-  return (
-    <div className={`space-y-4 ${showHeader ? '' : 'pt-4 border-t border-border'}`}>
-      {showHeader && (
+  // Handle Apple IAP donation (iOS native)
+  const handleAppleDonate = async (productId: string) => {
+    const success = await makeDonation(productId);
+    if (success && onClose) {
+      onClose();
+    }
+  };
+
+  // Shared header rendering
+  const renderHeader = () => (
+    <>
+      {showHeader ? (
         <div className="flex flex-col items-center gap-2 pb-2">
           <div className="w-12 h-12 rounded-full bg-pink-500/20 flex items-center justify-center">
             <Heart className="w-6 h-6 text-pink-500" />
@@ -66,9 +87,7 @@ export function KindHumanDonation({ onClose, showHeader = false }: KindHumanDona
           <h2 className="text-xl font-display font-bold text-foreground">Kind Human</h2>
           <p className="text-sm text-muted-foreground text-center">Support SHAKE</p>
         </div>
-      )}
-      
-      {!showHeader && (
+      ) : (
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center">
             <Heart className="w-4 h-4 text-pink-500" />
@@ -83,9 +102,47 @@ export function KindHumanDonation({ onClose, showHeader = false }: KindHumanDona
       <p className="text-sm text-muted-foreground text-center">
         Love what we're building? Help us grow the SHAKE community with any amount you'd like to give. 💚
       </p>
+    </>
+  );
+
+  // iOS native IAP donation UI
+  if (useAppleIAP) {
+    return (
+      <div className={`space-y-4 ${showHeader ? '' : 'pt-4 border-t border-border'}`}>
+        {renderHeader()}
+
+        <div className="flex flex-col gap-2">
+          {IOS_DONATION_TIERS.map((tier) => (
+            <Button
+              key={tier.productId}
+              onClick={() => handleAppleDonate(tier.productId)}
+              disabled={isPurchasing}
+              variant="outline"
+              className="w-full justify-between py-3"
+            >
+              <span className="flex items-center gap-2">
+                <Heart className="w-4 h-4 text-pink-500" />
+                Support {tier.label}
+              </span>
+              <span className="text-muted-foreground text-sm">Apple Pay</span>
+            </Button>
+          ))}
+        </div>
+
+        <p className="text-xs text-center text-muted-foreground">
+          One-time support • Secure payment via Apple
+        </p>
+      </div>
+    );
+  }
+
+  // Web/Android Stripe donation UI
+  return (
+    <div className={`space-y-4 ${showHeader ? '' : 'pt-4 border-t border-border'}`}>
+      {renderHeader()}
 
       <div className="flex flex-wrap gap-2">
-        {quickAmounts.map((quickAmount) => (
+        {stripeQuickAmounts.map((quickAmount) => (
           <button
             key={quickAmount}
             onClick={() => setAmount(quickAmount.toString())}
@@ -114,7 +171,7 @@ export function KindHumanDonation({ onClose, showHeader = false }: KindHumanDona
       </div>
 
       <Button
-        onClick={handleDonate}
+        onClick={handleStripeDonate}
         disabled={isLoading || !amount || parseFloat(amount) < 1}
         className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:opacity-90 text-white"
       >

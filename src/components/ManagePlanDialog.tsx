@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CreditCard, Calendar, AlertTriangle } from "lucide-react";
+import { CreditCard, Calendar, AlertTriangle, ExternalLink } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useTranslation } from "react-i18next";
+import { shouldUseAppleIAP } from "@/lib/platform-utils";
 
 interface ManagePlanDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
   const { subscriptionEnd, isManualOverride, checkSubscription } = useAuth();
   const isMobile = useIsMobile();
   const { t } = useTranslation();
+  const useAppleIAP = shouldUseAppleIAP();
 
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -52,7 +54,19 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
       })
     : null;
 
+  // On iOS, direct users to Apple's subscription management
+  const handleManageAppleSubscription = () => {
+    // Deep link to iOS subscription management
+    window.location.href = "https://apps.apple.com/account/subscriptions";
+  };
+
   const handleCancelSubscription = async () => {
+    // On iOS, redirect to Apple's subscription management instead
+    if (useAppleIAP) {
+      handleManageAppleSubscription();
+      return;
+    }
+
     setIsCanceling(true);
     try {
       const { data, error } = await supabase.functions.invoke("cancel-subscription");
@@ -125,8 +139,26 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
               )}
             </div>
 
-            {/* Cancel button - only show for Stripe-managed subscriptions */}
-            {!isManualOverride && (
+            {/* On iOS, show "Manage in Settings" button instead of cancel */}
+            {useAppleIAP && !isManualOverride && (
+              <>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleManageAppleSubscription}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Manage in Apple Settings
+                </Button>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  You can cancel or change your subscription in your Apple ID settings.
+                </p>
+              </>
+            )}
+
+            {/* Cancel button - only show for Stripe-managed subscriptions (non-iOS) */}
+            {!useAppleIAP && !isManualOverride && (
               <>
                 <Button
                   variant="outline"
@@ -141,6 +173,7 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
                 </p>
               </>
             )}
+
 
             {/* Admin-managed message */}
             {isManualOverride && (
