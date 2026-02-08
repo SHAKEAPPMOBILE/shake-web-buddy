@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEve
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getActivitiesWithDates, getStartingIndexByProximity, DAY_NAMES } from "@/data/activityTypes";
+import { getActivitiesWithDates, getStartingIndexByProximity } from "@/data/activityTypes";
+import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import shakeLogo from "@/assets/shake-logo-new.png";
@@ -74,7 +75,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       const activity = activities.find(a => a.id === id)!;
       return {
         id: activity.id,
-        label: activity.label,
+        label: getTranslatedActivityLabel(t, activity.id),
         emoji: activity.emoji,
         dayNumber: activity.dayNumber,
         nextDate: activity.nextDate,
@@ -296,7 +297,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
                 </div>
               ) : (
                 <div className="text-5xl md:text-6xl font-handwritten text-foreground">
-                  {currentActivity?.dayNumber}, {currentActivity?.nextDate ? DAY_NAMES[currentActivity.nextDate.getDay()] : ''}
+                  {currentActivity?.dayNumber}, {currentActivity?.nextDate ? getTranslatedDayName(t, currentActivity.nextDate.getDay()) : ''}
                 </div>
               )}
             </div>

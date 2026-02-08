@@ -8,7 +8,8 @@ import { useVenueContext } from "@/contexts/VenueContext";
 import { WorldMap, WorldMapHandle } from "@/components/WorldMap";
 import { useAllActivities } from "@/hooks/useAllActivities";
 import { UserActivity } from "@/hooks/useUserActivities";
-import { getActivityEmoji, getActivityLabel, getActivityColor, ACTIVITY_TYPES } from "@/data/activityTypes";
+import { getActivityEmoji, getActivityColor, ACTIVITY_TYPES } from "@/data/activityTypes";
+import { getTranslatedActivityLabel } from "@/lib/activity-translations";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateActivityDialog } from "@/components/CreateActivityDialog";
@@ -21,6 +22,7 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { playDingDingSound } from "@/lib/notification-sound";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { useTranslation } from "react-i18next";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { SHAKE_CITIES } from "@/data/cities";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
@@ -33,6 +35,7 @@ interface PlansMapDialogProps {
 }
 
 export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }: PlansMapDialogProps) {
+  const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const { activities, isLoading, refetch: refetchActivities } = useAllActivities();
   const { joinActivity, hasJoinedActivity, myActivities } = useUserActivities(city);
@@ -178,7 +181,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
     if (result.success) {
       // Store joined activity info for confirmation display
       setJoinedActivityInfo({
-        label: getActivityLabel(activity.activity_type),
+        label: getTranslatedActivityLabel(t, activity.activity_type),
         emoji: getActivityEmoji(activity.activity_type),
         city: activity.city,
       });
@@ -467,7 +470,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1">
                                   <p className="font-medium text-sm truncate text-white">
-                                    {getActivityLabel(activity.activity_type)}
+                                    {getTranslatedActivityLabel(t, activity.activity_type)}
                                   </p>
                                   {isOwner && (
                                     <span className="text-[10px] px-1 py-0.5 bg-primary/10 text-primary rounded">
@@ -577,7 +580,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1">
                                   <p className="font-medium text-sm truncate text-white">
-                                    {getActivityLabel(activity.activity_type)}
+                                    {getTranslatedActivityLabel(t, activity.activity_type)}
                                   </p>
                                   {isOwner && (
                                     <span className="text-[10px] px-1 py-0.5 bg-primary/10 text-primary rounded">
@@ -633,7 +636,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold">
-                    {getActivityLabel(selectedActivity.activity_type)} in {selectedActivity.city}
+                    {getTranslatedActivityLabel(t, selectedActivity.activity_type)} in {selectedActivity.city}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {format(new Date(selectedActivity.scheduled_for), "EEEE, MMMM d 'at' h:mm a")}

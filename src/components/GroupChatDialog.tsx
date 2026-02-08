@@ -44,7 +44,8 @@ interface Message {
   created_at: string;
 }
 
-import { getActivityLabel, getActivityEmoji, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
+import { getActivityEmoji, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
+import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/activity-translations";
 
 // Helper function to get activity-specific suggestions using translations
 function useActivitySuggestions(activityType: string) {
@@ -412,7 +413,7 @@ export function GroupChatDialog({
     setIsSending(false);
   };
 
-  const title = `${getActivityLabel(activityType)} ${getActivityEmoji(activityType)}`;
+  const title = `${getTranslatedActivityLabel(t, activityType)} ${getActivityEmoji(activityType)}`;
   const { location, mapsUrl } = useActivityVenue(city, activityType);
   const formattedDate = format(currentTime, "EEEE, MMMM d");
   const formattedTime = format(currentTime, "h:mm a");
@@ -442,11 +443,11 @@ export function GroupChatDialog({
             {/* Activity name and details */}
             <div className="text-center space-y-1.5">
               <p className="text-xl font-bold text-foreground">
-                {getActivityLabel(activityType)}
+                {getTranslatedActivityLabel(t, activityType)}
               </p>
-              {getActivityDay(activityType) && (
+              {getTranslatedActivityDay(t, activityType) && (
                 <p className="text-sm text-primary font-medium">
-                  {getActivityDay(activityType)}
+                  {getTranslatedActivityDay(t, activityType)}
                 </p>
               )}
               {/* Cross-city indicator */}

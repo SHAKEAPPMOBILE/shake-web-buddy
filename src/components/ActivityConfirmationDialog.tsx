@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { SuperHumanIcon } from "@/components/SuperHumanIcon";
 import { getActivityDay } from "@/data/activityTypes";
+import { getTranslatedActivityDay } from "@/lib/activity-translations";
+import { useTranslation } from "react-i18next";
 
 interface ActivityConfirmationDialogProps {
   open: boolean;
@@ -26,6 +28,7 @@ export function ActivityConfirmationDialog({
   onConfirm,
   onExplore,
 }: ActivityConfirmationDialogProps) {
+  const { t } = useTranslation();
   const { isPremium } = useAuth();
   const [showCityPicker, setShowCityPicker] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
@@ -41,7 +44,7 @@ export function ActivityConfirmationDialog({
 
   if (!activity) return null;
 
-  const activityDay = getActivityDay(activity.id);
+  const activityDay = getTranslatedActivityDay(t, activity.id);
   const displayCity = selectedCity || currentCity;
 
   const handleChangeCity = () => {
@@ -79,10 +82,10 @@ export function ActivityConfirmationDialog({
                 <span className="text-3xl">{activity.emoji}</span>
               </div>
               <h2 className="text-xl font-display font-bold">
-                Select a city for {activity.label}
+                {t('activityDialog.selectCityFor', 'Select a city for {{activity}}', { activity: activity.label })}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                As a Super-Human, you can join activities worldwide!
+                {t('activityDialog.superHumanWorldwide', 'As a Super-Human, you can join activities worldwide!')}
               </p>
             </div>
           </div>
@@ -148,7 +151,7 @@ export function ActivityConfirmationDialog({
                 ) : (
                   <MapPin className="w-3.5 h-3.5" />
                 )}
-                <span>in {displayCity}</span>
+                <span>{t('activityDialog.inCity', 'in {{city}}', { city: displayCity })}</span>
               </div>
               {selectedCity && (
                 <button
@@ -156,7 +159,7 @@ export function ActivityConfirmationDialog({
                   className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  <span>Reset to my city</span>
+                  <span>{t('activityDialog.resetToMyCity', 'Reset to my city')}</span>
                 </button>
               )}
             </div>
@@ -187,7 +190,7 @@ export function ActivityConfirmationDialog({
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
             >
               <Globe className="w-4 h-4" />
-              <span>Join in a different city</span>
+              <span>{t('activityDialog.joinDifferentCity', 'Join in a different city')}</span>
               {!isPremium && (
                 <SuperHumanIcon className="w-4 h-4" />
               )}

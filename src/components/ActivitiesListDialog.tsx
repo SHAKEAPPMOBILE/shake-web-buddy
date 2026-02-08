@@ -4,10 +4,12 @@ import { format } from "date-fns";
 import { Calendar, MapPin, Plus, Trash2, Users, DollarSign } from "lucide-react";
 import { useUserActivities, UserActivity } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
-import { getActivityEmoji, getActivityLabel, getActivityColor, ACTIVITY_TYPES } from "@/data/activityTypes";
+import { getActivityEmoji, getActivityColor, ACTIVITY_TYPES } from "@/data/activityTypes";
+import { getTranslatedActivityLabel } from "@/lib/activity-translations";
 import { getActivityConfig } from "@/lib/activityDetection";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
@@ -40,6 +42,7 @@ export function ActivitiesListDialog({
   onCreateActivity,
   onSelectActivity,
 }: ActivitiesListDialogProps) {
+  const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const { activities, myActivities, isLoading, joinActivity, leaveActivity, deleteActivity, hasJoinedActivity } = useUserActivities(city);
   const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
@@ -126,7 +129,7 @@ export function ActivitiesListDialog({
           <DialogHeader className="shrink-0">
             <DialogTitle className="text-center text-2xl font-display flex items-center justify-center gap-2">
               <Calendar className="w-6 h-6" />
-              Plans in {city}
+              {t('plansList.plansIn', 'Plans in {{city}}', { city })}
             </DialogTitle>
           </DialogHeader>
 
@@ -138,9 +141,9 @@ export function ActivitiesListDialog({
             ) : activities.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">No upcoming plans</p>
+                <p className="text-muted-foreground">{t('plansList.noUpcomingPlans', 'No upcoming plans')}</p>
                 <p className="text-sm text-muted-foreground/70 mt-1">
-                  Be the first to propose one!
+                  {t('plansList.beFirstToPropose', 'Be the first to propose one!')}
                 </p>
               </div>
             ) : (
@@ -188,8 +191,8 @@ export function ActivitiesListDialog({
                               {displayTitle}
                             </p>
                             {isOwner && (
-                              <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full whitespace-nowrap">
-                                Yours
+                             <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full whitespace-nowrap">
+                                {t('plansList.yours', 'Yours')}
                               </span>
                             )}
                           </div>
@@ -245,11 +248,11 @@ export function ActivitiesListDialog({
                               {processingActivityId === activity.id ? (
                                 <LoadingSpinner size="sm" />
                               ) : hasJoined ? (
-                                "Joined"
+                                t('plansList.joined', 'Joined')
                               ) : activity.price_amount ? (
-                                `Pay ${activity.price_amount}`
+                                t('plansList.pay', 'Pay {{amount}}', { amount: activity.price_amount })
                               ) : (
-                                "Join"
+                                t('plansList.join', 'Join')
                               )}
                             </Button>
                           )}
@@ -274,7 +277,7 @@ export function ActivitiesListDialog({
               }}
             >
               <Plus className="w-5 h-5" />
-              Propose a Plan
+              {t('plansList.proposePlan', 'Propose a Plan')}
             </button>
           </div>
         </DialogContent>
@@ -284,15 +287,15 @@ export function ActivitiesListDialog({
       <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Activity?</AlertDialogTitle>
+            <AlertDialogTitle>{t('plansList.cancelActivity', 'Cancel Activity?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the activity and notify all participants. This action cannot be undone.
+              {t('plansList.cancelActivityDesc', 'This will remove the activity and notify all participants. This action cannot be undone.')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep Activity</AlertDialogCancel>
+            <AlertDialogCancel>{t('plansList.keepActivity', 'Keep Activity')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Cancel Activity
+              {t('plansList.cancelActivityBtn', 'Cancel Activity')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

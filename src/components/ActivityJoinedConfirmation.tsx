@@ -2,7 +2,9 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MapPin, MessageSquare, X } from "lucide-react";
 import { useActivityVenue } from "@/contexts/VenueContext";
-import { getActivityLabel, getActivityEmoji, getActivityDay } from "@/data/activityTypes";
+import { getActivityEmoji } from "@/data/activityTypes";
+import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/activity-translations";
+import { useTranslation } from "react-i18next";
 
 interface ActivityJoinedConfirmationProps {
   open: boolean;
@@ -19,9 +21,10 @@ export function ActivityJoinedConfirmation({
   city,
   onJoinGroupChat,
 }: ActivityJoinedConfirmationProps) {
+  const { t } = useTranslation();
   const emoji = getActivityEmoji(activityType);
-  const label = getActivityLabel(activityType);
-  const activityDay = getActivityDay(activityType);
+  const label = getTranslatedActivityLabel(t, activityType);
+  const activityDay = getTranslatedActivityDay(t, activityType);
   const { location: venueInfo, mapsUrl, isTBD } = useActivityVenue(city, activityType);
 
   const handleJoinChat = () => {
@@ -47,12 +50,12 @@ export function ActivityJoinedConfirmation({
           </div>
           
           <h2 className="text-xl font-display font-bold text-foreground mb-1">
-            You're in for {label}!
+            {t('joinConfirmation.youreInFor', "You're in for {{activity}}!", { activity: label })}
           </h2>
           
           {activityDay && (
             <p className="text-sm text-muted-foreground">
-              This {activityDay}
+              {t('joinConfirmation.thisDay', 'This {{day}}', { day: activityDay })}
             </p>
           )}
         </div>
@@ -66,11 +69,11 @@ export function ActivityJoinedConfirmation({
               </div>
               <div className="flex-1 min-w-0 overflow-hidden">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                  {isTBD ? "Location" : "Today's Venue"}
+                  {isTBD ? t('joinConfirmation.location', 'Location') : t('joinConfirmation.todaysVenue', "Today's Venue")}
                 </p>
                 {isTBD ? (
                   <p className="text-sm font-medium text-foreground">
-                    TBD - Vote in chat!
+                    {t('joinConfirmation.tbdVoteInChat', 'TBD - Vote in chat!')}
                   </p>
                 ) : mapsUrl ? (
                   <a
@@ -102,14 +105,14 @@ export function ActivityJoinedConfirmation({
             }}
           >
             <MessageSquare className="w-5 h-5" />
-            Join Group Chat
+            {t('joinConfirmation.joinGroupChat', 'Join Group Chat')}
           </Button>
           
           <button
             onClick={() => onOpenChange(false)}
             className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
           >
-            Maybe later
+            {t('joinConfirmation.maybeLater', 'Maybe later')}
           </button>
         </div>
       </DialogContent>

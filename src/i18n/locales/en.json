@@ -454,5 +454,49 @@
     "keepSubscription": "Keep Subscription",
     "yesCancel": "Yes, Cancel",
     "canceling": "Canceling..."
+  },
+  "activityDialog": {
+    "whatsCallingYou": "What's calling you today?",
+    "tapToCreate": "Tap to create your plan!",
+    "swipeToChoose": "Swipe to choose. Sign in to create plans!",
+    "planCreated": "{{activity}} Plan Created! 🎉",
+    "dingDing": "Ding Ding! It's time to shake!",
+    "planVisible": "Your {{activity}} plan in {{city}} is now visible on the map",
+    "planVisibleFull": "Your {{activity}} plan is now visible on the map. Others can join!",
+    "selectCityFor": "Select a city for {{activity}}",
+    "superHumanWorldwide": "As a Super-Human, you can join activities worldwide!",
+    "joinDifferentCity": "Join in a different city",
+    "resetToMyCity": "Reset to my city",
+    "inCity": "in {{city}}",
+    "signInToCreate": "Sign in to create plans and meet others!",
+    "freePlansLeft": "{{count}} free plan(s) left this month"
+  },
+  "joinConfirmation": {
+    "youreInFor": "You're in for {{activity}}!",
+    "thisDay": "This {{day}}",
+    "location": "Location",
+    "todaysVenue": "Today's Venue",
+    "tbdVoteInChat": "TBD - Vote in chat!",
+    "joinGroupChat": "Join Group Chat",
+    "maybeLater": "Maybe later"
+  },
+  "myActivities": {
+    "title": "My Activities",
+    "noActiveActivities": "No active activities",
+    "joinToChat": "Join an activity to start chatting with others"
+  },
+  "plansList": {
+    "plansIn": "Plans in {{city}}",
+    "noUpcomingPlans": "No upcoming plans",
+    "beFirstToPropose": "Be the first to propose one!",
+    "proposePlan": "Propose a Plan",
+    "cancelActivity": "Cancel Activity?",
+    "cancelActivityDesc": "This will remove the activity and notify all participants. This action cannot be undone.",
+    "keepActivity": "Keep Activity",
+    "cancelActivityBtn": "Cancel Activity",
+    "yours": "Yours",
+    "joined": "Joined",
+    "join": "Join",
+    "pay": "Pay {{amount}}"
   }
 }
