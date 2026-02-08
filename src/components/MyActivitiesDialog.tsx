@@ -1,10 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar, MapPin, MessageSquare, Users, Plane } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
-import { getActivityEmoji, getActivityLabel, ACTIVITY_TYPES } from "@/data/activityTypes";
+import { getActivityEmoji, ACTIVITY_TYPES } from "@/data/activityTypes";
+import { getTranslatedActivityLabel } from "@/lib/activity-translations";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -44,6 +46,7 @@ export function MyActivitiesDialog({
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -328,7 +331,7 @@ export function MyActivitiesDialog({
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-display flex items-center justify-center gap-2">
             <MessageSquare className="w-5 h-5" />
-            My Activities
+            {t('myActivities.title', 'My Activities')}
           </DialogTitle>
         </DialogHeader>
 
@@ -340,9 +343,9 @@ export function MyActivitiesDialog({
           ) : activities.length === 0 ? (
             <div className="text-center py-8">
               <Calendar className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground">No active activities</p>
+              <p className="text-muted-foreground">{t('myActivities.noActiveActivities', 'No active activities')}</p>
               <p className="text-sm text-muted-foreground/70 mt-1">
-                Join an activity to start chatting with others
+                {t('myActivities.joinToChat', 'Join an activity to start chatting with others')}
               </p>
             </div>
           ) : (
@@ -360,7 +363,7 @@ export function MyActivitiesDialog({
                     {(() => {
                       const activityData = ACTIVITY_TYPES.find(a => a.id === activity.activity_type);
                       return activityData?.icon ? (
-                        <img src={activityData.icon} alt={activityData.label} className="w-8 h-8 object-contain" />
+                        <img src={activityData.icon} alt={getTranslatedActivityLabel(t, activity.activity_type)} className="w-8 h-8 object-contain" />
                       ) : (
                         <span>{getActivityEmoji(activity.activity_type)}</span>
                       );
@@ -370,7 +373,7 @@ export function MyActivitiesDialog({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-white">
-                        {getActivityLabel(activity.activity_type)}
+                        {getTranslatedActivityLabel(t, activity.activity_type)}
                       </p>
                       <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1">
                         <Users className="w-3 h-3" />

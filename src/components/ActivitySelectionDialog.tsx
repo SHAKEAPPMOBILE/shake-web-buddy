@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/carousel";
 import { Check, Clock } from "lucide-react";
 import { getActivitiesWithDates, getTodayDefaultIndex } from "@/data/activityTypes";
+import { getTranslatedActivityLabel } from "@/lib/activity-translations";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { ActivityConfirmationDialog } from "@/components/ActivityConfirmationDialog";
@@ -18,6 +19,7 @@ import { playDingDingSound } from "@/lib/notification-sound";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { useTranslation } from "react-i18next";
 
 interface ActivitySelectionDialogProps {
   open: boolean;
@@ -28,6 +30,7 @@ interface ActivitySelectionDialogProps {
 }
 
 export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, onPlanCreated, city }: ActivitySelectionDialogProps) {
+  const { t } = useTranslation();
   const { getActivityJoinCount } = useActivityJoins(city);
   const { user, isPremium } = useAuth();
   const { createActivity, remainingActivities } = useUserActivities(city);
@@ -76,7 +79,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     // Always show confirmation first (even if not signed in)
     const activity = orderedActivities.find(a => a.id === activityId);
     if (activity) {
-      setPendingActivity({ id: activity.id, label: activity.label, emoji: activity.emoji });
+      setPendingActivity({ id: activity.id, label: getTranslatedActivityLabel(t, activity.id), emoji: activity.emoji });
       setShowConfirmation(true);
     }
   }, [user, isPremium, remainingActivities, orderedActivities]);
@@ -116,8 +119,8 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
       playDingDingSound();
       triggerConfettiWaterfall();
 
-      toast.success("Plan created! 🎉", {
-        description: `Your ${pendingActivity.label} plan in ${selectedCity} is now visible on the map`,
+      toast.success(t('activityDialog.planCreated', '{{activity}} Plan Created! 🎉', { activity: pendingActivity.label }), {
+        description: t('activityDialog.planVisible', 'Your {{activity}} plan in {{city}} is now visible on the map', { activity: pendingActivity.label, city: selectedCity }),
         icon: <Check className="w-4 h-4" />,
       });
 
@@ -182,10 +185,10 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
             {/* Activity name confirmation */}
             <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <h2 className="text-2xl font-display font-bold text-foreground">
-                {successActivity.label} Plan Created! 🎉
+                {t('activityDialog.planCreated', '{{activity}} Plan Created! 🎉', { activity: successActivity.label })}
               </h2>
               <p className="text-lg text-muted-foreground mt-2">
-                Ding Ding! It's time to shake!
+                {t('activityDialog.dingDing', "Ding Ding! It's time to shake!")}
               </p>
             </div>
             
@@ -198,7 +201,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
             </div>
             
             <p className="text-sm text-muted-foreground/70 text-center max-w-xs animate-fade-in" style={{ animationDelay: '0.4s' }}>
-              Your <span className="font-semibold text-foreground">{successActivity.label}</span> plan is now visible on the map. Others can join!
+              {t('activityDialog.planVisibleFull', 'Your {{activity}} plan is now visible on the map. Others can join!', { activity: successActivity.label })}
             </p>
           </div>
         </DialogContent>
@@ -219,9 +222,9 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
           </div>
         )}
         <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-display">What's calling you today?</DialogTitle>
+          <DialogTitle className="text-center text-2xl font-display">{t('activityDialog.whatsCallingYou', "What's calling you today?")}</DialogTitle>
           <p className="text-center text-sm text-muted-foreground mt-2">
-            {user ? "Tap to create your plan!" : "Swipe to choose. Sign in to create plans!"}
+            {user ? t('activityDialog.tapToCreate', 'Tap to create your plan!') : t('activityDialog.swipeToChoose', 'Swipe to choose. Sign in to create plans!')}
           </p>
         </DialogHeader>
         
@@ -270,9 +273,9 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                           {activity.icon ? (
                             <img 
                               src={activity.icon} 
-                              alt={activity.label} 
-                              className={`object-contain transition-all duration-300 relative z-10 ${isCenter ? 'w-14 h-14' : 'w-9 h-9'}`}
-                            />
+                        alt={getTranslatedActivityLabel(t, activity.id)} 
+                        className={`object-contain transition-all duration-300 relative z-10 ${isCenter ? 'w-14 h-14' : 'w-9 h-9'}`}
+                      />
                           ) : (
                             <span className={`transition-all duration-300 relative z-10 ${isCenter ? 'text-4xl' : 'text-2xl'}`}>
                               {activity.emoji}
@@ -292,7 +295,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
                           ${selectingId === activity.id ? 'text-primary font-bold' : ''}
                         `}
                       >
-                        {activity.label}
+                        {getTranslatedActivityLabel(t, activity.id)}
                       </span>
                     </button>
                   </CarouselItem>
@@ -317,12 +320,12 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
         </div>
         {!user && (
           <p className="text-center text-xs text-muted-foreground/70">
-            Sign in to create plans and meet others!
+            {t('activityDialog.signInToCreate', 'Sign in to create plans and meet others!')}
           </p>
         )}
         {user && !isPremium && remainingActivities > 0 && (
           <p className="text-center text-xs text-muted-foreground/70">
-            {remainingActivities} free {remainingActivities === 1 ? 'plan' : 'plans'} left this month
+            {t('activityDialog.freePlansLeft', '{{count}} free plan(s) left this month', { count: remainingActivities })}
           </p>
         )}
       </DialogContent>
