@@ -261,8 +261,8 @@ export function IOSAppLayout() {
 
   const handleClockAnimationComplete = useCallback(() => {
     setShowClockAnimation(false);
-    // Navigate to Plans tab after joining
-    setActiveTab("plans");
+    // Show the joined confirmation with venue info and attendee preview
+    setShowJoinedConfirmation(true);
     setShowHomeActivities(false);
   }, []);
 

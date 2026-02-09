@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
+import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -15,6 +16,7 @@ import logoShake from "@/assets/logo_shake_original_color.png";
 export function Footer() {
   const [isShaking, setIsShaking] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
+  const [showJoinedConfirmation, setShowJoinedConfirmation] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showClockAnimation, setShowClockAnimation] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
@@ -62,6 +64,11 @@ export function Footer() {
 
   const handleClockAnimationComplete = () => {
     setShowClockAnimation(false);
+    setShowJoinedConfirmation(true);
+  };
+
+  const handleJoinGroupChatFromConfirmation = () => {
+    setShowJoinedConfirmation(false);
     setShowChatDialog(true);
   };
 
@@ -155,6 +162,7 @@ export function Footer() {
 
       <ActivitySelectionDialog open={showActivityDialog} onOpenChange={setShowActivityDialog} onSelectActivity={handleSelectActivity} onPlanCreated={handlePlanCreated} city={selectedCity} />
       <ShakingClockAnimation open={showClockAnimation} onOpenChange={setShowClockAnimation} onComplete={handleClockAnimationComplete} />
+      <ActivityJoinedConfirmation open={showJoinedConfirmation} onOpenChange={setShowJoinedConfirmation} activityType={selectedActivity} city={selectedCity} onJoinGroupChat={handleJoinGroupChatFromConfirmation} />
       <GroupChatDialog open={showChatDialog} onOpenChange={setShowChatDialog} activityType={selectedActivity} onBack={handleBackToActivities} attendeeCount={getActivityJoinCount(selectedActivity)} city={selectedCity} />
       
     </>
