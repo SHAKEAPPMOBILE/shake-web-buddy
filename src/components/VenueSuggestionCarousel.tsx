@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DbVenue, getVenueTypeForActivity } from "@/hooks/useDatabaseVenues";
+import { DbVenue, getVenueTypeForActivity, getCurrentVenueForActivity } from "@/hooks/useDatabaseVenues";
 import { useVenueContext } from "@/contexts/VenueContext";
 import { useTranslation } from "react-i18next";
 
@@ -33,6 +33,14 @@ export function VenueSuggestionCarousel({
     return null;
   }
 
+  // Get the auto-suggested venue (weekly rotation)
+  const suggestedVenue = getCurrentVenueForActivity(venues, city, activityType);
+
+  // Sort: suggested venue first, then the rest
+  const sortedVenues = suggestedVenue
+    ? [suggestedVenue, ...cityVenues.filter(v => v.id !== suggestedVenue.id)]
+    : cityVenues;
+
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
       const scrollAmount = 200;
@@ -44,7 +52,7 @@ export function VenueSuggestionCarousel({
   };
 
   return (
-    <div className="px-4 py-2 border-b border-border/30 bg-gradient-to-r from-blue-50/50 to-purple-50/50">
+    <div className="px-4 py-2 border-b border-border/30 bg-muted/30">
       <div className="flex items-center gap-2 mb-2">
         <MapPin className="w-3.5 h-3.5 text-primary" />
         <span className="text-xs font-medium text-muted-foreground">
@@ -69,28 +77,44 @@ export function VenueSuggestionCarousel({
           className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth touch-pan-x"
           style={{ scrollSnapType: "x mandatory" }}
         >
-          {cityVenues.map((venue) => (
-            <div
-              key={venue.id}
-              className="flex-shrink-0 min-w-[180px] max-w-[200px] bg-white rounded-lg border border-border/50 p-2.5 shadow-sm"
-              style={{ scrollSnapAlign: "start" }}
-            >
-              <p className="text-sm font-medium text-foreground truncate">
-                {venue.name}
-              </p>
-              <p className="text-xs text-muted-foreground truncate mb-2">
-                {venue.address}
-              </p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onSuggestVenue(venue)}
-                className="w-full h-7 text-xs bg-primary/5 border-primary/20 text-primary hover:bg-primary/10"
+          {sortedVenues.map((venue) => {
+            const isSuggested = suggestedVenue?.id === venue.id;
+            return (
+              <div
+                key={venue.id}
+                className={`flex-shrink-0 min-w-[180px] max-w-[200px] rounded-lg border p-2.5 shadow-sm ${
+                  isSuggested
+                    ? "bg-shake-green/10 border-shake-green/40"
+                    : "bg-card border-border/50"
+                }`}
+                style={{ scrollSnapAlign: "start" }}
               >
-                {t('chat.suggest', 'Suggest')} 📍
-              </Button>
-            </div>
-          ))}
+                {isSuggested && (
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-shake-green mb-1 block">
+                    ⭐ {t('chat.ourPick', 'Our Pick')}
+                  </span>
+                )}
+                <p className="text-sm font-medium text-foreground truncate">
+                  {venue.name}
+                </p>
+                <p className="text-xs text-muted-foreground truncate mb-2">
+                  {venue.address}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onSuggestVenue(venue)}
+                  className={`w-full h-7 text-xs ${
+                    isSuggested
+                      ? "bg-shake-green/10 border-shake-green/30 text-shake-green hover:bg-shake-green/20"
+                      : "bg-primary/5 border-primary/20 text-primary hover:bg-primary/10"
+                  }`}
+                >
+                  {t('chat.suggest', 'Suggest')} 📍
+                </Button>
+              </div>
+            );
+          })}
         </div>
 
         {/* Right scroll button */}
