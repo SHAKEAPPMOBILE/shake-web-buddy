@@ -458,7 +458,7 @@ export function GroupChatDialog({
                 </div>
               )}
               {/* Venue info */}
-              {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch") && (
+              {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch" || activityType === "drinks") && (
                 <div className="mt-1">
                   {mapsUrl ? (
                     <a
