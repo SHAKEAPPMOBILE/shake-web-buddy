@@ -159,7 +159,8 @@ export function GroupChatDialog({
   const { leaveActivity } = useActivityJoins(city);
   const { onlineCount } = useOnlinePresence();
   const isMobile = useIsMobile();
-  const [showVenueSuggestions, setShowVenueSuggestions] = useState(false);
+  const hasVenues = activityType === "lunch" || activityType === "dinner" || activityType === "brunch" || activityType === "drinks";
+  const [showVenueSuggestions, setShowVenueSuggestions] = useState(hasVenues);
   
   const { canSendText, addCharacters } = useTextMessageLimit();
   
