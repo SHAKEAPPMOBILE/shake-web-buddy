@@ -129,8 +129,13 @@ export function KindHumanDonation({ onClose, showHeader = false }: KindHumanDona
           ))}
         </div>
 
-        <p className="text-xs text-center text-muted-foreground">
-          One-time support • Secure payment via Apple
+        <p className="text-[10px] text-center text-muted-foreground">
+          One-time support • Payment charged to your Apple ID account at confirmation of purchase.
+        </p>
+        <p className="text-[10px] text-center text-muted-foreground">
+          <a href="/privacy-policy" className="underline">Privacy Policy</a>
+          {" • "}
+          <a href="/terms-of-service" className="underline">Terms of Service</a>
         </p>
       </div>
     );

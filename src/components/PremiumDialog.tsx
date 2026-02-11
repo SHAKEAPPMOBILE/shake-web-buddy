@@ -251,13 +251,23 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           )}
 
           {useAppleIAP ? (
-            <button
-              onClick={() => { window.location.href = "https://apps.apple.com/account/subscriptions"; }}
-              className="w-full py-3 rounded-xl bg-muted text-foreground font-medium transition-all hover:bg-muted/80 flex items-center justify-center gap-2"
-            >
-              <Settings className="w-4 h-4" />
-              Manage in Apple Settings
-            </button>
+            <>
+              <button
+                onClick={() => { window.location.href = "https://apps.apple.com/account/subscriptions"; }}
+                className="w-full py-3 rounded-xl bg-muted text-foreground font-medium transition-all hover:bg-muted/80 flex items-center justify-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Manage in Apple Settings
+              </button>
+              <button
+                onClick={handleRestorePurchases}
+                disabled={isPurchasing}
+                className="w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Restore Purchases
+              </button>
+            </>
           ) : (
             <button
               onClick={handleManageSubscription}
@@ -396,9 +406,26 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           </button>
         )}
 
-        <p className="text-xs text-center text-muted-foreground">
-          By subscribing, you agree to our Terms of Service
-        </p>
+        {useAppleIAP ? (
+          <div className="text-[10px] text-center text-muted-foreground space-y-1">
+            <p>
+              Payment will be charged to your Apple ID account at confirmation of purchase.
+              Subscription automatically renews unless it is canceled at least 24 hours before
+              the end of the current period. Your account will be charged for renewal within
+              24 hours prior to the end of the current period. You can manage and cancel your
+              subscriptions by going to your App Store account settings after purchase.
+            </p>
+            <p>
+              <a href="/privacy-policy" className="underline">Privacy Policy</a>
+              {" • "}
+              <a href="/terms-of-service" className="underline">Terms of Service</a>
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-center text-muted-foreground">
+            By subscribing, you agree to our Terms of Service
+          </p>
+        )}
 
         <KindHumanDonation />
       </DialogContent>
