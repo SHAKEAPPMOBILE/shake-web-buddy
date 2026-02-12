@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+<<<<<<< Updated upstream
 import { Check, MapPin, Globe, User, MessageSquare, Sparkles, Settings, RotateCcw } from "lucide-react";
 import shakeCoin from "@/assets/shake-coin.png";
+=======
+import { Check, MapPin, Globe, User, Mic, MessageSquare, Sparkles, Settings } from "lucide-react";
+>>>>>>> Stashed changes
 import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
   Dialog,
@@ -10,30 +14,32 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { SuperHumanIcon } from "./SuperHumanIcon";
+<<<<<<< Updated upstream
 import { KindHumanDonation } from "./KindHumanDonation";
 import { useInAppPurchases } from "@/hooks/useInAppPurchases";
 import { shouldUseAppleIAP } from "@/lib/platform-utils";
+=======
+import { Purchases } from '@revenuecat/purchases-capacitor';
+import { purchasePremium } from "@/lib/revenuecat";
+>>>>>>> Stashed changes
 
 interface PremiumDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const PRODUCT_ID = "shake_premium_monthly"; // You'll create this in App Store Connect
+
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
-  const [checkoutEmail, setCheckoutEmail] = useState("");
-  const [savedBillingEmail, setSavedBillingEmail] = useState<string | null>(null);
-  const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [productPrice, setProductPrice] = useState("€3.88");
   const { user, isPremium, isManualOverride } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -58,34 +64,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     enabled: isMobile,
   });
 
-  // Load saved billing email from private profile when dialog opens
-  useEffect(() => {
-    if (open && user) {
-      supabase
-        .from("profiles_private")
-        .select("billing_email")
-        .eq("user_id", user.id)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data?.billing_email) {
-            setSavedBillingEmail(data.billing_email);
-            setCheckoutEmail(data.billing_email);
-          }
-        });
-    }
-  }, [open, user]);
-
-  // User needs to enter email if: they exist, have no auth email, AND have no saved billing email
-  const needsEmail = !!user && !user.email && !savedBillingEmail;
-  const emailToUse = useMemo(() => {
-    if (user?.email) return user.email;
-    if (savedBillingEmail) return savedBillingEmail;
-    return checkoutEmail.trim();
-  }, [user?.email, savedBillingEmail, checkoutEmail]);
-  
-  // Check if we have a valid email to proceed with checkout
-  const hasValidEmail = !!user?.email || !!savedBillingEmail || !!checkoutEmail.trim();
-
   const features = [
     { icon: Sparkles, text: "Create your own activities unlimited" },
     { icon: Globe, text: "Access to 100+ cities worldwide" },
@@ -94,6 +72,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     { icon: MessageSquare, text: "Unlimited text messages" },
   ];
 
+<<<<<<< Updated upstream
   // Handle Apple IAP subscription
   const handleAppleSubscribe = async () => {
     if (!user) {
@@ -111,6 +90,32 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
   // Handle Stripe subscription (web)
   const handleStripeSubscribe = async () => {
+=======
+  // Initialize in-app purchases and load product info
+  useEffect(() => {
+    if (open && !isPremium) {
+      initializePurchases();
+    }
+  }, [open, isPremium]);
+
+  const initializePurchases = async () => {
+    try {
+      // Get available products
+      const { products } = await CapacitorPurchases.getProducts({
+        productIdentifiers: [PRODUCT_ID]
+      });
+
+      if (products && products.length > 0) {
+        const product = products[0];
+        setProductPrice(product.priceString);
+      }
+    } catch (error) {
+      console.error("Error initializing purchases:", error);
+    }
+  };
+
+  const handleSubscribe = async () => {
+>>>>>>> Stashed changes
     if (!user) {
       onOpenChange(false);
       navigate("/auth");
@@ -118,38 +123,45 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       return;
     }
 
-    if (!hasValidEmail) {
-      toast.error("Please add an email address in your profile before subscribing");
-      return;
-    }
-
     setIsLoading(true);
     try {
-      // Save billing email to private profile if user entered one
-      if (needsEmail && emailToUse && emailToUse !== savedBillingEmail) {
-        await supabase
-          .from("profiles_private")
-          .upsert({ 
-            user_id: user.id,
-            billing_email: emailToUse 
-          }, { onConflict: 'user_id' });
-      }
-
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: needsEmail ? { email: emailToUse } : undefined,
+      // Purchase the product
+      const { productIdentifier, transactionId } = await CapacitorPurchases.purchaseProduct({
+        productIdentifier: PRODUCT_ID
       });
 
-      if (error) {
-        throw error;
-      }
+      // Verify purchase with your backend
+      const { data, error } = await supabase.functions.invoke("verify-purchase", {
+        body: {
+          productId: productIdentifier,
+          transactionId: transactionId,
+          platform: 'ios' // or detect platform
+        }
+      });
 
+<<<<<<< Updated upstream
       if (data?.url) {
         // Use location.href instead of window.open to avoid popup blockers on iOS/iPad
         window.location.href = data.url;
+=======
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success("Welcome to Super-Human! 🎉");
+        onOpenChange(false);
+        // Refresh user premium status
+        window.location.reload();
       }
-    } catch (error) {
-      console.error("Error creating checkout:", error);
-      toast.error("Failed to start checkout. Please try again.");
+    } catch (error: any) {
+      console.error("Purchase error:", error);
+      
+      // Handle user cancellation gracefully
+      if (error.code === 'userCancelled') {
+        toast.info("Purchase cancelled");
+      } else {
+        toast.error("Purchase failed. Please try again.");
+>>>>>>> Stashed changes
+      }
     } finally {
       setIsLoading(false);
     }
@@ -166,6 +178,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const handleManageSubscription = async () => {
     setIsManageLoading(true);
     try {
+<<<<<<< Updated upstream
       const { data, error } = await supabase.functions.invoke("customer-portal");
 
       if (error) {
@@ -186,11 +199,19 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     } catch (error: any) {
       console.error("Error opening customer portal:", error);
       toast.error(error?.message || "Failed to open subscription management. Please try again.");
+=======
+      // Open native subscription management
+      await CapacitorPurchases.presentCodeRedemptionSheet();
+    } catch (error) {
+      console.error("Error opening subscription management:", error);
+      toast.error("Please manage your subscription in App Store settings");
+>>>>>>> Stashed changes
     } finally {
       setIsManageLoading(false);
     }
   };
 
+<<<<<<< Updated upstream
   const { subscriptionEnd } = useAuth();
   
   // Format subscription end date for display
@@ -209,6 +230,33 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   }, [subscriptionEnd]);
 
   // If user is premium via Stripe subscription (not manual override), show management view
+=======
+  const handleRestore = async () => {
+    setIsLoading(true);
+    try {
+      await CapacitorPurchases.restorePurchases();
+      
+      // Verify restored purchases with backend
+      const { data, error } = await supabase.functions.invoke("restore-purchases");
+      
+      if (error) throw error;
+      
+      if (data?.hasPremium) {
+        toast.success("Purchases restored successfully!");
+        window.location.reload();
+      } else {
+        toast.info("No purchases found to restore");
+      }
+    } catch (error) {
+      console.error("Restore error:", error);
+      toast.error("Failed to restore purchases");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // If user is premium, show management view
+>>>>>>> Stashed changes
   if (isPremium && !isManualOverride) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -280,7 +328,11 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           )}
 
           <p className="text-xs text-center text-muted-foreground">
+<<<<<<< Updated upstream
             Cancel anytime • You'll keep access until {formattedEndDate || "the end of your billing period"}
+=======
+            Manage your subscription in App Store settings
+>>>>>>> Stashed changes
           </p>
 
           <KindHumanDonation />
@@ -289,7 +341,11 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     );
   }
 
+<<<<<<< Updated upstream
   // If user is premium via manual override, show only Kind Human donation (no benefits list)
+=======
+  // If user is premium via manual override
+>>>>>>> Stashed changes
   if (isPremium && isManualOverride) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -309,6 +365,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     );
   }
 
+  // Non-premium view with purchase button
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
@@ -349,6 +406,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           ))}
         </div>
 
+<<<<<<< Updated upstream
         {/* Email input only needed for Stripe (web) when user has no email */}
         {!useAppleIAP && needsEmail && (
           <div className="space-y-2">
@@ -375,23 +433,44 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         <div className="text-center py-2">
           <div className="text-3xl font-display font-bold text-foreground">
             $3.88<span className="text-base font-normal text-muted-foreground">/month</span>
+=======
+        <div className="text-center py-2">
+          <div className="text-3xl font-display font-bold text-foreground">
+            {productPrice}<span className="text-base font-normal text-muted-foreground">/month</span>
+>>>>>>> Stashed changes
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">Cancel anytime • Best value!</p>
         </div>
 
         <button
           onClick={handleSubscribe}
+<<<<<<< Updated upstream
           disabled={isLoading || isPurchasing || (!useAppleIAP && !hasValidEmail)}
+=======
+          disabled={isLoading}
+>>>>>>> Stashed changes
           className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50"
           style={{
             background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
           }}
         >
+<<<<<<< Updated upstream
           {isLoading || isPurchasing 
             ? "Loading..." 
             : user 
               ? (useAppleIAP ? "Subscribe with Apple" : "Subscribe Now") 
               : "Sign In to Subscribe"}
+=======
+          {isLoading ? "Processing..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
+        </button>
+
+        <button
+          onClick={handleRestore}
+          disabled={isLoading}
+          className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Restore Purchases
+>>>>>>> Stashed changes
         </button>
 
         {/* Restore purchases button (iOS only) */}

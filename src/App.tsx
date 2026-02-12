@@ -1,5 +1,6 @@
 // Force sync - Jan 17, 2026
 import * as React from "react";
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +14,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { IOSAppLayout } from "@/components/IOSAppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useReferralTracking } from "@/hooks/useReferralTracking";
+import { initializeRevenueCat } from "./lib/revenuecat";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
@@ -31,7 +33,13 @@ function ReferralTracker() {
   return null;
 }
 
-const App = () => (
+const App = () => {
+  // Initialize RevenueCat on app load
+  useEffect(() => {
+    initializeRevenueCat();
+  }, []);
+
+  return (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
@@ -65,6 +73,7 @@ const App = () => (
     </ThemeProvider>
   </QueryClientProvider>
   </ErrorBoundary>
-);
+  );
+};
 
 export default App;
