@@ -1,11 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-<<<<<<< Updated upstream
 import { Check, MapPin, Globe, User, MessageSquare, Sparkles, Settings, RotateCcw } from "lucide-react";
 import shakeCoin from "@/assets/shake-coin.png";
-=======
-import { Check, MapPin, Globe, User, Mic, MessageSquare, Sparkles, Settings } from "lucide-react";
->>>>>>> Stashed changes
 import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
   Dialog,
@@ -20,31 +16,24 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { SuperHumanIcon } from "./SuperHumanIcon";
-<<<<<<< Updated upstream
 import { KindHumanDonation } from "./KindHumanDonation";
 import { useInAppPurchases } from "@/hooks/useInAppPurchases";
 import { shouldUseAppleIAP } from "@/lib/platform-utils";
-=======
-import { Purchases } from '@revenuecat/purchases-capacitor';
-import { purchasePremium } from "@/lib/revenuecat";
->>>>>>> Stashed changes
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface PremiumDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const PRODUCT_ID = "shake_premium_monthly"; // You'll create this in App Store Connect
-
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
-  const [productPrice, setProductPrice] = useState("€3.88");
   const { user, isPremium, isManualOverride } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  // In-app purchases hook for native iOS
   const {
     isNativePlatform,
     isPurchasing,
@@ -55,7 +44,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     isInitialized: isIAPInitialized,
   } = useInAppPurchases();
   
-  // Determine if we should use Apple IAP or Stripe
   const useAppleIAP = shouldUseAppleIAP();
   
   const swipeHandlers = useSwipeToClose({
@@ -72,8 +60,14 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     { icon: MessageSquare, text: "Unlimited text messages" },
   ];
 
-<<<<<<< Updated upstream
-  // Handle Apple IAP subscription
+  // Email state for Stripe checkout
+  const [checkoutEmail, setCheckoutEmail] = useState("");
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
+
+  // Check if user needs email input (phone-only users on web)
+  const needsEmail = !useAppleIAP && user && !user.email;
+  const hasValidEmail = !needsEmail || (checkoutEmail && checkoutEmail.includes("@"));
+
   const handleAppleSubscribe = async () => {
     if (!user) {
       onOpenChange(false);
@@ -88,34 +82,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     }
   };
 
-  // Handle Stripe subscription (web)
   const handleStripeSubscribe = async () => {
-=======
-  // Initialize in-app purchases and load product info
-  useEffect(() => {
-    if (open && !isPremium) {
-      initializePurchases();
-    }
-  }, [open, isPremium]);
-
-  const initializePurchases = async () => {
-    try {
-      // Get available products
-      const { products } = await CapacitorPurchases.getProducts({
-        productIdentifiers: [PRODUCT_ID]
-      });
-
-      if (products && products.length > 0) {
-        const product = products[0];
-        setProductPrice(product.priceString);
-      }
-    } catch (error) {
-      console.error("Error initializing purchases:", error);
-    }
-  };
-
-  const handleSubscribe = async () => {
->>>>>>> Stashed changes
     if (!user) {
       onOpenChange(false);
       navigate("/auth");
@@ -125,52 +92,25 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
     setIsLoading(true);
     try {
-      // Purchase the product
-      const { productIdentifier, transactionId } = await CapacitorPurchases.purchaseProduct({
-        productIdentifier: PRODUCT_ID
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: needsEmail ? { email: checkoutEmail } : {},
       });
 
-      // Verify purchase with your backend
-      const { data, error } = await supabase.functions.invoke("verify-purchase", {
-        body: {
-          productId: productIdentifier,
-          transactionId: transactionId,
-          platform: 'ios' // or detect platform
-        }
-      });
-
-<<<<<<< Updated upstream
-      if (data?.url) {
-        // Use location.href instead of window.open to avoid popup blockers on iOS/iPad
-        window.location.href = data.url;
-=======
       if (error) throw error;
 
-      if (data?.success) {
-        toast.success("Welcome to Super-Human! 🎉");
-        onOpenChange(false);
-        // Refresh user premium status
-        window.location.reload();
+      if (data?.url) {
+        window.location.href = data.url;
       }
     } catch (error: any) {
-      console.error("Purchase error:", error);
-      
-      // Handle user cancellation gracefully
-      if (error.code === 'userCancelled') {
-        toast.info("Purchase cancelled");
-      } else {
-        toast.error("Purchase failed. Please try again.");
->>>>>>> Stashed changes
-      }
+      console.error("Error creating checkout:", error);
+      toast.error("Failed to start checkout. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Unified subscribe handler
   const handleSubscribe = useAppleIAP ? handleAppleSubscribe : handleStripeSubscribe;
 
-  // Handle restore purchases (iOS only)
   const handleRestorePurchases = async () => {
     await restorePurchases();
   };
@@ -178,20 +118,12 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const handleManageSubscription = async () => {
     setIsManageLoading(true);
     try {
-<<<<<<< Updated upstream
       const { data, error } = await supabase.functions.invoke("customer-portal");
 
-      if (error) {
-        throw error;
-      }
-
-      // Handle error returned in the response body (500 status with JSON error)
-      if (data?.error) {
-        throw new Error(data.error);
-      }
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       if (data?.url) {
-        // Use location.href instead of window.open to avoid popup blockers on iOS/iPad
         window.location.href = data.url;
       } else {
         throw new Error("No portal URL received");
@@ -199,22 +131,13 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     } catch (error: any) {
       console.error("Error opening customer portal:", error);
       toast.error(error?.message || "Failed to open subscription management. Please try again.");
-=======
-      // Open native subscription management
-      await CapacitorPurchases.presentCodeRedemptionSheet();
-    } catch (error) {
-      console.error("Error opening subscription management:", error);
-      toast.error("Please manage your subscription in App Store settings");
->>>>>>> Stashed changes
     } finally {
       setIsManageLoading(false);
     }
   };
 
-<<<<<<< Updated upstream
   const { subscriptionEnd } = useAuth();
   
-  // Format subscription end date for display
   const formattedEndDate = useMemo(() => {
     if (!subscriptionEnd) return null;
     try {
@@ -229,34 +152,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     }
   }, [subscriptionEnd]);
 
-  // If user is premium via Stripe subscription (not manual override), show management view
-=======
-  const handleRestore = async () => {
-    setIsLoading(true);
-    try {
-      await CapacitorPurchases.restorePurchases();
-      
-      // Verify restored purchases with backend
-      const { data, error } = await supabase.functions.invoke("restore-purchases");
-      
-      if (error) throw error;
-      
-      if (data?.hasPremium) {
-        toast.success("Purchases restored successfully!");
-        window.location.reload();
-      } else {
-        toast.info("No purchases found to restore");
-      }
-    } catch (error) {
-      console.error("Restore error:", error);
-      toast.error("Failed to restore purchases");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // If user is premium, show management view
->>>>>>> Stashed changes
+  // Premium with Stripe subscription view
   if (isPremium && !isManualOverride) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -328,11 +224,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           )}
 
           <p className="text-xs text-center text-muted-foreground">
-<<<<<<< Updated upstream
             Cancel anytime • You'll keep access until {formattedEndDate || "the end of your billing period"}
-=======
-            Manage your subscription in App Store settings
->>>>>>> Stashed changes
           </p>
 
           <KindHumanDonation />
@@ -341,11 +233,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     );
   }
 
-<<<<<<< Updated upstream
-  // If user is premium via manual override, show only Kind Human donation (no benefits list)
-=======
-  // If user is premium via manual override
->>>>>>> Stashed changes
+  // Premium via manual override
   if (isPremium && isManualOverride) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -365,7 +253,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     );
   }
 
-  // Non-premium view with purchase button
+  // Non-premium view
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
@@ -406,8 +294,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           ))}
         </div>
 
-<<<<<<< Updated upstream
-        {/* Email input only needed for Stripe (web) when user has no email */}
         {!useAppleIAP && needsEmail && (
           <div className="space-y-2">
             <Label htmlFor="checkoutEmail">Email for receipt</Label>
@@ -433,47 +319,25 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         <div className="text-center py-2">
           <div className="text-3xl font-display font-bold text-foreground">
             $3.88<span className="text-base font-normal text-muted-foreground">/month</span>
-=======
-        <div className="text-center py-2">
-          <div className="text-3xl font-display font-bold text-foreground">
-            {productPrice}<span className="text-base font-normal text-muted-foreground">/month</span>
->>>>>>> Stashed changes
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">Cancel anytime • Best value!</p>
         </div>
 
         <button
           onClick={handleSubscribe}
-<<<<<<< Updated upstream
           disabled={isLoading || isPurchasing || (!useAppleIAP && !hasValidEmail)}
-=======
-          disabled={isLoading}
->>>>>>> Stashed changes
           className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50"
           style={{
             background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
           }}
         >
-<<<<<<< Updated upstream
           {isLoading || isPurchasing 
             ? "Loading..." 
             : user 
               ? (useAppleIAP ? "Subscribe with Apple" : "Subscribe Now") 
               : "Sign In to Subscribe"}
-=======
-          {isLoading ? "Processing..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
         </button>
 
-        <button
-          onClick={handleRestore}
-          disabled={isLoading}
-          className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Restore Purchases
->>>>>>> Stashed changes
-        </button>
-
-        {/* Restore purchases button (iOS only) */}
         {useAppleIAP && (
           <button
             onClick={handleRestorePurchases}
