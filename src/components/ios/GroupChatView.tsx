@@ -470,11 +470,9 @@ export function GroupChatView({
             {hasMultipleVenues && (
               <button
                 onClick={handlePrevVenue}
-                className={`p-1 rounded-full transition-colors ${
-                  isCurrentVenueAssigned ? 'bg-shake-green/30 hover:bg-shake-green/50' : 'bg-shake-yellow/30 hover:bg-shake-yellow/50'
-                }`}
+                className="p-1 rounded-full bg-shake-yellow/30 hover:bg-shake-yellow/50 transition-colors"
               >
-                <ChevronLeft className={`w-4 h-4 ${isCurrentVenueAssigned ? 'text-shake-green' : 'text-shake-yellow-foreground'}`} />
+                <ChevronLeft className="w-4 h-4 text-shake-yellow-foreground" />
               </button>
             )}
             
@@ -495,11 +493,20 @@ export function GroupChatView({
               </button>
               
               {isCurrentVenueAssigned ? (
-                /* Our Pick - green, non-clickable, no suggest */
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-shake-green/20 text-shake-green rounded-full font-medium text-sm shadow-md border border-shake-green/30">
+                /* Our Pick - green, expandable on click to show full name */
+                <button
+                  onClick={(e) => {
+                    const el = e.currentTarget.querySelector('.venue-name') as HTMLElement;
+                    if (el) {
+                      el.classList.toggle('max-w-[180px]');
+                      el.classList.toggle('max-w-none');
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-shake-green/20 text-shake-green rounded-full font-medium text-sm shadow-md border border-shake-green/30 cursor-pointer hover:bg-shake-green/30 transition-colors"
+                >
                   <span>⭐</span>
-                  <span className="truncate max-w-[180px]">{currentVenue.name}</span>
-                </div>
+                  <span className="venue-name truncate max-w-[180px] transition-all duration-200">{currentVenue.name}</span>
+                </button>
               ) : (
                 /* Other venues - yellow, clickable to suggest */
                 <button
@@ -516,11 +523,9 @@ export function GroupChatView({
             {hasMultipleVenues && (
               <button
                 onClick={handleNextVenue}
-                className={`p-1 rounded-full transition-colors ${
-                  isCurrentVenueAssigned ? 'bg-shake-green/30 hover:bg-shake-green/50' : 'bg-shake-yellow/30 hover:bg-shake-yellow/50'
-                }`}
+                className="p-1 rounded-full bg-shake-yellow/30 hover:bg-shake-yellow/50 transition-colors"
               >
-                <ChevronRight className={`w-4 h-4 ${isCurrentVenueAssigned ? 'text-shake-green' : 'text-shake-yellow-foreground'}`} />
+                <ChevronRight className="w-4 h-4 text-shake-yellow-foreground" />
               </button>
             )}
           </div>
