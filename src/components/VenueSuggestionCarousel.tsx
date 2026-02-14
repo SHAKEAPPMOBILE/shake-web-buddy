@@ -78,18 +78,18 @@ export function VenueSuggestionCarousel({
           style={{ scrollSnapType: "x mandatory" }}
         >
           {sortedVenues.map((venue) => {
-            const isSuggested = suggestedVenue?.id === venue.id;
+            const isOurPick = suggestedVenue?.id === venue.id;
             return (
               <div
                 key={venue.id}
                 className={`flex-shrink-0 min-w-[180px] max-w-[200px] rounded-lg border p-2.5 shadow-sm ${
-                  isSuggested
+                  isOurPick
                     ? "bg-shake-green/10 border-shake-green/40"
-                    : "bg-card border-border/50"
+                    : "bg-shake-yellow/10 border-shake-yellow/40"
                 }`}
                 style={{ scrollSnapAlign: "start" }}
               >
-                {isSuggested && (
+                {isOurPick && (
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-shake-green mb-1 block">
                     ⭐ {t('chat.ourPick', 'Our Pick')}
                   </span>
@@ -100,18 +100,16 @@ export function VenueSuggestionCarousel({
                 <p className="text-xs text-muted-foreground truncate mb-2">
                   {venue.address}
                 </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onSuggestVenue(venue)}
-                  className={`w-full h-7 text-xs ${
-                    isSuggested
-                      ? "bg-shake-green/10 border-shake-green/30 text-shake-green hover:bg-shake-green/20"
-                      : "bg-primary/5 border-primary/20 text-primary hover:bg-primary/10"
-                  }`}
-                >
-                  {t('chat.suggest', 'Suggest')} 📍
-                </Button>
+                {!isOurPick && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onSuggestVenue(venue)}
+                    className="w-full h-7 text-xs bg-shake-yellow/10 border-shake-yellow/30 text-shake-yellow hover:bg-shake-yellow/20"
+                  >
+                    {t('chat.suggest', 'Suggest')} 📍
+                  </Button>
+                )}
               </div>
             );
           })}
