@@ -51,3 +51,15 @@ verify_jwt = false
 
 [functions.revenuecat-webhook]
 verify_jwt = false
+
+[functions.send-bird-otp]
+verify_jwt = false
+
+[functions.verify-bird-otp]
+verify_jwt = false
+
+[functions.request-phone-change]
+verify_jwt = false
+
+[functions.verify-phone-change]
+verify_jwt = false

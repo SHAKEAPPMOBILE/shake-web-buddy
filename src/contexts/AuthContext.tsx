@@ -11,13 +11,9 @@ interface AuthContextType {
   isManualOverride: boolean;
   subscriptionEnd: string | null;
   didJustSignUp: boolean;
-  signUpWithPhone: (phone: string, name: string) => Promise<{ error: Error | null }>;
-  verifyOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
-  signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
+  sendOtp: (phone: string, purpose?: string) => Promise<{ error: Error | null; verificationId?: string }>;
+  verifyOtp: (phone: string, code: string, verificationId: string, options?: { purpose?: string; password?: string; name?: string }) => Promise<{ error: Error | null; data?: any }>;
   signInWithPassword: (phone: string, password: string) => Promise<{ error: Error | null }>;
-  signUpWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
-  resetPasswordWithEmail: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   checkSubscription: () => Promise<void>;
@@ -289,30 +285,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [session]);
 
-  const signUpWithPhone = async (phone: string, name: string) => {
-    // Send OTP to phone number for signup
-    const { error } = await supabase.auth.signInWithOtp({
-      phone,
-      options: {
-        data: {
-          phone_number: phone,
-          name: name,
-        },
-      },
-    });
-    return { error: error as Error | null };
+  // Send OTP via Bird WhatsApp
+  const sendOtp = async (phone: string, purpose = "auth"): Promise<{ error: Error | null; verificationId?: string }> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("send-bird-otp", {
+        body: { phone, purpose },
+      });
+
+      if (error) {
+        // Try to extract error message from the response
+        let errorMsg = error.message || "Failed to send code";
+        try {
+          const parsed = JSON.parse(error.message);
+          if (parsed?.error) errorMsg = parsed.error;
+        } catch {}
+        return { error: new Error(errorMsg) };
+      }
+
+      return { error: null, verificationId: data?.verificationId };
+    } catch (e: any) {
+      return { error: new Error(e?.message || "Failed to send code") };
+    }
   };
 
-  const signInWithPhone = async (phone: string) => {
-    // Send OTP to phone number for login
-    const { error } = await supabase.auth.signInWithOtp({
-      phone,
-    });
-    return { error: error as Error | null };
+  // Verify OTP via Bird
+  const verifyOtp = async (
+    phone: string,
+    code: string,
+    verificationId: string,
+    options?: { purpose?: string; password?: string; name?: string }
+  ): Promise<{ error: Error | null; data?: any }> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-bird-otp", {
+        body: {
+          phone,
+          code,
+          verificationId,
+          purpose: options?.purpose || "login",
+          password: options?.password || "",
+          name: options?.name || "",
+        },
+      });
+
+      if (error) {
+        let errorMsg = error.message || "Verification failed";
+        try {
+          const parsed = JSON.parse(error.message);
+          if (parsed?.error) errorMsg = parsed.error;
+        } catch {}
+        return { error: new Error(errorMsg) };
+      }
+
+      return { error: null, data };
+    } catch (e: any) {
+      return { error: new Error(e?.message || "Verification failed") };
+    }
   };
 
   const signInWithPassword = async (phone: string, password: string) => {
-    // Sign in with phone + password
     const { error } = await supabase.auth.signInWithPassword({
       phone,
       password,
@@ -321,59 +351,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updatePassword = async (password: string) => {
-    // Update user's password (used after OTP verification for password reset)
     const { error } = await supabase.auth.updateUser({
       password,
     });
     return { error: error as Error | null };
   };
 
-  const verifyOtp = async (phone: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({
-      phone,
-      token,
-      type: 'sms',
-    });
-    return { error: error as Error | null };
-  };
-
-  const signUpWithEmail = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    });
-    return { error: error as Error | null };
-  };
-
-  const signInWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error as Error | null };
-  };
-
-  const resetPasswordWithEmail = async (email: string) => {
-    const redirectUrl = `${window.location.origin}/auth?mode=reset`;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
-    });
-    return { error: error as Error | null };
-  };
-
-
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
     } catch (error) {
-      // Session might already be expired, clear local state anyway
       console.log("Sign out error (session may be expired):", error);
     }
-    // Always clear local state regardless of server response
     setUser(null);
     setSession(null);
     setDidJustSignUp(false);
@@ -392,14 +381,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isManualOverride,
         subscriptionEnd,
         didJustSignUp,
-        signUpWithPhone,
-        signInWithPhone,
-        signInWithPassword,
-        signUpWithEmail,
-        signInWithEmail,
-        resetPasswordWithEmail,
-        updatePassword,
+        sendOtp,
         verifyOtp,
+        signInWithPassword,
+        updatePassword,
         signOut,
         checkSubscription,
       }}
