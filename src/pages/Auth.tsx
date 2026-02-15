@@ -32,6 +32,7 @@ export default function Auth() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
+  const [verificationId, setVerificationId] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -57,7 +58,7 @@ export default function Auth() {
   );
   const [countrySearchOpen, setCountrySearchOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
-  const { user, signUpWithPhone, signInWithPhone, signInWithPassword, updatePassword, verifyOtp } = useAuth();
+  const { user, sendOtp, signInWithPassword, updatePassword, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -280,12 +281,13 @@ export default function Auth() {
         }
       }
       
-      // Send OTP
-      const { error } = await signInWithPhone(formattedPhone);
+      // Send OTP via Bird WhatsApp
+      const { error, verificationId: vId } = await sendOtp(formattedPhone, isLogin ? "login" : "signup");
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success("Verification code sent!");
+        setVerificationId(vId || "");
+        toast.success("Verification code sent via WhatsApp!");
         setResendCountdown(60);
         setStep('otp');
       }
@@ -344,11 +346,12 @@ export default function Auth() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const { error } = await signInWithPhone(formattedPhone);
+      const { error, verificationId: vId } = await sendOtp(formattedPhone, "forgot_password");
       
       if (error) {
         toast.error(error.message);
       } else {
+        setVerificationId(vId || "");
         toast.success("Verification code sent to reset your password!");
         setResendCountdown(60);
         setStep('forgot');
@@ -372,7 +375,7 @@ export default function Auth() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const { error } = await verifyOtp(formattedPhone, otpCode);
+      const { error } = await verifyOtp(formattedPhone, otpCode, verificationId, { purpose: "forgot_password" });
       if (error) {
         toast.error(error.message);
       } else {
@@ -402,12 +405,23 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const { error } = await updatePassword(password);
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      // Use verify-bird-otp with password to reset it server-side
+      const { error } = await verifyOtp(formattedPhone, otpCode, verificationId, {
+        purpose: "forgot_password",
+        password,
+      });
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success("Password updated! You're now logged in.");
-        navigate("/");
+        // Sign in with the new password
+        const { error: signInError } = await signInWithPassword(formattedPhone, password);
+        if (signInError) {
+          toast.error(signInError.message);
+        } else {
+          toast.success("Password updated! You're now logged in.");
+          navigate("/");
+        }
       }
     } catch (error) {
       toast.error("An unexpected error occurred");
@@ -544,40 +558,27 @@ export default function Auth() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const { error } = await verifyOtp(formattedPhone, otpCode);
+      const purpose = isLogin ? "login" : "signup";
+      const { error, data } = await verifyOtp(formattedPhone, otpCode, verificationId, {
+        purpose,
+        password: !isLogin ? password : undefined,
+        name: !isLogin ? name : undefined,
+      });
       if (error) {
         toast.error(error.message);
       } else {
-        // Check if user has completed their profile
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        
-        if (currentUser) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("name")
-            .eq("user_id", currentUser.id)
-            .maybeSingle();
-
-          // If profile has no name, this is a new user
-          if (!profile?.name) {
-            // If password was set during signup, save it now and go to profile
-            if (password && password.length >= 6) {
-              const { error: pwError } = await updatePassword(password);
-              if (pwError) {
-                console.error("Error setting password:", pwError);
-              }
-              toast.success("Phone verified! Now complete your profile.");
-              setStep('name');
-            } else {
-              // Fallback to old flow if no password was set
-              toast.success("Phone verified! Now set a password.");
-              setStep('password');
-            }
+        if (purpose === "signup") {
+          // Signup: user created server-side, now sign in with password
+          const { error: signInError } = await signInWithPassword(formattedPhone, password);
+          if (signInError) {
+            toast.error(signInError.message);
           } else {
-            toast.success("Welcome!");
-            navigate("/");
+            toast.success("Phone verified! Now complete your profile.");
+            setStep('name');
           }
         } else {
+          // Login OTP verified — sign in with password
+          toast.success("Welcome!");
           navigate("/");
         }
       }
@@ -1166,10 +1167,11 @@ export default function Auth() {
                   disabled={resendCountdown > 0}
                   onClick={async () => {
                     setOtpCode("");
-                    const { error } = await signInWithPhone(formatPhoneNumber(phoneNumber));
+                    const { error, verificationId: vId } = await sendOtp(formatPhoneNumber(phoneNumber));
                     if (error) {
                       toast.error(error.message);
                     } else {
+                      setVerificationId(vId || "");
                       toast.success("New code sent!");
                       setResendCountdown(60);
                     }
@@ -1578,10 +1580,11 @@ export default function Auth() {
                   disabled={resendCountdown > 0}
                   onClick={async () => {
                     setOtpCode("");
-                    const { error } = await signInWithPhone(formatPhoneNumber(phoneNumber));
+                    const { error, verificationId: vId } = await sendOtp(formatPhoneNumber(phoneNumber), "forgot_password");
                     if (error) {
                       toast.error(error.message);
                     } else {
+                      setVerificationId(vId || "");
                       toast.success("New code sent!");
                       setResendCountdown(60);
                     }

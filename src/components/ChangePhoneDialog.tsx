@@ -57,6 +57,7 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
   const [step, setStep] = useState<"enter" | "verify">("enter");
   const [phone, setPhone] = useState<string>(currentPhone ?? "");
   const [code, setCode] = useState<string>("");
+  const [verificationId, setVerificationId] = useState<string>("");
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
@@ -70,6 +71,7 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
     setStep("enter");
     setPhone(currentPhone ?? "");
     setCode("");
+    setVerificationId("");
     setIsSending(false);
     setIsVerifying(false);
     setResendCountdown(0);
@@ -90,15 +92,21 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
 
     setIsSending(true);
     try {
-      const { error } = await supabase.functions.invoke("request-phone-change", {
+      const { data, error } = await supabase.functions.invoke("request-phone-change", {
         body: { phone: parsed.data },
       });
 
       if (error) {
-        toast.error(error.message || "Failed to send code");
+        let errorMsg = error.message || "Failed to send code";
+        try {
+          const errParsed = JSON.parse(error.message);
+          if (errParsed?.error) errorMsg = errParsed.error;
+        } catch {}
+        toast.error(errorMsg);
         return;
       }
 
+      setVerificationId(data?.verificationId || "");
       toast.success(t("changePhone.codeSent", { phone: parsed.data }));
       setResendCountdown(60);
       setStep("verify");
@@ -125,11 +133,16 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
     setIsVerifying(true);
     try {
       const { data, error } = await supabase.functions.invoke("verify-phone-change", {
-        body: { phone: p.data, code: c.data },
+        body: { phone: p.data, code: c.data, verificationId },
       });
 
       if (error) {
-        toast.error(error.message || "Verification failed");
+        let errorMsg = error.message || "Verification failed";
+        try {
+          const errParsed = JSON.parse(error.message);
+          if (errParsed?.error) errorMsg = errParsed.error;
+        } catch {}
+        toast.error(errorMsg);
         return;
       }
 

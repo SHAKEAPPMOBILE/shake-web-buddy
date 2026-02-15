@@ -3,41 +3,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const PHONE_REGEX = /^\+\d{7,15}$/;
 
-function sha256Hex(input: string): Promise<string> {
-  const data = new TextEncoder().encode(input);
-  return crypto.subtle.digest("SHA-256", data).then((buf) => {
-    const bytes = new Uint8Array(buf);
-    return Array.from(bytes)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  });
-}
-
-function random6Digits(): string {
-  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
-  return String(n).padStart(6, "0");
-}
-
-function badRequest(message: string) {
-  return new Response(JSON.stringify({ error: message }), {
-    status: 400,
+function json(status: number, body: Record<string, unknown>) {
+  return new Response(JSON.stringify(body), {
+    status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-function tooMany(message: string, retryAfterSeconds?: number) {
-  return new Response(JSON.stringify({ error: message, retryAfterSeconds }), {
-    status: 429,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-      ...(retryAfterSeconds ? { "Retry-After": String(retryAfterSeconds) } : {}),
-    },
   });
 }
 
@@ -49,16 +24,17 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // Auth check
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!authHeader) return json(401, { error: "Unauthorized" });
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (authError || !user) return json(401, { error: "Unauthorized" });
 
     const body = await req.json().catch(() => null);
     const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
     if (!PHONE_REGEX.test(phone)) {
-      return badRequest("Invalid phone. Use E.164 format like +351912345678");
+      return json(400, { error: "Invalid phone. Use E.164 format like +351912345678" });
     }
 
     // Rate limit: max 3 sends/hour per user
@@ -71,15 +47,15 @@ serve(async (req) => {
 
     if (countError) {
       console.error("Rate limit count error:", countError);
-      return new Response(JSON.stringify({ error: "Failed to process request" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return json(500, { error: "Failed to process request" });
     }
 
     if ((sentLastHour ?? 0) >= 3) {
-      return tooMany("Too many codes requested. Please try again later.", 60 * 10);
+      return json(429, { error: "Too many codes requested. Please try again later.", retryAfterSeconds: 600 });
     }
 
     // Cooldown: 60s between sends
-    const { data: latest, error: latestError } = await supabase
+    const { data: latest } = await supabase
       .from("phone_change_requests")
       .select("created_at")
       .eq("user_id", user.id)
@@ -87,88 +63,106 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (latestError) {
-      console.error("Latest request read error:", latestError);
-    }
-
     if (latest?.created_at) {
-      const last = new Date(latest.created_at).getTime();
-      const secondsSince = Math.floor((Date.now() - last) / 1000);
+      const secondsSince = Math.floor((Date.now() - new Date(latest.created_at).getTime()) / 1000);
       if (secondsSince < 60) {
-        return tooMany("Please wait before requesting another code.", 60 - secondsSince);
+        return json(429, { error: "Please wait before requesting another code.", retryAfterSeconds: 60 - secondsSince });
       }
     }
 
-    // Ensure the phone is not already used by another user
-    const { data: existingPhone, error: existingPhoneError } = await supabase
+    // Ensure phone is not used by another user
+    const { data: existingPhone } = await supabase
       .from("profiles_private")
       .select("user_id")
       .eq("phone_number", phone)
       .limit(1)
       .maybeSingle();
 
-    if (existingPhoneError) {
-      console.error("Existing phone check error:", existingPhoneError);
-      return new Response(JSON.stringify({ error: "Failed to process request" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
     if (existingPhone?.user_id && existingPhone.user_id !== user.id) {
-      return badRequest("That phone number is already in use.");
+      return json(400, { error: "That phone number is already in use." });
     }
 
-    const code = random6Digits();
-    const codeHash = await sha256Hex(`${code}:${user.id}`);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    // Send OTP via Bird Verify API
+    const birdApiKey = Deno.env.get("BIRD_API_KEY");
+    const birdWorkspaceId = Deno.env.get("BIRD_WORKSPACE_ID");
+    const birdChannelId = Deno.env.get("BIRD_CHANNEL_ID");
+    const birdTemplateId = Deno.env.get("BIRD_WHATSAPP_TEMPLATE_ID");
+    const birdTemplateVersion = Deno.env.get("BIRD_WHATSAPP_TEMPLATE_VERSION");
+    const birdSmsNavigatorId = Deno.env.get("BIRD_SMS_NAVIGATOR_ID");
 
+    if (!birdApiKey || !birdWorkspaceId || !birdChannelId || !birdTemplateId || !birdTemplateVersion) {
+      console.error("Bird credentials not fully configured");
+      return json(500, { error: "OTP provider not configured" });
+    }
+
+    const steps: Record<string, unknown>[] = [
+      {
+        channelId: birdChannelId,
+        template: {
+          projectId: birdTemplateId,
+          locale: "en",
+          version: birdTemplateVersion,
+        },
+      },
+    ];
+
+    if (birdSmsNavigatorId) {
+      steps.push({ navigatorId: birdSmsNavigatorId });
+    }
+
+    const birdResp = await fetch(
+      `https://api.bird.com/workspaces/${birdWorkspaceId}/verify`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `AccessKey ${birdApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          identifier: { phonenumber: phone },
+          maxAttempts: 5,
+          timeout: 600,
+          codeLength: 6,
+          steps,
+        }),
+      }
+    );
+
+    if (!birdResp.ok) {
+      const errText = await birdResp.text();
+      console.error("Bird Verify API error:", birdResp.status, errText);
+      return json(502, { error: "Failed to send verification code" });
+    }
+
+    const birdData = await birdResp.json();
+    const verificationId = birdData.id;
+
+    if (!verificationId) {
+      console.error("Bird response missing verification ID:", birdData);
+      return json(502, { error: "Failed to send verification code" });
+    }
+
+    // Store the request for tracking (no code_hash needed since Bird handles verification)
     const { error: insertError } = await supabase.from("phone_change_requests").insert({
       user_id: user.id,
       phone_number: phone,
-      code_hash: codeHash,
-      expires_at: expiresAt,
+      code_hash: verificationId, // Store Bird verification ID in code_hash field
+      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       verify_attempts: 0,
     });
 
     if (insertError) {
       console.error("Insert phone_change_requests error:", insertError);
-      return new Response(JSON.stringify({ error: "Failed to create verification" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return json(500, { error: "Failed to create verification" });
     }
 
-    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
-    if (!accountSid || !authToken || !twilioPhone) {
-      console.error("Twilio credentials not configured");
-      return new Response(JSON.stringify({ error: "SMS provider not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    const message = `Your Shake verification code is ${code}. It expires in 10 minutes.`;
-    const resp = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        To: phone,
-        From: twilioPhone,
-        Body: message,
-      }),
-    });
-
-    if (!resp.ok) {
-      const errorText = await resp.text();
-      console.error("Twilio send failed:", errorText);
-      return new Response(JSON.stringify({ error: "Failed to send SMS" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    return new Response(JSON.stringify({ success: true, expiresAt }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return json(200, {
+      success: true,
+      verificationId,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
     });
   } catch (e) {
     console.error("request-phone-change error:", e);
-    return new Response(JSON.stringify({ error: "Unexpected error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json(500, { error: "Unexpected error" });
   }
 });

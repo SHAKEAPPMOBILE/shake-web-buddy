@@ -3,21 +3,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const PHONE_REGEX = /^\+\d{7,15}$/;
 const CODE_REGEX = /^\d{6}$/;
-
-function sha256Hex(input: string): Promise<string> {
-  const data = new TextEncoder().encode(input);
-  return crypto.subtle.digest("SHA-256", data).then((buf) => {
-    const bytes = new Uint8Array(buf);
-    return Array.from(bytes)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  });
-}
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -34,6 +25,15 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(supabaseUrl, serviceKey);
 
+    const birdApiKey = Deno.env.get("BIRD_API_KEY");
+    const birdWorkspaceId = Deno.env.get("BIRD_WORKSPACE_ID");
+
+    if (!birdApiKey || !birdWorkspaceId) {
+      console.error("Bird credentials not configured");
+      return json(500, { error: "OTP provider not configured" });
+    }
+
+    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json(401, { error: "Unauthorized" });
     const token = authHeader.replace("Bearer ", "");
@@ -43,66 +43,55 @@ serve(async (req) => {
     const body = await req.json().catch(() => null);
     const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
     const code = typeof body?.code === "string" ? body.code.trim() : "";
+    const verificationId = typeof body?.verificationId === "string" ? body.verificationId.trim() : "";
 
     if (!PHONE_REGEX.test(phone)) return json(400, { error: "Invalid phone" });
     if (!CODE_REGEX.test(code)) return json(400, { error: "Invalid code" });
+    if (!verificationId) return json(400, { error: "Missing verificationId" });
 
-    // Fetch latest unverified request for this phone
-    const nowIso = new Date().toISOString();
-    const { data: reqRow, error: reqError } = await admin
-      .from("phone_change_requests")
-      .select("id, code_hash, expires_at, verify_attempts, verified_at")
-      .eq("user_id", user.id)
-      .eq("phone_number", phone)
-      .is("verified_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Verify the code with Bird Verify API
+    const birdResp = await fetch(
+      `https://api.bird.com/workspaces/${birdWorkspaceId}/verify/${verificationId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `AccessKey ${birdApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code }),
+      }
+    );
 
-    if (reqError) {
-      console.error("Read phone_change_requests error:", reqError);
-      return json(500, { error: "Failed to verify" });
-    }
-    if (!reqRow) return json(400, { error: "No active verification request for that phone" });
+    if (!birdResp.ok) {
+      const errText = await birdResp.text();
+      console.error("Bird verify error:", birdResp.status, errText);
 
-    if (reqRow.expires_at <= nowIso) {
-      return json(400, { error: "Code expired. Please request a new one." });
-    }
-
-    if ((reqRow.verify_attempts ?? 0) >= 5) {
-      return json(429, { error: "Too many attempts. Please request a new code." });
+      if (birdResp.status === 400) {
+        return json(400, { error: "Incorrect code. Please try again." });
+      }
+      return json(502, { error: "Verification failed" });
     }
 
-    const expectedHash = await sha256Hex(`${code}:${user.id}`);
-    if (expectedHash !== reqRow.code_hash) {
-      const { error: bumpError } = await admin
-        .from("phone_change_requests")
-        .update({ verify_attempts: (reqRow.verify_attempts ?? 0) + 1 })
-        .eq("id", reqRow.id);
-
-      if (bumpError) console.error("Increment verify_attempts error:", bumpError);
-      return json(400, { error: "Incorrect code" });
-    }
-
-    // Mark verified
+    // Mark the phone_change_request as verified
     const { error: markError } = await admin
       .from("phone_change_requests")
       .update({ verified_at: new Date().toISOString() })
-      .eq("id", reqRow.id);
+      .eq("user_id", user.id)
+      .eq("phone_number", phone)
+      .eq("code_hash", verificationId)
+      .is("verified_at", null);
 
     if (markError) {
       console.error("Mark verified error:", markError);
-      return json(500, { error: "Failed to finalize verification" });
     }
 
-    // Update auth user phone (admin)
+    // Update auth user phone
     const { error: authUpdateError } = await admin.auth.admin.updateUserById(user.id, {
       phone,
     });
 
     if (authUpdateError) {
       console.error("Admin updateUserById(phone) error:", authUpdateError);
-      // Continue: keep profiles_private in sync even if auth phone update fails
     }
 
     // Update profiles_private phone_number
