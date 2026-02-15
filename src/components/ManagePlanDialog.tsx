@@ -139,8 +139,8 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
               )}
             </div>
 
-            {/* On iOS, show "Manage in Settings" button instead of cancel */}
-            {useAppleIAP && !isManualOverride && (
+            {/* On iOS, show "Manage in Settings" button */}
+            {useAppleIAP && (
               <>
                 <Button
                   variant="outline"
@@ -157,8 +157,8 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
               </>
             )}
 
-            {/* Cancel button - only show for Stripe-managed subscriptions (non-iOS) */}
-            {!useAppleIAP && !isManualOverride && (
+            {/* Cancel button - for Stripe-managed subscriptions (non-iOS) */}
+            {!useAppleIAP && (
               <>
                 <Button
                   variant="outline"
@@ -172,14 +172,6 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
                   {t("managePlan.cancelNote")}
                 </p>
               </>
-            )}
-
-
-            {/* Admin-managed message */}
-            {isManualOverride && (
-              <p className="text-xs text-center text-muted-foreground">
-                {t("managePlan.adminManaged")}
-              </p>
             )}
           </div>
         </DialogContent>

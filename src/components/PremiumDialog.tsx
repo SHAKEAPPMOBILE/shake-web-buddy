@@ -153,7 +153,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   }, [subscriptionEnd]);
 
   // Premium with Stripe subscription view
-  if (isPremium && !isManualOverride) {
+  if (isPremium) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
@@ -233,47 +233,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     );
   }
 
-  // Premium via manual override — show same view as regular premium, no admin mention
-  if (isPremium && isManualOverride) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent 
-          className="sm:max-w-md bg-card border-border"
-          {...(isMobile ? swipeHandlers : {})}
-        >
-          {isMobile && (
-            <div className="flex justify-center py-2 shrink-0">
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-            </div>
-          )}
-          <DialogHeader className="pb-2">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <SuperHumanIcon size={48} />
-            </div>
-            <DialogTitle className="text-center text-xl font-display">
-              You're a Super-Human! 🎉
-            </DialogTitle>
-            <DialogDescription className="text-center text-muted-foreground text-sm">
-              You have access to all premium features
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2 py-4">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-shake-green/20 flex items-center justify-center shrink-0">
-                  <Check className="w-3.5 h-3.5 text-shake-green" />
-                </div>
-                <span className="text-foreground text-sm">{feature.text}</span>
-              </div>
-            ))}
-          </div>
-
-          <KindHumanDonation />
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   // Non-premium view
   return (
