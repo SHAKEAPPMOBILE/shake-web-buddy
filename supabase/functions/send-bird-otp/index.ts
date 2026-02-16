@@ -59,22 +59,10 @@ serve(async (req) => {
       }
     }
 
-    // Build Bird Verify API request
+    // Build Bird Verify API request - use SMS channel directly
     const steps: Record<string, unknown>[] = [
-      {
-        channelId: birdChannelId,
-        template: {
-          projectId: birdTemplateId,
-          locale: "en",
-          version: birdTemplateVersion,
-        },
-      },
+      { channelId: birdChannelId },
     ];
-
-    // Add SMS fallback if navigator is configured
-    if (birdSmsNavigatorId) {
-      steps.push({ navigatorId: birdSmsNavigatorId });
-    }
 
     const verifyPayload = {
       identifier: { phonenumber: phone },

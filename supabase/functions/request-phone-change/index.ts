@@ -95,20 +95,10 @@ serve(async (req) => {
       return json(500, { error: "OTP provider not configured" });
     }
 
+    // Use SMS channel directly
     const steps: Record<string, unknown>[] = [
-      {
-        channelId: birdChannelId,
-        template: {
-          projectId: birdTemplateId,
-          locale: "en",
-          version: birdTemplateVersion,
-        },
-      },
+      { channelId: birdChannelId },
     ];
-
-    if (birdSmsNavigatorId) {
-      steps.push({ navigatorId: birdSmsNavigatorId });
-    }
 
     const birdResp = await fetch(
       `https://api.bird.com/workspaces/${birdWorkspaceId}/verify`,
