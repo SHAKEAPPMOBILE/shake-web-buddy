@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { VonageSMSService } from "../_shared/vonage-sms-service.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -206,59 +207,18 @@ serve(async (req) => {
       });
     }
 
-    // Twilio credentials
-    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
+    // Initialize Vonage SMS service
+    const smsService = VonageSMSService.fromEnv();
 
-    if (!accountSid || !authToken || !twilioPhone) {
-      console.error("Twilio credentials not configured");
-      throw new Error("Twilio credentials not configured");
-    }
+    // Prepare message
+    const message = `🎉 ${joinerName || "Someone"} just joined ${activityType} in ${city}! Open Shake to connect.`;
+    
+    // Send SMS to each user using Vonage
+    const phoneNumbers = profilesWithPhone.map(p => p.phone_number);
+    const results = await smsService.sendBulkSMS(phoneNumbers, message);
 
-    // Send SMS to each user
-    const results = await Promise.allSettled(
-      profilesWithPhone.map(async (profile) => {
-        const message = `🎉 ${joinerName || "Someone"} just joined ${activityType} in ${city}! Open Shake to connect.`;
-        
-        // Format phone number (ensure it has country code)
-        let phoneNumber = profile.phone_number.trim();
-        if (!phoneNumber.startsWith("+")) {
-          phoneNumber = "+1" + phoneNumber; // Default to US if no country code
-        }
-
-        console.log(`Sending SMS to ${phoneNumber}`);
-
-        const response = await fetch(
-          `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-          {
-            method: "POST",
-            headers: {
-              "Authorization": `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: new URLSearchParams({
-              To: phoneNumber,
-              From: twilioPhone,
-              Body: message,
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Failed to send SMS to ${phoneNumber}:`, errorText);
-          throw new Error(`Failed to send SMS: ${errorText}`);
-        }
-
-        const result = await response.json();
-        console.log(`SMS sent successfully to ${phoneNumber}:`, result.sid);
-        return result;
-      })
-    );
-
-    const successCount = results.filter(r => r.status === "fulfilled").length;
-    const failedCount = results.filter(r => r.status === "rejected").length;
+    const successCount = results.filter(r => r.success).length;
+    const failedCount = results.filter(r => !r.success).length;
 
     console.log(`SMS notifications: ${successCount} sent, ${failedCount} failed`);
 

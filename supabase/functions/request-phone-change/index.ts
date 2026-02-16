@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { VonageSMSService } from "../_shared/vonage-sms-service.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -133,32 +134,19 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Failed to create verification" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
-    if (!accountSid || !authToken || !twilioPhone) {
-      console.error("Twilio credentials not configured");
-      return new Response(JSON.stringify({ error: "SMS provider not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    // Initialize Vonage SMS service
+    const smsService = VonageSMSService.fromEnv();
 
     const message = `Your Shake verification code is ${code}. It expires in 10 minutes.`;
-    const resp = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        To: phone,
-        From: twilioPhone,
-        Body: message,
-      }),
-    });
-
-    if (!resp.ok) {
-      const errorText = await resp.text();
-      console.error("Twilio send failed:", errorText);
-      return new Response(JSON.stringify({ error: "Failed to send SMS" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    
+    try {
+      await smsService.sendSMS({ to: phone, message });
+    } catch (error) {
+      console.error("Vonage send failed:", error);
+      return new Response(JSON.stringify({ error: "Failed to send SMS" }), { 
+        status: 502, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      });
     }
 
     return new Response(JSON.stringify({ success: true, expiresAt }), {
