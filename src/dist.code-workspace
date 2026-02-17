@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": "../dist"
+		},
+		{
+			"path": "../ios"
+		},
+		{
+			"path": "../node_modules"
+		},
+		{
+			"path": "../android"
+		},
+		{
+			"path": "../public"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../supabase"
+		}
+	]
+}
