@@ -22,7 +22,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep link handler for OAuth callbacks (shake://auth/callback) -->
+            <!-- Deep link handler for OAuth callbacks (Android: shake://auth/callback) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 

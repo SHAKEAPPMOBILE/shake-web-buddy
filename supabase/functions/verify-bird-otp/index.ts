@@ -7,9 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PHONE_REGEX = /^\+\d{7,15}$/;
-const CODE_REGEX = /^\d{6}$/;
-
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -21,14 +18,6 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const birdApiKey = Deno.env.get("BIRD_API_KEY");
-    const birdWorkspaceId = Deno.env.get("BIRD_WORKSPACE_ID");
-
-    if (!birdApiKey || !birdWorkspaceId) {
-      console.error("Bird credentials not configured");
-      return json(500, { error: "OTP provider not configured" });
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(supabaseUrl, serviceKey);
@@ -39,44 +28,42 @@ serve(async (req) => {
     const verificationId = typeof body?.verificationId === "string" ? body.verificationId.trim() : "";
     const purpose = typeof body?.purpose === "string" ? body.purpose : "login";
     const password = typeof body?.password === "string" ? body.password : "";
-    const name = typeof body?.name === "string" ? body.name.trim() : "";
+    const name = typeof body?.name === "string" ? body.name : "";
 
-    if (!PHONE_REGEX.test(phone)) return json(400, { error: "Invalid phone" });
-    if (!CODE_REGEX.test(code)) return json(400, { error: "Invalid code" });
-    if (!verificationId) return json(400, { error: "Missing verificationId" });
-
-    // Verify the code with Bird Verify API
-    const birdResp = await fetch(
-      `https://api.bird.com/workspaces/${birdWorkspaceId}/verify/${verificationId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `AccessKey ${birdApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ code }),
-      }
-    );
-
-    if (!birdResp.ok) {
-      const errText = await birdResp.text();
-      console.error("Bird verify error:", birdResp.status, errText);
-
-      if (birdResp.status === 400) {
-        return json(400, { error: "Incorrect code. Please try again." });
-      }
-      return json(502, { error: "Verification failed" });
+    if (!phone || !code || !verificationId) {
+      return json(400, { error: "Missing required fields" });
     }
 
-    console.log(`Bird OTP verified for ${phone}, purpose: ${purpose}`);
+    const { data: otpRecord, error: otpError } = await admin
+      .from("otp_verifications")
+      .select("*")
+      .eq("id", verificationId)
+      .eq("phone_number", phone)
+      .eq("used", false)
+      .maybeSingle();
 
-    // Handle different purposes
+    if (otpError || !otpRecord) {
+      return json(400, { error: "Invalid or expired verification code" });
+    }
+
+    if (new Date(otpRecord.expires_at) < new Date()) {
+      await admin.from("otp_verifications").delete().eq("id", verificationId);
+      return json(400, { error: "Verification code has expired. Please request a new one." });
+    }
+
+    if (otpRecord.code !== code) {
+      return json(400, { error: "Incorrect code. Please try again." });
+    }
+
+    await admin.from("otp_verifications").update({ used: true }).eq("id", verificationId);
+
+    console.log(`OTP verified for ${phone}, purpose: ${purpose}`);
+
     if (purpose === "signup") {
       if (!password || password.length < 6) {
         return json(400, { error: "Password must be at least 6 characters" });
       }
 
-      // Check if user already exists
       const { data: existingProfile } = await admin
         .from("profiles_private")
         .select("user_id")
@@ -87,7 +74,6 @@ serve(async (req) => {
         return json(400, { error: "Account already exists. Please login instead." });
       }
 
-      // Create user via admin API
       const { data: newUser, error: createError } = await admin.auth.admin.createUser({
         phone,
         password,
@@ -108,11 +94,6 @@ serve(async (req) => {
     }
 
     if (purpose === "login") {
-      // For login, we just confirm the OTP is valid.
-      // The client will then call signInWithPassword.
-      // But if they don't have a password (legacy users), we need to handle that.
-      
-      // Check if user exists
       const { data: existingProfile } = await admin
         .from("profiles_private")
         .select("user_id")
@@ -131,7 +112,6 @@ serve(async (req) => {
     }
 
     if (purpose === "forgot_password") {
-      // Verify the user exists
       const { data: existingProfile } = await admin
         .from("profiles_private")
         .select("user_id")
@@ -142,7 +122,6 @@ serve(async (req) => {
         return json(400, { error: "No account found with this phone number" });
       }
 
-      // Update password if provided
       if (password && password.length >= 6) {
         const { error: updateError } = await admin.auth.admin.updateUserById(
           existingProfile.user_id,

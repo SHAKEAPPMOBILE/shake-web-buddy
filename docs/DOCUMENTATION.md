@@ -592,7 +592,8 @@ All edge functions are deployed to Lovable Cloud and handle server-side logic th
 
 The app supports iOS and Android via Capacitor:
 
-- **Deep linking:** `shake://auth/callback` for OAuth
+- **Deep linking (iOS):** `com.shake.app://auth/callback` for OAuth
+- **Deep linking (Android):** `shake://auth/callback` for OAuth
 - **Native features:** Push notifications, browser integration
 - **Build directories:** `android/`, `ios/`
 

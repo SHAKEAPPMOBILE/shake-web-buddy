@@ -16,19 +16,27 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
+function generateOTP(length = 6): string {
+  const digits = "0123456789";
+  let otp = "";
+  for (let i = 0; i < length; i++) {
+    otp += digits[Math.floor(Math.random() * digits.length)];
+  }
+  return otp;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const birdApiKey = Deno.env.get("BIRD_API_KEY");
-    const birdWorkspaceId = Deno.env.get("BIRD_WORKSPACE_ID");
-    const birdChannelId = Deno.env.get("BIRD_CHANNEL_ID");
-    const birdTemplateId = Deno.env.get("BIRD_WHATSAPP_TEMPLATE_ID");
-    const birdTemplateVersion = Deno.env.get("BIRD_WHATSAPP_TEMPLATE_VERSION");
-    const birdSmsNavigatorId = Deno.env.get("BIRD_SMS_NAVIGATOR_ID");
+    const infobipApiKey = Deno.env.get("INFOBIP_API_KEY");
+    const infobipBaseUrl = Deno.env.get("INFOBIP_BASE_URL");
+    const infobipFrom = Deno.env.get("INFOBIP_FROM");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    if (!birdApiKey || !birdWorkspaceId || !birdChannelId || !birdTemplateId || !birdTemplateVersion) {
-      console.error("Bird credentials not fully configured");
+    if (!infobipApiKey || !infobipBaseUrl || !infobipFrom) {
+      console.error("Infobip credentials not configured");
       return json(500, { error: "OTP provider not configured" });
     }
 
@@ -40,70 +48,75 @@ serve(async (req) => {
       return json(400, { error: "Invalid phone number" });
     }
 
-    // Rate limiting for auth OTPs
-    if (purpose === "auth") {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const admin = createClient(supabaseUrl, serviceKey);
+    const admin = createClient(supabaseUrl, serviceKey);
 
-      // Check rate limit: max 5 OTPs per phone per hour
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      const { count, error: countError } = await admin
-        .from("phone_change_requests")
-        .select("id", { count: "exact", head: true })
-        .eq("phone_number", phone)
-        .gte("created_at", oneHourAgo);
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count, error: countError } = await admin
+      .from("phone_change_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("phone_number", phone)
+      .gte("created_at", oneHourAgo);
 
-      if (!countError && (count ?? 0) >= 5) {
-        return json(429, { error: "Too many codes requested. Please try again later." });
-      }
+    if (!countError && (count ?? 0) >= 5) {
+      return json(429, { error: "Too many codes requested. Please try again later." });
     }
 
-    // Build Bird Verify API request - use SMS channel directly
-    const steps: Record<string, unknown>[] = [
-      { channelId: birdChannelId },
-    ];
+    const code = generateOTP(6);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const verificationId = crypto.randomUUID();
 
-    const verifyPayload = {
-      identifier: { phonenumber: phone },
-      maxAttempts: 3,
-      timeout: 600,
-      codeLength: 6,
-      steps,
+    const { error: insertError } = await admin
+      .from("otp_verifications")
+      .insert({
+        id: verificationId,
+        phone_number: phone,
+        code,
+        purpose,
+        expires_at: expiresAt,
+        used: false,
+      });
+
+    if (insertError) {
+      console.error("Failed to store OTP:", insertError);
+      return json(500, { error: "Failed to send verification code" });
+    }
+
+    const smsPayload = {
+      messages: [
+        {
+          from: infobipFrom,
+          destinations: [{ to: phone }],
+          text: `Your Shake verification code is: ${code}. Valid for 10 minutes.`,
+        },
+      ],
     };
 
-    const birdResp = await fetch(
-      `https://api.bird.com/workspaces/${birdWorkspaceId}/verify`,
+    const infobipResp = await fetch(
+      `${infobipBaseUrl}/sms/2/text/advanced`,
       {
         method: "POST",
         headers: {
-          Authorization: `AccessKey ${birdApiKey}`,
+          Authorization: `App ${infobipApiKey}`,
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
-        body: JSON.stringify(verifyPayload),
+        body: JSON.stringify(smsPayload),
       }
     );
 
-    if (!birdResp.ok) {
-      const errText = await birdResp.text();
-      console.error("Bird Verify API error:", birdResp.status, errText);
+    if (!infobipResp.ok) {
+      const errText = await infobipResp.text();
+      console.error("Infobip SMS error:", infobipResp.status, errText);
+      await admin.from("otp_verifications").delete().eq("id", verificationId);
       return json(502, { error: "Failed to send verification code" });
     }
 
-    const birdData = await birdResp.json();
-    const verificationId = birdData.id;
-
-    if (!verificationId) {
-      console.error("Bird response missing verification ID:", birdData);
-      return json(502, { error: "Failed to send verification code" });
-    }
-
-    console.log(`OTP sent via Bird for ${phone}, verificationId: ${verificationId}`);
+    console.log(`OTP sent via Infobip for ${phone}, verificationId: ${verificationId}`);
 
     return json(200, {
       success: true,
       verificationId,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      expiresAt,
     });
   } catch (e) {
     console.error("send-bird-otp error:", e);

@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.shake.app',
+  appId: 'com.shakeapp.shakeapp',
   appName: 'SHAKE',
   webDir: 'dist',
   plugins: {
