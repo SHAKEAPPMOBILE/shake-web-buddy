@@ -13,6 +13,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  redirectTo: 'com.shake.app://auth/callback',
+  redirectTo: typeof window !== "undefined" && window.location.hostname !== "localhost" ? "https://app.shakeapp.today/auth/callback" : "com.shake.app://auth/callback",
   }
 });
