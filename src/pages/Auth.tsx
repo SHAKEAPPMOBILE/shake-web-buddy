@@ -49,13 +49,20 @@ async function signInWithOAuth(provider: 'google' | 'apple') {
       }
     } else {
       // Web (desktop + mobile browser): full redirect to Google/Apple, then back to /auth/callback
-      const redirectTo =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/auth/callback`
-          : "https://shake-web-app.netlify.app/auth/callback";
+      const redirectTo = import.meta.env.DEV
+        ? "http://localhost:5173/auth/callback"
+        : "https://shake-web-app.netlify.app/auth/callback";
+
+      const options: any = { redirectTo };
+
+      // On Google, always show account picker so users can switch accounts
+      if (provider === "google") {
+        options.queryParams = { prompt: "select_account" };
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo },
+        options,
       });
       if (error) throw error;
       // Supabase will redirect the window to the provider; no need to do anything else
