@@ -17,6 +17,7 @@ import { PremiumDialog } from "@/components/PremiumDialog";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
 import { useTranslation } from "react-i18next";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface PlanMessage {
   id: string;
@@ -283,14 +284,15 @@ export function PlanGroupChatView({
                       });
                     }
                   }}
-                  className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0 overflow-hidden border border-border"
+                  className="w-8 h-8 shrink-0 rounded-full overflow-hidden border border-border"
                   disabled={isOwnMessage}
                 >
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-                  ) : (
-                    <User className="w-4 h-4 text-muted-foreground" />
-                  )}
+                  <Avatar className="w-full h-full rounded-full bg-muted">
+                    <AvatarImage src={avatarUrl ?? undefined} alt={displayName} className="object-cover" />
+                    <AvatarFallback className="bg-muted flex items-center justify-center">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
                 </button>
                 <div className={`flex-1 max-w-[70%] ${isOwnMessage ? "text-right" : ""}`}>
                   <div className={`flex items-baseline gap-2 ${isOwnMessage ? "justify-end" : ""}`}>

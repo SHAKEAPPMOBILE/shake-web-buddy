@@ -217,7 +217,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
 
   return (
-    <div className="flex flex-col h-full pt-[env(safe-area-inset-top,0px)]">
+    <div className="flex flex-col h-full min-h-0 pt-[env(safe-area-inset-top,0px)] overflow-y-auto pb-[env(safe-area-inset-bottom,0px)]">
       {/* Profile Header - Clickable to view own profile */}
       <button
         onClick={() => setShowProfileDialog(true)}

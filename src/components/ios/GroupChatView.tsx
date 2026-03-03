@@ -19,6 +19,7 @@ import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityLabel, getActivityEmoji, getActivityDay } from "@/data/activityTypes";
 import { getVenueTypeForActivity, DbVenue } from "@/hooks/useDatabaseVenues";
 import { useTranslation } from "react-i18next";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface GroupChatViewProps {
   activityType: string;
@@ -560,16 +561,15 @@ export function GroupChatView({
             const isOwnMessage = msg.user_id === user?.id;
             const profile = profiles[msg.user_id];
             const displayName = isOwnMessage ? 'You' : profile?.name || 'Shaker';
-            const avatarUrl = profile?.avatar_url;
+            const avatarUrl = isOwnMessage ? (ownProfile?.avatar_url ?? profile?.avatar_url) : profile?.avatar_url;
             return (
               <div key={msg.id} className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                <div className="w-8 h-8 rounded-full bg-white/5 shrink-0 overflow-hidden border border-white/10 flex items-center justify-center">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-                  ) : (
+                <Avatar className="w-8 h-8 shrink-0 rounded-full border border-white/10 bg-white/5">
+                  <AvatarImage src={avatarUrl ?? undefined} alt={displayName} className="object-cover" />
+                  <AvatarFallback className="bg-white/5 flex items-center justify-center">
                     <User className="w-4 h-4 text-white/40" />
-                  )}
-                </div>
+                  </AvatarFallback>
+                </Avatar>
                 <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
                   <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
                     <button

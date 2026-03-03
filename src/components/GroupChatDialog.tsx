@@ -23,6 +23,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useTranslation } from "react-i18next";
 import { VenueSuggestionCarousel } from "./VenueSuggestionCarousel";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DbVenue } from "@/hooks/useDatabaseVenues";
 interface GroupChatDialogProps {
   open: boolean;
@@ -605,24 +606,21 @@ export function GroupChatDialog({
                   const displayName = isOwnMessage 
                     ? t('chat.you', 'You') 
                     : profile?.name || t('chat.shaker', 'Shaker');
-                  const avatarUrl = profile?.avatar_url;
+                  const avatarUrl = isOwnMessage
+                    ? (ownProfile?.avatar_url ?? profile?.avatar_url)
+                    : profile?.avatar_url;
                   
                   return (
                     <div 
                       key={msg.id} 
                       className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${!user ? 'blur-sm select-none pointer-events-none' : ''}`}
                     >
-                      <div className="w-8 h-8 rounded-full bg-white/5 shrink-0 overflow-hidden border border-white/10">
-                        {avatarUrl ? (
-                          <img 
-                            src={avatarUrl} 
-                            alt={displayName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
+                      <Avatar className="w-8 h-8 shrink-0 rounded-full border border-white/10 bg-white/5">
+                        <AvatarImage src={avatarUrl ?? undefined} alt={displayName} className="object-cover" />
+                        <AvatarFallback className="bg-white/5 flex items-center justify-center">
                           <User className="w-4 h-4 text-white/40" />
-                        )}
-                      </div>
+                        </AvatarFallback>
+                      </Avatar>
                       <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
                         <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
                           <button 
