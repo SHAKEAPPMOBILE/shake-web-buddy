@@ -1,63 +1,35 @@
-import avatarNew1 from "@/assets/avatar-new-1.png";
-import avatarNew2 from "@/assets/avatar-new-2.png";
-import avatarNew3 from "@/assets/avatar-new-3.png";
-import avatarNew4 from "@/assets/avatar-new-4.png";
-import avatarNew5 from "@/assets/avatar-new-5.png";
-import avatarNew6 from "@/assets/avatar-new-6.png";
-import avatarNew7 from "@/assets/avatar-new-7.png";
-import avatarNew8 from "@/assets/avatar-new-8.png";
-import avatarNew9 from "@/assets/avatar-new-9.png";
-import avatarNew11 from "@/assets/avatar-new-11.png";
-import avatarNew12 from "@/assets/avatar-new-12.png";
-import avatarNew13 from "@/assets/avatar-new-13.png";
-import avatarNew14 from "@/assets/avatar-new-14.png";
-// Removed avatar-new-15 import as it's a duplicate of avatar-new-6
-import avatarNew16 from "@/assets/avatar-new-16.png";
-import avatarNew17 from "@/assets/avatar-new-17.png";
-import avatarNew18 from "@/assets/avatar-new-18.png";
-import avatarNew20 from "@/assets/avatar-new-20.png";
-import avatarNew21 from "@/assets/avatar-new-21.png";
-import avatarNew22 from "@/assets/avatar-new-22.png";
-import avatarNew23 from "@/assets/avatar-new-23.png";
-import avatarNew24 from "@/assets/avatar-new-24.png";
-import avatarNew25 from "@/assets/avatar-new-25.png";
-import avatarNew26 from "@/assets/avatar-new-26.png";
-import avatarNew27 from "@/assets/avatar-new-27.png";
-import avatarNew28 from "@/assets/avatar-new-28.png";
-import avatarNew30 from "@/assets/avatar-new-30.png";
 import { Check } from "lucide-react";
 import cameraIcon from "@/assets/camera-icon.png";
 import { cn } from "@/lib/utils";
 
-// Local asset avatars
+// Local asset avatars using stable public paths (won't change between builds)
 const localAvatarOptions = [
-  { id: "avatar-1", src: avatarNew1 },
-  { id: "avatar-2", src: avatarNew2 },
-  { id: "avatar-3", src: avatarNew3 },
-  { id: "avatar-4", src: avatarNew4 },
-  { id: "avatar-5", src: avatarNew5 },
-  { id: "avatar-6", src: avatarNew6 },
-  { id: "avatar-7", src: avatarNew7 },
-  { id: "avatar-8", src: avatarNew8 },
-  { id: "avatar-9", src: avatarNew9 },
-  { id: "avatar-11", src: avatarNew11 },
-  { id: "avatar-12", src: avatarNew12 },
-  { id: "avatar-13", src: avatarNew13 },
-  { id: "avatar-14", src: avatarNew14 },
-  // Removed avatar-15 as it's a duplicate of avatar-6
-  { id: "avatar-16", src: avatarNew16 },
-  { id: "avatar-17", src: avatarNew17 },
-  { id: "avatar-18", src: avatarNew18 },
-  { id: "avatar-20", src: avatarNew20 },
-  { id: "avatar-21", src: avatarNew21 },
-  { id: "avatar-22", src: avatarNew22 },
-  { id: "avatar-23", src: avatarNew23 },
-  { id: "avatar-24", src: avatarNew24 },
-  { id: "avatar-25", src: avatarNew25 },
-  { id: "avatar-26", src: avatarNew26 },
-  { id: "avatar-27", src: avatarNew27 },
-  { id: "avatar-28", src: avatarNew28 },
-  { id: "avatar-30", src: avatarNew30 },
+  { id: "avatar-1", src: "/avatars/avatar-new-1.png" },
+  { id: "avatar-2", src: "/avatars/avatar-new-2.png" },
+  { id: "avatar-3", src: "/avatars/avatar-new-3.png" },
+  { id: "avatar-4", src: "/avatars/avatar-new-4.png" },
+  { id: "avatar-5", src: "/avatars/avatar-new-5.png" },
+  { id: "avatar-6", src: "/avatars/avatar-new-6.png" },
+  { id: "avatar-7", src: "/avatars/avatar-new-7.png" },
+  { id: "avatar-8", src: "/avatars/avatar-new-8.png" },
+  { id: "avatar-9", src: "/avatars/avatar-new-9.png" },
+  { id: "avatar-11", src: "/avatars/avatar-new-11.png" },
+  { id: "avatar-12", src: "/avatars/avatar-new-12.png" },
+  { id: "avatar-13", src: "/avatars/avatar-new-13.png" },
+  { id: "avatar-14", src: "/avatars/avatar-new-14.png" },
+  { id: "avatar-16", src: "/avatars/avatar-new-16.png" },
+  { id: "avatar-17", src: "/avatars/avatar-new-17.png" },
+  { id: "avatar-18", src: "/avatars/avatar-new-18.png" },
+  { id: "avatar-20", src: "/avatars/avatar-new-20.png" },
+  { id: "avatar-21", src: "/avatars/avatar-new-21.png" },
+  { id: "avatar-22", src: "/avatars/avatar-new-22.png" },
+  { id: "avatar-23", src: "/avatars/avatar-new-23.png" },
+  { id: "avatar-24", src: "/avatars/avatar-new-24.png" },
+  { id: "avatar-25", src: "/avatars/avatar-new-25.png" },
+  { id: "avatar-26", src: "/avatars/avatar-new-26.png" },
+  { id: "avatar-27", src: "/avatars/avatar-new-27.png" },
+  { id: "avatar-28", src: "/avatars/avatar-new-28.png" },
+  { id: "avatar-30", src: "/avatars/avatar-new-30.png" },
 ];
 
 // Export avatar options (local only)
