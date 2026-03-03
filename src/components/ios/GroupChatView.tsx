@@ -423,7 +423,7 @@ export function GroupChatView({
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#06060a] z-50">
-      <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124,92,252,0.22) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(240,90,126,0.18) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 60% 20%, rgba(240,192,96,0.12) 0%, transparent 50%)' }} aria-hidden />
+      <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(circle at 8% 0%, rgba(139,92,246,0.65) 0%, transparent 55%), radial-gradient(circle at 92% 18%, rgba(236,72,153,0.6) 0%, transparent 55%), radial-gradient(circle at 50% 100%, rgba(56,189,248,0.5) 0%, transparent 60%)' }} aria-hidden />
       <div className="relative z-10 flex flex-col flex-1 min-h-0">
       <div className="flex items-center gap-3 px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-white/5">
         <button onClick={onBack} className="shrink-0 p-1.5 text-white/80 hover:text-white">

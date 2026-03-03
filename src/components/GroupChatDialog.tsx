@@ -428,7 +428,7 @@ export function GroupChatDialog({
         className={`sm:max-w-lg flex flex-col p-0 relative bg-[#06060a] overflow-hidden backdrop-blur-xl border-white/10 [&>button.dialog-close]:text-white transition-all duration-300 ${isChatExpanded ? 'h-[600px]' : 'h-auto'}`}
         {...(isMobile ? swipeHandlers : {})}
       >
-        <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124,92,252,0.22) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(240,90,126,0.18) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 60% 20%, rgba(240,192,96,0.12) 0%, transparent 50%)' }} aria-hidden />
+        <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(circle at 8% 0%, rgba(139,92,246,0.65) 0%, transparent 55%), radial-gradient(circle at 92% 18%, rgba(236,72,153,0.6) 0%, transparent 55%), radial-gradient(circle at 50% 100%, rgba(56,189,248,0.5) 0%, transparent 60%)' }} aria-hidden />
         {isMobile && (
           <div className="flex justify-center py-2 shrink-0">
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
