@@ -425,9 +425,10 @@ export function GroupChatDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className={`sm:max-w-lg flex flex-col p-0 bg-[#06060a] backdrop-blur-xl border-border/50 [&>button.dialog-close]:text-white transition-all duration-300 ${isChatExpanded ? 'h-[600px]' : 'h-auto'}`}
+        className={`sm:max-w-lg flex flex-col p-0 relative bg-[#06060a] overflow-hidden backdrop-blur-xl border-white/10 [&>button.dialog-close]:text-white transition-all duration-300 ${isChatExpanded ? 'h-[600px]' : 'h-auto'}`}
         {...(isMobile ? swipeHandlers : {})}
       >
+        <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124,92,252,0.22) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(240,90,126,0.18) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 60% 20%, rgba(240,192,96,0.12) 0%, transparent 50%)' }} aria-hidden />
         {isMobile && (
           <div className="flex justify-center py-2 shrink-0">
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
@@ -436,29 +437,27 @@ export function GroupChatDialog({
         {/* Welcome view when not expanded - centered like confirmation dialog */}
         {!isChatExpanded ? (
           <div className="flex flex-col items-center py-6 px-4 space-y-4">
-            {/* Activity emoji */}
-            <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle">
-              <span className="text-4xl">{getActivityEmoji(activityType)}</span>
+            {/* Activity emoji - minimal */}
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+              <span className="text-3xl">{getActivityEmoji(activityType)}</span>
             </div>
 
             {/* Activity name and details */}
-            <div className="text-center space-y-1.5">
-              <p className="text-xl font-bold text-foreground">
+            <div className="text-center space-y-1">
+              <p className="text-lg font-semibold text-white">
                 {getTranslatedActivityLabel(t, activityType)}
               </p>
               {getTranslatedActivityDay(t, activityType) && (
-                <p className="text-sm text-primary font-medium">
+                <p className="text-sm text-purple-300/90">
                   {getTranslatedActivityDay(t, activityType)}
                 </p>
               )}
-              {/* Cross-city indicator */}
               {isCrossCity && (
-                <div className="flex items-center justify-center gap-1.5 text-sm text-primary font-medium">
-                  <Plane className="w-3.5 h-3.5" />
+                <div className="flex items-center justify-center gap-1.5 text-xs text-purple-300/90">
+                  <Plane className="w-3 h-3" />
                   <span>in {city}</span>
                 </div>
               )}
-              {/* Venue info */}
               {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch" || activityType === "drinks") && (
                 <div className="mt-1">
                   {mapsUrl ? (
@@ -466,13 +465,13 @@ export function GroupChatDialog({
                       href={mapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline flex items-center justify-center gap-1"
+                      className="text-xs text-purple-300/90 hover:text-purple-200 flex items-center justify-center gap-1"
                     >
                       <MapPin className="w-3 h-3" />
                       {location}
                     </a>
                   ) : (
-                    <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    <span className="text-xs text-white/50 flex items-center justify-center gap-1">
                       <MapPin className="w-3 h-3" />
                       {location}
                     </span>
@@ -485,19 +484,19 @@ export function GroupChatDialog({
             {showAttendees ? (
               <button
                 onClick={() => setShowParticipantsList(true)}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
               >
                 <div className="flex -space-x-2">
                   {participants.slice(0, 4).map((p) => (
                     <div
                       key={p.user_id}
-                      className="w-7 h-7 rounded-full bg-muted border-2 border-white overflow-hidden"
+                      className="w-7 h-7 rounded-full bg-white/10 border border-white/20 overflow-hidden"
                     >
                       {p.avatar_url ? (
                         <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <User className="w-3.5 h-3.5 text-muted-foreground" />
+                          <User className="w-3.5 h-3.5 text-white/40" />
                         </div>
                       )}
                     </div>
@@ -506,44 +505,33 @@ export function GroupChatDialog({
                 <span>{t('chat.joinedToday', '{{count}} joined today', { count: attendeeCount })}</span>
               </button>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-white/50">
                 {t('chat.beFirstToJoin', 'Be the first to join today!')}
               </p>
             )}
 
-            {/* Action buttons */}
             <div className="flex flex-col gap-2 w-full max-w-xs">
               <Button
                 onClick={() => setIsChatExpanded(true)}
-                variant="shake"
-                className="w-full"
+                className="w-full bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
               >
                 {t('chat.openChat', 'Open Chat')}
               </Button>
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={handleMuteToggle}
-                  className="flex-1"
+                  className="flex-1 text-white/70 hover:text-white hover:bg-white/10"
                 >
-                  {isMuted ? (
-                    <>
-                      <BellOff className="w-4 h-4 mr-1" />
-                      {t('chat.unmute', 'Unmute')}
-                    </>
-                  ) : (
-                    <>
-                      <Bell className="w-4 h-4 mr-1" />
-                      {t('chat.mute', 'Mute')}
-                    </>
-                  )}
+                  {isMuted ? <BellOff className="w-4 h-4 mr-1" /> : <Bell className="w-4 h-4 mr-1" />}
+                  {isMuted ? t('chat.unmute', 'Unmute') : t('chat.mute', 'Mute')}
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={handleLeaveActivity}
-                  className="flex-1 text-destructive hover:text-destructive"
+                  className="flex-1 text-white/60 hover:text-red-400 hover:bg-white/5"
                 >
                   <LogOut className="w-4 h-4 mr-1" />
                   {t('chat.leave', 'Leave')}
@@ -553,53 +541,41 @@ export function GroupChatDialog({
           </div>
         ) : (
           <>
-            {/* Expanded Chat Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0 bg-white/5 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsChatExpanded(false)}
-                  className="p-1 hover:opacity-70 transition-opacity"
-                  title="Back"
-                >
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Expanded Chat Header - minimal */}
+            <div className="flex items-center justify-between px-4 py-2.5 shrink-0 border-b border-white/5">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setIsChatExpanded(false)} className="p-1.5 text-white/80 hover:text-white" title="Back">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
-                <div>
-                  <h3 className="font-display font-semibold text-white">{title}</h3>
-                  {isCrossCity && (
-                    <div className="flex items-center gap-1 text-xs text-purple-300">
-                      <Plane className="w-3 h-3" />
-                      <span>in {city}</span>
-                    </div>
-                  )}
-                </div>
+                <h3 className="font-medium text-white text-sm">{title}</h3>
+                {isCrossCity && (
+                  <span className="text-xs text-purple-300/80 flex items-center gap-0.5">
+                    <Plane className="w-3 h-3" /> {city}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 {showAttendees && (
                   <button
                     onClick={() => setShowParticipantsList(true)}
-                    className="flex items-center gap-1 px-2 py-1 text-xs bg-white/10 rounded-full hover:bg-white/20 transition-colors text-white"
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-white/70 hover:text-white rounded-full hover:bg-white/5"
                   >
-                    <Users className="w-3 h-3" />
+                    <Users className="w-3.5 h-3.5" />
                     <span>{attendeeCount}</span>
                   </button>
                 )}
-                {/* Venue suggestion toggle for activities with venues */}
                 {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch" || activityType === "drinks") && (
                   <button
                     onClick={() => setShowVenueSuggestions(!showVenueSuggestions)}
-                    className={`p-2 rounded-md transition-colors ${showVenueSuggestions ? 'bg-purple-500/30 text-purple-300' : 'hover:bg-white/10 text-white'}`}
+                    className={`p-1.5 rounded-md ${showVenueSuggestions ? 'text-purple-300 bg-purple-500/20' : 'text-white/60 hover:text-white'}`}
                     title={t('chat.suggestVenue', 'Suggest a venue')}
                   >
                     <MapPin className="w-4 h-4" />
                   </button>
                 )}
-                <button
-                  onClick={handleMuteToggle}
-                  className="p-2 hover:bg-white/10 rounded-md transition-colors text-white"
-                  title={isMuted ? "Unmute" : "Mute"}
-                >
+                <button onClick={handleMuteToggle} className="p-1.5 text-white/60 hover:text-white rounded-md" title={isMuted ? "Unmute" : "Mute"}>
                   {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                 </button>
               </div>
@@ -614,13 +590,12 @@ export function GroupChatDialog({
               />
             )}
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-white/50">
+                <div className="flex flex-col items-center justify-center h-full text-white/40">
                   <p className="text-center text-sm">
                     {t('chat.startTheConversation', 'Start the conversation!')}<br />
-                    {t('chat.messagesFromToday', 'Messages from today will appear here.')}
+                    <span className="text-xs">{t('chat.messagesFromToday', 'Messages from today will appear here.')}</span>
                   </p>
                 </div>
               ) : (
@@ -637,7 +612,7 @@ export function GroupChatDialog({
                       key={msg.id} 
                       className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${!user ? 'blur-sm select-none pointer-events-none' : ''}`}
                     >
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm shrink-0 overflow-hidden border border-white/20">
+                      <div className="w-8 h-8 rounded-full bg-white/5 shrink-0 overflow-hidden border border-white/10">
                         {avatarUrl ? (
                           <img 
                             src={avatarUrl} 
@@ -645,7 +620,7 @@ export function GroupChatDialog({
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="w-4 h-4 text-white/50" />
+                          <User className="w-4 h-4 text-white/40" />
                         )}
                       </div>
                       <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
@@ -665,15 +640,15 @@ export function GroupChatDialog({
                           >
                             {displayName}
                           </button>
-                          <span className="text-xs text-white/40">
+                          <span className="text-xs text-white/35">
                             {format(new Date(msg.created_at), 'h:mm a')}
                           </span>
                         </div>
                         <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                          <div className={`text-sm mt-1 p-3 rounded-lg inline-block ${
+                          <div className={`text-sm mt-0.5 px-3 py-2 rounded-xl inline-block ${
                             isOwnMessage 
-                              ? 'bg-gradient-to-r from-[#7c5cfc] to-[#9b7dfe] text-white'
-                              : 'bg-[rgba(124,92,252,0.18)] text-white border border-[#7c5cfc]/40'
+                              ? 'bg-[#7c5cfc] text-white'
+                              : 'bg-white/10 text-white border border-white/10'
                           }`}>
                             <span>{msg.message}</span>
                           </div>
@@ -695,15 +670,14 @@ export function GroupChatDialog({
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Suggestions - show when input is empty */}
             {user && !message.trim() && (
               <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
-                <div className="flex gap-2 w-max">
+                <div className="flex gap-1.5 w-max">
                   {chatSuggestions.map((suggestion, index) => (
                     <button
                       key={index}
                       onClick={() => setMessage(suggestion)}
-                      className="text-xs px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors border border-purple-500/30 whitespace-nowrap shrink-0"
+                      className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-purple-200 hover:bg-white/10 border border-white/10 whitespace-nowrap shrink-0"
                     >
                       {suggestion}
                     </button>
@@ -712,23 +686,21 @@ export function GroupChatDialog({
               </div>
             )}
 
-            {/* Input */}
-            <div className="p-4 border-t border-white/10">
+            <div className="p-3 border-t border-white/5">
               <div className="flex items-center gap-2">
-                {/* Participant Avatars */}
                 {showAttendees && participants.length > 0 && (
                   <div className="flex -space-x-2">
                     {participants.slice(0, 3).map((p) => (
                       <div
                         key={p.user_id}
-                        className="w-6 h-6 rounded-full bg-white/10 border border-white/20 overflow-hidden shrink-0"
+                        className="w-6 h-6 rounded-full bg-white/5 border border-white/10 overflow-hidden shrink-0"
                         title={p.name || 'Participant'}
                       >
                         {p.avatar_url ? (
                           <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <User className="w-2.5 h-2.5 text-white/50" />
+                            <User className="w-2.5 h-2.5 text-white/40" />
                           </div>
                         )}
                       </div>
@@ -740,15 +712,14 @@ export function GroupChatDialog({
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="flex-1 bg-white/5 border-white/10 focus-visible:ring-purple-500/50 text-white placeholder:text-white/40"
+                  className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
                   disabled={isSending || (!isPremium && !canSendText)}
                 />
-                <Button 
-                  variant="shake" 
-                  size="icon" 
+                <Button
+                  size="icon"
                   onClick={handleSendMessage}
                   disabled={isSending || !message.trim()}
-                  className="bg-gradient-to-r from-[#7c5cfc] to-[#9b7dfe] hover:from-[#8b6dfc] hover:to-[#aaaaff]"
+                  className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
                 >
                   {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
                 </Button>

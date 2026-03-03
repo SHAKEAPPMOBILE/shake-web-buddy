@@ -422,63 +422,44 @@ export function GroupChatView({
   const showAttendees = attendeeCount > 0;
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50">
-      {/* Minimal Header */}
-      <div className="flex items-center gap-3 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
-        <button onClick={onBack} className="shrink-0 p-1 hover:opacity-70 transition-opacity">
-          <ChevronLeft className="w-6 h-6 text-black" />
+    <div className="fixed inset-0 flex flex-col bg-[#06060a] z-50">
+      <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124,92,252,0.22) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(240,90,126,0.18) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 60% 20%, rgba(240,192,96,0.12) 0%, transparent 50%)' }} aria-hidden />
+      <div className="relative z-10 flex flex-col flex-1 min-h-0">
+      <div className="flex items-center gap-3 px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-white/5">
+        <button onClick={onBack} className="shrink-0 p-1.5 text-white/80 hover:text-white">
+          <ChevronLeft className="w-6 h-6" />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-display text-black flex items-center gap-2">
+          <h1 className="text-base font-medium text-white flex items-center gap-2">
             <span className="truncate">{title}</span>
             {isCrossCity && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full shrink-0">
+              <span className="flex items-center gap-1 px-2 py-0.5 text-xs text-purple-300/90 rounded-full shrink-0 bg-white/5">
                 <Plane className="w-3 h-3" />
                 {city}
               </span>
             )}
           </h1>
-          <p className="text-sm text-black/60">{getActivityDay(activityType) || formattedTime}</p>
+          <p className="text-xs text-white/50">{getActivityDay(activityType) || formattedTime}</p>
         </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost" 
-            size="icon" 
-            onClick={handleMuteToggle}
-            className="shrink-0 text-black/50 hover:text-black hover:bg-black/10 h-8 w-8"
-            title={isMuted ? "Unmute notifications" : "Mute notifications"}
-          >
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-white/60 hover:text-white hover:bg-white/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
             {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleLeaveActivity}
-            className="shrink-0 text-destructive/70 hover:text-destructive hover:bg-destructive/10 h-8 w-8"
-            title="Leave activity"
-          >
+          <Button variant="ghost" size="icon" onClick={handleLeaveActivity} className="shrink-0 text-white/50 hover:text-red-400 hover:bg-white/5 h-8 w-8" title="Leave">
             <LogOut className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      {/* Venue Suggestion Bar */}
       {hasVenues && currentVenue && (
-        <div className="px-4 py-2 border-b border-black/5">
+        <div className="px-4 py-2 border-b border-white/5">
           <div className="flex items-center gap-2">
-            {/* Left arrow */}
             {hasMultipleVenues && (
-              <button
-                onClick={handlePrevVenue}
-                className="p-1 rounded-full bg-shake-yellow/30 hover:bg-shake-yellow/50 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4 text-shake-yellow-foreground" />
+              <button onClick={handlePrevVenue} className="p-1 rounded-full text-white/60 hover:text-white hover:bg-white/5">
+                <ChevronLeft className="w-4 h-4" />
               </button>
             )}
-            
-            {/* Venue pill with external MapPin */}
             <div className="flex-1 flex items-center justify-center gap-1.5">
-              {/* MapPin outside pill - opens Google Maps */}
               <button
                 onClick={() => {
                   const venueUrl = currentVenue.latitude && currentVenue.longitude
@@ -486,14 +467,12 @@ export function GroupChatView({
                     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentVenue.name}, ${currentVenue.address}`)}`;
                   window.location.href = venueUrl;
                 }}
-                className="text-xl hover:scale-110 transition-transform"
+                className="text-lg hover:scale-110 transition-transform text-purple-300/90"
                 title="Open in Google Maps"
               >
                 📍
               </button>
-              
               {isCurrentVenueAssigned ? (
-                /* Our Pick - green, expandable on click to show full name */
                 <button
                   onClick={(e) => {
                     const el = e.currentTarget.querySelector('.venue-name') as HTMLElement;
@@ -502,44 +481,34 @@ export function GroupChatView({
                       el.classList.toggle('max-w-none');
                     }
                   }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-shake-green/20 text-shake-green rounded-full font-medium text-sm shadow-md border border-shake-green/30 cursor-pointer hover:bg-shake-green/30 transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#7c5cfc]/20 text-purple-200 rounded-full text-sm border border-white/10"
                 >
                   <span>⭐</span>
                   <span className="venue-name truncate max-w-[180px] transition-all duration-200">{currentVenue.name}</span>
                 </button>
               ) : (
-                /* Other venues - yellow, clickable to suggest */
                 <button
                   onClick={() => handleSuggestVenue(currentVenue)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-shake-yellow text-shake-yellow-foreground rounded-full font-medium text-sm shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 text-white/90 rounded-full text-sm border border-white/10 hover:bg-white/10"
                 >
                   <span className="truncate max-w-[180px]">{currentVenue.name}</span>
-                  <span className="text-xs opacity-75">({t('chat.suggest', 'Suggest')})</span>
+                  <span className="text-xs text-white/50">({t('chat.suggest', 'Suggest')})</span>
                 </button>
               )}
             </div>
-            
-            {/* Right arrow */}
             {hasMultipleVenues && (
-              <button
-                onClick={handleNextVenue}
-                className="p-1 rounded-full bg-shake-yellow/30 hover:bg-shake-yellow/50 transition-colors"
-              >
-                <ChevronRight className="w-4 h-4 text-shake-yellow-foreground" />
+              <button onClick={handleNextVenue} className="p-1 rounded-full text-white/60 hover:text-white hover:bg-white/5">
+                <ChevronRight className="w-4 h-4" />
               </button>
             )}
           </div>
-          
-          {/* Dots indicator */}
           {hasMultipleVenues && (
             <div className="flex justify-center gap-1 mt-1.5">
               {cityVenues.map((_, idx) => (
                 <div
                   key={idx}
                   className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    idx === currentVenueIndex 
-                      ? (idx === 0 && assignedVenue ? 'bg-shake-green' : 'bg-shake-yellow') 
-                      : (idx === 0 && assignedVenue ? 'bg-shake-green/30' : 'bg-shake-yellow/30')
+                    idx === currentVenueIndex ? 'bg-purple-400' : 'bg-white/20'
                   }`}
                 />
               ))}
@@ -548,87 +517,63 @@ export function GroupChatView({
         </div>
       )}
 
-      {/* Attendees section */}
       {showAttendees ? (
-        <div className="w-full px-4 py-3 border-b border-black/5">
-          <button 
-            onClick={() => setShowParticipantsList(true)}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-          >
+        <div className="w-full px-4 py-2.5 border-b border-white/5">
+          <button onClick={() => setShowParticipantsList(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="flex -space-x-2 overflow-hidden">
               {participants.slice(0, 6).map((participant) => (
-                <div
-                  key={participant.user_id}
-                  className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-[hsl(50,40%,92%)] shrink-0"
-                >
+                <div key={participant.user_id} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
                   {participant.avatar_url ? (
-                    <img
-                      src={participant.avatar_url}
-                      alt={participant.name || "User"}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={participant.avatar_url} alt={participant.name || "User"} className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-4 h-4 text-muted-foreground" />
+                    <User className="w-4 h-4 text-white/40" />
                   )}
                 </div>
               ))}
               {participants.length > 6 && (
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border-2 border-[hsl(50,40%,92%)] text-xs font-medium text-muted-foreground shrink-0">
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-xs font-medium text-white/50 shrink-0">
                   +{participants.length - 6}
                 </div>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/50">
               {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined
             </p>
           </button>
         </div>
       ) : (
-        <div className="w-full px-4 py-3 border-b border-black/5">
-          <p className="text-sm text-muted-foreground/70">
-            You're the first one here today!
-          </p>
+        <div className="w-full px-4 py-2.5 border-b border-white/5">
+          <p className="text-sm text-white/40">You're the first one here today!</p>
         </div>
       )}
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50">
+          <div className="flex flex-col items-center justify-center h-full text-white/40">
             <p className="text-center text-sm">
               Start the conversation!<br />
-              Messages from today will appear here.
+              <span className="text-xs">Messages from today will appear here.</span>
             </p>
           </div>
         ) : (
           messages.map((msg) => {
             const isOwnMessage = msg.user_id === user?.id;
             const profile = profiles[msg.user_id];
-            const displayName = isOwnMessage 
-              ? 'You' 
-              : profile?.name || 'Shaker';
+            const displayName = isOwnMessage ? 'You' : profile?.name || 'Shaker';
             const avatarUrl = profile?.avatar_url;
-            
             return (
-              <div 
-                key={msg.id} 
-                className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
-              >
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0 overflow-hidden border border-border">
+              <div key={msg.id} className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                <div className="w-8 h-8 rounded-full bg-white/5 shrink-0 overflow-hidden border border-white/10 flex items-center justify-center">
                   {avatarUrl ? (
-                    <img 
-                      src={avatarUrl} 
-                      alt={displayName}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-4 h-4 text-muted-foreground" />
+                    <User className="w-4 h-4 text-white/40" />
                   )}
                 </div>
                 <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
                   <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
-                    <button 
-                      className={`font-semibold text-sm text-black ${!isOwnMessage ? 'hover:underline cursor-pointer' : ''}`}
+                    <button
+                      className={`font-semibold text-sm text-white ${!isOwnMessage ? 'hover:text-purple-200 cursor-pointer' : ''}`}
                       onClick={() => {
                         if (!isOwnMessage) {
                           setSelectedUserProfile({
@@ -642,22 +587,18 @@ export function GroupChatView({
                     >
                       {displayName}
                     </button>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(msg.created_at), 'h:mm a')}
-                    </span>
+                    <span className="text-xs text-white/35">{format(new Date(msg.created_at), 'h:mm a')}</span>
                   </div>
                   <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                    <div className={`text-sm mt-1 p-2 rounded-lg inline-block ${
-                      isOwnMessage 
-                        ? 'bg-black text-white'
-                        : 'bg-blue-500 text-white'
+                    <div className={`text-sm mt-0.5 px-3 py-2 rounded-xl inline-block ${
+                      isOwnMessage ? 'bg-[#7c5cfc] text-white' : 'bg-white/10 text-white border border-white/10'
                     }`}>
                       <span>{msg.message}</span>
                     </div>
                     {isOwnMessage && (
                       <button
                         onClick={() => handleDeleteMessage(msg.id)}
-                        className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all"
+                        className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-white/40 hover:text-red-400 transition-all"
                         title="Delete message"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -672,15 +613,14 @@ export function GroupChatView({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Chat Suggestions */}
       {user && !message.trim() && (
         <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-2 w-max">
+          <div className="flex gap-1.5 w-max">
             {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
               <button
                 key={index}
                 onClick={() => setMessage(suggestion)}
-                className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20 whitespace-nowrap shrink-0"
+                className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-purple-200 hover:bg-white/10 border border-white/10 whitespace-nowrap shrink-0"
               >
                 {suggestion}
               </button>
@@ -689,22 +629,21 @@ export function GroupChatView({
         </div>
       )}
 
-      {/* Input */}
-      <div className="p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div className="p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5">
         <div className="flex items-center gap-2">
           <Input
             placeholder={canSendText ? "Type a message..." : "Character limit reached"}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
+            className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
             disabled={isSending || (!isPremium && !canSendText)}
           />
-          <Button 
-            variant="shake" 
-            size="icon" 
+          <Button
+            size="icon"
             onClick={handleSendMessage}
             disabled={isSending || !message.trim()}
+            className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
           >
             {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
           </Button>
@@ -734,6 +673,7 @@ export function GroupChatView({
           setSelectedUserProfile({ userId, userName, avatarUrl });
         }}
       />
+      </div>
     </div>
   );
 }
