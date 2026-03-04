@@ -18,6 +18,7 @@ import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 interface PlanMessage {
   id: string;
@@ -212,11 +213,12 @@ export function PlanGroupChatView({
         {/* Creator Avatar */}
         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-black/20 shadow-sm shrink-0">
           {creatorProfile?.avatar_url ? (
-            <img
-              src={creatorProfile.avatar_url}
-              alt={creatorProfile?.name || "Creator"}
-              className="w-full h-full object-cover"
-            />
+            <Avatar className="w-full h-full rounded-full">
+              <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
+              <AvatarFallback className="bg-white flex items-center justify-center">
+                <span className="text-lg">{getActivityEmoji(activity.activity_type)}</span>
+              </AvatarFallback>
+            </Avatar>
           ) : (
             <span className="text-lg">{getActivityEmoji(activity.activity_type)}</span>
           )}
@@ -288,7 +290,7 @@ export function PlanGroupChatView({
                   disabled={isOwnMessage}
                 >
                   <Avatar className="w-full h-full rounded-full bg-muted">
-                    <AvatarImage src={avatarUrl ?? undefined} alt={displayName} className="object-cover" />
+                    <AvatarImage src={getDisplayAvatarUrl(avatarUrl)} alt={displayName} className="object-cover" />
                     <AvatarFallback className="bg-muted flex items-center justify-center">
                       <User className="w-4 h-4 text-muted-foreground" />
                     </AvatarFallback>

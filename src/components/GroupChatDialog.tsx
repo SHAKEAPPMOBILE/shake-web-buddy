@@ -24,6 +24,7 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { useTranslation } from "react-i18next";
 import { VenueSuggestionCarousel } from "./VenueSuggestionCarousel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { DbVenue } from "@/hooks/useDatabaseVenues";
 interface GroupChatDialogProps {
   open: boolean;
@@ -489,18 +490,15 @@ export function GroupChatDialog({
               >
                 <div className="flex -space-x-2">
                   {participants.slice(0, 4).map((p) => (
-                    <div
+                    <Avatar
                       key={p.user_id}
-                      className="w-7 h-7 rounded-full bg-white/10 border border-white/20 overflow-hidden"
+                      className="w-7 h-7 rounded-full border border-white/20 bg-white/10 shrink-0"
                     >
-                      {p.avatar_url ? (
-                        <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <User className="w-3.5 h-3.5 text-white/40" />
-                        </div>
-                      )}
-                    </div>
+                      <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || ""} className="object-cover" />
+                      <AvatarFallback className="bg-white/10 flex items-center justify-center">
+                        <User className="w-3.5 h-3.5 text-white/40" />
+                      </AvatarFallback>
+                    </Avatar>
                   ))}
                 </div>
                 <span>{t('chat.joinedToday', '{{count}} joined today', { count: attendeeCount })}</span>
@@ -616,7 +614,7 @@ export function GroupChatDialog({
                       className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${!user ? 'blur-sm select-none pointer-events-none' : ''}`}
                     >
                       <Avatar className="w-8 h-8 shrink-0 rounded-full border border-white/10 bg-white/5">
-                        <AvatarImage src={avatarUrl ?? undefined} alt={displayName} className="object-cover" />
+                        <AvatarImage src={getDisplayAvatarUrl(avatarUrl)} alt={displayName} className="object-cover" />
                         <AvatarFallback className="bg-white/5 flex items-center justify-center">
                           <User className="w-4 h-4 text-white/40" />
                         </AvatarFallback>
@@ -689,19 +687,16 @@ export function GroupChatDialog({
                 {showAttendees && participants.length > 0 && (
                   <div className="flex -space-x-2">
                     {participants.slice(0, 3).map((p) => (
-                      <div
+                      <Avatar
                         key={p.user_id}
-                        className="w-6 h-6 rounded-full bg-white/5 border border-white/10 overflow-hidden shrink-0"
+                        className="w-6 h-6 rounded-full border border-white/10 bg-white/5 shrink-0"
                         title={p.name || 'Participant'}
                       >
-                        {p.avatar_url ? (
-                          <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <User className="w-2.5 h-2.5 text-white/40" />
-                          </div>
-                        )}
-                      </div>
+                        <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt="" className="object-cover" />
+                        <AvatarFallback className="bg-white/5 flex items-center justify-center">
+                          <User className="w-2.5 h-2.5 text-white/40" />
+                        </AvatarFallback>
+                      </Avatar>
                     ))}
                   </div>
                 )}

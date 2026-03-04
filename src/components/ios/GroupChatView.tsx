@@ -20,6 +20,7 @@ import { getActivityLabel, getActivityEmoji, getActivityDay } from "@/data/activ
 import { getVenueTypeForActivity, DbVenue } from "@/hooks/useDatabaseVenues";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 interface GroupChatViewProps {
   activityType: string;
@@ -523,13 +524,12 @@ export function GroupChatView({
           <button onClick={() => setShowParticipantsList(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="flex -space-x-2 overflow-hidden">
               {participants.slice(0, 6).map((participant) => (
-                <div key={participant.user_id} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
-                  {participant.avatar_url ? (
-                    <img src={participant.avatar_url} alt={participant.name || "User"} className="w-full h-full object-cover" />
-                  ) : (
+                <Avatar key={participant.user_id} className="w-8 h-8 rounded-full border border-white/10 bg-white/5 shrink-0">
+                  <AvatarImage src={getDisplayAvatarUrl(participant.avatar_url)} alt={participant.name || "User"} className="object-cover" />
+                  <AvatarFallback className="bg-white/5 flex items-center justify-center">
                     <User className="w-4 h-4 text-white/40" />
-                  )}
-                </div>
+                  </AvatarFallback>
+                </Avatar>
               ))}
               {participants.length > 6 && (
                 <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-xs font-medium text-white/50 shrink-0">
@@ -565,7 +565,7 @@ export function GroupChatView({
             return (
               <div key={msg.id} className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
                 <Avatar className="w-8 h-8 shrink-0 rounded-full border border-white/10 bg-white/5">
-                  <AvatarImage src={avatarUrl ?? undefined} alt={displayName} className="object-cover" />
+                  <AvatarImage src={getDisplayAvatarUrl(avatarUrl)} alt={displayName} className="object-cover" />
                   <AvatarFallback className="bg-white/5 flex items-center justify-center">
                     <User className="w-4 h-4 text-white/40" />
                   </AvatarFallback>

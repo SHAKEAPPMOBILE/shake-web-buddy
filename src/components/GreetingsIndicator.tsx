@@ -16,6 +16,8 @@ import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 export function GreetingsIndicator() {
   const { user } = useAuth();
@@ -116,17 +118,12 @@ export function GreetingsIndicator() {
                       key={greeting.id}
                       className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
                     >
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
-                        {greeting.from_user?.avatar_url ? (
-                          <img
-                            src={greeting.from_user.avatar_url}
-                            alt={greeting.from_user.name || "User"}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
+                      <Avatar className="w-10 h-10 rounded-full border border-border bg-muted shrink-0">
+                        <AvatarImage src={getDisplayAvatarUrl(greeting.from_user?.avatar_url)} alt={greeting.from_user?.name || "User"} className="object-cover" />
+                        <AvatarFallback className="bg-muted flex items-center justify-center">
                           <User className="w-5 h-5 text-muted-foreground" />
-                        )}
-                      </div>
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">
                           {greeting.from_user?.name || "Shaker"}
@@ -178,17 +175,12 @@ export function GreetingsIndicator() {
                       }
                       className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                     >
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-shake-yellow">
-                        {match.from_user?.avatar_url ? (
-                          <img
-                            src={match.from_user.avatar_url}
-                            alt={match.from_user.name || "User"}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
+                      <Avatar className="w-10 h-10 rounded-full border-2 border-shake-yellow bg-muted shrink-0">
+                        <AvatarImage src={getDisplayAvatarUrl(match.from_user?.avatar_url)} alt={match.from_user?.name || "User"} className="object-cover" />
+                        <AvatarFallback className="bg-muted flex items-center justify-center">
                           <User className="w-5 h-5 text-muted-foreground" />
-                        )}
-                      </div>
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex-1 min-w-0 text-left">
                         <p className="font-medium text-sm truncate">
                           {match.from_user?.name || "Shaker"}
