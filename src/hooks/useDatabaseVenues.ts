@@ -15,6 +15,16 @@ export interface DbVenue {
   updated_at: string;
 }
 
+// Normalize city for matching (case-insensitive, trim, accent folding) - exported for use in VenueContext
+export function normalizeCity(city: string): string {
+  const trimmed = (city || "").trim();
+  if (!trimmed) return "";
+  return trimmed
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
+
 // Map activity types to venue types
 export function getVenueTypeForActivity(activityType: string): 'lunch_dinner' | 'brunch' | 'drinks' | null {
   if (activityType === 'lunch' || activityType === 'dinner') {
@@ -29,7 +39,7 @@ export function getVenueTypeForActivity(activityType: string): 'lunch_dinner' | 
   return null;
 }
 
-// Fetch all venues from database
+// Fetch all venues from database (used by app for join confirmation and group chat)
 export function useAllVenues() {
   return useQuery({
     queryKey: ['db-venues'],
@@ -42,7 +52,13 @@ export function useAllVenues() {
         .order('venue_type', { ascending: true })
         .order('sort_order', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.warn('[Venues] Failed to load from Supabase:', error.message, error.code);
+        throw error;
+      }
+      if (typeof window !== 'undefined') {
+        console.info('[Venues] Loaded', (data?.length ?? 0), 'active venues from database');
+      }
       return data as DbVenue[];
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
@@ -105,9 +121,12 @@ export function getCurrentVenueForActivity(
   const venueType = getVenueTypeForActivity(activityType);
   if (!venueType) return null;
   
-  // Filter venues by city and type
+  const cityNorm = normalizeCity(city);
+  if (!cityNorm) return null;
+
+  // Filter venues by city (case-insensitive, accent-insensitive) and type
   const matchingVenues = venues.filter(
-    v => v.city === city && v.venue_type === venueType
+    v => normalizeCity(v.city) === cityNorm && v.venue_type === venueType
   );
   
   if (matchingVenues.length === 0) return null;

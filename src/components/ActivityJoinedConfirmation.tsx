@@ -25,7 +25,7 @@ export function ActivityJoinedConfirmation({
   const emoji = getActivityEmoji(activityType);
   const label = getTranslatedActivityLabel(t, activityType);
   const activityDay = getTranslatedActivityDay(t, activityType);
-  const { location: venueInfo, mapsUrl, isTBD } = useActivityVenue(city, activityType);
+  const { location: venueInfo, mapsUrl, isTBD, isLoading: venueLoading } = useActivityVenue(city, activityType);
 
   const handleJoinChat = () => {
     onOpenChange(false);
@@ -69,9 +69,13 @@ export function ActivityJoinedConfirmation({
               </div>
               <div className="flex-1 min-w-0 overflow-hidden">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                  {isTBD ? t('joinConfirmation.location', 'Location') : t('joinConfirmation.todaysVenue', "Today's Venue")}
+                  {venueLoading ? t('joinConfirmation.loading', 'Location') : isTBD ? t('joinConfirmation.location', 'Location') : t('joinConfirmation.todaysVenue', "Today's Venue")}
                 </p>
-                {isTBD ? (
+                {venueLoading ? (
+                  <p className="text-sm font-medium text-foreground animate-pulse">
+                    {t('joinConfirmation.loadingVenue', 'Loading...')}
+                  </p>
+                ) : isTBD ? (
                   <p className="text-sm font-medium text-foreground">
                     {t('joinConfirmation.tbdVoteInChat', 'TBD - Vote in chat!')}
                   </p>

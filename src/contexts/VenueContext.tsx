@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo } from "react";
-import { useAllVenues, DbVenue, getCurrentVenueForActivity, getVenueLocationString, getVenueMapsUrlFromDb } from "@/hooks/useDatabaseVenues";
+import { useAllVenues, DbVenue, getCurrentVenueForActivity, getVenueLocationString, getVenueMapsUrlFromDb, normalizeCity } from "@/hooks/useDatabaseVenues";
 
 interface VenueContextType {
   venues: DbVenue[];
@@ -38,7 +38,8 @@ export function VenueProvider({ children }: { children: React.ReactNode }) {
 
   const getVenueCoordinates = useMemo(() => {
     return (city: string, venueName: string): { lat: number; lng: number } | null => {
-      const venue = venues.find(v => v.city === city && v.name === venueName);
+      const cityNorm = normalizeCity(city);
+      const venue = venues.find(v => normalizeCity(v.city) === cityNorm && v.name === venueName);
       if (venue && venue.latitude && venue.longitude) {
         return { lat: venue.latitude, lng: venue.longitude };
       }
@@ -73,7 +74,7 @@ export function useVenueContext() {
 
 // Convenience hook for getting activity location details
 export function useActivityVenue(city: string, activityType: string) {
-  const { getVenueForActivity, getLocationString, getMapsUrl } = useVenueContext();
+  const { getVenueForActivity, getLocationString, getMapsUrl, isLoading } = useVenueContext();
   
   const venue = getVenueForActivity(city, activityType);
   const location = getLocationString(city, activityType);
@@ -83,7 +84,8 @@ export function useActivityVenue(city: string, activityType: string) {
     venue,
     location,
     mapsUrl,
-    isTBD: location === "TBD - Vote in chat!",
+    isLoading,
+    isTBD: !isLoading && location === "TBD - Vote in chat!",
     venueName: venue?.name || null,
   };
 }
