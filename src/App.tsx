@@ -105,7 +105,6 @@ const App = () => {
                 <BrowserRouter>
                   <ReferralTracker />
                   <Routes>
-                    <Route path="/*" element={<IOSAppLayout />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/auth/callback" element={<OAuthCallback />} />
                     <Route path="/welcome" element={<Welcome />} />
@@ -115,7 +114,7 @@ const App = () => {
                     <Route path="/terms-of-service" element={<TermsOfService />} />
                     <Route path="/subscription-success" element={<SubscriptionSuccess />} />
                     <Route path="/admin" element={<Admin />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="/*" element={<IOSAppLayout />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>
