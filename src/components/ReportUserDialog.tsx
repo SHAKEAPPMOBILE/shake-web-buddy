@@ -25,6 +25,8 @@ interface ReportUserDialogProps {
   onOpenChange: (open: boolean) => void;
   reportedUserId: string;
   reportedUserName: string | null;
+  /** Called after report is successfully submitted (e.g. to also block the user) */
+  onReportSubmitted?: () => void;
 }
 
 export function ReportUserDialog({
@@ -32,6 +34,7 @@ export function ReportUserDialog({
   onOpenChange,
   reportedUserId,
   reportedUserName,
+  onReportSubmitted,
 }: ReportUserDialogProps) {
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [description, setDescription] = useState("");
@@ -99,6 +102,7 @@ export function ReportUserDialog({
       toast.success(t("report.submitSuccess"));
       setReason(null);
       setDescription("");
+      onReportSubmitted?.();
       onOpenChange(false);
     } catch (error) {
       console.error("Error submitting report:", error);

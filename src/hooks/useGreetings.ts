@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 
 interface Greeting {
   id: string;
@@ -22,6 +23,7 @@ interface GreetingWithProfile extends Greeting {
 
 export function useGreetings() {
   const { user } = useAuth();
+  const { blockedUserIds } = useBlockedUsers();
   const [sentGreetings, setSentGreetings] = useState<GreetingWithProfile[]>([]);
   const [receivedGreetings, setReceivedGreetings] = useState<GreetingWithProfile[]>([]);
   const [matches, setMatches] = useState<GreetingWithProfile[]>([]);
@@ -83,22 +85,26 @@ export function useGreetings() {
         to_user: null,
       }));
 
+      // Exclude blocked users from received/matches/pending (remove from feed instantly)
+      const blockedSet = new Set(blockedUserIds);
+      const receivedFiltered = enrichedReceived.filter((g) => !blockedSet.has(g.from_user_id));
+
       setSentGreetings(enrichedSent);
-      setReceivedGreetings(enrichedReceived);
+      setReceivedGreetings(receivedFiltered);
 
       // Calculate matches (mutual greetings)
       const sentToIds = new Set(sent?.map((g) => g.to_user_id) || []);
-      const receivedFromIds = new Set(received?.map((g) => g.from_user_id) || []);
+      const receivedFromIds = new Set(receivedFiltered.map((g) => g.from_user_id));
 
       const matchedUserIds = [...sentToIds].filter((id) => receivedFromIds.has(id));
       
-      const matchedGreetings = enrichedReceived.filter((g) =>
+      const matchedGreetings = receivedFiltered.filter((g) =>
         matchedUserIds.includes(g.from_user_id)
       );
       setMatches(matchedGreetings);
 
       // Pending received = received but not yet sent back
-      const pendingReceivedGreetings = enrichedReceived.filter(
+      const pendingReceivedGreetings = receivedFiltered.filter(
         (g) => !sentToIds.has(g.from_user_id)
       );
       setPendingReceived(pendingReceivedGreetings);
@@ -107,7 +113,7 @@ export function useGreetings() {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, blockedUserIds]);
 
   // Send a greeting
   const sendGreeting = async (toUserId: string) => {

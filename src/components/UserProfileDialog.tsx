@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Calendar, MapPin, Instagram, Linkedin, Twitter, Flag, X, Video } from "lucide-react";
+import { User, Calendar, MapPin, Instagram, Linkedin, Twitter, Flag, X, Video, Ban } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -13,12 +13,14 @@ import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
 import { getActivityEmoji } from "@/data/activityTypes";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import { Button } from "@/components/ui/button";
 import { useStatusVideo } from "@/hooks/useStatusVideo";
 import { StatusVideoRecorder } from "./StatusVideoRecorder";
 import { StatusVideoViewer } from "./StatusVideoViewer";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 interface UserProfileDialogProps {
   open: boolean;
@@ -61,6 +63,7 @@ export function UserProfileDialog({
   const [showStatusViewer, setShowStatusViewer] = useState(false);
   const { isMatched } = useGreetings();
   const { user } = useAuth();
+  const { blockUser, isBlocking } = useBlockedUsers();
   const isMobile = useIsMobile();
   const { statusVideo, hasActiveStatus } = useStatusVideo(userId);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
@@ -341,9 +344,40 @@ export function UserProfileDialog({
             )}
           </div>
 
-          {/* Report User Button - only show for other users */}
+          {/* Block & Report - only show for other users */}
           {!isOwnProfile && (
-            <div className="border-t border-border/50 pt-4">
+            <div className="border-t border-border/50 pt-4 space-y-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await blockUser(userId);
+                    supabase.functions.invoke("send-report-notification", {
+                      body: {
+                        reportedUserId: userId,
+                        reportedUserName: userName,
+                        reason: "block",
+                        description: "User was blocked. They are now hidden from this user's feed.",
+                      },
+                    }).catch(() => {});
+                    toast.success(t("userProfile.blockSuccess", "User blocked. They won't appear in your feed."));
+                    onOpenChange(false);
+                  } catch (e: any) {
+                    if (e?.code === "23505") {
+                      toast.success(t("userProfile.alreadyBlocked", "Already blocked."));
+                      onOpenChange(false);
+                    } else {
+                      toast.error(t("userProfile.blockFailed", "Could not block user."));
+                    }
+                  }
+                }}
+                disabled={isBlocking}
+                className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              >
+                {isBlocking ? null : <Ban className="w-4 h-4 mr-2" />}
+                {t("userProfile.blockUser", "Block user")}
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -397,6 +431,12 @@ export function UserProfileDialog({
         onOpenChange={setShowReportDialog}
         reportedUserId={userId}
         reportedUserName={userName}
+        onReportSubmitted={async () => {
+          try {
+            await blockUser(userId);
+            onOpenChange(false);
+          } catch (_) {}
+        }}
       />
 
       {/* Status Video Recorder - only for own profile */}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import { Eye, User, Sparkles } from "lucide-react";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
@@ -47,6 +48,7 @@ export function GlobalParticipantsSection() {
     avatarUrl: string | null;
   } | null>(null);
   const { user, isPremium } = useAuth();
+  const { blockedUserIds } = useBlockedUsers();
   const isInitialLoad = useRef(true);
 
   // Seeded random for consistent shuffling (changes twice per week)
@@ -130,7 +132,9 @@ export function GlobalParticipantsSection() {
       ...shuffledWithoutAvatar,
     ];
 
-    setParticipants(prioritizedList);
+    // Exclude blocked users from feed
+    const blockedSet = new Set(blockedUserIds);
+    setParticipants(prioritizedList.filter((p) => !blockedSet.has(p.user_id)));
     setIsLoading(false);
   };
 
@@ -194,7 +198,7 @@ export function GlobalParticipantsSection() {
       supabase.removeChannel(profilesChannel);
       clearInterval(interval);
     };
-  }, [user?.id]);
+  }, [user?.id, blockedUserIds]);
 
   const handleParticipantClick = (participant: Participant) => {
     setSelectedUser({

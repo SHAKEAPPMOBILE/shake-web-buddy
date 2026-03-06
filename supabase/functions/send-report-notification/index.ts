@@ -23,6 +23,7 @@ const REASON_LABELS: Record<string, string> = {
   fake_profile: "Fake Profile",
   underage: "Underage User",
   other: "Other",
+  block: "User blocked (inappropriate content)",
 };
 
 serve(async (req) => {
@@ -76,6 +77,7 @@ serve(async (req) => {
     const reporterName = reporterProfile?.name || "Unknown User";
     const reportedName = reportedUserName || "Unknown User";
     const reasonLabel = REASON_LABELS[reason] || reason;
+    const isBlock = reason === "block";
     const reportTime = new Date().toLocaleString("en-US", { 
       timeZone: "Europe/Lisbon",
       dateStyle: "full",
@@ -86,7 +88,7 @@ serve(async (req) => {
     const emailResponse = await resend.emails.send({
       from: "SHAKE Reports <onboarding@resend.dev>",
       to: ["contact@shakeapp.today"],
-      subject: `🚨 User Report: ${reasonLabel}`,
+      subject: isBlock ? `🚫 User blocked: ${reportedName}` : `🚨 User Report: ${reasonLabel}`,
       html: `
         <!DOCTYPE html>
         <html>
