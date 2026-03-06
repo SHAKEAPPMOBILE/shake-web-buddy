@@ -60,7 +60,7 @@ export const purchaseDonation = async (
   
   try {
     const result = await Purchases.purchaseStoreProduct({
-      product: { identifier: donationId, type: 'inapp' }
+      product: { identifier: donationId } as any
     });
     return result.customerInfo;
   } catch (error) {
