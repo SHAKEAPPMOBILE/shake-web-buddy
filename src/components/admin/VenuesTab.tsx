@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Globe, Loader2, AlertTriangle } from "lucide-react";
+import { MapPin, Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Globe, Loader2, AlertTriangle, Upload } from "lucide-react";
 import { useVenues, useDeleteVenue, getWeeklyVenueFromList, getDailyVenueFromList, DbVenue } from "@/hooks/useVenues";
 import { VenueForm } from "./VenueForm";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { parseVenuesCsv } from "@/lib/csvVenues";
 
 interface VenueSummary {
   city: string;
@@ -28,6 +29,8 @@ export function VenuesTab() {
   const [editingVenue, setEditingVenue] = useState<DbVenue | null>(null);
   const [defaultType, setDefaultType] = useState<'lunch_dinner' | 'brunch' | 'drinks'>('lunch_dinner');
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: dbVenues = [], isLoading } = useVenues();
   const deleteVenue = useDeleteVenue();
@@ -37,6 +40,46 @@ export function VenuesTab() {
   const venuesMissingCoords = useMemo(() => {
     return dbVenues.filter(v => v.latitude === null || v.longitude === null).length;
   }, [dbVenues]);
+
+  const handleImportCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const rows = parseVenuesCsv(text);
+      if (rows.length === 0) {
+        toast({ title: "No valid rows in CSV", variant: "destructive" });
+        return;
+      }
+      const BATCH = 50;
+      let inserted = 0;
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const batch = rows.slice(i, i + BATCH).map((r) => ({
+          id: r.id,
+          city: r.city,
+          name: r.name,
+          address: r.address,
+          venue_type: r.venue_type,
+          latitude: r.latitude,
+          longitude: r.longitude,
+          sort_order: r.sort_order,
+          is_active: r.is_active,
+        }));
+        const { error } = await supabase.from('venues').upsert(batch, { onConflict: 'id' });
+        if (error) throw error;
+        inserted += batch.length;
+      }
+      queryClient.invalidateQueries({ queryKey: ['venues'] });
+      queryClient.invalidateQueries({ queryKey: ['db-venues'] });
+      toast({ title: `Imported ${inserted} venues` });
+    } catch (err: any) {
+      toast({ title: "Import failed", description: err?.message || String(err), variant: "destructive" });
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const handleBulkGeocode = async () => {
     if (venuesMissingCoords === 0) {
@@ -178,6 +221,26 @@ export function VenuesTab() {
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2 flex-wrap">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          className="hidden"
+          onChange={handleImportCsv}
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isImporting}
+        >
+          {isImporting ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Upload className="w-4 h-4 mr-2" />
+          )}
+          Import CSV
+        </Button>
         <Button size="sm" onClick={() => handleAddVenue('lunch_dinner')}>
           <Plus className="w-4 h-4 mr-2" />
           Add Venue
