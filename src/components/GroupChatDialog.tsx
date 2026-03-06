@@ -337,7 +337,7 @@ export function GroupChatDialog({
         activity_type: activityType,
         city: city,
         message: message.trim(),
-      });
+      } as any);
 
     if (error) {
       console.error("Error sending message:", error);
