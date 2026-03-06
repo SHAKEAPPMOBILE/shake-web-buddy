@@ -98,7 +98,7 @@ export function GlobalParticipantsSection() {
     }
 
     // Filter out test users (those with dicebear avatars which are test seeded users)
-    const realProfiles = profiles.filter(profile => {
+    const realProfiles = (profiles as any[]).filter((profile: any) => {
       // Exclude users with dicebear avatar URLs (test users)
       if (profile.avatar_url && profile.avatar_url.includes('api.dicebear.com')) {
         return false;
@@ -108,7 +108,7 @@ export function GlobalParticipantsSection() {
 
     setTotalCount(realProfiles.length);
 
-    const allParticipants: Participant[] = realProfiles.map((profile) => ({
+    const allParticipants: Participant[] = realProfiles.map((profile: any) => ({
       user_id: profile.user_id,
       name: profile.name || null,
       avatar_url: profile.avatar_url || null,

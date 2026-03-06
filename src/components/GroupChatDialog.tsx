@@ -403,7 +403,7 @@ export function GroupChatDialog({
         activity_type: activityType,
         city: city,
         message: suggestionMessage,
-      });
+      } as any);
 
     if (error) {
       console.error("Error sending venue suggestion:", error);
