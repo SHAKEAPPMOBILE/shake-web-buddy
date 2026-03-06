@@ -83,10 +83,10 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
       const { data } = await supabase
         .from("profiles")
         .select("avatar_url")
-        .eq("user_id", user.id)
+        .eq("user_id", user.id as any)
         .maybeSingle();
       if (data) {
-        setUserAvatarUrl(data.avatar_url);
+        setUserAvatarUrl((data as any).avatar_url);
       }
     };
     fetchUserProfile();

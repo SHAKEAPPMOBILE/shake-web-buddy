@@ -17,6 +17,7 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { SuperHumanIcon } from "./SuperHumanIcon";
 import { Purchases } from '@revenuecat/purchases-capacitor';
 import { purchasePremium } from "@/lib/revenuecat";
+const CapacitorPurchases = Purchases;
 
 interface PremiumDialogProps {
   open: boolean;
@@ -81,7 +82,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     setIsLoading(true);
     try {
       // Purchase the product
-      const { productIdentifier, transactionId } = await CapacitorPurchases.purchaseProduct({
+      const { productIdentifier, transactionId } = await (CapacitorPurchases as any).purchaseProduct({
         productIdentifier: PRODUCT_ID
       });
 

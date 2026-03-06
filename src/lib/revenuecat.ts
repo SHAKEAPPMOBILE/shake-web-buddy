@@ -26,7 +26,7 @@ export const checkPremiumAccess = async (): Promise<boolean> => {
   
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    return customerInfo.entitlements.active['premium'] !== undefined;
+    return (customerInfo as any).entitlements?.active?.['premium'] !== undefined;
   } catch (error) {
     console.error('Error checking premium:', error);
     return false;
@@ -60,7 +60,7 @@ export const purchaseDonation = async (
   
   try {
     const result = await Purchases.purchaseStoreProduct({
-      product: { identifier: donationId, type: 'inapp' }
+      product: { identifier: donationId } as any
     });
     return result.customerInfo;
   } catch (error) {
