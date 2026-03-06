@@ -194,8 +194,8 @@ export function GroupChatDialog({
       const { data: joins, error: joinsError } = await supabase
         .from("activity_joins")
         .select("user_id")
-        .eq("activity_type", activityType)
-        .eq("city", city)
+        .eq("activity_type", activityType as any)
+        .eq("city", city as any)
         .gt("expires_at", new Date().toISOString());
 
       if (joinsError || !joins?.length) {
@@ -203,7 +203,7 @@ export function GroupChatDialog({
         return;
       }
 
-      const uniqueUserIds = [...new Set(joins.map((j) => j.user_id))];
+      const uniqueUserIds = [...new Set((joins as any[]).map((j: any) => j.user_id))];
 
       const { data: profilesData } = await supabase
         .from("profiles")
@@ -211,7 +211,7 @@ export function GroupChatDialog({
         .in("user_id", uniqueUserIds);
 
       const participantsList = uniqueUserIds.map((userId) => {
-        const profile = profilesData?.find((p) => p.user_id === userId);
+        const profile = (profilesData as any[])?.find((p: any) => p.user_id === userId);
         return {
           user_id: userId,
           name: profile?.name || null,
