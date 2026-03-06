@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { User } from "lucide-react";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { useTranslation } from "react-i18next";
 
 type PublicProfile = {
@@ -74,7 +75,7 @@ export default function Welcome() {
             <div className="mx-auto mb-4 w-24 h-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
               {profile?.avatar_url ? (
                 <img
-                  src={profile.avatar_url}
+                  src={getDisplayAvatarUrl(profile.avatar_url) ?? profile.avatar_url}
                   alt={`${displayName}'s profile picture`}
                   className="w-full h-full object-cover"
                   loading="eager"

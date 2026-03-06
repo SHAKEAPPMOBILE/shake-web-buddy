@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { Switch } from "@/components/ui/switch";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { ChangePhoneDialog } from "@/components/ChangePhoneDialog";
@@ -170,11 +171,12 @@ export default function Profile() {
     setIsSaving(true);
 
     try {
-      // Update public profile
+      // Update public profile (include avatar so preset/custom avatar is saved)
       const { error: publicError } = await supabase
         .from("profiles")
         .update({
           name: name.trim(),
+          avatar_url: avatarUrl?.trim() || null,
           nationality: nationality.trim() || null,
           occupation: occupation.trim() || null,
           instagram_url: instagramUrl.trim() || null,
@@ -310,7 +312,7 @@ export default function Profile() {
               <div className="w-24 h-24 rounded-full bg-muted border-2 border-border overflow-hidden flex items-center justify-center">
                 {avatarUrl ? (
                   <img 
-                    src={avatarUrl} 
+                    src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl} 
                     alt="" 
                     className="w-full h-full object-cover"
                     onError={() => setAvatarUrl(null)}
@@ -653,9 +655,21 @@ export default function Profile() {
               onSelectAvatar={async (avatarId) => {
                 setSelectedAvatar(avatarId);
                 const avatar = avatarOptions.find(a => a.id === avatarId);
-                if (avatar) {
-                  setAvatarUrl(avatar.src);
+                if (avatar && user) {
+                  const newUrl = avatar.src;
+                  setAvatarUrl(newUrl);
                   setShowAvatarPicker(false);
+                  // Persist preset avatar to DB immediately so it shows everywhere
+                  const { error } = await supabase
+                    .from("profiles")
+                    .update({ avatar_url: newUrl })
+                    .eq("user_id", user.id);
+                  if (error) {
+                    console.error("Failed to save preset avatar:", error);
+                    toast.error("Failed to save avatar");
+                  } else {
+                    toast.success("Avatar updated!");
+                  }
                 }
               }}
               onUploadClick={() => {
@@ -666,7 +680,7 @@ export default function Profile() {
                   fileInputRef.current?.click();
                 }, 100);
               }}
-              customAvatarPreview={avatarUrl}
+              customAvatarPreview={avatarUrl ? (getDisplayAvatarUrl(avatarUrl) ?? avatarUrl) : null}
             />
           </div>
         </DialogContent>

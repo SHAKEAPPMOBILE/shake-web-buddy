@@ -18,6 +18,7 @@ import { useActiveChat } from "@/hooks/useActiveChat";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { useUserActivities, type UserActivity } from "@/hooks/useUserActivities";
 import { supabase } from "@/integrations/supabase/client";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -191,7 +192,7 @@ export function Header() {
                     >
                       {avatarUrl ? (
                         <img 
-                          src={avatarUrl} 
+                          src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl} 
                           alt="" 
                           className="w-full h-full object-cover"
                           onError={() => setAvatarUrl(null)}
@@ -268,7 +269,7 @@ export function Header() {
                   >
                     {avatarUrl ? (
                       <img 
-                        src={avatarUrl} 
+                        src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl} 
                         alt="" 
                         className="w-full h-full object-cover"
                         onError={() => setAvatarUrl(null)}

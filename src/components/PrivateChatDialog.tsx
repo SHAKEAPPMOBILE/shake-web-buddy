@@ -18,6 +18,7 @@ import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { toast } from "sonner";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { useTranslation } from "react-i18next";
 
 interface PrivateChatDialogProps {
@@ -114,7 +115,7 @@ export function PrivateChatDialog({
             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-black/20 shadow-sm">
               {otherUserAvatar ? (
                 <img
-                  src={otherUserAvatar}
+                  src={getDisplayAvatarUrl(otherUserAvatar) ?? otherUserAvatar}
                   alt={otherUserName || "User"}
                   className="w-full h-full object-cover"
                 />

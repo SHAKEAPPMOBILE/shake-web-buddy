@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { MapPin, Sparkles, TrendingUp, UserPlus, Users, Gift, CheckCircle2, AlertCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
@@ -225,7 +226,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
               <div key={referral.id} className="flex items-center gap-3">
                 <Avatar className="w-10 h-10">
                   {referral.profile?.avatar_url ? (
-                    <AvatarImage src={referral.profile.avatar_url} alt={referral.profile.name || "User"} />
+                    <AvatarImage src={getDisplayAvatarUrl(referral.profile.avatar_url)} alt={referral.profile.name || "User"} />
                   ) : null}
                   <AvatarFallback className="bg-muted text-muted-foreground text-sm">
                     {referral.profile?.name?.charAt(0)?.toUpperCase() || "?"}

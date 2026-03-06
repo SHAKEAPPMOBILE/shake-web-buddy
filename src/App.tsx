@@ -15,6 +15,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { IOSAppLayout } from "@/components/IOSAppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useReferralTracking } from "@/hooks/useReferralTracking";
+import { LanguageSync } from "@/components/LanguageSync";
 import { initializeRevenueCat } from "./lib/revenuecat";
 import Auth from "./pages/Auth";
 import OAuthCallback from "./pages/OAuthCallback";
@@ -98,6 +99,7 @@ const App = () => {
       <ThemeProvider>
         <LanguageProvider>
           <AuthProvider>
+            <LanguageSync />
             <CityProvider>
               <VenueProvider>
                 <TooltipProvider>

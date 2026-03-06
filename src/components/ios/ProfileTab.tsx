@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -41,6 +41,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 interface ProfileTabProps {
   onSignOut?: () => void;
@@ -161,34 +163,39 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     }
   };
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) return;
-      
-      const [publicProfile, privateProfile] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("avatar_url, name")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-        supabase
-          .from("profiles_private")
-          .select("preferred_payout_method")
-          .eq("user_id", user.id)
-          .maybeSingle()
-      ]);
-      
-      if (publicProfile.data) {
-        setAvatarUrl(publicProfile.data.avatar_url);
-        setUserName(publicProfile.data.name);
-      }
-      if (privateProfile.data) {
-        setPreferredMethod(privateProfile.data.preferred_payout_method);
-      }
-    };
-    
-    fetchProfile();
+  const fetchProfile = useCallback(async () => {
+    if (!user) return;
+    const [publicProfile, privateProfile] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("avatar_url, name")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("profiles_private")
+        .select("preferred_payout_method")
+        .eq("user_id", user.id)
+        .maybeSingle()
+    ]);
+    if (publicProfile.data) {
+      setAvatarUrl(publicProfile.data.avatar_url);
+      setUserName(publicProfile.data.name);
+    }
+    if (privateProfile.data) {
+      setPreferredMethod(privateProfile.data.preferred_payout_method);
+    }
   }, [user]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // Refetch profile when user returns to app/tab (e.g. after editing profile) so avatar updates
+  useEffect(() => {
+    const onFocus = () => fetchProfile();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [fetchProfile]);
 
   // Open subscription dropdown when triggered from navigation state (e.g., after donation)
   useEffect(() => {
@@ -231,16 +238,16 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               ? "ring-4 ring-shake-green ring-offset-2 ring-offset-background"
               : "border-2 border-border"
           )}>
-            {avatarUrl ? (
-              <img 
-                src={avatarUrl} 
-                alt="" 
+            <Avatar className="w-full h-full rounded-none">
+              <AvatarImage
+                src={getDisplayAvatarUrl(avatarUrl ?? undefined)}
+                alt=""
                 className="w-full h-full object-cover"
-                onError={() => setAvatarUrl(null)}
               />
-            ) : (
-              <User className="w-12 h-12 text-muted-foreground" />
-            )}
+              <AvatarFallback className="bg-muted">
+                <User className="w-12 h-12 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
           </div>
 
           {/* Status Camera Button */}

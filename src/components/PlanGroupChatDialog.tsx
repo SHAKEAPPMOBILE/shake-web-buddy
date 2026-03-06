@@ -19,6 +19,7 @@ import { PremiumDialog } from "@/components/PremiumDialog";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 interface PlanMessage {
   id: string;
@@ -319,7 +320,7 @@ export function PlanGroupChatDialog({
                       className="w-5 h-5 rounded-full bg-muted border border-white overflow-hidden"
                     >
                       {p.avatar_url ? (
-                        <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
+                        <img src={getDisplayAvatarUrl(p.avatar_url) ?? p.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted">
                           <User className="w-2.5 h-2.5 text-muted-foreground" />

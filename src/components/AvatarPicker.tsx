@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import cameraIcon from "@/assets/camera-icon.png";
 import { cn } from "@/lib/utils";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 // Local asset avatars using stable public paths (won't change between builds)
 const localAvatarOptions = [
@@ -67,7 +68,7 @@ export function AvatarPicker({
         >
           {customAvatarPreview ? (
             <>
-              <img src={customAvatarPreview} alt="Custom avatar" className="w-full h-full object-cover" />
+              <img src={getDisplayAvatarUrl(customAvatarPreview) ?? customAvatarPreview} alt="Custom avatar" className="w-full h-full object-cover" />
               {selectedAvatar === "custom" && (
                 <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
                   <Check className="w-5 h-5 text-shake-green" />
@@ -96,7 +97,7 @@ export function AvatarPicker({
                 : "border-border hover:border-primary/50"
             )}
           >
-            <img src={avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
+            <img src={getDisplayAvatarUrl(avatar.src) ?? avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
             {selectedAvatar === avatar.id && (
               <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
                 <Check className="w-4 h-4 text-shake-green" />

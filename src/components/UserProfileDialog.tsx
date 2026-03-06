@@ -19,6 +19,7 @@ import { useStatusVideo } from "@/hooks/useStatusVideo";
 import { StatusVideoRecorder } from "./StatusVideoRecorder";
 import { StatusVideoViewer } from "./StatusVideoViewer";
 import { cn } from "@/lib/utils";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -183,7 +184,7 @@ export function UserProfileDialog({
               >
                 {avatarUrl ? (
                   <img 
-                    src={avatarUrl} 
+                    src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl} 
                     alt={userName || "User"}
                     className="w-full h-full object-cover"
                   />
@@ -409,7 +410,7 @@ export function UserProfileDialog({
             </button>
             {avatarUrl && (
               <img 
-                src={avatarUrl} 
+                src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl} 
                 alt={userName || "User"}
                 className="max-w-[90vw] max-h-[80vh] rounded-2xl shadow-2xl object-contain"
               />

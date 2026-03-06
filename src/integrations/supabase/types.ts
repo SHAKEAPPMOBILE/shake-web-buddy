@@ -439,6 +439,7 @@ export type Database = {
           paypal_connected: boolean | null
           paypal_email: string | null
           phone_number: string | null
+          preferred_language: string | null
           preferred_payout_method: string | null
           premium_override: boolean
           push_notifications_enabled: boolean
@@ -458,6 +459,7 @@ export type Database = {
           paypal_connected?: boolean | null
           paypal_email?: string | null
           phone_number?: string | null
+          preferred_language?: string | null
           preferred_payout_method?: string | null
           premium_override?: boolean
           push_notifications_enabled?: boolean
@@ -477,6 +479,7 @@ export type Database = {
           paypal_connected?: boolean | null
           paypal_email?: string | null
           phone_number?: string | null
+          preferred_language?: string | null
           preferred_payout_method?: string | null
           premium_override?: boolean
           push_notifications_enabled?: boolean

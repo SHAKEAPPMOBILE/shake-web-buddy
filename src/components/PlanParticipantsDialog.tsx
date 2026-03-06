@@ -10,6 +10,7 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { SuperHumanIcon } from "./SuperHumanIcon";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 interface Participant {
   user_id: string;
@@ -174,7 +175,7 @@ export function PlanParticipantsDialog({
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border relative">
                         {participant.avatar_url ? (
                           <img
-                            src={participant.avatar_url}
+                            src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
                             alt={participant.name || "User"}
                             className="w-full h-full object-cover"
                           />
@@ -216,7 +217,7 @@ export function PlanParticipantsDialog({
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
                             {participant.avatar_url ? (
                               <img
-                                src={participant.avatar_url}
+                                src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
                                 alt={participant.name || "User"}
                                 className="w-full h-full object-cover"
                               />
@@ -265,7 +266,7 @@ export function PlanParticipantsDialog({
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
                             {participant.avatar_url ? (
                               <img
-                                src={participant.avatar_url}
+                                src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
                                 alt={participant.name || "User"}
                                 className="w-full h-full object-cover"
                               />

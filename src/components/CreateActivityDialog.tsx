@@ -23,6 +23,7 @@ import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { usePayPalConnect } from "@/hooks/usePayPalConnect";
 import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { supabase } from "@/integrations/supabase/client";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
 import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
@@ -415,7 +416,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
                     {userAvatarUrl ? (
                       <img 
-                        src={userAvatarUrl} 
+                        src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl} 
                         alt="Your avatar" 
                         className="w-full h-full object-cover"
                       />

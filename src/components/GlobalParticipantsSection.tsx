@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 interface Participant {
   user_id: string;
@@ -252,7 +253,7 @@ export function GlobalParticipantsSection() {
               >
                 {p.avatar_url ? (
                   <img
-                    src={p.avatar_url}
+                    src={getDisplayAvatarUrl(p.avatar_url) ?? p.avatar_url}
                     alt={p.name || "User"}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -307,7 +308,7 @@ export function GlobalParticipantsSection() {
                       >
                         {participant.avatar_url ? (
                           <img
-                            src={participant.avatar_url}
+                            src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
                             alt={participant.name || "User"}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -354,7 +355,7 @@ export function GlobalParticipantsSection() {
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
                             {participant.avatar_url ? (
                               <img
-                                src={participant.avatar_url}
+                                src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
                                 alt={participant.name || "User"}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -403,7 +404,7 @@ export function GlobalParticipantsSection() {
                           >
                             {participant.avatar_url ? (
                               <img
-                                src={participant.avatar_url}
+                                src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
                                 alt={participant.name || "User"}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
