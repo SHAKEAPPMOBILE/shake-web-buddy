@@ -1,0 +1,16 @@
+id,city,name,address,venue_type,latitude,longitude,sort_order,is_active,created_at,updated_at
+3257762f-9b85-4b5e-bea3-d0204fe3ae48,Amsterdam,Dignita,"Koningsplein 1, 1017 BB Amsterdam, Netherlands",brunch,52.36703,4.889529,0,true,2026-01-27 20:19:26,2026-02-15 21:26:36
+aa4d3262-b3bd-43df-8505-79a483a3a909,Amsterdam,CT Coffee & Coconuts,"Ceintuurbaan 282-284, 1072 GK Amsterdam, Netherlands",brunch,52.352667,4.891503,1,true,2026-01-27 20:19:26,2026-02-15 21:17:01
+1c0896c7-3502-4fe5-85f6-21f9ec12fcc4,Amsterdam,The Avocado Show,"Daniël Stalpertstraat 61 HS, 1072 XB Amsterdam, Netherlands",brunch,52.356316,4.889852,2,true,2026-01-27 20:19:26,2026-02-15 21:17:02
+93ac32b5-eb04-41d1-a41d-8261db862da3,Amsterdam,Door 74,"Reguliersdwarsstraat 74, 1017 BN Amsterdam",drinks,52.365938,4.893593,0,true,2026-01-27 20:24:10,2026-01-27 20:50:58
+817ce5d9-dcb3-4195-8010-5c4b07388be1,Amsterdam,Flying Dutchmen Cocktails,"Singel 460, 1017 AW Amsterdam",drinks,52.367549,4.888833,1,true,2026-01-27 20:24:10,2026-01-27 20:50:58
+d1eb8efb-278a-45fd-8f4d-f5518711d856,Amsterdam,Bar Oldenhof,"Elandsgracht 84, 1016 TZ Amsterdam",drinks,52.369659,4.880278,2,true,2026-01-27 20:24:10,2026-01-27 20:50:59
+07b7d0d1-e68c-4b80-b674-27f7729a1606,Amsterdam,Tales & Spirits,"Lijnbaanssteeg 5-7, 1012 TE Amsterdam",drinks,52.376098,4.891792,3,true,2026-01-27 20:24:10,2026-01-27 20:51:00
+a83f7bf0-a6c9-43d1-a4bf-bd53d8d9722f,Amsterdam,Hannekes Boom,"Dijksgracht 4, 1019 BS Amsterdam",drinks,52.376293,4.911597,4,true,2026-01-27 20:24:10,2026-01-27 20:51:00
+774eb901-2b09-4e71-b018-6fb30ab9d3e6,Amsterdam,SkyLounge Amsterdam,"Oosterdoksstraat 4, 1011 DK Amsterdam",drinks,52.376681,4.905206,5,true,2026-01-27 20:24:10,2026-01-27 20:51:01
+75db2da9-1935-4d42-847d-20bbe032f6cd,Amsterdam,Café de Dokter,"Rozenboomsteeg 4, 1012 PR Amsterdam",drinks,52.369254,4.890825,6,true,2026-01-27 20:24:10,2026-01-27 20:51:01
+dc8f39ca-ff96-4e92-9146-7a52b9a9b004,Amsterdam,The Avocado Show,"Keizersgracht 449, 1017 DK Amsterdam, Netherlands",lunch_dinner,52.366337,4.886416,0,true,2026-01-27 20:52:35,2026-02-15 21:27:59
+bcf69b1a-f554-45fe-800e-52c7e1491760,Amsterdam,Hail Mary,"Overtoom 31, 1054 HB Amsterdam, Netherlands",lunch_dinner,52.363194,4.877548,1,true,2026-01-27 20:52:35,2026-02-15 21:27:58
+453af1f4-cc9b-4dc9-9eb1-dc72c2e7f56e,Amsterdam,Bakers & Roasters,"Eerste Jacob van Campenstraat 54, 1072 BH Amsterdam, Netherlands",lunch_dinner,52.357312,4.889846,2,true,2026-01-27 20:52:35,2026-02-15 21:26:38
+148e23dd-a8df-42ef-8410-d0405a7c509c,Amsterdam,Vegan Junk Food Bar,"Staringplein 21, 1054 VL Amsterdam, Netherlands",lunch_dinner,52.361098,4.862701,3,true,2026-01-27 20:52:35,2026-02-15 21:26:38
+7e4131ce-6e76-4988-8bf8-8c280ea2ef55,Amsterdam,Dignita Hoftuin,"Nieuwe Herengracht 18A, 1018 DP Amsterdam, Netherlands",lunch_dinner,52.365606,4.904537,4,true,2026-01-27 20:52:35,2026-02-15 21:26:39
