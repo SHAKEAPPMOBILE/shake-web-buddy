@@ -5,6 +5,7 @@ interface VenueContextType {
   venues: DbVenue[];
   isLoading: boolean;
   error: Error | null;
+  refetchVenues: () => void;
   getVenueForActivity: (city: string, activityType: string) => DbVenue | null;
   getLocationString: (city: string, activityType: string) => string;
   getMapsUrl: (city: string, activityType: string) => string | null;
@@ -14,7 +15,7 @@ interface VenueContextType {
 const VenueContext = createContext<VenueContextType | undefined>(undefined);
 
 export function VenueProvider({ children }: { children: React.ReactNode }) {
-  const { data: venues = [], isLoading, error } = useAllVenues();
+  const { data: venues = [], isLoading, error, refetch: refetchVenues } = useAllVenues();
 
   const getVenueForActivity = useMemo(() => {
     return (city: string, activityType: string): DbVenue | null => {
@@ -51,6 +52,7 @@ export function VenueProvider({ children }: { children: React.ReactNode }) {
     venues,
     isLoading,
     error: error as Error | null,
+    refetchVenues,
     getVenueForActivity,
     getLocationString,
     getMapsUrl,
@@ -74,7 +76,7 @@ export function useVenueContext() {
 
 // Convenience hook for getting activity location details
 export function useActivityVenue(city: string, activityType: string) {
-  const { getVenueForActivity, getLocationString, getMapsUrl, isLoading } = useVenueContext();
+  const { getVenueForActivity, getLocationString, getMapsUrl, isLoading, error: venueError, refetchVenues } = useVenueContext();
   
   const venue = getVenueForActivity(city, activityType);
   const location = getLocationString(city, activityType);
@@ -85,6 +87,8 @@ export function useActivityVenue(city: string, activityType: string) {
     location,
     mapsUrl,
     isLoading,
+    venueError: venueError as Error | null,
+    refetchVenues,
     isTBD: !isLoading && location === "TBD - Vote in chat!",
     venueName: venue?.name || null,
   };

@@ -39,7 +39,9 @@ export function getVenueTypeForActivity(activityType: string): 'lunch_dinner' | 
   return null;
 }
 
-// Fetch all venues from database (used by app for join confirmation and group chat)
+// Fetch all venues from database (used by app for join confirmation and group chat).
+// Same query shape as admin (useVenues): no server-side is_active filter, then filter in JS.
+// This avoids RLS/query differences between admin and app.
 export function useAllVenues() {
   return useQuery({
     queryKey: ['db-venues'],
@@ -47,19 +49,20 @@ export function useAllVenues() {
       const { data, error } = await supabase
         .from('venues')
         .select('*')
-        .eq('is_active', true)
         .order('city', { ascending: true })
         .order('venue_type', { ascending: true })
         .order('sort_order', { ascending: true });
       
       if (error) {
-        console.warn('[Venues] Failed to load from Supabase:', error.message, error.code);
+        console.warn('[Venues] Failed to load from Supabase:', error.message, error.code, error);
         throw error;
       }
+      const list = (data ?? []) as DbVenue[];
+      const active = list.filter((v) => v.is_active !== false);
       if (typeof window !== 'undefined') {
-        console.info('[Venues] Loaded', (data?.length ?? 0), 'active venues from database');
+        console.info('[Venues] Loaded', active.length, 'active venues (total rows:', list.length, ')');
       }
-      return data as DbVenue[];
+      return active;
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });

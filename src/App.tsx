@@ -27,6 +27,7 @@ import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import NotFound from "./pages/NotFound";
 import Welcome from "./pages/Welcome";
 import Admin from "./pages/Admin";
+import PublicVenues from "./pages/PublicVenues";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +106,8 @@ const App = () => {
                 <BrowserRouter>
                   <ReferralTracker />
                   <Routes>
+                    <Route path="/venues" element={<PublicVenues />} />
+                    <Route path="/admin" element={<Admin />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/auth/callback" element={<OAuthCallback />} />
                     <Route path="/welcome" element={<Welcome />} />
@@ -113,7 +116,6 @@ const App = () => {
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                     <Route path="/terms-of-service" element={<TermsOfService />} />
                     <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-                    <Route path="/admin" element={<Admin />} />
                     <Route path="/*" element={<IOSAppLayout />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
