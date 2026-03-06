@@ -82,7 +82,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     setIsLoading(true);
     try {
       // Purchase the product
-      const { productIdentifier, transactionId } = await CapacitorPurchases.purchaseProduct({
+      const { productIdentifier, transactionId } = await (CapacitorPurchases as any).purchaseProduct({
         productIdentifier: PRODUCT_ID
       });
 
