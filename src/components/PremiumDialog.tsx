@@ -29,7 +29,7 @@ const PRODUCT_ID = "shake_premium_monthly"; // You'll create this in App Store C
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
-  const [productPrice, setProductPrice] = useState("€3.88");
+  const [productPrice, setProductPrice] = useState("$2.99");
   const { user, isPremium, isManualOverride } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();

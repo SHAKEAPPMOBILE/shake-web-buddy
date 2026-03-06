@@ -9,7 +9,7 @@ const PREMIUM_ENTITLEMENT_ID = 'premium';
 
 // Product identifiers from App Store Connect
 export const PRODUCT_IDS = {
-  MONTHLY_SUBSCRIPTION: 'shake_superhuman_monthly', // $3.88/month
+  MONTHLY_SUBSCRIPTION: 'shake_superhuman_monthly', // $2.99/month
   KIND_HUMAN_TIER_1: 'shake_kindhuman_1', // $1 donation
   KIND_HUMAN_TIER_2: 'shake_kindhuman_5', // $5 donation
   KIND_HUMAN_TIER_3: 'shake_kindhuman_10', // $10 donation
