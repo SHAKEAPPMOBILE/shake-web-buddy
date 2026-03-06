@@ -354,7 +354,7 @@ export function GroupChatDialog({
     const { error } = await supabase
       .from("activity_messages")
       .delete()
-      .eq("id", messageId);
+      .eq("id", messageId as any);
 
     if (error) {
       console.error("Error deleting message:", error);
