@@ -249,8 +249,8 @@ export function GroupChatDialog({
       const { data, error } = await supabase
         .from("activity_messages")
         .select("*")
-        .eq("activity_type", activityType)
-        .eq("city", city)
+        .eq("activity_type", activityType as any)
+        .eq("city", city as any)
         .gte("created_at", today.toISOString())
         .order("created_at", { ascending: true });
 
@@ -259,7 +259,7 @@ export function GroupChatDialog({
         return;
       }
 
-      setMessages(data || []);
+      setMessages((data as any) || []);
     };
 
     fetchMessages();
