@@ -17,6 +17,7 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { SuperHumanIcon } from "./SuperHumanIcon";
 import { Purchases } from '@revenuecat/purchases-capacitor';
 import { purchasePremium } from "@/lib/revenuecat";
+const CapacitorPurchases = Purchases;
 
 interface PremiumDialogProps {
   open: boolean;
