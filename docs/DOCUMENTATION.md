@@ -411,6 +411,26 @@ These functions power phone login, signup, and forgot-password. If users see gen
 | **Rate limit** | 429 "Too many codes requested. Please try again later." | Max 5 OTP requests per phone per hour; wait or adjust limit in `send-bird-otp` |
 | **Invalid/expired code** | 400 from verify-bird-otp | User must request a new code (codes expire in 10 minutes) |
 
+### Testing on iPad (App Store review)
+
+To test login like Apple’s reviewers (e.g. on iPad Air), you **do need login credentials**: a **phone number** and **password**. There is no public demo account; use one of these:
+
+1. **Your own account**  
+   Use a real phone number you control and the password you set when signing up (or after “Forgot password”).
+
+2. **Test account for review**  
+   Create a test user that can sign in with **phone + password** (no SMS/OTP needed):
+   - Open the **Admin** page: `https://<your-app-url>/admin` (e.g. Netlify or production URL).
+   - Enter the **admin password** (the one configured in Supabase as `ADMIN_SEED_PASSWORD` for the `seed-test-users` edge function).
+   - In **“Create New Test User”**, set:
+     - **Phone:** e.g. `+1 555 123 4567` (use the +1 555 format; test users bypass SMS).
+     - **Password:** e.g. `Test1234!` (min 6 characters).
+     - **Name:** optional.
+   - Click **Create Test User**. That user can log in immediately with **Sign in with password** using that phone and password.
+   - On iPad (or simulator), open the app → **Sign in with password** → enter that phone and password.
+
+Use the same test phone + password in your **App Store Connect** “Sign-in information” / “Demo account” so reviewers can log in. For review you can use a real account (e.g. phone +351 968600945; store the password only in App Store Connect, not in this repo). Ensure Supabase and Infobip are configured (see table above) so both password and OTP flows work.
+
 ### Function Reference
 
 ---
