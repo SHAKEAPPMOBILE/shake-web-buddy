@@ -50,9 +50,10 @@ serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
+    // Rate limit: max 5 OTP requests per phone per hour (count our own otp_verifications)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count, error: countError } = await admin
-      .from("phone_change_requests")
+      .from("otp_verifications")
       .select("id", { count: "exact", head: true })
       .eq("phone_number", phone)
       .gte("created_at", oneHourAgo);

@@ -399,6 +399,18 @@ supabase/
 
 All edge functions are deployed to Lovable Cloud and handle server-side logic that requires elevated permissions or external API calls.
 
+### Login / OTP (send-bird-otp, verify-bird-otp)
+
+These functions power phone login, signup, and forgot-password. If users see generic errors (e.g. "Unable to sign in" or "Unable to send verification code"), the edge function may be returning non-2xx. Common causes:
+
+| Cause | Symptom | Fix |
+|-------|----------|-----|
+| **Missing Infobip secrets** | 500 "OTP provider not configured" | Set `INFOBIP_API_KEY`, `INFOBIP_BASE_URL`, `INFOBIP_FROM` in Supabase → Project Settings → Edge Functions → Secrets |
+| **Missing `otp_verifications` table** | 500 "Failed to send verification code" | Run migrations; ensure `supabase/migrations/20260309120000_otp_verifications.sql` is applied |
+| **Infobip API failure** (quota, invalid sender, etc.) | 502 "Failed to send verification code" | Check Infobip dashboard, sender approval, and account limits |
+| **Rate limit** | 429 "Too many codes requested. Please try again later." | Max 5 OTP requests per phone per hour; wait or adjust limit in `send-bird-otp` |
+| **Invalid/expired code** | 400 from verify-bird-otp | User must request a new code (codes expire in 10 minutes) |
+
 ### Function Reference
 
 ---
@@ -585,6 +597,9 @@ All edge functions are deployed to Lovable Cloud and handle server-side logic th
 | `TWILIO_AUTH_TOKEN` | SMS authentication |
 | `TWILIO_PHONE_NUMBER` | SMS sender number |
 | `ELEVENLABS_API_KEY` | AI voice generation |
+| `INFOBIP_API_KEY` | OTP/SMS via Infobip (login/signup/forgot-password) |
+| `INFOBIP_BASE_URL` | Infobip API base URL (e.g. `https://api.infobip.com`) |
+| `INFOBIP_FROM` | Infobip sender ID/number for SMS |
 
 ---
 

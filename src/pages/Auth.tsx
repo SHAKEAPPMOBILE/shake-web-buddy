@@ -27,6 +27,25 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { isNativePlatform } from "@/lib/platform-utils";
 
+// Show user-friendly messages instead of technical errors (e.g. "Load failed", "Edge Function returned non-2xx") for App Store compliance
+function toFriendlyAuthMessage(raw: string, context: "login" | "otp" | "forgot" | "general"): string {
+  const lower = (raw || "").toLowerCase();
+  const isTechnical =
+    lower.includes("load failed") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("networkerror") ||
+    lower.includes("edge function") ||
+    lower.includes("non-2xx") ||
+    lower.includes("network request failed");
+  if (isTechnical) {
+    if (context === "login") return "Unable to sign in. Please check your connection and try again.";
+    if (context === "otp") return "Something went wrong. Please check your connection and try again.";
+    if (context === "forgot") return "Unable to continue. Please check your connection and try again.";
+    return "Something went wrong. Please try again.";
+  }
+  return raw || "Something went wrong. Please try again.";
+}
+
 // OAuth: on web (including mobile browser) use redirect flow; on native app use Capacitor Browser
 async function signInWithOAuth(provider: 'google' | 'apple') {
   try {
@@ -333,7 +352,7 @@ export default function Auth() {
       // Send OTP via Bird WhatsApp
       const { error, verificationId: vId } = await sendOtp(formattedPhone, isLogin ? "login" : "signup");
       if (error) {
-        toast.error(error.message);
+        toast.error(toFriendlyAuthMessage(error.message, "otp"));
       } else {
         setVerificationId(vId || "");
         toast.success("Verification code sent via WhatsApp!");
@@ -371,7 +390,7 @@ export default function Auth() {
         if (error.message.includes("Invalid login credentials")) {
           toast.error("Invalid phone number or password");
         } else {
-          toast.error(error.message);
+          toast.error(toFriendlyAuthMessage(error.message, "login"));
         }
       } else {
         toast.success("Welcome!");
@@ -398,7 +417,7 @@ export default function Auth() {
       const { error, verificationId: vId } = await sendOtp(formattedPhone, "forgot_password");
       
       if (error) {
-        toast.error(error.message);
+        toast.error(toFriendlyAuthMessage(error.message, "forgot"));
       } else {
         setVerificationId(vId || "");
         toast.success("Verification code sent to reset your password!");
@@ -426,7 +445,7 @@ export default function Auth() {
       const formattedPhone = formatPhoneNumber(phoneNumber);
       const { error } = await verifyOtp(formattedPhone, otpCode, verificationId, { purpose: "forgot_password" });
       if (error) {
-        toast.error(error.message);
+        toast.error(toFriendlyAuthMessage(error.message, "forgot"));
       } else {
         toast.success("Phone verified! Now set your new password.");
         setStep('reset');
@@ -461,12 +480,12 @@ export default function Auth() {
         password,
       });
       if (error) {
-        toast.error(error.message);
+        toast.error(toFriendlyAuthMessage(error.message, "forgot"));
       } else {
         // Sign in with the new password
         const { error: signInError } = await signInWithPassword(formattedPhone, password);
         if (signInError) {
-          toast.error(signInError.message);
+          toast.error(toFriendlyAuthMessage(signInError.message, "login"));
         } else {
           toast.success("Password updated! You're now logged in.");
           navigate("/");
@@ -614,13 +633,13 @@ export default function Auth() {
         name: !isLogin ? name : undefined,
       });
       if (error) {
-        toast.error(error.message);
+        toast.error(toFriendlyAuthMessage(error.message, "otp"));
       } else {
         if (purpose === "signup") {
           // Signup: user created server-side, now sign in with password
           const { error: signInError } = await signInWithPassword(formattedPhone, password);
           if (signInError) {
-            toast.error(signInError.message);
+            toast.error(toFriendlyAuthMessage(signInError.message, "login"));
           } else {
             toast.success("Phone verified! Now complete your profile.");
             setStep('name');
@@ -656,7 +675,7 @@ export default function Auth() {
     try {
       const { error } = await updatePassword(password);
       if (error) {
-        toast.error(error.message);
+        toast.error(toFriendlyAuthMessage(error.message, "general"));
       } else {
         toast.success("Password set! Now complete your profile.");
         setStep('name');
@@ -1245,7 +1264,7 @@ export default function Auth() {
                     setOtpCode("");
                     const { error, verificationId: vId } = await sendOtp(formatPhoneNumber(phoneNumber));
                     if (error) {
-                      toast.error(error.message);
+                      toast.error(toFriendlyAuthMessage(error.message, "otp"));
                     } else {
                       setVerificationId(vId || "");
                       toast.success("New code sent!");
@@ -1658,7 +1677,7 @@ export default function Auth() {
                     setOtpCode("");
                     const { error, verificationId: vId } = await sendOtp(formatPhoneNumber(phoneNumber), "forgot_password");
                     if (error) {
-                      toast.error(error.message);
+                      toast.error(toFriendlyAuthMessage(error.message, "forgot"));
                     } else {
                       setVerificationId(vId || "");
                       toast.success("New code sent!");

@@ -285,6 +285,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [session]);
 
+  // User-friendly message for technical/network errors (App Store rejects raw "Load failed" / "Edge Function returned non-2xx")
+  const toUserFriendlyAuthError = (raw: string, fallback: string): string => {
+    const lower = (raw || "").toLowerCase();
+    if (
+      lower.includes("load failed") ||
+      lower.includes("failed to fetch") ||
+      lower.includes("networkerror") ||
+      lower.includes("edge function") ||
+      lower.includes("non-2xx") ||
+      lower.includes("network request failed")
+    ) {
+      return fallback;
+    }
+    return raw || fallback;
+  };
+
   // Send OTP via Bird WhatsApp
   const sendOtp = async (phone: string, purpose = "auth"): Promise<{ error: Error | null; verificationId?: string }> => {
     try {
@@ -293,18 +309,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        // Try to extract error message from the response
         let errorMsg = error.message || "Failed to send code";
         try {
           const parsed = JSON.parse(error.message);
           if (parsed?.error) errorMsg = parsed.error;
         } catch {}
+        errorMsg = toUserFriendlyAuthError(errorMsg, "Unable to send verification code. Please check your connection and try again.");
         return { error: new Error(errorMsg) };
       }
 
       return { error: null, verificationId: data?.verificationId };
     } catch (e: any) {
-      return { error: new Error(e?.message || "Failed to send code") };
+      const msg = toUserFriendlyAuthError(e?.message || "", "Unable to send verification code. Please check your connection and try again.");
+      return { error: new Error(msg) };
     }
   };
 
@@ -333,12 +350,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const parsed = JSON.parse(error.message);
           if (parsed?.error) errorMsg = parsed.error;
         } catch {}
+        errorMsg = toUserFriendlyAuthError(errorMsg, "Verification failed. Please check your connection and try again.");
         return { error: new Error(errorMsg) };
       }
 
       return { error: null, data };
     } catch (e: any) {
-      return { error: new Error(e?.message || "Verification failed") };
+      const msg = toUserFriendlyAuthError(e?.message || "", "Verification failed. Please check your connection and try again.");
+      return { error: new Error(msg) };
     }
   };
 
@@ -347,7 +366,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       phone,
       password,
     });
-    return { error: error as Error | null };
+    if (error) {
+      const friendly = toUserFriendlyAuthError(
+        error.message,
+        "Unable to sign in. Please check your connection and try again."
+      );
+      return { error: new Error(friendly) };
+    }
+    return { error: null };
   };
 
   const updatePassword = async (password: string) => {
