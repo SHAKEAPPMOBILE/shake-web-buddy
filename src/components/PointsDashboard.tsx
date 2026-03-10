@@ -39,7 +39,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
       toast({
         title: t('points.bonusClaimedTitle', '🎉 Welcome Bonus Claimed!'),
         description: t('points.bonusClaimedDesc', 'You earned +10 points for completing your profile!'),
-        duration: 3000,
+        duration: 2000,
       });
     }
   };

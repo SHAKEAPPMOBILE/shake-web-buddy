@@ -179,7 +179,7 @@ export function GlobalParticipantsSection() {
                 <span><strong>{newMemberName}</strong> just joined!</span>
               </div>,
               {
-                duration: 4000,
+                duration: 2000,
               }
             );
           }
