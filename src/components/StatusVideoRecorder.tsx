@@ -3,6 +3,7 @@ import { X, Upload, Trash2, FileVideo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { uploadStatusVideo, deleteStatusVideo } from "@/hooks/useStatusVideo";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface StatusVideoRecorderProps {
   open: boolean;
@@ -21,6 +22,7 @@ export function StatusVideoRecorder({
   existingVideoUrl,
   onVideoUploaded,
 }: StatusVideoRecorderProps) {
+  const { isPremium } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -136,6 +138,13 @@ export function StatusVideoRecorder({
   };
 
   if (!open) return null;
+
+  // Premium gate: only Super-Human users can upload status videos
+  if (!isPremium) {
+    toast.error("Uploading a status video is a Super-Human feature. Upgrade to share status videos.");
+    onOpenChange(false);
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black">

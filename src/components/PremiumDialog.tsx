@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, MapPin, Globe, User, MessageSquare, Sparkles, Settings } from "lucide-react";
+import { Check, MapPin, Globe, User, MessageSquare, Sparkles, Settings, Video } from "lucide-react";
 import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
   Dialog,
@@ -46,6 +46,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     { icon: MapPin, text: "Join activities in any city" },
     { icon: User, text: "See other users' profiles unlimited" },
     { icon: MessageSquare, text: "Unlimited text messages" },
+    { icon: Video, text: "Upload status video" },
   ];
 
   // Initialize in-app purchases and load product info

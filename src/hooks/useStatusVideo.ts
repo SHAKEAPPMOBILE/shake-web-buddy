@@ -123,6 +123,16 @@ export async function uploadStatusVideo(
     return null;
   }
 
+  // Also set this video as the user's avatar so it appears on their profile for everyone
+  const { error: avatarError } = await supabase
+    .from("profiles")
+    .update({ avatar_url: urlData.publicUrl })
+    .eq("user_id", userId);
+
+  if (avatarError) {
+    console.error("Failed to update avatar to status video:", avatarError);
+  }
+
   return urlData.publicUrl;
 }
 
