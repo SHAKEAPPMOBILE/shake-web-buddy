@@ -25,6 +25,79 @@ function generateOTP(length = 6): string {
   return otp;
 }
 
+async function sendViaInfobip(
+  phone: string,
+  code: string,
+  infobipApiKey: string,
+  infobipBaseUrl: string,
+  infobipFrom: string
+) {
+  const smsPayload = {
+    messages: [
+      {
+        from: infobipFrom,
+        destinations: [{ to: phone }],
+        text: `Your Shake verification code is: ${code}. Valid for 10 minutes.`,
+      },
+    ],
+  };
+
+  const infobipResp = await fetch(`${infobipBaseUrl}/sms/2/text/advanced`, {
+    method: "POST",
+    headers: {
+      Authorization: `App ${infobipApiKey}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(smsPayload),
+  });
+
+  if (!infobipResp.ok) {
+    const errText = await infobipResp.text();
+    console.error("Infobip SMS error:", infobipResp.status, errText);
+    return { ok: false as const, status: 502, error: "Failed to send verification code" };
+  }
+
+  return { ok: true as const };
+}
+
+async function sendViaTwilio(phone: string, code: string) {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const twilioPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
+
+  if (!accountSid || !authToken || !twilioPhone) {
+    console.error("Twilio credentials not configured for OTP");
+    return { ok: false as const, status: 500, error: "OTP provider not configured" };
+  }
+
+  const body = new URLSearchParams({
+    To: phone,
+    From: twilioPhone,
+    Body: `Your Shake verification code is: ${code}. Valid for 10 minutes.`,
+  });
+
+  const response = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("Twilio SMS error:", response.status, errText);
+    return { ok: false as const, status: 502, error: "Failed to send verification code" };
+  }
+
+  return { ok: true as const };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -34,11 +107,6 @@ serve(async (req) => {
     const infobipFrom = Deno.env.get("INFOBIP_FROM");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    if (!infobipApiKey || !infobipBaseUrl || !infobipFrom) {
-      console.error("Infobip credentials not configured");
-      return json(500, { error: "OTP provider not configured" });
-    }
 
     const body = await req.json().catch(() => null);
     const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
@@ -82,37 +150,24 @@ serve(async (req) => {
       return json(500, { error: "Failed to send verification code" });
     }
 
-    const smsPayload = {
-      messages: [
-        {
-          from: infobipFrom,
-          destinations: [{ to: phone }],
-          text: `Your Shake verification code is: ${code}. Valid for 10 minutes.`,
-        },
-      ],
-    };
+    // Prefer Infobip if configured; otherwise fall back to Twilio (same SMS infra as plan notifications)
+    let providerResult:
+      | { ok: true }
+      | { ok: false; status: number; error: string };
 
-    const infobipResp = await fetch(
-      `${infobipBaseUrl}/sms/2/text/advanced`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `App ${infobipApiKey}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(smsPayload),
-      }
-    );
-
-    if (!infobipResp.ok) {
-      const errText = await infobipResp.text();
-      console.error("Infobip SMS error:", infobipResp.status, errText);
-      await admin.from("otp_verifications").delete().eq("id", verificationId);
-      return json(502, { error: "Failed to send verification code" });
+    if (infobipApiKey && infobipBaseUrl && infobipFrom) {
+      providerResult = await sendViaInfobip(phone, code, infobipApiKey, infobipBaseUrl, infobipFrom);
+    } else {
+      providerResult = await sendViaTwilio(phone, code);
     }
 
-    console.log(`OTP sent via Infobip for ${phone}, verificationId: ${verificationId}`);
+    if (!providerResult.ok) {
+      // Clean up the OTP row so we don't accumulate unusable codes
+      await admin.from("otp_verifications").delete().eq("id", verificationId);
+      return json(providerResult.status, { error: providerResult.error });
+    }
+
+    console.log(`OTP sent for ${phone}, verificationId: ${verificationId}`);
 
     return json(200, {
       success: true,

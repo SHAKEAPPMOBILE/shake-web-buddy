@@ -78,8 +78,10 @@ export function GlobalParticipantsSection() {
     return shuffled;
   };
 
-  const fetchRecentParticipants = async () => {
-    setIsLoading(true);
+  const fetchRecentParticipants = async (showSpinner = false) => {
+    if (showSpinner) {
+      setIsLoading(true);
+    }
 
     // Get all users who signed up (ordered by most recent), excluding test users
     const { data: profiles, error: profilesError } = await supabase
@@ -140,7 +142,8 @@ export function GlobalParticipantsSection() {
   };
 
   useEffect(() => {
-    fetchRecentParticipants();
+    // Initial load: show spinner
+    fetchRecentParticipants(true);
 
     // Subscribe to real-time updates on profiles table (new signups)
     const profilesChannel = supabase
@@ -181,8 +184,8 @@ export function GlobalParticipantsSection() {
             );
           }
           
-          // Refresh the list
-          fetchRecentParticipants();
+          // Refresh the list without flashing the loading spinner
+          fetchRecentParticipants(false);
         }
       )
       .subscribe();
@@ -192,8 +195,8 @@ export function GlobalParticipantsSection() {
       isInitialLoad.current = false;
     }, 2000);
 
-    // Also refresh every 30 seconds as backup
-    const interval = setInterval(fetchRecentParticipants, 30000);
+    // Also refresh every 30 seconds as backup, without toggling the loading state
+    const interval = setInterval(() => fetchRecentParticipants(false), 30000);
     
     return () => {
       supabase.removeChannel(profilesChannel);
