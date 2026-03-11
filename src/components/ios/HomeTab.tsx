@@ -393,7 +393,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">
             <span className="transition-opacity duration-500 block">
               {showTapInstruction ? (
-                <span className="flex items-center justify-center gap-2 flex-wrap">
+                <span className="flex items-center justify-center gap-2 flex-wrap text-5xl md:text-6xl font-handwritten text-foreground">
                   {t('home.tapOnThe', 'Tap on')} 
                   <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-foreground text-background text-lg font-bold">+</span> 
                   {t('home.toStartShaking', 'to start shaking!')}
