@@ -207,6 +207,7 @@ export function IOSAppLayout() {
       handleShakeClick();
       return;
     }
+    setShowEvents(false);
     setShowHomeActivities(false);
     setActiveTab(tab);
   };

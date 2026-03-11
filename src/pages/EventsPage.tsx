@@ -439,15 +439,27 @@ function EventDetail({
             )}
             {status === "error" && (
               !user ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm">
-                  <div className="w-12 h-12 rounded-full bg-primary/30 border border-primary/40 flex items-center justify-center mb-3">
-                    <Lock className="w-5 h-5 text-primary" />
+                <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                  <div
+                    className="w-full rounded-2xl p-5 mb-5 flex flex-col items-center gap-2"
+                    style={{
+                      background: "linear-gradient(135deg, hsl(270, 55%, 28%), hsl(290, 45%, 18%))",
+                    }}
+                  >
+                    <MessageCircle className="w-8 h-8 text-white/90 mb-1" />
+                    <p className="text-white font-bold text-base leading-snug">{event.name}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Users className="w-3.5 h-3.5 text-white/60" />
+                      <span className="text-white/70 text-xs">
+                        {event.chatCount.toLocaleString()} people in this chat
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-foreground font-bold">Unlock for $1</p>
-                  <p className="text-muted-foreground text-xs mt-1 text-center px-8">Chat with everyone attending</p>
-                  <Button onClick={() => setShowPayment(true)} className="mt-4 rounded-xl font-bold">
-                    Join Chat · $1
+                  <Button onClick={() => setShowPayment(true)} className="w-full rounded-full font-bold text-base py-3 h-auto">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Enter Group Chat · $1
                   </Button>
+                  <p className="text-muted-foreground text-xs mt-3">One-time fee · Ticket holders only</p>
                 </div>
               ) : (
                 <p className="text-muted-foreground text-sm py-2">Couldn&apos;t load chat. Try again.</p>

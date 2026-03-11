@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +81,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const { totalNet, currency, activities, isLoading: earningsLoading } = useCreatorEarnings();
   const { isVerified, isPending, isRejected, isLoading: verificationLoading } = useCreatorVerification();
   const [showIDVerificationDialog, setShowIDVerificationDialog] = useState(false);
+  const [showParanormal, setShowParanormal] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState<{ user_id: string; name: string; avatar_url: string | null }[]>([]);
+  const [isLoadingParanormal, setIsLoadingParanormal] = useState(false);
 
   const handleOpenManagePlan = () => {
     setShowSubscriptionDropdown(false);
@@ -189,6 +192,45 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  useEffect(() => {
+    if (showParanormal) {
+      fetchBlockedUsers();
+    }
+  }, [showParanormal, fetchBlockedUsers]);
+
+  const fetchBlockedUsers = useCallback(async () => {
+    if (!user) return;
+    setIsLoadingParanormal(true);
+    try {
+      const { data: blocks, error } = await supabase
+        .from("user_blocks")
+        .select("blocked_id")
+        .eq("blocker_id", user.id);
+      if (error) throw error;
+      const ids = (blocks ?? []).map((b) => b.blocked_id);
+      if (ids.length === 0) {
+        setBlockedUsers([]);
+        return;
+      }
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", ids);
+      if (profilesError) throw profilesError;
+      setBlockedUsers(
+        (profiles ?? []).map((p) => ({
+          user_id: p.user_id,
+          name: p.name ?? "User",
+          avatar_url: p.avatar_url ?? null,
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching blocked users:", error);
+    } finally {
+      setIsLoadingParanormal(false);
+    }
+  }, [user]);
 
   // Refetch profile when user returns to app/tab (e.g. after editing profile) so avatar updates
   useEffect(() => {
@@ -808,6 +850,74 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </div>
           )}
         </div>
+
+        {/* Paranormal Activity Dialog */}
+        <Dialog open={showParanormal} onOpenChange={setShowParanormal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>👻 Paranormal Activity</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Blocked users won&apos;t appear in your feed or chats.</p>
+              {isLoadingParanormal ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : blockedUsers.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  No blocked users 👻
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {blockedUsers.map((u) => (
+                    <div key={u.user_id} className="flex items-center justify-between gap-3 py-1">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={getDisplayAvatarUrl(u.avatar_url ?? undefined)} alt={u.name} />
+                          <AvatarFallback>
+                            <User className="w-4 h-4 text-muted-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-medium">{u.name}</span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await supabase
+                              .from("user_blocks")
+                              .delete()
+                              .eq("blocker_id", user.id)
+                              .eq("blocked_id", u.user_id);
+                            setBlockedUsers((prev) => prev.filter((p) => p.user_id !== u.user_id));
+                          } catch (error) {
+                            console.error("Error unblocking user:", error);
+                          }
+                        }}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Unblock
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Paranormal Activity - Blocked & Flagged */}
+        <button
+          onClick={() => setShowParanormal(true)}
+          className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-purple-500/30 rounded-xl hover:bg-muted/30 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+            <Ghost className="w-5 h-5 text-purple-400" />
+          </div>
+          <div className="flex-1 text-left">
+            <span className="font-medium">Paranormal Activity</span>
+            <p className="text-xs text-muted-foreground">Blocked &amp; flagged users</p>
+          </div>
+        </button>
 
         {/* Language Selector */}
         <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
