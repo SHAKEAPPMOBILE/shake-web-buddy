@@ -578,6 +578,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
               Near You
             </h1>
           </div>
+        </div>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {CATEGORIES.map((c) => (
             <button
