@@ -193,12 +193,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     fetchProfile();
   }, [fetchProfile]);
 
-  useEffect(() => {
-    if (showParanormal) {
-      fetchBlockedUsers();
-    }
-  }, [showParanormal, fetchBlockedUsers]);
-
   const fetchBlockedUsers = useCallback(async () => {
     if (!user) return;
     setIsLoadingParanormal(true);
@@ -231,6 +225,12 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setIsLoadingParanormal(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (showParanormal) {
+      fetchBlockedUsers();
+    }
+  }, [showParanormal, fetchBlockedUsers]);
 
   // Refetch profile when user returns to app/tab (e.g. after editing profile) so avatar updates
   useEffect(() => {
