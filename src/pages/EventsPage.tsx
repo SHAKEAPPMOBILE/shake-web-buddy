@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   MapPin,
@@ -21,6 +21,7 @@ import {
 } from "@/lib/ticketmaster";
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // Fallback when no API key or API returns empty
 const MOCK_EVENTS: EventItem[] = [
@@ -135,43 +136,43 @@ const hue = (id: string) =>
 
 function PaymentModal({
   event,
+  eventStartsAt,
   onClose,
-  onSuccess,
 }: {
   event: EventItem;
+  eventStartsAt: string;
   onClose: () => void;
-  onSuccess: () => void | Promise<void>;
 }) {
-  const [step, setStep] = useState<"pay" | "success">("pay");
   const [loading, setLoading] = useState(false);
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setStep("success");
-      setTimeout(onSuccess, 1400);
-    }, 1800);
-  };
+    try {
+      const { data, error } = await supabase.functions.invoke("create-event-chat-payment", {
+        body: { eventId: event.id, eventName: event.name, eventStartsAt },
+      });
 
-  if (step === "success") {
-    return (
-      <div
-        className="fixed inset-0 z-[60] flex items-end justify-center bg-black/75"
-        onClick={(e) => e.target === e.currentTarget && onClose()}
-      >
-        <div className="w-full max-w-[420px] rounded-t-[28px] bg-card p-10 pb-12 flex flex-col items-center border border-border">
-          <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center mb-4">
-            <Check className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <p className="text-foreground font-bold text-xl">You're in! 🎉</p>
-          <p className="text-muted-foreground text-sm mt-1">
-            Group chat unlocked
-          </p>
-        </div>
-      </div>
-    );
-  }
+      if (error) {
+        toast.error(error.message ?? "Failed to start payment");
+        setLoading(false);
+        return;
+      }
+      if (data?.error) {
+        toast.error(data.error);
+        setLoading(false);
+        return;
+      }
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+      toast.error("Failed to create payment session");
+      setLoading(false);
+    } catch {
+      toast.error("Failed to process payment. Please try again.");
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -232,9 +233,11 @@ const DEFAULT_EVENT_STARTS_AT = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).t
 function EventDetail({
   event,
   onClose,
+  initialUnlock,
 }: {
   event: EventItem;
   onClose: () => void;
+  initialUnlock?: boolean;
 }) {
   const [showPayment, setShowPayment] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -254,6 +257,12 @@ function EventDetail({
     eventStartsAt,
   });
   const h = hue(event.id);
+
+  useEffect(() => {
+    if (initialUnlock && status === "locked") {
+      unlockChat();
+    }
+  }, [initialUnlock, status, unlockChat]);
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-y-auto">
@@ -445,14 +454,8 @@ function EventDetail({
       {showPayment && (
         <PaymentModal
           event={event}
+          eventStartsAt={eventStartsAt}
           onClose={() => setShowPayment(false)}
-          onSuccess={async () => {
-            setShowPayment(false);
-            const result = await unlockChat();
-            if (!result.success) {
-              toast.error(result.error);
-            }
-          }}
         />
       )}
     </div>
@@ -461,10 +464,28 @@ function EventDetail({
 
 export default function EventsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [cat, setCat] = useState("All");
   const [selected, setSelected] = useState<EventItem | null>(null);
+  const [initialUnlockEventId, setInitialUnlockEventId] = useState<string | null>(null);
+
+  const chatUnlockedId = searchParams.get("chat_unlocked");
+
+  useEffect(() => {
+    if (!chatUnlockedId || events.length === 0) return;
+    const event = events.find((e) => e.id === chatUnlockedId);
+    if (event) {
+      setSelected(event);
+      setInitialUnlockEventId(chatUnlockedId);
+    }
+    navigate("/events", { replace: true });
+  }, [chatUnlockedId, events, navigate]);
+
+  useEffect(() => {
+    if (!selected) setInitialUnlockEventId(null);
+  }, [selected]);
 
   useEffect(() => {
     let cancelled = false;
@@ -669,7 +690,11 @@ export default function EventsPage() {
       </div>
 
       {selected && (
-        <EventDetail event={selected} onClose={() => setSelected(null)} />
+        <EventDetail
+          event={selected}
+          onClose={() => setSelected(null)}
+          initialUnlock={selected.id === initialUnlockEventId}
+        />
       )}
     </div>
   );
