@@ -450,7 +450,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
       : events.filter((e) => e.category === cat);
 
   return (
-    <div className="max-w-[420px] mx-auto min-h-screen flex flex-col bg-background overflow-hidden relative">
+    <div className="w-full min-h-screen flex flex-col bg-background overflow-hidden relative">
       {/* Header */}
       <div className="px-5 pt-5 pb-3 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
