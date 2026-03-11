@@ -377,7 +377,7 @@ export function IOSAppLayout() {
         <div className="h-full relative">
           {renderTab()}
           {showEvents && (
-            <div className="absolute inset-0 z-30">
+            <div className="absolute inset-0 z-30 overflow-y-auto min-h-0">
               <EventsPage onClose={() => setShowEvents(false)} />
             </div>
           )}
