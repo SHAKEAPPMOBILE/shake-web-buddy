@@ -7,7 +7,6 @@ import {
   Users,
   ExternalLink,
   MessageCircle,
-  Lock,
   X,
   Check,
   Clock,
@@ -333,15 +332,10 @@ function EventDetail({
           </a>
         </div>
 
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="w-4 h-4 text-primary" />
-            <span className="font-semibold text-foreground">
-              Event Group Chat
-            </span>
-          </div>
-          <span className="text-muted-foreground text-sm">
-            {status === "active" ? memberCount : event.chatCount} members
+        <div className="flex items-center gap-2 mb-3">
+          <MessageCircle className="w-4 h-4 text-primary" />
+          <span className="font-semibold text-foreground">
+            Event Group Chat
           </span>
         </div>
 
@@ -365,12 +359,6 @@ function EventDetail({
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-foreground text-sm truncate">{event.name}</p>
-                <div className="flex items-center gap-1">
-                  <Users className="w-2.5 h-2.5 text-muted-foreground" />
-                  <span className="text-muted-foreground text-[11px]">
-                    {event.chatCount.toLocaleString()} members
-                  </span>
-                </div>
               </div>
             </div>
           )}
@@ -380,23 +368,8 @@ function EventDetail({
                 <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
             )}
-            {status === "locked" && (
-              <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-                <div
-                  className="w-full rounded-2xl p-5 mb-5 flex flex-col items-center gap-2"
-                  style={{
-                    background: "linear-gradient(135deg, hsl(270, 55%, 28%), hsl(290, 45%, 18%))",
-                  }}
-                >
-                  <MessageCircle className="w-8 h-8 text-white/90 mb-1" />
-                  <p className="text-white font-bold text-base leading-snug">{event.name}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Users className="w-3.5 h-3.5 text-white/60" />
-                    <span className="text-white/70 text-xs">
-                      {event.chatCount.toLocaleString()} people in this chat
-                    </span>
-                  </div>
-                </div>
+            {(status === "locked" || (status === "error" && !user)) && (
+              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                 <Button
                   onClick={() => setShowPayment(true)}
                   className="w-full rounded-full font-bold text-base py-3 h-auto"
@@ -404,7 +377,9 @@ function EventDetail({
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Enter Group Chat · $1
                 </Button>
-                <p className="text-muted-foreground text-xs mt-3">One-time fee · Ticket holders only</p>
+                <p className="text-muted-foreground text-xs mt-3">
+                  One-time fee · Chat expires 12h after event starts
+                </p>
               </div>
             )}
             {status === "active" && (
@@ -437,33 +412,8 @@ function EventDetail({
             {status === "expired" && (
               <p className="text-muted-foreground text-sm py-2">This chat ended 12 hours after the event 🎤</p>
             )}
-            {status === "error" && (
-              !user ? (
-                <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-                  <div
-                    className="w-full rounded-2xl p-5 mb-5 flex flex-col items-center gap-2"
-                    style={{
-                      background: "linear-gradient(135deg, hsl(270, 55%, 28%), hsl(290, 45%, 18%))",
-                    }}
-                  >
-                    <MessageCircle className="w-8 h-8 text-white/90 mb-1" />
-                    <p className="text-white font-bold text-base leading-snug">{event.name}</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Users className="w-3.5 h-3.5 text-white/60" />
-                      <span className="text-white/70 text-xs">
-                        {event.chatCount.toLocaleString()} people in this chat
-                      </span>
-                    </div>
-                  </div>
-                  <Button onClick={() => setShowPayment(true)} className="w-full rounded-full font-bold text-base py-3 h-auto">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Enter Group Chat · $1
-                  </Button>
-                  <p className="text-muted-foreground text-xs mt-3">One-time fee · Ticket holders only</p>
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm py-2">Couldn&apos;t load chat. Try again.</p>
-              )
+            {status === "error" && user && (
+              <p className="text-muted-foreground text-sm py-2">Couldn&apos;t load chat. Try again.</p>
             )}
           </div>
         </div>
@@ -649,12 +599,9 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                       {e.date}
                     </p>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1">
-                        <MessageCircle className="w-3 h-3 text-primary" />
-                        <span className="text-xs text-primary">
-                          {e.chatCount.toLocaleString()} in chat
-                        </span>
-                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {e.ticketsSold.toLocaleString()} sold
+                      </span>
                       {"presaleCount" in e && (
                         <span className="text-xs text-muted-foreground">
                           {e.presaleCount.toLocaleString()} presale
@@ -709,12 +656,6 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                       <span className="text-primary text-xs font-medium">
                         ${e.priceMin}–${e.priceMax}
                       </span>
-                      <div className="flex items-center gap-1">
-                        <MessageCircle className="w-2.5 h-2.5 text-muted-foreground" />
-                        <span className="text-muted-foreground text-[11px]">
-                          {e.chatCount}
-                        </span>
-                      </div>
                       <div className="flex items-center gap-1">
                         <Users className="w-2.5 h-2.5 text-muted-foreground" />
                         <span className="text-muted-foreground text-[11px]">

@@ -189,10 +189,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     }
   }, [user]);
 
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
-
   const fetchBlockedUsers = useCallback(async () => {
     if (!user) return;
     setIsLoadingParanormal(true);
@@ -225,6 +221,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setIsLoadingParanormal(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   useEffect(() => {
     if (showParanormal) {
