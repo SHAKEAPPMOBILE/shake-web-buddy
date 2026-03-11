@@ -8,6 +8,7 @@ export interface EventItem {
   name: string;
   date: string;
   eventStartAt?: string;
+  imageUrl?: string;
   venue: string;
   city: string;
   distance: string;
@@ -44,6 +45,7 @@ interface TMEvent {
   id: string;
   name?: string;
   url?: string;
+  images?: Array<{ url: string; width?: number; height?: number; ratio?: string }>;
   dates?: { start?: { localDate?: string; localTime?: string; dateTime?: string } };
   _embedded?: {
     venues?: Array<{ name?: string; city?: { name?: string } }>;
@@ -65,12 +67,18 @@ function mapTmEventToItem(e: TMEvent, index: number): EventItem {
   const priceMax = e.priceRanges?.[0]?.max ?? 0;
   const ticketsSold = e.sales?.totalTicketsSold ?? 0;
   const presaleCount = e.sales?.presale?.totalTicketsSold;
+  const imageUrl =
+    e.images
+      ?.filter((img) => img.ratio === "16_9")
+      .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0]?.url ??
+    e.images?.[0]?.url;
 
   return {
     id: e.id,
     name: e.name ?? "Unnamed Event",
     date: dateStr,
     eventStartAt: dateTime ?? undefined,
+    imageUrl,
     venue: venue?.name ?? "TBA",
     city: venue?.city?.name ?? "",
     distance: "—",

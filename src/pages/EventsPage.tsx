@@ -195,9 +195,11 @@ function EventDetail({
       {/* Hero */}
       <div
         className="relative h-56 flex-shrink-0"
-        style={{
-          background: `linear-gradient(135deg, hsl(${h}, 55%, 18%), hsl(${(h + 120) % 360}, 45%, 10%))`,
-        }}
+        style={
+          event.imageUrl
+            ? { backgroundImage: `url(${event.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+            : { background: `linear-gradient(135deg, hsl(${h}, 55%, 15%), hsl(${(h + 120) % 360}, 45%, 8%))` }
+        }
       >
         <Button
           variant="ghost"
@@ -344,7 +346,7 @@ function EventDetail({
                   className="w-full rounded-full font-bold text-base py-3 h-auto"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  Enter Group Chat · $1
+                  Enter Group Chat
                 </Button>
                 <p className="text-muted-foreground text-xs mt-3">
                   One-time fee · Chat expires 12h after event starts
@@ -508,9 +510,11 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                 >
                   <div
                     className="h-28 relative"
-                    style={{
-                      background: `linear-gradient(135deg, hsl(${hue(e.id)}, 55%, 22%), hsl(${(hue(e.id) + 120) % 360}, 45%, 13%))`,
-                    }}
+                    style={
+                      e.imageUrl
+                        ? { backgroundImage: `url(${e.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                        : { background: `linear-gradient(135deg, hsl(${hue(e.id)}, 55%, 22%), hsl(${(hue(e.id) + 120) % 360}, 45%, 13%))` }
+                    }
                   >
                     <div className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold">
                       HOT
@@ -566,12 +570,14 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                   className="w-full flex items-center gap-3 py-3.5 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
                 >
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, hsl(${hue(e.id)}, 55%, 28%), hsl(${(hue(e.id) + 80) % 360}, 45%, 18%))`,
-                    }}
+                    className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center text-xl overflow-hidden"
+                    style={
+                      e.imageUrl
+                        ? { backgroundImage: `url(${e.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                        : { background: `linear-gradient(135deg, hsl(${hue(e.id)}, 55%, 28%), hsl(${(hue(e.id) + 80) % 360}, 45%, 18%))` }
+                    }
                   >
-                    {e.emoji}
+                    {!e.imageUrl && e.emoji}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground text-sm mb-0.5 truncate">
