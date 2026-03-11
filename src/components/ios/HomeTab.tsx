@@ -17,11 +17,12 @@ interface HomeTabProps {
   showActivities?: boolean;
   onCloseActivities?: () => void;
   isShaking?: boolean;
+  onOpenEvents?: () => void;
 }
 
 // Separate dialog state for "Propose a plan" flow
 
-export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false, onOpenEvents }: HomeTabProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -372,21 +373,22 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       )}>
         {/* Welcome Message */}
         <div className="mb-8">
-          <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border">
-              <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
-              <span className="text-sm text-muted-foreground">
-                {t('home.realConnections', 'Real connections, real life.')}
-              </span>
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border">
+                <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
+                <span className="text-sm text-muted-foreground">
+                  {t('home.realConnections', 'Real connections, real life.')}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={onOpenEvents}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-foreground hover:border-primary/40 transition-colors"
+              >
+                <Music2 className="w-4 h-4 text-primary" />
+                {t('home.eventsNearYou', 'Events near you')}
+              </button>
             </div>
-            <Link
-              to="/events"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-foreground hover:border-primary/40 transition-colors"
-            >
-              <Music2 className="w-4 h-4 text-primary" />
-              {t('home.eventsNearYou', 'Events near you')}
-            </Link>
-          </div>
 
           <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">
             <span className="transition-opacity duration-500 block">

@@ -25,6 +25,7 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { getOrderedActivities, getNextOccurrenceDate } from "@/data/activityTypes";
+import EventsPage from "@/pages/EventsPage";
 
 export function IOSAppLayout() {
   const [activeTab, setActiveTab] = useState("home");
@@ -37,6 +38,7 @@ export function IOSAppLayout() {
   const [showHomeActivities, setShowHomeActivities] = useState(false);
   const [isHeroShaking, setIsHeroShaking] = useState(false);
   const [isInFullPageChat, setIsInFullPageChat] = useState(false);
+  const [showEvents, setShowEvents] = useState(false);
   
   // State for navigating to chat tab with a specific activity
   const [pendingChatActivity, setPendingChatActivity] = useState<{ activityType: string; city: string } | null>(null);
@@ -310,6 +312,7 @@ export function IOSAppLayout() {
             onSelectActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
             isShaking={isHeroShaking}
+            onOpenEvents={() => setShowEvents(true)}
           />
         );
       case "plans":
@@ -337,6 +340,7 @@ export function IOSAppLayout() {
               onSelectActivity={handleHomeActivitySelect}
               onCloseActivities={() => setShowHomeActivities(false)}
               isShaking={isHeroShaking}
+              onOpenEvents={() => setShowEvents(true)}
             />
           );
         }
@@ -354,6 +358,7 @@ export function IOSAppLayout() {
             onSelectActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
             isShaking={isHeroShaking}
+            onOpenEvents={() => setShowEvents(true)}
           />
         );
     }
@@ -368,8 +373,13 @@ export function IOSAppLayout() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Main content area - fixed height, no scroll */}
       <main className={cn("flex-1 overflow-hidden safe-area-top", user && !isInFullPageChat && "pb-20")}>
-        <div className="h-full">
+        <div className="h-full relative">
           {renderTab()}
+          {showEvents && (
+            <div className="absolute inset-0 z-30">
+              <EventsPage onClose={() => setShowEvents(false)} />
+            </div>
+          )}
         </div>
       </main>
 

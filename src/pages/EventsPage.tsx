@@ -22,6 +22,7 @@ import {
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Fallback when no API key or API returns empty
 const MOCK_EVENTS: EventItem[] = [
@@ -239,6 +240,7 @@ function EventDetail({
   onClose: () => void;
   initialUnlock?: boolean;
 }) {
+  const { user } = useAuth();
   const [showPayment, setShowPayment] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const eventStartsAt = event.eventStartAt ?? DEFAULT_EVENT_STARTS_AT;
@@ -351,6 +353,27 @@ function EventDetail({
         )}
 
         <div className="rounded-2xl overflow-hidden border border-border relative">
+          {status === "active" && (
+            <div className="px-4 pt-3 pb-2 border-b border-border flex items-center gap-2 bg-card/80">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
+                style={{
+                  background: `linear-gradient(135deg, hsl(270, 55%, 28%), hsl(290, 45%, 18%))`,
+                }}
+              >
+                {event.emoji}
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-foreground text-sm truncate">{event.name}</p>
+                <div className="flex items-center gap-1">
+                  <Users className="w-2.5 h-2.5 text-muted-foreground" />
+                  <span className="text-muted-foreground text-[11px]">
+                    {event.chatCount.toLocaleString()} members
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="p-4 bg-card/80 min-h-[120px]">
             {status === "loading" && (
               <div className="flex items-center justify-center py-8">
@@ -358,20 +381,30 @@ function EventDetail({
               </div>
             )}
             {status === "locked" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm">
-                <div className="w-12 h-12 rounded-full bg-primary/30 border border-primary/40 flex items-center justify-center mb-3">
-                  <Lock className="w-5 h-5 text-primary" />
+              <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                <div
+                  className="w-full rounded-2xl p-5 mb-5 flex flex-col items-center gap-2"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(270, 55%, 28%), hsl(290, 45%, 18%))",
+                  }}
+                >
+                  <MessageCircle className="w-8 h-8 text-white/90 mb-1" />
+                  <p className="text-white font-bold text-base leading-snug">{event.name}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Users className="w-3.5 h-3.5 text-white/60" />
+                    <span className="text-white/70 text-xs">
+                      {event.chatCount.toLocaleString()} people in this chat
+                    </span>
+                  </div>
                 </div>
-                <p className="text-foreground font-bold">Unlock for $1</p>
-                <p className="text-muted-foreground text-xs mt-1 text-center px-8">
-                  Chat with everyone attending
-                </p>
                 <Button
                   onClick={() => setShowPayment(true)}
-                  className="mt-4 rounded-xl font-bold"
+                  className="w-full rounded-full font-bold text-base py-3 h-auto"
                 >
-                  Join Chat · $1
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Enter Group Chat · $1
                 </Button>
+                <p className="text-muted-foreground text-xs mt-3">One-time fee · Ticket holders only</p>
               </div>
             )}
             {status === "active" && (
@@ -405,7 +438,20 @@ function EventDetail({
               <p className="text-muted-foreground text-sm py-2">This chat ended 12 hours after the event 🎤</p>
             )}
             {status === "error" && (
-              <p className="text-muted-foreground text-sm py-2">Couldn&apos;t load chat. Try again.</p>
+              !user ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm">
+                  <div className="w-12 h-12 rounded-full bg-primary/30 border border-primary/40 flex items-center justify-center mb-3">
+                    <Lock className="w-5 h-5 text-primary" />
+                  </div>
+                  <p className="text-foreground font-bold">Unlock for $1</p>
+                  <p className="text-muted-foreground text-xs mt-1 text-center px-8">Chat with everyone attending</p>
+                  <Button onClick={() => setShowPayment(true)} className="mt-4 rounded-xl font-bold">
+                    Join Chat · $1
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm py-2">Couldn&apos;t load chat. Try again.</p>
+              )
             )}
           </div>
         </div>
@@ -462,7 +508,7 @@ function EventDetail({
   );
 }
 
-export default function EventsPage() {
+export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
@@ -518,19 +564,20 @@ export default function EventsPage() {
       {/* Header */}
       <div className="px-5 pt-5 pb-3 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
-            Near You
-          </h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full -mr-2"
-            onClick={() => navigate(-1)}
-            aria-label="Back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={() => (onClose ? onClose() : navigate(-1))}
+              aria-label="Back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
+              Near You
+            </h1>
+          </div>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {CATEGORIES.map((c) => (
             <button
