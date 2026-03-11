@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SuperHumanIcon } from "../SuperHumanIcon";
-import { Calendar, Users, Plus, Plane, Share2, MapPin, Search, X, Trash2 } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Share2, MapPin, Search, X, Trash2, Music2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -604,7 +604,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-display font-bold">{t('plans.myPlans')}</h2>
           <div className="flex items-center gap-2">
-            {/* City Search Toggle */}
+            {/* Events button + City Search Toggle */}
+            <button
+              onClick={() => navigate("/events")}
+              className={`flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all ${
+                searchCity !== selectedCity 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-foreground"
+              }`}
+            >
+              <Music2 className="w-4 h-4" />
+            </button>
             <button
               onClick={() => setShowCitySearch(!showCitySearch)}
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium transition-all ${
