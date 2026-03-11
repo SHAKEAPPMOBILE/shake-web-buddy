@@ -375,12 +375,11 @@ export function IOSAppLayout() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Main content area - fixed height, no scroll */}
       <main className={cn("flex-1 overflow-hidden safe-area-top", user && !isInFullPageChat && "pb-20")}>
-        <div className="h-full relative">
-          {renderTab()}
-          {showEvents && (
-            <div className="absolute inset-0 z-30 overflow-y-auto min-h-0">
-              <EventsPage onClose={() => setShowEvents(false)} />
-            </div>
+        <div className="h-full">
+          {showEvents ? (
+            <EventsPage onClose={() => setShowEvents(false)} />
+          ) : (
+            renderTab()
           )}
         </div>
       </main>
