@@ -67,11 +67,14 @@ function mapTmEventToItem(e: TMEvent, index: number): EventItem {
   const priceMax = e.priceRanges?.[0]?.max ?? 0;
   const ticketsSold = e.sales?.totalTicketsSold ?? 0;
   const presaleCount = e.sales?.presale?.totalTicketsSold;
+  const images = e.images ?? [];
+  const prefer16_9 = (ratio: string | undefined) =>
+    ratio === "16_9" || ratio === "16:9";
   const imageUrl =
-    e.images
-      ?.filter((img) => img.ratio === "16_9")
+    images
+      .filter((img) => prefer16_9(img.ratio))
       .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0]?.url ??
-    e.images?.[0]?.url;
+    images[0]?.url;
 
   return {
     id: e.id,
