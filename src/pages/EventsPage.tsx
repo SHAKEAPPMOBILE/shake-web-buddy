@@ -7,7 +7,6 @@ import {
   Users,
   ExternalLink,
   MessageCircle,
-  X,
   Check,
   Clock,
 } from "lucide-react";
@@ -134,100 +133,6 @@ const CATEGORIES = ["All", "Music", "Classical", "Pop", "Art", "Comedy"];
 const hue = (id: string) =>
   (parseInt(id.replace("tm", ""), 10) * 47) % 360;
 
-function PaymentModal({
-  event,
-  eventStartsAt,
-  onClose,
-}: {
-  event: EventItem;
-  eventStartsAt: string;
-  onClose: () => void;
-}) {
-  const [loading, setLoading] = useState(false);
-
-  const handlePay = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-event-chat-payment", {
-        body: { eventId: event.id, eventName: event.name, eventStartsAt },
-      });
-
-      if (error) {
-        toast.error(error.message ?? "Failed to start payment");
-        setLoading(false);
-        return;
-      }
-      if (data?.error) {
-        toast.error(data.error);
-        setLoading(false);
-        return;
-      }
-      if (data?.url) {
-        window.location.href = data.url;
-        return;
-      }
-      toast.error("Failed to create payment session");
-      setLoading(false);
-    } catch {
-      toast.error("Failed to process payment. Please try again.");
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/75"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="w-full max-w-[420px] rounded-t-[28px] bg-card border border-border overflow-hidden">
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-primary/30" />
-        </div>
-        <div className="p-6 pt-2 pb-8">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="font-bold text-foreground text-lg">Join Group Chat</p>
-              <p className="text-muted-foreground text-sm">{event.name}</p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </div>
-          <div className="rounded-2xl p-4 bg-primary/10 border border-primary/20 mb-5">
-            <div className="flex justify-between mb-2">
-              <span className="text-primary/90 text-sm">Chat access fee</span>
-              <span className="text-foreground font-semibold">$1.00</span>
-            </div>
-            <div className="flex justify-between pt-2 border-t border-primary/15">
-              <span className="text-foreground font-medium text-sm">Total</span>
-              <span className="text-foreground font-bold">$1.00</span>
-            </div>
-          </div>
-          <Button
-            onClick={handlePay}
-            disabled={loading}
-            className="w-full h-12 rounded-2xl font-bold text-base"
-          >
-            {loading ? (
-              <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-            ) : (
-              "Pay $1.00 · Unlock Chat"
-            )}
-          </Button>
-          <p className="text-center text-muted-foreground text-xs mt-3">
-            Secure · No subscription
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const DEFAULT_EVENT_STARTS_AT = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
 function EventDetail({
@@ -240,9 +145,29 @@ function EventDetail({
   initialUnlock?: boolean;
 }) {
   const { user } = useAuth();
-  const [showPayment, setShowPayment] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const eventStartsAt = event.eventStartAt ?? DEFAULT_EVENT_STARTS_AT;
+
+  const handleEnterChat = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("create-event-chat-payment", {
+        body: { eventId: event.id, eventName: event.name, eventStartsAt },
+      });
+      if (error) {
+        toast.error(error.message ?? "Failed to start payment");
+        return;
+      }
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      toast.error("Failed to process payment. Please try again.");
+    }
+  };
   const {
     status,
     messages,
@@ -371,7 +296,7 @@ function EventDetail({
             {status === "locked" && (
               <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                 <Button
-                  onClick={() => setShowPayment(true)}
+                  onClick={handleEnterChat}
                   className="w-full rounded-full font-bold text-base py-3 h-auto"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
@@ -415,7 +340,7 @@ function EventDetail({
             {status === "error" && (
               <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                 <Button
-                  onClick={() => setShowPayment(true)}
+                  onClick={handleEnterChat}
                   className="w-full rounded-full font-bold text-base py-3 h-auto"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
@@ -469,14 +394,6 @@ function EventDetail({
           </div>
         )}
       </div>
-
-      {showPayment && (
-        <PaymentModal
-          event={event}
-          eventStartsAt={eventStartsAt}
-          onClose={() => setShowPayment(false)}
-        />
-      )}
     </div>
   );
 }
