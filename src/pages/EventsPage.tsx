@@ -368,7 +368,7 @@ function EventDetail({
                 <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
             )}
-            {(status === "locked" || (status === "error" && !user)) && (
+            {status === "locked" && (
               <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                 <Button
                   onClick={() => setShowPayment(true)}
@@ -412,8 +412,19 @@ function EventDetail({
             {status === "expired" && (
               <p className="text-muted-foreground text-sm py-2">This chat ended 12 hours after the event 🎤</p>
             )}
-            {status === "error" && user && (
-              <p className="text-muted-foreground text-sm py-2">Couldn&apos;t load chat. Try again.</p>
+            {status === "error" && (
+              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                <Button
+                  onClick={() => setShowPayment(true)}
+                  className="w-full rounded-full font-bold text-base py-3 h-auto"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Enter Group Chat · $1
+                </Button>
+                <p className="text-muted-foreground text-xs mt-3">
+                  One-time fee · Chat expires 12h after event starts
+                </p>
+              </div>
             )}
           </div>
         </div>
