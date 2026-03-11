@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, MapPin, MessageSquare, User, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, MapPin, MessageSquare, User, Plus, ChevronLeft, ChevronRight, Music2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +21,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
 
   const tabs = [
     { id: "home", icon: Home, label: t('home.title', 'Home') },
+    { id: "events", icon: Music2, label: t('home.eventsNearYou', 'Events') },
     { id: "plans", icon: MapPin, label: t('plans.title') },
     { id: "shake", icon: Plus, label: "Shake", isCenter: true },
     { id: "chat", icon: MessageSquare, label: t('chat.title') },
@@ -38,6 +39,10 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const handleTabClick = (tabId: string) => {
     if (tabId === "shake") {
       handleShakeAnimation();
+    }
+    if (tabId === "events") {
+      navigate("/events");
+      return;
     }
     if (tabId === "profile" && !user) {
       navigate("/auth");

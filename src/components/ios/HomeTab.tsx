@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Music2 } from "lucide-react";
 import { getActivitiesWithDates, getStartingIndexByProximity } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
@@ -372,11 +372,20 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       )}>
         {/* Welcome Message */}
         <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border mb-6">
-            <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
-            <span className="text-sm text-muted-foreground">
-              {t('home.realConnections', 'Real connections, real life.')}
-            </span>
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border">
+              <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
+              <span className="text-sm text-muted-foreground">
+                {t('home.realConnections', 'Real connections, real life.')}
+              </span>
+            </div>
+            <Link
+              to="/events"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-foreground hover:border-primary/40 transition-colors"
+            >
+              <Music2 className="w-4 h-4 text-primary" />
+              {t('home.eventsNearYou', 'Events near you')}
+            </Link>
           </div>
 
           <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">

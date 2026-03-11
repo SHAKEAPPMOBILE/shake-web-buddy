@@ -354,6 +354,85 @@ export type Database = {
           },
         ]
       }
+      event_chats: {
+        Row: {
+          event_id: string
+          name: string
+          expires_at: string
+          created_at: string
+        }
+        Insert: {
+          event_id: string
+          name: string
+          expires_at: string
+          created_at?: string
+        }
+        Update: {
+          event_id?: string
+          name?: string
+          expires_at?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      event_chat_members: {
+        Row: {
+          event_id: string
+          user_id: string
+          joined_at: string
+        }
+        Insert: {
+          event_id: string
+          user_id: string
+          joined_at?: string
+        }
+        Update: {
+          event_id?: string
+          user_id?: string
+          joined_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_chat_members_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_chats"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
+      event_chat_messages: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          message: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          user_id: string
+          message: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          user_id?: string
+          message?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_chat_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_chats"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
       private_messages: {
         Row: {
           audio_url: string | null
