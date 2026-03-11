@@ -300,7 +300,7 @@ function EventDetail({
                   className="w-full rounded-full font-bold text-base py-3 h-auto"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  Enter Group Chat · $1
+                  Enter Group Chat
                 </Button>
                 <p className="text-muted-foreground text-xs mt-3">
                   One-time fee · Chat expires 12h after event starts
