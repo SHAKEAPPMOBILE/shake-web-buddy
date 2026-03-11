@@ -150,8 +150,16 @@ function EventDetail({
 
   const handleEnterChat = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Please sign in to unlock the group chat.");
+        return;
+      }
       const { data, error } = await supabase.functions.invoke("create-event-chat-payment", {
         body: { eventId: event.id, eventName: event.name, eventStartsAt },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
       if (error) {
         toast.error(error.message ?? "Failed to start payment");
