@@ -55,9 +55,10 @@ interface PlansTabProps {
   onChatViewChange?: (isInChat: boolean) => void;
   pendingPaidActivityId?: string | null;
   onPendingPaidActivityHandled?: () => void;
+  onOpenEvents?: () => void;
 }
 
-export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled }: PlansTabProps = {}) {
+export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, onOpenEvents }: PlansTabProps = {}) {
   const { t, i18n } = useTranslation();
   const { selectedLanguage } = useLanguage();
   const { selectedCity } = useCity();
@@ -606,7 +607,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           <div className="flex items-center gap-2">
             {/* Events button + City Search Toggle */}
             <button
-              onClick={() => navigate("/events")}
+              onClick={() => onOpenEvents?.()}
               className={`flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all ${
                 searchCity !== selectedCity 
                   ? "bg-primary text-primary-foreground" 

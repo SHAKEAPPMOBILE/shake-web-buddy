@@ -322,6 +322,7 @@ export function IOSAppLayout() {
             onChatViewChange={handleChatViewChange}
             pendingPaidActivityId={pendingPaidActivityId}
             onPendingPaidActivityHandled={() => setPendingPaidActivityId(null)}
+            onOpenEvents={() => setShowEvents(true)}
           />
         );
       case "chat":
