@@ -1,7 +1,9 @@
 /**
- * Ticketmaster Discovery API v2 – events by location.
- * Set VITE_TICKETMASTER_API_KEY in .env (never commit the key).
+ * Ticketmaster Discovery API via Supabase Edge Function.
+ * The actual API call runs in supabase/functions/fetch-events (server-side).
  */
+
+import { supabase } from "@/integrations/supabase/client";
 
 export interface EventItem {
   id: string;
@@ -40,95 +42,29 @@ function getCategoryAndEmoji(segmentName: string | undefined): { category: strin
   return { category, emoji };
 }
 
-/** Ticketmaster API event (relevant fields only). */
-interface TMEvent {
-  id: string;
-  name?: string;
-  url?: string;
-  images?: Array<{ url: string; width?: number; height?: number; ratio?: string }>;
-  dates?: { start?: { localDate?: string; localTime?: string; dateTime?: string } };
-  _embedded?: {
-    venues?: Array<{ name?: string; city?: { name?: string } }>;
-  };
-  priceRanges?: Array<{ min?: number; max?: number }>;
-  sales?: { totalTicketsSold?: number; presale?: { totalTicketsSold?: number } };
-  classifications?: Array<{ segment?: { name?: string } }>;
-}
-
-function mapTmEventToItem(e: TMEvent, index: number): EventItem {
-  const venue = e._embedded?.venues?.[0];
-  const start = e.dates?.start;
-  const localDate = start?.localDate ?? "";
-  const localTime = start?.localTime ?? "";
-  const dateTime = start?.dateTime;
-  const dateStr = [localDate, localTime].filter(Boolean).join(", ") || "TBD";
-  const { category, emoji } = getCategoryAndEmoji(e.classifications?.[0]?.segment?.name);
-  const priceMin = e.priceRanges?.[0]?.min ?? 0;
-  const priceMax = e.priceRanges?.[0]?.max ?? 0;
-  const ticketsSold = e.sales?.totalTicketsSold ?? 0;
-  const presaleCount = e.sales?.presale?.totalTicketsSold;
-  const images = e.images ?? [];
-  const imageUrl =
-    images.find(
-      (img) => img.ratio === "16_9" && (img.width ?? 0) >= 640
-    )?.url ||
-    images[0]?.url ||
-    undefined;
-
-  return {
-    id: e.id,
-    name: e.name ?? "Unnamed Event",
-    date: dateStr,
-    eventStartAt: dateTime ?? undefined,
-    imageUrl,
-    venue: venue?.name ?? "TBA",
-    city: venue?.city?.name ?? "",
-    distance: "—",
-    priceMin,
-    priceMax,
-    category,
-    emoji,
-    chatCount: 0,
-    ticketsSold,
-    presaleCount,
-    isHot: ticketsSold > 1000 || (presaleCount ?? 0) > 500,
-    ticketmasterUrl: e.url,
-  };
-}
-
-const BOGOTA_LATLONG = "4.71,-74.07";
-const DEFAULT_RADIUS = 50;
-const DEFAULT_SIZE = 20;
-
 export async function fetchTicketmasterEvents(options?: {
   latlong?: string;
   radius?: number;
   size?: number;
 }): Promise<EventItem[]> {
-  const apiKey = import.meta.env.VITE_TICKETMASTER_API_KEY;
-  if (!apiKey || typeof apiKey !== "string") {
-    return [];
-  }
-
-  const params = new URLSearchParams({
-    apikey: apiKey,
-    latlong: options?.latlong ?? BOGOTA_LATLONG,
-    radius: String(options?.radius ?? DEFAULT_RADIUS),
-    unit: "km",
-    size: String(options?.size ?? DEFAULT_SIZE),
-    sort: "date,asc",
+  const { data, error } = await supabase.functions.invoke<{
+    events?: EventItem[];
+  }>("fetch-events", {
+    body: {
+      latlong: options?.latlong,
+      radius: options?.radius,
+      size: options?.size,
+    },
   });
 
-  const url = `https://app.ticketmaster.com/discovery/v2/events.json?${params.toString()}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    console.warn("Ticketmaster API error:", res.status, await res.text());
+  if (error) {
+    console.warn("fetch-events edge function error:", error.message || error);
     return [];
   }
 
-  const data = (await res.json()) as {
-    _embedded?: { events?: TMEvent[] };
-  };
-  const events = data._embedded?.events ?? [];
-  return events.map((e, i) => mapTmEventToItem(e, i));
+  if (!data || !Array.isArray(data.events)) {
+    return [];
+  }
+
+  return data.events;
 }
