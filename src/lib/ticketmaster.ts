@@ -51,9 +51,9 @@ export async function fetchTicketmasterEvents(options?: {
     events?: EventItem[];
   }>("fetch-events", {
     body: {
-      latlong: options?.latlong,
-      radius: options?.radius,
-      size: options?.size,
+      latlong: options?.latlong ?? "4.71,-74.07",
+      radius: options?.radius ?? 50,
+      size: options?.size ?? 20,
     },
   });
 
