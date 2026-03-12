@@ -68,19 +68,12 @@ function mapTmEventToItem(e: TMEvent, index: number): EventItem {
   const ticketsSold = e.sales?.totalTicketsSold ?? 0;
   const presaleCount = e.sales?.presale?.totalTicketsSold;
   const images = e.images ?? [];
-  const prefer16_9 = (ratio: string | undefined) =>
-    ratio === "16_9" || ratio === "16:9";
-  const targetWidth = 640;
-  const sixteenNineImages = images.filter((img) => prefer16_9(img.ratio) && (img.width ?? 0) > 0);
-  const bestSixteenNine =
-    sixteenNineImages.length > 0
-      ? sixteenNineImages.reduce((best, img) => {
-          const bestDiff = Math.abs((best.width ?? targetWidth) - targetWidth);
-          const imgDiff = Math.abs((img.width ?? targetWidth) - targetWidth);
-          return imgDiff < bestDiff ? img : best;
-        })
-      : undefined;
-  const imageUrl = bestSixteenNine?.url ?? images[0]?.url;
+  const imageUrl =
+    images.find(
+      (img) => img.ratio === "16_9" && (img.width ?? 0) >= 640
+    )?.url ||
+    images[0]?.url ||
+    undefined;
 
   return {
     id: e.id,
