@@ -70,11 +70,17 @@ function mapTmEventToItem(e: TMEvent, index: number): EventItem {
   const images = e.images ?? [];
   const prefer16_9 = (ratio: string | undefined) =>
     ratio === "16_9" || ratio === "16:9";
-  const imageUrl =
-    images
-      .filter((img) => prefer16_9(img.ratio))
-      .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0]?.url ??
-    images[0]?.url;
+  const targetWidth = 640;
+  const sixteenNineImages = images.filter((img) => prefer16_9(img.ratio) && (img.width ?? 0) > 0);
+  const bestSixteenNine =
+    sixteenNineImages.length > 0
+      ? sixteenNineImages.reduce((best, img) => {
+          const bestDiff = Math.abs((best.width ?? targetWidth) - targetWidth);
+          const imgDiff = Math.abs((img.width ?? targetWidth) - targetWidth);
+          return imgDiff < bestDiff ? img : best;
+        })
+      : undefined;
+  const imageUrl = bestSixteenNine?.url ?? images[0]?.url;
 
   return {
     id: e.id,
