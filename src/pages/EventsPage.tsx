@@ -518,15 +518,14 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
       <div className="px-5 pt-5 pb-3 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full"
+            <button
+              type="button"
               onClick={() => (onClose ? onClose() : navigate(-1))}
+              className="shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Back"
             >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
+              <ChevronLeft className="w-5 h-5" />
+            </button>
             <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
               Near You
             </h1>
