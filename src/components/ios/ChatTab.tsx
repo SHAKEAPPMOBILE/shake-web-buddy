@@ -33,6 +33,11 @@ interface ChatActivity {
   creator_name?: string;
   creator_avatar?: string;
   note?: string | null;
+  // Event chats
+  is_event?: boolean;
+  event_id?: string;
+  event_name?: string;
+  expires_at?: string;
 }
 
 interface ChatTabProps {
@@ -229,6 +234,44 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
         });
       }
 
+      // Event chats the user has joined
+      const { data: eventMemberships } = await supabase
+        .from("event_chat_members")
+        .select("event_id, event_chats(name, expires_at)")
+        .eq("user_id", user.id);
+
+      if (eventMemberships && eventMemberships.length > 0) {
+        for (const membership of eventMemberships as any[]) {
+          const ev = membership.event_chats as { name: string; expires_at: string } | null;
+          if (!ev) continue;
+
+          const expiresAt = new Date(ev.expires_at);
+          if (isNaN(expiresAt.getTime())) continue;
+
+          // Only show chats that haven't fully expired
+          if (expiresAt.getTime() <= Date.now()) continue;
+
+          // Count participants for this event chat
+          const { count: participantCount } = await supabase
+            .from("event_chat_members")
+            .select("*", { count: "exact", head: true })
+            .eq("event_id", membership.event_id);
+
+          chatActivities.push({
+            id: `event-${membership.event_id}`,
+            activity_type: ev.name,
+            city: "Event",
+            scheduled_for: ev.expires_at,
+            participant_count: participantCount || 1,
+            is_plan: false,
+            is_event: true,
+            event_id: membership.event_id,
+            event_name: ev.name,
+            expires_at: ev.expires_at,
+          });
+        }
+      }
+
       // Sort with Today first, Tomorrow second, then chronologically
       chatActivities.sort((a, b) => {
         const dateA = new Date(a.scheduled_for);
@@ -279,6 +322,16 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "plan_messages" },
+        () => fetchActivities()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "event_chat_members", filter: `user_id=eq.${user.id}` },
+        () => fetchActivities()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "event_chat_messages" },
         () => fetchActivities()
       )
       .subscribe();
@@ -337,6 +390,11 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
   };
 
   const handleActivityClick = async (activity: ChatActivity) => {
+    if (activity.is_event && activity.event_id) {
+      navigate(`/chat/event/${activity.event_id}`);
+      return;
+    }
+
     if (activity.is_plan && activity.plan_id) {
       // Fetch full plan details
       const { data: plan } = await supabase
@@ -520,11 +578,20 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-white">
-                      {activity.is_plan && activity.note ? activity.note : getActivityLabel(activity.activity_type)}
+                      {activity.is_plan && activity.note
+                        ? activity.note
+                        : activity.is_event && activity.event_name
+                        ? activity.event_name
+                        : getActivityLabel(activity.activity_type)}
                     </h3>
                     {activity.is_plan && (
                       <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
                         {t('common.plan')}
+                      </span>
+                    )}
+                    {activity.is_event && (
+                      <span className="text-xs bg-[#F97316] text-white px-1.5 py-0.5 rounded-full">
+                        EVENT
                       </span>
                     )}
                   </div>
@@ -537,7 +604,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                     )}
                   </div>
 
-                  {!activity.is_plan && (
+                  {!activity.is_plan && !activity.is_event && (
                     <div className="flex items-center gap-2 mt-1">
                       <Calendar className="w-3.5 h-3.5 text-white/70" />
                       <span className="text-sm text-white/70">

@@ -440,6 +440,8 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
       setInitialUnlockEventId(chatUnlockedId);
       if (paymentSuccess) {
         toast.success("Payment successful! You now have access to the group chat.");
+        navigate(`/chat/event/${chatUnlockedId}`, { replace: true });
+        return;
       }
     }
     navigate("/events", { replace: true });

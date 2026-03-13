@@ -30,6 +30,7 @@ import Welcome from "./pages/Welcome";
 import Admin from "./pages/Admin";
 import PublicVenues from "./pages/PublicVenues";
 import EventsPage from "./pages/EventsPage";
+import EventChatPage from "./pages/EventChatPage";
 
 const queryClient = new QueryClient();
 
@@ -120,6 +121,7 @@ const App = () => {
                     <Route path="/terms-of-service" element={<TermsOfService />} />
                     <Route path="/subscription-success" element={<SubscriptionSuccess />} />
                     <Route path="/events" element={<EventsPage />} />
+                    <Route path="/chat/event/:eventId" element={<EventChatPage />} />
                     <Route path="/*" element={<IOSAppLayout />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
