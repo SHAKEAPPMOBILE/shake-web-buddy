@@ -20,66 +20,33 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "No authorization header provided" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
-    }
+    if (!authHeader) throw new Error("No authorization header provided");
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-    logStep("Env check", {
-      hasSupabaseUrl: !!Deno.env.get("SUPABASE_URL"),
-      supabaseUrlLength: supabaseUrl.length,
-      hasSupabaseAnonKey: !!Deno.env.get("SUPABASE_ANON_KEY"),
-      supabaseAnonKeyLength: supabaseAnonKey.length,
-      authHeaderPrefix: authHeader.slice(0, 20),
-      authHeaderLength: authHeader.length,
-    });
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false },
-      global: {
-        headers: {
-          Authorization: authHeader,
-        },
-      },
-    });
-
-    const { data } = await supabaseClient.auth.getUser();
+    const token = authHeader.replace("Bearer ", "");
+    const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
 
     if (!user?.id) {
-      return new Response(JSON.stringify({ error: "User not authenticated" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
+      throw new Error("User not authenticated");
     }
 
-    let body: { eventId?: string; eventName?: string; eventStartsAt?: string };
-    try {
-      body = await req.json();
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
+    const body = await req.json();
+    const { eventId, eventName, eventStartsAt } = body;
 
-    const eventId = body.eventId ?? "";
-    const eventName = body.eventName ?? "";
-    const eventStartsAt = body.eventStartsAt != null ? String(body.eventStartsAt) : "";
-
-    if (!eventId.trim() || !eventName.trim() || !eventStartsAt.trim()) {
-      return new Response(JSON.stringify({ error: "eventId, eventName, and eventStartsAt are required" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
+    if (!eventId || !eventName || !eventStartsAt) {
+      throw new Error("eventId, eventName, and eventStartsAt are required");
     }
 
     logStep("Processing payment request", { userId: user.id, eventId });
 
+    // Get payer's email for Stripe
     const { data: payerPrivate } = await supabaseClient
       .from("profiles_private")
       .select("billing_email")
@@ -88,20 +55,11 @@ serve(async (req) => {
 
     const payerEmail = payerPrivate?.billing_email || user.email;
 
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey || !stripeSecretKey.trim()) {
-      logStep("ERROR", { message: "STRIPE_SECRET_KEY is not set" });
-      return new Response(JSON.stringify({ error: "Payment is not configured (missing STRIPE_SECRET_KEY)" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 503,
-      });
-    }
-
-    const stripe = new Stripe(stripeSecretKey.trim(), {
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
 
-    const origin = (req.headers.get("origin") || "https://shake-web-buddy.lovable.app").replace(/\/$/, "");
+    const origin = req.headers.get("origin") || "https://shake-web-buddy.lovable.app";
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -144,10 +102,9 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
-    const status = errorMessage.includes("authenticated") || errorMessage.includes("authorization") ? 401 : 500;
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status,
+      status: 500,
     });
   }
 });

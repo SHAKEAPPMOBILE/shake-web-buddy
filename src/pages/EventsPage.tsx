@@ -150,53 +150,36 @@ function EventDetail({
   const eventStartsAt = event.eventStartAt ?? DEFAULT_EVENT_STARTS_AT;
 
   const handleEnterChat = async () => {
+    if (!user) {
+      toast.error("Please sign in to unlock the group chat.");
+      return;
+    }
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error("Please sign in to unlock the group chat.");
-        return;
-      }
-      const isExpired = session.expires_at != null && session.expires_at * 1000 < Date.now();
-      if (isExpired) {
-        toast.error("Your session expired. Please sign in again.");
-        await signOut();
-        navigate("/auth", { state: { message: "Your session expired. Please sign in again." }, replace: true });
-        return;
-      }
       const { data, error } = await supabase.functions.invoke("create-event-chat-payment", {
         body: { eventId: event.id, eventName: event.name, eventStartsAt },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
       });
-      const errMsg = error?.message ?? "";
-      const dataErr = (data as { error?: string })?.error ?? "";
-      const is401 =
-        errMsg.includes("401") ||
-        errMsg.toLowerCase().includes("unauthorized") ||
-        errMsg.toLowerCase().includes("jwt") ||
-        dataErr.includes("401") ||
-        dataErr.toLowerCase().includes("unauthorized") ||
-        dataErr.toLowerCase().includes("authenticated");
-      if (is401) {
-        toast.error("Your session expired. Please sign in again.");
-        await signOut();
-        navigate("/auth", { state: { message: "Your session expired. Please sign in again." }, replace: true });
-        return;
-      }
-      if (error) {
-        toast.error(error.message ?? "Failed to start payment");
-        return;
-      }
+
+      if (error) throw error;
+
       if (data?.error) {
         toast.error(data.error);
         return;
       }
+
       if (data?.url) {
         window.location.href = data.url;
+      } else {
+        toast.error("Failed to create payment session");
       }
-    } catch {
-      toast.error("Failed to process payment. Please try again.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("401") || message.toLowerCase().includes("unauthorized") || message.toLowerCase().includes("authenticated")) {
+        toast.error("Your session expired. Please sign in again.");
+        await signOut();
+        navigate("/auth", { state: { message: "Your session expired. Please sign in again." }, replace: true });
+      } else {
+        toast.error("Failed to process payment. Please try again.");
+      }
     }
   };
   const {
