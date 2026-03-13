@@ -155,13 +155,34 @@ function EventDetail({
       return;
     }
     try {
+      // If already a member of this event chat, skip payment and go directly to chat
+      const { data: existingMember, error: memberError } = await supabase
+        .from("event_chat_members")
+        .select("event_id")
+        .eq("event_id", event.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (memberError) {
+        console.log("[EventsPage] Error checking existing event_chat_members", memberError);
+      }
+
+      if (existingMember) {
+        navigate(`/chat/event/${event.id}`);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast.error("Please sign in to unlock the group chat.");
         return;
       }
       const { data, error } = await supabase.functions.invoke("create-event-chat-payment", {
-        body: { eventId: event.id, eventName: event.name, eventStartsAt },
+        body: {
+          eventId: event.id,
+          eventName: `${event.name} · ${event.venue}, ${event.city}`,
+          eventStartsAt,
+        },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
@@ -441,7 +462,9 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
       setInitialUnlockEventId(chatUnlockedId);
       if (paymentSuccess) {
         toast.success("Payment successful! You now have access to the group chat.");
-        navigate(`/chat/event/${chatUnlockedId}`, { replace: true });
+        setTimeout(() => {
+          navigate(`/chat/event/${chatUnlockedId}`, { replace: true });
+        }, 2000);
         return;
       }
     }

@@ -36,25 +36,64 @@ export default function EventChatPage() {
 
     const loadMeta = async () => {
       setIsLoadingMeta(true);
-      const { data } = await supabase
-        .from("event_chats")
-        .select("name, expires_at, created_at")
-        .eq("event_id", eventId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from("event_chats")
+          .select("name, expires_at, created_at")
+          .eq("event_id", eventId)
+          .maybeSingle();
 
-      if (cancelled) return;
+        if (cancelled) return;
 
-      if (data) {
-        setEventName(data.name);
-        // Reconstruct start time as 12h before expires_at (matches webhook logic)
-        const expires = new Date(data.expires_at);
-        if (!isNaN(expires.getTime())) {
-          const start = new Date(expires.getTime() - 12 * 60 * 60 * 1000);
-          setEventStartsAt(start.toISOString());
+        if (error) {
+          console.log("[EventChatPage] Error loading event_chats", error);
+        }
+
+        if (data) {
+          setEventName(data.name);
+          // Reconstruct start time as 12h before expires_at (matches webhook logic)
+          const expires = new Date(data.expires_at as string);
+          if (!isNaN(expires.getTime())) {
+            const start = new Date(expires.getTime() - 12 * 60 * 60 * 1000);
+            setEventStartsAt(start.toISOString());
+          }
+        } else if (user) {
+          // Fallback: if chat row doesn't exist but user is a member, create it on the fly
+          const { data: member, error: memberError } = await supabase
+            .from("event_chat_members")
+            .select("event_id")
+            .eq("event_id", eventId)
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (memberError) {
+            console.log("[EventChatPage] Error checking event_chat_members", memberError);
+          }
+
+          if (member) {
+            const fallbackExpiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+            const { error: insertError } = await supabase
+              .from("event_chats")
+              .insert({
+                event_id: eventId,
+                name: eventName,
+                expires_at: fallbackExpiresAt,
+              });
+
+            if (insertError) {
+              console.log("[EventChatPage] Error creating fallback event_chats row", insertError);
+            } else {
+              setEventStartsAt(new Date(Date.now()).toISOString());
+            }
+          }
+        }
+      } catch (e) {
+        console.log("[EventChatPage] Unexpected error loading metadata", e);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingMeta(false);
         }
       }
-
-      setIsLoadingMeta(false);
     };
 
     loadMeta();
@@ -62,7 +101,7 @@ export default function EventChatPage() {
     return () => {
       cancelled = true;
     };
-  }, [eventId]);
+  }, [eventId, user, eventName]);
 
   const {
     status,
@@ -92,7 +131,7 @@ export default function EventChatPage() {
     if (status === "expired") {
       return "This chat ended 12h after the event 🎤";
     }
-    return "Coordinate with other attendees";
+    return "Messages from this event will appear here.";
   }, [minutesLeft, status]);
 
   if (!eventId) {
@@ -149,7 +188,7 @@ export default function EventChatPage() {
             <div className="flex flex-col items-center justify-center h-full text-white/40">
               <p className="text-center text-sm">
                 Start the conversation!<br />
-                <span className="text-xs">Messages will appear here.</span>
+                <span className="text-xs">Messages from today will appear here.</span>
               </p>
             </div>
           )}
