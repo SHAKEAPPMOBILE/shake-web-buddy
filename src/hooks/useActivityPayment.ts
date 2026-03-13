@@ -13,8 +13,14 @@ export function useActivityPayment() {
     setIsLoading(true);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Please sign in to continue.");
+        return null;
+      }
       const { data, error } = await supabase.functions.invoke("create-activity-payment", {
         body: { activityId },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
       if (error) throw error;
