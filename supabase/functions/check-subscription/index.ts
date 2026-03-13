@@ -31,6 +31,14 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    logStep("Env check", {
+      hasSupabaseUrl: !!Deno.env.get("SUPABASE_URL"),
+      supabaseUrlLength: supabaseUrl.length,
+      hasSupabaseAnonKey: !!Deno.env.get("SUPABASE_ANON_KEY"),
+      supabaseAnonKeyLength: supabaseAnonKey.length,
+      authHeaderPrefix: authHeader.slice(0, 20),
+      authHeaderLength: authHeader.length,
+    });
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: { persistSession: false },
       global: {

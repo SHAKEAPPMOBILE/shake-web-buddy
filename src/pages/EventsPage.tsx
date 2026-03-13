@@ -144,7 +144,8 @@ function EventDetail({
   onClose: () => void;
   initialUnlock?: boolean;
 }) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
   const eventStartsAt = event.eventStartAt ?? DEFAULT_EVENT_STARTS_AT;
 
@@ -155,12 +156,34 @@ function EventDetail({
         toast.error("Please sign in to unlock the group chat.");
         return;
       }
+      const isExpired = session.expires_at != null && session.expires_at * 1000 < Date.now();
+      if (isExpired) {
+        toast.error("Your session expired. Please sign in again.");
+        await signOut();
+        navigate("/auth", { state: { message: "Your session expired. Please sign in again." }, replace: true });
+        return;
+      }
       const { data, error } = await supabase.functions.invoke("create-event-chat-payment", {
         body: { eventId: event.id, eventName: event.name, eventStartsAt },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
+      const errMsg = error?.message ?? "";
+      const dataErr = (data as { error?: string })?.error ?? "";
+      const is401 =
+        errMsg.includes("401") ||
+        errMsg.toLowerCase().includes("unauthorized") ||
+        errMsg.toLowerCase().includes("jwt") ||
+        dataErr.includes("401") ||
+        dataErr.toLowerCase().includes("unauthorized") ||
+        dataErr.toLowerCase().includes("authenticated");
+      if (is401) {
+        toast.error("Your session expired. Please sign in again.");
+        await signOut();
+        navigate("/auth", { state: { message: "Your session expired. Please sign in again." }, replace: true });
+        return;
+      }
       if (error) {
         toast.error(error.message ?? "Failed to start payment");
         return;
