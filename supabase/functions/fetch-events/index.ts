@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,6 +19,40 @@ interface EventbriteEvent {
   } | null;
 }
 
+/** Row from public.public_events */
+interface PublicEventRow {
+  id: string;
+  name: string | null;
+  image_url: string | null;
+  venue: string | null;
+  city: string | null;
+  event_starts_at: string | null;
+  ticket_url: string | null;
+  source: string | null;
+  created_at: string | null;
+}
+
+/** Event shape returned to the frontend */
+interface EventItem {
+  id: string;
+  name: string;
+  date: string;
+  eventStartAt: string | undefined;
+  imageUrl: string | undefined;
+  venue: string;
+  city: string;
+  distance: string;
+  priceMin: number;
+  priceMax: number;
+  category: string;
+  emoji: string;
+  chatCount: number;
+  ticketsSold: number;
+  presaleCount?: number;
+  isHot: boolean;
+  ticketmasterUrl: string | undefined;
+}
+
 const CATEGORY_EMOJI: Record<string, string> = {
   Music: "🎵",
   Film: "🎬",
@@ -28,8 +63,39 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 function getCategoryAndEmoji(_segmentName: string | undefined): { category: string; emoji: string } {
-  // For now, treat all Eventbrite events as "Music" for UI purposes
   return { category: "Music", emoji: CATEGORY_EMOJI.Music };
+}
+
+function formatEventDate(iso: string | null): string {
+  if (!iso) return "TBD";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return "TBD";
+  }
+}
+
+function mapPublicEventToItem(row: PublicEventRow): EventItem {
+  const { category, emoji } = getCategoryAndEmoji(row.source ?? undefined);
+  return {
+    id: row.id,
+    name: row.name ?? "Unnamed Event",
+    date: formatEventDate(row.event_starts_at),
+    eventStartAt: row.event_starts_at ?? undefined,
+    imageUrl: row.image_url ?? undefined,
+    venue: row.venue ?? "—",
+    city: row.city ?? "Medellín",
+    distance: "—",
+    priceMin: 0,
+    priceMax: 0,
+    category,
+    emoji,
+    chatCount: 0,
+    ticketsSold: 0,
+    isHot: false,
+    ticketmasterUrl: row.ticket_url ?? undefined,
+  };
 }
 
 // Safe mock events used when upstream providers are unavailable or empty
@@ -80,6 +146,30 @@ serve(async (req) => {
   }
 
   try {
+    // Prefer events from public_events table; fall back to Eventbrite then mock only if empty
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (supabaseUrl && supabaseServiceKey) {
+      try {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const { data: rows, error } = await supabase
+          .from("public_events")
+          .select("*")
+          .order("event_starts_at", { ascending: true, nullsFirst: false });
+
+        if (!error && rows && rows.length > 0) {
+          const events = (rows as PublicEventRow[]).map(mapPublicEventToItem);
+          return new Response(JSON.stringify({ events }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn("[fetch-events] public_events query failed:", msg);
+      }
+    }
+
     const eventbriteKey = Deno.env.get("EVENTBRITE_API_KEY");
     if (!eventbriteKey) {
       console.warn("[fetch-events] EVENTBRITE_API_KEY missing, returning mock events");
