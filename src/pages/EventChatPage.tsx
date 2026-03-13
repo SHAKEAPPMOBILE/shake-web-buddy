@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Clock, Users } from "lucide-react";
+import { ChevronLeft, Users, Clock } from "lucide-react";
 import { useEventChat } from "@/hooks/useEventChat";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface EventChatPageParams {
   eventId?: string;
@@ -17,6 +20,7 @@ export default function EventChatPage() {
   const [eventName, setEventName] = useState<string>("Event chat");
   const [eventStartsAt, setEventStartsAt] = useState<string>(new Date().toISOString());
   const [isLoadingMeta, setIsLoadingMeta] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -76,6 +80,11 @@ export default function EventChatPage() {
 
   const [inputValue, setInputValue] = useState("");
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const headerSubtitle = useMemo(() => {
     if (minutesLeft !== null && status === "active") {
       return `Chat closes in ${minutesLeft}m`;
@@ -91,134 +100,150 @@ export default function EventChatPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full"
+    <div className="fixed inset-0 flex flex-col bg-[#06060a] z-50">
+      <div
+        className="absolute inset-0 pointer-events-none z-0"
+        style={{
+          background:
+            "radial-gradient(circle at 8% 0%, rgba(139,92,246,0.65) 0%, transparent 55%), radial-gradient(circle at 92% 18%, rgba(236,72,153,0.6) 0%, transparent 55%), radial-gradient(circle at 50% 100%, rgba(56,189,248,0.5) 0%, transparent 60%)",
+        }}
+        aria-hidden
+      />
+      <div className="relative z-10 flex flex-col flex-1 min-h-0">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-white/5">
+          <button
             onClick={() => navigate(-1)}
+            className="shrink-0 p-1.5 text-white/80 hover:text-white"
             aria-label="Back"
           >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-extrabold text-foreground truncate max-w-[200px]">
-                {eventName}
-              </h1>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold tracking-wide">
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-medium text-white flex items-center gap-2">
+              <span className="truncate max-w-[200px]">{eventName}</span>
+              <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-orange-200 rounded-full shrink-0 bg-white/5">
                 EVENT
               </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{headerSubtitle}</p>
+            </h1>
+            <p className="text-xs text-white/50 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" />
+              <span>{headerSubtitle}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-white/60">
+            <Users className="w-3.5 h-3.5" />
+            <span>{memberCount}</span>
           </div>
         </div>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Users className="w-3.5 h-3.5" />
-          <span>{memberCount}</span>
-        </div>
-      </div>
 
-      {/* Chat content */}
-      <div className="flex-1 flex flex-col px-4 py-3 gap-3 overflow-y-auto">
-        {isLoadingMeta && (
-          <p className="text-xs text-muted-foreground text-center">
-            Setting up your event chat…
-          </p>
-        )}
-
-        {status === "loading" && !isLoadingMeta && (
-          <div className="flex items-center justify-center py-8">
-            <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
-
-        {status === "expired" && (
-          <div className="flex flex-col items-center justify-center py-8 text-center text-sm text-muted-foreground">
-            <Clock className="w-5 h-5 mb-2" />
-            <p>This chat ended 12 hours after the event.</p>
-          </div>
-        )}
-
-        {(status === "active" || status === "locked" || status === "error") && messages.map((m) => (
-          <div key={m.id} className="flex gap-2 mb-1">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 bg-primary/70">
-              {senderMap[m.user_id]?.name?.[0]?.toUpperCase() ?? "?"}
+        {/* Chat body */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {isLoadingMeta && (
+            <div className="flex items-center justify-center py-8">
+              <LoadingSpinner size="lg" />
             </div>
-            <div className="min-w-0">
-              <div className="flex gap-2 items-center">
-                <span className="text-primary/90 text-xs font-semibold">
-                  {senderMap[m.user_id]?.name ?? "User"}
-                </span>
-                <span className="text-muted-foreground/80 text-[11px]">
-                  {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </span>
+          )}
+
+          {!isLoadingMeta && messages.length === 0 && status !== "error" && status !== "locked" && (
+            <div className="flex flex-col items-center justify-center h-full text-white/40">
+              <p className="text-center text-sm">
+                Start the conversation!<br />
+                <span className="text-xs">Messages will appear here.</span>
+              </p>
+            </div>
+          )}
+
+          {messages.map((m) => {
+            const profile = senderMap[m.user_id];
+            const displayName = profile?.name || "User";
+            const avatarUrl = profile?.avatar_url;
+            const isOwn = user?.id === m.user_id;
+
+            return (
+              <div key={m.id} className={`group flex gap-3 ${isOwn ? "flex-row-reverse" : ""}`}>
+                <Avatar className="w-8 h-8 shrink-0 rounded-full border border-white/10 bg-white/5">
+                  <AvatarImage src={avatarUrl || undefined} alt={displayName} className="object-cover" />
+                  <AvatarFallback className="bg-white/5 flex items-center justify-center">
+                    <span className="text-xs text-white/40">
+                      {displayName.charAt(0).toUpperCase()}
+                    </span>
+                  </AvatarFallback>
+                </Avatar>
+                <div className={`flex-1 max-w-[70%] ${isOwn ? "text-right" : ""}`}>
+                  <div className={`flex items-baseline gap-2 ${isOwn ? "justify-end" : ""}`}>
+                    <span className="font-semibold text-sm text-white">
+                      {isOwn ? "You" : displayName}
+                    </span>
+                    <span className="text-xs text-white/35">
+                      {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <div className={`flex items-center gap-1 ${isOwn ? "flex-row-reverse" : ""}`}>
+                    <div
+                      className={`text-sm mt-0.5 px-3 py-2 rounded-xl inline-block ${
+                        isOwn ? "bg-[#7c5cfc] text-white" : "bg-white/10 text-white border border-white/10"
+                      }`}
+                    >
+                      <span>{m.content}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="text-foreground text-sm mt-0.5 break-words">{m.content}</p>
+            );
+          })}
+
+          {status === "locked" && (
+            <p className="text-xs text-white/50 text-center mt-4">
+              You don&apos;t have access to this chat yet. If you just paid, please wait a moment for the
+              payment to be processed.
+            </p>
+          )}
+
+          {status === "error" && (
+            <p className="text-xs text-red-400 text-center mt-4">
+              Something went wrong loading this chat. Please try again later.
+            </p>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input bar */}
+        {status === "active" && (
+          <div className="p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5">
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Type a message..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!inputValue.trim()) return;
+                    void sendMessage(inputValue);
+                    setInputValue("");
+                  }
+                }}
+                className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
+                disabled={isSending}
+              />
+              <Button
+                size="icon"
+                onClick={async () => {
+                  if (!inputValue.trim()) return;
+                  await sendMessage(inputValue);
+                  setInputValue("");
+                }}
+                disabled={isSending || !inputValue.trim()}
+                className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
+              >
+                {isSending ? <LoadingSpinner size="sm" /> : <span className="text-xs font-semibold">➤</span>}
+              </Button>
             </div>
           </div>
-        ))}
-
-        {status === "locked" && (
-          <p className="text-xs text-muted-foreground text-center mt-4">
-            You don&apos;t have access to this chat. If you just paid, please wait a moment for the payment to be processed.
-          </p>
-        )}
-
-        {status === "error" && (
-          <p className="text-xs text-destructive text-center mt-4">
-            Something went wrong loading this chat. Please try again later.
-          </p>
         )}
       </div>
-
-      {/* Input */}
-      {status === "active" && (
-        <div className="px-4 pb-4 pt-2 border-t border-border bg-background">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Message the group..."
-              className="flex-1 rounded-xl px-4 py-2.5 text-sm text-foreground bg-card border border-border outline-none focus:ring-2 focus:ring-primary/30"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  if (!inputValue.trim()) return;
-                  void sendMessage(inputValue);
-                  setInputValue("");
-                }
-              }}
-            />
-            <Button
-              size="icon"
-              className="w-10 h-10 rounded-xl shrink-0"
-              disabled={isSending || !inputValue.trim()}
-              onClick={async () => {
-                if (!inputValue.trim()) return;
-                await sendMessage(inputValue);
-                setInputValue("");
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
