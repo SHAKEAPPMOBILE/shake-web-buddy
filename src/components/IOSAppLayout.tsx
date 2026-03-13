@@ -374,7 +374,7 @@ export function IOSAppLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Main content area - fixed height, no scroll */}
-      <main className={cn("flex-1 overflow-hidden safe-area-top", user && !isInFullPageChat && "pb-20")}>
+      <main className={cn("flex-1 overflow-hidden safe-area-top", !isInFullPageChat && "pb-20")}>
         <div className="h-full">
           {showEvents ? (
             <EventsPage onClose={() => setShowEvents(false)} />
@@ -384,8 +384,14 @@ export function IOSAppLayout() {
         </div>
       </main>
 
-      {/* Only show navigation when user is logged in and not in full-page chat */}
-      {user && !isInFullPageChat && <IOSTabBar activeTab={activeTab} onTabChange={handleTabChange} onShakeStart={handleTabBarShake} />}
+      {/* Only hide navigation in full-page chat */}
+      {!isInFullPageChat && (
+        <IOSTabBar
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onShakeStart={handleTabBarShake}
+        />
+      )}
 
       {/* Dialogs */}
       <ActivitySelectionDialog
