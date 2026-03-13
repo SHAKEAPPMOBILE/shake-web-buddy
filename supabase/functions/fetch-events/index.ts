@@ -40,6 +40,48 @@ const BOGOTA_LATLONG = "4.71,-74.07";
 const DEFAULT_RADIUS = 50;
 const DEFAULT_SIZE = 20;
 
+// Safe mock events used when Ticketmaster is unavailable
+const MOCK_EVENTS = [
+  {
+    id: "tm-mock-1",
+    name: "LCD Soundsystem",
+    date: "Mar 15, 2026",
+    eventStartAt: "2026-03-15T19:00:00Z",
+    imageUrl: undefined,
+    venue: "El Campín",
+    city: "Bogotá",
+    distance: "0.4 km",
+    priceMin: 89,
+    priceMax: 245,
+    category: "Music",
+    emoji: "🎵",
+    chatCount: 0,
+    ticketsSold: 1240,
+    presaleCount: 420,
+    isHot: true,
+    ticketmasterUrl: "https://www.ticketmaster.com",
+  },
+  {
+    id: "tm-mock-2",
+    name: "Morat: Gira Mundial",
+    date: "Mar 22, 2026",
+    eventStartAt: "2026-03-22T20:00:00Z",
+    imageUrl: undefined,
+    venue: "Movistar Arena",
+    city: "Bogotá",
+    distance: "1.2 km",
+    priceMin: 65,
+    priceMax: 200,
+    category: "Pop",
+    emoji: "🎤",
+    chatCount: 0,
+    ticketsSold: 8500,
+    presaleCount: 3100,
+    isHot: true,
+    ticketmasterUrl: "https://www.ticketmaster.com",
+  },
+];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -48,9 +90,10 @@ serve(async (req) => {
   try {
     const ticketmasterKey = Deno.env.get("TICKETMASTER_API_KEY");
     if (!ticketmasterKey) {
-      return new Response(JSON.stringify({ error: "TICKETMASTER_API_KEY is not configured" }), {
+      console.warn("[fetch-events] TICKETMASTER_API_KEY missing, returning mock events");
+      return new Response(JSON.stringify({ events: MOCK_EVENTS, warning: "Using mock events - TICKETMASTER_API_KEY not configured" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status: 200,
       });
     }
 
@@ -75,15 +118,26 @@ serve(async (req) => {
     });
 
     const url = `https://app.ticketmaster.com/discovery/v2/events.json?${params.toString()}`;
-    const res = await fetch(url);
+    let res: Response;
+    try {
+      res = await fetch(url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn("[fetch-events] Ticketmaster fetch failed:", msg);
+      return new Response(JSON.stringify({ events: MOCK_EVENTS, warning: "Using mock events - Ticketmaster unavailable" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     if (!res.ok) {
       const text = await res.text();
       console.warn("Ticketmaster API error:", res.status, text);
       return new Response(
-        JSON.stringify({ error: "Ticketmaster API error", status: res.status }),
+        JSON.stringify({ events: MOCK_EVENTS, warning: "Using mock events - Ticketmaster error" }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 502,
+          status: 200,
         },
       );
     }
@@ -139,9 +193,9 @@ serve(async (req) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[fetch-events] ERROR", message);
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ events: MOCK_EVENTS, warning: "Using mock events - internal error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: 200,
     });
   }
 });
