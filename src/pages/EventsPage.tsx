@@ -266,6 +266,14 @@ function EventDetail({
       </div>
 
       <div className="flex-1 px-5 pb-20">
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors -ml-1 mb-2"
+          aria-label="Back"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
         <h1 className="text-2xl font-extrabold text-foreground leading-tight mb-4">
           {event.name}
         </h1>
@@ -591,14 +599,16 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                       {e.date}
                     </p>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs text-muted-foreground">
-                        {e.ticketsSold.toLocaleString()} sold
-                      </span>
-                      {"presaleCount" in e && (
+                      {e.ticketsSold ? (
+                        <span className="text-xs text-muted-foreground">
+                          {e.ticketsSold.toLocaleString()} sold
+                        </span>
+                      ) : null}
+                      {"presaleCount" in e && e.presaleCount ? (
                         <span className="text-xs text-muted-foreground">
                           {e.presaleCount.toLocaleString()} presale
                         </span>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </button>
@@ -648,11 +658,11 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                       {e.venue} · {e.date}
                     </p>
                     <div className="flex gap-3 items-center flex-wrap">
-                      {e.priceMin && e.priceMax && (
+                      {(e.priceMin != null && e.priceMax != null && e.priceMin > 0 && e.priceMax > 0) ? (
                         <span className="text-primary text-xs font-medium">
                           ${e.priceMin}–${e.priceMax}
                         </span>
-                      )}
+                      ) : null}
                       {e.ticketsSold ? (
                         <div className="flex items-center gap-1">
                           <Users className="w-2.5 h-2.5 text-muted-foreground" />
@@ -669,9 +679,11 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-muted-foreground text-xs mb-1">
-                      {e.distance}
-                    </p>
+                    {e.distance ? (
+                      <p className="text-muted-foreground text-xs mb-1">
+                        {e.distance}
+                      </p>
+                    ) : null}
                     {e.isHot && (
                       <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/30 text-primary">
                         HOT
