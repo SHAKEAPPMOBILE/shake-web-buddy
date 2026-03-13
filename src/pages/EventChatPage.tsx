@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Users, Clock } from "lucide-react";
+import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut } from "lucide-react";
 import { useEventChat } from "@/hooks/useEventChat";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +20,7 @@ export default function EventChatPage() {
   const [eventName, setEventName] = useState<string>("Event chat");
   const [eventStartsAt, setEventStartsAt] = useState<string>(new Date().toISOString());
   const [isLoadingMeta, setIsLoadingMeta] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -33,8 +34,11 @@ export default function EventChatPage() {
     if (!eventId) return;
 
     let cancelled = false;
+    let attempts = 0;
+    const MAX_RETRIES = 3;
 
     const loadMeta = async () => {
+      if (cancelled) return;
       setIsLoadingMeta(true);
       try {
         const { data, error } = await supabase
@@ -51,14 +55,16 @@ export default function EventChatPage() {
 
         if (data) {
           setEventName(data.name);
-          // Reconstruct start time as 12h before expires_at (matches webhook logic)
           const expires = new Date(data.expires_at as string);
           if (!isNaN(expires.getTime())) {
             const start = new Date(expires.getTime() - 12 * 60 * 60 * 1000);
             setEventStartsAt(start.toISOString());
           }
-        } else if (user) {
-          // Fallback: if chat row doesn't exist but user is a member, create it on the fly
+          setIsLoadingMeta(false);
+          return;
+        }
+
+        if (user) {
           const { data: member, error: memberError } = await supabase
             .from("event_chat_members")
             .select("event_id")
@@ -71,7 +77,7 @@ export default function EventChatPage() {
           }
 
           if (member) {
-            const fallbackExpiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+            const fallbackExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
             const { error: insertError } = await supabase
               .from("event_chats")
               .insert({
@@ -83,9 +89,18 @@ export default function EventChatPage() {
             if (insertError) {
               console.log("[EventChatPage] Error creating fallback event_chats row", insertError);
             } else {
-              setEventStartsAt(new Date(Date.now()).toISOString());
+              setEventStartsAt(new Date().toISOString());
+              setIsLoadingMeta(false);
+              return;
             }
           }
+        }
+
+        if (attempts < MAX_RETRIES) {
+          attempts += 1;
+          console.log("[EventChatPage] event_chats missing, retrying...", { attempts });
+          setTimeout(loadMeta, 3000);
+          return;
         }
       } catch (e) {
         console.log("[EventChatPage] Unexpected error loading metadata", e);
@@ -173,6 +188,34 @@ export default function EventChatPage() {
           <div className="flex items-center gap-1 text-xs text-white/60">
             <Users className="w-3.5 h-3.5" />
             <span>{memberCount}</span>
+          </div>
+          <div className="flex items-center gap-0.5 ml-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMuted((prev) => !prev)}
+              className="shrink-0 text-white/60 hover:text-white hover:bg-white/5 h-8 w-8"
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={async () => {
+                if (!user) return;
+                await supabase
+                  .from("event_chat_members")
+                  .delete()
+                  .eq("event_id", eventId)
+                  .eq("user_id", user.id);
+                navigate(-1);
+              }}
+              className="shrink-0 text-white/50 hover:text-red-400 hover:bg-white/5 h-8 w-8"
+              title="Leave chat"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
         </div>
 
