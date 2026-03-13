@@ -53,32 +53,31 @@ serve(async (req) => {
 
     logStep("Event received", { type: event.type });
 
-    // Handle checkout session completed for activity payments
+    // Handle checkout session completed for activity or event payments
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      
-      // Check if this is an activity payment (has activity_id in metadata)
-      const activityId = session.metadata?.activity_id;
-      const payerUserId = session.metadata?.payer_user_id;
-      
+      const metadata = session.metadata || {};
+      const activityId = metadata.activity_id;
+      const eventId = metadata.event_id;
+      const payerUserId = metadata.payer_user_id;
+
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { persistSession: false } }
+      );
+
+      // Activity payments: add user to activity_joins
       if (activityId && payerUserId) {
         logStep("Processing activity payment completion", { activityId, payerUserId });
-        
-        const supabaseClient = createClient(
-          Deno.env.get("SUPABASE_URL") ?? "",
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-          { auth: { persistSession: false } }
-        );
-        
-        // Get activity details
+
         const { data: activity } = await supabaseClient
           .from("user_activities")
           .select("activity_type, city")
           .eq("id", activityId)
           .maybeSingle();
-        
+
         if (activity) {
-          // Add user to activity_joins
           const { error: joinError } = await supabaseClient
             .from("activity_joins")
             .insert({
@@ -87,7 +86,7 @@ serve(async (req) => {
               activity_type: activity.activity_type,
               city: activity.city,
             });
-          
+
           if (joinError) {
             logStep("Error joining activity after payment", { error: joinError.message });
           } else {
@@ -95,7 +94,61 @@ serve(async (req) => {
           }
         }
       }
-      
+
+      // Event chat payments: ensure event chat + membership
+      if (eventId && payerUserId) {
+        const eventName = metadata.event_name || "Event chat";
+        const startsAtRaw = metadata.event_starts_at;
+
+        let expiresAt = new Date();
+        if (startsAtRaw) {
+          const start = new Date(startsAtRaw);
+          if (!isNaN(start.getTime())) {
+            expiresAt = new Date(start.getTime() + 12 * 60 * 60 * 1000);
+          }
+        } else {
+          // Fallback: 12h from now
+          expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
+        }
+
+        logStep("Processing event chat payment completion", {
+          eventId,
+          payerUserId,
+          eventName,
+          expiresAt: expiresAt.toISOString(),
+        });
+
+        // Create or update event_chats row
+        const { error: upsertError } = await supabaseClient
+          .from("event_chats")
+          .upsert(
+            {
+              event_id: eventId,
+              name: eventName,
+              expires_at: expiresAt.toISOString(),
+            },
+            { onConflict: "event_id" },
+          );
+
+        if (upsertError) {
+          logStep("Error upserting event_chats", { error: upsertError.message });
+        }
+
+        // Add member row (ignore unique violation)
+        const { error: memberError } = await supabaseClient
+          .from("event_chat_members")
+          .insert({
+            event_id: eventId,
+            user_id: payerUserId,
+          });
+
+        if (memberError && memberError.code !== "23505") {
+          logStep("Error inserting event_chat_member", { error: memberError.message });
+        } else if (!memberError) {
+          logStep("User joined event chat after payment", { eventId, payerUserId });
+        }
+      }
+
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

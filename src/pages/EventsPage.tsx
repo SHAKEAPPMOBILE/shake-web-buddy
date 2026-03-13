@@ -429,7 +429,8 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const [selected, setSelected] = useState<EventItem | null>(null);
   const [initialUnlockEventId, setInitialUnlockEventId] = useState<string | null>(null);
 
-  const chatUnlockedId = searchParams.get("chat_unlocked");
+  const chatUnlockedId = searchParams.get("chat_unlocked") || searchParams.get("event_id");
+  const paymentSuccess = searchParams.get("payment_success") === "true";
 
   useEffect(() => {
     if (!chatUnlockedId || events.length === 0) return;
@@ -437,10 +438,12 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
     if (event) {
       setSelected(event);
       setInitialUnlockEventId(chatUnlockedId);
-      toast.success("Payment successful! You now have access to the group chat.");
+      if (paymentSuccess) {
+        toast.success("Payment successful! You now have access to the group chat.");
+      }
     }
     navigate("/events", { replace: true });
-  }, [chatUnlockedId, events, navigate]);
+  }, [chatUnlockedId, paymentSuccess, events, navigate]);
 
   useEffect(() => {
     if (!selected) setInitialUnlockEventId(null);
