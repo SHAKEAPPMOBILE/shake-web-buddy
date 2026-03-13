@@ -433,7 +433,8 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const paymentSuccess = searchParams.get("payment_success") === "true";
 
   useEffect(() => {
-    if (!chatUnlockedId || events.length === 0) return;
+    // Only handle Stripe/payment redirects once events have finished loading
+    if (!chatUnlockedId || eventsLoading || events.length === 0) return;
     const event = events.find((e) => e.id === chatUnlockedId);
     if (event) {
       setSelected(event);
@@ -445,7 +446,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
       }
     }
     navigate("/events", { replace: true });
-  }, [chatUnlockedId, paymentSuccess, events, navigate]);
+  }, [chatUnlockedId, paymentSuccess, eventsLoading, events, navigate]);
 
   useEffect(() => {
     if (!selected) setInitialUnlockEventId(null);
