@@ -10,6 +10,7 @@ import {
   Check,
   Clock,
 } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEventChat } from "@/hooks/useEventChat";
@@ -449,6 +450,9 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const [cat, setCat] = useState("All");
   const [selected, setSelected] = useState<EventItem | null>(null);
   const [initialUnlockEventId, setInitialUnlockEventId] = useState<string | null>(null);
+  const [showEventChatSuccess, setShowEventChatSuccess] = useState(false);
+  const [successEventId, setSuccessEventId] = useState<string | null>(null);
+  const [successEventName, setSuccessEventName] = useState<string | null>(null);
 
   const chatUnlockedId = searchParams.get("chat_unlocked") || searchParams.get("event_id");
   const paymentSuccess = searchParams.get("payment_success") === "true";
@@ -461,10 +465,9 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
       setSelected(event);
       setInitialUnlockEventId(chatUnlockedId);
       if (paymentSuccess) {
-        toast.success("Payment successful! You now have access to the group chat.");
-        setTimeout(() => {
-          navigate(`/chat/event/${chatUnlockedId}`, { replace: true });
-        }, 2000);
+        setSuccessEventId(chatUnlockedId);
+        setSuccessEventName(event.name);
+        setShowEventChatSuccess(true);
         return;
       }
     }
@@ -680,6 +683,64 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           onClose={() => setSelected(null)}
           initialUnlock={selected.id === initialUnlockEventId}
         />
+      )}
+
+      {showEventChatSuccess && successEventId && successEventName && (
+        <Dialog
+          open={showEventChatSuccess}
+          onOpenChange={(open) => {
+            if (!open) setShowEventChatSuccess(false);
+          }}
+        >
+          <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+            <div className="flex flex-col items-center justify-center py-10 space-y-6">
+              <div
+                className="animate-scale-in"
+                style={{ animationDuration: "0.4s" }}
+              >
+                <div className="w-24 h-24 rounded-full bg-white shadow-lg flex items-center justify-center">
+                  <span className="text-4xl">🎉</span>
+                </div>
+              </div>
+              <div
+                className="text-center animate-fade-in"
+                style={{ animationDelay: "0.2s" }}
+              >
+                <h2 className="text-2xl font-display font-bold text-foreground">
+                  You&apos;re in!
+                </h2>
+                <p className="text-sm text-muted-foreground mt-2">
+                  You now have access to the Event Group Chat for
+                  <br />
+                  <span className="font-semibold">{successEventName}</span>
+                </p>
+              </div>
+              <div
+                className="animate-scale-in"
+                style={{ animationDelay: "0.3s" }}
+              >
+                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <Check className="w-5 h-5 text-green-500" />
+                </div>
+              </div>
+              <p
+                className="text-xs text-muted-foreground/80 text-center max-w-xs animate-fade-in"
+                style={{ animationDelay: "0.4s" }}
+              >
+                Join the group chat now to meet other fans and coordinate before the event.
+              </p>
+              <Button
+                className="mt-2 w-full rounded-full font-semibold"
+                onClick={() => {
+                  setShowEventChatSuccess(false);
+                  navigate(`/chat/event/${successEventId}`, { replace: true });
+                }}
+              >
+                Go to Chat
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
