@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, MapPin, DollarSign, ArrowLeft, Mail, Shield, BarChart3 } from "lucide-react";
+import { Loader2, Users, MapPin, DollarSign, ArrowLeft, Mail, Shield, BarChart3, CalendarDays } from "lucide-react";
 import { VenuesTab } from "@/components/admin/VenuesTab";
 import { UsersTab } from "@/components/admin/UsersTab";
 import { PayoutsTab } from "@/components/admin/PayoutsTab";

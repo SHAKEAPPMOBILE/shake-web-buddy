@@ -454,3 +454,6 @@ export function EventsTab() {
   );
 }
 
+export default EventsTab;
+
+
