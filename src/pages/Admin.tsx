@@ -10,6 +10,7 @@ import { UsersTab } from "@/components/admin/UsersTab";
 import { PayoutsTab } from "@/components/admin/PayoutsTab";
 import { VerificationsTab } from "@/components/admin/VerificationsTab";
 import { AnalyticsTab } from "@/components/admin/AnalyticsTab";
+import { EventsTab } from "@/components/admin/EventsTab";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 export default function Admin() {
@@ -283,7 +284,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 max-w-3xl">
+          <TabsList className="grid w-full grid-cols-6 max-w-4xl">
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Analytics
@@ -303,6 +304,10 @@ export default function Admin() {
             <TabsTrigger value="venues" className="flex items-center gap-2">
               <MapPin className="w-4 h-4" />
               Venues
+            </TabsTrigger>
+            <TabsTrigger value="events" className="flex items-center gap-2">
+              <CalendarDays className="w-4 h-4" />
+              Events
             </TabsTrigger>
           </TabsList>
 
@@ -324,6 +329,10 @@ export default function Admin() {
 
           <TabsContent value="venues" className="mt-6">
             <VenuesTab />
+          </TabsContent>
+
+          <TabsContent value="events" className="mt-6">
+            <EventsTab />
           </TabsContent>
         </Tabs>
       </div>
