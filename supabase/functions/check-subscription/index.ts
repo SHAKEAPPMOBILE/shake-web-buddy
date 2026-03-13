@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const logStep = (step: string, details?: any) => {
@@ -20,6 +20,12 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       logStep("No authorization header - returning not subscribed");
@@ -29,39 +35,20 @@ serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-    logStep("Env check", {
-      hasSupabaseUrl: !!Deno.env.get("SUPABASE_URL"),
-      supabaseUrlLength: supabaseUrl.length,
-      hasSupabaseAnonKey: !!Deno.env.get("SUPABASE_ANON_KEY"),
-      supabaseAnonKeyLength: supabaseAnonKey.length,
-      authHeaderPrefix: authHeader.slice(0, 20),
-      authHeaderLength: authHeader.length,
-    });
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false },
-      global: {
-        headers: {
-          Authorization: authHeader,
-        },
-      },
-    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data } = await supabaseClient.auth.getUser(token);
+    const user = data.user;
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
-
-    if (userError || !userData?.user) {
-      logStep("Auth validation failed - returning not subscribed", { error: userError?.message });
+    if (!user?.id) {
+      logStep("Auth validation failed - returning not subscribed");
       return new Response(JSON.stringify({ subscribed: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    const user = userData.user;
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
     let email = user?.email ?? null;
 
