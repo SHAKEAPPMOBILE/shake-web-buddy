@@ -292,7 +292,7 @@ export function VenuesTab() {
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
-              <Wine className="w-4 h-4 text-purple-500" />
+              <Wine className="w-4 h-4 text-primary" />
               <span className="text-2xl font-bold">{totals.drinks}</span>
             </div>
             <p className="text-xs text-muted-foreground">Bars/Drinks</p>

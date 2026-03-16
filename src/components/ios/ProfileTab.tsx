@@ -908,10 +908,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         {/* Paranormal Activity - Blocked & Flagged */}
         <button
           onClick={() => setShowParanormal(true)}
-          className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-purple-500/30 rounded-xl hover:bg-muted/30 transition-colors"
+          className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-primary/40 rounded-xl hover:bg-muted/30 transition-colors"
         >
-          <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
-            <Ghost className="w-5 h-5 text-purple-400" />
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <Ghost className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1 text-left">
             <span className="font-medium">Paranormal Activity</span>

@@ -450,12 +450,12 @@ export function GroupChatDialog({
                 {getTranslatedActivityLabel(t, activityType)}
               </p>
               {getTranslatedActivityDay(t, activityType) && (
-                <p className="text-sm text-purple-300/90">
+                <p className="text-sm text-primary/80">
                   {getTranslatedActivityDay(t, activityType)}
                 </p>
               )}
               {isCrossCity && (
-                <div className="flex items-center justify-center gap-1.5 text-xs text-purple-300/90">
+                <div className="flex items-center justify-center gap-1.5 text-xs text-primary/80">
                   <Plane className="w-3 h-3" />
                   <span>in {city}</span>
                 </div>
@@ -467,7 +467,7 @@ export function GroupChatDialog({
                       href={mapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-purple-300/90 hover:text-purple-200 flex items-center justify-center gap-1"
+                      className="text-xs text-primary/80 hover:text-primary flex items-center justify-center gap-1"
                     >
                       <MapPin className="w-3 h-3" />
                       {location}
@@ -550,7 +550,7 @@ export function GroupChatDialog({
                 </button>
                 <h3 className="font-medium text-white text-sm">{title}</h3>
                 {isCrossCity && (
-                  <span className="text-xs text-purple-300/80 flex items-center gap-0.5">
+                  <span className="text-xs text-primary/80 flex items-center gap-0.5">
                     <Plane className="w-3 h-3" /> {city}
                   </span>
                 )}
@@ -568,7 +568,7 @@ export function GroupChatDialog({
                 {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch" || activityType === "drinks") && (
                   <button
                     onClick={() => setShowVenueSuggestions(!showVenueSuggestions)}
-                    className={`p-1.5 rounded-md ${showVenueSuggestions ? 'text-purple-300 bg-purple-500/20' : 'text-white/60 hover:text-white'}`}
+                    className={`p-1.5 rounded-md ${showVenueSuggestions ? 'text-primary bg-primary/20' : 'text-white/60 hover:text-white'}`}
                     title={t('chat.suggestVenue', 'Suggest a venue')}
                   >
                     <MapPin className="w-4 h-4" />
@@ -622,7 +622,7 @@ export function GroupChatDialog({
                       <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
                         <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
                           <button 
-                            className={`font-semibold text-sm text-white ${!isOwnMessage ? 'hover:text-purple-300 cursor-pointer' : ''}`}
+                            className={`font-semibold text-sm text-white ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
                             onClick={() => {
                               if (!isOwnMessage) {
                                 setSelectedUserProfile({
@@ -673,7 +673,7 @@ export function GroupChatDialog({
                     <button
                       key={index}
                       onClick={() => setMessage(suggestion)}
-                      className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-purple-200 hover:bg-white/10 border border-white/10 whitespace-nowrap shrink-0"
+                      className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-primary hover:bg-white/10 border border-white/10 whitespace-nowrap shrink-0"
                     >
                       {suggestion}
                     </button>

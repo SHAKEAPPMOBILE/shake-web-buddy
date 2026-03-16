@@ -435,7 +435,7 @@ export function GroupChatView({
           <h1 className="text-base font-medium text-white flex items-center gap-2">
             <span className="truncate">{title}</span>
             {isCrossCity && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-xs text-purple-300/90 rounded-full shrink-0 bg-white/5">
+              <span className="flex items-center gap-1 px-2 py-0.5 text-xs text-primary/80 rounded-full shrink-0 bg-white/5">
                 <Plane className="w-3 h-3" />
                 {city}
               </span>
@@ -469,7 +469,7 @@ export function GroupChatView({
                     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentVenue.name}, ${currentVenue.address}`)}`;
                   window.location.href = venueUrl;
                 }}
-                className="text-lg hover:scale-110 transition-transform text-purple-300/90"
+                className="text-lg hover:scale-110 transition-transform text-primary/80"
                 title="Open in Google Maps"
               >
                 📍
@@ -483,7 +483,7 @@ export function GroupChatView({
                       el.classList.toggle('max-w-none');
                     }
                   }}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#7c5cfc]/20 text-purple-200 rounded-full text-sm border border-white/10"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/20 text-primary rounded-full text-sm border border-white/10"
                 >
                   <span>⭐</span>
                   <span className="venue-name truncate max-w-[180px] transition-all duration-200">{currentVenue.name}</span>
@@ -510,7 +510,7 @@ export function GroupChatView({
                 <div
                   key={idx}
                   className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    idx === currentVenueIndex ? 'bg-purple-400' : 'bg-white/20'
+                    idx === currentVenueIndex ? 'bg-primary' : 'bg-white/20'
                   }`}
                 />
               ))}
@@ -573,7 +573,7 @@ export function GroupChatView({
                 <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
                   <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
                     <button
-                      className={`font-semibold text-sm text-white ${!isOwnMessage ? 'hover:text-purple-200 cursor-pointer' : ''}`}
+                      className={`font-semibold text-sm text-white ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
                       onClick={() => {
                         if (!isOwnMessage) {
                           setSelectedUserProfile({
@@ -620,7 +620,7 @@ export function GroupChatView({
               <button
                 key={index}
                 onClick={() => setMessage(suggestion)}
-                className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-purple-200 hover:bg-white/10 border border-white/10 whitespace-nowrap shrink-0"
+                className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-primary hover:bg-white/10 border border-white/10 whitespace-nowrap shrink-0"
               >
                 {suggestion}
               </button>

@@ -131,7 +131,7 @@ export default function Admin() {
   // Password recovery flow
   if (showRecovery) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-indigo-800 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background/80 to-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <Button
@@ -156,7 +156,7 @@ export default function Admin() {
             {recoveredPassword ? (
               // Show recovered password
               <div className="space-y-4">
-                <div className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-xl p-6 text-center">
+                <div className="bg-gradient-to-r from-primary/20 to-primary/5 rounded-xl p-6 text-center">
                   <p className="text-white/80 text-sm mb-2">Your admin password is:</p>
                   <p className="text-white text-2xl font-mono font-bold tracking-wider">
                     {recoveredPassword}
@@ -241,7 +241,7 @@ export default function Admin() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-indigo-800 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background/80 to-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">🔐 Admin Access</CardTitle>

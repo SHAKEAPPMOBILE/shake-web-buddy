@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Users, FlaskConical, UserCheck, Loader2, Eye, EyeOff, Crown, Key, Plus, Trash2, UsersRound } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
+import { useDailyTheme } from "@/hooks/useDailyTheme";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserData {
@@ -24,6 +25,7 @@ interface TestUserFormProps {
 }
 
 function TestUserForm({ password, onUserCreated }: TestUserFormProps) {
+  const theme = useDailyTheme();
   const [phone, setPhone] = useState("+1 555 ");
   const [userPassword, setUserPassword] = useState("Test1234!");
   const [name, setName] = useState("");
@@ -274,13 +276,13 @@ export function UsersTab({ adminPassword }: { adminPassword: string }) {
             <p className="text-sm text-green-600 font-medium">Real Users</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
-              <FlaskConical className="w-5 h-5 text-purple-600" />
-              <span className="text-3xl font-bold text-purple-700">{testUsers.length}</span>
+              <FlaskConical className="w-5 h-5 text-primary" />
+              <span className="text-3xl font-bold text-primary">{testUsers.length}</span>
             </div>
-            <p className="text-sm text-purple-600 font-medium">Test Users</p>
+            <p className="text-sm text-primary font-medium">Test Users</p>
           </CardContent>
         </Card>
       </div>
@@ -395,7 +397,7 @@ export function UsersTab({ adminPassword }: { adminPassword: string }) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FlaskConical className="w-5 h-5 text-purple-600" />
+          <FlaskConical className="w-5 h-5 text-primary" />
               Test Users ({filteredTestUsers.length})
             </CardTitle>
             <CardDescription>

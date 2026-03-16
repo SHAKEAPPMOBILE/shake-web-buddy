@@ -175,7 +175,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
               </span>
             </div>
             <div className="flex items-start gap-2">
-              <UserPlus className="w-4 h-4 mt-0.5 text-purple-500 shrink-0" />
+              <UserPlus className="w-4 h-4 mt-0.5 text-primary shrink-0" />
               <span>
                 <strong className="text-foreground">{t('points.inviteFriends', 'Invite friends')}</strong> — {t('points.inviteFriendsPoints', 'Earn +5 points when someone signs up using your referral link')}
               </span>
@@ -188,7 +188,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
       <div className="bg-card rounded-2xl p-4 border border-border">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-purple-500" />
+            <Users className="w-5 h-5 text-primary" />
             <h4 className="font-medium">{t('points.referrals', 'Referrals')}</h4>
           </div>
           <div className="flex items-center gap-1.5 text-sm">

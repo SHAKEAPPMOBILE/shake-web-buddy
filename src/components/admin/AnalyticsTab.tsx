@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, MessageSquare, Users, MapPin, Calendar, Activity, RefreshCw } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDailyTheme } from "@/hooks/useDailyTheme";
 
 interface AnalyticsTabProps {
   adminPassword: string;
@@ -53,6 +54,7 @@ interface AnalyticsData {
 }
 
 export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
+  const theme = useDailyTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +119,7 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+        <Card className={`bg-gradient-to-br ${theme.gradient} text-white`}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <MessageSquare className="w-8 h-8 opacity-80" />
