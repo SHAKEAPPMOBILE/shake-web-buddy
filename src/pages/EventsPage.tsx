@@ -235,28 +235,28 @@ function EventDetail({
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-y-auto">
       {/* Hero */}
-      <div
-        className="relative h-56 flex-shrink-0 overflow-hidden"
-        style={
-          !event.imageUrl
-            ? { background: `linear-gradient(135deg, hsl(${h}, 55%, 15%), hsl(${(h + 120) % 360}, 45%, 8%))` }
-            : undefined
-        }
-      >
-        {event.imageUrl && (
+      <div className="relative w-full h-56 bg-muted overflow-hidden">
+        {event.imageUrl ? (
           <img
             src={event.imageUrl}
-            className="w-full h-full object-cover"
             alt={event.name}
-            onError={(ev) => {
-              const target = ev.target as HTMLImageElement;
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target.parentElement) {
+                target.parentElement.style.background = "hsl(var(--muted))";
+              }
               target.style.display = "none";
             }}
           />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-6xl">
+            {event.emoji || "🎵"}
+          </div>
         )}
         <button
           type="button"
-          className="fixed top-4 left-4 shrink-0 p-1.5 rounded-full bg-black/40 text-white/90 hover:text-white"
+          className="absolute top-4 left-4 shrink-0 p-1.5 rounded-full bg-black/40 text-white/90 hover:text-white"
           onClick={onClose}
           aria-label="Back"
         >
@@ -267,13 +267,6 @@ function EventDetail({
             HOT 🔥
           </div>
         )}
-        <div className="absolute bottom-4 left-4 text-4xl">{event.emoji}</div>
-        <div
-          className="absolute inset-x-0 bottom-0 h-16"
-          style={{
-            background: "linear-gradient(transparent, hsl(var(--background)))",
-          }}
-        />
       </div>
 
       <div className="flex-1 px-5 pb-20">
@@ -688,26 +681,22 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                   onClick={() => setSelected(e)}
                   className="w-full flex items-center gap-3 py-3.5 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
                 >
-                  <div
-                    className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center text-xl overflow-hidden relative"
-                    style={
-                      !e.imageUrl
-                        ? { background: `linear-gradient(135deg, hsl(${hue(e.id)}, 55%, 28%), hsl(${(hue(e.id) + 80) % 360}, 45%, 18%))` }
-                        : undefined
-                    }
-                  >
-                    {e.imageUrl && (
+                  <div className="w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                    {e.imageUrl ? (
                       <img
                         src={e.imageUrl}
-                        className="w-full h-full object-cover absolute inset-0"
                         alt={e.name}
+                        className="w-full h-full object-cover"
                         onError={(ev) => {
                           const target = ev.target as HTMLImageElement;
                           target.style.display = "none";
                         }}
                       />
+                    ) : (
+                      <span className="w-full h-full flex items-center justify-center text-xl">
+                        {e.emoji || "🎵"}
+                      </span>
                     )}
-                    {!e.imageUrl && e.emoji}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground text-sm mb-0.5 truncate">
