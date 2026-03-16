@@ -290,12 +290,14 @@ function EventDetail({
           </div>
         ) : null}
 
-        {event.priceMin && event.priceMax ? (
+        {(event.priceMin && event.priceMin > 0) || event.ticketmasterUrl ? (
           <div className="rounded-2xl p-4 bg-card border border-border flex items-center justify-between mt-5 mb-5">
             <div>
               <p className="text-muted-foreground text-xs">Tickets on Ticketmaster</p>
               <p className="text-foreground font-bold text-lg">
-                ${event.priceMin}–${event.priceMax}
+                {event.priceMin && event.priceMin > 0 && event.priceMax && event.priceMax > 0
+                  ? `$${event.priceMin}–${event.priceMax}`
+                  : "Get Tickets"}
               </p>
             </div>
             <a
@@ -461,9 +463,41 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const [showEventChatSuccess, setShowEventChatSuccess] = useState(false);
   const [successEventId, setSuccessEventId] = useState<string | null>(null);
   const [successEventName, setSuccessEventName] = useState<string | null>(null);
+  const [userCity, setUserCity] = useState<string | null>(null);
+
+  const { user } = useAuth();
 
   const chatUnlockedId = searchParams.get("chat_unlocked") || searchParams.get("event_id");
   const paymentSuccess = searchParams.get("payment_success") === "true";
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setUserCity(null);
+      return;
+    }
+
+    const loadCity = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("city")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (!cancelled && !error) {
+          setUserCity((data as { city?: string | null } | null)?.city ?? null);
+        }
+      } catch {
+        if (!cancelled) setUserCity(null);
+      }
+    };
+
+    loadCity();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     // Only handle Stripe/payment redirects once events have finished loading
@@ -489,7 +523,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   useEffect(() => {
     let cancelled = false;
     setEventsLoading(true);
-    fetchTicketmasterEvents({ radius: 50, size: 25 })
+    fetchTicketmasterEvents({ radius: 50, size: 25, city: userCity })
       .then((list) => {
         if (!cancelled) {
           setEvents(list.length > 0 ? list : MOCK_EVENTS);
@@ -504,7 +538,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [userCity]);
 
   const hot = useMemo(() => events.filter((e) => e.isHot), [events]);
   const filtered =

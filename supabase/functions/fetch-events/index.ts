@@ -240,16 +240,33 @@ serve(async (req) => {
   }
 
   try {
+    let cityFilter: string | null = null;
+    try {
+      const body = await req.json().catch(() => null);
+      if (body && typeof body.city === "string") {
+        const trimmed = body.city.trim();
+        cityFilter = trimmed.length ? trimmed : null;
+      }
+    } catch {
+      cityFilter = null;
+    }
+
     // Prefer events from public_events table; fall back to Eventbrite then mock only if empty
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (supabaseUrl && supabaseServiceKey) {
       try {
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
-        const { data: rows, error } = await supabase
+        let query = supabase
           .from("public_events")
           .select("*")
-          .gte("event_starts_at", new Date().toISOString())
+          .gte("event_starts_at", new Date().toISOString());
+
+        if (cityFilter) {
+          query = query.ilike("city", `%${cityFilter}%`);
+        }
+
+        const { data: rows, error } = await query
           .order("event_starts_at", { ascending: true, nullsFirst: false });
 
         if (!error && rows && rows.length > 0) {

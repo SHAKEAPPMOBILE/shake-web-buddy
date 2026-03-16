@@ -46,6 +46,7 @@ export async function fetchTicketmasterEvents(options?: {
   latlong?: string;
   radius?: number;
   size?: number;
+  city?: string | null;
 }): Promise<EventItem[]> {
   const { data, error } = await supabase.functions.invoke<{
     events?: EventItem[];
@@ -54,6 +55,7 @@ export async function fetchTicketmasterEvents(options?: {
       latlong: options?.latlong ?? "4.71,-74.07",
       radius: options?.radius ?? 50,
       size: options?.size ?? 20,
+      city: options?.city ?? undefined,
     },
   });
 
