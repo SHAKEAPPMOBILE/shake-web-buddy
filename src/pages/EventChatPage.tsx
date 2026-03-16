@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { IOSTabBar } from "@/components/IOSTabBar";
 
 interface EventChatPageParams {
   eventId?: string;
@@ -41,6 +42,28 @@ export default function EventChatPage() {
       if (cancelled) return;
       setIsLoadingMeta(true);
       try {
+        // Fetch event details from public_events for title and fallback
+        let publicEventName = eventName;
+        try {
+          const { data: publicEvent, error: publicError } = await supabase
+            .from("public_events")
+            .select("name, venue, city, event_starts_at")
+            .eq("id", eventId)
+            .maybeSingle();
+
+          if (!cancelled && !publicError && publicEvent) {
+            if (publicEvent.name) {
+              publicEventName = publicEvent.name;
+              setEventName(publicEvent.name);
+            }
+            if (publicEvent.event_starts_at) {
+              setEventStartsAt(publicEvent.event_starts_at);
+            }
+          }
+        } catch (e) {
+          console.log("[EventChatPage] Error loading public_events", e);
+        }
+
         const { data, error } = await supabase
           .from("event_chats")
           .select("name, expires_at, created_at")
@@ -77,19 +100,18 @@ export default function EventChatPage() {
           }
 
           if (member) {
-            const fallbackExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+            const fallbackExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
             const { error: insertError } = await supabase
               .from("event_chats")
               .insert({
                 event_id: eventId,
-                name: eventName,
+                name: publicEventName,
                 expires_at: fallbackExpiresAt,
               });
 
             if (insertError) {
               console.log("[EventChatPage] Error creating fallback event_chats row", insertError);
             } else {
-              setEventStartsAt(new Date().toISOString());
               setIsLoadingMeta(false);
               return;
             }
@@ -99,7 +121,7 @@ export default function EventChatPage() {
         if (attempts < MAX_RETRIES) {
           attempts += 1;
           console.log("[EventChatPage] event_chats missing, retrying...", { attempts });
-          setTimeout(loadMeta, 3000);
+          setTimeout(loadMeta, 2000);
           return;
         }
       } catch (e) {
@@ -153,8 +175,28 @@ export default function EventChatPage() {
     return null;
   }
 
+  const handleTabChange = (tab: string) => {
+    switch (tab) {
+      case "home":
+        navigate("/");
+        break;
+      case "plans":
+        navigate("/");
+        break;
+      case "chat":
+        navigate(-1);
+        break;
+      case "profile":
+        navigate("/profile");
+        break;
+      default:
+        navigate("/");
+    }
+  };
+
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#06060a] z-50">
+    <>
+    <div className="fixed inset-0 flex flex-col bg-[#06060a] z-40">
       <div
         className="absolute inset-0 pointer-events-none z-0"
         style={{
@@ -327,6 +369,8 @@ export default function EventChatPage() {
         )}
       </div>
     </div>
+    <IOSTabBar activeTab="chat" onTabChange={handleTabChange} />
+    </>
   );
 }
 
