@@ -155,6 +155,7 @@ serve(async (req) => {
         const { data: rows, error } = await supabase
           .from("public_events")
           .select("*")
+          .gte("event_starts_at", new Date().toISOString())
           .order("event_starts_at", { ascending: true, nullsFirst: false });
 
         if (!error && rows && rows.length > 0) {
