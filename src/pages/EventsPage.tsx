@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 // Fallback when no API key or API returns empty
 const MOCK_EVENTS: EventItem[] = [
@@ -675,9 +676,8 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
             </span>
           </div>
           {eventsLoading ? (
-            <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border p-6 text-center text-muted-foreground text-sm flex flex-col items-center gap-3">
-              <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span>Loading events…</span>
+            <div className="flex items-center justify-center min-h-[280px]">
+              <LoadingSpinner size="lg" />
             </div>
           ) : (
           <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border">
