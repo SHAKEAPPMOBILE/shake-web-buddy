@@ -65,13 +65,13 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                   {/* Left arrow - only visible during shake */}
                   {isShaking && (
                     <ChevronLeft 
-                      className="w-5 h-5 text-[hsl(210,100%,50%)] animate-bounce-left"
+                      className="w-5 h-5 text-primary animate-bounce-left"
                     />
                   )}
                   
                   {/* Center circle */}
                   <div className={cn(
-                    "w-16 h-16 rounded-full bg-[hsl(210,100%,50%)] flex items-center justify-center shadow-lg transition-all",
+                    "w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg transition-all",
                     isActive && "scale-110",
                     isShaking && "animate-shake-center"
                   )}>
@@ -81,13 +81,13 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                   {/* Right arrow - only visible during shake */}
                   {isShaking && (
                     <ChevronRight 
-                      className="w-5 h-5 text-[hsl(210,100%,50%)] animate-bounce-right"
+                      className="w-5 h-5 text-primary animate-bounce-right"
                     />
                   )}
                 </div>
                 <span className={cn(
                   "text-[10px] mt-1 font-medium",
-                  isActive ? "text-[hsl(210,100%,50%)]" : "text-muted-foreground"
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}>
                   {tab.label}
                 </span>

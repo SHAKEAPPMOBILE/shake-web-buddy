@@ -17,6 +17,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useReferralTracking } from "@/hooks/useReferralTracking";
 import { LanguageSync } from "@/components/LanguageSync";
 import { initializeRevenueCat } from "./lib/revenuecat";
+import { getTodaysTheme, hexToHslCssVars } from "@/lib/themes";
 import Auth from "./pages/Auth";
 import OAuthCallback from "./pages/OAuthCallback";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,20 @@ const App = () => {
   // Initialize RevenueCat on app load
   useEffect(() => {
     initializeRevenueCat();
+  }, []);
+
+  // Daily rotating theme (consistent for all users)
+  useEffect(() => {
+    const theme = getTodaysTheme();
+    document.documentElement.style.setProperty("--primary-hex", theme.primary);
+
+    const hsl = hexToHslCssVars(theme.primary);
+    if (hsl) {
+      document.documentElement.style.setProperty("--primary", hsl);
+      document.documentElement.style.setProperty("--ring", hsl);
+      document.documentElement.style.setProperty("--sidebar-primary", hsl);
+      document.documentElement.style.setProperty("--sidebar-ring", hsl);
+    }
   }, []);
 
   // Handle deep link callbacks from OAuth redirects

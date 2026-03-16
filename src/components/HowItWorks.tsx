@@ -1,8 +1,10 @@
 import { UserPlus, Search, Calendar } from "lucide-react";
 import avatar3 from "@/assets/avatar-3.png";
 import avatar4 from "@/assets/avatar-4.png";
+import { useDailyTheme } from "@/hooks/useDailyTheme";
 
 export function HowItWorks() {
+  const theme = useDailyTheme();
   const steps = [
     {
       icon: <UserPlus className="w-8 h-8" />,
@@ -52,10 +54,10 @@ export function HowItWorks() {
           {steps.map((step, index) => {
             // Vibrant card background gradients
             const cardGradients = [
-              "bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500",
+              `bg-gradient-to-br ${theme.gradient}`,
               "bg-gradient-to-br from-emerald-500 via-green-500 to-teal-500",
-              "bg-gradient-to-br from-fuchsia-500 via-purple-400 to-violet-500",
-              "bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-500",
+              `bg-gradient-to-br ${theme.gradient}`,
+              `bg-gradient-to-br ${theme.gradient}`,
             ];
             
             return (
