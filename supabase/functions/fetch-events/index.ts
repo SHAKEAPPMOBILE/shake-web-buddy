@@ -127,38 +127,30 @@ function extractArtistNameFromTitle(name: string | null): string | null {
   return cleaned.length ? cleaned : null;
 }
 
-/** Treat as real image only if it looks like a CDN (not placeholder or Wikipedia). */
-function isRealImageUrl(url: string | null): boolean {
-  if (!url || !url.trim()) return false;
+function isRealImageUrl(url: string | null | undefined): boolean {
+  if (!url || url.trim().length === 0) return false;
   const lower = url.toLowerCase();
-  if (lower.includes("wikimedia") || lower.includes("wikipedia")) return false;
-  if (lower.includes("i.scdn.co") || lower.includes("spotify") || lower.includes("ticketmaster") || lower.includes("cloudfront") || lower.includes("resources.")) return true;
-  if (url.length < 20) return false;
+  const bad = ["wikipedia", "wikimedia", "shopify", "imgur", "placeholder", "b0b0b0b0"];
+  if (bad.some((b) => lower.includes(b))) return false;
   return true;
 }
 
 async function getSpotifyImageForArtist(artistName: string, token: string): Promise<string | null> {
   try {
-    const params = new URLSearchParams({
-      q: artistName,
-      type: "artist",
-      limit: "1",
-    });
-    const res = await fetch(`https://api.spotify.com/v1/search?${params.toString()}`, {
+    const query = `q=${encodeURIComponent(artistName)}&type=artist&limit=1`;
+    const res = await fetch(`https://api.spotify.com/v1/search?${query}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
+    const data = res.ok ? (await res.json()) as { artists?: { items?: Array<{ name?: string | null; images?: Array<{ url?: string | null }> }> } } : null;
+    const firstArtist = data?.artists?.items?.[0] ?? null;
+    console.log("[fetch-events] Spotify API status=" + res.status + " firstResult=" + JSON.stringify(firstArtist));
     if (!res.ok) {
       const text = await res.text();
       console.warn("[fetch-events] Spotify search failed:", res.status, text);
       return null;
     }
-    const data = await res.json() as {
-      artists?: { items?: Array<{ name?: string | null; images?: Array<{ url?: string | null }> }> };
-    };
-    const firstArtist = data.artists?.items?.[0];
-    console.log("[fetch-events] Spotify artist search result:", JSON.stringify(firstArtist));
     const url = firstArtist?.images?.[0]?.url ?? null;
     return url && typeof url === "string" ? url : null;
   } catch (err) {
