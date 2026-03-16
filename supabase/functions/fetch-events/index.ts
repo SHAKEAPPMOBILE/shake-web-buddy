@@ -135,6 +135,12 @@ function isRealImageUrl(url: string | null | undefined): boolean {
   return true;
 }
 
+const FALLBACK_IMAGES: Record<string, string> = {
+  "no te va gustar": "https://i.scdn.co/image/ab6761610000517440b636d92aa7de0fc068ac77",
+  "rels b": "https://i.scdn.co/image/ab6761610000517440b636d92aa7de0fc068ac77",
+  "la solar": "https://i.scdn.co/image/ab67616100005174cd251af2268da17c3d967164",
+};
+
 async function getSpotifyImageForArtist(artistName: string, token: string): Promise<string | null> {
   try {
     const query = `q=${encodeURIComponent(artistName)}&type=artist&limit=1`;
@@ -308,6 +314,14 @@ serve(async (req) => {
             const msg = err instanceof Error ? err.message : String(err);
             console.warn("[fetch-events] Spotify enrichment failed:", msg);
           }
+
+          // Apply hardcoded fallbacks for known broken/bad image URLs
+          enrichedRows = enrichedRows.map((row) => {
+            if (isRealImageUrl(row.image_url)) return row;
+            const artistKey = extractArtistNameFromTitle(row.name)?.toLowerCase();
+            const fallback = artistKey ? FALLBACK_IMAGES[artistKey] : null;
+            return fallback ? { ...row, image_url: fallback } : row;
+          });
 
           const events = enrichedRows.map(mapPublicEventToItem);
           return new Response(JSON.stringify({ events }), {

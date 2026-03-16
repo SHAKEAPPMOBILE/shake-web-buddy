@@ -9,6 +9,8 @@ import { ActivityConfirmationDialog } from "./ActivityConfirmationDialog";
 import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { OnboardingScreens } from "./OnboardingScreens";
+import { MandatoryPhotoScreen } from "./MandatoryPhotoScreen";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 import { PremiumDialog } from "./PremiumDialog";
 import { ProximityCheckInPopup } from "./ProximityCheckInPopup";
@@ -56,6 +58,8 @@ export function IOSAppLayout() {
   
   // State for opening subscription dropdown from navigation state
   const [openSubscriptionOnMount, setOpenSubscriptionOnMount] = useState(false);
+  const [showMandatoryPhoto, setShowMandatoryPhoto] = useState(false);
+  const [isCheckingAvatar, setIsCheckingAvatar] = useState(true);
 
   const { user, isLoading, didJustSignUp } = useAuth();
   const { selectedCity } = useCity();
@@ -127,11 +131,13 @@ export function IOSAppLayout() {
   // Initialize push notifications for private messages
   usePrivateMessageNotifications();
 
-  // Check if user needs to complete profile after Google OAuth
-  // Only check if user is logged in - don't redirect logged out users
+  // Check if user needs to complete profile (avatar required; name/dob for auth redirect)
   useEffect(() => {
-    // Don't do anything if still loading or user is not logged in
-    if (isLoading || !user) return;
+    if (isLoading || !user) {
+      setIsCheckingAvatar(false);
+      setShowMandatoryPhoto(false);
+      return;
+    }
 
     let cancelled = false;
     let retryCount = 0;
@@ -139,52 +145,48 @@ export function IOSAppLayout() {
 
     const checkProfileCompletion = async () => {
       try {
-        // First verify we have a valid session
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          console.log("No valid session during profile check, skipping");
+          setIsCheckingAvatar(false);
           return;
         }
 
-        const [{ data: profile, error: profileError }, { data: profilePrivate, error: privateError }] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("name")
-            .eq("user_id", user.id)
-            .maybeSingle(),
-          supabase
-            .from("profiles_private")
-            .select("date_of_birth")
-            .eq("user_id", user.id)
-            .maybeSingle(),
+        const [
+          { data: profile, error: profileError },
+          { data: profilePrivate, error: privateError },
+        ] = await Promise.all([
+          supabase.from("profiles").select("name, avatar_url").eq("user_id", user.id).maybeSingle(),
+          supabase.from("profiles_private").select("date_of_birth").eq("user_id", user.id).maybeSingle(),
         ]);
 
         if (cancelled) return;
 
-        // If we got errors or null results, it might be a timing issue - retry
         if ((profileError || privateError || (!profile && !profilePrivate)) && retryCount < maxRetries) {
           retryCount++;
-          console.log(`Profile check retry ${retryCount}/${maxRetries}`);
           setTimeout(checkProfileCompletion, 500 * retryCount);
           return;
         }
 
-        // Only redirect if we actually got results and they're incomplete
-        // Don't redirect if we couldn't fetch the data (network issues, etc.)
+        const avatarMissing = !profile?.avatar_url || String(profile.avatar_url).trim() === "";
+        if (avatarMissing) {
+          setShowMandatoryPhoto(true);
+        } else {
+          setShowMandatoryPhoto(false);
+        }
+
         if (profile !== null || profilePrivate !== null) {
           const needsProfile = !profile?.name || !profilePrivate?.date_of_birth;
-
-          if (needsProfile) {
-            // Redirect to auth page to complete profile
+          if (needsProfile && !avatarMissing) {
             navigate("/auth");
           }
         }
       } catch (error) {
         console.log("Profile check failed:", error);
+      } finally {
+        if (!cancelled) setIsCheckingAvatar(false);
       }
     };
 
-    // Longer delay to ensure auth state and session are fully settled
     setTimeout(checkProfileCompletion, 300);
 
     return () => {
@@ -365,6 +367,25 @@ export function IOSAppLayout() {
         );
     }
   };
+
+  // While checking if user has avatar, avoid flashing main app
+  if (user && isCheckingAvatar) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Block until profile photo is set (new and existing users)
+  if (user && showMandatoryPhoto) {
+    return (
+      <MandatoryPhotoScreen
+        userId={user.id}
+        onComplete={() => setShowMandatoryPhoto(false)}
+      />
+    );
+  }
 
   // Show onboarding for new users (after signup)
   if (showOnboarding && !isCheckingOnboarding && user) {
