@@ -1,11 +1,6 @@
 export const DAILY_THEMES = [
-  { name: "violet", primary: "#7C3AED", gradient: "from-violet-600 to-purple-500" },
-  { name: "amber", primary: "#D97706", gradient: "from-amber-500 to-yellow-400" },
-  { name: "rose", primary: "#E11D48", gradient: "from-rose-600 to-pink-500" },
-  { name: "cyan", primary: "#0891B2", gradient: "from-cyan-600 to-teal-500" },
-  { name: "emerald", primary: "#059669", gradient: "from-emerald-600 to-green-500" },
-  { name: "orange", primary: "#EA580C", gradient: "from-orange-600 to-amber-500" },
-  { name: "indigo", primary: "#4F46E5", gradient: "from-indigo-600 to-violet-500" },
+  { name: "purple", primary: "#7C3AED", gradient: "from-violet-600 to-purple-500" },
+  { name: "yellow", primary: "#D97706", gradient: "from-amber-500 to-yellow-400" },
 ] as const;
 
 export type DailyTheme = (typeof DAILY_THEMES)[number];

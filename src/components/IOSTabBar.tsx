@@ -62,32 +62,32 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                 className="relative -mt-6 flex flex-col items-center"
               >
                 <div className="flex items-center gap-1">
-                  {/* Left arrow - only visible during shake */}
+                  {/* Left arrow - only visible during shake (fixed green, not themed) */}
                   {isShaking && (
                     <ChevronLeft 
-                      className="w-5 h-5 text-primary animate-bounce-left"
+                      className="w-5 h-5 text-emerald-400 animate-bounce-left"
                     />
                   )}
                   
-                  {/* Center circle */}
+                  {/* Center circle - always green, independent of daily theme */}
                   <div className={cn(
-                    "w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg transition-all",
+                    "w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg transition-all",
                     isActive && "scale-110",
                     isShaking && "animate-shake-center"
                   )}>
                     <Plus className="w-8 h-8 text-white" />
                   </div>
                   
-                  {/* Right arrow - only visible during shake */}
+                  {/* Right arrow - only visible during shake (fixed green, not themed) */}
                   {isShaking && (
                     <ChevronRight 
-                      className="w-5 h-5 text-primary animate-bounce-right"
+                      className="w-5 h-5 text-emerald-400 animate-bounce-right"
                     />
                   )}
                 </div>
                 <span className={cn(
                   "text-[10px] mt-1 font-medium",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? "text-emerald-500" : "text-muted-foreground"
                 )}>
                   {tab.label}
                 </span>
