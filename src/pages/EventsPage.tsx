@@ -236,25 +236,11 @@ function EventDetail({
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-y-auto">
       {/* Hero */}
-      <div className="relative w-full h-56 bg-muted overflow-hidden">
-        {event.imageUrl ? (
-          <img
-            src={event.imageUrl}
-            alt={event.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              if (target.parentElement) {
-                target.parentElement.style.background = "hsl(var(--muted))";
-              }
-              target.style.display = "none";
-            }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-6xl">
-            {event.emoji || "🎵"}
-          </div>
-        )}
+      <div className="relative w-full h-52 bg-muted overflow-hidden">
+        {event.imageUrl
+          ? <img src={event.imageUrl} alt={event.name} className="w-full h-full object-cover" />
+          : <div className="w-full h-full flex items-center justify-center text-7xl">🎵</div>
+        }
         <button
           type="button"
           className="absolute top-4 left-4 shrink-0 p-1.5 rounded-full bg-black/40 text-white/90 hover:text-white"
@@ -688,22 +674,11 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                   onClick={() => setSelected(e)}
                   className="w-full flex items-center gap-3 py-3.5 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
                 >
-                  <div className="w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0 flex items-center justify-center">
-                    {e.imageUrl ? (
-                      <img
-                        src={e.imageUrl}
-                        alt={e.name}
-                        className="w-full h-full object-cover"
-                        onError={(ev) => {
-                          const target = ev.target as HTMLImageElement;
-                          target.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <span className="w-full h-full flex items-center justify-center text-xl">
-                        {e.emoji || "🎵"}
-                      </span>
-                    )}
+                  <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                    {e.imageUrl
+                      ? <img src={e.imageUrl} alt={e.name} className="w-full h-full object-cover" />
+                      : <span className="text-2xl">🎵</span>
+                    }
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground text-sm mb-0.5 truncate">
