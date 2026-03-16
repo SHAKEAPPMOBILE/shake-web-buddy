@@ -238,7 +238,7 @@ function EventDetail({
       {/* Hero */}
       <div className="relative w-full h-52 bg-muted overflow-hidden">
         {event.imageUrl
-          ? <img src={event.imageUrl} alt={event.name} className="w-full h-full object-cover" />
+          ? <img src={event.imageUrl} alt={event.name} className="w-full h-full object-cover object-top" />
           : <div className="w-full h-full flex items-center justify-center text-7xl">🎵</div>
         }
         <button
@@ -281,26 +281,41 @@ function EventDetail({
           </div>
         ) : null}
 
-        {(event.priceMin && event.priceMin > 0) || event.ticketmasterUrl ? (
-          <div className="rounded-2xl p-4 bg-card border border-border flex items-center justify-between mt-5 mb-5">
-            <div>
-              <p className="text-muted-foreground text-xs">Tickets on Ticketmaster</p>
-              <p className="text-foreground font-bold text-lg">
-                {event.priceMin && event.priceMin > 0 && event.priceMax && event.priceMax > 0
-                  ? `$${event.priceMin}–${event.priceMax}`
-                  : "Get Tickets"}
-              </p>
+        {(() => {
+          const url = event.ticketmasterUrl;
+          const hasRealUrl =
+            typeof url === "string" &&
+            url.length > 30 &&
+            (() => {
+              try {
+                const u = new URL(url);
+                return u.pathname.length > 1;
+              } catch {
+                return false;
+              }
+            })();
+          if (!hasRealUrl) return null;
+          return (
+            <div className="rounded-2xl p-4 bg-card border border-border flex items-center justify-between mt-5 mb-5">
+              <div>
+                <p className="text-muted-foreground text-xs">Tickets on Ticketmaster</p>
+                <p className="text-foreground font-bold text-lg">
+                  {event.priceMin && event.priceMin > 0 && event.priceMax && event.priceMax > 0
+                    ? `$${event.priceMin}–${event.priceMax}`
+                    : "Get Tickets"}
+                </p>
+              </div>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm no-underline hover:opacity-90"
+              >
+                Buy <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
-            <a
-              href={event.ticketmasterUrl ?? "https://www.ticketmaster.com"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm no-underline hover:opacity-90"
-            >
-              Buy <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        ) : null}
+          );
+        })()}
 
         <div className="flex items-center gap-2 mb-3">
           <MessageCircle className="w-4 h-4 text-primary" />

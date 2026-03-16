@@ -262,15 +262,21 @@ serve(async (req) => {
           .select("*")
           .gte("event_starts_at", new Date().toISOString());
 
-        if (cityFilter) {
-          query = query.ilike("city", `%${cityFilter}%`);
-        }
+        const cityPattern = cityFilter ? `%${cityFilter}%` : "%Medellín%";
+        query = query.ilike("city", cityPattern);
 
         const { data: rows, error } = await query
           .order("event_starts_at", { ascending: true, nullsFirst: false });
 
         if (!error && rows && rows.length > 0) {
-          let enrichedRows = rows as PublicEventRow[];
+          // Dedupe by name: keep only the row with earliest event_starts_at per name (rows already ordered by event_starts_at)
+          const byName = new Map<string, PublicEventRow>();
+          for (const row of rows as PublicEventRow[]) {
+            const name = (row.name ?? "").trim();
+            if (!name || byName.has(name)) continue;
+            byName.set(name, row);
+          }
+          let enrichedRows = Array.from(byName.values());
           try {
             const token = await getSpotifyAccessToken();
             if (token) {
