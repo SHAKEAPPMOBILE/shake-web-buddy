@@ -22,6 +22,7 @@ import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { triggerConfettiWaterfall } from "@/lib/confetti";
 
 // Fallback when no API key or API returns empty
 const MOCK_EVENTS: EventItem[] = [
@@ -523,6 +524,12 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   useEffect(() => {
     if (!selected) setInitialUnlockEventId(null);
   }, [selected]);
+
+  useEffect(() => {
+    if (showEventChatSuccess) {
+      triggerConfettiWaterfall();
+    }
+  }, [showEventChatSuccess]);
 
   useEffect(() => {
     let cancelled = false;
