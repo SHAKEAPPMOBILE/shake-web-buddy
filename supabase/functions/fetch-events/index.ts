@@ -119,16 +119,22 @@ async function getSpotifyAccessToken(): Promise<string | null> {
 
 function extractArtistNameFromTitle(name: string | null): string | null {
   if (!name) return null;
-  const separators = [" - ", " · ", "-", "·"];
-  let artist = name;
-  for (const sep of separators) {
-    if (artist.includes(sep)) {
-      artist = artist.split(sep)[0];
-      break;
-    }
-  }
-  artist = artist.trim();
-  return artist.length ? artist : null;
+  const part = name.split(/[-–·|]/)[0];
+  if (!part) return null;
+  const cleaned = part
+    .replace(/\b(tour|live|concert|en vivo|festival|show|presenta|presenta su|world tour|\d{4})\b/gi, "")
+    .trim();
+  return cleaned.length ? cleaned : null;
+}
+
+/** Treat as real image only if it looks like a CDN (not placeholder or Wikipedia). */
+function isRealImageUrl(url: string | null): boolean {
+  if (!url || !url.trim()) return false;
+  const lower = url.toLowerCase();
+  if (lower.includes("wikimedia") || lower.includes("wikipedia")) return false;
+  if (lower.includes("i.scdn.co") || lower.includes("spotify") || lower.includes("ticketmaster") || lower.includes("cloudfront") || lower.includes("resources.")) return true;
+  if (url.length < 20) return false;
+  return true;
 }
 
 async function getSpotifyImageForArtist(artistName: string, token: string): Promise<string | null> {
@@ -278,19 +284,24 @@ serve(async (req) => {
             if (token) {
               const updated: PublicEventRow[] = [];
               for (const row of enrichedRows) {
-                if (row.image_url && row.image_url.trim().length > 0) {
+                const originalName = row.name ?? "";
+                if (isRealImageUrl(row.image_url)) {
+                  console.log(`[fetch-events] event="${originalName}" | extracted=— | image=kept existing CDN`);
                   updated.push(row);
                   continue;
                 }
                 const artistName = extractArtistNameFromTitle(row.name);
                 if (!artistName) {
-                  updated.push(row);
+                  console.log(`[fetch-events] event="${originalName}" | extracted=null | image=null (no artist)`);
+                  updated.push({ ...row, image_url: null });
                   continue;
                 }
                 const imageUrl = await getSpotifyImageForArtist(artistName, token);
+                const finalUrl = imageUrl ?? null;
+                console.log(`[fetch-events] event="${originalName}" | extracted="${artistName}" | image=${finalUrl ? "found" : "null"}`);
                 updated.push({
                   ...row,
-                  image_url: imageUrl ?? row.image_url,
+                  image_url: finalUrl,
                 });
               }
               enrichedRows = updated;
