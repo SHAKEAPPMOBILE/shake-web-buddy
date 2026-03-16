@@ -16,7 +16,7 @@ import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { useVenueContext } from "@/contexts/VenueContext";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { LoadingSpinner } from "../LoadingSpinner";
-import { getActivityLabel, getActivityEmoji, getActivityDay } from "@/data/activityTypes";
+import { getActivityLabel, getActivityEmoji, getNextOccurrenceDate } from "@/data/activityTypes";
 import { getVenueTypeForActivity, DbVenue } from "@/hooks/useDatabaseVenues";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -419,7 +419,8 @@ export function GroupChatView({
     }
   };
 
-  const formattedTime = format(currentTime, "EEEE, MMMM d • h:mm a");
+  const subtitleDate = getNextOccurrenceDate(activityType);
+  const headerSubtitle = format(subtitleDate, "EEEE d");
   const title = `${getActivityEmoji(activityType)} ${getActivityLabel(activityType)}`;
   const showAttendees = attendeeCount > 0;
 
@@ -441,7 +442,7 @@ export function GroupChatView({
               </span>
             )}
           </h1>
-          <p className="text-xs text-white/50">{getActivityDay(activityType) || formattedTime}</p>
+          <p className="text-xs text-white/70">{headerSubtitle}</p>
         </div>
         <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-white/60 hover:text-white hover:bg-white/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
@@ -550,7 +551,7 @@ export function GroupChatView({
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-white/40">
+          <div className="flex flex-col items-center justify-center h-full text-white/60">
             <p className="text-center text-sm">
               Start the conversation!<br />
               <span className="text-xs">Messages from today will appear here.</span>
@@ -620,7 +621,7 @@ export function GroupChatView({
               <button
                 key={index}
                 onClick={() => setMessage(suggestion)}
-                className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-primary hover:bg-white/10 border border-white/10 whitespace-nowrap shrink-0"
+                className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-white/80 hover:bg-white/15 border border-white/30 whitespace-nowrap shrink-0"
               >
                 {suggestion}
               </button>
