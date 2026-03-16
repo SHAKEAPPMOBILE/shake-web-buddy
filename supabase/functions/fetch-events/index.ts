@@ -149,9 +149,11 @@ async function getSpotifyImageForArtist(artistName: string, token: string): Prom
       return null;
     }
     const data = await res.json() as {
-      artists?: { items?: Array<{ images?: Array<{ url?: string | null }> }> };
+      artists?: { items?: Array<{ name?: string | null; images?: Array<{ url?: string | null }> }> };
     };
-    const url = data.artists?.items?.[0]?.images?.[0]?.url ?? null;
+    const firstArtist = data.artists?.items?.[0];
+    console.log("[fetch-events] Spotify artist search result:", JSON.stringify(firstArtist));
+    const url = firstArtist?.images?.[0]?.url ?? null;
     return url && typeof url === "string" ? url : null;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

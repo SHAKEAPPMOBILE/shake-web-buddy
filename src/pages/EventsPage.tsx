@@ -236,13 +236,24 @@ function EventDetail({
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-y-auto">
       {/* Hero */}
       <div
-        className="relative h-56 flex-shrink-0"
+        className="relative h-56 flex-shrink-0 overflow-hidden"
         style={
-          event.imageUrl
-            ? { backgroundImage: `url(${event.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-            : { background: `linear-gradient(135deg, hsl(${h}, 55%, 15%), hsl(${(h + 120) % 360}, 45%, 8%))` }
+          !event.imageUrl
+            ? { background: `linear-gradient(135deg, hsl(${h}, 55%, 15%), hsl(${(h + 120) % 360}, 45%, 8%))` }
+            : undefined
         }
       >
+        {event.imageUrl && (
+          <img
+            src={event.imageUrl}
+            className="w-full h-full object-cover"
+            alt={event.name}
+            onError={(ev) => {
+              const target = ev.target as HTMLImageElement;
+              target.style.display = "none";
+            }}
+          />
+        )}
         <button
           type="button"
           className="fixed top-4 left-4 shrink-0 p-1.5 rounded-full bg-black/40 text-white/90 hover:text-white"
@@ -603,13 +614,24 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                   className="shrink-0 w-[200px] rounded-2xl overflow-hidden bg-card border border-border text-left hover:border-primary/30 transition-colors"
                 >
                   <div
-                    className="h-28 relative"
+                    className="h-28 relative overflow-hidden rounded-t-2xl"
                     style={
-                      e.imageUrl
-                        ? { backgroundImage: `url(${e.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-                        : { background: `linear-gradient(135deg, hsl(${hue(e.id)}, 55%, 22%), hsl(${(hue(e.id) + 120) % 360}, 45%, 13%))` }
+                      !e.imageUrl
+                        ? { background: `linear-gradient(135deg, hsl(${hue(e.id)}, 55%, 22%), hsl(${(hue(e.id) + 120) % 360}, 45%, 13%))` }
+                        : undefined
                     }
                   >
+                    {e.imageUrl && (
+                      <img
+                        src={e.imageUrl}
+                        className="w-full h-full object-cover absolute inset-0"
+                        alt={e.name}
+                        onError={(ev) => {
+                          const target = ev.target as HTMLImageElement;
+                          target.style.display = "none";
+                        }}
+                      />
+                    )}
                     <div className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold">
                       HOT
                     </div>
@@ -667,13 +689,24 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                   className="w-full flex items-center gap-3 py-3.5 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
                 >
                   <div
-                    className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center text-xl overflow-hidden"
+                    className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center text-xl overflow-hidden relative"
                     style={
-                      e.imageUrl
-                        ? { backgroundImage: `url(${e.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-                        : { background: `linear-gradient(135deg, hsl(${hue(e.id)}, 55%, 28%), hsl(${(hue(e.id) + 80) % 360}, 45%, 18%))` }
+                      !e.imageUrl
+                        ? { background: `linear-gradient(135deg, hsl(${hue(e.id)}, 55%, 28%), hsl(${(hue(e.id) + 80) % 360}, 45%, 18%))` }
+                        : undefined
                     }
                   >
+                    {e.imageUrl && (
+                      <img
+                        src={e.imageUrl}
+                        className="w-full h-full object-cover absolute inset-0"
+                        alt={e.name}
+                        onError={(ev) => {
+                          const target = ev.target as HTMLImageElement;
+                          target.style.display = "none";
+                        }}
+                      />
+                    )}
                     {!e.imageUrl && e.emoji}
                   </div>
                   <div className="flex-1 min-w-0">
