@@ -245,7 +245,7 @@ function EventDetail({
       >
         <button
           type="button"
-          className="absolute top-4 left-4 shrink-0 p-1.5 text-white/80 hover:text-white"
+          className="fixed top-4 left-4 shrink-0 p-1.5 rounded-full bg-black/40 text-white/90 hover:text-white"
           onClick={onClose}
           aria-label="Back"
         >
@@ -266,14 +266,6 @@ function EventDetail({
       </div>
 
       <div className="flex-1 px-5 pb-20">
-        <button
-          type="button"
-          onClick={onClose}
-          className="shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors -ml-1 mb-2"
-          aria-label="Back"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
         <h1 className="text-2xl font-extrabold text-foreground leading-tight mb-4">
           {event.name}
         </h1>
