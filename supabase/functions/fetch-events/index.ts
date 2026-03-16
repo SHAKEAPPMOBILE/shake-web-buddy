@@ -7,6 +7,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+let spotifyAccessToken: string | null = null;
+let spotifyTokenExpiresAt: number | null = null;
+
 interface EventbriteEvent {
   id: string;
   name?: { text?: string | null } | null;
@@ -64,6 +67,97 @@ const CATEGORY_EMOJI: Record<string, string> = {
 
 function getCategoryAndEmoji(_segmentName: string | undefined): { category: string; emoji: string } {
   return { category: "Music", emoji: CATEGORY_EMOJI.Music };
+}
+
+async function getSpotifyAccessToken(): Promise<string | null> {
+  const now = Date.now();
+  if (spotifyAccessToken && spotifyTokenExpiresAt && now < spotifyTokenExpiresAt) {
+    return spotifyAccessToken;
+  }
+
+  const clientId = Deno.env.get("SPOTIFY_CLIENT_ID");
+  const clientSecret = Deno.env.get("SPOTIFY_CLIENT_SECRET");
+  if (!clientId || !clientSecret) {
+    console.warn("[fetch-events] Missing SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET");
+    return null;
+  }
+
+  try {
+    const res = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+      },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn("[fetch-events] Spotify token request failed:", res.status, text);
+      return null;
+    }
+
+    const data = await res.json() as { access_token?: string; expires_in?: number };
+    if (!data.access_token) {
+      console.warn("[fetch-events] Spotify token response missing access_token");
+      return null;
+    }
+
+    spotifyAccessToken = data.access_token;
+    const ttlMs = (data.expires_in ?? 3600) * 1000;
+    spotifyTokenExpiresAt = now + ttlMs - 60_000;
+    return spotifyAccessToken;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("[fetch-events] Spotify token error:", msg);
+    return null;
+  }
+}
+
+function extractArtistNameFromTitle(name: string | null): string | null {
+  if (!name) return null;
+  const separators = [" - ", " · ", "-", "·"];
+  let artist = name;
+  for (const sep of separators) {
+    if (artist.includes(sep)) {
+      artist = artist.split(sep)[0];
+      break;
+    }
+  }
+  artist = artist.trim();
+  return artist.length ? artist : null;
+}
+
+async function getSpotifyImageForArtist(artistName: string, token: string): Promise<string | null> {
+  try {
+    const params = new URLSearchParams({
+      q: artistName,
+      type: "artist",
+      limit: "1",
+    });
+    const res = await fetch(`https://api.spotify.com/v1/search?${params.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn("[fetch-events] Spotify search failed:", res.status, text);
+      return null;
+    }
+    const data = await res.json() as {
+      artists?: { items?: Array<{ images?: Array<{ url?: string | null }> }> };
+    };
+    const url = data.artists?.items?.[0]?.images?.[0]?.url ?? null;
+    return url && typeof url === "string" ? url : null;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("[fetch-events] Spotify search error:", msg);
+    return null;
+  }
 }
 
 function formatEventDate(iso: string | null): string {
@@ -159,7 +253,35 @@ serve(async (req) => {
           .order("event_starts_at", { ascending: true, nullsFirst: false });
 
         if (!error && rows && rows.length > 0) {
-          const events = (rows as PublicEventRow[]).map(mapPublicEventToItem);
+          let enrichedRows = rows as PublicEventRow[];
+          try {
+            const token = await getSpotifyAccessToken();
+            if (token) {
+              const updated: PublicEventRow[] = [];
+              for (const row of enrichedRows) {
+                if (row.image_url && row.image_url.trim().length > 0) {
+                  updated.push(row);
+                  continue;
+                }
+                const artistName = extractArtistNameFromTitle(row.name);
+                if (!artistName) {
+                  updated.push(row);
+                  continue;
+                }
+                const imageUrl = await getSpotifyImageForArtist(artistName, token);
+                updated.push({
+                  ...row,
+                  image_url: imageUrl ?? row.image_url,
+                });
+              }
+              enrichedRows = updated;
+            }
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.warn("[fetch-events] Spotify enrichment failed:", msg);
+          }
+
+          const events = enrichedRows.map(mapPublicEventToItem);
           return new Response(JSON.stringify({ events }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
