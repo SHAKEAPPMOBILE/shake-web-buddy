@@ -136,8 +136,8 @@ function isRealImageUrl(url: string | null | undefined): boolean {
 }
 
 const FALLBACK_IMAGES: Record<string, string> = {
-  "no te va gustar": "https://i.scdn.co/image/ab6761610000517440b636d92aa7de0fc068ac77",
-  "rels b": "https://i.scdn.co/image/ab6761610000517440b636d92aa7de0fc068ac77",
+  "no te va gustar": "https://i.scdn.co/image/ab67616100005174d5222dc17c903bf3e236e0e3",
+  "rels b": "https://i.scdn.co/image/ab67616100005174d5222dc17c903bf3e236e0e3",
   "la solar": "https://i.scdn.co/image/ab67616100005174cd251af2268da17c3d967164",
 };
 

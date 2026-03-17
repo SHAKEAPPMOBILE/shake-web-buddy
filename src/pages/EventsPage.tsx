@@ -691,7 +691,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
                 >
                   <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 flex items-center justify-center">
                     {e.imageUrl
-                      ? <img src={e.imageUrl} alt={e.name} className="w-full h-full object-cover" />
+                      ? <img src={e.imageUrl} alt={e.name} className="w-full h-full object-cover object-top" />
                       : <span className="text-2xl">🎵</span>
                     }
                   </div>
