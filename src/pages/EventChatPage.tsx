@@ -59,8 +59,20 @@ export default function EventChatPage() {
         }
 
         if (!member) {
-          navigate("/events", { replace: true });
-          return;
+          // Wait 3 seconds before concluding user is not a member, to allow frontend upsert to complete
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+
+          const { data: recheckMember } = await supabase
+            .from("event_chat_members")
+            .select("event_id")
+            .eq("event_id", eventId)
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (!recheckMember) {
+            navigate("/events", { replace: true });
+            return;
+          }
         }
 
         // 2) User is a member — fetch event_chats

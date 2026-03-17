@@ -150,14 +150,17 @@ function EventDetail({
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
+  const [isEnteringChat, setIsEnteringChat] = useState(false);
   const eventStartsAt = event.eventStartAt ?? DEFAULT_EVENT_STARTS_AT;
 
   const handleEnterChat = async () => {
+    if (isEnteringChat) return;
     if (!user) {
       toast.error("Please sign in to unlock the group chat.");
       return;
     }
     try {
+      setIsEnteringChat(true);
       // If already a member of this event chat, skip payment and go directly to chat
       console.log("[EventsPage] Before event_chat_members check", { eventId: event.id, userId: user.id });
       const { data: existingMember, error: memberError } = await supabase
@@ -212,6 +215,9 @@ function EventDetail({
       } else {
         toast.error("Failed to process payment. Please try again.");
       }
+    }
+    } finally {
+      setIsEnteringChat(false);
     }
   };
   const {
@@ -361,9 +367,14 @@ function EventDetail({
                 <Button
                   onClick={handleEnterChat}
                   className="w-full rounded-full font-bold text-base py-3 h-auto"
+                  disabled={isEnteringChat}
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Enter Group Chat
+                  {isEnteringChat ? (
+                    <LoadingSpinner size="sm" className="mr-2" />
+                  ) : (
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                  )}
+                  {isEnteringChat ? "Connecting..." : "Enter Group Chat"}
                 </Button>
                 <p className="text-muted-foreground text-xs mt-3">
                   One-time fee · Chat expires 12h after event starts
@@ -405,9 +416,14 @@ function EventDetail({
                 <Button
                   onClick={handleEnterChat}
                   className="w-full rounded-full font-bold text-base py-3 h-auto"
+                  disabled={isEnteringChat}
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Enter Group Chat
+                  {isEnteringChat ? (
+                    <LoadingSpinner size="sm" className="mr-2" />
+                  ) : (
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                  )}
+                  {isEnteringChat ? "Connecting..." : "Enter Group Chat"}
                 </Button>
                 <p className="text-muted-foreground text-xs mt-3">
                   One-time fee · Chat expires 12h after event starts
@@ -512,36 +528,29 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
     // Only handle Stripe/payment redirects once events have finished loading
     if (!chatUnlockedId || eventsLoading || events.length === 0) return;
     const event = events.find((e) => e.id === chatUnlockedId);
-    if (event) {
-      setSelected(event);
-      setInitialUnlockEventId(chatUnlockedId);
-      if (paymentSuccess) {
-        setSuccessEventId(chatUnlockedId);
-        setSuccessEventName(event.name);
-        setShowEventChatSuccess(true);
-        return;
-      }
+    if (!event) {
+      navigate("/events", { replace: true });
+      return;
     }
-    navigate("/events", { replace: true });
-  }, [chatUnlockedId, paymentSuccess, eventsLoading, events, navigate]);
 
-  useEffect(() => {
-    if (!paymentSuccess || !chatUnlockedId || !user) return;
+    setSelected(event);
+    setInitialUnlockEventId(chatUnlockedId);
+
+    if (!paymentSuccess || !user) return;
 
     const createMembership = async () => {
       try {
-        // 1. Upsert event_chats row
-        const { data: publicEvent } = await supabase
-          .from("public_events")
-          .select("name, event_starts_at")
-          .eq("id", chatUnlockedId)
-          .maybeSingle();
+        // 1. Upsert event_chats row with expires_at = eventStartAt + 12h (fallback: now + 12h)
+        const start = event.eventStartAt ? new Date(event.eventStartAt) : new Date();
+        const expiresAt = new Date(
+          (isNaN(start.getTime()) ? Date.now() : start.getTime()) + 12 * 60 * 60 * 1000,
+        );
 
         await supabase.from("event_chats").upsert(
           {
             event_id: chatUnlockedId,
-            name: publicEvent?.name ?? chatUnlockedId,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            name: event.name,
+            expires_at: expiresAt.toISOString(),
           },
           { onConflict: "event_id" },
         );
@@ -555,13 +564,17 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           },
           { onConflict: "event_id,user_id" },
         );
+
+        setSuccessEventId(chatUnlockedId);
+        setSuccessEventName(event.name);
+        setShowEventChatSuccess(true);
       } catch (error) {
         console.log("[EventsPage] Error creating membership after payment redirect", error);
       }
     };
 
     void createMembership();
-  }, [paymentSuccess, chatUnlockedId, user]);
+  }, [chatUnlockedId, paymentSuccess, eventsLoading, events, user, navigate]);
 
   useEffect(() => {
     if (!selected) setInitialUnlockEventId(null);
