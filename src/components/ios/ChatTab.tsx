@@ -235,10 +235,15 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
       }
 
       // Event chats the user has joined
-      const { data: eventMemberships } = await supabase
+      const { data: eventMemberships, error: eventMembershipsError } = await supabase
         .from("event_chat_members")
         .select("event_id, event_chats(name, expires_at)")
         .eq("user_id", user.id);
+
+      console.log("[ChatTab] Event memberships query", {
+        count: eventMemberships?.length ?? 0,
+        error: eventMembershipsError?.message,
+      });
 
       if (eventMemberships && eventMemberships.length > 0) {
         for (const membership of eventMemberships as any[]) {

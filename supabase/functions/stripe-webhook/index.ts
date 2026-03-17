@@ -100,6 +100,12 @@ serve(async (req) => {
         const eventName = metadata.event_name || "Event chat";
         const startsAtRaw = metadata.event_starts_at;
 
+        logStep("Event chat metadata from Stripe (must match frontend event.id)", {
+          metadata_event_id: eventId,
+          metadata_event_id_type: typeof eventId,
+          payerUserId,
+        });
+
         let expiresAt = new Date();
         if (startsAtRaw) {
           const start = new Date(startsAtRaw);
@@ -118,7 +124,7 @@ serve(async (req) => {
           expiresAt: expiresAt.toISOString(),
         });
 
-        // Create or update event_chats row
+        // Create or update event_chats row (expires_at = event_starts_at + 12h)
         const { error: upsertError } = await supabaseClient
           .from("event_chats")
           .upsert(
@@ -134,7 +140,8 @@ serve(async (req) => {
           logStep("Error upserting event_chats", { error: upsertError.message });
         }
 
-        // Add member row (ignore unique violation)
+        // Add member row (event_id must exactly match frontend event.id for member check to find it)
+        logStep("Inserting event_chat_members", { event_id: eventId, user_id: payerUserId });
         const { error: memberError } = await supabaseClient
           .from("event_chat_members")
           .insert({

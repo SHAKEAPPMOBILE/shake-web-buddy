@@ -86,7 +86,7 @@ export default function EventChatPage() {
           return;
         }
 
-        // 3) Member but event_chats row missing — create from public_events
+        // 3) Member but event_chats row missing — create from public_events (expires_at = event_starts_at + 12h)
         const { data: pub } = await supabase
           .from("public_events")
           .select("name, event_starts_at")
@@ -95,11 +95,19 @@ export default function EventChatPage() {
 
         if (cancelled) return;
 
+        let expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
+        if (pub?.event_starts_at) {
+          const start = new Date(pub.event_starts_at);
+          if (!isNaN(start.getTime())) {
+            expiresAt = new Date(start.getTime() + 12 * 60 * 60 * 1000);
+          }
+        }
+
         await supabase.from("event_chats").upsert(
           {
             event_id: eventId,
             name: pub?.name ?? eventId,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            expires_at: expiresAt.toISOString(),
           },
           { onConflict: "event_id" }
         );

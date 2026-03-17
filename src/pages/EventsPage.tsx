@@ -159,12 +159,14 @@ function EventDetail({
     }
     try {
       // If already a member of this event chat, skip payment and go directly to chat
+      console.log("[EventsPage] Before event_chat_members check", { eventId: event.id, userId: user.id });
       const { data: existingMember, error: memberError } = await supabase
         .from("event_chat_members")
         .select("event_id")
         .eq("event_id", event.id)
         .eq("user_id", user.id)
         .maybeSingle();
+      console.log("[EventsPage] After event_chat_members check", { eventId: event.id, userId: user.id, existingMember, memberError: memberError?.message });
 
       if (memberError) {
         console.log("[EventsPage] Error checking existing event_chat_members", memberError);
