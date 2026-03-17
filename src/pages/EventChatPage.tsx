@@ -21,6 +21,7 @@ export default function EventChatPage() {
   const [eventName, setEventName] = useState<string>("Event chat");
   const [eventStartsAt, setEventStartsAt] = useState<string>(new Date().toISOString());
   const [isLoadingMeta, setIsLoadingMeta] = useState(true);
+  const [hasFatalError, setHasFatalError] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -32,53 +33,51 @@ export default function EventChatPage() {
   }, [user, navigate]);
 
   useEffect(() => {
-    if (!eventId) return;
+    if (!eventId || !user) return;
 
     let cancelled = false;
     let attempts = 0;
     const MAX_RETRIES = 3;
+    setHasFatalError(false);
 
     const loadMeta = async () => {
       if (cancelled) return;
+      let willRetry = false;
       setIsLoadingMeta(true);
       try {
-        // Fetch event details from public_events for title and fallback
-        let publicEventName = eventName;
-        try {
-          const { data: publicEvent, error: publicError } = await supabase
-            .from("public_events")
-            .select("name, venue, city, event_starts_at")
-            .eq("id", eventId)
-            .maybeSingle();
+        // 1) First check if user is in event_chat_members for this event
+        const { data: member, error: memberError } = await supabase
+          .from("event_chat_members")
+          .select("event_id")
+          .eq("event_id", eventId)
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-          if (!cancelled && !publicError && publicEvent) {
-            if (publicEvent.name) {
-              publicEventName = publicEvent.name;
-              setEventName(publicEvent.name);
-            }
-            if (publicEvent.event_starts_at) {
-              setEventStartsAt(publicEvent.event_starts_at);
-            }
-          }
-        } catch (e) {
-          console.log("[EventChatPage] Error loading public_events", e);
+        if (cancelled) return;
+        if (memberError) {
+          console.log("[EventChatPage] Error checking event_chat_members", memberError);
         }
 
-        const { data, error } = await supabase
+        if (!member) {
+          navigate("/events", { replace: true });
+          return;
+        }
+
+        // 2) User is a member — fetch event_chats
+        const { data: chatRow, error: chatError } = await supabase
           .from("event_chats")
           .select("name, expires_at, created_at")
           .eq("event_id", eventId)
           .maybeSingle();
 
         if (cancelled) return;
-
-        if (error) {
-          console.log("[EventChatPage] Error loading event_chats", error);
+        if (chatError) {
+          console.log("[EventChatPage] Error loading event_chats", chatError);
         }
 
-        if (data) {
-          setEventName(data.name);
-          const expires = new Date(data.expires_at as string);
+        if (chatRow) {
+          setEventName(chatRow.name);
+          const expires = new Date(chatRow.expires_at as string);
           if (!isNaN(expires.getTime())) {
             const start = new Date(expires.getTime() - 12 * 60 * 60 * 1000);
             setEventStartsAt(start.toISOString());
@@ -87,47 +86,44 @@ export default function EventChatPage() {
           return;
         }
 
-        if (user) {
-          const { data: member, error: memberError } = await supabase
-            .from("event_chat_members")
-            .select("event_id")
-            .eq("event_id", eventId)
-            .eq("user_id", user.id)
-            .maybeSingle();
+        // 3) Member but event_chats row missing — create from public_events
+        const { data: pub } = await supabase
+          .from("public_events")
+          .select("name, event_starts_at")
+          .eq("id", eventId)
+          .maybeSingle();
 
-          if (memberError) {
-            console.log("[EventChatPage] Error checking event_chat_members", memberError);
-          }
+        if (cancelled) return;
 
-          if (member) {
-            const fallbackExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-            const { error: insertError } = await supabase
-              .from("event_chats")
-              .insert({
-                event_id: eventId,
-                name: publicEventName,
-                expires_at: fallbackExpiresAt,
-              });
+        await supabase.from("event_chats").upsert(
+          {
+            event_id: eventId,
+            name: pub?.name ?? eventId,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          { onConflict: "event_id" }
+        );
 
-            if (insertError) {
-              console.log("[EventChatPage] Error creating fallback event_chats row", insertError);
-            } else {
-              setIsLoadingMeta(false);
-              return;
-            }
-          }
-        }
+        if (cancelled) return;
 
-        if (attempts < MAX_RETRIES) {
-          attempts += 1;
-          console.log("[EventChatPage] event_chats missing, retrying...", { attempts });
+        attempts += 1;
+        if (attempts <= MAX_RETRIES) {
+          willRetry = true;
           setTimeout(loadMeta, 2000);
           return;
         }
+        setHasFatalError(true);
       } catch (e) {
         console.log("[EventChatPage] Unexpected error loading metadata", e);
+        attempts += 1;
+        if (attempts <= MAX_RETRIES) {
+          willRetry = true;
+          setTimeout(loadMeta, 2000);
+          return;
+        }
+        setHasFatalError(true);
       } finally {
-        if (!cancelled) {
+        if (!cancelled && !willRetry) {
           setIsLoadingMeta(false);
         }
       }
@@ -138,7 +134,7 @@ export default function EventChatPage() {
     return () => {
       cancelled = true;
     };
-  }, [eventId, user, eventName]);
+  }, [eventId, user, navigate]);
 
   const {
     status,
@@ -269,7 +265,7 @@ export default function EventChatPage() {
             </div>
           )}
 
-          {!isLoadingMeta && messages.length === 0 && status !== "error" && status !== "locked" && (
+          {!isLoadingMeta && !hasFatalError && messages.length === 0 && status !== "error" && status !== "locked" && (
             <div className="flex flex-col items-center justify-center h-full text-white/40">
               <p className="text-center text-sm">
                 Start the conversation!<br />
@@ -324,7 +320,7 @@ export default function EventChatPage() {
             </p>
           )}
 
-          {status === "error" && (
+          {hasFatalError && (
             <p className="text-xs text-red-400 text-center mt-4">
               Something went wrong loading this chat. Please try again later.
             </p>
