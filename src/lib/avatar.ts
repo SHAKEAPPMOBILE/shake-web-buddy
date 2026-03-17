@@ -1,4 +1,20 @@
 /**
+ * Returns true if the avatar URL is considered valid (user has set an avatar).
+ * Treats as valid: preset paths (/avatars/avatar-new-*), shakeapp.today, and any absolute or root-relative URL.
+ */
+export function hasValidAvatarUrl(avatarUrl: string | null | undefined): boolean {
+  if (avatarUrl == null || avatarUrl.trim() === "") return false;
+  const u = avatarUrl.trim();
+  return (
+    u.includes("/avatars/avatar-new-") ||
+    u.includes("shakeapp.today") ||
+    u.startsWith("http://") ||
+    u.startsWith("https://") ||
+    u.startsWith("/")
+  );
+}
+
+/**
  * Returns a URL suitable for displaying an avatar image.
  * - Absolute URLs (http/https) are returned as-is.
  * - Relative paths (e.g. /avatars/avatar-new-1.png) are resolved against the current origin

@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { hasValidAvatarUrl } from "@/lib/avatar";
 import { getOrderedActivities, getNextOccurrenceDate } from "@/data/activityTypes";
 import EventsPage from "@/pages/EventsPage";
 
@@ -167,7 +168,7 @@ export function IOSAppLayout() {
           return;
         }
 
-        const avatarMissing = !profile?.avatar_url || String(profile.avatar_url).trim() === "";
+        const avatarMissing = !hasValidAvatarUrl(profile?.avatar_url);
         if (avatarMissing) {
           setShowMandatoryPhoto(true);
         } else {
