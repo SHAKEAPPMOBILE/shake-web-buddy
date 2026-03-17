@@ -526,6 +526,44 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   }, [chatUnlockedId, paymentSuccess, eventsLoading, events, navigate]);
 
   useEffect(() => {
+    if (!paymentSuccess || !chatUnlockedId || !user) return;
+
+    const createMembership = async () => {
+      try {
+        // 1. Upsert event_chats row
+        const { data: publicEvent } = await supabase
+          .from("public_events")
+          .select("name, event_starts_at")
+          .eq("id", chatUnlockedId)
+          .maybeSingle();
+
+        await supabase.from("event_chats").upsert(
+          {
+            event_id: chatUnlockedId,
+            name: publicEvent?.name ?? chatUnlockedId,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          { onConflict: "event_id" },
+        );
+
+        // 2. Upsert event_chat_members row
+        await supabase.from("event_chat_members").upsert(
+          {
+            event_id: chatUnlockedId,
+            user_id: user.id,
+            joined_at: new Date().toISOString(),
+          },
+          { onConflict: "event_id,user_id" },
+        );
+      } catch (error) {
+        console.log("[EventsPage] Error creating membership after payment redirect", error);
+      }
+    };
+
+    void createMembership();
+  }, [paymentSuccess, chatUnlockedId, user]);
+
+  useEffect(() => {
     if (!selected) setInitialUnlockEventId(null);
   }, [selected]);
 
