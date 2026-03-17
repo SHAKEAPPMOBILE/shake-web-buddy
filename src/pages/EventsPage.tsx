@@ -215,7 +215,6 @@ function EventDetail({
       } else {
         toast.error("Failed to process payment. Please try again.");
       }
-    }
     } finally {
       setIsEnteringChat(false);
     }
