@@ -94,6 +94,7 @@ export function ProfileAvatarWithStatus({
           open={showStatusViewer}
           onOpenChange={setShowStatusViewer}
           videoUrl={statusVideo.video_url}
+          videoId={statusVideo.id}
           userName={userName || undefined}
         />
       )}

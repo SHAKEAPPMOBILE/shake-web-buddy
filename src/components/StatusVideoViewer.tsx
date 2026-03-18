@@ -1,9 +1,11 @@
 import { X } from "lucide-react";
+import { ReportContentButton } from "@/components/ReportContentButton";
 
 interface StatusVideoViewerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   videoUrl: string;
+  videoId?: string;
   userName?: string;
 }
 
@@ -11,6 +13,7 @@ export function StatusVideoViewer({
   open,
   onOpenChange,
   videoUrl,
+  videoId,
   userName,
 }: StatusVideoViewerProps) {
   if (!open) return null;
@@ -20,6 +23,13 @@ export function StatusVideoViewer({
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black"
       onClick={() => onOpenChange(false)}
     >
+        {videoId && (
+          <div className="absolute top-4 right-14 z-10">
+            {/* Reporting status videos for abuse review */}
+            {/* stopPropagation handled inside ReportContentButton */}
+            <ReportContentButton contentId={videoId} contentType="status_video" iconOnly />
+          </div>
+        )}
       {/* Close button */}
       <button
         onClick={(e) => {

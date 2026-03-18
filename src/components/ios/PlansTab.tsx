@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LoadingSpinner } from "../LoadingSpinner";
+import { ReportContentButton } from "@/components/ReportContentButton";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import { Input } from "@/components/ui/input";
 import { SHAKE_CITIES } from "@/data/cities";
@@ -874,6 +875,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
+                  )}
+                  {/* Report button (only for non-owners) */}
+                  {user && plan.user_id !== user.id && (
+                    <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
                   )}
                   <button
                     type="button"
