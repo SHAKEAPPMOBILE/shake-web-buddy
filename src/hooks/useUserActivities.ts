@@ -359,17 +359,9 @@ export function useUserActivities(city: string) {
       };
     }
 
-    // Cross-city join is premium. If frontend premium state is stale, double-check backend override.
+    // Cross-city join is premium.
     if (activity.city !== city && !isPremium) {
-      const { data: privateProfile } = await supabase
-        .from("profiles_private")
-        .select("premium_override")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!privateProfile?.premium_override) {
-        return { success: false, requiresPremium: true };
-      }
+      return { success: false, requiresPremium: true };
     }
 
     const { error } = await supabase.from("activity_joins").insert({
