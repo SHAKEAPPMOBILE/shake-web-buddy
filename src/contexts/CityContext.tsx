@@ -39,27 +39,34 @@ export function CityProvider({ children }: { children: ReactNode }) {
     // If detection fails, don't auto-pick a hardcoded city.
     // Leave `selectedCity` as null so the user can manually choose.
     setIsCityOutOfRange(false);
-    setSelectedCity(null);
     setDetectedCity(null);
+    setSelectedCity(null);
     setIsLoading(false);
   };
 
   const fallbackToIpGeolocation = async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // Give IP geolocation a bit more time
       
       const response = await fetch("https://ipapi.co/json/", {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
       
+      if (!response.ok) {
+        fallbackToDefault();
+        return;
+      }
+
       const data = await response.json();
-      
-      if (data.latitude && data.longitude) {
+
+      const lat = Number(data?.latitude);
+      const lng = Number(data?.longitude);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
         const { city: closestCity, distanceKm } = findClosestCity(
-          data.latitude,
-          data.longitude
+          lat,
+          lng
         );
         if (distanceKm <= 500) {
           setCity(closestCity);
@@ -77,17 +84,24 @@ export function CityProvider({ children }: { children: ReactNode }) {
 
   const detectLocation = () => {
     setIsLoading(true);
-    
+
+    let didSettle = false;
+
     if ("geolocation" in navigator) {
-      // Set a faster timeout for geolocation
+      // If geolocation doesn't resolve within 5 seconds, fall back to IP.
       const geoTimeout = setTimeout(() => {
+        if (didSettle) return;
+        didSettle = true;
         console.log("Geolocation timeout - falling back to IP");
         fallbackToIpGeolocation();
-      }, 5000); // 5 second timeout instead of 10
+      }, 5000);
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          if (didSettle) return;
+          didSettle = true;
           clearTimeout(geoTimeout);
+
           const { latitude, longitude } = position.coords;
           const { city: closestCity, distanceKm } = findClosestCity(latitude, longitude);
           if (distanceKm <= 500) {
@@ -97,6 +111,8 @@ export function CityProvider({ children }: { children: ReactNode }) {
           }
         },
         () => {
+          if (didSettle) return;
+          didSettle = true;
           clearTimeout(geoTimeout);
           // Browser geolocation denied/failed - fallback to IP geolocation
           fallbackToIpGeolocation();

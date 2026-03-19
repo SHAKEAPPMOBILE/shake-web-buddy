@@ -111,9 +111,6 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
                   className="w-full text-left px-2 py-1.5 rounded-sm hover:bg-muted/50 cursor-pointer flex items-center gap-2"
                 >
                   <span>{city.name}, {city.country}</span>
-                  {!isPremium && (
-                    <SuperHumanIcon size={14} className="ml-auto" />
-                  )}
                 </button>
               ))}
             </div>
@@ -176,7 +173,6 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
                   className="cursor-pointer"
                 >
                   {city.name}, {city.country}
-                  {!isPremium && <SuperHumanIcon size={14} className="ml-auto" />}
                 </DropdownMenuItem>
               ))}
             </div>

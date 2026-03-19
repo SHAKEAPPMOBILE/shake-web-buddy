@@ -39,7 +39,7 @@ export const SHAKE_CITIES: City[] = [
   { name: "Rio de Janeiro", country: "Brazil", region: "South America", lat: -22.9068, lng: -43.1729 },
   { name: "Brasília", country: "Brazil", region: "South America", lat: -15.7975, lng: -47.8919 },
   { name: "Salvador", country: "Brazil", region: "South America", lat: -12.9714, lng: -38.5014 },
-  { name: "Panama City", country: "Panama", region: "South America", lat: 8.9824, lng: -79.5199 },
+  { name: "Panama City", country: "Panama", region: "South America", lat: 8.9936, lng: -79.5197 },
   
   // Europe – Western & Northern
   { name: "London", country: "United Kingdom", region: "Europe", lat: 51.5074, lng: -0.1278 },

@@ -9,6 +9,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 let spotifyAccessToken: string | null = null;
 let spotifyTokenExpiresAt: number | null = null;
 
@@ -85,16 +95,20 @@ async function getSpotifyAccessToken(): Promise<string | null> {
   }
 
   try {
-    const res = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+    const res = await fetchWithTimeout(
+      "https://accounts.spotify.com/api/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+        },
+        body: new URLSearchParams({
+          grant_type: "client_credentials",
+        }),
       },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-      }),
-    });
+      8000,
+    );
 
     if (!res.ok) {
       const text = await res.text();
@@ -146,11 +160,15 @@ const FALLBACK_IMAGES: Record<string, string> = {
 async function getSpotifyImageForArtist(artistName: string, token: string): Promise<string | null> {
   try {
     const query = `q=${encodeURIComponent(artistName)}&type=artist&limit=1`;
-    const res = await fetch(`https://api.spotify.com/v1/search?${query}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const res = await fetchWithTimeout(
+      `https://api.spotify.com/v1/search?${query}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+      8000,
+    );
     const data = res.ok ? (await res.json()) as { artists?: { items?: Array<{ name?: string | null; images?: Array<{ url?: string | null }> }> } } : null;
     const firstArtist = data?.artists?.items?.[0] ?? null;
     console.log("[fetch-events] Spotify API status=" + res.status + " firstResult=" + JSON.stringify(firstArtist));
@@ -396,6 +414,8 @@ serve(async (req) => {
             const token = await getSpotifyAccessToken();
             if (token) {
               const updated: PublicEventRow[] = [];
+              const MAX_SPOTIFY_ENRICHMENTS = 8; // Prevent long-running enrichment
+              let spotifyEnrichmentCount = 0;
               for (const row of enrichedRows) {
                 const originalName = row.name ?? "";
                 if (isRealImageUrl(row.image_url)) {
@@ -409,9 +429,14 @@ serve(async (req) => {
                   updated.push({ ...row, image_url: null });
                   continue;
                 }
+                if (spotifyEnrichmentCount >= MAX_SPOTIFY_ENRICHMENTS) {
+                  updated.push({ ...row, image_url: null });
+                  continue;
+                }
                 const imageUrl = await getSpotifyImageForArtist(artistName, token);
                 const finalUrl = imageUrl ?? null;
                 console.log(`[fetch-events] event="${originalName}" | extracted="${artistName}" | image=${finalUrl ? "found" : "null"}`);
+                spotifyEnrichmentCount += 1;
                 updated.push({
                   ...row,
                   image_url: finalUrl,
@@ -500,9 +525,11 @@ serve(async (req) => {
       });
 
       try {
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${eventbriteKey}` },
-        });
+        const res = await fetchWithTimeout(
+          url,
+          { headers: { Authorization: `Bearer ${eventbriteKey}` } },
+          10000,
+        );
 
         if (!res.ok) {
           const text = await res.text();
@@ -593,7 +620,7 @@ serve(async (req) => {
       });
 
       try {
-        const res = await fetch(tmUrl);
+        const res = await fetchWithTimeout(tmUrl, {}, 10000);
         if (!res.ok) {
           const text = await res.text();
           console.warn("[fetch-events] Ticketmaster API error:", res.status, text);
