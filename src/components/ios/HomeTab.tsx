@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
-import { ChevronLeft, ChevronRight, Music2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Music2, MapPin } from "lucide-react";
 import { getActivitiesWithDates, getStartingIndexByProximity } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
@@ -432,7 +432,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         {isCityLoading ? (
           <div className="flex justify-center">
             <div className="inline-flex items-center gap-2 animate-pulse">
-              <span className="text-base">📍</span>
+              <MapPin className="w-4 h-4 text-shake-teal" />
               <div className="h-4 w-[140px] rounded bg-muted/60" />
             </div>
           </div>
@@ -450,7 +450,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
               onClick={() => setIsCitySelectorOpen(true)}
               className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <span className="text-base">📍</span>
+              <MapPin className="w-4 h-4 text-shake-teal" />
               <span className="truncate">{selectedCity}</span>
             </button>
           </div>
