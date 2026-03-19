@@ -97,7 +97,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   // Fetch all plans for the searched city
   const fetchPlans = useCallback(async () => {
-    if (!searchCity) return;
+    if (!searchCity) {
+      setActivities([]);
+      setIsLoading(false);
+      return;
+    }
     
     setIsLoading(true);
     
