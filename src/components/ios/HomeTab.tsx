@@ -431,13 +431,16 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         {/* City pill under the shakers row */}
         {isCityLoading ? (
           <div className="flex justify-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/60 border border-border animate-pulse w-[220px]" />
+            <div className="inline-flex items-center gap-2 animate-pulse">
+              <span className="text-base">📍</span>
+              <div className="h-4 w-[140px] rounded bg-muted/60" />
+            </div>
           </div>
         ) : isCityOutOfRange ? (
           <div className="flex justify-center">
-            <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-muted-foreground w-[220px]">
+            <div className="text-sm text-muted-foreground flex items-center justify-center gap-2">
               <span className="text-base">🌍</span>
-              <span className="truncate">Coming to your city soon</span>
+              <span>Coming to your city soon</span>
             </div>
           </div>
         ) : selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..." ? (
@@ -445,7 +448,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             <button
               type="button"
               onClick={() => setIsCitySelectorOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors w-[220px]"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <span className="text-base">📍</span>
               <span className="truncate">{selectedCity}</span>
@@ -454,7 +457,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         ) : null}
 
         {/* Theme toggle */}
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mt-4 mb-6">
           <ThemeToggle />
         </div>
       </div>
