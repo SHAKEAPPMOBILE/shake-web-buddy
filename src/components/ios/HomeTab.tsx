@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
-import { ChevronLeft, ChevronRight, Music2, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Music2 } from "lucide-react";
 import { getActivitiesWithDates, getStartingIndexByProximity } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
@@ -10,12 +10,10 @@ import shakeLogo from "@/assets/shake-logo-new.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LandingCarousel } from "@/components/LandingCarousel";
 import { useCity } from "@/contexts/CityContext";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useTranslation } from "react-i18next";
 import { CreateActivityDialog } from "@/components/CreateActivityDialog";
 import { CitySelector } from "@/components/CitySelector";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { toast } from "sonner";
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
   showActivities?: boolean;
@@ -31,7 +29,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const navigate = useNavigate();
-  const { selectedCity, isLoading: isCityLoading, isCityOutOfRange, refreshLocation, isDetectingLocation } = useCity();
+  const { selectedCity, isLoading: isCityLoading, isCityOutOfRange } = useCity();
   const [isCitySelectorOpen, setIsCitySelectorOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   // Rotating text for "Meet new..." phrases
@@ -446,7 +444,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             </div>
           </div>
         ) : selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..." ? (
-          <div className="flex justify-center items-center gap-2">
+          <div className="flex justify-center">
             <button
               type="button"
               onClick={() => setIsCitySelectorOpen(true)}
@@ -454,26 +452,6 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             >
               <span className="inline-flex items-center justify-center w-4 h-4 text-shake-teal">📍</span>
               <span className="truncate">{selectedCity}</span>
-            </button>
-            <button
-              type="button"
-              aria-label="Detect my location"
-              disabled={isDetectingLocation}
-              onClick={async () => {
-                const res = await refreshLocation();
-                if (!res.ok) {
-                  toast.error("Could not detect your location", {
-                    description: res.error ?? "Please try again."
-                  });
-                }
-              }}
-              className="p-1.5 rounded-full bg-card border border-border/70 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {isDetectingLocation ? (
-                <LoadingSpinner size="sm" />
-              ) : (
-                <RefreshCw className="w-4 h-4 text-shake-teal" />
-              )}
             </button>
           </div>
         ) : null}
