@@ -198,47 +198,20 @@ function mapPublicEventToItem(row: PublicEventRow): EventItem {
   };
 }
 
-// Safe mock events used when upstream providers are unavailable or empty
-const MOCK_EVENTS = [
-  {
-    id: "tm-mock-1",
-    name: "LCD Soundsystem",
-    date: "Mar 15, 2026",
-    eventStartAt: "2026-03-15T19:00:00Z",
-    imageUrl: undefined,
-    venue: "El Campín",
-    city: "Bogotá",
-    distance: "0.4 km",
-    priceMin: 89,
-    priceMax: 245,
-    category: "Music",
-    emoji: "🎵",
-    chatCount: 0,
-    ticketsSold: 1240,
-    presaleCount: 420,
-    isHot: true,
-    ticketmasterUrl: "https://www.ticketmaster.com",
-  },
-  {
-    id: "tm-mock-2",
-    name: "Morat: Gira Mundial",
-    date: "Mar 22, 2026",
-    eventStartAt: "2026-03-22T20:00:00Z",
-    imageUrl: undefined,
-    venue: "Movistar Arena",
-    city: "Bogotá",
-    distance: "1.2 km",
-    priceMin: 65,
-    priceMax: 200,
-    category: "Pop",
-    emoji: "🎤",
-    chatCount: 0,
-    ticketsSold: 8500,
-    presaleCount: 3100,
-    isHot: true,
-    ticketmasterUrl: "https://www.ticketmaster.com",
-  },
-];
+function respondWithEmpty(reason: string, details?: Record<string, unknown>): Response {
+  console.warn("[fetch-events] Returning empty events:", reason, details ?? {});
+  return new Response(
+    JSON.stringify({
+      events: [],
+      error: reason,
+      details,
+    }),
+    {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    },
+  );
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -270,11 +243,16 @@ serve(async (req) => {
       radiusKm = null;
     }
 
-    // Prefer events from public_events table; fall back to Eventbrite then mock only if empty
+    // Prefer events from public_events table; fall back to Eventbrite then empty if empty.
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (supabaseUrl && supabaseServiceKey) {
       try {
+        console.log("[fetch-events] Using public_events DB path", {
+          cityFilter,
+          latlong,
+          radiusKm,
+        });
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
         let query = supabase
           .from("public_events")
@@ -289,6 +267,10 @@ serve(async (req) => {
           .order("event_starts_at", { ascending: true, nullsFirst: false });
 
         if (!error && rows && rows.length > 0) {
+          console.log("[fetch-events] public_events returned rows", {
+            count: rows.length,
+            cityFilter,
+          });
           // Dedupe by name: keep only the row with earliest event_starts_at per name (rows already ordered by event_starts_at)
           const byName = new Map<string, PublicEventRow>();
           for (const row of rows as PublicEventRow[]) {
@@ -343,25 +325,25 @@ serve(async (req) => {
             status: 200,
           });
         }
+
+        console.log("[fetch-events] public_events empty -> falling back to Eventbrite", {
+          rowsCount: rows?.length ?? 0,
+          error: error?.message ?? null,
+          cityFilter,
+        });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.warn("[fetch-events] public_events query failed:", msg);
       }
     }
+    else {
+      console.log("[fetch-events] Skipping public_events path; missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    }
 
     const eventbriteKey = Deno.env.get("EVENTBRITE_API_KEY");
     if (!eventbriteKey) {
-      console.warn("[fetch-events] EVENTBRITE_API_KEY missing, returning mock events");
-      return new Response(
-        JSON.stringify({
-          events: MOCK_EVENTS,
-          warning: "Using mock events - EVENTBRITE_API_KEY not configured",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        },
-      );
+      console.warn("[fetch-events] EVENTBRITE_API_KEY missing; returning empty events");
+      return respondWithEmpty("EVENTBRITE_API_KEY not configured", { cityFilter, latlong, radiusKm });
     }
 
     // Build Eventbrite search params without hardcoded city defaults.
@@ -392,6 +374,14 @@ serve(async (req) => {
       "https://www.eventbriteapi.com/v3/events/search/?" +
       new URLSearchParams(eventbriteParams).toString();
 
+    console.log("[fetch-events] Calling Eventbrite", {
+      cityFilter,
+      latlong,
+      radiusKm,
+      hasLatLong: Boolean(eventbriteParams["location.latitude"]),
+      hasAddress: Boolean(eventbriteParams["location.address"]),
+    });
+
     let res: Response;
     try {
       res = await fetch(url, {
@@ -402,48 +392,24 @@ serve(async (req) => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.warn("[fetch-events] Eventbrite fetch failed:", msg);
-      return new Response(
-        JSON.stringify({
-          events: MOCK_EVENTS,
-          warning: "Using mock events - Eventbrite unavailable",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        },
-      );
+      return respondWithEmpty("Eventbrite fetch failed", { message: msg });
     }
 
     if (!res.ok) {
       const text = await res.text();
       console.warn("[fetch-events] Eventbrite API error:", res.status, text);
-      return new Response(
-        JSON.stringify({
-          events: MOCK_EVENTS,
-          warning: "Using mock events - Eventbrite error",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        },
-      );
+      return respondWithEmpty("Eventbrite API returned non-OK", {
+        status: res.status,
+        body: text?.slice(0, 500) ?? "",
+      });
     }
 
     const data = (await res.json()) as { events?: EventbriteEvent[] };
     const events = data.events ?? [];
 
     if (!events.length) {
-      console.warn("[fetch-events] Eventbrite returned 0 events, using mock events");
-      return new Response(
-        JSON.stringify({
-          events: MOCK_EVENTS,
-          warning: "Using mock events - Eventbrite returned 0 results",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        },
-      );
+      console.warn("[fetch-events] Eventbrite returned 0 events");
+      return respondWithEmpty("Eventbrite returned 0 results", { cityFilter, latlong, radiusKm });
     }
 
     const mapped = events.map((e) => {
@@ -487,10 +453,7 @@ serve(async (req) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[fetch-events] ERROR", message);
-    return new Response(JSON.stringify({ events: MOCK_EVENTS, warning: "Using mock events - internal error" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return respondWithEmpty("Internal error", { message });
   }
 });
 
