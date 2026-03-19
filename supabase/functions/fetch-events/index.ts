@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { SHAKE_CITIES } from "../../../src/data/cities.ts";
+import { countryCodes } from "../../../src/data/countryCodes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -213,6 +215,117 @@ function respondWithEmpty(reason: string, details?: Record<string, unknown>): Re
   );
 }
 
+function normalizeForMatch(s: string) {
+  return s
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
+
+function resolveCityAndCountryCode(cityFilter: string | null): {
+  city: string | null;
+  countryCode: string | null;
+} {
+  if (!cityFilter) return { city: null, countryCode: null };
+
+  const normalizedCity = normalizeForMatch(cityFilter);
+  const cityObj =
+    SHAKE_CITIES.find((c) => normalizeForMatch(c.name) === normalizedCity) ??
+    SHAKE_CITIES.find((c) => normalizeForMatch(c.name).includes(normalizedCity) || normalizedCity.includes(normalizeForMatch(c.name)));
+
+  const countryName = cityObj?.country ?? null;
+  if (!countryName) return { city: cityObj?.name ?? cityFilter, countryCode: null };
+
+  // Our SHAKE_CITIES "USA" value doesn't match the countryCodes "United States" name.
+  const normalizedCountryName = normalizeForMatch(countryName === "USA" ? "United States" : countryName);
+
+  const country = countryCodes.find((cc) => {
+    const name = normalizeForMatch(cc.name);
+    return name === normalizedCountryName || name.includes(normalizedCountryName) || normalizedCountryName.includes(name);
+  });
+
+  return { city: cityObj?.name ?? cityFilter, countryCode: country?.code ?? null };
+}
+
+interface TicketmasterEvent {
+  id: string;
+  name: string;
+  url?: string | null;
+  images?: Array<{ url?: string | null }> | null;
+  dates?: { start?: { dateTime?: string | null; localDate?: string | null } | null } | null;
+  _embedded?: {
+    venues?: Array<{
+      name?: string | null;
+      city?: { name?: string | null } | null;
+    }> | null;
+  } | null;
+}
+
+interface TicketmasterDiscoveryResponse {
+  _embedded?: { events?: TicketmasterEvent[] | null } | null;
+}
+
+function mapTicketmasterEventToItem(e: TicketmasterEvent, fallbackCity?: string | null): EventItem {
+  const startAt =
+    e.dates?.start?.dateTime ??
+    (e.dates?.start?.localDate ? new Date(e.dates.start.localDate).toISOString() : null);
+
+  const venueName = e._embedded?.venues?.[0]?.name ?? "—";
+  const cityName = e._embedded?.venues?.[0]?.city?.name ?? fallbackCity ?? "—";
+  const imageUrl = e.images?.[0]?.url ?? undefined;
+
+  const { category, emoji } = getCategoryAndEmoji(undefined);
+
+  return {
+    id: `tm-${e.id}`,
+    name: e.name ?? "Unnamed Event",
+    date: formatEventDate(startAt),
+    eventStartAt: startAt ?? undefined,
+    imageUrl,
+    venue: venueName,
+    city: cityName,
+    distance: "—",
+    priceMin: 0,
+    priceMax: 0,
+    category,
+    emoji,
+    chatCount: 0,
+    ticketsSold: 0,
+    presaleCount: undefined,
+    isHot: false,
+    ticketmasterUrl: e.url ?? undefined,
+  };
+}
+
+function dedupeByEventNameKeepingEarliestStart(events: EventItem[]): EventItem[] {
+  const byName = new Map<string, EventItem>();
+
+  for (const e of events) {
+    const key = e.name.trim().toLowerCase();
+    if (!key) continue;
+
+    const existing = byName.get(key);
+    if (!existing) {
+      byName.set(key, e);
+      continue;
+    }
+
+    const existingTs = existing.eventStartAt ? new Date(existing.eventStartAt).getTime() : Infinity;
+    const nextTs = e.eventStartAt ? new Date(e.eventStartAt).getTime() : Infinity;
+
+    if (nextTs < existingTs) {
+      byName.set(key, e);
+    }
+  }
+
+  return Array.from(byName.values()).sort((a, b) => {
+    const aTs = a.eventStartAt ? new Date(a.eventStartAt).getTime() : Infinity;
+    const bTs = b.eventStartAt ? new Date(b.eventStartAt).getTime() : Infinity;
+    return aTs - bTs;
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -340,113 +453,187 @@ serve(async (req) => {
       console.log("[fetch-events] Skipping public_events path; missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
     }
 
-    const eventbriteKey = Deno.env.get("EVENTBRITE_API_KEY");
-    if (!eventbriteKey) {
-      console.warn("[fetch-events] EVENTBRITE_API_KEY missing; returning empty events");
-      return respondWithEmpty("EVENTBRITE_API_KEY not configured", { cityFilter, latlong, radiusKm });
-    }
-
-    // Build Eventbrite search params without hardcoded city defaults.
-    const eventbriteParams: Record<string, string> = {
-      expand: "venue,logo",
-    };
-
     const withinKm = `${radiusKm ?? 50}km`;
 
-    if (latlong) {
-      const [latStr, lngStr] = latlong.split(",").map((s) => s.trim());
-      const lat = latStr ? Number(latStr) : NaN;
-      const lng = lngStr ? Number(lngStr) : NaN;
-      if (!isNaN(lat) && !isNaN(lng)) {
-        eventbriteParams["location.latitude"] = String(lat);
-        eventbriteParams["location.longitude"] = String(lng);
+    const eventbriteKey = Deno.env.get("EVENTBRITE_API_KEY");
+    let eventbriteEvents: EventItem[] = [];
+    let eventbriteReason: string | null = null;
+
+    if (!eventbriteKey) {
+      console.warn("[fetch-events] EVENTBRITE_API_KEY missing; skipping Eventbrite", {
+        cityFilter,
+      });
+      eventbriteReason = "EVENTBRITE_API_KEY not configured";
+    } else {
+      // Build Eventbrite search params without hardcoded city defaults.
+      const eventbriteParams: Record<string, string> = {
+        expand: "venue,logo",
+      };
+
+      if (latlong) {
+        const [latStr, lngStr] = latlong.split(",").map((s) => s.trim());
+        const lat = latStr ? Number(latStr) : NaN;
+        const lng = lngStr ? Number(lngStr) : NaN;
+        if (!isNaN(lat) && !isNaN(lng)) {
+          eventbriteParams["location.latitude"] = String(lat);
+          eventbriteParams["location.longitude"] = String(lng);
+          eventbriteParams["location.within"] = withinKm;
+        }
+      }
+
+      // Fallback to address-based location search only if we have a city name.
+      if (!eventbriteParams["location.latitude"] && cityFilter) {
+        eventbriteParams["location.address"] = cityFilter;
         eventbriteParams["location.within"] = withinKm;
+      }
+
+      const url =
+        "https://www.eventbriteapi.com/v3/events/search/?" +
+        new URLSearchParams(eventbriteParams).toString();
+
+      console.log("[fetch-events] Calling Eventbrite", {
+        cityFilter,
+        latlong,
+        radiusKm,
+        hasLatLong: Boolean(eventbriteParams["location.latitude"]),
+        hasAddress: Boolean(eventbriteParams["location.address"]),
+      });
+
+      try {
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${eventbriteKey}` },
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.warn("[fetch-events] Eventbrite API error:", res.status, text);
+          eventbriteReason = `Eventbrite non-OK: ${res.status}`;
+        } else {
+          const data = (await res.json()) as { events?: EventbriteEvent[] };
+          const events = data.events ?? [];
+
+          if (!events.length) {
+            console.warn("[fetch-events] Eventbrite returned 0 events");
+            eventbriteReason = "Eventbrite returned 0 results";
+          } else {
+            eventbriteEvents = events.map((e) => {
+              const nameText = e.name?.text ?? "Unnamed Event";
+              const logoUrl =
+                e.logo?.original?.url ??
+                e.logo?.url ??
+                undefined;
+              const venueName = e.venue?.name ?? "—";
+              const cityName = e.venue?.address?.city ?? "—";
+              const eventStartAt = e.start?.utc ?? undefined;
+
+              const { category, emoji } = getCategoryAndEmoji(undefined);
+
+              return {
+                id: `eb-${e.id}`,
+                name: nameText,
+                date: formatEventDate(eventStartAt ?? null),
+                eventStartAt,
+                imageUrl: logoUrl,
+                venue: venueName,
+                city: cityName,
+                distance: "—",
+                priceMin: 0,
+                priceMax: 0,
+                category,
+                emoji,
+                chatCount: 0,
+                ticketsSold: 0,
+                presaleCount: undefined,
+                isHot: false,
+                ticketmasterUrl: e.url ?? undefined,
+              };
+            });
+          }
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn("[fetch-events] Eventbrite fetch failed:", msg);
+        eventbriteReason = `Eventbrite fetch failed: ${msg}`;
       }
     }
 
-    // Fallback to address-based location search only if we have a city name.
-    if (!eventbriteParams["location.latitude"] && cityFilter) {
-      eventbriteParams["location.address"] = cityFilter;
-      eventbriteParams["location.within"] = withinKm;
-    }
+    const ticketmasterKey = Deno.env.get("TICKETMASTER_API_KEY");
+    let ticketmasterEvents: EventItem[] = [];
+    let ticketmasterReason: string | null = null;
 
-    const url =
-      "https://www.eventbriteapi.com/v3/events/search/?" +
-      new URLSearchParams(eventbriteParams).toString();
+    const { city: resolvedCityName, countryCode } = resolveCityAndCountryCode(cityFilter);
 
-    console.log("[fetch-events] Calling Eventbrite", {
-      cityFilter,
-      latlong,
-      radiusKm,
-      hasLatLong: Boolean(eventbriteParams["location.latitude"]),
-      hasAddress: Boolean(eventbriteParams["location.address"]),
-    });
-
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${eventbriteKey}`,
-        },
+    if (!ticketmasterKey) {
+      console.warn("[fetch-events] TICKETMASTER_API_KEY missing; skipping Ticketmaster");
+      ticketmasterReason = "TICKETMASTER_API_KEY not configured";
+    } else if (!resolvedCityName || !countryCode) {
+      console.warn("[fetch-events] Missing city/countryCode for Ticketmaster", {
+        cityFilter,
+        resolvedCityName,
+        countryCode,
       });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn("[fetch-events] Eventbrite fetch failed:", msg);
-      return respondWithEmpty("Eventbrite fetch failed", { message: msg });
-    }
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.warn("[fetch-events] Eventbrite API error:", res.status, text);
-      return respondWithEmpty("Eventbrite API returned non-OK", {
-        status: res.status,
-        body: text?.slice(0, 500) ?? "",
-      });
-    }
-
-    const data = (await res.json()) as { events?: EventbriteEvent[] };
-    const events = data.events ?? [];
-
-    if (!events.length) {
-      console.warn("[fetch-events] Eventbrite returned 0 events");
-      return respondWithEmpty("Eventbrite returned 0 results", { cityFilter, latlong, radiusKm });
-    }
-
-    const mapped = events.map((e) => {
-      const nameText = e.name?.text ?? "Unnamed Event";
-      const logoUrl =
-        e.logo?.original?.url ??
-        e.logo?.url ??
-        undefined;
-      const venueName = e.venue?.name ?? "—";
-      const cityName = e.venue?.address?.city ?? "—";
-      const eventStartAt = e.start?.utc ?? undefined;
-
-      // For now, we treat all Eventbrite results as "Music" for the UI
-      const { category, emoji } = getCategoryAndEmoji(undefined);
-
-      return {
-        id: `eb-${e.id}`,
-        name: nameText,
-        date: eventStartAt ?? "TBD",
-        eventStartAt,
-        imageUrl: logoUrl,
-        venue: venueName,
-        city: cityName,
-        distance: "—",
-        priceMin: 0,
-        priceMax: 0,
-        category,
-        emoji,
-        chatCount: 0,
-        ticketsSold: 0,
-        presaleCount: undefined,
-        isHot: false,
-        ticketmasterUrl: e.url ?? undefined,
+      ticketmasterReason = "Missing city or countryCode for Ticketmaster";
+    } else {
+      const ticketmasterParams: Record<string, string> = {
+        apikey: ticketmasterKey,
+        city: resolvedCityName,
+        countryCode,
+        radius: String(radiusKm ?? 50),
+        unit: "km",
       };
-    });
 
-    return new Response(JSON.stringify({ events: mapped }), {
+      const tmUrl =
+        "https://app.ticketmaster.com/discovery/v2/events.json?" +
+        new URLSearchParams(ticketmasterParams).toString();
+
+      console.log("[fetch-events] Calling Ticketmaster", {
+        city: resolvedCityName,
+        countryCode,
+        radiusKm,
+      });
+
+      try {
+        const res = await fetch(tmUrl);
+        if (!res.ok) {
+          const text = await res.text();
+          console.warn("[fetch-events] Ticketmaster API error:", res.status, text);
+          ticketmasterReason = `Ticketmaster non-OK: ${res.status}`;
+        } else {
+          const data = (await res.json()) as TicketmasterDiscoveryResponse;
+          const events = data._embedded?.events ?? [];
+
+          if (!events.length) {
+            console.warn("[fetch-events] Ticketmaster returned 0 events");
+            ticketmasterReason = "Ticketmaster returned 0 results";
+          } else {
+            ticketmasterEvents = events
+              .filter((e) => Boolean(e?.id) && Boolean(e?.name))
+              .map((e) => mapTicketmasterEventToItem(e, resolvedCityName));
+          }
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn("[fetch-events] Ticketmaster fetch failed:", msg);
+        ticketmasterReason = `Ticketmaster fetch failed: ${msg}`;
+      }
+    }
+
+    const combined = dedupeByEventNameKeepingEarliestStart([
+      ...eventbriteEvents,
+      ...ticketmasterEvents,
+    ]);
+
+    if (!combined.length) {
+      return respondWithEmpty("No events found from Eventbrite and Ticketmaster", {
+        cityFilter,
+        latlong,
+        radiusKm,
+        eventbriteReason,
+        ticketmasterReason,
+      });
+    }
+
+    return new Response(JSON.stringify({ events: combined }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
