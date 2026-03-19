@@ -14,7 +14,6 @@ import { useTranslation } from "react-i18next";
 import { CreateActivityDialog } from "@/components/CreateActivityDialog";
 import { CitySelector } from "@/components/CitySelector";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { MapPin } from "lucide-react";
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
   showActivities?: boolean;
@@ -379,23 +378,6 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         {/* Welcome Message */}
         <div className="mb-8">
             <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
-              {isCityLoading ? (
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/60 border border-border animate-pulse w-[220px]" />
-              ) : isCityOutOfRange ? (
-                <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-muted-foreground w-[220px]">
-                  <span className="text-base">🌍</span>
-                  <span className="truncate">Coming to your city soon</span>
-                </div>
-              ) : selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..." ? (
-                <button
-                  type="button"
-                  onClick={() => setIsCitySelectorOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors w-[220px]"
-                >
-                  <MapPin className="w-4 h-4 text-shake-teal" />
-                  <span className="truncate">{selectedCity}</span>
-                </button>
-              ) : null}
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border">
                 <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
                 <span className="text-sm text-muted-foreground">
@@ -445,6 +427,31 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         <div className="mb-3">
           <GlobalParticipantsSection />
         </div>
+
+        {/* City pill under the shakers row */}
+        {isCityLoading ? (
+          <div className="flex justify-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/60 border border-border animate-pulse w-[220px]" />
+          </div>
+        ) : isCityOutOfRange ? (
+          <div className="flex justify-center">
+            <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-muted-foreground w-[220px]">
+              <span className="text-base">🌍</span>
+              <span className="truncate">Coming to your city soon</span>
+            </div>
+          </div>
+        ) : selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..." ? (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => setIsCitySelectorOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors w-[220px]"
+            >
+              <span className="text-base">📍</span>
+              <span className="truncate">{selectedCity}</span>
+            </button>
+          </div>
+        ) : null}
 
         {/* Theme toggle */}
         <div className="flex justify-center mb-6">
