@@ -50,9 +50,26 @@ export async function fetchTicketmasterEvents(options?: {
   city?: string | null;
 }): Promise<EventItem[]> {
   const resolvedCityName = options?.city ?? null;
+
+  const normalizeForMatch = (s: string) =>
+    s
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "");
+
+  const cityQuery = resolvedCityName ? normalizeForMatch(resolvedCityName) : null;
+  const cityQueryPrimary = cityQuery ? cityQuery.split(",")[0].trim() : null;
+
+  // Resolve city coordinates from our canonical SHAKE_CITIES list.
+  // This ensures we search by lat/lng (Eventbrite "near me") even if Eventbrite's internal city names don't match.
   const cityMatch =
-    resolvedCityName &&
-    SHAKE_CITIES.find((c) => c.name.toLowerCase() === resolvedCityName.toLowerCase());
+    cityQueryPrimary &&
+    (SHAKE_CITIES.find((c) => normalizeForMatch(c.name) === cityQueryPrimary) ??
+      SHAKE_CITIES.find((c) => {
+        const cName = normalizeForMatch(c.name);
+        return cName.includes(cityQueryPrimary) || cityQueryPrimary.includes(cName);
+      }));
 
   const resolvedLatlong =
     options?.latlong ??

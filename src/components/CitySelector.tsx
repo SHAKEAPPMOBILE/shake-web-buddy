@@ -88,7 +88,6 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
                 onClick={() => setSelectedCity(detectedCity.name)}
                 className="cursor-pointer"
               >
-                <span className="inline-flex items-center justify-center w-4 h-4 mr-2 text-shake-teal">📍</span>
                 {detectedCity.name}, {detectedCity.country}
                 <span className="ml-auto text-xs text-muted-foreground">Free</span>
               </DropdownMenuItem>
@@ -107,7 +106,6 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
                   onClick={() => handleCitySelect(city.name)}
                   className="cursor-pointer"
                 >
-                  <span className="inline-flex items-center justify-center w-4 h-4 mr-2 text-shake-teal">📍</span>
                   {city.name}, {city.country}
                   {!isPremium && (
                     <SuperHumanIcon size={14} className="ml-auto" />
