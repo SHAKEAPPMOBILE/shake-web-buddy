@@ -64,7 +64,7 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
           ) : (
             <span className="inline-flex items-center justify-center w-4 h-4 text-shake-teal">📍</span>
           )}
-          <span>{selectedCity}</span>
+          <span>{selectedCity ?? "Select city"}</span>
           <ChevronDown className="w-3 h-3" />
           {!isPremium && <SuperHumanIcon size={14} />}
         </div>
@@ -131,7 +131,7 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
         ) : (
           <span className="inline-flex items-center justify-center w-4 h-4 text-shake-teal">📍</span>
         )}
-        <span>{selectedCity}</span>
+        <span>{selectedCity ?? "Select city"}</span>
         <ChevronDown className="w-3 h-3" />
         {!isPremium && <SuperHumanIcon size={14} />}
       </DropdownMenuTrigger>

@@ -454,7 +454,18 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
               <span className="truncate">{selectedCity}</span>
             </button>
           </div>
-        ) : null}
+        ) : (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => setIsCitySelectorOpen(true)}
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span className="inline-flex items-center justify-center w-4 h-4 text-shake-teal">📍</span>
+              <span>Select your city</span>
+            </button>
+          </div>
+        )}
 
         {/* Theme toggle */}
         <div className="flex justify-center mt-4 mb-6">

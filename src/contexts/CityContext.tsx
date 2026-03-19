@@ -12,11 +12,8 @@ interface CityContextType {
 const CityContext = createContext<CityContextType | undefined>(undefined);
 
 export function CityProvider({ children }: { children: ReactNode }) {
-  const [selectedCity, setSelectedCity] = useState<string>(() => {
-    // Start with a default city immediately to avoid showing "Detecting..."
-    return SHAKE_CITIES[0]?.name || "Loading...";
-  });
-  const [detectedCity, setDetectedCity] = useState<City | null>(SHAKE_CITIES[0] || null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [detectedCity, setDetectedCity] = useState<City | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCityOutOfRange, setIsCityOutOfRange] = useState(false);
 
@@ -39,14 +36,12 @@ export function CityProvider({ children }: { children: ReactNode }) {
   };
 
   const fallbackToDefault = () => {
-    const defaultCity = SHAKE_CITIES[0];
-    if (defaultCity) {
-      setCity(defaultCity);
-    } else {
-      setIsCityOutOfRange(false);
-      setSelectedCity(null);
-      setIsLoading(false);
-    }
+    // If detection fails, don't auto-pick a hardcoded city.
+    // Leave `selectedCity` as null so the user can manually choose.
+    setIsCityOutOfRange(false);
+    setSelectedCity(null);
+    setDetectedCity(null);
+    setIsLoading(false);
   };
 
   const fallbackToIpGeolocation = async () => {
