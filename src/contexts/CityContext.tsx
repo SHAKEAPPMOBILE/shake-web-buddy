@@ -48,12 +48,12 @@ export function CityProvider({ children }: { children: ReactNode }) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    const tryIpApi = async (): Promise<{ lat: number; lng: number } | null> => {
-      console.log("[CityContext] IP fallback: ipapi.co start");
+    const tryFreeIpApi = async (): Promise<{ lat: number; lng: number } | null> => {
+      console.log("[CityContext] IP fallback: freeipapi start");
       try {
-        const response = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+        const response = await fetch("https://freeipapi.com/api/json", { signal: controller.signal });
         if (!response.ok) {
-          console.warn("[CityContext] IP fallback: ipapi.co non-OK", response.status);
+          console.warn("[CityContext] IP fallback: freeipapi non-OK", response.status);
           return null;
         }
 
@@ -62,28 +62,28 @@ export function CityProvider({ children }: { children: ReactNode }) {
         const lng = Number(data?.longitude);
 
         if (Number.isFinite(lat) && Number.isFinite(lng)) {
-          console.log("[CityContext] IP fallback: ipapi.co success", { lat, lng, city: data?.city });
+          console.log("[CityContext] IP fallback: freeipapi success", { lat, lng, city: data?.cityName });
           return { lat, lng };
         }
 
-        console.warn("[CityContext] IP fallback: ipapi.co missing coords", {
+        console.warn("[CityContext] IP fallback: freeipapi missing coords", {
           lat: data?.latitude,
           lng: data?.longitude,
-          city: data?.city,
+          city: data?.cityName,
         });
         return null;
       } catch (err) {
-        console.warn("[CityContext] IP fallback: ipapi.co failed", err);
+        console.warn("[CityContext] IP fallback: freeipapi failed", err);
         return null;
       }
     };
 
-    const tryIpWho = async (): Promise<{ lat: number; lng: number } | null> => {
-      console.log("[CityContext] IP fallback: ipwho.is start");
+    const tryDbIp = async (): Promise<{ lat: number; lng: number } | null> => {
+      console.log("[CityContext] IP fallback: db-ip start");
       try {
-        const response = await fetch("https://ipwho.is/", { signal: controller.signal });
+        const response = await fetch("https://api.db-ip.com/v2/free/self", { signal: controller.signal });
         if (!response.ok) {
-          console.warn("[CityContext] IP fallback: ipwho.is non-OK", response.status);
+          console.warn("[CityContext] IP fallback: db-ip non-OK", response.status);
           return null;
         }
 
@@ -92,24 +92,24 @@ export function CityProvider({ children }: { children: ReactNode }) {
         const lng = Number(data?.longitude);
 
         if (Number.isFinite(lat) && Number.isFinite(lng)) {
-          console.log("[CityContext] IP fallback: ipwho.is success", { lat, lng, city: data?.city });
+          console.log("[CityContext] IP fallback: db-ip success", { lat, lng, city: data?.city });
           return { lat, lng };
         }
 
-        console.warn("[CityContext] IP fallback: ipwho.is missing coords", {
+        console.warn("[CityContext] IP fallback: db-ip missing coords", {
           lat: data?.latitude,
           lng: data?.longitude,
           city: data?.city,
         });
         return null;
       } catch (err) {
-        console.warn("[CityContext] IP fallback: ipwho.is failed", err);
+        console.warn("[CityContext] IP fallback: db-ip failed", err);
         return null;
       }
     };
 
     try {
-      const coords = (await tryIpApi()) ?? (await tryIpWho());
+      const coords = (await tryFreeIpApi()) ?? (await tryDbIp());
       clearTimeout(timeoutId);
 
       if (!coords) {
