@@ -12,21 +12,26 @@ import { LandingCarousel } from "@/components/LandingCarousel";
 import { useCity } from "@/contexts/CityContext";
 import { useTranslation } from "react-i18next";
 import { CreateActivityDialog } from "@/components/CreateActivityDialog";
+import { CitySelector } from "@/components/CitySelector";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { MapPin } from "lucide-react";
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
   showActivities?: boolean;
   onCloseActivities?: () => void;
   isShaking?: boolean;
   onOpenEvents?: () => void;
+  onUpgradeClick?: () => void;
 }
 
 // Separate dialog state for "Propose a plan" flow
 
-export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false, onOpenEvents }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false, onOpenEvents, onUpgradeClick }: HomeTabProps) {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const navigate = useNavigate();
-  const { selectedCity } = useCity();
+  const { selectedCity, isLoading: isCityLoading, isCityOutOfRange } = useCity();
+  const [isCitySelectorOpen, setIsCitySelectorOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   // Rotating text for "Meet new..." phrases
   const meetPhrases = useMemo(() => [
@@ -374,6 +379,23 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         {/* Welcome Message */}
         <div className="mb-8">
             <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+              {isCityLoading ? (
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/60 border border-border animate-pulse w-[220px]" />
+              ) : isCityOutOfRange ? (
+                <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-muted-foreground w-[220px]">
+                  <span className="text-base">🌍</span>
+                  <span className="truncate">Coming to your city soon</span>
+                </div>
+              ) : selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..." ? (
+                <button
+                  type="button"
+                  onClick={() => setIsCitySelectorOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors w-[220px]"
+                >
+                  <MapPin className="w-4 h-4 text-shake-teal" />
+                  <span className="truncate">{selectedCity}</span>
+                </button>
+              ) : null}
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border">
                 <span className="w-2 h-2 rounded-full bg-shake-green animate-pulse" />
                 <span className="text-sm text-muted-foreground">
@@ -436,6 +458,17 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         onOpenChange={setShowCreateDialog}
         city={selectedCity}
       />
+
+      <Dialog open={isCitySelectorOpen} onOpenChange={setIsCitySelectorOpen}>
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+          <CitySelector
+            isPremium={isPremium}
+            onUpgradeClick={onUpgradeClick}
+            open={isCitySelectorOpen}
+            onOpenChange={(open) => setIsCitySelectorOpen(open)}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

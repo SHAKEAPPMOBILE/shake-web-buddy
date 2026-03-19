@@ -34,7 +34,7 @@ const CITY_COUNTRY_MAP: Record<string, string> = {
   "Dubai": "AE",
   "New York City": "US", "San Francisco": "US", "Los Angeles": "US", "San Diego": "US",
   "Austin": "US", "Miami": "US", "Boston": "US", "Dallas": "US", "Chicago": "US", "Sacramento": "US",
-  "Medellín": "CO", "Bogotá": "CO",
+  "Medell\u00EDn": "CO", "Bogotá": "CO",
   "São Paulo": "BR", "Rio de Janeiro": "BR",
   "Mexico City": "MX",
 };

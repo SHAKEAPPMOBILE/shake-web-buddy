@@ -222,7 +222,7 @@ export const CITY_BRUNCH_VENUES: Record<string, BrunchVenue[]> = {
   ],
   
   // Colombia
-  "Medellín": [
+  "Medell\u00EDn": [
     { name: "Al Alma Café", description: "Cozy brunch spot" },
     { name: "Pergamino Café", description: "Coffee-driven brunch" },
     { name: "El Social", description: "Local favorite" },
@@ -372,11 +372,11 @@ export const CITY_VENUES: Record<string, Venue[]> = {
     { name: "Go Green Restaurante", address: "Ak 15 #82-12, Bogotá, Colombia" },
     { name: "Go Green San Martin", address: "Ak 7 #32-84, Santa Fé, Bogotá, Colombia" },
   ],
-  "Medellín": [
-    { name: "Café Zeppelin", address: "Dg 75 #76-12, Laureles-Estadio, Medellín, Antioquia, Colombia" },
-    { name: "Café Revolución", address: "Carrera 73 |, Cq. 4 #6, Laureles, Medellín, Antioquia, Colombia" },
-    { name: "Brunch & Lunch By Zoé Jasmin", address: "Av. 33 #78-17, Laureles-Estadio, Medellín, Antioquia, Colombia" },
-    { name: "Café Primavera", address: "Tv. 39A #71-10, Laureles-Estadio, Medellín, Antioquia, Colombia" },
+  "Medell\u00EDn": [
+    { name: "Café Zeppelin", address: "Dg 75 #76-12, Laureles-Estadio, Medel\u00EDn, Antioquia, Colombia" },
+    { name: "Café Revolución", address: "Carrera 73 |, Cq. 4 #6, Laureles, Medel\u00EDn, Antioquia, Colombia" },
+    { name: "Brunch & Lunch By Zoé Jasmin", address: "Av. 33 #78-17, Laureles-Estadio, Medel\u00EDn, Antioquia, Colombia" },
+    { name: "Café Primavera", address: "Tv. 39A #71-10, Laureles-Estadio, Medel\u00EDn, Antioquia, Colombia" },
   ],
   "Cartagena": [
     { name: "Juan del Mar", address: "Calle del Santísimo, Cartagena" },

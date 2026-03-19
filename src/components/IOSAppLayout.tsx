@@ -317,6 +317,7 @@ export function IOSAppLayout() {
             onCloseActivities={() => setShowHomeActivities(false)}
             isShaking={isHeroShaking}
             onOpenEvents={() => setShowEvents(true)}
+            onUpgradeClick={() => setShowPremiumDialog(true)}
           />
         );
       case "plans":
@@ -346,6 +347,7 @@ export function IOSAppLayout() {
               onCloseActivities={() => setShowHomeActivities(false)}
               isShaking={isHeroShaking}
               onOpenEvents={() => setShowEvents(true)}
+              onUpgradeClick={() => setShowPremiumDialog(true)}
             />
           );
         }
@@ -364,6 +366,7 @@ export function IOSAppLayout() {
             onCloseActivities={() => setShowHomeActivities(false)}
             isShaking={isHeroShaking}
             onOpenEvents={() => setShowEvents(true)}
+            onUpgradeClick={() => setShowPremiumDialog(true)}
           />
         );
     }

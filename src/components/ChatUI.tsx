@@ -24,7 +24,7 @@ export default function ChatUI({
   activityName = "Sunday Brunch",
   activityEmoji = "🥐",
   date = "Sun, Mar 2",
-  location = "El Poblado, Medellín",
+  location = "El Poblado",
   members = [],
   messages: initialMessages = [],
   onSend,

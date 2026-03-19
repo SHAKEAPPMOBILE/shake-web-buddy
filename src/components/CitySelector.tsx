@@ -18,9 +18,15 @@ import { LoadingSpinner } from "./LoadingSpinner";
 interface CitySelectorProps {
   isPremium?: boolean;
   onUpgradeClick?: () => void;
+  /**
+   * Optional controlled open state for the dropdown.
+   * Useful when rendering CitySelector inside another modal.
+   */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
+export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelectorProps) {
   const { isPremium } = useAuth();
   const { selectedCity, setSelectedCity, detectedCity, isLoading } = useCity();
 
@@ -44,7 +50,7 @@ export function CitySelector({ onUpgradeClick }: CitySelectorProps) {
   }, {} as Record<string, City[]>);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors outline-none">
         {isLoading ? (
           <LoadingSpinner size="sm" />

@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.public_events (
   name text,
   image_url text,
   venue text,
-  city text DEFAULT 'Medellín',
+  city text,
   event_starts_at timestamptz,
   ticket_url text,
   source text,

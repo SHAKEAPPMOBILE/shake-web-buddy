@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { SHAKE_CITIES } from "@/data/cities";
 
 export interface EventItem {
   id: string;
@@ -48,11 +49,20 @@ export async function fetchTicketmasterEvents(options?: {
   size?: number;
   city?: string | null;
 }): Promise<EventItem[]> {
+  const resolvedCityName = options?.city ?? null;
+  const cityMatch =
+    resolvedCityName &&
+    SHAKE_CITIES.find((c) => c.name.toLowerCase() === resolvedCityName.toLowerCase());
+
+  const resolvedLatlong =
+    options?.latlong ??
+    (cityMatch ? `${cityMatch.lat},${cityMatch.lng}` : undefined);
+
   const { data, error } = await supabase.functions.invoke<{
     events?: EventItem[];
   }>("fetch-events", {
     body: {
-      latlong: options?.latlong ?? "4.71,-74.07",
+      latlong: resolvedLatlong,
       radius: options?.radius ?? 50,
       size: options?.size ?? 20,
       city: options?.city ?? undefined,

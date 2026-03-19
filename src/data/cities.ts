@@ -26,7 +26,7 @@ export const SHAKE_CITIES: City[] = [
   
   // Central & South America
   { name: "Bogotá", country: "Colombia", region: "South America", lat: 4.7110, lng: -74.0721 },
-  { name: "Medellín", country: "Colombia", region: "South America", lat: 6.2442, lng: -75.5812 },
+  { name: "Medell\u00EDn", country: "Colombia", region: "South America", lat: 6.2442, lng: -75.5812 },
   { name: "Cartagena", country: "Colombia", region: "South America", lat: 10.3910, lng: -75.4794 },
   { name: "Quito", country: "Ecuador", region: "South America", lat: -0.1807, lng: -78.4678 },
   { name: "Lima", country: "Peru", region: "South America", lat: -12.0464, lng: -77.0428 },
@@ -141,7 +141,7 @@ function deg2rad(deg: number): number {
   return deg * (Math.PI / 180);
 }
 
-export function findClosestCity(lat: number, lng: number): City {
+export function findClosestCity(lat: number, lng: number): { city: City; distanceKm: number } {
   let closestCity = SHAKE_CITIES[0];
   let minDistance = Infinity;
   
@@ -153,7 +153,7 @@ export function findClosestCity(lat: number, lng: number): City {
     }
   }
   
-  return closestCity;
+  return { city: closestCity, distanceKm: minDistance };
 }
 
 export const REGIONS = [...new Set(SHAKE_CITIES.map(city => city.region))];

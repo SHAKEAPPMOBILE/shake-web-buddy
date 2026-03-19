@@ -22,6 +22,7 @@ import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCity } from "@/contexts/CityContext";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
@@ -487,41 +488,12 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const [showEventChatSuccess, setShowEventChatSuccess] = useState(false);
   const [successEventId, setSuccessEventId] = useState<string | null>(null);
   const [successEventName, setSuccessEventName] = useState<string | null>(null);
-  const [userCity, setUserCity] = useState<string | null>(null);
 
   const { user } = useAuth();
+  const { selectedCity, isLoading: isCityLoading, isCityOutOfRange } = useCity();
 
   const chatUnlockedId = searchParams.get("chat_unlocked") || searchParams.get("event_id");
   const paymentSuccess = searchParams.get("payment_success") === "true";
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!user) {
-      setUserCity(null);
-      return;
-    }
-
-    const loadCity = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("city")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (!cancelled && !error) {
-          setUserCity((data as { city?: string | null } | null)?.city ?? null);
-        }
-      } catch {
-        if (!cancelled) setUserCity(null);
-      }
-    };
-
-    loadCity();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
 
   useEffect(() => {
     // Only handle Stripe/payment redirects once events have finished loading
@@ -587,15 +559,28 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
 
   useEffect(() => {
     let cancelled = false;
+    if (isCityOutOfRange) {
+      setEventsLoading(false);
+      setEvents([]);
+      return () => {
+        cancelled = true;
+      };
+    }
+    if (isCityLoading || !selectedCity) {
+      setEventsLoading(true);
+      return () => {
+        cancelled = true;
+      };
+    }
     setEventsLoading(true);
-    fetchTicketmasterEvents({ radius: 50, size: 25, city: userCity })
+    fetchTicketmasterEvents({ radius: 50, size: 25, city: selectedCity })
       .then((list) => {
         if (!cancelled) {
-          setEvents(list.length > 0 ? list : MOCK_EVENTS);
+          setEvents(list);
         }
       })
       .catch(() => {
-        if (!cancelled) setEvents(MOCK_EVENTS);
+        if (!cancelled) setEvents([]);
       })
       .finally(() => {
         if (!cancelled) setEventsLoading(false);
@@ -603,7 +588,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
     return () => {
       cancelled = true;
     };
-  }, [userCity]);
+  }, [selectedCity, isCityLoading, isCityOutOfRange]);
 
   const hot = useMemo(() => events.filter((e) => e.isHot), [events]);
   const filtered =
@@ -727,9 +712,26 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
               All Nearby
             </span>
           </div>
-          {eventsLoading ? (
-            <div className="flex items-center justify-center min-h-[280px]">
-              <LoadingSpinner size="lg" />
+          {isCityOutOfRange ? (
+            <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border p-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                SHAKE is coming to your city soon 🌍 Stay tuned!
+              </p>
+            </div>
+          ) : eventsLoading ? (
+            <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border p-4">
+              <div className="animate-pulse space-y-3">
+                <div className="h-14 rounded-xl bg-muted/60" />
+                <div className="h-14 rounded-xl bg-muted/60" />
+                <div className="h-14 rounded-xl bg-muted/60" />
+                <div className="h-14 rounded-xl bg-muted/60" />
+              </div>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border p-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                No events in {selectedCity ?? "this city"} yet — check back soon 🔥
+              </p>
             </div>
           ) : (
           <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border">

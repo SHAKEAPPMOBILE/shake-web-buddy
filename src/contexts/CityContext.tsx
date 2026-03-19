@@ -2,10 +2,11 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { findClosestCity, SHAKE_CITIES, City } from "@/data/cities";
 
 interface CityContextType {
-  selectedCity: string;
+  selectedCity: string | null;
   setSelectedCity: (city: string) => void;
   detectedCity: City | null;
   isLoading: boolean;
+  isCityOutOfRange: boolean;
 }
 
 const CityContext = createContext<CityContextType | undefined>(undefined);
@@ -17,6 +18,7 @@ export function CityProvider({ children }: { children: ReactNode }) {
   });
   const [detectedCity, setDetectedCity] = useState<City | null>(SHAKE_CITIES[0] || null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCityOutOfRange, setIsCityOutOfRange] = useState(false);
 
   useEffect(() => {
     detectLocation();
@@ -25,6 +27,14 @@ export function CityProvider({ children }: { children: ReactNode }) {
   const setCity = (city: City) => {
     setDetectedCity(city);
     setSelectedCity(city.name);
+    setIsCityOutOfRange(false);
+    setIsLoading(false);
+  };
+
+  const setCityOutOfRange = (city: City) => {
+    setDetectedCity(city);
+    setSelectedCity(null);
+    setIsCityOutOfRange(true);
     setIsLoading(false);
   };
 
@@ -33,6 +43,7 @@ export function CityProvider({ children }: { children: ReactNode }) {
     if (defaultCity) {
       setCity(defaultCity);
     } else {
+      setIsCityOutOfRange(false);
       setIsLoading(false);
     }
   };
@@ -50,8 +61,15 @@ export function CityProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       
       if (data.latitude && data.longitude) {
-        const closestCity = findClosestCity(data.latitude, data.longitude);
-        setCity(closestCity);
+        const { city: closestCity, distanceKm } = findClosestCity(
+          data.latitude,
+          data.longitude
+        );
+        if (distanceKm <= 500) {
+          setCity(closestCity);
+        } else {
+          setCityOutOfRange(closestCity);
+        }
       } else {
         fallbackToDefault();
       }
@@ -75,8 +93,12 @@ export function CityProvider({ children }: { children: ReactNode }) {
         (position) => {
           clearTimeout(geoTimeout);
           const { latitude, longitude } = position.coords;
-          const closestCity = findClosestCity(latitude, longitude);
-          setCity(closestCity);
+          const { city: closestCity, distanceKm } = findClosestCity(latitude, longitude);
+          if (distanceKm <= 500) {
+            setCity(closestCity);
+          } else {
+            setCityOutOfRange(closestCity);
+          }
         },
         () => {
           clearTimeout(geoTimeout);
@@ -92,7 +114,9 @@ export function CityProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <CityContext.Provider value={{ selectedCity, setSelectedCity, detectedCity, isLoading }}>
+    <CityContext.Provider
+      value={{ selectedCity, setSelectedCity, detectedCity, isLoading, isCityOutOfRange }}
+    >
       {children}
     </CityContext.Provider>
   );

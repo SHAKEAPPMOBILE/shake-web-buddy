@@ -401,7 +401,7 @@ export const VENUE_COORDINATES: Record<string, Record<string, VenueCoordinates>>
   },
   
   // ========== SOUTH AMERICA ==========
-  "Medellín": {
+  "Medell\u00EDn": {
     "Al Alma Café": { lat: 6.2100, lng: -75.5700 },
     "Pergamino Café": { lat: 6.2080, lng: -75.5680 },
     "El Social": { lat: 6.2120, lng: -75.5720 },

@@ -68,7 +68,7 @@ const emptyForm: EventFormState = {
   name: "",
   image_url: "",
   venue: "",
-  city: "Medellín",
+  city: "",
   event_starts_at: "",
   ticket_url: "",
   price_min: "",
@@ -136,7 +136,7 @@ export function EventsTab() {
       name: ev.name ?? "",
       image_url: ev.image_url ?? "",
       venue: ev.venue ?? "",
-      city: ev.city ?? "Medellín",
+      city: ev.city ?? "",
       event_starts_at: toLocalDateTimeInputValue(ev.event_starts_at),
       ticket_url: ev.ticket_url ?? "",
       price_min: ev.price_min != null ? String(ev.price_min) : "",
@@ -162,7 +162,7 @@ export function EventsTab() {
       name: form.name || null,
       image_url: form.image_url || null,
       venue: form.venue || null,
-      city: form.city || "Medellín",
+      city: form.city.trim() ? form.city.trim() : null,
       event_starts_at: eventStartsAtIso,
       ticket_url: form.ticket_url || null,
       price_min: form.price_min ? Number(form.price_min) : null,
@@ -259,7 +259,7 @@ export function EventsTab() {
                   id="event-city"
                   value={form.city}
                   onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                  placeholder="Medellín"
+                  placeholder="e.g. Bogotá"
                 />
               </div>
               <div className="space-y-1.5">

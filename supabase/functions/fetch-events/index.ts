@@ -185,7 +185,7 @@ function mapPublicEventToItem(row: PublicEventRow): EventItem {
     eventStartAt: row.event_starts_at ?? undefined,
     imageUrl: row.image_url ?? undefined,
     venue: row.venue ?? "—",
-    city: row.city ?? "Medellín",
+    city: row.city ?? "—",
     distance: "—",
     priceMin: 0,
     priceMax: 0,
@@ -247,14 +247,27 @@ serve(async (req) => {
 
   try {
     let cityFilter: string | null = null;
+    let latlong: string | null = null;
+    let radiusKm: number | null = null;
     try {
       const body = await req.json().catch(() => null);
       if (body && typeof body.city === "string") {
         const trimmed = body.city.trim();
         cityFilter = trimmed.length ? trimmed : null;
       }
+
+      if (body && typeof body.latlong === "string") {
+        const trimmed = body.latlong.trim();
+        latlong = trimmed.length ? trimmed : null;
+      }
+
+      if (body && typeof body.radius === "number" && isFinite(body.radius)) {
+        radiusKm = body.radius;
+      }
     } catch {
       cityFilter = null;
+      latlong = null;
+      radiusKm = null;
     }
 
     // Prefer events from public_events table; fall back to Eventbrite then mock only if empty
@@ -268,8 +281,9 @@ serve(async (req) => {
           .select("*")
           .gte("event_starts_at", new Date().toISOString());
 
-        const cityPattern = cityFilter ? `%${cityFilter}%` : "%Medellín%";
-        query = query.ilike("city", cityPattern);
+        if (cityFilter) {
+          query = query.ilike("city", `%${cityFilter}%`);
+        }
 
         const { data: rows, error } = await query
           .order("event_starts_at", { ascending: true, nullsFirst: false });
@@ -350,13 +364,33 @@ serve(async (req) => {
       );
     }
 
+    // Build Eventbrite search params without hardcoded city defaults.
+    const eventbriteParams: Record<string, string> = {
+      expand: "venue,logo",
+    };
+
+    const withinKm = `${radiusKm ?? 50}km`;
+
+    if (latlong) {
+      const [latStr, lngStr] = latlong.split(",").map((s) => s.trim());
+      const lat = latStr ? Number(latStr) : NaN;
+      const lng = lngStr ? Number(lngStr) : NaN;
+      if (!isNaN(lat) && !isNaN(lng)) {
+        eventbriteParams["location.latitude"] = String(lat);
+        eventbriteParams["location.longitude"] = String(lng);
+        eventbriteParams["location.within"] = withinKm;
+      }
+    }
+
+    // Fallback to address-based location search only if we have a city name.
+    if (!eventbriteParams["location.latitude"] && cityFilter) {
+      eventbriteParams["location.address"] = cityFilter;
+      eventbriteParams["location.within"] = withinKm;
+    }
+
     const url =
       "https://www.eventbriteapi.com/v3/events/search/?" +
-      new URLSearchParams({
-        "location.address": "Medellin,Colombia",
-        "location.within": "50km",
-        expand: "venue,logo",
-      }).toString();
+      new URLSearchParams(eventbriteParams).toString();
 
     let res: Response;
     try {
@@ -418,8 +452,8 @@ serve(async (req) => {
         e.logo?.original?.url ??
         e.logo?.url ??
         undefined;
-      const venueName = e.venue?.name ?? "Medellín";
-      const cityName = e.venue?.address?.city ?? "Medellín";
+      const venueName = e.venue?.name ?? "—";
+      const cityName = e.venue?.address?.city ?? "—";
       const eventStartAt = e.start?.utc ?? undefined;
 
       // For now, we treat all Eventbrite results as "Music" for the UI
