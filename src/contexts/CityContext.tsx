@@ -7,44 +7,45 @@ interface CityContextType {
   detectedCity: City | null;
   isLoading: boolean;
   isCityOutOfRange: boolean;
+  isDetectingLocation: boolean;
+  refreshLocation: () => Promise<{ ok: boolean; error?: string }>;
 }
 
 const CityContext = createContext<CityContextType | undefined>(undefined);
 
 export function CityProvider({ children }: { children: ReactNode }) {
-  const [selectedCity, setSelectedCity] = useState<string>(() => {
+  const [selectedCity, setSelectedCity] = useState<string | null>(() => {
     // Start with a default city immediately to avoid showing "Detecting..."
     return SHAKE_CITIES[0]?.name || "Loading...";
   });
   const [detectedCity, setDetectedCity] = useState<City | null>(SHAKE_CITIES[0] || null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCityOutOfRange, setIsCityOutOfRange] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   useEffect(() => {
-    detectLocation();
+    void detectLocation({ initial: true });
   }, []);
 
-  const setCity = (city: City) => {
+  const applyCity = (city: City) => {
     setDetectedCity(city);
-    setSelectedCity(city.name);
     setIsCityOutOfRange(false);
-    setIsLoading(false);
+    setSelectedCity(city.name);
   };
 
-  const setCityOutOfRange = (city: City) => {
+  const applyCityOutOfRange = (city: City) => {
     setDetectedCity(city);
     setSelectedCity(null);
     setIsCityOutOfRange(true);
-    setIsLoading(false);
   };
 
   const fallbackToDefault = () => {
     const defaultCity = SHAKE_CITIES[0];
     if (defaultCity) {
-      setCity(defaultCity);
+      applyCity(defaultCity);
     } else {
       setIsCityOutOfRange(false);
-      setIsLoading(false);
+      setSelectedCity(null);
     }
   };
 
@@ -66,9 +67,9 @@ export function CityProvider({ children }: { children: ReactNode }) {
           data.longitude
         );
         if (distanceKm <= 500) {
-          setCity(closestCity);
+          applyCity(closestCity);
         } else {
-          setCityOutOfRange(closestCity);
+          applyCityOutOfRange(closestCity);
         }
       } else {
         fallbackToDefault();
@@ -79,43 +80,63 @@ export function CityProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const detectLocation = () => {
-    setIsLoading(true);
+  const detectLocation = async ({ initial }: { initial: boolean }) => {
+    if (initial) setIsLoading(true);
+    else setIsDetectingLocation(true);
     
-    if ("geolocation" in navigator) {
-      // Set a faster timeout for geolocation
-      const geoTimeout = setTimeout(() => {
-        console.log("Geolocation timeout - falling back to IP");
-        fallbackToIpGeolocation();
-      }, 5000); // 5 second timeout instead of 10
+    const cleanup = () => {
+      if (initial) setIsLoading(false);
+      else setIsDetectingLocation(false);
+    };
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          clearTimeout(geoTimeout);
-          const { latitude, longitude } = position.coords;
-          const { city: closestCity, distanceKm } = findClosestCity(latitude, longitude);
-          if (distanceKm <= 500) {
-            setCity(closestCity);
-          } else {
-            setCityOutOfRange(closestCity);
-          }
-        },
-        () => {
-          clearTimeout(geoTimeout);
-          // Browser geolocation denied/failed - fallback to IP geolocation
-          fallbackToIpGeolocation();
-        },
-        { timeout: 5000, enableHighAccuracy: false } // Faster, less accurate
-      );
-    } else {
+    try {
+      if ("geolocation" in navigator) {
+        // Browser geolocation with explicit timeout via Promise.
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve(pos),
+            (err) => reject(err),
+            { timeout: 5000, enableHighAccuracy: false }
+          );
+        });
+
+        const { latitude, longitude } = position.coords;
+        const { city: closestCity, distanceKm } = findClosestCity(latitude, longitude);
+        if (distanceKm <= 500) applyCity(closestCity);
+        else applyCityOutOfRange(closestCity);
+
+        return { ok: true as const };
+      }
+
       // No browser geolocation support - fallback to IP geolocation
-      fallbackToIpGeolocation();
+      await fallbackToIpGeolocation();
+      return { ok: true as const };
+    } catch (err) {
+      // Browser geolocation denied/failed - fallback to IP geolocation
+      await fallbackToIpGeolocation();
+      const message =
+        err instanceof Error ? err.message : (typeof err === "string" ? err : "Failed to detect location");
+      return { ok: false as const, error: message };
+    } finally {
+      cleanup();
     }
+  };
+
+  const refreshLocation = async () => {
+    return detectLocation({ initial: false });
   };
 
   return (
     <CityContext.Provider
-      value={{ selectedCity, setSelectedCity, detectedCity, isLoading, isCityOutOfRange }}
+      value={{
+        selectedCity,
+        setSelectedCity,
+        detectedCity,
+        isLoading,
+        isCityOutOfRange,
+        isDetectingLocation,
+        refreshLocation,
+      }}
     >
       {children}
     </CityContext.Provider>
