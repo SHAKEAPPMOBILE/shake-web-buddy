@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Users, MessageSquare, MapPin, Sparkles } from "lucide-react";
+import { ChevronRight, Users, MessageSquare, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface OnboardingScreensProps {
@@ -38,7 +38,6 @@ export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
       emoji: "📍",
       title: t("onboarding.meetInPersonTitle"),
       description: t("onboarding.meetInPersonDescription"),
-      icon: MapPin,
       color: "from-green-500/20 to-green-500/5",
     },
   ];

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, Send, Users, User, BellOff, Bell, LogOut, MapPin, Trash2, Plane } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, Users, User, BellOff, Bell, LogOut, Trash2, Plane } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";

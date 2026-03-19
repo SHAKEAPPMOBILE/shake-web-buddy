@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, Trash2, MapPin, Calendar, Clock, FileText } from "lucide-react";
+import { ArrowLeft, Send, Users, User, Trash2, Calendar, Clock, FileText } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -350,7 +350,7 @@ export function PlanGroupChatDialog({
           </div>
           {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "brunch") && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <MapPin className="w-4 h-4" />
+              <span className="inline-flex items-center justify-center w-4 h-4">📍</span>
               {mapsUrl ? (
                 <a
                   href={mapsUrl}

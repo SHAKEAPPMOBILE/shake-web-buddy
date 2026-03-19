@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Users, DollarSign, AlertCircle, Calendar } from "lucide-react";
+import { Users, DollarSign, AlertCircle, Calendar } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -117,7 +117,7 @@ export function ActivityDetailDialog({
           {/* Location */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-muted-foreground" />
+              <span className="inline-flex items-center justify-center w-5 h-5 text-muted-foreground">📍</span>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t("common.location")}</p>

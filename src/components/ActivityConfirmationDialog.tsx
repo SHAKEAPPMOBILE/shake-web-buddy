@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
-import { MapPin, Globe, ChevronRight, Calendar, CheckCircle2, Search, Plane, RotateCcw } from "lucide-react";
+import { Globe, ChevronRight, Calendar, CheckCircle2, Search, Plane, RotateCcw } from "lucide-react";
 import { SHAKE_CITIES, REGIONS } from "@/data/cities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
@@ -105,7 +105,7 @@ export function ActivityConfirmationDialog({
                         className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-left"
                       >
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <MapPin className="w-5 h-5 text-primary" />
+                          <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>
                         </div>
                         <div>
                           <p className="font-medium">{city.name}</p>
@@ -149,7 +149,7 @@ export function ActivityConfirmationDialog({
                 {selectedCity ? (
                   <Plane className="w-3.5 h-3.5" />
                 ) : (
-                  <MapPin className="w-3.5 h-3.5" />
+                  <span className="inline-flex items-center justify-center w-3.5 h-3.5">📍</span>
                 )}
                 <span>{t('activityDialog.inCity', 'in {{city}}', { city: displayCity })}</span>
               </div>

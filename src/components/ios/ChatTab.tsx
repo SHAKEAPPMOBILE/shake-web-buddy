@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MessageSquare, Users, Plane, MapPin, Calendar } from "lucide-react";
+import { MessageSquare, Users, Plane, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useNavigate } from "react-router-dom";
@@ -602,7 +602,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                   </div>
 
                   <div className="flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3 h-3 text-white/60" />
+                    <span className="inline-flex items-center justify-center w-3 h-3 text-white/60">📍</span>
                     <span className="text-xs text-white/70">{activity.city}</span>
                     {activity.is_plan && activity.creator_name && (
                       <span className="text-xs text-white/50">• {t('common.by')} {activity.creator_name}</span>

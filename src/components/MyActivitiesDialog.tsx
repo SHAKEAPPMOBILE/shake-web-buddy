@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, MapPin, MessageSquare, Users, Plane } from "lucide-react";
+import { Calendar, MessageSquare, Users, Plane } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -384,7 +384,7 @@ export function MyActivitiesDialog({
                       {homeCity && activity.city !== homeCity ? (
                         <Plane className="w-3 h-3" />
                       ) : (
-                        <MapPin className="w-3 h-3" />
+                        <span className="inline-flex items-center justify-center w-3 h-3">📍</span>
                       )}
                       {activity.city}
                     </p>

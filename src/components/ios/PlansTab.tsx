@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SuperHumanIcon } from "../SuperHumanIcon";
-import { Calendar, Users, Plus, Plane, Share2, MapPin, Search, X, Trash2, Music2 } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Share2, Search, X, Trash2, Music2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -745,7 +745,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         ) : activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <MapPin className="w-8 h-8 text-muted-foreground" />
+              <span className="inline-flex items-center justify-center w-8 h-8 text-muted-foreground">📍</span>
             </div>
             <p className="text-muted-foreground">{t('plans.noPlansInCity', { city: searchCity })}</p>
             {searchCity !== selectedCity && (
@@ -815,7 +815,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   </div>
 
                   <div className="flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3 h-3 text-white/60" />
+                    <span className="inline-flex items-center justify-center w-3 h-3 text-white/60">📍</span>
                     <span className="text-xs text-white/70">{plan.city}</span>
                     {!plan.isCarouselJoin && (
                       <span className="text-xs text-white/50">

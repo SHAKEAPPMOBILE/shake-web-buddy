@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MapPin, MessageSquare, X } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
 import { useActivityVenue } from "@/contexts/VenueContext";
 import { getActivityEmoji } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/activity-translations";
@@ -65,7 +65,7 @@ export function ActivityJoinedConfirmation({
           <div className="rounded-2xl bg-muted/50 p-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-primary" />
+                <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>
               </div>
               <div className="flex-1 min-w-0 overflow-hidden">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">

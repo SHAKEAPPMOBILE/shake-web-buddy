@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAddVenue, useUpdateVenue, DbVenue, VenueInsert } from "@/hooks/useVenues";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Save, X, MapPin, Loader2, Check } from "lucide-react";
+import { Plus, Save, X, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface VenueFormProps {
@@ -215,7 +215,7 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
                 ) : geocodeSuccess ? (
                   <Check className="w-4 h-4 text-green-500" />
                 ) : (
-                  <MapPin className="w-4 h-4" />
+                  <span className="inline-flex items-center justify-center w-4 h-4">📍</span>
                 )}
                 <span className="ml-1 hidden sm:inline">{geocodeSuccess ? "Found" : "Get GPS"}</span>
               </Button>

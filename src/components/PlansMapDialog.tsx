@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { format } from "date-fns";
-import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown, Check, Search, MapPin } from "lucide-react";
+import { List, Map, Plus, X, Users, ChevronRight, Bell, BellOff, ChevronDown, Check, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useVenueContext } from "@/contexts/VenueContext";
 import { WorldMap, WorldMapHandle } from "@/components/WorldMap";
@@ -489,7 +489,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                                     onClick={(e) => e.stopPropagation()}
                                     className="text-xs text-white/60 truncate flex items-center gap-1 hover:text-white/90 transition-colors underline-offset-2 hover:underline"
                                   >
-                                    <MapPin className="w-3 h-3 shrink-0" />
+                                    <span className="inline-flex items-center justify-center w-3 h-3 shrink-0">📍</span>
                                     {getLocationString(activity.city, activity.activity_type)}
                                   </a>
                                 )}
@@ -599,7 +599,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                                     onClick={(e) => e.stopPropagation()}
                                     className="text-xs text-white/60 truncate flex items-center gap-1 hover:text-white/90 transition-colors underline-offset-2 hover:underline"
                                   >
-                                    <MapPin className="w-3 h-3 shrink-0" />
+                                    <span className="inline-flex items-center justify-center w-3 h-3 shrink-0">📍</span>
                                     {getLocationString(activity.city, activity.activity_type)}
                                   </a>
                                 )}

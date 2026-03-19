@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MapPin, X, Loader2, Check, Sparkles } from "lucide-react";
+import { X, Loader2, Check, Sparkles } from "lucide-react";
 import { useCheckIn } from "@/hooks/useCheckIn";
 import { useState } from "react";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
@@ -54,7 +54,7 @@ export function ProximityCheckInPopup({
       <DialogContent className="sm:max-w-md bg-gradient-to-br from-shake-yellow/20 to-shake-green/10 border-shake-yellow/30">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-center justify-center">
-            <MapPin className="w-5 h-5 text-shake-green" />
+            <span className="inline-flex items-center justify-center w-5 h-5 text-shake-green">📍</span>
             {t("checkIn.youreAt", { venue: venueName })}
           </DialogTitle>
         </DialogHeader>
@@ -62,7 +62,7 @@ export function ProximityCheckInPopup({
         <div className="flex flex-col items-center py-6 space-y-4">
           {/* Animated venue icon */}
           <div className="w-24 h-24 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle">
-            <MapPin className="w-12 h-12 text-shake-green" />
+            <span className="inline-flex items-center justify-center w-12 h-12 text-shake-green">📍</span>
           </div>
 
           {/* Distance indicator */}
@@ -117,7 +117,7 @@ export function ProximityCheckInPopup({
                   {isCheckingIn ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
-                    <MapPin className="w-4 h-4 mr-2" />
+                    <span className="inline-flex items-center justify-center w-4 h-4 mr-2">📍</span>
                   )}
                   {t("checkIn.checkInBtn")}
                 </Button>

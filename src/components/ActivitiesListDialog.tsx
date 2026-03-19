@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Calendar, MapPin, Plus, Trash2, Users, DollarSign } from "lucide-react";
+import { Calendar, Plus, Trash2, Users, DollarSign } from "lucide-react";
 import { useUserActivities, UserActivity } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
 import { getActivityEmoji, getActivityColor, ACTIVITY_TYPES } from "@/data/activityTypes";

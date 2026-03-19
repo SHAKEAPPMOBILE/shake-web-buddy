@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ChevronLeft,
-  MapPin,
   Calendar,
   Users,
   ExternalLink,
@@ -270,14 +269,20 @@ function EventDetail({
           {event.name}
         </h1>
         {[
-          { Icon: MapPin, t: `${event.venue}, ${event.city}` },
+          { icon: "📍", t: `${event.venue}, ${event.city}` },
           { Icon: Calendar, t: event.date },
-        ].map(({ Icon, t }, i) => (
+        ].map(({ Icon, icon, t }, i) => (
           <div
             key={i}
             className="flex items-center gap-2 mb-2 text-muted-foreground"
           >
-            <Icon className="w-3.5 h-3.5 text-primary shrink-0" />
+            {Icon ? (
+              <Icon className="w-3.5 h-3.5 text-primary shrink-0" />
+            ) : (
+              <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-primary shrink-0">
+                {icon}
+              </span>
+            )}
             <span className="text-sm">{t}</span>
           </div>
         ))}

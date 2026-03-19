@@ -1,4 +1,4 @@
-import { MapPin, Mountain, Wine, Coffee, Utensils, Users } from "lucide-react";
+import { Mountain, Wine, Coffee, Utensils, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ActivityCategoryProps {

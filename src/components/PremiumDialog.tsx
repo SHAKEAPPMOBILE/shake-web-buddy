@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, MapPin, Globe, User, MessageSquare, Sparkles, Settings, Video } from "lucide-react";
+import { Check, Globe, User, MessageSquare, Sparkles, Settings, Video } from "lucide-react";
 import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
   Dialog,
@@ -43,7 +43,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const features = [
     { icon: Sparkles, text: "Create your own activities unlimited" },
     { icon: Globe, text: "Access to 100+ cities worldwide" },
-    { icon: MapPin, text: "Join activities in any city" },
+    { iconEmoji: "📍", text: "Join activities in any city" },
     { icon: User, text: "See other users' profiles unlimited" },
     { icon: MessageSquare, text: "Unlimited text messages" },
     { icon: Video, text: "Upload status video" },
@@ -285,7 +285,13 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           {features.map((feature, index) => (
             <div key={index} className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <feature.icon className="w-3.5 h-3.5 text-primary" />
+                {feature.icon ? (
+                  <feature.icon className="w-3.5 h-3.5 text-primary" />
+                ) : (
+                  <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-primary">
+                    📍
+                  </span>
+                )}
               </div>
               <span className="text-foreground text-sm">{feature.text}</span>
               <Check className="w-3.5 h-3.5 text-shake-green ml-auto shrink-0" />

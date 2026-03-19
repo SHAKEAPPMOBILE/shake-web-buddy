@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, Check, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCheckIn } from "@/hooks/useCheckIn";
 import { useTranslation } from "react-i18next";
@@ -79,7 +79,7 @@ export function CheckInButton({
       {isCheckingIn ? (
         <Loader2 className="w-4 h-4 animate-spin" />
       ) : (
-        <MapPin className="w-4 h-4" />
+        <span className="inline-flex items-center justify-center w-4 h-4">📍</span>
       )}
       <span className="hidden sm:inline">{t("checkIn.checkInPts")}</span>
       <span className="sm:hidden">+5</span>

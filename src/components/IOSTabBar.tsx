@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, MapPin, MessageSquare, User, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, MessageSquare, User, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -21,7 +21,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
 
   const tabs = [
     { id: "home", icon: Home, label: t('home.title', 'Home') },
-    { id: "plans", icon: MapPin, label: t('plans.title') },
+    { id: "plans", iconEmoji: "📍", label: t('plans.title') },
     { id: "shake", icon: Plus, label: "Shake", isCenter: true },
     { id: "chat", icon: MessageSquare, label: t('chat.title') },
     { id: "profile", icon: User, label: t('profile.title') },
@@ -51,6 +51,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
       <div className="flex items-end justify-around px-2 pt-2 pb-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
+          const iconEmoji = (tab as any).iconEmoji as string | undefined;
           const isActive = activeTab === tab.id;
           const hasNotification = tab.id === "chat" && totalUnread > 0;
 
@@ -105,10 +106,19 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                 "relative p-2 rounded-xl transition-all",
                 isActive && "bg-primary/10"
               )}>
-                <Icon className={cn(
-                  "w-6 h-6 transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )} />
+                {Icon ? (
+                  <Icon className={cn(
+                    "w-6 h-6 transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )} />
+                ) : (
+                  <span className={cn(
+                    "inline-flex items-center justify-center w-6 h-6 transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}>
+                    {iconEmoji ?? "📍"}
+                  </span>
+                )}
                 {hasNotification && (
                   <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
                     {totalUnread > 99 ? "99+" : totalUnread}

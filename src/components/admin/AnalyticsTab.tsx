@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, MessageSquare, Users, MapPin, Calendar, Activity, RefreshCw } from "lucide-react";
+import { Loader2, MessageSquare, Users, Calendar, Activity, RefreshCw } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDailyTheme } from "@/hooks/useDailyTheme";
@@ -158,7 +158,7 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
         <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <MapPin className="w-8 h-8 opacity-80" />
+              <span className="inline-flex items-center justify-center w-8 h-8 opacity-80">📍</span>
               <div>
                 <p className="text-2xl font-bold">{data.check_ins.total_check_ins.toLocaleString()}</p>
                 <p className="text-sm opacity-90">Total Check-ins</p>
@@ -275,7 +275,7 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
+                  <span className="inline-flex items-center justify-center w-5 h-5">📍</span>
                   Users Active by City
                 </CardTitle>
               </CardHeader>
@@ -311,7 +311,7 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
+                  <span className="inline-flex items-center justify-center w-5 h-5">📍</span>
                   Activities by City
                 </CardTitle>
               </CardHeader>
@@ -378,7 +378,7 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
+                  <span className="inline-flex items-center justify-center w-5 h-5">📍</span>
                   Check-ins by City
                 </CardTitle>
               </CardHeader>
@@ -409,7 +409,7 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
+                  <span className="inline-flex items-center justify-center w-5 h-5">📍</span>
                   Check-ins by Venue
                 </CardTitle>
               </CardHeader>

@@ -1,4 +1,4 @@
-import { MapPin, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,7 +55,7 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
         {isLoading ? (
           <LoadingSpinner size="sm" />
         ) : (
-          <MapPin className="w-4 h-4 text-shake-teal" />
+          <span className="inline-flex items-center justify-center w-4 h-4 text-shake-teal">📍</span>
         )}
         <span>{selectedCity}</span>
         <ChevronDown className="w-3 h-3" />
@@ -88,7 +88,7 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
                 onClick={() => setSelectedCity(detectedCity.name)}
                 className="cursor-pointer"
               >
-                <MapPin className="w-4 h-4 mr-2 text-shake-teal" />
+                <span className="inline-flex items-center justify-center w-4 h-4 mr-2 text-shake-teal">📍</span>
                 {detectedCity.name}, {detectedCity.country}
                 <span className="ml-auto text-xs text-muted-foreground">Free</span>
               </DropdownMenuItem>
@@ -107,6 +107,7 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
                   onClick={() => handleCitySelect(city.name)}
                   className="cursor-pointer"
                 >
+                  <span className="inline-flex items-center justify-center w-4 h-4 mr-2 text-shake-teal">📍</span>
                   {city.name}, {city.country}
                   {!isPremium && (
                     <SuperHumanIcon size={14} className="ml-auto" />

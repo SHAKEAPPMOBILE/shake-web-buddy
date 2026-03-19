@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, MapPin, DollarSign, ArrowLeft, Mail, Shield, BarChart3, CalendarDays } from "lucide-react";
+import { Loader2, Users, DollarSign, ArrowLeft, Mail, Shield, BarChart3, CalendarDays } from "lucide-react";
 import { VenuesTab } from "@/components/admin/VenuesTab";
 import { UsersTab } from "@/components/admin/UsersTab";
 import { PayoutsTab } from "@/components/admin/PayoutsTab";
@@ -304,7 +304,7 @@ export default function Admin() {
               Payouts
             </TabsTrigger>
             <TabsTrigger value="venues" className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
+              <span className="inline-flex items-center justify-center w-4 h-4">📍</span>
               Venues
             </TabsTrigger>
             <TabsTrigger value="events" className="flex items-center gap-2">

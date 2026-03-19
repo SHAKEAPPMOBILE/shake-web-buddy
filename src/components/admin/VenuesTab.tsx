@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Globe, Loader2, AlertTriangle, Upload } from "lucide-react";
+import { Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Globe, Loader2, AlertTriangle, Upload } from "lucide-react";
 import { useVenues, useDeleteVenue, getWeeklyVenueFromList, getDailyVenueFromList, DbVenue } from "@/hooks/useVenues";
 import { VenueForm } from "./VenueForm";
 import { toast } from "@/hooks/use-toast";
@@ -301,7 +301,7 @@ export function VenuesTab() {
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-green-500" />
+              <span className="inline-flex items-center justify-center w-4 h-4 text-green-500">📍</span>
               <span className="text-2xl font-bold">{totals.total}</span>
             </div>
             <p className="text-xs text-muted-foreground">Total Venues</p>
@@ -398,7 +398,7 @@ export function VenuesTab() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
+              <span className="inline-flex items-center justify-center w-5 h-5">📍</span>
               {selectedCity ? `${selectedCity} Venues` : "Select a City"}
             </CardTitle>
             {selectedCity && (

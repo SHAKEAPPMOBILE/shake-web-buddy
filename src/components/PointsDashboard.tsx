@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { MapPin, Sparkles, TrendingUp, UserPlus, Users, Gift, CheckCircle2, AlertCircle } from "lucide-react";
+import { Sparkles, TrendingUp, UserPlus, Users, Gift, CheckCircle2, AlertCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { formatDistanceToNow } from "date-fns";
@@ -163,7 +163,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
               </span>
             </div>
             <div className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 mt-0.5 text-shake-green shrink-0" />
+              <span className="inline-flex items-center justify-center w-4 h-4 mt-0.5 text-shake-green shrink-0">📍</span>
               <span>
                 <strong className="text-foreground">{t('points.checkInVenues', 'Check in at venues')}</strong> — {t('points.checkInPoints', 'Earn +5 points when you check in at the venues of your activities')}
               </span>

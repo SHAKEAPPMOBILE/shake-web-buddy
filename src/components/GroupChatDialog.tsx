@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Globe, MapPin, Trash2, Plane } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Globe, Trash2, Plane } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -469,12 +469,12 @@ export function GroupChatDialog({
                       rel="noopener noreferrer"
                       className="text-xs text-primary/80 hover:text-primary flex items-center justify-center gap-1"
                     >
-                      <MapPin className="w-3 h-3" />
+                      <span className="inline-flex items-center justify-center w-3 h-3">📍</span>
                       {location}
                     </a>
                   ) : (
                     <span className="text-xs text-white/50 flex items-center justify-center gap-1">
-                      <MapPin className="w-3 h-3" />
+                      <span className="inline-flex items-center justify-center w-3 h-3">📍</span>
                       {location}
                     </span>
                   )}
@@ -571,7 +571,7 @@ export function GroupChatDialog({
                     className={`p-1.5 rounded-md ${showVenueSuggestions ? 'text-primary bg-primary/20' : 'text-white/60 hover:text-white'}`}
                     title={t('chat.suggestVenue', 'Suggest a venue')}
                   >
-                    <MapPin className="w-4 h-4" />
+                    <span className="inline-flex items-center justify-center w-4 h-4">📍</span>
                   </button>
                 )}
                 <button onClick={handleMuteToggle} className="p-1.5 text-white/60 hover:text-white rounded-md" title={isMuted ? "Unmute" : "Mute"}>

@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DbVenue, getVenueTypeForActivity, getCurrentVenueForActivity } from "@/hooks/useDatabaseVenues";
 import { useVenueContext } from "@/contexts/VenueContext";
@@ -54,7 +54,7 @@ export function VenueSuggestionCarousel({
   return (
     <div className="px-4 py-2 border-b border-border/30 bg-muted/30">
       <div className="flex items-center gap-2 mb-2">
-        <MapPin className="w-3.5 h-3.5 text-primary" />
+        <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-primary">📍</span>
         <span className="text-xs font-medium text-muted-foreground">
           {t('chat.suggestVenue', 'Suggest a venue')}
         </span>

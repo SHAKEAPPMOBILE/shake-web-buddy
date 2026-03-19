@@ -1,4 +1,4 @@
-import { MapPin, Calendar, Users, Clock, ChevronRight } from "lucide-react";
+import { Calendar, Users, Clock, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -65,7 +65,7 @@ export function ActivityCard({
         
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="w-4 h-4 text-primary" />
+            <span className="inline-flex items-center justify-center w-4 h-4 text-primary">📍</span>
             <span className="line-clamp-1">{location}</span>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">

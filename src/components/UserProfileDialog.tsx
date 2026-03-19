@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Calendar, MapPin, Instagram, Linkedin, Twitter, Flag, X, Video, Ban } from "lucide-react";
+import { User, Calendar, Instagram, Linkedin, Twitter, Flag, X, Video, Ban } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -251,7 +251,7 @@ export function UserProfileDialog({
             {/* Location from most recent activity */}
             {activityHistory.length > 0 && (
               <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                <MapPin className="w-3.5 h-3.5" />
+                <span className="inline-flex items-center justify-center w-3.5 h-3.5">📍</span>
                 <span>{activityHistory[0].city}</span>
               </div>
             )}
@@ -332,7 +332,7 @@ export function UserProfileDialog({
                         {t(`activities.${activity.activity_type}`, activity.activity_type)}
                       </p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
+                        <span className="inline-flex items-center justify-center w-3 h-3">📍</span>
                         {activity.city}
                       </p>
                     </div>
