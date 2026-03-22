@@ -2,6 +2,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { SHAKE_CITIES } from "../../../src/data/cities.ts";
 import { countryCodes } from "../../../src/data/countryCodes.ts";
+import {
+  stripCountrySuffixFromCityName,
+  toTicketmasterCityName,
+} from "../../../src/lib/eventCityFormat.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -353,11 +357,16 @@ serve(async (req) => {
     let cityFilter: string | null = null;
     let latlong: string | null = null;
     let radiusKm: number | null = null;
+    let sizeLimit = 20;
     try {
       const body = await req.json().catch(() => null);
       if (body && typeof body.city === "string") {
         const trimmed = body.city.trim();
         cityFilter = trimmed.length ? trimmed : null;
+      }
+
+      if (cityFilter) {
+        cityFilter = stripCountrySuffixFromCityName(cityFilter);
       }
 
       if (body && typeof body.latlong === "string") {
@@ -367,6 +376,10 @@ serve(async (req) => {
 
       if (body && typeof body.radius === "number" && isFinite(body.radius)) {
         radiusKm = body.radius;
+      }
+
+      if (body && typeof body.size === "number" && isFinite(body.size)) {
+        sizeLimit = Math.min(200, Math.max(1, Math.floor(body.size)));
       }
     } catch {
       cityFilter = null;
@@ -593,55 +606,90 @@ serve(async (req) => {
     if (!ticketmasterKey) {
       console.warn("[fetch-events] TICKETMASTER_API_KEY missing; skipping Ticketmaster");
       ticketmasterReason = "TICKETMASTER_API_KEY not configured";
-    } else if (!resolvedCityName || !countryCode) {
-      console.warn("[fetch-events] Missing city/countryCode for Ticketmaster", {
-        cityFilter,
-        resolvedCityName,
-        countryCode,
-      });
-      ticketmasterReason = "Missing city or countryCode for Ticketmaster";
     } else {
-      const ticketmasterParams: Record<string, string> = {
-        apikey: ticketmasterKey,
-        city: resolvedCityName,
-        countryCode,
-        radius: String(radiusKm ?? 50),
-        unit: "km",
-      };
+      const radiusStr = String(radiusKm ?? 50);
+      const tmBase = "https://app.ticketmaster.com/discovery/v2/events.json";
+      /** Prefer geo search (latlong) — matches Ticketmaster docs and fixes "New York City" vs "New York" mismatches. */
+      const canUseGeo = Boolean(latlong);
+      const canUseCity = Boolean(resolvedCityName && countryCode);
 
-      const tmUrl =
-        "https://app.ticketmaster.com/discovery/v2/events.json?" +
-        new URLSearchParams(ticketmasterParams).toString();
+      if (!canUseGeo && !canUseCity) {
+        console.warn("[fetch-events] Missing latlong and city/country for Ticketmaster", {
+          cityFilter,
+          resolvedCityName,
+          countryCode,
+          latlong,
+        });
+        ticketmasterReason = "Missing latlong or city+countryCode for Ticketmaster";
+      } else {
+        const ticketmasterParams: Record<string, string> = {
+          apikey: ticketmasterKey,
+          radius: radiusStr,
+          unit: "km",
+          size: String(sizeLimit),
+        };
 
-      console.log("[fetch-events] Calling Ticketmaster", {
-        city: resolvedCityName,
-        countryCode,
-        radiusKm,
-      });
-
-      try {
-        const res = await fetchWithTimeout(tmUrl, {}, 10000);
-        if (!res.ok) {
-          const text = await res.text();
-          console.warn("[fetch-events] Ticketmaster API error:", res.status, text);
-          ticketmasterReason = `Ticketmaster non-OK: ${res.status}`;
+        if (canUseGeo) {
+          ticketmasterParams.latlong = latlong!;
+          if (countryCode) ticketmasterParams.countryCode = countryCode;
         } else {
-          const data = (await res.json()) as TicketmasterDiscoveryResponse;
-          const events = data._embedded?.events ?? [];
-
-          if (!events.length) {
-            console.warn("[fetch-events] Ticketmaster returned 0 events");
-            ticketmasterReason = "Ticketmaster returned 0 results";
-          } else {
-            ticketmasterEvents = events
-              .filter((e) => Boolean(e?.id) && Boolean(e?.name))
-              .map((e) => mapTicketmasterEventToItem(e, resolvedCityName));
-          }
+          const tmCity = toTicketmasterCityName(resolvedCityName!);
+          ticketmasterParams.city = tmCity;
+          ticketmasterParams.countryCode = countryCode!;
         }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.warn("[fetch-events] Ticketmaster fetch failed:", msg);
-        ticketmasterReason = `Ticketmaster fetch failed: ${msg}`;
+
+        const tmUrl = `${tmBase}?${new URLSearchParams(ticketmasterParams).toString()}`;
+        const logUrl = tmUrl.replace(/apikey=[^&]+/, "apikey=(redacted)");
+
+        console.log("[fetch-events] Calling Ticketmaster", {
+          mode: canUseGeo ? "latlong+radius" : "city+countryCode",
+          cityFilter,
+          resolvedCityName,
+          ticketmasterCityParam: canUseGeo ? null : toTicketmasterCityName(resolvedCityName!),
+          countryCode: countryCode ?? null,
+          latlong: canUseGeo ? latlong : null,
+          radiusKm: radiusStr,
+          size: sizeLimit,
+          url: logUrl,
+        });
+
+        try {
+          const res = await fetchWithTimeout(tmUrl, {}, 10000);
+          const textBody = await res.text();
+          if (!res.ok) {
+            console.warn("[fetch-events] Ticketmaster API error:", res.status, textBody.slice(0, 500));
+            ticketmasterReason = `Ticketmaster non-OK: ${res.status}`;
+          } else {
+            let data: TicketmasterDiscoveryResponse;
+            try {
+              data = JSON.parse(textBody) as TicketmasterDiscoveryResponse;
+            } catch {
+              console.warn("[fetch-events] Ticketmaster JSON parse failed", textBody.slice(0, 300));
+              ticketmasterReason = "Ticketmaster response not JSON";
+              data = {};
+            }
+            const events = data._embedded?.events ?? [];
+
+            console.log("[fetch-events] Ticketmaster response OK", {
+              embeddedEventCount: events.length,
+              mode: canUseGeo ? "geo" : "city",
+            });
+
+            if (!events.length) {
+              console.warn("[fetch-events] Ticketmaster returned 0 events (empty _embedded.events)");
+              ticketmasterReason = "Ticketmaster returned 0 results";
+            } else {
+              const displayCity = resolvedCityName ?? cityFilter ?? "—";
+              ticketmasterEvents = events
+                .filter((e) => Boolean(e?.id) && Boolean(e?.name))
+                .map((e) => mapTicketmasterEventToItem(e, displayCity));
+            }
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("[fetch-events] Ticketmaster fetch failed:", msg);
+          ticketmasterReason = `Ticketmaster fetch failed: ${msg}`;
+        }
       }
     }
 

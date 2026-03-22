@@ -5,6 +5,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { SHAKE_CITIES } from "@/data/cities";
+import { stripCountrySuffixFromCityName } from "@/lib/eventCityFormat";
 
 export interface EventItem {
   id: string;
@@ -50,6 +51,7 @@ export async function fetchTicketmasterEvents(options?: {
   city?: string | null;
 }): Promise<EventItem[]> {
   const resolvedCityName = options?.city ?? null;
+  const strippedForMatch = resolvedCityName ? stripCountrySuffixFromCityName(resolvedCityName) : null;
 
   const normalizeForMatch = (s: string) =>
     s
@@ -58,7 +60,7 @@ export async function fetchTicketmasterEvents(options?: {
       .normalize("NFD")
       .replace(/\p{Diacritic}/gu, "");
 
-  const cityQuery = resolvedCityName ? normalizeForMatch(resolvedCityName) : null;
+  const cityQuery = strippedForMatch ? normalizeForMatch(strippedForMatch) : null;
   const cityQueryPrimary = cityQuery ? cityQuery.split(",")[0].trim() : null;
 
   // Resolve city coordinates from our canonical SHAKE_CITIES list.
@@ -75,6 +77,18 @@ export async function fetchTicketmasterEvents(options?: {
     options?.latlong ??
     (cityMatch ? `${cityMatch.lat},${cityMatch.lng}` : undefined);
 
+  const cityForEdge = strippedForMatch ?? resolvedCityName ?? undefined;
+
+  console.log("[fetchTicketmasterEvents] invoking fetch-events", {
+    selectedCityRaw: resolvedCityName,
+    cityAfterStrip: strippedForMatch,
+    citySentToEdge: cityForEdge,
+    latlong: resolvedLatlong,
+    matchedShakeCity: cityMatch?.name ?? null,
+    radius: options?.radius ?? 50,
+    size: options?.size ?? 20,
+  });
+
   const { data, error } = await supabase.functions.invoke<{
     events?: EventItem[];
   }>("fetch-events", {
@@ -82,7 +96,7 @@ export async function fetchTicketmasterEvents(options?: {
       latlong: resolvedLatlong,
       radius: options?.radius ?? 50,
       size: options?.size ?? 20,
-      city: options?.city ?? undefined,
+      city: cityForEdge,
     },
   });
 
