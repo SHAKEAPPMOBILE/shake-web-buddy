@@ -583,7 +583,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
       };
     }
     setEventsLoading(true);
-    fetchTicketmasterEvents({ radius: 50, size: 25, city: selectedCity })
+    fetchTicketmasterEvents({ radius: 50, size: 50, city: selectedCity })
       .then((list) => {
         console.log("[EventsPage] fetchTicketmasterEvents resolved", {
           rawLength: Array.isArray(list) ? list.length : "not-array",

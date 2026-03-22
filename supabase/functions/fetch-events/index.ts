@@ -87,8 +87,32 @@ const CATEGORY_EMOJI: Record<string, string> = {
   Default: "🎤",
 };
 
+/** DB / Eventbrite / legacy paths — keep stable defaults */
 function getCategoryAndEmoji(_segmentName: string | undefined): { category: string; emoji: string } {
   return { category: "Music", emoji: CATEGORY_EMOJI.Music };
+}
+
+/**
+ * Ticketmaster Discovery: segment.name (e.g. "Music", "Sports", "Arts & Theatre").
+ * @see https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/
+ */
+function mapTicketmasterSegment(segmentName: string | undefined): { category: string; emoji: string } {
+  const s = (segmentName ?? "").trim().toLowerCase();
+  if (s === "music") return { category: "Music", emoji: "🎵" };
+  if (s === "sports") return { category: "Sports", emoji: "🏆" };
+  if (s === "arts & theatre" || s === "arts and theatre") return { category: "Art", emoji: "🎭" };
+  if (s === "comedy") return { category: "Comedy", emoji: "😂" };
+  if (s === "film") return { category: "Art", emoji: "🎬" };
+  if (s === "family") return { category: "Art", emoji: "👨‍👩‍👧" };
+  return { category: "Music", emoji: "🎵" };
+}
+
+function extractTicketmasterSegmentName(e: TicketmasterEvent): string | undefined {
+  const fromEvent = e.classifications?.[0]?.segment?.name;
+  if (typeof fromEvent === "string" && fromEvent.trim()) return fromEvent.trim();
+  const fromAttraction = e._embedded?.attractions?.[0]?.classifications?.[0]?.segment?.name;
+  if (typeof fromAttraction === "string" && fromAttraction.trim()) return fromAttraction.trim();
+  return undefined;
 }
 
 async function getSpotifyAccessToken(): Promise<string | null> {
@@ -282,10 +306,18 @@ interface TicketmasterEvent {
   url?: string | null;
   images?: Array<{ url?: string | null }> | null;
   dates?: { start?: { dateTime?: string | null; localDate?: string | null } | null } | null;
+  classifications?: Array<{
+    segment?: { name?: string | null } | null;
+  }> | null;
   _embedded?: {
     venues?: Array<{
       name?: string | null;
       city?: { name?: string | null } | null;
+    }> | null;
+    attractions?: Array<{
+      classifications?: Array<{
+        segment?: { name?: string | null } | null;
+      }> | null;
     }> | null;
   } | null;
 }
@@ -303,7 +335,8 @@ function mapTicketmasterEventToItem(e: TicketmasterEvent, fallbackCity?: string 
   const cityName = e._embedded?.venues?.[0]?.city?.name ?? fallbackCity ?? "—";
   const imageUrl = e.images?.[0]?.url ?? undefined;
 
-  const { category, emoji } = getCategoryAndEmoji(undefined);
+  const segmentName = extractTicketmasterSegmentName(e);
+  const { category, emoji } = mapTicketmasterSegment(segmentName);
 
   return {
     id: `tm-${e.id}`,
@@ -363,7 +396,7 @@ serve(async (req) => {
     let cityFilter: string | null = null;
     let latlong: string | null = null;
     let radiusKm: number | null = null;
-    let sizeLimit = 20;
+    let sizeLimit = 50;
     try {
       const body = await req.json().catch(() => null);
       if (body && typeof body.city === "string") {

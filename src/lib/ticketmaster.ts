@@ -82,7 +82,7 @@ export async function fetchTicketmasterEvents(options?: {
   const invokeBody = {
     latlong: resolvedLatlong,
     radius: options?.radius ?? 50,
-    size: options?.size ?? 20,
+    size: options?.size ?? 50,
     city: cityForEdge,
   };
 
