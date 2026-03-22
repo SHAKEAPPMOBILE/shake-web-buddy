@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle, ArrowLeft, Heart } from "lucide-react";
+import { ArrowLeft, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 
@@ -114,13 +115,13 @@ export default function SubscriptionSuccess() {
         <div className="max-w-md w-full text-center space-y-6">
           <div className="flex justify-center">
             <div className="w-20 h-20 rounded-full bg-shake-green/20 flex items-center justify-center">
-              <CheckCircle className="w-10 h-10 text-shake-green" />
+              <LoadingSpinner size="lg" />
             </div>
           </div>
 
           <div className="space-y-2">
             <h2 className="text-3xl font-display font-bold text-foreground">
-              You're a Super-Human now!
+              {"You're a Super-Human!"}
             </h2>
           </div>
 
