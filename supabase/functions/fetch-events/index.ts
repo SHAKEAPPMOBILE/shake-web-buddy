@@ -372,6 +372,70 @@ function mapTicketmasterEventToItem(e: TicketmasterEvent, fallbackCity?: string 
   };
 }
 
+/** Single Ticketmaster Discovery request; returns mapped events or [] on failure/empty. */
+async function fetchTicketmasterDiscoveryOnce(
+  ticketmasterKey: string,
+  baseParams: { radius: string; unit: string; size: string },
+  geoOrCity:
+    | { kind: "geo"; latlong: string; countryCode?: string | null }
+    | { kind: "city"; city: string; countryCode: string },
+  displayCity: string,
+): Promise<EventItem[]> {
+  const tmBase = "https://app.ticketmaster.com/discovery/v2/events.json";
+  const ticketmasterParams: Record<string, string> = {
+    apikey: ticketmasterKey,
+    ...baseParams,
+  };
+  if (geoOrCity.kind === "geo") {
+    ticketmasterParams.latlong = geoOrCity.latlong;
+    if (geoOrCity.countryCode) ticketmasterParams.countryCode = geoOrCity.countryCode;
+  } else {
+    ticketmasterParams.city = geoOrCity.city;
+    ticketmasterParams.countryCode = geoOrCity.countryCode;
+  }
+
+  const tmUrl = `${tmBase}?${new URLSearchParams(ticketmasterParams).toString()}`;
+  const logUrl = redactTicketmasterApiKeyFromUrl(tmUrl);
+
+  console.log("[fetch-events] Ticketmaster full URL (apikey redacted):", logUrl);
+  console.log("[fetch-events] Calling Ticketmaster", {
+    mode: geoOrCity.kind === "geo" ? "latlong+radius" : "city+countryCode",
+    url: logUrl,
+  });
+
+  try {
+    const res = await fetchWithTimeout(tmUrl, {}, 10000);
+    const textBody = await res.text();
+    if (!res.ok) {
+      console.warn("[fetch-events] Ticketmaster API error:", res.status, textBody.slice(0, 500));
+      return [];
+    }
+    let data: TicketmasterDiscoveryResponse;
+    try {
+      data = JSON.parse(textBody) as TicketmasterDiscoveryResponse;
+    } catch {
+      console.warn("[fetch-events] Ticketmaster JSON parse failed", textBody.slice(0, 300));
+      return [];
+    }
+    const events = data._embedded?.events ?? [];
+    console.log("[fetch-events] Ticketmaster response OK", {
+      embeddedEventCount: events.length,
+      mode: geoOrCity.kind,
+    });
+    if (!events.length) {
+      console.warn("[fetch-events] Ticketmaster returned 0 events (empty _embedded.events)");
+      return [];
+    }
+    return events
+      .filter((e) => Boolean(e?.id) && Boolean(e?.name))
+      .map((e) => mapTicketmasterEventToItem(e, displayCity));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("[fetch-events] Ticketmaster fetch failed:", msg);
+    return [];
+  }
+}
+
 function dedupeByEventNameKeepingEarliestStart(events: EventItem[]): EventItem[] {
   const byName = new Map<string, EventItem>();
 
@@ -439,108 +503,77 @@ serve(async (req) => {
       radiusKm = null;
     }
 
-    // Prefer events from public_events table; fall back to Eventbrite then empty if empty.
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (supabaseUrl && supabaseServiceKey) {
-      try {
-        console.log("[fetch-events] Using public_events DB path", {
-          cityFilter,
-          latlong,
-          radiusKm,
+
+    const { city: resolvedCityName, countryCode } = resolveCityAndCountryCode(cityFilter);
+    const displayCity = resolvedCityName ?? cityFilter ?? "—";
+
+    // --- 1) Ticketmaster first: latlong+radius, then city+country if still 0 ---
+    const ticketmasterKey = Deno.env.get("TICKETMASTER_API_KEY");
+    let ticketmasterEvents: EventItem[] = [];
+    let ticketmasterReason: string | null = null;
+
+    const tmBaseParams = {
+      radius: String(radiusKm ?? 50),
+      unit: "km",
+      size: String(sizeLimit),
+    };
+
+    if (!ticketmasterKey) {
+      console.warn("[fetch-events] TICKETMASTER_API_KEY missing; skipping Ticketmaster");
+      ticketmasterReason = "TICKETMASTER_API_KEY not configured";
+    } else {
+      const canUseGeo = Boolean(latlong);
+      const canUseCity = Boolean(resolvedCityName && countryCode);
+
+      if (canUseGeo) {
+        ticketmasterEvents = await fetchTicketmasterDiscoveryOnce(
+          ticketmasterKey,
+          tmBaseParams,
+          { kind: "geo", latlong: latlong!, countryCode },
+          displayCity,
+        );
+        console.log("[fetch-events] Ticketmaster geo attempt", { count: ticketmasterEvents.length });
+      }
+
+      if (ticketmasterEvents.length === 0 && canUseCity) {
+        const tmCity = toTicketmasterCityName(resolvedCityName!);
+        ticketmasterEvents = await fetchTicketmasterDiscoveryOnce(
+          ticketmasterKey,
+          tmBaseParams,
+          { kind: "city", city: tmCity, countryCode: countryCode! },
+          displayCity,
+        );
+        console.log("[fetch-events] Ticketmaster city attempt (after empty geo or no geo)", {
+          count: ticketmasterEvents.length,
         });
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-        let query = supabase
-          .from("public_events")
-          .select("*")
-          .gte("event_starts_at", new Date().toISOString());
+      }
 
-        if (cityFilter) {
-          query = query.ilike("city", `%${cityFilter}%`);
-        }
-
-        const { data: rows, error } = await query
-          .order("event_starts_at", { ascending: true, nullsFirst: false });
-
-        if (!error && rows && rows.length > 0) {
-          console.log("[fetch-events] public_events returned rows", {
-            count: rows.length,
+      if (ticketmasterEvents.length === 0) {
+        if (!canUseGeo && !canUseCity) {
+          console.warn("[fetch-events] Missing latlong and city/country for Ticketmaster", {
             cityFilter,
+            resolvedCityName,
+            countryCode,
+            latlong,
           });
-          // Dedupe by name: keep only the row with earliest event_starts_at per name (rows already ordered by event_starts_at)
-          const byName = new Map<string, PublicEventRow>();
-          for (const row of rows as PublicEventRow[]) {
-            const name = (row.name ?? "").trim();
-            if (!name || byName.has(name)) continue;
-            byName.set(name, row);
-          }
-          let enrichedRows = Array.from(byName.values());
-          try {
-            const token = await getSpotifyAccessToken();
-            if (token) {
-              const updated: PublicEventRow[] = [];
-              const MAX_SPOTIFY_ENRICHMENTS = 8; // Prevent long-running enrichment
-              let spotifyEnrichmentCount = 0;
-              for (const row of enrichedRows) {
-                const originalName = row.name ?? "";
-                if (isRealImageUrl(row.image_url)) {
-                  console.log(`[fetch-events] event="${originalName}" | extracted=— | image=kept existing CDN`);
-                  updated.push(row);
-                  continue;
-                }
-                const artistName = extractArtistNameFromTitle(row.name);
-                if (!artistName) {
-                  console.log(`[fetch-events] event="${originalName}" | extracted=null | image=null (no artist)`);
-                  updated.push({ ...row, image_url: null });
-                  continue;
-                }
-                if (spotifyEnrichmentCount >= MAX_SPOTIFY_ENRICHMENTS) {
-                  updated.push({ ...row, image_url: null });
-                  continue;
-                }
-                const imageUrl = await getSpotifyImageForArtist(artistName, token);
-                const finalUrl = imageUrl ?? null;
-                console.log(`[fetch-events] event="${originalName}" | extracted="${artistName}" | image=${finalUrl ? "found" : "null"}`);
-                spotifyEnrichmentCount += 1;
-                updated.push({
-                  ...row,
-                  image_url: finalUrl,
-                });
-              }
-              enrichedRows = updated;
-            }
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            console.warn("[fetch-events] Spotify enrichment failed:", msg);
-          }
-
-          // Apply hardcoded fallbacks for known broken/bad image URLs
-          enrichedRows = enrichedRows.map((row) => {
-            if (isRealImageUrl(row.image_url)) return row;
-            const artistKey = extractArtistNameFromTitle(row.name)?.toLowerCase();
-            const fallback = artistKey ? FALLBACK_IMAGES[artistKey] : null;
-            return fallback ? { ...row, image_url: fallback } : row;
-          });
-
-          const events = enrichedRows.map(mapPublicEventToItem);
-          return new Response(JSON.stringify({ events }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          });
+          ticketmasterReason = "Missing latlong or city+countryCode for Ticketmaster";
+        } else {
+          ticketmasterReason = "Ticketmaster returned 0 results (geo and/or city attempts)";
         }
-
-        console.log("[fetch-events] public_events empty -> falling back to Eventbrite", {
-          rowsCount: rows?.length ?? 0,
-          error: error?.message ?? null,
-          cityFilter,
-        });
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.warn("[fetch-events] public_events query failed:", msg);
       }
     }
-    else {
-      console.log("[fetch-events] Skipping public_events path; missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+
+    if (ticketmasterEvents.length > 0) {
+      const events = dedupeByEventNameKeepingEarliestStart(ticketmasterEvents);
+      console.log("[fetch-events] Returning Ticketmaster results only (no DB / Eventbrite merge)", {
+        count: events.length,
+      });
+      return new Response(JSON.stringify({ events }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
     const withinKm = `${radiusKm ?? 50}km`;
@@ -649,116 +682,111 @@ serve(async (req) => {
       }
     }
 
-    const ticketmasterKey = Deno.env.get("TICKETMASTER_API_KEY");
-    let ticketmasterEvents: EventItem[] = [];
-    let ticketmasterReason: string | null = null;
+    // --- 3) public_events DB only after Ticketmaster returned 0; require city filter (never return global rows) ---
+    let dbEvents: EventItem[] = [];
+    let dbReason: string | null = null;
 
-    const { city: resolvedCityName, countryCode } = resolveCityAndCountryCode(cityFilter);
+    if (!cityFilter) {
+      console.log("[fetch-events] Skipping public_events (no cityFilter — avoids returning all cities)");
+    } else if (supabaseUrl && supabaseServiceKey) {
+      try {
+        console.log("[fetch-events] Ticketmaster empty; trying public_events for city", { cityFilter });
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const { data: rows, error } = await supabase
+          .from("public_events")
+          .select("*")
+          .gte("event_starts_at", new Date().toISOString())
+          .ilike("city", `%${cityFilter}%`)
+          .order("event_starts_at", { ascending: true, nullsFirst: false });
 
-    if (!ticketmasterKey) {
-      console.warn("[fetch-events] TICKETMASTER_API_KEY missing; skipping Ticketmaster");
-      ticketmasterReason = "TICKETMASTER_API_KEY not configured";
-    } else {
-      const radiusStr = String(radiusKm ?? 50);
-      const tmBase = "https://app.ticketmaster.com/discovery/v2/events.json";
-      /** Prefer geo search (latlong) — matches Ticketmaster docs and fixes "New York City" vs "New York" mismatches. */
-      const canUseGeo = Boolean(latlong);
-      const canUseCity = Boolean(resolvedCityName && countryCode);
-
-      if (!canUseGeo && !canUseCity) {
-        console.warn("[fetch-events] Missing latlong and city/country for Ticketmaster", {
-          cityFilter,
-          resolvedCityName,
-          countryCode,
-          latlong,
-        });
-        ticketmasterReason = "Missing latlong or city+countryCode for Ticketmaster";
-      } else {
-        const ticketmasterParams: Record<string, string> = {
-          apikey: ticketmasterKey,
-          radius: radiusStr,
-          unit: "km",
-          size: String(sizeLimit),
-        };
-
-        if (canUseGeo) {
-          ticketmasterParams.latlong = latlong!;
-          if (countryCode) ticketmasterParams.countryCode = countryCode;
-        } else {
-          const tmCity = toTicketmasterCityName(resolvedCityName!);
-          ticketmasterParams.city = tmCity;
-          ticketmasterParams.countryCode = countryCode!;
-        }
-
-        const tmUrl = `${tmBase}?${new URLSearchParams(ticketmasterParams).toString()}`;
-        const logUrl = redactTicketmasterApiKeyFromUrl(tmUrl);
-
-        // Full URL so you can verify query params in Supabase → Edge Functions → Logs (apikey never logged).
-        console.log("[fetch-events] Ticketmaster full URL (apikey redacted):", logUrl);
-        console.log("[fetch-events] Calling Ticketmaster", {
-          mode: canUseGeo ? "latlong+radius" : "city+countryCode",
-          cityFilter,
-          resolvedCityName,
-          ticketmasterCityParam: canUseGeo ? null : toTicketmasterCityName(resolvedCityName!),
-          countryCode: countryCode ?? null,
-          latlong: canUseGeo ? latlong : null,
-          radiusKm: radiusStr,
-          size: sizeLimit,
-          url: logUrl,
-        });
-
-        try {
-          const res = await fetchWithTimeout(tmUrl, {}, 10000);
-          const textBody = await res.text();
-          if (!res.ok) {
-            console.warn("[fetch-events] Ticketmaster API error:", res.status, textBody.slice(0, 500));
-            ticketmasterReason = `Ticketmaster non-OK: ${res.status}`;
-          } else {
-            let data: TicketmasterDiscoveryResponse;
-            try {
-              data = JSON.parse(textBody) as TicketmasterDiscoveryResponse;
-            } catch {
-              console.warn("[fetch-events] Ticketmaster JSON parse failed", textBody.slice(0, 300));
-              ticketmasterReason = "Ticketmaster response not JSON";
-              data = {};
-            }
-            const events = data._embedded?.events ?? [];
-
-            console.log("[fetch-events] Ticketmaster response OK", {
-              embeddedEventCount: events.length,
-              mode: canUseGeo ? "geo" : "city",
-            });
-
-            if (!events.length) {
-              console.warn("[fetch-events] Ticketmaster returned 0 events (empty _embedded.events)");
-              ticketmasterReason = "Ticketmaster returned 0 results";
-            } else {
-              const displayCity = resolvedCityName ?? cityFilter ?? "—";
-              ticketmasterEvents = events
-                .filter((e) => Boolean(e?.id) && Boolean(e?.name))
-                .map((e) => mapTicketmasterEventToItem(e, displayCity));
-            }
+        if (error) {
+          console.warn("[fetch-events] public_events query error:", error.message);
+          dbReason = error.message;
+        } else if (rows && rows.length > 0) {
+          console.log("[fetch-events] public_events returned rows", {
+            count: rows.length,
+            cityFilter,
+          });
+          const byName = new Map<string, PublicEventRow>();
+          for (const row of rows as PublicEventRow[]) {
+            const name = (row.name ?? "").trim();
+            if (!name || byName.has(name)) continue;
+            byName.set(name, row);
           }
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          console.warn("[fetch-events] Ticketmaster fetch failed:", msg);
-          ticketmasterReason = `Ticketmaster fetch failed: ${msg}`;
+          let enrichedRows = Array.from(byName.values());
+          try {
+            const token = await getSpotifyAccessToken();
+            if (token) {
+              const updated: PublicEventRow[] = [];
+              const MAX_SPOTIFY_ENRICHMENTS = 8;
+              let spotifyEnrichmentCount = 0;
+              for (const row of enrichedRows) {
+                const originalName = row.name ?? "";
+                if (isRealImageUrl(row.image_url)) {
+                  console.log(`[fetch-events] event="${originalName}" | extracted=— | image=kept existing CDN`);
+                  updated.push(row);
+                  continue;
+                }
+                const artistName = extractArtistNameFromTitle(row.name);
+                if (!artistName) {
+                  console.log(`[fetch-events] event="${originalName}" | extracted=null | image=null (no artist)`);
+                  updated.push({ ...row, image_url: null });
+                  continue;
+                }
+                if (spotifyEnrichmentCount >= MAX_SPOTIFY_ENRICHMENTS) {
+                  updated.push({ ...row, image_url: null });
+                  continue;
+                }
+                const imageUrl = await getSpotifyImageForArtist(artistName, token);
+                const finalUrl = imageUrl ?? null;
+                console.log(`[fetch-events] event="${originalName}" | extracted="${artistName}" | image=${finalUrl ? "found" : "null"}`);
+                spotifyEnrichmentCount += 1;
+                updated.push({
+                  ...row,
+                  image_url: finalUrl,
+                });
+              }
+              enrichedRows = updated;
+            }
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.warn("[fetch-events] Spotify enrichment failed:", msg);
+          }
+
+          enrichedRows = enrichedRows.map((row) => {
+            if (isRealImageUrl(row.image_url)) return row;
+            const artistKey = extractArtistNameFromTitle(row.name)?.toLowerCase();
+            const fallback = artistKey ? FALLBACK_IMAGES[artistKey] : null;
+            return fallback ? { ...row, image_url: fallback } : row;
+          });
+
+          dbEvents = enrichedRows.map(mapPublicEventToItem);
+        } else {
+          console.log("[fetch-events] public_events returned 0 rows for city", { cityFilter });
+          dbReason = "public_events returned 0 rows";
         }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn("[fetch-events] public_events query failed:", msg);
+        dbReason = msg;
       }
+    } else {
+      console.log("[fetch-events] Skipping public_events; missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
     }
 
     const combined = dedupeByEventNameKeepingEarliestStart([
       ...eventbriteEvents,
-      ...ticketmasterEvents,
+      ...dbEvents,
     ]);
 
     if (!combined.length) {
-      return respondWithEmpty("No events found from Eventbrite and Ticketmaster", {
+      return respondWithEmpty("No events found from Ticketmaster, Eventbrite, or public_events", {
         cityFilter,
         latlong,
         radiusKm,
         eventbriteReason,
         ticketmasterReason,
+        dbReason,
       });
     }
 
