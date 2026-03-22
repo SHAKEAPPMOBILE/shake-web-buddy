@@ -27,6 +27,10 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { isNativePlatform } from "@/lib/platform-utils";
 
+/** App Store review: demo login without SMS (no effect on other numbers). */
+const DEMO_PHONE = "+15550000000";
+const DEMO_OTP = "123456";
+
 // Show user-friendly messages instead of technical errors (e.g. "Load failed", "Edge Function returned non-2xx") for App Store compliance
 function toFriendlyAuthMessage(raw: string, context: "login" | "otp" | "forgot" | "general"): string {
   const lower = (raw || "").toLowerCase();
@@ -327,7 +331,14 @@ export default function Auth() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      
+
+      if (formattedPhone === DEMO_PHONE) {
+        toast.info("Demo mode active — enter 123456 as your code");
+        setResendCountdown(60);
+        setStep("otp");
+        return;
+      }
+
       // For signup, check if phone number already exists
       if (!isLogin) {
         const { data: existingProfile } = await supabase
@@ -349,13 +360,13 @@ export default function Auth() {
         }
       }
       
-      // Send OTP via Bird WhatsApp
+      // Send OTP via SMS (Bird)
       const { error, verificationId: vId } = await sendOtp(formattedPhone, isLogin ? "login" : "signup");
       if (error) {
         toast.error(toFriendlyAuthMessage(error.message, "otp"));
       } else {
         setVerificationId(vId || "");
-        toast.success("Verification code sent via WhatsApp!");
+        toast.success(`Verification code sent via SMS to ${formattedPhone}`);
         setResendCountdown(60);
         setStep('otp');
       }
@@ -420,7 +431,7 @@ export default function Auth() {
         toast.error(toFriendlyAuthMessage(error.message, "forgot"));
       } else {
         setVerificationId(vId || "");
-        toast.success("Verification code sent to reset your password!");
+        toast.success(`Verification code sent via SMS to ${formattedPhone}`);
         setResendCountdown(60);
         setStep('forgot');
       }
@@ -626,6 +637,21 @@ export default function Auth() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
+
+      if (formattedPhone === DEMO_PHONE && otpCode === DEMO_OTP) {
+        const { error: demoError } = await supabase.auth.signInWithPassword({
+          email: "demo@shakeapp.com",
+          password: "DemoUser2024!",
+        });
+        if (demoError) {
+          toast.error(toFriendlyAuthMessage(demoError.message, "login"));
+        } else {
+          toast.success("Welcome!");
+          navigate("/");
+        }
+        return;
+      }
+
       const purpose = isLogin ? "login" : "signup";
       const { error, data } = await verifyOtp(formattedPhone, otpCode, verificationId, {
         purpose,
@@ -645,9 +671,24 @@ export default function Auth() {
             setStep('name');
           }
         } else {
-          // Login OTP verified — sign in with password
-          toast.success("Welcome!");
-          navigate("/");
+          // Login: OTP verified server-side; complete Supabase session via magic-link token (see verify-bird-otp)
+          const tokenHash = data?.magicLinkTokenHash as string | undefined;
+          if (!tokenHash) {
+            toast.error("Unable to complete sign in. Please try again.");
+          } else {
+            const { error: sessionError, data: otpData } = await supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: "magiclink",
+            });
+            if (sessionError) {
+              toast.error(toFriendlyAuthMessage(sessionError.message, "login"));
+            } else if (otpData.session) {
+              toast.success("Welcome!");
+              navigate("/");
+            } else {
+              toast.error("Unable to complete sign in. Please try again.");
+            }
+          }
         }
       }
     } catch (error) {
@@ -1262,12 +1303,17 @@ export default function Auth() {
                   disabled={resendCountdown > 0}
                   onClick={async () => {
                     setOtpCode("");
-                    const { error, verificationId: vId } = await sendOtp(formatPhoneNumber(phoneNumber));
+                    const { error, verificationId: vId } = await sendOtp(
+                      formatPhoneNumber(phoneNumber),
+                      "forgot_password",
+                    );
                     if (error) {
                       toast.error(toFriendlyAuthMessage(error.message, "otp"));
                     } else {
                       setVerificationId(vId || "");
-                      toast.success("New code sent!");
+                      toast.success(
+                        `Verification code sent via SMS to ${formatPhoneNumber(phoneNumber)}`,
+                      );
                       setResendCountdown(60);
                     }
                   }}
@@ -1675,12 +1721,17 @@ export default function Auth() {
                   disabled={resendCountdown > 0}
                   onClick={async () => {
                     setOtpCode("");
-                    const { error, verificationId: vId } = await sendOtp(formatPhoneNumber(phoneNumber), "forgot_password");
+                    const { error, verificationId: vId } = await sendOtp(
+                      formatPhoneNumber(phoneNumber),
+                      isLogin ? "login" : "signup",
+                    );
                     if (error) {
-                      toast.error(toFriendlyAuthMessage(error.message, "forgot"));
+                      toast.error(toFriendlyAuthMessage(error.message, "otp"));
                     } else {
                       setVerificationId(vId || "");
-                      toast.success("New code sent!");
+                      toast.success(
+                        `Verification code sent via SMS to ${formatPhoneNumber(phoneNumber)}`,
+                      );
                       setResendCountdown(60);
                     }
                   }}
