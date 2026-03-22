@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
-import { ChevronLeft, ChevronRight, MapPin, Music2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Music2 } from "lucide-react";
 import { getActivitiesWithDates, getStartingIndexByProximity } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
@@ -13,6 +13,7 @@ import { useCity } from "@/contexts/CityContext";
 import { useTranslation } from "react-i18next";
 import { CreateActivityDialog } from "@/components/CreateActivityDialog";
 import { CitySelector } from "@/components/CitySelector";
+import { LocationPinEmoji } from "@/components/LocationPinEmoji";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
@@ -432,7 +433,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         {isCityLoading ? (
           <div className="flex justify-center">
             <div className="inline-flex items-center gap-2 animate-pulse">
-              <MapPin className="w-4 h-4 text-shake-teal shrink-0" />
+              <LocationPinEmoji className="text-xl" />
               <div className="h-4 w-[140px] rounded bg-muted/60" />
             </div>
           </div>
@@ -443,7 +444,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
               onClick={() => setIsCitySelectorOpen(true)}
               className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors max-w-[min(100%,280px)]"
             >
-              <MapPin className="w-4 h-4 text-shake-teal shrink-0" />
+              <LocationPinEmoji className="text-xl" />
               <span className="truncate">
                 {selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..."
                   ? selectedCity

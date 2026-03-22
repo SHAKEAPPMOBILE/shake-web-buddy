@@ -589,7 +589,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         ) : activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <span className="inline-flex items-center justify-center w-8 h-8 text-muted-foreground">📍</span>
+              <span
+                className="inline-flex items-center justify-center w-8 h-8 text-muted-foreground text-2xl leading-none"
+                aria-hidden
+              >
+                🚧
+              </span>
             </div>
             <p className="text-muted-foreground">
               {t("plans.noPlansInCity", { city: selectedCity || "—" })}
