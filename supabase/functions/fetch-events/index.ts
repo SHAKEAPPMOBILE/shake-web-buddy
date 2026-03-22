@@ -1,3 +1,9 @@
+/**
+ * Public event discovery — must be callable from the browser with the anon key.
+ * If you see 401 from the app: Dashboard → Edge Functions → fetch-events → Settings
+ * → turn OFF "Enforce JWT Verification", OR ensure `verify_jwt = false` in
+ * `supabase/config.toml` and redeploy (`supabase functions deploy fetch-events`).
+ */
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { SHAKE_CITIES } from "../../../src/data/cities.ts";
@@ -9,8 +15,8 @@ import {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {

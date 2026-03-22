@@ -64,6 +64,7 @@ verify_jwt = false
 [functions.verify-phone-change]
 verify_jwt = false
 
-# Public event discovery — browser uses anon key + optional user JWT
+# Public event discovery — browser uses anon key + optional user JWT.
+# Must match Dashboard: fetch-events → Settings → Enforce JWT Verification = OFF
 [functions.fetch-events]
 verify_jwt = false
