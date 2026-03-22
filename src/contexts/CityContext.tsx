@@ -15,6 +15,7 @@ function isValidCityName(name: string | null | undefined): boolean {
   return SHAKE_CITIES.some((c) => c.name === name);
 }
 
+/** Synchronous read on first render — must stay in sync with setSelectedCity / revertToDetectedLocation */
 function readPersistedCity(): string | null {
   try {
     const v = localStorage.getItem(SHAKE_SELECTED_CITY_LS);
@@ -37,11 +38,10 @@ interface CityContextType {
 const CityContext = createContext<CityContextType | undefined>(undefined);
 
 export function CityProvider({ children }: { children: ReactNode }) {
-  const [selectedCity, setSelectedCityState] = useState<string | null>(() =>
-    readPersistedCity(),
-  );
+  const [selectedCity, setSelectedCityState] = useState<string | null>(() => readPersistedCity());
   const [detectedCity, setDetectedCity] = useState<City | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  /** If user already has a valid saved city, don't block the UI (Events, etc.) waiting for GPS/IP */
+  const [isLoading, setIsLoading] = useState(() => !readPersistedCity());
   const [isCityOutOfRange, setIsCityOutOfRange] = useState(false);
 
   const setSelectedCity = useCallback((city: string) => {
@@ -66,44 +66,45 @@ export function CityProvider({ children }: { children: ReactNode }) {
     setIsCityOutOfRange(false);
   }, [detectedCity]);
 
-  useEffect(() => {
-    detectLocation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const setCity = (city: City) => {
+  const setCity = (city: City, displayOnly: boolean) => {
     setDetectedCity(city);
     setIsCityOutOfRange(false);
-    if (!readPersistedCity()) {
-      setSelectedCityState(city.name);
-      try {
-        localStorage.setItem(SHAKE_SELECTED_CITY_LS, city.name);
-      } catch {
-        /* ignore */
+    if (!displayOnly) {
+      if (!readPersistedCity()) {
+        setSelectedCityState(city.name);
+        try {
+          localStorage.setItem(SHAKE_SELECTED_CITY_LS, city.name);
+        } catch {
+          /* ignore */
+        }
       }
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
-  const setCityOutOfRange = (city: City) => {
+  const setCityOutOfRange = (city: City, displayOnly: boolean) => {
     setDetectedCity(city);
     setIsCityOutOfRange(true);
-    if (!readPersistedCity()) {
-      setSelectedCityState(null);
+    if (!displayOnly) {
+      if (!readPersistedCity()) {
+        setSelectedCityState(null);
+      }
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
-  const fallbackToDefault = () => {
+  const fallbackToDefault = (displayOnly: boolean) => {
     setIsCityOutOfRange(false);
     setDetectedCity(null);
-    if (!readPersistedCity()) {
-      setSelectedCityState(null);
+    if (!displayOnly) {
+      if (!readPersistedCity()) {
+        setSelectedCityState(null);
+      }
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
-  const fallbackToIpGeolocation = async () => {
+  const fallbackToIpGeolocation = async (displayOnly: boolean) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
@@ -236,9 +237,10 @@ export function CityProvider({ children }: { children: ReactNode }) {
 
       if (!coordsOrCity) {
         console.warn(
-          "[CityContext] IP fallback: both services failed, leaving selectedCity=null",
+          "[CityContext] IP fallback: both services failed",
+          displayOnly ? "(displayOnly: keep saved selection)" : "leaving selectedCity unset if no persistence",
         );
-        fallbackToDefault();
+        fallbackToDefault(displayOnly);
         return;
       }
 
@@ -247,26 +249,31 @@ export function CityProvider({ children }: { children: ReactNode }) {
         console.log("[CityContext] IP fallback: resolved closest city", {
           closestCity: closestCity.name,
           distanceKm,
+          displayOnly,
         });
 
-        if (distanceKm <= 500) setCity(closestCity);
-        else setCityOutOfRange(closestCity);
+        if (distanceKm <= 500) setCity(closestCity, displayOnly);
+        else setCityOutOfRange(closestCity, displayOnly);
         return;
       }
 
       const mappedCity = coordsOrCity as City;
-      setCity(mappedCity);
+      setCity(mappedCity, displayOnly);
     } catch (error) {
       console.warn("[CityContext] IP geolocation error (outer):", error);
-      fallbackToDefault();
+      fallbackToDefault(displayOnly);
     } finally {
       clearTimeout(timeoutId);
     }
   };
 
-  const detectLocation = () => {
-    setIsLoading(true);
-    console.log("[CityContext] detectLocation start");
+  const detectLocation = (options?: { displayOnly?: boolean }) => {
+    const displayOnly = options?.displayOnly ?? false;
+
+    if (!displayOnly) {
+      setIsLoading(true);
+    }
+    console.log("[CityContext] detectLocation start", { displayOnly, hasPersistedCity: Boolean(readPersistedCity()) });
 
     let didSettle = false;
 
@@ -275,7 +282,7 @@ export function CityProvider({ children }: { children: ReactNode }) {
         if (didSettle) return;
         didSettle = true;
         console.log("Geolocation timeout - falling back to IP");
-        fallbackToIpGeolocation();
+        void fallbackToIpGeolocation(displayOnly);
       }, 5000);
 
       navigator.geolocation.getCurrentPosition(
@@ -285,13 +292,13 @@ export function CityProvider({ children }: { children: ReactNode }) {
           clearTimeout(geoTimeout);
 
           const { latitude, longitude } = position.coords;
-          console.log("[CityContext] Geolocation success", { latitude, longitude });
+          console.log("[CityContext] Geolocation success", { latitude, longitude, displayOnly });
           const { city: closestCity, distanceKm } = findClosestCity(latitude, longitude);
           console.log("[CityContext] Geolocation closest city", { closestCity: closestCity.name, distanceKm });
           if (distanceKm <= 500) {
-            setCity(closestCity);
+            setCity(closestCity, displayOnly);
           } else {
-            setCityOutOfRange(closestCity);
+            setCityOutOfRange(closestCity, displayOnly);
           }
         },
         () => {
@@ -299,15 +306,26 @@ export function CityProvider({ children }: { children: ReactNode }) {
           didSettle = true;
           clearTimeout(geoTimeout);
           console.warn("[CityContext] Geolocation denied/failed - falling back to IP");
-          fallbackToIpGeolocation();
+          void fallbackToIpGeolocation(displayOnly);
         },
         { timeout: 5000, enableHighAccuracy: false },
       );
     } else {
       console.warn("[CityContext] Geolocation not supported - falling back to IP");
-      fallbackToIpGeolocation();
+      void fallbackToIpGeolocation(displayOnly);
     }
   };
+
+  useEffect(() => {
+    const saved = readPersistedCity();
+    if (saved) {
+      // Manual selection wins: keep selectedCity from localStorage; still resolve GPS/IP for "Your location" / revert
+      detectLocation({ displayOnly: true });
+    } else {
+      detectLocation({ displayOnly: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <CityContext.Provider
