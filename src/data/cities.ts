@@ -7,7 +7,7 @@ export interface City {
 }
 
 export const SHAKE_CITIES: City[] = [
-  // North America
+  // North America — `name` must match CityContext / city picker / localStorage exactly (e.g. "New York City")
   { name: "New York City", country: "USA", region: "North America", lat: 40.7128, lng: -74.0060 },
   { name: "Los Angeles", country: "USA", region: "North America", lat: 34.0522, lng: -118.2437 },
   { name: "San Francisco", country: "USA", region: "North America", lat: 37.7749, lng: -122.4194 },

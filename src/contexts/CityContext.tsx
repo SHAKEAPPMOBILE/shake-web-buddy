@@ -9,6 +9,8 @@ import {
 import { findClosestCity, SHAKE_CITIES, City } from "@/data/cities";
 
 const SHAKE_SELECTED_CITY_LS = "shake_selected_city";
+/** "1" / "true" = user picked from city list; "0" / "false" = auto-detected selection */
+const SHAKE_MANUAL_CITY_LS = "shake_city_manual_selection";
 
 function isValidCityName(name: string | null | undefined): boolean {
   if (!name) return false;
@@ -25,6 +27,31 @@ function readPersistedCity(): string | null {
   }
 }
 
+function writeManualFlag(manual: boolean) {
+  try {
+    localStorage.setItem(SHAKE_MANUAL_CITY_LS, manual ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * True if the user explicitly chose a city from the picker (not GPS/IP auto-assign).
+ * Out-of-range checks use `SHAKE_CITIES` from `@/data/cities` (exact `name` match, e.g. "New York City").
+ */
+function readPersistedManual(): boolean {
+  try {
+    const v = localStorage.getItem(SHAKE_MANUAL_CITY_LS);
+    if (v === "1" || v === "true") return true;
+    if (v === "0" || v === "false") return false;
+    // Legacy: had a saved city before we tracked manual — treat as manual so Events/API aren't blocked
+    const city = localStorage.getItem(SHAKE_SELECTED_CITY_LS);
+    return isValidCityName(city);
+  } catch {
+    return false;
+  }
+}
+
 interface CityContextType {
   selectedCity: string | null;
   setSelectedCity: (city: string) => void;
@@ -33,6 +60,8 @@ interface CityContextType {
   detectedCity: City | null;
   isLoading: boolean;
   isCityOutOfRange: boolean;
+  /** User chose a city from the picker; false when selection came from auto GPS/IP detection */
+  isManuallySelected: boolean;
 }
 
 const CityContext = createContext<CityContextType | undefined>(undefined);
@@ -43,6 +72,7 @@ export function CityProvider({ children }: { children: ReactNode }) {
   /** If user already has a valid saved city, don't block the UI (Events, etc.) waiting for GPS/IP */
   const [isLoading, setIsLoading] = useState(() => !readPersistedCity());
   const [isCityOutOfRange, setIsCityOutOfRange] = useState(false);
+  const [isManuallySelected, setIsManuallySelected] = useState(() => readPersistedManual());
 
   const setSelectedCity = useCallback((city: string) => {
     if (!isValidCityName(city)) return;
@@ -51,6 +81,8 @@ export function CityProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore quota */
     }
+    writeManualFlag(true);
+    setIsManuallySelected(true);
     setSelectedCityState(city);
     setIsCityOutOfRange(false);
   }, []);
@@ -62,6 +94,8 @@ export function CityProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
+    writeManualFlag(false);
+    setIsManuallySelected(false);
     setSelectedCityState(detectedCity.name);
     setIsCityOutOfRange(false);
   }, [detectedCity]);
@@ -77,6 +111,8 @@ export function CityProvider({ children }: { children: ReactNode }) {
         } catch {
           /* ignore */
         }
+        writeManualFlag(false);
+        setIsManuallySelected(false);
       }
       setIsLoading(false);
     }
@@ -88,6 +124,8 @@ export function CityProvider({ children }: { children: ReactNode }) {
     if (!displayOnly) {
       if (!readPersistedCity()) {
         setSelectedCityState(null);
+        writeManualFlag(false);
+        setIsManuallySelected(false);
       }
       setIsLoading(false);
     }
@@ -99,6 +137,8 @@ export function CityProvider({ children }: { children: ReactNode }) {
     if (!displayOnly) {
       if (!readPersistedCity()) {
         setSelectedCityState(null);
+        writeManualFlag(false);
+        setIsManuallySelected(false);
       }
       setIsLoading(false);
     }
@@ -336,6 +376,7 @@ export function CityProvider({ children }: { children: ReactNode }) {
         detectedCity,
         isLoading,
         isCityOutOfRange,
+        isManuallySelected,
       }}
     >
       {children}

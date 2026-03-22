@@ -495,7 +495,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const [successEventName, setSuccessEventName] = useState<string | null>(null);
 
   const { user } = useAuth();
-  const { selectedCity, isLoading: isCityLoading, isCityOutOfRange } = useCity();
+  const { selectedCity, isLoading: isCityLoading, isCityOutOfRange, isManuallySelected } = useCity();
 
   const chatUnlockedId = searchParams.get("chat_unlocked") || searchParams.get("event_id");
   const paymentSuccess = searchParams.get("payment_success") === "true";
@@ -564,7 +564,8 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
 
   useEffect(() => {
     let cancelled = false;
-    if (isCityOutOfRange) {
+    // Manual pick (e.g. NYC from picker): never block events API — out-of-range only applies to auto-detected location
+    if (isCityOutOfRange && !isManuallySelected) {
       setEventsLoading(false);
       setEvents([]);
       return () => {
@@ -593,7 +594,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
     return () => {
       cancelled = true;
     };
-  }, [selectedCity, isCityLoading, isCityOutOfRange]);
+  }, [selectedCity, isCityLoading, isCityOutOfRange, isManuallySelected]);
 
   const hot = useMemo(() => events.filter((e) => e.isHot), [events]);
   const filtered =
@@ -717,7 +718,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
               All Nearby
             </span>
           </div>
-          {isCityOutOfRange ? (
+          {isCityOutOfRange && !isManuallySelected ? (
             <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border p-6 text-center">
               <p className="text-sm text-muted-foreground">
                 SHAKE is coming to your city soon 🌍 Stay tuned!
