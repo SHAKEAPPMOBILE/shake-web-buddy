@@ -1,17 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle, ArrowLeft, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
-import { SuperHumanIcon } from "@/components/SuperHumanIcon";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { checkSubscription, isPremium } = useAuth();
-  const [isChecking, setIsChecking] = useState(true);
+  const { checkSubscription } = useAuth();
 
   const isDonation = searchParams.get("donation") === "true";
 
@@ -22,9 +19,7 @@ export default function SubscriptionSuccess() {
     // Only check subscription status for non-donation flows
     if (!isDonation) {
       const refreshStatus = async () => {
-        setIsChecking(true);
         await checkSubscription();
-        setIsChecking(false);
       };
 
       refreshStatus();
@@ -42,8 +37,6 @@ export default function SubscriptionSuccess() {
         clearInterval(interval);
         clearTimeout(timeout);
       };
-    } else {
-      setIsChecking(false);
     }
   }, [checkSubscription, isDonation]);
 
@@ -127,47 +120,17 @@ export default function SubscriptionSuccess() {
 
           <div className="space-y-2">
             <h2 className="text-3xl font-display font-bold text-foreground">
-              You're a Super-Human!
+              You're a Super-Human now!
             </h2>
-            <p className="text-muted-foreground">
-              Your subscription is now active. Enjoy access to 100+ cities worldwide!
-            </p>
           </div>
 
-          <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-center gap-2">
-              <SuperHumanIcon size={20} />
-              <span className="font-semibold text-foreground">Super-Human</span>
-            </div>
-
-            {isChecking ? (
-              <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                <LoadingSpinner size="sm" />
-                <span className="text-sm">Confirming subscription...</span>
-              </div>
-            ) : isPremium ? (
-              <p className="text-sm text-shake-green">Subscription confirmed!</p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Processing your subscription...
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-3">
+          <div className="pt-2">
             <Button
               onClick={() => navigate("/", { replace: true })}
               className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
               size="lg"
             >
-              Start Exploring Cities
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/profile", { replace: true })}
-              className="w-full"
-            >
-              Go to Profile
+              Start Exploring!
             </Button>
           </div>
         </div>
