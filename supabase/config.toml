@@ -63,3 +63,7 @@ verify_jwt = false
 
 [functions.verify-phone-change]
 verify_jwt = false
+
+# Public event discovery — browser uses anon key + optional user JWT
+[functions.fetch-events]
+verify_jwt = false
