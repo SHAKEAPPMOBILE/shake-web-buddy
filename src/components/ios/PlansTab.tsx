@@ -5,7 +5,7 @@ import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreateActivityDialog } from "../CreateActivityDialog";
 import { CitySelector } from "@/components/CitySelector";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { CityPickerModal } from "@/components/CityPickerModal";
 import { PlanGroupChatView } from "./PlanGroupChatView";
 import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
@@ -571,14 +571,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
       </div>
 
-      <Sheet open={isCitySheetOpen} onOpenChange={setIsCitySheetOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
-          <SheetHeader className="text-left pb-2">
-            <SheetTitle className="font-display">{t("plans.searchCity")}</SheetTitle>
-          </SheetHeader>
-          <CitySelector variant="picker" onPickerClose={() => setIsCitySheetOpen(false)} />
-        </SheetContent>
-      </Sheet>
+      <CityPickerModal
+        open={isCitySheetOpen}
+        onOpenChange={setIsCitySheetOpen}
+        title={t("plans.chooseYourCity", "Choose your city")}
+      >
+        <CitySelector
+          variant="picker"
+          autoFocusSearch={isCitySheetOpen}
+          onPickerClose={() => setIsCitySheetOpen(false)}
+        />
+      </CityPickerModal>
 
       {/* Plans List */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">

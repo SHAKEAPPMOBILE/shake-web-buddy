@@ -13,8 +13,8 @@ import { useCity } from "@/contexts/CityContext";
 import { useTranslation } from "react-i18next";
 import { CreateActivityDialog } from "@/components/CreateActivityDialog";
 import { CitySelector } from "@/components/CitySelector";
+import { CityPickerModal } from "@/components/CityPickerModal";
 import { LocationPinEmoji } from "@/components/LocationPinEmoji";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
   showActivities?: boolean;
@@ -469,17 +469,13 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         city={selectedCity ?? ""}
       />
 
-      <Sheet open={isCitySelectorOpen} onOpenChange={setIsCitySelectorOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
-          <SheetHeader className="text-left pb-2">
-            <SheetTitle className="font-display">Choose your city</SheetTitle>
-          </SheetHeader>
-          <CitySelector
-            variant="picker"
-            onPickerClose={() => setIsCitySelectorOpen(false)}
-          />
-        </SheetContent>
-      </Sheet>
+      <CityPickerModal open={isCitySelectorOpen} onOpenChange={setIsCitySelectorOpen} title="Choose your city">
+        <CitySelector
+          variant="picker"
+          autoFocusSearch={isCitySelectorOpen}
+          onPickerClose={() => setIsCitySelectorOpen(false)}
+        />
+      </CityPickerModal>
     </>
   );
 }

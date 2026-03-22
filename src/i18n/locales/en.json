@@ -175,6 +175,7 @@
     "participants": "Participants",
     "scheduledFor": "Scheduled for",
     "searchCity": "Search city...",
+    "chooseYourCity": "Choose your city",
     "resetToMyCity": "Reset to my city",
     "backTo": "Back to {{city}}",
     "noCitiesFound": "No cities found",

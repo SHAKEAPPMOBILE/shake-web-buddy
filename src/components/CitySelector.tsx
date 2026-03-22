@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { SHAKE_CITIES, REGIONS, City } from "@/data/cities";
 import { useCity } from "@/contexts/CityContext";
+import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "./LoadingSpinner";
 
 interface CitySelectorProps {
@@ -22,6 +23,8 @@ interface CitySelectorProps {
   variant?: "dropdown" | "picker";
   /** Called after a city is chosen or when reverting to detected location (picker mode). */
   onPickerClose?: () => void;
+  /** Focus search when the picker opens (sheet/modal). */
+  autoFocusSearch?: boolean;
 }
 
 function buildGrouped(): Record<string, City[]> {
@@ -34,12 +37,22 @@ function buildGrouped(): Record<string, City[]> {
 type CityPickerBodyProps = {
   onClose?: () => void;
   className?: string;
+  autoFocusSearch?: boolean;
+  /** Header dropdown: cap height; sheet/modal: fill available space */
+  embedded?: boolean;
 };
 
 /** Shared searchable city list — same behavior in header dropdown and home/plans pickers */
-export function CityPickerBody({ onClose, className }: CityPickerBodyProps) {
+export function CityPickerBody({ onClose, className, autoFocusSearch, embedded }: CityPickerBodyProps) {
   const { selectedCity, setSelectedCity, detectedCity, revertToDetectedLocation } = useCity();
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!autoFocusSearch) return;
+    const id = window.setTimeout(() => searchInputRef.current?.focus(), 50);
+    return () => window.clearTimeout(id);
+  }, [autoFocusSearch]);
 
   const groupedCities = useMemo(() => buildGrouped(), []);
 
@@ -74,16 +87,26 @@ export function CityPickerBody({ onClose, className }: CityPickerBodyProps) {
     !!selectedCity &&
     selectedCity.toLowerCase() !== detectedCity.name.toLowerCase();
 
+  const rowClass =
+    "w-full rounded-xl px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80 active:bg-muted/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+
   return (
-    <div className={className}>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+    <div
+      className={cn(
+        "flex min-h-0 flex-col gap-3",
+        embedded ? "max-h-[min(68vh,440px)] w-full" : "min-h-0 flex-1",
+        className,
+      )}
+    >
+      <div className="relative shrink-0">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
+          ref={searchInputRef}
           type="search"
           placeholder="Search cities..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 h-10"
+          className="h-11 border-border/80 bg-muted/40 pl-10 pr-3 shadow-sm focus-visible:bg-background"
           autoComplete="off"
         />
       </div>
@@ -92,56 +115,61 @@ export function CityPickerBody({ onClose, className }: CityPickerBodyProps) {
         <button
           type="button"
           onClick={handleBackToLocation}
-          className="w-full text-left text-sm text-muted-foreground hover:text-foreground py-2 px-1 rounded-md hover:bg-muted/60 transition-colors"
+          className="shrink-0 rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
         >
           ✕ Back to my location
           {detectedCity ? (
-            <span className="text-xs text-muted-foreground/80 ml-1">
-              ({detectedCity.name})
-            </span>
+            <span className="ml-1 text-xs text-muted-foreground/80">({detectedCity.name})</span>
           ) : null}
         </button>
       )}
 
-      <div className="overflow-y-auto max-h-[min(55vh,360px)] w-full pr-1 -mr-1 space-y-1">
-        {detectedCity && (
-          <>
-            <div className="text-xs text-muted-foreground px-1 pt-1">Your Location (Closest City)</div>
-            <button
-              type="button"
-              onClick={() => handleSelect(detectedCity.name)}
-              className="w-full text-left px-2 py-2 rounded-md hover:bg-muted/50 cursor-pointer flex items-center gap-2 text-sm"
-            >
-              <span>
-                {detectedCity.name}, {detectedCity.country}
-              </span>
-              <span className="ml-auto text-xs text-muted-foreground">Nearby</span>
-            </button>
-            <div className="h-px bg-border my-2" />
-          </>
+      <div
+        className={cn(
+          "min-h-0 overscroll-contain pr-1 [-ms-overflow-style:none] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5",
+          embedded ? "max-h-[min(50vh,320px)] overflow-y-auto" : "flex-1 overflow-y-auto",
         )}
-
-        {Object.entries(filteredGrouped).map(([region, cities]) => (
-          <div key={region} className="pt-1">
-            <div className="text-xs text-muted-foreground px-2 py-1">{region}</div>
-            {cities.map((city) => (
+      >
+        <div className="space-y-1 pb-1">
+          {detectedCity && (
+            <>
+              <div className="px-1 pb-1 pt-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Your Location
+              </div>
               <button
-                key={`${city.name}-${city.country}`}
                 type="button"
-                onClick={() => handleSelect(city.name)}
-                className="w-full text-left px-2 py-2 rounded-md hover:bg-muted/50 cursor-pointer flex items-center gap-2 text-sm"
+                onClick={() => handleSelect(detectedCity.name)}
+                className={cn(rowClass, "flex cursor-pointer items-center gap-2")}
               >
-                <span>
-                  {city.name}, {city.country}
+                <span className="font-medium text-foreground">
+                  {detectedCity.name}, {detectedCity.country}
                 </span>
+                <span className="ml-auto shrink-0 text-xs text-muted-foreground">Nearby</span>
               </button>
-            ))}
-          </div>
-        ))}
+              <div className="my-2 h-px bg-border/80" />
+            </>
+          )}
 
-        {searchQuery.trim() && Object.keys(filteredGrouped).length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-6">No cities match your search.</p>
-        )}
+          {Object.entries(filteredGrouped).map(([region, cities]) => (
+            <div key={region} className="pt-1">
+              <div className="px-2 py-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">{region}</div>
+              {cities.map((city) => (
+                <button
+                  key={`${city.name}-${city.country}`}
+                  type="button"
+                  onClick={() => handleSelect(city.name)}
+                  className={cn(rowClass, "cursor-pointer text-foreground")}
+                >
+                  {city.name}, {city.country}
+                </button>
+              ))}
+            </div>
+          ))}
+
+          {searchQuery.trim() && Object.keys(filteredGrouped).length === 0 && (
+            <p className="py-8 text-center text-sm text-muted-foreground">No cities match your search.</p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -152,11 +180,19 @@ export function CitySelector({
   onOpenChange,
   variant = "dropdown",
   onPickerClose,
+  autoFocusSearch,
 }: CitySelectorProps) {
   const { selectedCity, isLoading } = useCity();
 
   if (variant === "picker") {
-    return <CityPickerBody onClose={onPickerClose} className="flex flex-col gap-3 w-full" />;
+    return (
+      <CityPickerBody
+        onClose={onPickerClose}
+        autoFocusSearch={autoFocusSearch}
+        className="h-full min-h-0 w-full"
+        embedded={false}
+      />
+    );
   }
 
   return (
@@ -170,10 +206,14 @@ export function CitySelector({
         <span>{selectedCity ?? "Select city"}</span>
         <ChevronDown className="w-3 h-3" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 max-h-[min(70vh,480px)] flex flex-col bg-card border border-border z-50 p-3" align="end">
+      <DropdownMenuContent
+        className="z-50 flex max-h-[min(70vh,480px)] w-80 flex-col overflow-hidden border border-border bg-card p-3"
+        align="end"
+      >
         <CityPickerBody
+          embedded
           onClose={() => onOpenChange?.(false)}
-          className="flex flex-col gap-3 w-full min-w-0"
+          className="min-w-0"
         />
       </DropdownMenuContent>
     </DropdownMenu>
