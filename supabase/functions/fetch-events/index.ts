@@ -29,6 +29,19 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
   }
 }
 
+/** Full request URL with `apikey` replaced for safe logging (Supabase function logs). */
+function redactTicketmasterApiKeyFromUrl(fullUrl: string): string {
+  try {
+    const u = new URL(fullUrl);
+    if (u.searchParams.has("apikey")) {
+      u.searchParams.set("apikey", "(redacted)");
+    }
+    return u.toString();
+  } catch {
+    return fullUrl.replace(/([?&])apikey=[^&]*/gi, "$1apikey=(redacted)");
+  }
+}
+
 let spotifyAccessToken: string | null = null;
 let spotifyTokenExpiresAt: number | null = null;
 
@@ -678,8 +691,10 @@ serve(async (req) => {
         }
 
         const tmUrl = `${tmBase}?${new URLSearchParams(ticketmasterParams).toString()}`;
-        const logUrl = tmUrl.replace(/apikey=[^&]+/, "apikey=(redacted)");
+        const logUrl = redactTicketmasterApiKeyFromUrl(tmUrl);
 
+        // Full URL so you can verify query params in Supabase → Edge Functions → Logs (apikey never logged).
+        console.log("[fetch-events] Ticketmaster full URL (apikey redacted):", logUrl);
         console.log("[fetch-events] Calling Ticketmaster", {
           mode: canUseGeo ? "latlong+radius" : "city+countryCode",
           cityFilter,
