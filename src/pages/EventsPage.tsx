@@ -566,6 +566,10 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
     let cancelled = false;
     // Manual pick (e.g. NYC from picker): never block events API — out-of-range only applies to auto-detected location
     if (isCityOutOfRange && !isManuallySelected) {
+      console.log("[EventsPage] skip fetch — out of range (auto-detected)", {
+        isCityOutOfRange,
+        isManuallySelected,
+      });
       setEventsLoading(false);
       setEvents([]);
       return () => {
@@ -581,11 +585,23 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
     setEventsLoading(true);
     fetchTicketmasterEvents({ radius: 50, size: 25, city: selectedCity })
       .then((list) => {
+        console.log("[EventsPage] fetchTicketmasterEvents resolved", {
+          rawLength: Array.isArray(list) ? list.length : "not-array",
+          rawSample: Array.isArray(list) ? list.slice(0, 2) : list,
+          cancelled,
+        });
         if (!cancelled) {
           setEvents(list);
+          console.log("[EventsPage] setEvents applied", {
+            length: list.length,
+            categories: [...new Set(list.map((e) => e.category))],
+          });
+        } else {
+          console.log("[EventsPage] setEvents skipped (effect cancelled)");
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("[EventsPage] fetchTicketmasterEvents rejected", err);
         if (!cancelled) setEvents([]);
       })
       .finally(() => {
@@ -596,11 +612,40 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
     };
   }, [selectedCity, isCityLoading, isCityOutOfRange, isManuallySelected]);
 
+  /** Ticketmaster/edge currently tag most API events as "Music" — other tabs would show empty unless we reset */
+  useEffect(() => {
+    setCat("All");
+  }, [selectedCity]);
+
+  useEffect(() => {
+    if (events.length === 0 || cat === "All") return;
+    const n = events.filter((e) => e.category === cat).length;
+    if (n === 0) {
+      console.log("[EventsPage] category filter matched 0 events — resetting to All", {
+        cat,
+        availableCategories: [...new Set(events.map((e) => e.category))],
+      });
+      setCat("All");
+    }
+  }, [events, cat]);
+
   const hot = useMemo(() => events.filter((e) => e.isHot), [events]);
   const filtered =
     cat === "All"
       ? events
       : events.filter((e) => e.category === cat);
+
+  useEffect(() => {
+    const filteredCount =
+      cat === "All" ? events.length : events.filter((e) => e.category === cat).length;
+    const hotCount = events.filter((e) => e.isHot).length;
+    console.log("[EventsPage] filter/render snapshot", {
+      eventsCount: events.length,
+      cat,
+      filteredCount,
+      hotCount,
+    });
+  }, [events, cat]);
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-background overflow-hidden relative">
