@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
-import { ChevronLeft, ChevronRight, Music2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Music2 } from "lucide-react";
 import { getActivitiesWithDates, getStartingIndexByProximity } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
@@ -13,7 +13,7 @@ import { useCity } from "@/contexts/CityContext";
 import { useTranslation } from "react-i18next";
 import { CreateActivityDialog } from "@/components/CreateActivityDialog";
 import { CitySelector } from "@/components/CitySelector";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
   showActivities?: boolean;
@@ -25,9 +25,9 @@ interface HomeTabProps {
 
 // Separate dialog state for "Propose a plan" flow
 
-export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false, onOpenEvents, onUpgradeClick }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false, onOpenEvents, onUpgradeClick: _onUpgradeClick }: HomeTabProps) {
   const { t } = useTranslation();
-  const { user, isPremium } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { selectedCity, isLoading: isCityLoading, isCityOutOfRange } = useCity();
   const [isCitySelectorOpen, setIsCitySelectorOpen] = useState(false);
@@ -432,37 +432,25 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         {isCityLoading ? (
           <div className="flex justify-center">
             <div className="inline-flex items-center gap-2 animate-pulse">
-              <span className="inline-flex items-center justify-center w-4 h-4 text-shake-teal">📍</span>
+              <MapPin className="w-4 h-4 text-shake-teal shrink-0" />
               <div className="h-4 w-[140px] rounded bg-muted/60" />
             </div>
-          </div>
-        ) : isCityOutOfRange ? (
-          <div className="flex justify-center">
-            <div className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-              <span className="text-base">🌍</span>
-              <span>Coming to your city soon</span>
-            </div>
-          </div>
-        ) : selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..." ? (
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={() => setIsCitySelectorOpen(true)}
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <span className="inline-flex items-center justify-center w-4 h-4 text-shake-teal">📍</span>
-              <span className="truncate">{selectedCity}</span>
-            </button>
           </div>
         ) : (
           <div className="flex justify-center">
             <button
               type="button"
               onClick={() => setIsCitySelectorOpen(true)}
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors max-w-[min(100%,280px)]"
             >
-              <span className="inline-flex items-center justify-center w-4 h-4 text-shake-teal">📍</span>
-              <span>Select your city</span>
+              <MapPin className="w-4 h-4 text-shake-teal shrink-0" />
+              <span className="truncate">
+                {selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..."
+                  ? selectedCity
+                  : isCityOutOfRange
+                    ? "Coming to your city soon"
+                    : "Select your city"}
+              </span>
             </button>
           </div>
         )}
@@ -477,19 +465,20 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       <CreateActivityDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        city={selectedCity}
+        city={selectedCity ?? ""}
       />
 
-      <Dialog open={isCitySelectorOpen} onOpenChange={setIsCitySelectorOpen}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+      <Sheet open={isCitySelectorOpen} onOpenChange={setIsCitySelectorOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
+          <SheetHeader className="text-left pb-2">
+            <SheetTitle className="font-display">Choose your city</SheetTitle>
+          </SheetHeader>
           <CitySelector
-            isPremium={isPremium}
-            onUpgradeClick={onUpgradeClick}
-            open={isCitySelectorOpen}
-            onOpenChange={(open) => setIsCitySelectorOpen(open)}
+            variant="picker"
+            onPickerClose={() => setIsCitySelectorOpen(false)}
           />
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

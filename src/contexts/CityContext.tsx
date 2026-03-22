@@ -1,9 +1,34 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from "react";
 import { findClosestCity, SHAKE_CITIES, City } from "@/data/cities";
+
+const SHAKE_SELECTED_CITY_LS = "shake_selected_city";
+
+function isValidCityName(name: string | null | undefined): boolean {
+  if (!name) return false;
+  return SHAKE_CITIES.some((c) => c.name === name);
+}
+
+function readPersistedCity(): string | null {
+  try {
+    const v = localStorage.getItem(SHAKE_SELECTED_CITY_LS);
+    return isValidCityName(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
 
 interface CityContextType {
   selectedCity: string | null;
   setSelectedCity: (city: string) => void;
+  /** Snap selection back to IP/GPS-detected nearest supported city */
+  revertToDetectedLocation: () => void;
   detectedCity: City | null;
   isLoading: boolean;
   isCityOutOfRange: boolean;
@@ -12,35 +37,69 @@ interface CityContextType {
 const CityContext = createContext<CityContextType | undefined>(undefined);
 
 export function CityProvider({ children }: { children: ReactNode }) {
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedCity, setSelectedCityState] = useState<string | null>(() =>
+    readPersistedCity(),
+  );
   const [detectedCity, setDetectedCity] = useState<City | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCityOutOfRange, setIsCityOutOfRange] = useState(false);
 
+  const setSelectedCity = useCallback((city: string) => {
+    if (!isValidCityName(city)) return;
+    try {
+      localStorage.setItem(SHAKE_SELECTED_CITY_LS, city);
+    } catch {
+      /* ignore quota */
+    }
+    setSelectedCityState(city);
+    setIsCityOutOfRange(false);
+  }, []);
+
+  const revertToDetectedLocation = useCallback(() => {
+    if (!detectedCity) return;
+    try {
+      localStorage.setItem(SHAKE_SELECTED_CITY_LS, detectedCity.name);
+    } catch {
+      /* ignore */
+    }
+    setSelectedCityState(detectedCity.name);
+    setIsCityOutOfRange(false);
+  }, [detectedCity]);
+
   useEffect(() => {
     detectLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setCity = (city: City) => {
     setDetectedCity(city);
     setIsCityOutOfRange(false);
-    setSelectedCity(city.name);
+    if (!readPersistedCity()) {
+      setSelectedCityState(city.name);
+      try {
+        localStorage.setItem(SHAKE_SELECTED_CITY_LS, city.name);
+      } catch {
+        /* ignore */
+      }
+    }
     setIsLoading(false);
   };
 
   const setCityOutOfRange = (city: City) => {
     setDetectedCity(city);
-    setSelectedCity(null);
     setIsCityOutOfRange(true);
+    if (!readPersistedCity()) {
+      setSelectedCityState(null);
+    }
     setIsLoading(false);
   };
 
   const fallbackToDefault = () => {
-    // If detection fails, don't auto-pick a hardcoded city.
-    // Leave `selectedCity` as null so the user can manually choose.
     setIsCityOutOfRange(false);
     setDetectedCity(null);
-    setSelectedCity(null);
+    if (!readPersistedCity()) {
+      setSelectedCityState(null);
+    }
     setIsLoading(false);
   };
 
@@ -112,7 +171,6 @@ export function CityProvider({ children }: { children: ReactNode }) {
 
         if (inCountry.length === 1) return inCountry[0];
         if (inCountry.length > 1 && cityName) {
-          // Best-effort: pick a city whose name overlaps most with the returned city name.
           const normCity = normalize(cityName);
           const best = inCountry.find((c) => {
             const n = normalize(c.name);
@@ -121,7 +179,6 @@ export function CityProvider({ children }: { children: ReactNode }) {
           if (best) return best;
         }
 
-        // No meaningful match; return the first supported city in that country as a deterministic fallback.
         if (inCountry.length > 0) return inCountry[0];
       }
 
@@ -152,7 +209,6 @@ export function CityProvider({ children }: { children: ReactNode }) {
           return { lat, lng };
         }
 
-        // Some free tiers return a city but no coordinates. In that case, map the city/country to our SHAKE_CITIES list.
         console.warn("[CityContext] IP fallback: db-ip missing coords; mapping by city/country", {
           city: data?.city,
           countryName: data?.countryName,
@@ -198,7 +254,6 @@ export function CityProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Mapped City from DB-IP (no coords): use it directly as a best-effort.
       const mappedCity = coordsOrCity as City;
       setCity(mappedCity);
     } catch (error) {
@@ -216,7 +271,6 @@ export function CityProvider({ children }: { children: ReactNode }) {
     let didSettle = false;
 
     if ("geolocation" in navigator) {
-      // If geolocation doesn't resolve within 5 seconds, fall back to IP.
       const geoTimeout = setTimeout(() => {
         if (didSettle) return;
         didSettle = true;
@@ -244,14 +298,12 @@ export function CityProvider({ children }: { children: ReactNode }) {
           if (didSettle) return;
           didSettle = true;
           clearTimeout(geoTimeout);
-          // Browser geolocation denied/failed - fallback to IP geolocation
           console.warn("[CityContext] Geolocation denied/failed - falling back to IP");
           fallbackToIpGeolocation();
         },
-        { timeout: 5000, enableHighAccuracy: false } // Faster, less accurate
+        { timeout: 5000, enableHighAccuracy: false },
       );
     } else {
-      // No browser geolocation support - fallback to IP geolocation
       console.warn("[CityContext] Geolocation not supported - falling back to IP");
       fallbackToIpGeolocation();
     }
@@ -262,6 +314,7 @@ export function CityProvider({ children }: { children: ReactNode }) {
       value={{
         selectedCity,
         setSelectedCity,
+        revertToDetectedLocation,
         detectedCity,
         isLoading,
         isCityOutOfRange,

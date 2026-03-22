@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { SuperHumanIcon } from "../SuperHumanIcon";
-import { Calendar, Users, Plus, Plane, Share2, Search, X, Trash2, Music2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Calendar, Users, Plus, Plane, Share2, Trash2, Music2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { PremiumDialog } from "../PremiumDialog";
 import { CreateActivityDialog } from "../CreateActivityDialog";
+import { CitySelector } from "@/components/CitySelector";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PlanGroupChatView } from "./PlanGroupChatView";
 import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
@@ -18,8 +18,6 @@ import { toast } from "sonner";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
-import { Input } from "@/components/ui/input";
-import { SHAKE_CITIES } from "@/data/cities";
 import { SwipeableCard } from "../SwipeableCard";
 import { useTranslation } from "react-i18next";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
@@ -62,42 +60,18 @@ interface PlansTabProps {
 export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, onOpenEvents }: PlansTabProps = {}) {
   const { t, i18n } = useTranslation();
   const { selectedLanguage } = useLanguage();
-  const { selectedCity } = useCity();
-  const { user, isPremium } = useAuth();
+  const { selectedCity, detectedCity, revertToDetectedLocation } = useCity();
+  const { user } = useAuth();
   const { referralCode } = useReferralCode(user?.id);
   const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
   const isMobile = useIsMobile();
   const [activities, setActivities] = useState<PlanActivity[]>([]);
-  const [searchCity, setSearchCity] = useState<string>(() => {
-    return localStorage.getItem("plans-city-filter") || selectedCity || "";
-  });
-  const [showCitySearch, setShowCitySearch] = useState(false);
-  const [citySearchQuery, setCitySearchQuery] = useState("");
-  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const citySearchContainerRef = useRef<HTMLDivElement>(null);
+  const [isCitySheetOpen, setIsCitySheetOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Sync searchCity with selectedCity when it changes (initial load)
-  useEffect(() => {
-    if (selectedCity && !localStorage.getItem("plans-city-filter")) {
-      setSearchCity(selectedCity);
-    }
-  }, [selectedCity]);
-
-  // Filter city suggestions based on search query - only show when user types
-  const citySuggestions = useMemo(() => {
-    if (!citySearchQuery.trim()) return [];
-    const query = citySearchQuery.toLowerCase();
-    return SHAKE_CITIES.filter(city => 
-      city.name.toLowerCase().includes(query) ||
-      city.country.toLowerCase().includes(query)
-    ).slice(0, 10);
-  }, [citySearchQuery]);
-
-  // Fetch all plans for the searched city
+  // Fetch all plans for the selected city (global CityContext)
   const fetchPlans = useCallback(async () => {
-    if (!searchCity) {
+    if (!selectedCity) {
       setActivities([]);
       setIsLoading(false);
       return;
@@ -112,7 +86,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const { data: cityActivities, error: cityError } = await supabase
       .from("user_activities")
       .select("*")
-      .eq("city", searchCity)
+      .eq("city", selectedCity)
       .eq("is_active", true)
       .gte("scheduled_for", startOfToday.toISOString())
       .order("scheduled_for", { ascending: true });
@@ -139,7 +113,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const { data: allCarouselJoins } = await supabase
       .from("activity_joins")
       .select("activity_type, city, user_id")
-      .eq("city", searchCity)
+      .eq("city", selectedCity)
       .is("activity_id", null)
       .gt("expires_at", new Date().toISOString());
 
@@ -150,7 +124,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .from("activity_joins")
         .select("activity_type, city, user_id")
         .eq("user_id", user.id)
-        .neq("city", searchCity)
+        .neq("city", selectedCity)
         .is("activity_id", null)
         .gt("expires_at", new Date().toISOString());
       
@@ -195,7 +169,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .gte("scheduled_for", startOfToday.toISOString());
       
       // Only include joined activities from the searched city
-      joinedActivities = (joinedData || []).filter(a => a.city === searchCity);
+      joinedActivities = (joinedData || []).filter(a => a.city === selectedCity);
     }
 
     // Combine and deduplicate
@@ -293,14 +267,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     setActivities(allPlans);
     setIsLoading(false);
-  }, [searchCity, user]);
+  }, [selectedCity, user]);
 
   // Initial fetch and realtime subscription
   useEffect(() => {
     fetchPlans();
 
     const channel = supabase
-      .channel(`plans-tab-${searchCity}`)
+      .channel(`plans-tab-${selectedCity ?? "none"}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "user_activities" },
@@ -316,9 +290,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchPlans, searchCity]);
+  }, [fetchPlans, selectedCity]);
   
-  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
   const [showChatView, setShowChatView] = useState(false);
@@ -391,52 +364,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
   }, [pendingPaidActivityId, activities, isLoading, onPendingPaidActivityHandled]);
 
-  // Handle city selection from search
-  const handleSelectCity = (cityName: string) => {
-    setSearchCity(cityName);
-    setCitySearchQuery("");
-    setShowCitySuggestions(false);
-    setShowCitySearch(false);
-    localStorage.setItem("plans-city-filter", cityName);
-  };
-
-  // Reset to user's city
-  const handleResetToMyCity = () => {
-    setSearchCity(selectedCity);
-    setCitySearchQuery("");
-    setShowCitySuggestions(false);
-    setShowCitySearch(false);
-    localStorage.removeItem("plans-city-filter");
-  };
-
-  // Focus search input when opened
-  useEffect(() => {
-    if (showCitySearch && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [showCitySearch]);
-
-  // Click outside to close city search
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        citySearchContainerRef.current &&
-        !citySearchContainerRef.current.contains(event.target as Node)
-      ) {
-        setShowCitySearch(false);
-        setShowCitySuggestions(false);
-        setCitySearchQuery("");
-      }
-    };
-
-    if (showCitySearch) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showCitySearch]);
+  const browsingDifferentFromDetected =
+    !!detectedCity &&
+    !!selectedCity &&
+    selectedCity.toLowerCase() !== detectedCity.name.toLowerCase();
 
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
@@ -605,27 +536,25 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-display font-bold">{t('plans.myPlans')}</h2>
           <div className="flex items-center gap-2">
-            {/* Events button + City Search Toggle */}
+            {/* Events + city (same picker as Home — CityContext) */}
             <button
+              type="button"
               onClick={() => onOpenEvents?.()}
-              className={`flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all ${
-                searchCity !== selectedCity 
-                  ? "bg-primary text-primary-foreground" 
-                  : "bg-muted text-foreground"
-              }`}
+              className="flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-muted text-foreground"
             >
               <Music2 className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setShowCitySearch(!showCitySearch)}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium transition-all ${
-                searchCity !== selectedCity 
-                  ? "bg-primary text-primary-foreground" 
+              type="button"
+              onClick={() => setIsCitySheetOpen(true)}
+              className={`flex items-center gap-1 max-w-[min(50vw,200px)] px-2.5 py-1.5 rounded-full text-sm font-medium transition-all ${
+                browsingDifferentFromDetected
+                  ? "bg-primary text-primary-foreground"
                   : "bg-muted text-foreground"
               }`}
             >
-              <Plane className="w-4 h-4" />
-              {searchCity !== selectedCity && <span>{searchCity}</span>}
+              <Plane className="w-4 h-4 shrink-0" />
+              <span className="truncate">{selectedCity || t("plans.searchCity")}</span>
             </button>
             <button
               onClick={handleCreatePlan}
@@ -640,100 +569,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           </div>
         </div>
 
-        {/* City Search Input */}
-        {showCitySearch && (
-          <div ref={citySearchContainerRef} className="relative">
-            {isPremium ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      ref={searchInputRef}
-                      type="text"
-                    placeholder={t('plans.searchCity')}
-                    value={citySearchQuery}
-                    onChange={(e) => {
-                        setCitySearchQuery(e.target.value);
-                        setShowCitySuggestions(true);
-                      }}
-                      onFocus={() => setShowCitySuggestions(true)}
-                      className="pl-9 pr-9 bg-muted border-none"
-                    />
-                    {citySearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCitySearchQuery("");
-                          searchInputRef.current?.focus();
-                        }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2"
-                      >
-                        <X className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    )}
-                  </div>
-                  {searchCity !== selectedCity && (
-                    <button
-                      onClick={handleResetToMyCity}
-                      className="text-xs text-primary whitespace-nowrap"
-                    >
-                      {t('plans.resetToMyCity')}
-                    </button>
-                  )}
-                </div>
-
-                {/* City Suggestions Dropdown */}
-                {showCitySuggestions && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
-                    {citySuggestions.length > 0 ? (
-                      citySuggestions.map((city) => (
-                        <button
-                          key={`${city.name}-${city.country}`}
-                          onClick={() => handleSelectCity(city.name)}
-                          className="w-full px-4 py-2.5 text-left hover:bg-muted flex items-center justify-between text-sm"
-                        >
-                          <span>{city.name}</span>
-                          <span className="text-muted-foreground text-xs">{city.country}</span>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-sm text-muted-foreground">
-                        {t('plans.noCitiesFound')}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            ) : (
-              /* Non-premium: Show subscribe prompt */
-              <div className="bg-card border border-border rounded-xl p-4 shadow-lg">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-shake-yellow/20 flex items-center justify-center">
-                    <SuperHumanIcon size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-sm">{t('plans.explorePlansWorldwide')}</h4>
-                    <p className="text-xs text-muted-foreground">{t('plans.superHumanFeature')}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {t('plans.browseAndJoinPlans')}
-                </p>
-                <button
-                  onClick={() => {
-                    setShowCitySearch(false);
-                    setShowPremiumDialog(true);
-                  }}
-                  className="w-full py-2 bg-shake-yellow text-black rounded-lg text-sm font-medium hover:opacity-90 transition-all"
-                >
-                  {t('plans.becomeaSuperHuman')}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
+
+      <Sheet open={isCitySheetOpen} onOpenChange={setIsCitySheetOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
+          <SheetHeader className="text-left pb-2">
+            <SheetTitle className="font-display">{t("plans.searchCity")}</SheetTitle>
+          </SheetHeader>
+          <CitySelector variant="picker" onPickerClose={() => setIsCitySheetOpen(false)} />
+        </SheetContent>
+      </Sheet>
 
       {/* Plans List */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -746,13 +591,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <span className="inline-flex items-center justify-center w-8 h-8 text-muted-foreground">📍</span>
             </div>
-            <p className="text-muted-foreground">{t('plans.noPlansInCity', { city: searchCity })}</p>
-            {searchCity !== selectedCity && (
+            <p className="text-muted-foreground">
+              {t("plans.noPlansInCity", { city: selectedCity || "—" })}
+            </p>
+            {browsingDifferentFromDetected && (
               <button
-                onClick={handleResetToMyCity}
+                type="button"
+                onClick={() => revertToDetectedLocation()}
                 className="mt-3 text-sm text-primary hover:underline"
               >
-                {t('plans.backTo', { city: selectedCity })}
+                {t("plans.resetToMyCity")}
               </button>
             )}
             <button
@@ -906,15 +754,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       </div>
 
 
-      <PremiumDialog 
-        open={showPremiumDialog} 
-        onOpenChange={setShowPremiumDialog} 
-      />
-
       <CreateActivityDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        city={searchCity}
+        city={selectedCity ?? ""}
       />
 
 
