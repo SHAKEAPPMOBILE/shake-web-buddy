@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Check, Globe, User, MessageSquare, Sparkles, Settings, Video } from "lucide-react";
+import { Check, User, MessageSquare, Sparkles, Settings, Video } from "lucide-react";
 import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
   Dialog,
@@ -42,8 +42,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
   const features = [
     { icon: Sparkles, text: "Create your own activities unlimited" },
-    { icon: Globe, text: "Access to 100+ cities worldwide" },
-    { iconEmoji: "📍", text: "Join activities in any city" },
     { icon: User, text: "See other users' profiles unlimited" },
     { icon: MessageSquare, text: "Unlimited text messages" },
     { icon: Video, text: "Upload status video" },
@@ -333,7 +331,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
             Become a Super-Human
           </DialogTitle>
           <DialogDescription className="text-center text-muted-foreground text-sm">
-            Explore and join activities in any city
+            Unlock unlimited creation, profiles, messaging, and more
           </DialogDescription>
         </DialogHeader>
 

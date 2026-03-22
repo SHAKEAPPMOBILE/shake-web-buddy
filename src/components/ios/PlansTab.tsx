@@ -393,11 +393,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   // Handle city selection from search
   const handleSelectCity = (cityName: string) => {
-    // Premium gate: only Super-Human users can explore other cities
-    if (!isPremium && cityName.toLowerCase() !== selectedCity.toLowerCase()) {
-      setShowPremiumDialog(true);
-      return;
-    }
     setSearchCity(cityName);
     setCitySearchQuery("");
     setShowCitySuggestions(false);

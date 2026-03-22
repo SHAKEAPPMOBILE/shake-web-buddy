@@ -68,12 +68,6 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
 
   // Handle city selection from suggestions
   const handleSelectCity = (cityName: string) => {
-    // Premium gate: only Super-Human users can explore other cities
-    if (!isPremium && cityName.toLowerCase() !== city.toLowerCase()) {
-      setShowPremiumDialog(true);
-      return;
-    }
-    
     setSearchQuery(cityName);
     setShowCitySuggestions(false);
     // Fly to the city on the map

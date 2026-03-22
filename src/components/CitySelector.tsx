@@ -8,10 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SHAKE_CITIES, REGIONS, City } from "@/data/cities";
-import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
-import { SuperHumanIcon } from "./SuperHumanIcon";
 import { LoadingSpinner } from "./LoadingSpinner";
 
 interface CitySelectorProps {
@@ -26,22 +23,11 @@ interface CitySelectorProps {
 }
 
 export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelectorProps) {
-  const { isPremium } = useAuth();
   const { selectedCity, setSelectedCity, detectedCity, isLoading } = useCity();
 
   const closeDropdown = () => onOpenChange?.(false);
 
   const handleCitySelect = (cityName: string) => {
-    if (!isPremium) {
-      toast.error("Super-Human feature", {
-        description: "Become a Super-Human to select any city worldwide!",
-        action: {
-          label: "Upgrade",
-          onClick: () => onUpgradeClick?.(),
-        },
-      });
-      return;
-    }
     setSelectedCity(cityName);
     closeDropdown();
   };
@@ -65,21 +51,7 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
           )}
           <span>{selectedCity ?? "Select city"}</span>
           <ChevronDown className="w-3 h-3" />
-          {!isPremium && <SuperHumanIcon size={14} />}
         </div>
-
-        {!isPremium && (
-          <>
-            <div
-              className="mt-2 flex items-center gap-2 text-shake-yellow cursor-pointer hover:bg-muted/50 transition-colors rounded px-2 py-1.5"
-              onClick={() => onUpgradeClick?.()}
-            >
-              <SuperHumanIcon size={16} />
-              Become a Super-Human to select any city
-            </div>
-            <div className="h-px bg-border my-2" />
-          </>
-        )}
 
         {detectedCity && (
           <>
@@ -129,22 +101,8 @@ export function CitySelector({ onUpgradeClick, open, onOpenChange }: CitySelecto
         )}
         <span>{selectedCity ?? "Select city"}</span>
         <ChevronDown className="w-3 h-3" />
-        {!isPremium && <SuperHumanIcon size={14} />}
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64 bg-card border border-border z-50" align="end">
-        {!isPremium && (
-          <>
-            <DropdownMenuLabel
-              className="flex items-center gap-2 text-shake-yellow cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => onUpgradeClick?.()}
-            >
-              <SuperHumanIcon size={16} />
-              Become a Super-Human to select any city
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-          </>
-        )}
-
         {detectedCity && (
           <>
             <DropdownMenuLabel className="text-xs text-muted-foreground">
