@@ -2,7 +2,11 @@ import { Purchases } from '@revenuecat/purchases-capacitor';
 import { Capacitor } from '@capacitor/core';
 
 export const isNativePlatform = () => {
-  return Capacitor.getPlatform() === 'ios' || Capacitor.getPlatform() === 'android';
+  // Web must never use RevenueCat IAP (plugin stubs throw).
+  if (Capacitor.getPlatform() === "web") return false;
+  if (!Capacitor.isNativePlatform()) return false;
+  const platform = Capacitor.getPlatform();
+  return platform === "ios" || platform === "android";
 };
 
 export const initializeRevenueCat = async () => {
@@ -34,7 +38,9 @@ export const checkPremiumAccess = async (): Promise<boolean> => {
 };
 
 export const purchasePremium = async () => {
-  if (!isNativePlatform()) throw new Error('Not available on web');
+  if (!isNativePlatform()) {
+    throw new Error("Not available on web — use Stripe checkout");
+  }
   
   try {
     const offerings = await Purchases.getOfferings();

@@ -301,7 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return raw || fallback;
   };
 
-  // Send OTP via Bird WhatsApp
+  // Send OTP via SMS (Bird)
   const sendOtp = async (phone: string, purpose = "auth"): Promise<{ error: Error | null; verificationId?: string }> => {
     try {
       const { data, error } = await supabase.functions.invoke("send-bird-otp", {

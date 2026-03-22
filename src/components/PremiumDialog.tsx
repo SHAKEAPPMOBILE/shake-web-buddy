@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Check, Globe, User, MessageSquare, Sparkles, Settings, Video } from "lucide-react";
 import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
@@ -17,6 +17,7 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { SuperHumanIcon } from "./SuperHumanIcon";
 import { Purchases } from '@revenuecat/purchases-capacitor';
 import { purchasePremium } from "@/lib/revenuecat";
+import { shouldUseStripeSubscriptionCheckout } from "@/lib/platform-utils";
 const CapacitorPurchases = Purchases;
 
 interface PremiumDialogProps {
@@ -24,13 +25,12 @@ interface PremiumDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const PRODUCT_ID = "shake_premium_monthly"; // You'll create this in App Store Connect
-
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
   const [productPrice, setProductPrice] = useState("$2.99");
   const { user, isPremium, isManualOverride } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
@@ -57,19 +57,29 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   }, [open, isPremium]);
 
   const initializePurchases = async () => {
+    if (shouldUseStripeSubscriptionCheckout()) {
+      return;
+    }
     try {
-      // Get available products
-      const { products } = await CapacitorPurchases.getProducts({
-        productIdentifiers: [PRODUCT_ID]
-      });
+      // Load pricing from RevenueCat offerings (native iOS/Android only).
+      const offerings = await CapacitorPurchases.getOfferings();
+      const pkg =
+        offerings.current?.availablePackages.find(
+          p =>
+            p.product?.identifier === "SuperHuman" ||
+            p.identifier === "monthly" ||
+            p.product?.identifier?.includes("SuperHuman")
+        ) ?? offerings.current?.availablePackages[0];
 
-      if (products && products.length > 0) {
-        const product = products[0];
-        setProductPrice(product.priceString);
-      }
+      if (pkg?.product?.priceString) setProductPrice(pkg.product.priceString);
     } catch (error) {
       console.error("Error initializing purchases:", error);
     }
+  };
+
+  const hasPremiumEntitlement = (customerInfo: any): boolean => {
+    const entitlements = customerInfo?.entitlements?.active ?? {};
+    return entitlements?.premium !== undefined || entitlements?.superhuman !== undefined;
   };
 
   const handleSubscribe = async () => {
@@ -82,36 +92,78 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
     setIsLoading(true);
     try {
-      // Purchase the product
-      const { productIdentifier, transactionId } = await (CapacitorPurchases as any).purchaseProduct({
-        productIdentifier: PRODUCT_ID
-      });
+      // Web / non-native: Stripe Checkout. Native iOS/Android: RevenueCat IAP.
+      if (shouldUseStripeSubscriptionCheckout()) {
+        console.log("Web path: calling create-checkout");
+        const { data, error } = await supabase.functions.invoke("create-checkout", {
+          body: {
+            userId: user.id,
+            email: user.email ?? null,
+          },
+        });
 
-      // Verify purchase with your backend
-      const { data, error } = await supabase.functions.invoke("verify-purchase", {
-        body: {
-          productId: productIdentifier,
-          transactionId: transactionId,
-          platform: 'ios' // or detect platform
+        if (error) throw error;
+        if (data?.error) throw new Error(String(data.error));
+
+        const checkoutUrl = data?.url;
+        if (!checkoutUrl || typeof checkoutUrl !== "string") {
+          throw new Error("Failed to create checkout session");
         }
-      });
 
-      if (error) throw error;
+        window.location.href = checkoutUrl;
+        return;
+      }
 
-      if (data?.success) {
+      // Native purchase via RevenueCat; webhook updates `premium_override` server-side.
+      const customerInfo = await purchasePremium();
+
+      if (hasPremiumEntitlement(customerInfo)) {
         toast.success("Welcome to Super-Human! 🎉");
         onOpenChange(false);
         // Refresh user premium status
         window.location.reload();
+      } else {
+        // Entitlement confirmation may lag behind the client purchase result.
+        toast.info("Subscription confirmed. Finalizing access...");
+        onOpenChange(false);
+        window.location.reload();
       }
     } catch (error: any) {
-      console.error("Purchase error:", error);
-      
+      console.error("Premium purchase error:", {
+        message: error?.message,
+        code: error?.code,
+        name: error?.name,
+        raw: error,
+      });
+
+      const msg = String(error?.message ?? error ?? "");
+      const lower = msg.toLowerCase();
+
+      if (lower.includes("email required for subscription")) {
+        onOpenChange(false);
+        toast.info("Add your email to subscribe");
+        navigate("/profile", {
+          state: {
+            focusBillingEmail: true,
+            returnTo: location.pathname,
+          },
+        });
+        return;
+      }
+
       // Handle user cancellation gracefully
-      if (error.code === 'userCancelled') {
+      if (error?.code === "userCancelled" || error?.userCancelled) {
         toast.info("Purchase cancelled");
       } else {
-        toast.error("Purchase failed. Please try again.");
+        if (lower.includes("stripe") && (lower.includes("not set") || lower.includes("missing"))) {
+          toast.error("Payments are not configured yet. Please try again later.");
+        } else if (lower.includes("verify-purchase") || lower.includes("not found")) {
+          toast.error("Subscription verification isn't set up yet. Please try again later.");
+        } else if (lower.includes("product not found")) {
+          toast.error("Subscription product not found. Please contact support.");
+        } else {
+          toast.error(msg ? `Purchase failed: ${msg}` : "Purchase failed. Please try again.");
+        }
       }
     } finally {
       setIsLoading(false);
@@ -119,6 +171,10 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   };
 
   const handleManageSubscription = async () => {
+    if (shouldUseStripeSubscriptionCheckout()) {
+      toast.info("On the web, manage billing from your Shake account email or contact support.");
+      return;
+    }
     setIsManageLoading(true);
     try {
       // Open native subscription management
@@ -132,20 +188,20 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   };
 
   const handleRestore = async () => {
+    if (shouldUseStripeSubscriptionCheckout()) {
+      toast.info("Restore purchases is for the mobile app. Web subscriptions use Stripe.");
+      return;
+    }
     setIsLoading(true);
     try {
       await CapacitorPurchases.restorePurchases();
-      
-      // Verify restored purchases with backend
-      const { data, error } = await supabase.functions.invoke("restore-purchases");
-      
-      if (error) throw error;
-      
-      if (data?.hasPremium) {
+
+      const customerInfo = await CapacitorPurchases.getCustomerInfo();
+      if (hasPremiumEntitlement(customerInfo)) {
         toast.success("Purchases restored successfully!");
         window.location.reload();
       } else {
-        toast.info("No purchases found to restore");
+        toast.info("No active subscription found to restore");
       }
     } catch (error) {
       console.error("Restore error:", error);

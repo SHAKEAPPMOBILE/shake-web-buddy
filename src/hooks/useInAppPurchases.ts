@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { Purchases, PurchasesPackage, CustomerInfo, LOG_LEVEL } from '@revenuecat/purchases-capacitor';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { isNativePlatform } from '@/lib/revenuecat';
 
 // RevenueCat entitlement identifier for premium access
 const PREMIUM_ENTITLEMENT_ID = 'premium';
@@ -28,7 +28,7 @@ interface InAppPurchaseState {
 export function useInAppPurchases() {
   const { user, checkSubscription } = useAuth();
   const [state, setState] = useState<InAppPurchaseState>({
-    isNativePlatform: Capacitor.isNativePlatform(),
+    isNativePlatform: isNativePlatform(),
     isInitialized: false,
     isLoading: false,
     isPurchasing: false,

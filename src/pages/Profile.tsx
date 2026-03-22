@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,7 +34,9 @@ export default function Profile() {
   const { t } = useTranslation();
   const { user, isLoading: authLoading, isPremium, signOut, updatePassword } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
   
   const [name, setName] = useState("");
   const [nationality, setNationality] = useState("");
@@ -60,6 +62,10 @@ export default function Profile() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const focusBillingEmail = Boolean((location.state as any)?.focusBillingEmail);
+  const returnTo = (location.state as any)?.returnTo as string | undefined;
+  const [highlightBillingEmail, setHighlightBillingEmail] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -114,6 +120,24 @@ export default function Profile() {
       fetchProfile();
     }
   }, [user]);
+
+  // When coming from the subscription flow, focus + highlight the billing email input.
+  useEffect(() => {
+    if (!focusBillingEmail) return;
+    if (isLoading) return;
+
+    setHighlightBillingEmail(true);
+    // Focus after the input is mounted and populated.
+    setTimeout(() => {
+      emailInputRef.current?.focus();
+    }, 0);
+
+    const t = setTimeout(() => {
+      setHighlightBillingEmail(false);
+    }, 4000);
+
+    return () => clearTimeout(t);
+  }, [focusBillingEmail, isLoading]);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -202,6 +226,12 @@ export default function Profile() {
 
       toast.success("Profile saved!");
       triggerConfettiWaterfall();
+
+      // If user was routed here to add their email for subscription,
+      // return them back so they can subscribe again.
+      if (returnTo) {
+        navigate(returnTo, { replace: true });
+      }
     } catch (error) {
       console.error("Error saving profile:", error);
       toast.error("Failed to save profile");
@@ -405,10 +435,12 @@ export default function Profile() {
               </Label>
               <Input
                 id="email"
+                ref={emailInputRef}
                 type="email"
                 value={billingEmail}
                 onChange={(e) => setBillingEmail(e.target.value)}
                 placeholder="your@email.com"
+                className={highlightBillingEmail ? "ring-2 ring-shake-yellow/50 border-shake-yellow/50" : undefined}
               />
               <p className="text-xs text-muted-foreground">
                 Used for billing and to receive updates from us.

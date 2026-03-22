@@ -104,10 +104,47 @@ serve(async (req) => {
         return json(400, { error: "No account found with this phone number" });
       }
 
+      const { data: userData, error: userFetchError } = await admin.auth.admin.getUserById(
+        existingProfile.user_id,
+      );
+
+      if (userFetchError || !userData?.user) {
+        console.error("getUserById error:", userFetchError);
+        return json(500, { error: "Failed to load user" });
+      }
+
+      // Magic link verification requires an email on the auth user. Phone-only accounts get a
+      // deterministic internal address so we can mint a token_hash without changing the password.
+      let emailForMagicLink = userData.user.email ?? "";
+      if (!emailForMagicLink) {
+        const syntheticEmail = `${String(userData.user.id).replace(/-/g, "")}@phone-otp.internal`;
+        const { error: emailUpdateError } = await admin.auth.admin.updateUserById(
+          existingProfile.user_id,
+          { email: syntheticEmail, email_confirm: true },
+        );
+        if (emailUpdateError) {
+          console.error("Synthetic email update error:", emailUpdateError);
+          return json(500, { error: "Failed to prepare sign-in" });
+        }
+        emailForMagicLink = syntheticEmail;
+      }
+
+      const { data: linkResult, error: linkError } = await admin.auth.admin.generateLink({
+        type: "magiclink",
+        email: emailForMagicLink,
+      });
+
+      const tokenHash = linkResult?.properties?.hashed_token;
+      if (linkError || !tokenHash) {
+        console.error("generateLink error:", linkError, linkResult);
+        return json(500, { error: "Failed to create session" });
+      }
+
       return json(200, {
         success: true,
         userId: existingProfile.user_id,
         action: "otp_verified",
+        magicLinkTokenHash: tokenHash,
       });
     }
 

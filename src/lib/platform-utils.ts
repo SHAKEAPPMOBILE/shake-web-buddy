@@ -53,3 +53,12 @@ export function shouldUseAppleIAP(): boolean {
 export function shouldUseStripe(): boolean {
   return isWebPlatform() || isNativeAndroid();
 }
+
+/**
+ * Super-Human subscription: use Stripe Checkout on web; RevenueCat only on native iOS/Android.
+ * Prefer this over a bare `isNativePlatform()` check — RevenueCat stubs throw on web
+ * ("Purchases.purchaseProduct() is not implemented on web").
+ */
+export function shouldUseStripeSubscriptionCheckout(): boolean {
+  return Capacitor.getPlatform() === "web" || !Capacitor.isNativePlatform();
+}
