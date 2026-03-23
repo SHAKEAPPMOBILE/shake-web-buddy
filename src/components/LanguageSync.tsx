@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export function LanguageSync() {
   const { user } = useAuth();
-  const { selectedLanguage, setSelectedLanguage } = useLanguage();
+  const { setSelectedLanguage } = useLanguage();
 
   // Load saved language from DB when user is available
   useEffect(() => {
@@ -40,20 +40,9 @@ export function LanguageSync() {
     };
   }, [user?.id, setSelectedLanguage]);
 
-  // Persist language to DB when user changes it (and we're logged in)
-  useEffect(() => {
-    if (!user?.id || !selectedLanguage?.code) return;
-
-    // Avoid writing back immediately after we just loaded from DB (same tick)
-    const code = selectedLanguage.code;
-    supabase
-      .from("profiles_private")
-      .update({ preferred_language: code })
-      .eq("user_id", user.id)
-      .then(({ error }) => {
-        if (error) console.warn("LanguageSync: failed to save preferred_language", error);
-      });
-  }, [user?.id, selectedLanguage?.code]);
+  // NOTE: Disabled DB persistence for preferred_language because some deployed
+  // environments do not yet have this column in `profiles_private`, causing
+  // 400 PATCH errors on page load.
 
   return null;
 }
