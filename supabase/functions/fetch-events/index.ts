@@ -373,6 +373,9 @@ async function fetchTicketmasterDiscoveryOnce(
   const ticketmasterParams: Record<string, string> = {
     apikey: ticketmasterKey,
     ...baseParams,
+    classificationName: "music,sports,arts,comedy,family",
+    sort: "date,asc",
+    includeFamily: "yes",
   };
   if (geoOrCity.kind === "geo") {
     ticketmasterParams.latlong = geoOrCity.latlong;
@@ -425,12 +428,20 @@ async function fetchTicketmasterDiscoveryOnce(
 }
 
 function dedupeByEventNameKeepingEarliestStart(events: EventItem[]): EventItem[] {
-  // Ticketmaster may return the same "show" multiple times (one per performance date)
-  // while `event.name` stays identical. Deduplicate by show name only, keeping the
-  // earliest/next upcoming start time.
-  const byName = new Map<string, EventItem>();
-
+  // Pass 1: strict dedupe by native event ID only.
+  const byId = new Map<string, EventItem>();
   for (const e of events) {
+    const key = (e.id ?? "").trim();
+    if (!key) continue;
+    if (!byId.has(key)) {
+      byId.set(key, e);
+    }
+  }
+  const afterIdDedup = Array.from(byId.values());
+
+  // Pass 2: group by normalized show name and keep the earliest upcoming date.
+  const byName = new Map<string, EventItem>();
+  for (const e of afterIdDedup) {
     const key = (e.name ?? "").toLowerCase().trim();
     if (!key) continue;
 
@@ -455,12 +466,12 @@ function dedupeByEventNameKeepingEarliestStart(events: EventItem[]): EventItem[]
     return aTs - bTs;
   });
 
-  const removed = Math.max(0, events.length - deduped.length);
-  console.log("[fetch-events] dedupe removed", {
-    inputCount: events.length,
-    outputCount: deduped.length,
-    removed,
-    dedupeKey: "name-only",
+  console.log("[fetch-events] dedupe pipeline", {
+    rawCount: events.length,
+    afterIdDedup: afterIdDedup.length,
+    afterNameDedup: deduped.length,
+    removedById: Math.max(0, events.length - afterIdDedup.length),
+    removedByName: Math.max(0, afterIdDedup.length - deduped.length),
   });
 
   return deduped;
@@ -526,7 +537,7 @@ serve(async (req) => {
     const tmBaseParams = {
       radius: String(radiusKm ?? 50),
       unit: "km",
-      size: String(sizeLimit),
+      size: String(Math.max(sizeLimit, 100)),
     };
 
     if (!ticketmasterKey) {
