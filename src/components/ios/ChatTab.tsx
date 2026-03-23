@@ -38,6 +38,7 @@ interface ChatActivity {
   event_id?: string;
   event_name?: string;
   expires_at?: string;
+  event_venue?: string;
 }
 
 interface ChatTabProps {
@@ -234,10 +235,22 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
         });
       }
 
+      const resolveEventMembershipExpiry = (m: { expires_at?: string | null; paid_at?: string | null }) => {
+        if (m.expires_at) {
+          const d = new Date(m.expires_at);
+          if (!isNaN(d.getTime())) return d;
+        }
+        if (m.paid_at) {
+          const d = new Date(m.paid_at);
+          if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
+        }
+        return null;
+      };
+
       // Event chats the user has joined
       const { data: eventMemberships, error: eventMembershipsError } = await supabase
         .from("event_chat_members")
-        .select("event_id, event_chats(name, expires_at)")
+        .select("event_id, paid_at, expires_at, event_name, event_venue, event_chats(name, expires_at)")
         .eq("user_id", user.id);
 
       console.log("[ChatTab] Event memberships query", {
@@ -247,14 +260,17 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
 
       if (eventMemberships && eventMemberships.length > 0) {
         for (const membership of eventMemberships as any[]) {
-          const ev = membership.event_chats as { name: string; expires_at: string } | null;
-          if (!ev) continue;
+          const ev = membership.event_chats as { name?: string; expires_at?: string } | null;
+          const expiresAt = resolveEventMembershipExpiry(membership);
+          if (expiresAt && expiresAt.getTime() <= Date.now()) continue;
 
-          const expiresAt = new Date(ev.expires_at);
-          if (isNaN(expiresAt.getTime())) continue;
-
-          // Only show chats that haven't fully expired
-          if (expiresAt.getTime() <= Date.now()) continue;
+          const parsedName = typeof membership.event_name === "string" && membership.event_name.trim()
+            ? membership.event_name.trim()
+            : (ev?.name ?? "Event Chat");
+          const fallbackVenue = parsedName.includes(" · ") ? parsedName.split(" · ")[1] : "Event";
+          const parsedVenue = typeof membership.event_venue === "string" && membership.event_venue.trim()
+            ? membership.event_venue.trim()
+            : fallbackVenue;
 
           // Count participants for this event chat
           const { count: participantCount } = await supabase
@@ -264,15 +280,16 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
 
           chatActivities.push({
             id: `event-${membership.event_id}`,
-            activity_type: ev.name,
-            city: "Event",
-            scheduled_for: ev.expires_at,
+            activity_type: parsedName,
+            city: parsedVenue,
+            scheduled_for: expiresAt ? expiresAt.toISOString() : new Date().toISOString(),
             participant_count: participantCount || 1,
             is_plan: false,
             is_event: true,
             event_id: membership.event_id,
-            event_name: ev.name,
-            expires_at: ev.expires_at,
+            event_name: parsedName,
+            event_venue: parsedVenue,
+            expires_at: expiresAt ? expiresAt.toISOString() : undefined,
           });
         }
       }
@@ -362,6 +379,8 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
     if (cityFilter === "all") return activities;
     return activities.filter(a => a.city === cityFilter);
   }, [activities, cityFilter]);
+  const eventActivities = useMemo(() => filteredActivities.filter((a) => a.is_event), [filteredActivities]);
+  const nonEventActivities = useMemo(() => filteredActivities.filter((a) => !a.is_event), [filteredActivities]);
 
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
@@ -540,7 +559,8 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
             )}
           </div>
         ) : (
-          filteredActivities.map((activity) => (
+          <>
+          {nonEventActivities.map((activity) => (
             <div
               key={activity.id}
               role="button"
@@ -599,11 +619,16 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                         EVENT
                       </span>
                     )}
+                    {activity.is_event && (
+                      <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
+                        12h access
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1 mt-0.5">
                     <span className="inline-flex items-center justify-center w-3 h-3 text-white/60">📍</span>
-                    <span className="text-xs text-white/70">{activity.city}</span>
+                    <span className="text-xs text-white/70">{activity.is_event ? (activity.event_venue ?? activity.city) : activity.city}</span>
                     {activity.is_plan && activity.creator_name && (
                       <span className="text-xs text-white/50">• {t('common.by')} {activity.creator_name}</span>
                     )}
@@ -637,7 +662,62 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                 </div>
               </div>
             </div>
-          ))
+          ))}
+          {eventActivities.length > 0 && (
+            <>
+              <div className="pt-1 pb-0.5">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground/80 font-semibold">
+                  Event Chats
+                </p>
+              </div>
+              {eventActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleActivityClick(activity)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleActivityClick(activity);
+                    }
+                  }}
+                  className="w-full text-left rounded-2xl p-4 space-y-3 hover:opacity-90 transition-all cursor-pointer relative"
+                  style={{
+                    background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-2xl">
+                      🎫
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-white">{activity.event_name ?? activity.activity_type}</h3>
+                        <span className="text-xs bg-[#F97316] text-white px-1.5 py-0.5 rounded-full">
+                          EVENT
+                        </span>
+                        <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
+                          12h access
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="inline-flex items-center justify-center w-3 h-3 text-white/60">📍</span>
+                        <span className="text-xs text-white/70">{activity.event_venue ?? activity.city}</span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Users className="w-3.5 h-3.5 text-white/70" />
+                        <span className="text-sm text-white/70">
+                          {activity.participant_count} {activity.participant_count === 1 ? t('common.person') : t('common.people')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+          </>
         )}
       </div>
 

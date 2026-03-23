@@ -140,18 +140,22 @@ serve(async (req) => {
           logStep("Error upserting event_chats", { error: upsertError.message });
         }
 
-        // Add member row (event_id must exactly match frontend event.id for member check to find it)
-        logStep("Inserting event_chat_members", { event_id: eventId, user_id: payerUserId });
+        // Upsert member row so payment retries/webhooks do not fail with conflict.
+        logStep("Upserting event_chat_members", { event_id: eventId, user_id: payerUserId });
+        const paidAtIso = new Date().toISOString();
         const { error: memberError } = await supabaseClient
           .from("event_chat_members")
-          .insert({
+          .upsert({
             event_id: eventId,
             user_id: payerUserId,
-          });
+            paid_at: paidAtIso,
+            expires_at: expiresAt.toISOString(),
+            event_name: eventName,
+          }, { onConflict: "event_id,user_id" });
 
-        if (memberError && memberError.code !== "23505") {
-          logStep("Error inserting event_chat_member", { error: memberError.message });
-        } else if (!memberError) {
+        if (memberError) {
+          logStep("Error upserting event_chat_member", { error: memberError.message });
+        } else {
           logStep("User joined event chat after payment", { eventId, payerUserId });
         }
       }

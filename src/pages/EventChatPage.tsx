@@ -48,7 +48,7 @@ export default function EventChatPage() {
         // 1) First check if user is in event_chat_members for this event
         const { data: member, error: memberError } = await supabase
           .from("event_chat_members")
-          .select("event_id")
+          .select("event_id, paid_at, expires_at")
           .eq("event_id", eventId)
           .eq("user_id", user.id)
           .maybeSingle();
@@ -58,19 +58,43 @@ export default function EventChatPage() {
           console.log("[EventChatPage] Error checking event_chat_members", memberError);
         }
 
+        const resolveMembershipExpiry = (m: { expires_at?: string | null; paid_at?: string | null } | null) => {
+          if (!m) return null;
+          if (m.expires_at) {
+            const d = new Date(m.expires_at);
+            if (!isNaN(d.getTime())) return d;
+          }
+          if (m.paid_at) {
+            const d = new Date(m.paid_at);
+            if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
+          }
+          return null;
+        };
+
         if (!member) {
           // Wait 3 seconds before concluding user is not a member, to allow frontend upsert to complete
           await new Promise((resolve) => setTimeout(resolve, 3000));
 
           const { data: recheckMember } = await supabase
             .from("event_chat_members")
-            .select("event_id")
+            .select("event_id, paid_at, expires_at")
             .eq("event_id", eventId)
             .eq("user_id", user.id)
             .maybeSingle();
 
           if (!recheckMember) {
             navigate("/events", { replace: true });
+            return;
+          }
+          const recheckExpiry = resolveMembershipExpiry(recheckMember);
+          if (recheckExpiry && recheckExpiry.getTime() <= Date.now()) {
+            setIsLoadingMeta(false);
+            return;
+          }
+        } else {
+          const memberExpiry = resolveMembershipExpiry(member);
+          if (memberExpiry && memberExpiry.getTime() <= Date.now()) {
+            setIsLoadingMeta(false);
             return;
           }
         }
@@ -243,10 +267,12 @@ export default function EventChatPage() {
               <span>{headerSubtitle}</span>
             </p>
           </div>
-          <div className="flex items-center gap-1 text-xs text-white/60">
-            <Users className="w-3.5 h-3.5" />
-            <span>{memberCount}</span>
-          </div>
+          {memberCount !== null && (
+            <div className="flex items-center gap-1 text-xs text-white/60">
+              <Users className="w-3.5 h-3.5" />
+              <span>{memberCount}</span>
+            </div>
+          )}
           <div className="flex items-center gap-0.5 ml-1">
             <Button
               variant="ghost"

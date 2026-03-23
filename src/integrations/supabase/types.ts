@@ -380,16 +380,31 @@ export type Database = {
           event_id: string
           user_id: string
           joined_at: string
+          paid_at: string | null
+          expires_at: string | null
+          event_name: string | null
+          event_venue: string | null
+          event_starts_at: string | null
         }
         Insert: {
           event_id: string
           user_id: string
           joined_at?: string
+          paid_at?: string | null
+          expires_at?: string | null
+          event_name?: string | null
+          event_venue?: string | null
+          event_starts_at?: string | null
         }
         Update: {
           event_id?: string
           user_id?: string
           joined_at?: string
+          paid_at?: string | null
+          expires_at?: string | null
+          event_name?: string | null
+          event_venue?: string | null
+          event_starts_at?: string | null
         }
         Relationships: [
           {

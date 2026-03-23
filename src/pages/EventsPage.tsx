@@ -166,7 +166,7 @@ function EventDetail({
       console.log("[EventsPage] Before event_chat_members check", { eventId: event.id, userId: user.id });
       const { data: existingMember, error: memberError } = await supabase
         .from("event_chat_members")
-        .select("event_id")
+        .select("event_id, paid_at, expires_at")
         .eq("event_id", event.id)
         .eq("user_id", user.id)
         .maybeSingle();
@@ -176,9 +176,25 @@ function EventDetail({
         console.log("[EventsPage] Error checking existing event_chat_members", memberError);
       }
 
+      const resolveMembershipExpiry = (m: { expires_at?: string | null; paid_at?: string | null } | null) => {
+        if (!m) return null;
+        if (m.expires_at) {
+          const d = new Date(m.expires_at);
+          if (!isNaN(d.getTime())) return d;
+        }
+        if (m.paid_at) {
+          const d = new Date(m.paid_at);
+          if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
+        }
+        return null;
+      };
+
       if (existingMember) {
-        navigate(`/chat/event/${event.id}`);
-        return;
+        const expiry = resolveMembershipExpiry(existingMember);
+        if (!expiry || expiry.getTime() > Date.now()) {
+          navigate(`/chat/event/${event.id}`);
+          return;
+        }
       }
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -532,12 +548,24 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           { onConflict: "event_id" },
         );
 
+        const paidAt = new Date();
+        const expiresAtFromStart = event.eventStartAt ? new Date(event.eventStartAt) : null;
+        const hasValidStart = expiresAtFromStart && !isNaN(expiresAtFromStart.getTime());
+        const membershipExpiresAt = hasValidStart
+          ? new Date(expiresAtFromStart.getTime() + 12 * 60 * 60 * 1000)
+          : new Date(paidAt.getTime() + 24 * 60 * 60 * 1000);
+
         // 2. Upsert event_chat_members row
         await supabase.from("event_chat_members").upsert(
           {
             event_id: chatUnlockedId,
             user_id: user.id,
             joined_at: new Date().toISOString(),
+            paid_at: paidAt.toISOString(),
+            expires_at: membershipExpiresAt.toISOString(),
+            event_name: event.name,
+            event_venue: `${event.venue}, ${event.city}`,
+            event_starts_at: event.eventStartAt ?? null,
           },
           { onConflict: "event_id,user_id" },
         );
