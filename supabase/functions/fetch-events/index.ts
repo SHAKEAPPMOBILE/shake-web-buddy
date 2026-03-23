@@ -425,32 +425,31 @@ async function fetchTicketmasterDiscoveryOnce(
 }
 
 function dedupeByEventNameKeepingEarliestStart(events: EventItem[]): EventItem[] {
-  // Previous behavior deduped on name only, which collapses same-show-on-multiple-dates.
-  // Unique key is now `${name}__${date}`.
-  const byKey = new Map<string, EventItem>();
+  // Ticketmaster may return the same "show" multiple times (one per performance date)
+  // while `event.name` stays identical. Deduplicate by show name only, keeping the
+  // earliest/next upcoming start time.
+  const byName = new Map<string, EventItem>();
 
   for (const e of events) {
-    const name = (e.name ?? "").trim().toLowerCase();
-    const date = (e.date ?? "").trim().toLowerCase();
-    const key = `${name}__${date}`;
-    if (!name || !date) continue;
+    const key = (e.name ?? "").toLowerCase().trim();
+    if (!key) continue;
 
-    const existing = byKey.get(key);
+    const existing = byName.get(key);
     if (!existing) {
-      byKey.set(key, e);
+      byName.set(key, e);
       continue;
     }
 
     const existingTs = existing.eventStartAt ? new Date(existing.eventStartAt).getTime() : Infinity;
     const nextTs = e.eventStartAt ? new Date(e.eventStartAt).getTime() : Infinity;
 
-    // Keep the earliest start for the same (name,date) pair.
+    // Keep the earliest start time for the same show name.
     if (nextTs < existingTs) {
-      byKey.set(key, e);
+      byName.set(key, e);
     }
   }
 
-  const deduped = Array.from(byKey.values()).sort((a, b) => {
+  const deduped = Array.from(byName.values()).sort((a, b) => {
     const aTs = a.eventStartAt ? new Date(a.eventStartAt).getTime() : Infinity;
     const bTs = b.eventStartAt ? new Date(b.eventStartAt).getTime() : Infinity;
     return aTs - bTs;
@@ -461,6 +460,7 @@ function dedupeByEventNameKeepingEarliestStart(events: EventItem[]): EventItem[]
     inputCount: events.length,
     outputCount: deduped.length,
     removed,
+    dedupeKey: "name-only",
   });
 
   return deduped;
