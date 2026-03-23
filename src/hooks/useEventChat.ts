@@ -65,11 +65,22 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
     if (!user) { setStatus("locked"); return; }
     if (isChatExpired()) { setStatus("expired"); return; }
 
-    const { data: member, error: memberError } = await supabase
-      .from("event_chat_members").select("*")
-      .eq("user_id", user.id).eq("event_id", eventId).maybeSingle();
-
-    if (memberError) { setStatus("error"); return; }
+    let member: { id?: string } | null = null;
+    try {
+      const { data, error: memberError } = await supabase
+        .from("event_chat_members").select("*")
+        .eq("user_id", user.id).eq("event_id", eventId).maybeSingle();
+      if (memberError) {
+        console.warn("[useEventChat] event_chat_members membership query failed; defaulting to locked", memberError);
+        setStatus("locked");
+        return;
+      }
+      member = data;
+    } catch (err) {
+      console.warn("[useEventChat] event_chat_members membership query threw; defaulting to locked", err);
+      setStatus("locked");
+      return;
+    }
     if (!member) { setStatus("locked"); return; }
 
     setExpiresAt(computedExpiresAt);
@@ -97,11 +108,20 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
       }
     }
 
-    const { count } = await supabase
-      .from("event_chat_members").select("*", { count: "exact", head: true })
-      .eq("event_id", eventId).gt("expires_at", new Date().toISOString());
-
-    setMemberCount(count ?? 0);
+    try {
+      const { count, error: countError } = await supabase
+        .from("event_chat_members").select("*", { count: "exact", head: true })
+        .eq("event_id", eventId).gt("expires_at", new Date().toISOString());
+      if (countError) {
+        console.warn("[useEventChat] event_chat_members count query failed; hiding count", countError);
+        setMemberCount(0);
+      } else {
+        setMemberCount(count ?? 0);
+      }
+    } catch (err) {
+      console.warn("[useEventChat] event_chat_members count query threw; hiding count", err);
+      setMemberCount(0);
+    }
     setStatus("active");
   }, [user, eventId, computedExpiresAt, startCountdown]);
 

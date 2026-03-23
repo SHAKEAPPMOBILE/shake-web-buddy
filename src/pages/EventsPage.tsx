@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ChevronLeft,
   Calendar,
+  MapPin,
   Users,
   ExternalLink,
   MessageCircle,
@@ -244,51 +245,59 @@ function EventDetail({
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-y-auto">
       {/* Hero */}
-      <div className="relative w-full h-52 bg-muted overflow-hidden">
-        {event.imageUrl
-          ? <img src={event.imageUrl} alt={event.name} className="w-full h-full object-cover object-top" />
-          : <div className="w-full h-full flex items-center justify-center text-7xl">🎵</div>
-        }
+      <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
+        {event.imageUrl ? (
+          <>
+            <img
+              src={event.imageUrl}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-45"
+            />
+            <div className="absolute inset-0 bg-black/50" />
+            <img
+              src={event.imageUrl}
+              alt={event.name}
+              className="relative z-10 w-full h-full object-contain"
+            />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-7xl bg-muted text-muted-foreground">
+            🎵
+          </div>
+        )}
         <button
           type="button"
-          className="absolute top-4 left-4 shrink-0 p-1.5 rounded-full bg-black/40 text-white/90 hover:text-white"
+          className="absolute top-4 left-4 z-20 shrink-0 p-1.5 rounded-full bg-black/50 text-white/90 hover:text-white"
           onClick={onClose}
           aria-label="Back"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         {event.isHot && (
-          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+          <div className="absolute top-4 right-4 z-20 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold">
             HOT 🔥
           </div>
         )}
       </div>
 
-      <div className="flex-1 px-5 pb-20">
+      <div className="flex-1 px-4 pt-5 pb-24">
         <h1 className="text-2xl font-extrabold text-foreground leading-tight mb-4">
           {event.name}
         </h1>
-        {[
-          { icon: "📍", t: `${event.venue}, ${event.city}` },
-          { Icon: Calendar, t: event.date },
-        ].map(({ Icon, icon, t }, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2 mb-2 text-muted-foreground"
-          >
-            {Icon ? (
-              <Icon className="w-3.5 h-3.5 text-primary shrink-0" />
-            ) : (
-              <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-primary shrink-0">
-                {icon}
-              </span>
-            )}
-            <span className="text-sm">{t}</span>
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <MapPin className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-sm">{event.venue}, {event.city}</span>
           </div>
-        ))}
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Calendar className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-sm">{event.date}</span>
+          </div>
+        </div>
         {event.ticketsSold ? (
-          <div className="flex items-center gap-2 mb-2 text-muted-foreground">
-            <Users className="w-3.5 h-3.5 text-primary shrink-0" />
+          <div className="flex items-center gap-2 mb-5 text-muted-foreground">
+            <Users className="w-4 h-4 text-primary shrink-0" />
             <span className="text-sm">
               {event.ticketsSold.toLocaleString()} tickets sold
             </span>
@@ -310,28 +319,20 @@ function EventDetail({
             })();
           if (!hasRealUrl) return null;
           return (
-            <div className="rounded-2xl p-4 bg-card border border-border flex items-center justify-between mt-5 mb-5">
-              <div>
-                <p className="text-muted-foreground text-xs">Tickets on Ticketmaster</p>
-                <p className="text-foreground font-bold text-lg">
-                  {event.priceMin && event.priceMin > 0 && event.priceMax && event.priceMax > 0
-                    ? `$${event.priceMin}–${event.priceMax}`
-                    : "Get Tickets"}
-                </p>
-              </div>
+            <div className="mt-1 mb-6">
               <a
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm no-underline hover:opacity-90"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-base no-underline hover:opacity-90"
               >
-                Buy <ExternalLink className="w-3 h-3" />
+                Get Tickets <ExternalLink className="w-4 h-4" />
               </a>
             </div>
           );
         })()}
 
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 mt-1">
           <MessageCircle className="w-4 h-4 text-primary" />
           <span className="font-semibold text-foreground">
             Event Group Chat
