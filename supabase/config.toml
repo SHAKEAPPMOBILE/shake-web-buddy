@@ -40,6 +40,9 @@ verify_jwt = false
 [functions.create-activity-payment]
 verify_jwt = false
 
+[functions.create-event-chat-payment]
+verify_jwt = false
+
 [functions.stripe-connect-callback]
 verify_jwt = false
 
