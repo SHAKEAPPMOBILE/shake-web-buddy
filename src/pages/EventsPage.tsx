@@ -360,145 +360,53 @@ function EventDetail({
           </span>
         </div>
 
-        {status === "active" && minutesLeft !== null && (
-          <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-2 text-muted-foreground text-sm bg-muted/50">
-            <Clock className="w-3.5 h-3.5 shrink-0" />
-            <span>Chat closes in {minutesLeft}m</span>
-          </div>
-        )}
-
-        <div className="rounded-2xl overflow-hidden border border-border relative">
-          {status === "active" && (
-            <div className="px-4 pt-3 pb-2 border-b border-border flex items-center gap-2 bg-card/80">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
-                style={{
-                  background: `linear-gradient(135deg, hsl(270, 55%, 28%), hsl(290, 45%, 18%))`,
-                }}
-              >
-                {event.emoji}
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold text-foreground text-sm truncate">{event.name}</p>
-              </div>
+        <div className="p-4 bg-card/80 rounded-2xl border border-border">
+          {status === "loading" && (
+            <div className="flex items-center justify-center py-8">
+              <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           )}
-          <div className="p-4 bg-card/80 min-h-[120px]">
-            {status === "loading" && (
-              <div className="flex items-center justify-center py-8">
-                <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-            {status === "locked" && (
-              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                <Button
-                  onClick={handleEnterChat}
-                  className="w-full rounded-full font-bold text-base py-3 h-auto"
-                  disabled={isEnteringChat}
-                >
-                  {isEnteringChat ? (
-                    <LoadingSpinner size="sm" className="mr-2" />
-                  ) : (
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                  )}
-                  {isEnteringChat ? "Connecting..." : "Enter Group Chat"}
-                </Button>
-                <p className="text-muted-foreground text-xs mt-3">
-                  One-time fee · Chat expires 12h after event starts
-                </p>
-              </div>
-            )}
-            {status === "active" && (
-              <>
-                {messages.map((m) => (
-                  <div key={m.id} className="flex gap-2 mb-3">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-                      style={{
-                        background: `hsl(${(m.user_id.slice(0, 8).split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360)}, 55%, 40%)`,
-                      }}
-                    >
-                      {senderMap[m.user_id]?.name?.[0]?.toUpperCase() ?? "?"}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex gap-2 items-center">
-                        <span className="text-primary/90 text-xs font-semibold">
-                          {senderMap[m.user_id]?.name ?? "User"}
-                        </span>
-                        <span className="text-muted-foreground/80 text-[11px]">
-                          {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                      <p className="text-foreground text-sm mt-0.5">{m.content}</p>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-            {status === "expired" && (
-              <p className="text-muted-foreground text-sm py-2">This chat ended 12 hours after the event 🎤</p>
-            )}
-            {status === "error" && (
-              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                <Button
-                  onClick={handleEnterChat}
-                  className="w-full rounded-full font-bold text-base py-3 h-auto"
-                  disabled={isEnteringChat}
-                >
-                  {isEnteringChat ? (
-                    <LoadingSpinner size="sm" className="mr-2" />
-                  ) : (
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                  )}
-                  {isEnteringChat ? "Connecting..." : "Enter Group Chat"}
-                </Button>
-                <p className="text-muted-foreground text-xs mt-3">
-                  One-time fee · Chat expires 12h after event starts
-                </p>
-              </div>
-            )}
-          </div>
+          {status === "active" && (
+            <div className="flex flex-col items-center gap-3">
+              {minutesLeft !== null && (
+                <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-muted-foreground text-sm bg-muted/50">
+                  <Clock className="w-3.5 h-3.5 shrink-0" />
+                  <span>Chat closes in {minutesLeft}m</span>
+                </div>
+              )}
+              <Button
+                onClick={() => navigate(`/chat/event/${event.id}`)}
+                className="w-full rounded-full font-bold text-base py-3 h-auto"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Open Group Chat
+              </Button>
+            </div>
+          )}
+          {(status === "locked" || status === "error") && (
+            <div className="flex flex-col items-center justify-center py-6 px-4 text-center">
+              <Button
+                onClick={handleEnterChat}
+                className="w-full rounded-full font-bold text-base py-3 h-auto"
+                disabled={isEnteringChat}
+              >
+                {isEnteringChat ? (
+                  <LoadingSpinner size="sm" className="mr-2" />
+                ) : (
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                )}
+                {isEnteringChat ? "Connecting..." : "Enter Group Chat"}
+              </Button>
+              <p className="text-muted-foreground text-xs mt-3">
+                One-time fee · Chat expires 12h after event starts
+              </p>
+            </div>
+          )}
+          {status === "expired" && (
+            <p className="text-muted-foreground text-sm py-2 text-center">This chat ended 12 hours after the event</p>
+          )}
         </div>
 
-        {status === "active" && (
-          <div className="flex gap-2 mt-3">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Message the group..."
-              className="flex-1 rounded-xl px-4 py-2.5 text-sm text-foreground bg-card border border-border outline-none focus:ring-2 focus:ring-primary/30"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  sendMessage(inputValue);
-                  setInputValue("");
-                }
-              }}
-            />
-            <Button
-              size="icon"
-              className="w-10 h-10 rounded-xl shrink-0"
-              disabled={isSending}
-              onClick={async () => {
-                await sendMessage(inputValue);
-                setInputValue("");
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
