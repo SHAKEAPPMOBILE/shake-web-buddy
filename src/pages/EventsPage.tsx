@@ -131,7 +131,7 @@ const MOCK_EVENTS: EventItem[] = [
   },
 ];
 
-const CATEGORIES = ["All", "Music", "Classical", "Pop", "Art", "Comedy"];
+const CATEGORIES = ["All", "Music", "Classical", "Pop", "Art", "Comedy", "Sports"];
 
 const hue = (id: string) =>
   (parseInt(id.replace("tm", ""), 10) * 47) % 360;
