@@ -46,6 +46,51 @@ serve(async (req) => {
 
     logStep("Processing payment request", { userId: user.id, eventId });
 
+    // Server-side idempotency guard: never create a new checkout session if the user
+    // already has active membership for this exact event.
+    const { data: existingMembership, error: existingMembershipError } = await supabaseClient
+      .from("event_chat_members")
+      .select("event_id, expires_at, paid_at")
+      .eq("event_id", eventId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (existingMembershipError) {
+      logStep("Membership precheck query failed", { error: existingMembershipError.message, eventId, userId: user.id });
+    }
+
+    const resolveMembershipExpiry = (m: { expires_at?: string | null; paid_at?: string | null } | null) => {
+      if (!m) return null;
+      if (m.expires_at) {
+        const d = new Date(m.expires_at);
+        if (!isNaN(d.getTime())) return d;
+      }
+      if (m.paid_at) {
+        const d = new Date(m.paid_at);
+        if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
+      }
+      return null;
+    };
+
+    const existingExpiry = resolveMembershipExpiry(existingMembership as { expires_at?: string | null; paid_at?: string | null } | null);
+    if (existingMembership && (!existingExpiry || existingExpiry.getTime() > Date.now())) {
+      logStep("Active membership found, skipping Stripe checkout", {
+        eventId,
+        userId: user.id,
+        expiresAt: existingExpiry?.toISOString() ?? null,
+      });
+      return new Response(
+        JSON.stringify({
+          alreadyJoined: true,
+          eventId,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        },
+      );
+    }
+
     // Get payer's email for Stripe
     const { data: payerPrivate } = await supabaseClient
       .from("profiles_private")
@@ -93,6 +138,7 @@ serve(async (req) => {
       JSON.stringify({
         url: session.url,
         sessionId: session.id,
+        alreadyJoined: false,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

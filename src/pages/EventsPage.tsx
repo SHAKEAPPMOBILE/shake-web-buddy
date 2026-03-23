@@ -218,6 +218,11 @@ function EventDetail({
         return;
       }
 
+      if (data?.alreadyJoined) {
+        navigate(`/chat/event/${event.id}`);
+        return;
+      }
+
       if (data?.url) {
         window.location.href = data.url;
       } else {
@@ -539,7 +544,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           (isNaN(start.getTime()) ? Date.now() : start.getTime()) + 12 * 60 * 60 * 1000,
         );
 
-        await supabase.from("event_chats").upsert(
+        const { error: eventChatsUpsertError } = await supabase.from("event_chats").upsert(
           {
             event_id: chatUnlockedId,
             name: event.name,
@@ -547,6 +552,9 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           },
           { onConflict: "event_id" },
         );
+        if (eventChatsUpsertError) {
+          console.log("[EventsPage] event_chats upsert error after payment redirect", eventChatsUpsertError);
+        }
 
         const paidAt = new Date();
         const expiresAtFromStart = event.eventStartAt ? new Date(event.eventStartAt) : null;
@@ -556,7 +564,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           : new Date(paidAt.getTime() + 24 * 60 * 60 * 1000);
 
         // 2. Upsert event_chat_members row
-        await supabase.from("event_chat_members").upsert(
+        const { error: membershipUpsertError } = await supabase.from("event_chat_members").upsert(
           {
             event_id: chatUnlockedId,
             user_id: user.id,
@@ -569,6 +577,10 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           },
           { onConflict: "event_id,user_id" },
         );
+        if (membershipUpsertError) {
+          console.log("[EventsPage] event_chat_members upsert error after payment redirect", membershipUpsertError);
+          return;
+        }
 
         setSuccessEventId(chatUnlockedId);
         setSuccessEventName(event.name);
