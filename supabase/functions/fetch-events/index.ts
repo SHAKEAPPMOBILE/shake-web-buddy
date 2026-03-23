@@ -460,7 +460,21 @@ function dedupeByEventNameKeepingEarliestStart(events: EventItem[]): EventItem[]
     }
   }
 
-  const deduped = Array.from(byName.values()).sort((a, b) => {
+  const afterNameDedup = Array.from(byName.values());
+
+  // Pass 3: collapse same-venue same-date rows; keep first seen row in group.
+  const byVenueDate = new Map<string, EventItem>();
+  for (const e of afterNameDedup) {
+    const venue = (e.venue ?? "").toLowerCase().trim();
+    const date = (e.date ?? "").trim();
+    if (!venue || !date) continue;
+    const key = `${venue}__${date}`;
+    if (!byVenueDate.has(key)) {
+      byVenueDate.set(key, e);
+    }
+  }
+
+  const deduped = Array.from(byVenueDate.values()).sort((a, b) => {
     const aTs = a.eventStartAt ? new Date(a.eventStartAt).getTime() : Infinity;
     const bTs = b.eventStartAt ? new Date(b.eventStartAt).getTime() : Infinity;
     return aTs - bTs;
@@ -469,9 +483,11 @@ function dedupeByEventNameKeepingEarliestStart(events: EventItem[]): EventItem[]
   console.log("[fetch-events] dedupe pipeline", {
     rawCount: events.length,
     afterIdDedup: afterIdDedup.length,
-    afterNameDedup: deduped.length,
+    afterNameDedup: afterNameDedup.length,
+    afterVenueDateDedup: deduped.length,
     removedById: Math.max(0, events.length - afterIdDedup.length),
-    removedByName: Math.max(0, afterIdDedup.length - deduped.length),
+    removedByName: Math.max(0, afterIdDedup.length - afterNameDedup.length),
+    removedByVenueDate: Math.max(0, afterNameDedup.length - deduped.length),
   });
 
   return deduped;
