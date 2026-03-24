@@ -247,10 +247,10 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
         return null;
       };
 
-      // Event chats the user has joined
+      // Event chats the user has joined (merged into same list as activity chats)
       const { data: eventMemberships, error: eventMembershipsError } = await supabase
         .from("event_chat_members")
-        .select("event_id, paid_at, expires_at, event_name")
+        .select("event_id, paid_at, expires_at, event_name, event_starts_at")
         .eq("user_id", user.id);
 
       console.log("[ChatTab] Event memberships query", {
@@ -269,6 +269,17 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
           const fallbackVenue = parsedName.includes(" · ") ? parsedName.split(" · ")[1] : "Event";
           const parsedVenue = fallbackVenue;
 
+          const startFromDb = membership.event_starts_at
+            ? new Date(membership.event_starts_at as string)
+            : null;
+          const hasValidStart = startFromDb && !isNaN(startFromDb.getTime());
+          const scheduledFor =
+            hasValidStart
+              ? startFromDb!.toISOString()
+              : expiresAt
+                ? expiresAt.toISOString()
+                : new Date().toISOString();
+
           // Count participants for this event chat
           const { count: participantCount } = await supabase
             .from("event_chat_members")
@@ -277,9 +288,9 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
 
           chatActivities.push({
             id: `event-${membership.event_id}`,
-            activity_type: parsedName,
+            activity_type: "event",
             city: parsedVenue,
-            scheduled_for: expiresAt ? expiresAt.toISOString() : new Date().toISOString(),
+            scheduled_for: scheduledFor,
             participant_count: participantCount || 1,
             is_plan: false,
             is_event: true,
@@ -376,8 +387,6 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
     if (cityFilter === "all") return activities;
     return activities.filter(a => a.city === cityFilter);
   }, [activities, cityFilter]);
-  const eventActivities = useMemo(() => filteredActivities.filter((a) => a.is_event), [filteredActivities]);
-  const nonEventActivities = useMemo(() => filteredActivities.filter((a) => !a.is_event), [filteredActivities]);
 
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
@@ -557,7 +566,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
           </div>
         ) : (
           <>
-          {nonEventActivities.map((activity, idx) => (
+          {filteredActivities.map((activity, idx) => (
             <div
               key={activity.id}
               role="button"
@@ -587,7 +596,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                 {/* Activity Icon */}
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-2xl">
-                    {getActivityEmoji(activity.activity_type)}
+                    {activity.is_event ? "🎫" : getActivityEmoji(activity.activity_type)}
                   </div>
                   {activity.is_plan && activity.creator_avatar && (
                     <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-white/50">
@@ -601,7 +610,13 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
 
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-white">
+                    <h3
+                      className={
+                        idx % 2 === 0
+                          ? "font-semibold text-white"
+                          : "font-semibold text-foreground"
+                      }
+                    >
                       {activity.is_plan && activity.note
                         ? activity.note
                         : activity.is_event && activity.event_name
@@ -609,7 +624,13 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                         : getActivityLabel(activity.activity_type)}
                     </h3>
                     {activity.is_plan && (
-                      <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
+                      <span
+                        className={
+                          idx % 2 === 0
+                            ? "text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full"
+                            : "text-xs bg-primary/15 text-primary px-1.5 py-0.5 rounded-full"
+                        }
+                      >
                         {t('common.plan')}
                       </span>
                     )}
@@ -619,24 +640,60 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                       </span>
                     )}
                     {activity.is_event && (
-                      <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
+                      <span
+                        className={
+                          idx % 2 === 0
+                            ? "text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full"
+                            : "text-xs bg-muted text-foreground px-1.5 py-0.5 rounded-full"
+                        }
+                      >
                         12h access
                       </span>
                     )}
                   </div>
 
                   <div className="flex items-center gap-1 mt-0.5">
-                    <span className="inline-flex items-center justify-center w-3 h-3 text-white/60">📍</span>
-                    <span className="text-xs text-white/70">{activity.is_event ? (activity.event_venue ?? activity.city) : activity.city}</span>
+                    <span
+                      className={
+                        idx % 2 === 0
+                          ? "inline-flex items-center justify-center w-3 h-3 text-white/60"
+                          : "inline-flex items-center justify-center w-3 h-3 text-muted-foreground"
+                      }
+                    >
+                      📍
+                    </span>
+                    <span
+                      className={
+                        idx % 2 === 0 ? "text-xs text-white/70" : "text-xs text-muted-foreground"
+                      }
+                    >
+                      {activity.is_event ? (activity.event_venue ?? activity.city) : activity.city}
+                    </span>
                     {activity.is_plan && activity.creator_name && (
-                      <span className="text-xs text-white/50">• {t('common.by')} {activity.creator_name}</span>
+                      <span
+                        className={
+                          idx % 2 === 0 ? "text-xs text-white/50" : "text-xs text-muted-foreground"
+                        }
+                      >
+                        • {t('common.by')} {activity.creator_name}
+                      </span>
                     )}
                   </div>
 
-                  {!activity.is_plan && !activity.is_event && (
+                  {!activity.is_plan && (
                     <div className="flex items-center gap-2 mt-1">
-                      <Calendar className="w-3.5 h-3.5 text-white/70" />
-                      <span className="text-sm text-white/70">
+                      <Calendar
+                        className={
+                          idx % 2 === 0
+                            ? "w-3.5 h-3.5 text-white/70"
+                            : "w-3.5 h-3.5 text-muted-foreground"
+                        }
+                      />
+                      <span
+                        className={
+                          idx % 2 === 0 ? "text-sm text-white/70" : "text-sm text-muted-foreground"
+                        }
+                      >
                         {formatDateWithTranslation(new Date(activity.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
                       </span>
                       {isToday(new Date(activity.scheduled_for)) && (
@@ -645,7 +702,13 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                         </span>
                       )}
                       {isTomorrow(new Date(activity.scheduled_for)) && (
-                        <span className="text-xs bg-primary/80 text-white font-semibold px-2 py-0.5 rounded-full">
+                        <span
+                          className={
+                            idx % 2 === 0
+                              ? "text-xs bg-primary/80 text-white font-semibold px-2 py-0.5 rounded-full"
+                              : "text-xs bg-primary/20 text-primary font-semibold px-2 py-0.5 rounded-full"
+                          }
+                        >
                           {t('common.tomorrow')}
                         </span>
                       )}
@@ -653,8 +716,18 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                   )}
 
                   <div className="flex items-center gap-1 mt-1">
-                    <Users className="w-3.5 h-3.5 text-white/70" />
-                    <span className="text-sm text-white/70">
+                    <Users
+                      className={
+                        idx % 2 === 0
+                          ? "w-3.5 h-3.5 text-white/70"
+                          : "w-3.5 h-3.5 text-muted-foreground"
+                      }
+                    />
+                    <span
+                      className={
+                        idx % 2 === 0 ? "text-sm text-white/70" : "text-sm text-muted-foreground"
+                      }
+                    >
                       {activity.participant_count} {activity.participant_count === 1 ? t('common.person') : t('common.people')}
                     </span>
                   </div>
@@ -662,60 +735,6 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
               </div>
             </div>
           ))}
-          {eventActivities.length > 0 && (
-            <>
-              <div className="pt-1 pb-0.5">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground/80 font-semibold">
-                  Event Chats
-                </p>
-              </div>
-              {eventActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleActivityClick(activity)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleActivityClick(activity);
-                    }
-                  }}
-                  className="w-full text-left rounded-2xl p-4 space-y-3 hover:opacity-90 transition-all cursor-pointer relative"
-                  style={{
-                    background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-2xl">
-                      🎫
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white">{activity.event_name ?? activity.activity_type}</h3>
-                        <span className="text-xs bg-[#F97316] text-white px-1.5 py-0.5 rounded-full">
-                          EVENT
-                        </span>
-                        <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">
-                          12h access
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="inline-flex items-center justify-center w-3 h-3 text-white/60">📍</span>
-                        <span className="text-xs text-white/70">{activity.event_venue ?? activity.city}</span>
-                      </div>
-                      <div className="flex items-center gap-1 mt-1">
-                        <Users className="w-3.5 h-3.5 text-white/70" />
-                        <span className="text-sm text-white/70">
-                          {activity.participant_count} {activity.participant_count === 1 ? t('common.person') : t('common.people')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
           </>
         )}
       </div>
