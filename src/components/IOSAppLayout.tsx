@@ -230,21 +230,8 @@ export function IOSAppLayout() {
         triggerConfettiWaterfall();
         setShowClockAnimation(true);
       } else {
-        // Already joined - check if there are messages in this activity
-        const { count } = await supabase
-          .from("activity_messages")
-          .select("*", { count: "exact", head: true })
-          .eq("activity_type", activity)
-          .eq("city", targetCity);
-        
-        if (count && count > 0) {
-          // Has conversation - navigate to chat tab
-          setPendingChatActivity({ activityType: activity, city: targetCity });
-          setActiveTab("chat");
-        } else {
-          // No conversation yet - navigate to plans tab
-          setActiveTab("plans");
-        }
+        // Already joined - show confirmation modal again so user sees venue + time
+        setShowJoinedConfirmation(true);
         setShowHomeActivities(false);
       }
     }
