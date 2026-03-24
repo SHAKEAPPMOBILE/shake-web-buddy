@@ -9,7 +9,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EventJoinedConfirmation } from "@/components/EventJoinedConfirmation";
+import { ActivityJoinedConfirmation } from "@/components/ActivityJoinedConfirmation";
 import { cn } from "@/lib/utils";
 import {
   type EventItem,
@@ -135,6 +135,22 @@ const hue = (id: string) =>
   (parseInt(id.replace("tm", ""), 10) * 47) % 360;
 
 const DEFAULT_EVENT_STARTS_AT = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+function eventDateLineForConfirmation(event: EventItem): string {
+  if (event.eventStartAt) {
+    const d = new Date(event.eventStartAt);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    }
+  }
+  return event.date;
+}
 
 function resolveMembershipExpiry(m: { expires_at?: string | null; paid_at?: string | null } | null) {
   if (!m) return null;
@@ -802,13 +818,25 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
         />
       )}
 
-      <EventJoinedConfirmation
+      <ActivityJoinedConfirmation
         open={!!joinConfirmationEvent}
         onOpenChange={(open) => {
           if (!open) setJoinConfirmationEvent(null);
         }}
-        event={joinConfirmationEvent}
-        onEnterGroupChat={() => {
+        activityType="lunch"
+        city={joinConfirmationEvent?.city ?? ""}
+        eventConfirmation={
+          joinConfirmationEvent
+            ? {
+                name: joinConfirmationEvent.name,
+                dateLine: eventDateLineForConfirmation(joinConfirmationEvent),
+                venue: joinConfirmationEvent.venue,
+                city: joinConfirmationEvent.city,
+                emoji: joinConfirmationEvent.emoji,
+              }
+            : undefined
+        }
+        onJoinGroupChat={() => {
           const id = joinConfirmationEvent?.id;
           setJoinConfirmationEvent(null);
           if (id) navigate(`/chat/event/${id}`, { replace: true });
