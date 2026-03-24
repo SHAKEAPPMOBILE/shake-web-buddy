@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useRef } from "react";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   ChevronLeft,
   Calendar,
@@ -444,7 +444,9 @@ function EventDetail({
 
 export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const joiningEventChatRef = useRef(false);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [cat, setCat] = useState("All");
@@ -521,7 +523,6 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
         addGroupChatAccess(user.id, chatUnlockedId);
         setSelected(null);
         setJoinConfirmationEvent(event);
-        navigate("/events", { replace: true });
       } catch (error) {
         console.log("[EventsPage] Error creating membership after payment redirect", error);
       }
@@ -840,7 +841,27 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
       <ActivityJoinedConfirmation
         open={!!joinConfirmationEvent}
         onOpenChange={(open) => {
-          if (!open) setJoinConfirmationEvent(null);
+          if (!open) {
+            setJoinConfirmationEvent(null);
+            if (joiningEventChatRef.current) {
+              joiningEventChatRef.current = false;
+              return;
+            }
+            if (location.pathname === "/events") {
+              navigate("/", { replace: true, state: { openEvents: true } });
+              return;
+            }
+            setSearchParams(
+              (prev) => {
+                const next = new URLSearchParams(prev);
+                next.delete("payment_success");
+                next.delete("chat_unlocked");
+                next.delete("event_id");
+                return next;
+              },
+              { replace: true },
+            );
+          }
         }}
         activityType="lunch"
         city={joinConfirmationEvent?.city ?? ""}
@@ -856,6 +877,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
             : undefined
         }
         onJoinGroupChat={() => {
+          joiningEventChatRef.current = true;
           const id = joinConfirmationEvent?.id;
           setJoinConfirmationEvent(null);
           if (id) navigate(`/chat/event/${id}`, { replace: true });

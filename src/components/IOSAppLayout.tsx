@@ -82,13 +82,26 @@ export function IOSAppLayout() {
     }
   }, [wasSuccessful, verifiedActivityId, resetPaymentState]);
   
-  // Handle navigation state for opening profile tab with subscription dialog
+  // location.state: profile tab + subscription, or Near You (openEvents) after standalone /events
   useEffect(() => {
-    const state = location.state as { openTab?: string; openSubscription?: boolean } | null;
-    if (state?.openTab === "profile" && state?.openSubscription) {
+    const state = location.state as {
+      openTab?: string;
+      openSubscription?: boolean;
+      openEvents?: boolean;
+    } | null;
+    if (!state) return;
+
+    let shouldClear = false;
+    if (state.openTab === "profile" && state.openSubscription) {
       setActiveTab("profile");
       setOpenSubscriptionOnMount(true);
-      // Clear the state to prevent re-triggering
+      shouldClear = true;
+    }
+    if (state.openEvents) {
+      setShowEvents(true);
+      shouldClear = true;
+    }
+    if (shouldClear) {
       navigate(location.pathname, { replace: true, state: null });
     }
   }, [location.state, navigate, location.pathname]);

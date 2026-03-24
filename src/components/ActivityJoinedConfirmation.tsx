@@ -38,8 +38,8 @@ export function ActivityJoinedConfirmation({
   const { location: venueInfo, mapsUrl, isTBD, isLoading: venueLoading, venueError, refetchVenues } = useActivityVenue(city, activityType);
 
   const handleJoinChat = () => {
-    onOpenChange(false);
     onJoinGroupChat();
+    onOpenChange(false);
   };
 
   return (

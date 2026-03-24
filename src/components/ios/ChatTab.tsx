@@ -250,7 +250,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
       // Event chats the user has joined
       const { data: eventMemberships, error: eventMembershipsError } = await supabase
         .from("event_chat_members")
-        .select("event_id, paid_at, expires_at, event_name, event_venue")
+        .select("event_id, paid_at, expires_at, event_name")
         .eq("user_id", user.id);
 
       console.log("[ChatTab] Event memberships query", {
@@ -267,9 +267,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
             ? membership.event_name.trim()
             : "Event Chat";
           const fallbackVenue = parsedName.includes(" · ") ? parsedName.split(" · ")[1] : "Event";
-          const parsedVenue = typeof membership.event_venue === "string" && membership.event_venue.trim()
-            ? membership.event_venue.trim()
-            : fallbackVenue;
+          const parsedVenue = fallbackVenue;
 
           // Count participants for this event chat
           const { count: participantCount } = await supabase
@@ -559,7 +557,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
           </div>
         ) : (
           <>
-          {nonEventActivities.map((activity) => (
+          {nonEventActivities.map((activity, idx) => (
             <div
               key={activity.id}
               role="button"
@@ -573,7 +571,9 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
               }}
               className="w-full text-left rounded-2xl p-4 space-y-3 hover:opacity-90 transition-all cursor-pointer relative"
               style={{
-                background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+                background: idx % 2 === 0
+                  ? "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))"
+                  : "#ffffff",
               }}
             >
               {/* Unread badge */}
