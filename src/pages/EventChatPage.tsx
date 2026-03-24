@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { IOSTabBar } from "@/components/IOSTabBar";
 
 interface EventChatPageParams {
   eventId?: string;
@@ -435,7 +434,6 @@ export default function EventChatPage() {
         )}
       </div>
     </div>
-    <IOSTabBar activeTab="chat" onTabChange={handleTabChange} />
     </>
   );
 }
