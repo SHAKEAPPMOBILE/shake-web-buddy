@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, X } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { useActivityVenue } from "@/contexts/VenueContext";
 import { getActivityEmoji } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/activity-translations";
@@ -45,14 +45,6 @@ export function ActivityJoinedConfirmation({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-auto p-0 gap-0 rounded-3xl border-0 overflow-hidden bg-card">
-        {/* Close button */}
-        <button
-          onClick={() => onOpenChange(false)}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors z-10"
-        >
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
-
         {eventConfirmation ? (
           <>
             <div className="pt-8 pb-4 px-6 text-center">
