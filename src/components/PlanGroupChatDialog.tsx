@@ -1,7 +1,6 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, Trash2, Calendar, Clock, FileText } from "lucide-react";
+import { ArrowLeft, Send, Users, User, Trash2, Calendar, Smile, X } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,15 +10,13 @@ import { playNotificationSound } from "@/lib/notification-sound";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
-import { useActivityVenue } from "@/contexts/VenueContext";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PlanMessage {
   id: string;
@@ -39,6 +36,8 @@ interface Activity {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  image_url?: string | null;
+  title?: string | null;
 }
 
 interface PlanGroupChatDialogProps {
@@ -49,7 +48,7 @@ interface PlanGroupChatDialogProps {
   attendeeCount?: number;
 }
 
-const chatSuggestions = [
+const CHAT_SUGGESTIONS = [
   "What time works best?",
   "Where should we meet?",
   "Count me in!",
@@ -57,6 +56,21 @@ const chatSuggestions = [
   "I'm running late!",
   "On my way! 🏃",
 ];
+
+const STICKER_PACKS = [
+  { label: "Fun", stickers: ["🎉", "🎊", "🥳", "🎈", "🎁", "🎆", "✨", "💫", "🎯", "🏆"] },
+  { label: "Love", stickers: ["❤️", "🧡", "💛", "💚", "💙", "💜", "💕", "💞", "🫶", "🥰"] },
+  { label: "Vibe", stickers: ["🔥", "💯", "⭐", "🌈", "🌊", "🌟", "👏", "🙌", "💪", "🤩"] },
+  { label: "Activity", stickers: ["🍕", "🍺", "☕", "🏃", "🧘", "🏊", "🎸", "⚽", "🏀", "🤝"] },
+];
+
+const EMOJI_ONLY_RE = /^[\p{Emoji_Presentation}\p{Emoji}\u200d\ufe0f\s]+$/u;
+function isSticker(msg: string): boolean {
+  const trimmed = msg.trim();
+  if (!trimmed) return false;
+  const chars = [...trimmed].filter(c => c.trim());
+  return EMOJI_ONLY_RE.test(trimmed) && chars.length <= 4;
+}
 
 export function PlanGroupChatDialog({
   open,
@@ -69,6 +83,8 @@ export function PlanGroupChatDialog({
   const [messages, setMessages] = useState<PlanMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [showParticipantsDialog, setShowParticipantsDialog] = useState(false);
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [activeStickerPack, setActiveStickerPack] = useState(0);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
     userId: string;
     userName: string | null;
@@ -76,97 +92,62 @@ export function PlanGroupChatDialog({
   } | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
-  
-  const { canSendText, addCharacters } = useTextMessageLimit();
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user, isPremium } = useAuth();
-  const { location, mapsUrl } = useActivityVenue(activity.city, activity.activity_type);
-  const isMobile = useIsMobile();
-  
-  const swipeHandlers = useSwipeToClose({
-    onClose: () => onOpenChange(false),
-    threshold: 80,
-    enabled: isMobile,
-  });
 
-  // Get unique user IDs from messages
+  const { canSendText, addCharacters } = useTextMessageLimit();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { user, isPremium } = useAuth();
+
   const userIds = useMemo(() => {
     const ids = [...new Set(messages.map((msg) => msg.user_id))];
-    // Also include activity creator
-    if (!ids.includes(activity.user_id)) {
-      ids.push(activity.user_id);
-    }
+    if (!ids.includes(activity.user_id)) ids.push(activity.user_id);
     return ids;
   }, [messages, activity.user_id]);
 
   const { profiles } = useUserProfiles(userIds);
 
-  // Fetch participants (creator + joined users)
+  const ownProfile = user ? profiles[user.id] : null;
+
   useEffect(() => {
     if (!open || !activity.id) return;
 
     const fetchParticipants = async () => {
-      // Get activity joins for this activity
       const { data: joins, error: joinsError } = await supabase
         .from("activity_joins")
         .select("user_id")
         .eq("activity_id", activity.id)
         .gt("expires_at", new Date().toISOString());
 
-      // Collect unique user IDs (creator + joiners)
       const participantUserIds = [activity.user_id];
       if (joins && !joinsError) {
         joins.forEach((j) => {
-          if (!participantUserIds.includes(j.user_id)) {
-            participantUserIds.push(j.user_id);
-          }
+          if (!participantUserIds.includes(j.user_id)) participantUserIds.push(j.user_id);
         });
       }
 
-      // Fetch profiles for all participants
       const { data: profilesData } = await supabase
         .from("profiles")
         .select("user_id, name, avatar_url")
         .in("user_id", participantUserIds);
 
-      const participantsList = participantUserIds.map((userId) => {
-        const profile = profilesData?.find((p) => p.user_id === userId);
-        return {
-          user_id: userId,
-          name: profile?.name || null,
-          avatar_url: profile?.avatar_url || null,
-        };
-      });
-
-      setParticipants(participantsList);
+      setParticipants(
+        participantUserIds.map((userId) => {
+          const profile = profilesData?.find((p) => p.user_id === userId);
+          return { user_id: userId, name: profile?.name || null, avatar_url: profile?.avatar_url || null };
+        })
+      );
     };
 
     fetchParticipants();
 
-    // Subscribe to activity_joins changes for this activity
     const channel = supabase
       .channel(`plan-participants-${activity.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "activity_joins",
-          filter: `activity_id=eq.${activity.id}`,
-        },
-        () => {
-          fetchParticipants();
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "activity_joins", filter: `activity_id=eq.${activity.id}` }, fetchParticipants)
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [open, activity.id, activity.user_id]);
 
-  // Fetch messages
   useEffect(() => {
     if (!open || !activity.id) return;
 
@@ -176,97 +157,76 @@ export function PlanGroupChatDialog({
         .select("*")
         .eq("activity_id", activity.id)
         .order("created_at", { ascending: true });
-
-      if (error) {
-        console.error("Error fetching plan messages:", error);
-        return;
-      }
-
-      setMessages(data || []);
+      if (!error) setMessages(data || []);
     };
 
     fetchMessages();
 
-    // Subscribe to new messages
     const channel = supabase
       .channel(`plan-messages-${activity.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "plan_messages",
-          filter: `activity_id=eq.${activity.id}`,
-        },
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "plan_messages", filter: `activity_id=eq.${activity.id}` },
         (payload) => {
-          const newMessage = payload.new as PlanMessage;
-          setMessages((prev) => [...prev, newMessage]);
-          // Play notification sound for messages from others
-          if (newMessage.user_id !== user?.id) {
-            playNotificationSound();
-          }
+          const newMsg = payload.new as PlanMessage;
+          setMessages((prev) => [...prev, newMsg]);
+          if (newMsg.user_id !== user?.id) playNotificationSound();
         }
       )
-      .on(
-        "postgres_changes",
-        {
-          event: "DELETE",
-          schema: "public",
-          table: "plan_messages",
-        },
-        (payload) => {
-          setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
-        }
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "plan_messages" },
+        (payload) => setMessages((prev) => prev.filter((m) => m.id !== payload.old.id))
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [open, activity.id, user?.id]);
 
-  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!message.trim() || !user || isSending) return;
+  useEffect(() => {
+    if (!open) {
+      setShowStickerPicker(false);
+      setMessage("");
+    }
+  }, [open]);
 
-    // Check text character limit for free users
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || !user || isSending) return;
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
       toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
       return;
     }
-
     setIsSending(true);
-
     try {
       const { error } = await supabase.from("plan_messages").insert({
         activity_id: activity.id,
         user_id: user.id,
-        message: message.trim(),
+        message: text.trim(),
       });
-
       if (error) throw error;
-
-      addCharacters(message.trim().length);
-      setMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
+      addCharacters(text.trim().length);
+    } catch {
       toast.error("Failed to send message");
     } finally {
       setIsSending(false);
     }
   };
 
+  const handleSendMessage = () => {
+    sendMessage(message);
+    setMessage("");
+  };
+
+  const handleSendSticker = (sticker: string) => {
+    sendMessage(sticker);
+    setShowStickerPicker(false);
+    inputRef.current?.focus();
+  };
+
   const handleDeleteMessage = async (messageId: string) => {
     const { error } = await supabase.from("plan_messages").delete().eq("id", messageId);
-
-    if (error) {
-      toast.error("Failed to delete message");
-    }
+    if (error) toast.error("Failed to delete message");
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -279,248 +239,282 @@ export function PlanGroupChatDialog({
   const scheduledDate = new Date(activity.scheduled_for);
   const formattedDate = format(scheduledDate, "EEEE, MMMM d");
   const formattedTime = format(scheduledDate, "h:mm a");
+  const emoji = getActivityEmoji(activity.activity_type);
+  const label = activity.title || getActivityLabel(activity.activity_type);
   const creatorProfile = profiles[activity.user_id];
+  const displayAttendeeCount = attendeeCount > 0 ? attendeeCount : participants.length;
+
+  if (!open) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-lg flex flex-col p-0 bg-[hsl(50,40%,92%)] backdrop-blur-xl border-border/50 [&>button.dialog-close]:text-black h-[600px]"
-        {...(isMobile ? swipeHandlers : {})}
-      >
-        {isMobile && (
-          <div className="flex justify-center py-2 shrink-0">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-          </div>
-        )}
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#06060a] overflow-hidden" style={{ animation: "slideInFromRight 0.25s ease-out" }}>
+      {/* Purple / pink radial gradient background */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle at 8% 0%, rgba(139,92,246,0.55) 0%, transparent 50%), " +
+            "radial-gradient(circle at 92% 12%, rgba(236,72,153,0.45) 0%, transparent 50%), " +
+            "radial-gradient(circle at 50% 100%, rgba(56,189,248,0.35) 0%, transparent 55%)",
+        }}
+        aria-hidden
+      />
 
-        {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50 shrink-0">
-          <button onClick={onBack} className="p-1 hover:bg-muted rounded-md transition-colors">
+      {/* ── EVENT HEADER ── */}
+      <div className="relative z-10 shrink-0">
+        {/* Top bar: back + participants */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <button
+            onClick={() => { onOpenChange(false); onBack(); }}
+            className="p-2 -ml-2 text-white/70 hover:text-white transition-colors rounded-full hover:bg-white/10"
+          >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-display font-semibold text-foreground truncate">
-              {getActivityEmoji(activity.activity_type)} {getActivityLabel(activity.activity_type)}
-            </h3>
-            <p className="text-xs text-muted-foreground truncate">
-              Created by {creatorProfile?.name || "Shaker"}
-            </p>
-          </div>
-          {/* Participant avatars or count */}
           <button
             onClick={() => setShowParticipantsDialog(true)}
-            className="flex items-center gap-1.5 px-2 py-1 text-xs bg-muted rounded-full hover:bg-muted/80 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 transition-colors border border-white/10"
           >
-            {participants.length > 0 ? (
-              <>
-                <div className="flex -space-x-1.5">
-                  {participants.slice(0, 4).map((p) => (
-                    <div
-                      key={p.user_id}
-                      className="w-5 h-5 rounded-full bg-muted border border-white overflow-hidden"
-                    >
-                      {p.avatar_url ? (
-                        <img src={getDisplayAvatarUrl(p.avatar_url) ?? p.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-muted">
-                          <User className="w-2.5 h-2.5 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <span>{attendeeCount > 0 ? attendeeCount : participants.length}</span>
-              </>
-            ) : (
-              <>
-                <Users className="w-3 h-3" />
-                <span>{attendeeCount}</span>
-              </>
-            )}
+            <div className="flex -space-x-1.5">
+              {participants.slice(0, 3).map((p) => (
+                <Avatar key={p.user_id} className="w-5 h-5 border border-white/20 bg-white/10 shrink-0">
+                  <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || ""} className="object-cover" />
+                  <AvatarFallback className="bg-white/5">
+                    <User className="w-2.5 h-2.5 text-white/40" />
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+            <span className="text-xs text-white/70 font-medium">{displayAttendeeCount}</span>
           </button>
         </div>
 
-        {/* Activity Details Card */}
-        <div className="mx-4 mt-3 p-3 bg-white/50 rounded-lg border border-border/30 shrink-0">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <Calendar className="w-4 h-4" />
-            <span>{formattedDate}</span>
-            <Clock className="w-4 h-4 ml-2" />
-            <span>{formattedTime}</span>
+        {/* Event identity: image / emoji + name + date */}
+        <div className="flex items-center gap-4 px-4 pb-4 border-b border-white/8">
+          {/* Event image or emoji */}
+          <div className="shrink-0 w-16 h-16 rounded-2xl overflow-hidden border border-white/15 bg-white/5 flex items-center justify-center">
+            {activity.image_url ? (
+              <img src={activity.image_url} alt={label} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-3xl leading-none">{emoji}</span>
+            )}
           </div>
-          {(activity.activity_type === "lunch" || activity.activity_type === "dinner" || activity.activity_type === "brunch") && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <span className="inline-flex items-center justify-center w-4 h-4">📍</span>
-              {mapsUrl ? (
-                <a
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  {location}
-                </a>
-              ) : (
-                <span>{location}</span>
-              )}
+
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-semibold text-white leading-tight truncate">{label}</h2>
+            {activity.note && (
+              <p className="text-xs text-white/50 truncate mt-0.5">{activity.note}</p>
+            )}
+            <div className="flex items-center gap-2 mt-1.5">
+              <Calendar className="w-3.5 h-3.5 text-primary/70 shrink-0" />
+              <span className="text-xs text-primary/80 font-medium">{formattedDate}</span>
+              <span className="text-xs text-white/40">·</span>
+              <span className="text-xs text-white/50">{formattedTime}</span>
             </div>
-          )}
-          {activity.note && (
-            <div className="flex items-start gap-2 text-sm text-muted-foreground">
-              <FileText className="w-4 h-4 mt-0.5" />
-              <span>{activity.note}</span>
-            </div>
-          )}
+            {creatorProfile?.name && (
+              <p className="text-xs text-white/35 mt-0.5">by {creatorProfile.name}</p>
+            )}
+          </div>
         </div>
+      </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50">
-              <p className="text-center text-sm">
-                Start planning!<br />
-                Coordinate with others joining this plan.
-              </p>
-            </div>
-          ) : (
-            messages.map((msg) => {
-              const isOwnMessage = msg.user_id === user?.id;
-              const profile = profiles[msg.user_id];
-              const displayName = isOwnMessage ? "You" : profile?.name || "Shaker";
-              const avatarUrl = profile?.avatar_url;
+      {/* ── MESSAGES ── */}
+      <div className="relative z-10 flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-white/40 gap-3">
+            <span className="text-4xl">{emoji}</span>
+            <p className="text-center text-sm">
+              Start planning!<br />
+              <span className="text-xs text-white/30">Coordinate details with everyone joining.</span>
+            </p>
+          </div>
+        ) : (
+          messages.map((msg) => {
+            const isOwn = msg.user_id === user?.id;
+            const profile = profiles[msg.user_id];
+            const displayName = isOwn ? "You" : profile?.name || "Shaker";
+            const avatarUrl = isOwn ? (ownProfile?.avatar_url ?? profile?.avatar_url) : profile?.avatar_url;
+            const stickerMsg = isSticker(msg.message);
 
-              return (
-                <div
-                  key={msg.id}
-                  className={`group flex gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}
-                >
+            return (
+              <div key={msg.id} className={`group flex gap-3 ${isOwn ? "flex-row-reverse" : ""}`}>
+                {!stickerMsg && (
                   <button
-                    onClick={() => {
-                      if (!isOwnMessage) {
-                        setSelectedUserProfile({
-                          userId: msg.user_id,
-                          userName: profile?.name || null,
-                          avatarUrl: profile?.avatar_url || null,
-                        });
-                      }
-                    }}
-                    className="w-8 h-8 shrink-0 rounded-full overflow-hidden border border-border"
-                    disabled={isOwnMessage}
+                    onClick={() => !isOwn && setSelectedUserProfile({ userId: msg.user_id, userName: profile?.name || null, avatarUrl: profile?.avatar_url || null })}
+                    disabled={isOwn}
+                    className="w-8 h-8 shrink-0"
                   >
-                    <Avatar className="w-full h-full rounded-full bg-muted">
-                      <AvatarImage src={avatarUrl ?? undefined} alt={displayName} className="object-cover" />
-                      <AvatarFallback className="bg-muted flex items-center justify-center">
-                        <User className="w-4 h-4 text-muted-foreground" />
+                    <Avatar className="w-8 h-8 rounded-full border border-white/10 bg-white/5">
+                      <AvatarImage src={getDisplayAvatarUrl(avatarUrl)} alt={displayName} className="object-cover" />
+                      <AvatarFallback className="bg-white/5">
+                        <User className="w-4 h-4 text-white/40" />
                       </AvatarFallback>
                     </Avatar>
                   </button>
-                  <div className={`flex-1 max-w-[70%] ${isOwnMessage ? "text-right" : ""}`}>
-                    <div className={`flex items-baseline gap-2 ${isOwnMessage ? "justify-end" : ""}`}>
+                )}
+
+                <div className={`flex-1 max-w-[75%] ${isOwn ? "text-right" : ""} ${stickerMsg ? "max-w-full" : ""}`}>
+                  {!stickerMsg && (
+                    <div className={`flex items-baseline gap-2 mb-0.5 ${isOwn ? "justify-end" : ""}`}>
                       <button
-                        className={`font-semibold text-sm text-black ${!isOwnMessage ? "hover:underline cursor-pointer" : ""}`}
-                        onClick={() => {
-                          if (!isOwnMessage) {
-                            setSelectedUserProfile({
-                              userId: msg.user_id,
-                              userName: profile?.name || null,
-                              avatarUrl: profile?.avatar_url || null,
-                            });
-                          }
-                        }}
-                        disabled={isOwnMessage}
+                        className={`font-semibold text-sm text-white ${!isOwn ? "hover:text-primary cursor-pointer" : ""}`}
+                        onClick={() => !isOwn && setSelectedUserProfile({ userId: msg.user_id, userName: profile?.name || null, avatarUrl: profile?.avatar_url || null })}
+                        disabled={isOwn}
                       >
                         {displayName}
                       </button>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(msg.created_at), "h:mm a")}
-                      </span>
+                      <span className="text-xs text-white/30">{format(new Date(msg.created_at), "h:mm a")}</span>
                     </div>
-                    <div className={`flex items-center gap-1 ${isOwnMessage ? "flex-row-reverse" : ""}`}>
-                      <div
-                        className={`text-sm mt-1 p-2 rounded-lg inline-block ${
-                          isOwnMessage
-                            ? "bg-black text-white"
-                            : "bg-blue-500 text-white"
-                        }`}
-                      >
-                        <span>{msg.message}</span>
+                  )}
+
+                  <div className={`flex items-center gap-1 ${isOwn ? "flex-row-reverse" : ""} ${stickerMsg ? "justify-center" : ""}`}>
+                    {stickerMsg ? (
+                      <div className={`flex flex-col items-center gap-0.5 ${isOwn ? "items-end" : "items-start"}`}>
+                        <span className="text-5xl leading-none select-none" title={isOwn ? "You" : displayName}>
+                          {msg.message.trim()}
+                        </span>
+                        <span className="text-xs text-white/25">{format(new Date(msg.created_at), "h:mm a")}</span>
                       </div>
-                      {isOwnMessage && (
-                        <button
-                          onClick={() => handleDeleteMessage(msg.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all"
-                          title="Delete message"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
+                    ) : (
+                      <div className={`text-sm px-3 py-2 rounded-2xl inline-block ${
+                        isOwn
+                          ? "bg-[#7c5cfc] text-white rounded-tr-sm"
+                          : "bg-white/10 text-white border border-white/10 rounded-tl-sm"
+                      }`}>
+                        {msg.message}
+                      </div>
+                    )}
+                    {isOwn && (
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-white/40 hover:text-red-400 transition-all shrink-0"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+              </div>
+            );
+          })
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-        {/* Quick suggestions */}
-        {user && !message.trim() && (
-          <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2 w-max">
-              {chatSuggestions.map((suggestion) => (
+      {/* ── STICKER PICKER ── */}
+      {showStickerPicker && (
+        <div className="relative z-10 shrink-0 bg-[#0d0d14] border-t border-white/8">
+          {/* Pack tabs */}
+          <div className="flex items-center justify-between px-3 pt-2 pb-1">
+            <div className="flex gap-1">
+              {STICKER_PACKS.map((pack, i) => (
                 <button
-                  key={suggestion}
-                  onClick={() => setMessage(suggestion)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20 whitespace-nowrap shrink-0"
+                  key={pack.label}
+                  onClick={() => setActiveStickerPack(i)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    activeStickerPack === i
+                      ? "bg-[#7c5cfc] text-white"
+                      : "text-white/50 hover:text-white hover:bg-white/10"
+                  }`}
                 >
-                  {suggestion}
+                  {pack.label}
                 </button>
               ))}
             </div>
+            <button onClick={() => setShowStickerPicker(false)} className="p-1 text-white/40 hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
           </div>
-        )}
-
-        {/* Input area */}
-        <div className="p-4">
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder={user ? (canSendText ? "Type a message..." : "Character limit reached") : "Sign in to chat"}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={!user || (!isPremium && !canSendText)}
-              className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
-            />
-            <Button onClick={handleSendMessage} disabled={!message.trim() || isSending || !user} variant="shake">
-              {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
-            </Button>
+          {/* Sticker grid */}
+          <div className="grid grid-cols-5 gap-1 px-3 pb-3">
+            {STICKER_PACKS[activeStickerPack].stickers.map((sticker) => (
+              <button
+                key={sticker}
+                onClick={() => handleSendSticker(sticker)}
+                className="text-3xl h-12 flex items-center justify-center rounded-xl hover:bg-white/10 active:scale-90 transition-all"
+              >
+                {sticker}
+              </button>
+            ))}
           </div>
         </div>
+      )}
 
-        {/* User Profile Dialog */}
-        {selectedUserProfile && (
-          <UserProfileDialog
-            open={!!selectedUserProfile}
-            onOpenChange={() => setSelectedUserProfile(null)}
-            userId={selectedUserProfile.userId}
-            userName={selectedUserProfile.userName}
-            avatarUrl={selectedUserProfile.avatarUrl}
+      {/* ── QUICK SUGGESTIONS ── */}
+      {!showStickerPicker && user && !message.trim() && (
+        <div className="relative z-10 px-4 pb-2 overflow-x-auto scrollbar-hide shrink-0">
+          <div className="flex gap-1.5 w-max">
+            {CHAT_SUGGESTIONS.map((s) => (
+              <button
+                key={s}
+                onClick={() => setMessage(s)}
+                className="text-xs px-2.5 py-1.5 rounded-full bg-white/5 text-primary hover:bg-white/10 border border-white/10 whitespace-nowrap shrink-0 transition-colors"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── INPUT BAR ── */}
+      <div className="relative z-10 p-3 border-t border-white/8 shrink-0">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowStickerPicker((v) => !v)}
+            className={`shrink-0 p-2 rounded-full transition-colors ${showStickerPicker ? "bg-[#7c5cfc] text-white" : "text-white/50 hover:text-white hover:bg-white/10"}`}
+            title="Stickers"
+          >
+            <Smile className="w-5 h-5" />
+          </button>
+          <Input
+            ref={inputRef}
+            placeholder={!user ? "Sign in to chat" : canSendText ? "Message..." : "Character limit reached"}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={!user || (!isPremium && !canSendText)}
+            className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/35 min-h-9 rounded-full px-4"
+            onFocus={() => setShowStickerPicker(false)}
           />
-        )}
+          <Button
+            size="icon"
+            onClick={handleSendMessage}
+            disabled={isSending || !message.trim() || !user}
+            className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0 rounded-full"
+          >
+            {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
+          </Button>
+        </div>
+      </div>
 
-        {/* Participants List Dialog */}
-        <PlanParticipantsDialog
-          open={showParticipantsDialog}
-          onOpenChange={setShowParticipantsDialog}
-          activity={activity}
-          onViewProfile={(userId, userName, avatarUrl) => {
-            setShowParticipantsDialog(false);
-            setSelectedUserProfile({ userId, userName, avatarUrl });
-          }}
+      {/* ── DIALOGS ── */}
+      {selectedUserProfile && (
+        <UserProfileDialog
+          open={!!selectedUserProfile}
+          onOpenChange={() => setSelectedUserProfile(null)}
+          userId={selectedUserProfile.userId}
+          userName={selectedUserProfile.userName}
+          avatarUrl={selectedUserProfile.avatarUrl}
         />
-        
-        <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
-      </DialogContent>
-    </Dialog>
+      )}
+      <PlanParticipantsDialog
+        open={showParticipantsDialog}
+        onOpenChange={setShowParticipantsDialog}
+        activity={activity}
+        onViewProfile={(userId, userName, avatarUrl) => {
+          setShowParticipantsDialog(false);
+          setSelectedUserProfile({ userId, userName, avatarUrl });
+        }}
+      />
+      <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+      <style>{`
+        @keyframes slideInFromRight {
+          from { transform: translateX(100%); opacity: 0.8; }
+          to   { transform: translateX(0);    opacity: 1; }
+        }
+      `}</style>
+    </div>
   );
 }
