@@ -250,7 +250,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
       // Event chats the user has joined
       const { data: eventMemberships, error: eventMembershipsError } = await supabase
         .from("event_chat_members")
-        .select("event_id, paid_at, expires_at, event_name, event_venue, event_chats(name, expires_at)")
+        .select("event_id, paid_at, expires_at, event_name, event_venue")
         .eq("user_id", user.id);
 
       console.log("[ChatTab] Event memberships query", {
@@ -260,13 +260,12 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
 
       if (eventMemberships && eventMemberships.length > 0) {
         for (const membership of eventMemberships as any[]) {
-          const ev = membership.event_chats as { name?: string; expires_at?: string } | null;
           const expiresAt = resolveEventMembershipExpiry(membership);
           if (expiresAt && expiresAt.getTime() <= Date.now()) continue;
 
           const parsedName = typeof membership.event_name === "string" && membership.event_name.trim()
             ? membership.event_name.trim()
-            : (ev?.name ?? "Event Chat");
+            : "Event Chat";
           const fallbackVenue = parsedName.includes(" · ") ? parsedName.split(" · ")[1] : "Event";
           const parsedVenue = typeof membership.event_venue === "string" && membership.event_venue.trim()
             ? membership.event_venue.trim()
