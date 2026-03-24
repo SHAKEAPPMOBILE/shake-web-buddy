@@ -20,6 +20,8 @@ export default function EventChatPage() {
   const { user } = useAuth();
   const [eventName, setEventName] = useState<string>("Event chat");
   const [eventStartsAt, setEventStartsAt] = useState<string>(new Date().toISOString());
+  const [eventImageUrl, setEventImageUrl] = useState<string | null>(null);
+  const [eventDate, setEventDate] = useState<string>("");
   const [isLoadingMeta, setIsLoadingMeta] = useState(true);
   const [hasFatalError, setHasFatalError] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -125,7 +127,7 @@ export default function EventChatPage() {
         // 3) Member but event_chats row missing — create from public_events (expires_at = event_starts_at + 12h)
         const { data: pub } = await supabase
           .from("public_events")
-          .select("name, event_starts_at")
+          .select("name, event_starts_at, image_url")
           .eq("id", eventId)
           .maybeSingle();
 
@@ -136,8 +138,11 @@ export default function EventChatPage() {
           const start = new Date(pub.event_starts_at);
           if (!isNaN(start.getTime())) {
             expiresAt = new Date(start.getTime() + 12 * 60 * 60 * 1000);
+            setEventDate(start.toLocaleDateString([], { month: "short", day: "numeric" }));
           }
         }
+        if (pub?.image_url) setEventImageUrl(pub.image_url);
+        if (pub?.name) setEventName(pub.name);
 
         await supabase.from("event_chats").upsert(
           {
@@ -255,17 +260,36 @@ export default function EventChatPage() {
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base font-medium text-white flex items-center gap-2">
-              <span className="truncate max-w-[200px]">{eventName}</span>
-              <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-orange-200 rounded-full shrink-0 bg-white/5">
-                EVENT
-              </span>
-            </h1>
-            <p className="text-xs text-white/50 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              <span>{headerSubtitle}</span>
-            </p>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {eventImageUrl && (
+              <div
+                className="shrink-0 flex flex-col items-center"
+                style={{
+                  background: "white",
+                  padding: "3px 3px 8px 3px",
+                  borderRadius: "2px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+                  transform: "rotate(-2deg)",
+                  width: "46px",
+                }}
+              >
+                <img
+                  src={eventImageUrl}
+                  alt={eventName}
+                  style={{ width: "40px", height: "40px", objectFit: "cover", display: "block" }}
+                />
+                <span style={{ fontSize: "6px", color: "#555", marginTop: "2px", maxWidth: "40px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {eventDate}
+                </span>
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base font-semibold text-white truncate">{eventName}</h1>
+              <p className="text-xs text-white/50 flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{headerSubtitle}</span>
+              </p>
+            </div>
           </div>
           {memberCount !== null && (
             <div className="flex items-center gap-1 text-xs text-white/60">
