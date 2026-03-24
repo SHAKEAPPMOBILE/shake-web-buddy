@@ -25,6 +25,7 @@ export function ActivityJoinedConfirmation({
   const emoji = getActivityEmoji(activityType);
   const label = getTranslatedActivityLabel(t, activityType);
   const activityDay = getTranslatedActivityDay(t, activityType);
+  const activityTime = activityType === 'lunch' ? '12:30 PM' : activityType === 'dinner' ? '7:00 PM' : activityType === 'drinks' ? '8:00 PM' : null;
   const { location: venueInfo, mapsUrl, isTBD, isLoading: venueLoading, venueError, refetchVenues } = useActivityVenue(city, activityType);
 
   const handleJoinChat = () => {
@@ -56,6 +57,11 @@ export function ActivityJoinedConfirmation({
           {activityDay && (
             <p className="text-sm text-muted-foreground">
               {t('joinConfirmation.thisDay', 'This {{day}}', { day: activityDay })}
+            </p>
+          )}
+          {activityTime && (
+            <p className="text-sm font-medium text-primary">
+              {activityTime}
             </p>
           )}
         </div>

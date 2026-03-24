@@ -45,6 +45,7 @@ export function ActivityConfirmationDialog({
   if (!activity) return null;
 
   const activityDay = getTranslatedActivityDay(t, activity.id);
+  const activityTime = activity.id === 'lunch' ? '12:30 PM' : activity.id === 'dinner' ? '7:00 PM' : activity.id === 'drinks' ? '8:00 PM' : null;
   const displayCity = selectedCity || currentCity;
 
   const handleChangeCity = () => {
@@ -143,6 +144,11 @@ export function ActivityConfirmationDialog({
                 <div className="flex items-center justify-center gap-1.5 text-primary font-medium text-sm">
                   <Calendar className="w-3.5 h-3.5" />
                   <span>{activityDay}</span>
+                </div>
+              )}
+              {activityTime && (
+                <div className="flex items-center justify-center gap-1.5 text-primary font-medium text-sm">
+                  <span>🕐 {activityTime}</span>
                 </div>
               )}
               <div className={`flex items-center justify-center gap-1.5 text-sm ${selectedCity ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
