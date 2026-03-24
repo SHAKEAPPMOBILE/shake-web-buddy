@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { addGroupChatAccess, hasGroupChatAccess } from "@/lib/groupChatAccess";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 // Fallback when no API key or API returns empty
@@ -182,8 +183,19 @@ function EventDetail({
   const navigate = useNavigate();
   const [isEnteringChat, setIsEnteringChat] = useState(false);
   const [hasActiveMembership, setHasActiveMembership] = useState(false);
+  const [hasStoredAccess, setHasStoredAccess] = useState(false);
   const [membershipLoading, setMembershipLoading] = useState(true);
   const eventStartsAt = event.eventStartAt ?? DEFAULT_EVENT_STARTS_AT;
+
+  const hasPaidAccess = hasActiveMembership || hasStoredAccess;
+
+  useEffect(() => {
+    if (!user?.id) {
+      setHasStoredAccess(false);
+      return;
+    }
+    setHasStoredAccess(hasGroupChatAccess(user.id, event.id));
+  }, [event.id, user?.id, membershipVersion]);
 
   useEffect(() => {
     let cancelled = false;
@@ -209,6 +221,10 @@ function EventDetail({
       const expiry = resolveMembershipExpiry(existingMember);
       const active = !!(existingMember && (!expiry || expiry.getTime() > Date.now()));
       setHasActiveMembership(active);
+      if (active && user?.id) {
+        addGroupChatAccess(user.id, event.id);
+        setHasStoredAccess(true);
+      }
       setMembershipLoading(false);
     })();
     return () => {
@@ -241,6 +257,7 @@ function EventDetail({
       if (existingMember) {
         const expiry = resolveMembershipExpiry(existingMember);
         if (!expiry || expiry.getTime() > Date.now()) {
+          if (user?.id) addGroupChatAccess(user.id, event.id);
           onJoinedEvent(event);
           return;
         }
@@ -268,6 +285,7 @@ function EventDetail({
       }
 
       if (data?.alreadyJoined) {
+        if (user?.id) addGroupChatAccess(user.id, event.id);
         onJoinedEvent(event);
         return;
       }
@@ -397,7 +415,7 @@ function EventDetail({
         </p>
 
         <Button
-          onClick={hasActiveMembership ? handleOpenChat : handleEnterChat}
+          onClick={hasPaidAccess ? handleOpenChat : handleEnterChat}
           className="w-full rounded-full font-bold text-base py-3 h-auto"
           disabled={isEnteringChat || membershipLoading}
         >
@@ -410,11 +428,11 @@ function EventDetail({
             ? "Loading..."
             : isEnteringChat
               ? "Connecting..."
-              : hasActiveMembership
+              : hasPaidAccess
                 ? "Open Group Chat"
                 : "Enter Group Chat"}
         </Button>
-        {!hasActiveMembership && !membershipLoading && (
+        {!hasPaidAccess && !membershipLoading && (
           <p className="text-muted-foreground text-xs mt-3 text-center">
             One-time fee · Chat expires 12h after event starts
           </p>
@@ -500,6 +518,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
         }
 
         setChatMembershipVersion((v) => v + 1);
+        addGroupChatAccess(user.id, chatUnlockedId);
         setSelected(null);
         setJoinConfirmationEvent(event);
         navigate("/events", { replace: true });
