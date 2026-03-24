@@ -399,8 +399,7 @@ export default function EventChatPage() {
         </div>
 
         {/* Input bar */}
-        {status === "active" && (
-          <div className="p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5">
+        <div className="p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5">
             <div className="flex items-center gap-2">
               <Input
                 placeholder="Type a message..."
@@ -415,7 +414,7 @@ export default function EventChatPage() {
                   }
                 }}
                 className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
-                disabled={isSending}
+                disabled={isSending || status !== "active"}
               />
               <Button
                 size="icon"
@@ -430,8 +429,7 @@ export default function EventChatPage() {
                 {isSending ? <LoadingSpinner size="sm" /> : <span className="text-xs font-semibold">➤</span>}
               </Button>
             </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
     </>
