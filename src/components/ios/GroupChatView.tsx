@@ -40,8 +40,7 @@ interface Message {
 }
 
 const defaultSuggestions = [
-  "What time works best?",
-  "Where should we meet?",
+    "Where should we meet?",
   "Count me in!",
   "See you there! 👋",
   "I'm running late!",
@@ -486,7 +485,6 @@ export function GroupChatView({
                   }}
                   className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/20 text-primary rounded-full text-sm border border-white/10"
                 >
-                  <span>⭐</span>
                   <span className="venue-name truncate max-w-[180px] transition-all duration-200">{currentVenue.name}</span>
                 </button>
               ) : (

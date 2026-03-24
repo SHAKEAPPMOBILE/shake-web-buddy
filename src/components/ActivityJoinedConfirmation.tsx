@@ -74,9 +74,7 @@ export function ActivityJoinedConfirmation({
                 <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>
               </div>
               <div className="flex-1 min-w-0 overflow-hidden">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                  {venueLoading ? t('joinConfirmation.loading', 'Location') : venueError ? t('joinConfirmation.location', 'Location') : isTBD ? t('joinConfirmation.location', 'Location') : t('joinConfirmation.todaysVenue', "Today's Venue")}
-                </p>
+
                 {venueLoading ? (
                   <p className="text-sm font-medium text-foreground animate-pulse">
                     {t('joinConfirmation.loadingVenue', 'Loading...')}
