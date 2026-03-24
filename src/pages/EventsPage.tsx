@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import type { CSSProperties } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   ChevronLeft,
@@ -164,6 +165,206 @@ function resolveMembershipExpiry(m: { expires_at?: string | null; paid_at?: stri
     if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
   }
   return null;
+}
+
+const EVENT_CHAT_CUBE_SIZE = 92;
+const EVENT_CHAT_CUBE_Z = EVENT_CHAT_CUBE_SIZE / 2;
+
+/** Speedrun-style banner: flowing iridescent gradient, copy left, rose-gold 3D cube + SVG chat mark right */
+function EventGroupChatEnterVisual({
+  description,
+  hasPaidAccess,
+  isEnteringChat,
+  membershipLoading,
+  onClick,
+}: {
+  description: string;
+  hasPaidAccess: boolean;
+  isEnteringChat: boolean;
+  membershipLoading: boolean;
+  onClick: () => void;
+}) {
+  const faceBase: CSSProperties = {
+    position: "absolute",
+    width: EVENT_CHAT_CUBE_SIZE,
+    height: EVENT_CHAT_CUBE_SIZE,
+    left: 0,
+    top: 0,
+    backfaceVisibility: "hidden",
+    border: "1px solid rgba(255,255,255,0.35)",
+    boxShadow:
+      "inset 0 2px 4px rgba(255,255,255,0.45), inset 0 -12px 24px rgba(60,30,20,0.25), 0 0 0 1px rgba(0,0,0,0.06)",
+  };
+
+  const z = EVENT_CHAT_CUBE_Z;
+  const label =
+    membershipLoading ? "Loading..." : isEnteringChat ? "Connecting..." : hasPaidAccess ? "Open Group Chat" : "Enter Group Chat";
+
+  const faceTop: CSSProperties = {
+    ...faceBase,
+    background:
+      "linear-gradient(155deg, #fff5eb 0%, #f0d4b8 35%, #e8b88a 70%, #d4986a 100%)",
+  };
+  const faceFront: CSSProperties = {
+    ...faceBase,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background:
+      "linear-gradient(168deg, #f2d4bc 0%, #d4a078 38%, #a86b45 72%, #7a4a32 100%)",
+  };
+  const faceBack: CSSProperties = {
+    ...faceBase,
+    background:
+      "linear-gradient(195deg, #c9a080 0%, #8f5c3e 50%, #5c3824 100%)",
+  };
+  const faceRight: CSSProperties = {
+    ...faceBase,
+    background:
+      "linear-gradient(135deg, #e8c4a8 0%, #b8825c 45%, #6b4428 100%)",
+  };
+  const faceLeft: CSSProperties = {
+    ...faceBase,
+    background:
+      "linear-gradient(225deg, #edd0b8 0%, #c99570 50%, #8b5a3a 100%)",
+  };
+  const faceBottom: CSSProperties = {
+    ...faceBase,
+    background:
+      "linear-gradient(180deg, #a07050 0%, #6b4030 100%)",
+  };
+
+  return (
+    <div className="relative w-full rounded-[28px] overflow-hidden border border-black/5 shadow-xl mb-4 ring-1 ring-black/[0.04]">
+      <style>
+        {`
+          @keyframes eventChatIridescentFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+          @keyframes eventDetailChatCubeDrift {
+            from { transform: rotateX(-20deg) rotateY(28deg); }
+            to { transform: rotateX(-20deg) rotateY(388deg); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .event-detail-chat-cube-spin {
+              animation: none !important;
+              transform: rotateX(-20deg) rotateY(42deg) !important;
+            }
+            .event-chat-gradient-flow {
+              animation: none !important;
+              background-position: 40% 50% !important;
+            }
+          }
+        `}
+      </style>
+
+      {/* Living gradient: large tiled bg + position drift (teal → purple → pink → amber) */}
+      <div
+        className="event-chat-gradient-flow absolute inset-0 -z-0"
+        style={{
+          background: `
+            radial-gradient(ellipse 90% 70% at 80% 40%, rgba(253, 230, 200, 0.55), transparent 50%),
+            radial-gradient(ellipse 80% 60% at 20% 60%, rgba(45, 212, 191, 0.35), transparent 55%),
+            linear-gradient(
+              105deg,
+              #2dd4bf 0%,
+              #a78bfa 28%,
+              #f0abfc 52%,
+              #fda4af 68%,
+              #fcd34d 82%,
+              #fb923c 92%,
+              #2dd4bf 100%
+            )
+          `,
+          backgroundSize: "320% 320%",
+          backgroundPosition: "0% 50%",
+          animation: "eventChatIridescentFlow 22s ease-in-out infinite",
+        }}
+      />
+      <div
+        className="absolute inset-0 -z-0 pointer-events-none bg-gradient-to-br from-white/50 via-transparent to-amber-100/30 dark:from-white/10 dark:to-transparent"
+        aria-hidden
+      />
+
+      <div className="relative z-10 flex flex-col gap-6 p-5 sm:p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+        {/* Left: title, body, CTA — dark text on light iridescent */}
+        <div className="min-w-0 flex-1 flex flex-col items-stretch text-left">
+          <h2 className="text-xl font-extrabold tracking-tight text-neutral-950 dark:text-neutral-100 mb-2">
+            Event Group Chat
+          </h2>
+          <p className="text-sm leading-relaxed text-neutral-800/90 dark:text-neutral-200/90 mb-5 max-w-md">
+            {description}
+          </p>
+          <Button
+            type="button"
+            onClick={onClick}
+            className="w-full sm:w-auto sm:self-start rounded-full font-bold text-sm uppercase tracking-wide py-3 px-8 h-auto bg-neutral-950 text-white hover:bg-neutral-900 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 border-0 shadow-lg disabled:opacity-60"
+            disabled={isEnteringChat || membershipLoading}
+          >
+            {isEnteringChat || membershipLoading ? (
+              <LoadingSpinner size="sm" className="mr-2 text-white dark:text-neutral-950" />
+            ) : (
+              <MessageCircle className="w-4 h-4 mr-2" />
+            )}
+            {label}
+          </Button>
+        </div>
+
+        {/* Right: 3D rose-gold cube + soft float shadow */}
+        <div
+          className="flex shrink-0 justify-center sm:justify-end sm:pr-2 py-2"
+          style={{
+            perspective: 520,
+            perspectiveOrigin: "55% 40%",
+            filter: "drop-shadow(12px 20px 28px rgba(40, 20, 10, 0.22))",
+          }}
+        >
+          <div
+            className="event-detail-chat-cube-spin relative"
+            style={{
+              width: EVENT_CHAT_CUBE_SIZE,
+              height: EVENT_CHAT_CUBE_SIZE,
+              transformStyle: "preserve-3d",
+              animation: "eventDetailChatCubeDrift 20s linear infinite",
+            }}
+          >
+            <div style={{ ...faceFront, transform: `rotateY(0deg) translateZ(${z}px)` }}>
+              <svg
+                width={36}
+                height={36}
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+                aria-hidden
+              >
+                <path
+                  d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2h-3l-3 3-3-3H6a2 2 0 01-2-2V6z"
+                  fill="url(#eventChatBubbleMetal)"
+                  stroke="rgba(255,255,255,0.55)"
+                  strokeWidth="0.75"
+                />
+                <defs>
+                  <linearGradient id="eventChatBubbleMetal" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#fff8f0" />
+                    <stop offset="0.45" stopColor="#e8d5c4" />
+                    <stop offset="1" stopColor="#8b5a3a" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div style={{ ...faceBack, transform: `rotateY(180deg) translateZ(${z}px)` }} />
+            <div style={{ ...faceRight, transform: `rotateY(90deg) translateZ(${z}px)` }} />
+            <div style={{ ...faceLeft, transform: `rotateY(-90deg) translateZ(${z}px)` }} />
+            <div style={{ ...faceTop, transform: `rotateX(90deg) translateZ(${z}px)` }} />
+            <div style={{ ...faceBottom, transform: `rotateX(-90deg) translateZ(${z}px)` }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function EventDetail({
@@ -403,35 +604,13 @@ function EventDetail({
           );
         })()}
 
-        <div className="flex items-center gap-2 mb-3 mt-1">
-          <MessageCircle className="w-4 h-4 text-primary" />
-          <span className="font-semibold text-foreground">
-            Event Group Chat
-          </span>
-        </div>
-
-        <p className="text-muted-foreground text-sm mb-4">
-          Join the group to coordinate with others going to this show. Chat stays open until 12 hours after the event starts.
-        </p>
-
-        <Button
+        <EventGroupChatEnterVisual
+          description="Join the group to coordinate with others going to this show. Chat stays open until 12 hours after the event starts."
+          hasPaidAccess={hasPaidAccess}
+          isEnteringChat={isEnteringChat}
+          membershipLoading={membershipLoading}
           onClick={hasPaidAccess ? handleOpenChat : handleEnterChat}
-          className="w-full rounded-full font-bold text-base py-3 h-auto"
-          disabled={isEnteringChat || membershipLoading}
-        >
-          {isEnteringChat || membershipLoading ? (
-            <LoadingSpinner size="sm" className="mr-2" />
-          ) : (
-            <MessageCircle className="w-4 h-4 mr-2" />
-          )}
-          {membershipLoading
-            ? "Loading..."
-            : isEnteringChat
-              ? "Connecting..."
-              : hasPaidAccess
-                ? "Open Group Chat"
-                : "Enter Group Chat"}
-        </Button>
+        />
         {!hasPaidAccess && !membershipLoading && (
           <p className="text-muted-foreground text-xs mt-3 text-center">
             One-time fee · Chat expires 12h after event starts
