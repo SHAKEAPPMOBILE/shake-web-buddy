@@ -7,10 +7,9 @@ import {
   Users,
   ExternalLink,
   MessageCircle,
-  X,
 } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { EventJoinedConfirmation } from "@/components/EventJoinedConfirmation";
 import { cn } from "@/lib/utils";
 import {
   type EventItem,
@@ -154,11 +153,14 @@ function EventDetail({
   event,
   onClose,
   membershipVersion = 0,
+  onJoinedEvent,
 }: {
   event: EventItem;
   onClose: () => void;
   /** Bumped after server creates event_chat_members so we re-check access without remounting. */
   membershipVersion?: number;
+  /** After user gains membership — show confirmation; do not navigate to chat here. */
+  onJoinedEvent: (event: EventItem) => void;
 }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -223,7 +225,7 @@ function EventDetail({
       if (existingMember) {
         const expiry = resolveMembershipExpiry(existingMember);
         if (!expiry || expiry.getTime() > Date.now()) {
-          navigate(`/chat/event/${event.id}`);
+          onJoinedEvent(event);
           return;
         }
       }
@@ -250,7 +252,7 @@ function EventDetail({
       }
 
       if (data?.alreadyJoined) {
-        navigate(`/chat/event/${event.id}`);
+        onJoinedEvent(event);
         return;
       }
 
@@ -413,14 +415,8 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [cat, setCat] = useState("All");
   const [selected, setSelected] = useState<EventItem | null>(null);
-  const [showEventChatSuccess, setShowEventChatSuccess] = useState(false);
+  const [joinConfirmationEvent, setJoinConfirmationEvent] = useState<EventItem | null>(null);
   const [chatMembershipVersion, setChatMembershipVersion] = useState(0);
-  const [successEventId, setSuccessEventId] = useState<string | null>(null);
-  const [successEventName, setSuccessEventName] = useState<string | null>(null);
-  const [successEventVenue, setSuccessEventVenue] = useState<string | null>(null);
-  const [successEventCity, setSuccessEventCity] = useState<string | null>(null);
-  const [successEventDate, setSuccessEventDate] = useState<string | null>(null);
-  const [successEventEmoji, setSuccessEventEmoji] = useState<string>("🎉");
 
   const { user } = useAuth();
   const { selectedCity, isLoading: isCityLoading, isCityOutOfRange, isManuallySelected } = useCity();
@@ -437,9 +433,10 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
       return;
     }
 
-    setSelected(event);
-
-    if (!paymentSuccess || !user) return;
+    if (!paymentSuccess || !user) {
+      setSelected(event);
+      return;
+    }
 
     const createMembership = async () => {
       try {
@@ -487,13 +484,9 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
         }
 
         setChatMembershipVersion((v) => v + 1);
-        setSuccessEventId(chatUnlockedId);
-        setSuccessEventName(event.name);
-        setSuccessEventVenue(event.venue || null);
-        setSuccessEventCity(event.city || null);
-        setSuccessEventDate(event.eventStartAt || null);
-        setSuccessEventEmoji(event.emoji || "🎉");
-        setShowEventChatSuccess(true);
+        setSelected(null);
+        setJoinConfirmationEvent(event);
+        navigate("/events", { replace: true });
       } catch (error) {
         console.log("[EventsPage] Error creating membership after payment redirect", error);
       }
@@ -503,10 +496,10 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   }, [chatUnlockedId, paymentSuccess, eventsLoading, events, user, navigate]);
 
   useEffect(() => {
-    if (showEventChatSuccess) {
+    if (joinConfirmationEvent?.id) {
       triggerConfettiWaterfall();
     }
-  }, [showEventChatSuccess]);
+  }, [joinConfirmationEvent?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -802,109 +795,25 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           event={selected}
           onClose={() => setSelected(null)}
           membershipVersion={chatMembershipVersion}
+          onJoinedEvent={(ev) => {
+            setSelected(null);
+            setJoinConfirmationEvent(ev);
+          }}
         />
       )}
 
-      {showEventChatSuccess && successEventId && successEventName && (
-        <Dialog
-          open={showEventChatSuccess}
-          onOpenChange={(open) => {
-            if (!open) setShowEventChatSuccess(false);
-          }}
-        >
-          <DialogContent className="max-w-sm mx-auto p-0 gap-0 rounded-3xl border-0 overflow-hidden bg-card">
-            {/* Close button */}
-            <button
-              onClick={() => setShowEventChatSuccess(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors z-10"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
-
-            {/* Success header */}
-            <div className="pt-8 pb-4 px-6 text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 animate-bounce-subtle">
-                <span className="text-4xl">{successEventEmoji}</span>
-              </div>
-              <h2 className="text-xl font-display font-bold text-foreground mb-1">
-                You&apos;re in!
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                You now have access to the group chat for
-              </p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">
-                {successEventName}
-              </p>
-            </div>
-
-            {/* Event info card */}
-            {(successEventVenue || successEventDate) && (
-              <div className="px-6 pb-4">
-                <div className="rounded-2xl bg-muted/50 p-4 space-y-3">
-                  {successEventVenue && (
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-4 h-4 text-primary" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Venue</p>
-                        <p className="text-sm font-medium text-foreground break-words">
-                          {successEventVenue}
-                          {successEventCity && (
-                            <span className="text-muted-foreground font-normal">, {successEventCity}</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {successEventDate && (
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-4 h-4 text-primary" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Date</p>
-                        <p className="text-sm font-medium text-foreground">
-                          {new Date(successEventDate).toLocaleDateString(undefined, {
-                            weekday: "long",
-                            month: "long",
-                            day: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="px-6 pb-8 space-y-3">
-              <Button
-                className="w-full h-12 rounded-full font-semibold text-base gap-2"
-                style={{
-                  background: "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))",
-                }}
-                onClick={() => {
-                  setShowEventChatSuccess(false);
-                  navigate(`/chat/event/${successEventId}`, { replace: true });
-                }}
-              >
-                <MessageCircle className="w-5 h-5" />
-                Join Group Chat
-              </Button>
-              <button
-                onClick={() => setShowEventChatSuccess(false)}
-                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
-              >
-                Maybe later
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      <EventJoinedConfirmation
+        open={!!joinConfirmationEvent}
+        onOpenChange={(open) => {
+          if (!open) setJoinConfirmationEvent(null);
+        }}
+        event={joinConfirmationEvent}
+        onEnterGroupChat={() => {
+          const id = joinConfirmationEvent?.id;
+          setJoinConfirmationEvent(null);
+          if (id) navigate(`/chat/event/${id}`, { replace: true });
+        }}
+      />
     </div>
   );
 }
