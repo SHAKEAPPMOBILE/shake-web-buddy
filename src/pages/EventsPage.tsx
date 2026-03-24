@@ -7,14 +7,11 @@ import {
   Users,
   ExternalLink,
   MessageCircle,
-  Check,
-  Clock,
   X,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useEventChat } from "@/hooks/useEventChat";
 import {
   type EventItem,
   fetchTicketmasterEvents,
@@ -140,20 +137,66 @@ const hue = (id: string) =>
 
 const DEFAULT_EVENT_STARTS_AT = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
+function resolveMembershipExpiry(m: { expires_at?: string | null; paid_at?: string | null } | null) {
+  if (!m) return null;
+  if (m.expires_at) {
+    const d = new Date(m.expires_at);
+    if (!isNaN(d.getTime())) return d;
+  }
+  if (m.paid_at) {
+    const d = new Date(m.paid_at);
+    if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
+  }
+  return null;
+}
+
 function EventDetail({
   event,
   onClose,
-  initialUnlock,
+  membershipVersion = 0,
 }: {
   event: EventItem;
   onClose: () => void;
-  initialUnlock?: boolean;
+  /** Bumped after server creates event_chat_members so we re-check access without remounting. */
+  membershipVersion?: number;
 }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [inputValue, setInputValue] = useState("");
   const [isEnteringChat, setIsEnteringChat] = useState(false);
+  const [hasActiveMembership, setHasActiveMembership] = useState(false);
+  const [membershipLoading, setMembershipLoading] = useState(true);
   const eventStartsAt = event.eventStartAt ?? DEFAULT_EVENT_STARTS_AT;
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setHasActiveMembership(false);
+      setMembershipLoading(false);
+      return;
+    }
+    setMembershipLoading(true);
+    (async () => {
+      const { data: existingMember, error: memberError } = await supabase
+        .from("event_chat_members")
+        .select("event_id, paid_at, expires_at")
+        .eq("event_id", event.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (memberError) {
+        setHasActiveMembership(false);
+        setMembershipLoading(false);
+        return;
+      }
+      const expiry = resolveMembershipExpiry(existingMember);
+      const active = !!(existingMember && (!expiry || expiry.getTime() > Date.now()));
+      setHasActiveMembership(active);
+      setMembershipLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [event.id, user, membershipVersion]);
 
   const handleEnterChat = async () => {
     if (isEnteringChat) return;
@@ -176,19 +219,6 @@ function EventDetail({
       if (memberError) {
         console.log("[EventsPage] Error checking existing event_chat_members", memberError);
       }
-
-      const resolveMembershipExpiry = (m: { expires_at?: string | null; paid_at?: string | null } | null) => {
-        if (!m) return null;
-        if (m.expires_at) {
-          const d = new Date(m.expires_at);
-          if (!isNaN(d.getTime())) return d;
-        }
-        if (m.paid_at) {
-          const d = new Date(m.paid_at);
-          if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
-        }
-        return null;
-      };
 
       if (existingMember) {
         const expiry = resolveMembershipExpiry(existingMember);
@@ -242,27 +272,10 @@ function EventDetail({
       setIsEnteringChat(false);
     }
   };
-  const {
-    status,
-    messages,
-    senderMap,
-    memberCount,
-    minutesLeft,
-    sendMessage,
-    unlockChat,
-    isSending,
-  } = useEventChat({
-    eventId: event.id,
-    eventName: event.name,
-    eventStartsAt,
-  });
-  const h = hue(event.id);
 
-  useEffect(() => {
-    if (initialUnlock && status === "locked") {
-      unlockChat();
-    }
-  }, [initialUnlock, status, unlockChat]);
+  const handleOpenChat = () => {
+    navigate(`/chat/event/${event.id}`);
+  };
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-y-auto">
@@ -361,144 +374,32 @@ function EventDetail({
           </span>
         </div>
 
-        {status === "active" && minutesLeft !== null && (
-          <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-2 text-muted-foreground text-sm bg-muted/50">
-            <Clock className="w-3.5 h-3.5 shrink-0" />
-            <span>Chat closes in {minutesLeft}m</span>
-          </div>
-        )}
+        <p className="text-muted-foreground text-sm mb-4">
+          Join the group to coordinate with others going to this show. Chat stays open until 12 hours after the event starts.
+        </p>
 
-        <div className="rounded-2xl overflow-hidden border border-border relative">
-          {status === "active" && (
-            <div className="px-4 pt-3 pb-2 border-b border-border flex items-center gap-2 bg-card/80">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
-                style={{
-                  background: `linear-gradient(135deg, hsl(270, 55%, 28%), hsl(290, 45%, 18%))`,
-                }}
-              >
-                {event.emoji}
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold text-foreground text-sm truncate">{event.name}</p>
-              </div>
-            </div>
+        <Button
+          onClick={hasActiveMembership ? handleOpenChat : handleEnterChat}
+          className="w-full rounded-full font-bold text-base py-3 h-auto"
+          disabled={isEnteringChat || membershipLoading}
+        >
+          {isEnteringChat || membershipLoading ? (
+            <LoadingSpinner size="sm" className="mr-2" />
+          ) : (
+            <MessageCircle className="w-4 h-4 mr-2" />
           )}
-          <div className="p-4 bg-card/80 min-h-[120px]">
-            {status === "loading" && (
-              <div className="flex items-center justify-center py-8">
-                <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-            {status === "locked" && (
-              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                <Button
-                  onClick={handleEnterChat}
-                  className="w-full rounded-full font-bold text-base py-3 h-auto"
-                  disabled={isEnteringChat}
-                >
-                  {isEnteringChat ? (
-                    <LoadingSpinner size="sm" className="mr-2" />
-                  ) : (
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                  )}
-                  {isEnteringChat ? "Connecting..." : "Enter Group Chat"}
-                </Button>
-                <p className="text-muted-foreground text-xs mt-3">
-                  One-time fee · Chat expires 12h after event starts
-                </p>
-              </div>
-            )}
-            {status === "active" && (
-              <>
-                {messages.map((m) => (
-                  <div key={m.id} className="flex gap-2 mb-3">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-                      style={{
-                        background: `hsl(${(m.user_id.slice(0, 8).split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360)}, 55%, 40%)`,
-                      }}
-                    >
-                      {senderMap[m.user_id]?.name?.[0]?.toUpperCase() ?? "?"}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex gap-2 items-center">
-                        <span className="text-primary/90 text-xs font-semibold">
-                          {senderMap[m.user_id]?.name ?? "User"}
-                        </span>
-                        <span className="text-muted-foreground/80 text-[11px]">
-                          {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                      <p className="text-foreground text-sm mt-0.5">{m.content}</p>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-            {status === "expired" && (
-              <p className="text-muted-foreground text-sm py-2">This chat ended 12 hours after the event 🎤</p>
-            )}
-            {status === "error" && (
-              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                <Button
-                  onClick={handleEnterChat}
-                  className="w-full rounded-full font-bold text-base py-3 h-auto"
-                  disabled={isEnteringChat}
-                >
-                  {isEnteringChat ? (
-                    <LoadingSpinner size="sm" className="mr-2" />
-                  ) : (
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                  )}
-                  {isEnteringChat ? "Connecting..." : "Enter Group Chat"}
-                </Button>
-                <p className="text-muted-foreground text-xs mt-3">
-                  One-time fee · Chat expires 12h after event starts
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {status === "active" && (
-          <div className="flex gap-2 mt-3">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Message the group..."
-              className="flex-1 rounded-xl px-4 py-2.5 text-sm text-foreground bg-card border border-border outline-none focus:ring-2 focus:ring-primary/30"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  sendMessage(inputValue);
-                  setInputValue("");
-                }
-              }}
-            />
-            <Button
-              size="icon"
-              className="w-10 h-10 rounded-xl shrink-0"
-              disabled={isSending}
-              onClick={async () => {
-                await sendMessage(inputValue);
-                setInputValue("");
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </Button>
-          </div>
+          {membershipLoading
+            ? "Loading..."
+            : isEnteringChat
+              ? "Connecting..."
+              : hasActiveMembership
+                ? "Open Group Chat"
+                : "Enter Group Chat"}
+        </Button>
+        {!hasActiveMembership && !membershipLoading && (
+          <p className="text-muted-foreground text-xs mt-3 text-center">
+            One-time fee · Chat expires 12h after event starts
+          </p>
         )}
       </div>
     </div>
@@ -512,8 +413,8 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [cat, setCat] = useState("All");
   const [selected, setSelected] = useState<EventItem | null>(null);
-  const [initialUnlockEventId, setInitialUnlockEventId] = useState<string | null>(null);
   const [showEventChatSuccess, setShowEventChatSuccess] = useState(false);
+  const [chatMembershipVersion, setChatMembershipVersion] = useState(0);
   const [successEventId, setSuccessEventId] = useState<string | null>(null);
   const [successEventName, setSuccessEventName] = useState<string | null>(null);
   const [successEventVenue, setSuccessEventVenue] = useState<string | null>(null);
@@ -537,7 +438,6 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
     }
 
     setSelected(event);
-    setInitialUnlockEventId(chatUnlockedId);
 
     if (!paymentSuccess || !user) return;
 
@@ -586,6 +486,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           return;
         }
 
+        setChatMembershipVersion((v) => v + 1);
         setSuccessEventId(chatUnlockedId);
         setSuccessEventName(event.name);
         setSuccessEventVenue(event.venue || null);
@@ -600,10 +501,6 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
 
     void createMembership();
   }, [chatUnlockedId, paymentSuccess, eventsLoading, events, user, navigate]);
-
-  useEffect(() => {
-    if (!selected) setInitialUnlockEventId(null);
-  }, [selected]);
 
   useEffect(() => {
     if (showEventChatSuccess) {
@@ -904,7 +801,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
         <EventDetail
           event={selected}
           onClose={() => setSelected(null)}
-          initialUnlock={selected.id === initialUnlockEventId}
+          membershipVersion={chatMembershipVersion}
         />
       )}
 
