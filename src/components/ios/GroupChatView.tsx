@@ -483,16 +483,16 @@ export function GroupChatView({
                       el.classList.toggle('max-w-none');
                     }
                   }}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/20 text-primary rounded-full text-sm border border-white/10"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 text-primary rounded-full text-base font-display font-semibold border border-white/10"
                 >
-                  <span className="venue-name truncate max-w-[180px] transition-all duration-200">{currentVenue.name}</span>
+                  <span className="venue-name truncate max-w-[260px] transition-all duration-200">{currentVenue.name}</span>
                 </button>
               ) : (
                 <button
                   onClick={() => handleSuggestVenue(currentVenue)}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 text-white/90 rounded-full text-sm border border-white/10 hover:bg-white/10"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 text-white/90 rounded-full text-base font-display font-semibold border border-white/10 hover:bg-white/10"
                 >
-                  <span className="truncate max-w-[180px]">{currentVenue.name}</span>
+                  <span className="truncate max-w-[260px]">{currentVenue.name}</span>
                   <span className="text-xs text-white/50">({t('chat.suggest', 'Suggest')})</span>
                 </button>
               )}
