@@ -1,34 +1,31 @@
-import { useId, useMemo } from "react";
+import { useMemo } from "react";
 import type { CSSProperties } from "react";
 
 /** viewBox height for aspect ratio */
-const VIEWBOX_H = 178;
+const VIEWBOX_H = 165;
 
-/** Display width; height follows viewBox aspect (larger = fills banner right side). */
-const NOTE_DISPLAY_W = 182;
+/** ~40% smaller than prior ~182px accent — compact banner accent */
+const NOTE_DISPLAY_W = 110;
 const NOTE_DISPLAY_H = Math.round((NOTE_DISPLAY_W * VIEWBOX_H) / 100);
 
 const LAYER_COUNT = 20;
 const DEPTH_STEP = 2.2;
 
-/** Head center + tilt (degrees, SVG rotate = CW; negative ≈ classic “up-right” oval). */
-const HEAD_CX = 37;
-const HEAD_CY = 131;
-const HEAD_ROT = -26;
-const HEAD_RX = 28;
-const HEAD_RY = 17;
+/** Classic engraved tilt (SVG positive rotate = CW; negative = oval up-right). */
+const HEAD_CX = 35;
+const HEAD_CY = 118;
+const HEAD_ROT = -22;
+const HEAD_RX = 25;
+const HEAD_RY = 15;
 
-/** Bronze / rose-gold metallic stops; `t` = 0 (back) … 1 (front) for shading. */
-function metallicStops(t: number): { a: string; b: string; c: string } {
-  const lift = t * 14;
-  return {
-    a: `rgb(${245 - lift * 0.4}, ${228 - lift * 0.5}, ${210 - lift * 0.45})`,
-    b: `rgb(${212 - lift * 0.35}, ${160 - lift * 0.3}, ${120 - lift * 0.25})`,
-    c: `rgb(${130 - lift * 0.4}, ${88 - lift * 0.35}, ${58 - lift * 0.3})`,
-  };
+/** Front face pure black; slices toward the back use subtle dark gray for extrusion depth. */
+function extrusionFill(layerIndex: number, totalLayers: number): string {
+  if (totalLayers <= 1) return "#000000";
+  const t = layerIndex / (totalLayers - 1);
+  const v = Math.round(30 * (1 - t));
+  return `rgb(${v},${v},${v})`;
 }
 
-/** Right-side attach point of rotated ellipse (stem joins here). */
 function stemAttachOnHead(): { x: number; y: number } {
   const rad = (HEAD_ROT * Math.PI) / 180;
   const x = HEAD_CX + HEAD_RX * Math.cos(rad);
@@ -37,27 +34,25 @@ function stemAttachOnHead(): { x: number; y: number } {
 }
 
 /**
- * Classic single eighth note (♪): filled tilted oval head, thick vertical stem, curved flag.
- * Geometry aligned with engraved notation (stem from right of head).
+ * Single eighth note (♪): filled oval head (bottom), straight vertical stem from head’s right,
+ * one curved flag at stem top — classic icon proportions.
  */
 function EighthNoteSvg({
-  gradId,
+  fill,
   layerIndex,
   totalLayers,
 }: {
-  gradId: string;
+  fill: string;
   layerIndex: number;
   totalLayers: number;
 }) {
-  const t = totalLayers > 1 ? layerIndex / (totalLayers - 1) : 1;
-  const { a, b, c } = metallicStops(t);
   const attach = stemAttachOnHead();
-  const stemLeft = attach.x - 3.2;
-  const stemRight = attach.x + 4.2;
-  const stemBottom = attach.y + 2.8;
+  const stemLeft = attach.x - 3;
+  const stemRight = attach.x + 4;
+  const stemBottom = attach.y + 2.5;
   const stemTop = 22;
 
-  const fill = `url(#${gradId})`;
+  const isFront = layerIndex === totalLayers - 1;
 
   return (
     <svg
@@ -69,20 +64,10 @@ function EighthNoteSvg({
       aria-hidden
       className="block"
     >
-      <defs>
-        <linearGradient id={gradId} x1="8%" y1="6%" x2="92%" y2="94%" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor={a} />
-          <stop offset="48%" stopColor={b} />
-          <stop offset="100%" stopColor={c} />
-        </linearGradient>
-      </defs>
-
-      {/* Tilted filled note head — bold oval like reference icon */}
       <g transform={`translate(${HEAD_CX} ${HEAD_CY}) rotate(${HEAD_ROT})`}>
         <ellipse cx="0" cy="0" rx={HEAD_RX} ry={HEAD_RY} fill={fill} />
       </g>
 
-      {/* Thick vertical stem from right of head */}
       <path
         fill={fill}
         d={`M ${stemLeft.toFixed(2)} ${stemBottom.toFixed(2)}
@@ -92,33 +77,33 @@ function EighthNoteSvg({
             Z`}
       />
 
-      {/* Curved flag: swoops from stem top, tapers toward lower-right (fits viewBox width) */}
+      {/* Single flag: smooth outward curl, tapers toward lower-right */}
       <path
         fill={fill}
         d={`M ${stemLeft} ${stemTop}
             L ${stemRight} ${stemTop}
-            C 88 ${stemTop + 1} 100 24 99 46
-            C 98 64 91 84 83 91
-            C 75 96 65 93 59 82
-            C 53 70 51 57 54 45
-            C 55 35 55 30 ${stemLeft + 0.5} ${stemTop + 4}
+            C 79 ${stemTop + 2} 93 30 92 50
+            C 91 68 80 84 68 88
+            C 58 91 50 86 46 76
+            C 42 64 44 50 48 40
+            C 50 33 50 28 ${stemLeft + 0.5} ${stemTop + 5}
             Z`}
       />
 
-      {layerIndex === totalLayers - 1 ? (
+      {isFront ? (
         <>
           <path
             d={`M ${stemLeft} ${stemTop}
               L ${stemRight} ${stemTop}
-              C 88 ${stemTop + 1} 100 24 99 46
-              C 98 64 91 84 83 91
-              C 75 96 65 93 59 82
-              C 53 70 51 57 54 45
-              C 55 35 55 30 ${stemLeft + 0.5} ${stemTop + 4}
+              C 79 ${stemTop + 2} 93 30 92 50
+              C 91 68 80 84 68 88
+              C 58 91 50 86 46 76
+              C 42 64 44 50 48 40
+              C 50 33 50 28 ${stemLeft + 0.5} ${stemTop + 5}
               Z`}
             fill="none"
-            stroke="rgba(255,255,255,0.2)"
-            strokeWidth="0.4"
+            stroke="rgba(255,255,255,0.06)"
+            strokeWidth="0.35"
           />
           <g transform={`translate(${HEAD_CX} ${HEAD_CY}) rotate(${HEAD_ROT})`}>
             <ellipse
@@ -127,8 +112,8 @@ function EighthNoteSvg({
               rx={HEAD_RX}
               ry={HEAD_RY}
               fill="none"
-              stroke="rgba(255,255,255,0.16)"
-              strokeWidth="0.4"
+              stroke="rgba(255,255,255,0.05)"
+              strokeWidth="0.35"
             />
           </g>
         </>
@@ -137,7 +122,7 @@ function EighthNoteSvg({
   );
 }
 
-function ExtrudedEighthNote({ uid }: { uid: string }) {
+function ExtrudedEighthNote() {
   const totalDepth = (LAYER_COUNT - 1) * DEPTH_STEP;
   const zOffset = totalDepth / 2;
 
@@ -146,16 +131,16 @@ function ExtrudedEighthNote({ uid }: { uid: string }) {
       Array.from({ length: LAYER_COUNT }, (_, i) => ({
         i,
         z: i * DEPTH_STEP - zOffset,
-        gradId: `note-metal-${uid}-${i}`,
+        fill: extrusionFill(i, LAYER_COUNT),
       })),
-    [uid, zOffset]
+    [zOffset]
   );
 
   return (
     <>
-      {layers.map(({ i, z, gradId }) => (
+      {layers.map(({ i, z, fill }) => (
         <div
-          key={gradId}
+          key={i}
           style={{
             position: "absolute",
             left: "50%",
@@ -166,11 +151,12 @@ function ExtrudedEighthNote({ uid }: { uid: string }) {
             marginTop: -NOTE_DISPLAY_H / 2,
             transform: `translateZ(${z}px)`,
             transformStyle: "preserve-3d",
-            backfaceVisibility: "hidden",
-            opacity: 0.88 + (i / (LAYER_COUNT - 1 || 1)) * 0.12,
+            backfaceVisibility: "visible",
+            WebkitBackfaceVisibility: "visible",
+            opacity: 1,
           }}
         >
-          <EighthNoteSvg gradId={gradId} layerIndex={i} totalLayers={LAYER_COUNT} />
+          <EighthNoteSvg fill={fill} layerIndex={i} totalLayers={LAYER_COUNT} />
         </div>
       ))}
     </>
@@ -178,8 +164,6 @@ function ExtrudedEighthNote({ uid }: { uid: string }) {
 }
 
 export function EventGroupChatBanner3D() {
-  const uid = useId().replace(/:/g, "");
-
   const outerStyle: CSSProperties = {
     perspective: 640,
     perspectiveOrigin: "52% 42%",
@@ -188,7 +172,7 @@ export function EventGroupChatBanner3D() {
 
   return (
     <div
-      className="flex shrink-0 self-center justify-end overflow-visible sm:pr-0 py-0 sm:py-1 max-sm:scale-[0.86] sm:scale-100 origin-center"
+      className="flex shrink-0 self-center justify-end overflow-visible sm:pr-0 py-0 sm:py-1 max-sm:scale-100 sm:scale-100 origin-center"
       style={outerStyle}
     >
       <style>
@@ -214,7 +198,7 @@ export function EventGroupChatBanner3D() {
           animation: "eventDetailChatObjectDrift 20s linear infinite",
         }}
       >
-        <ExtrudedEighthNote uid={uid} />
+        <ExtrudedEighthNote />
       </div>
     </div>
   );

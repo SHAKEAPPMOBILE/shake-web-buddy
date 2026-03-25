@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Smile } from "lucide-react";
 import { useEventChat } from "@/hooks/useEventChat";
@@ -86,6 +86,23 @@ export default function EventChatPage() {
       return;
     }
   }, [user, navigate]);
+
+  /** Full-screen route sits outside IOSAppLayout; in light theme `body` is near-white and shows through safe-area / overscroll. */
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlBg = html.style.backgroundColor;
+    const prevBodyBg = body.style.backgroundColor;
+    const prevBodyOverscroll = body.style.overscrollBehavior;
+    html.style.backgroundColor = "#06060a";
+    body.style.backgroundColor = "#06060a";
+    body.style.overscrollBehavior = "none";
+    return () => {
+      html.style.backgroundColor = prevHtmlBg;
+      body.style.backgroundColor = prevBodyBg;
+      body.style.overscrollBehavior = prevBodyOverscroll;
+    };
+  }, []);
 
   useEffect(() => {
     if (!eventId || !user) return;
@@ -261,13 +278,13 @@ export default function EventChatPage() {
 
   useEffect(() => {
     if (!showStickerTray) return;
-    const onDoc = (e: MouseEvent) => {
+    const onDoc = (e: PointerEvent) => {
       if (stickerBarRef.current && !stickerBarRef.current.contains(e.target as Node)) {
         setShowStickerTray(false);
       }
     };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+    document.addEventListener("pointerdown", onDoc);
+    return () => document.removeEventListener("pointerdown", onDoc);
   }, [showStickerTray]);
 
   useEffect(() => {
@@ -295,7 +312,7 @@ export default function EventChatPage() {
     {stickerConfetti ? (
       <StickerSendConfetti x={stickerConfetti.x} y={stickerConfetti.y} seed={stickerConfetti.seed} />
     ) : null}
-    <div className="fixed inset-0 flex flex-col bg-[#06060a] z-40">
+    <div className="fixed inset-0 z-40 flex min-h-[100dvh] flex-col bg-[#06060a]">
       <div
         className="absolute inset-0 pointer-events-none z-0"
         style={{
@@ -491,15 +508,19 @@ export default function EventChatPage() {
                     type="button"
                     className="flex h-20 w-20 mx-auto items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 shadow-inner hover:bg-white/25 active:scale-95 transition-all disabled:opacity-40"
                     disabled={isSending || status !== "active"}
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       const r = e.currentTarget.getBoundingClientRect();
-                      setStickerConfetti((prev) => ({
-                        seed: (prev?.seed ?? 0) + 1,
-                        x: r.left + r.width / 2,
-                        y: r.top + r.height / 2,
-                      }));
-                      void sendMessage(id, "sticker");
-                      setShowStickerTray(false);
+                      try {
+                        await sendMessage(id, "sticker");
+                        setStickerConfetti((prev) => ({
+                          seed: (prev?.seed ?? 0) + 1,
+                          x: r.left + r.width / 2,
+                          y: r.top + r.height / 2,
+                        }));
+                        setShowStickerTray(false);
+                      } catch (err) {
+                        console.error("[EventChatPage] sticker send failed", err);
+                      }
                     }}
                     aria-label={`Send ${EVENT_CHAT_STICKER_LABELS[id]} sticker`}
                   >
@@ -531,8 +552,15 @@ export default function EventChatPage() {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   if (!inputValue.trim()) return;
-                  void sendMessage(inputValue);
-                  setInputValue("");
+                  const text = inputValue;
+                  void (async () => {
+                    try {
+                      await sendMessage(text);
+                      setInputValue("");
+                    } catch (err) {
+                      console.error("[EventChatPage] send failed", err);
+                    }
+                  })();
                 }
               }}
               className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
@@ -542,8 +570,13 @@ export default function EventChatPage() {
               size="icon"
               onClick={async () => {
                 if (!inputValue.trim()) return;
-                await sendMessage(inputValue);
-                setInputValue("");
+                const text = inputValue;
+                try {
+                  await sendMessage(text);
+                  setInputValue("");
+                } catch (err) {
+                  console.error("[EventChatPage] send failed", err);
+                }
               }}
               disabled={isSending || !inputValue.trim()}
               className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"

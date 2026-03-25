@@ -205,13 +205,44 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
       if (messageType === "sticker" && !EVENT_CHAT_STICKER_SET.has(trimmed)) return;
       setIsSending(true);
       try {
-        await supabase.from("event_chat_messages").insert({
-          event_id: eventId,
-          user_id: user.id,
-          content: trimmed,
-          expires_at: computedExpiresAt.toISOString(),
-          message_type: messageType,
-        });
+        const { data: row, error } = await supabase
+          .from("event_chat_messages")
+          .insert({
+            event_id: eventId,
+            user_id: user.id,
+            content: trimmed,
+            expires_at: computedExpiresAt.toISOString(),
+            message_type: messageType,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("[useEventChat] sendMessage insert failed", error);
+          throw error;
+        }
+        if (!row) return;
+
+        const newMsg: EventChatMessage = {
+          ...(row as EventChatMessage),
+          message_type: (row as EventChatMessage).message_type ?? messageType,
+        };
+
+        setMessages((prev) => (prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg]));
+
+        if (!senderMapRef.current[user.id]) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id, name, avatar_url")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (profile) {
+            setSenderMap((prev) => ({
+              ...prev,
+              [user.id]: { name: profile.name ?? "User", avatar_url: profile.avatar_url ?? "" },
+            }));
+          }
+        }
       } finally {
         setIsSending(false);
       }
