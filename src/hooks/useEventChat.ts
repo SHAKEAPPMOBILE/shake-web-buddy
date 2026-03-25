@@ -8,6 +8,12 @@ import {
   resolveEventChatAccessExpiryForUi,
 } from "@/lib/eventChatMembership";
 
+/**
+ * Event chat hook — no navigate() anywhere here.
+ * Countdown uses setInterval(..., 30_000); first tick runs immediately (not ~3s).
+ * No retry loop that redirects; loadChat can set status locked/expired/active only.
+ */
+
 export interface EventChatMessage {
   id: string;
   event_id: string;
@@ -62,6 +68,8 @@ export function useEventChat({
   const [isSending, setIsSending] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Bumped on effect cleanup (Strict Mode) and before each load; stale async must not flip status. */
+  const loadGenerationRef = useRef(0);
   const senderMapRef = useRef(senderMap);
   senderMapRef.current = senderMap;
 
@@ -107,12 +115,17 @@ export function useEventChat({
     timerRef.current = setInterval(tick, 30_000);
   }, [eventId, setChatStatus]);
 
-  const loadChat = useCallback(async () => {
+  const loadChatWithGeneration = useCallback(
+    async (gen: number) => {
+    const stale = () => gen !== loadGenerationRef.current;
+
     if (!user) {
+      if (stale()) return;
       setChatStatus("locked", "loadChat: no user");
       return;
     }
 
+    if (stale()) return;
     setChatStatus("loading", "loadChat: start (membership check first; no early isChatExpired on props)");
 
     const { data: member, error: memberError } = await supabase
@@ -122,11 +135,17 @@ export function useEventChat({
       .eq("event_id", eventId)
       .maybeSingle();
 
+    if (stale()) {
+      logEventChat("loadChat", "aborted after membership fetch (stale generation)", { gen, eventId });
+      return;
+    }
+
     if (memberError) {
       console.warn("[useEventChat] event_chat_members query failed", memberError);
     }
     if (!member) {
       logEventChat("loadChat", "No membership row → locked", { eventId, userId: user.id });
+      if (stale()) return;
       setChatStatus("locked", "loadChat: no event_chat_members row");
       return;
     }
@@ -136,6 +155,7 @@ export function useEventChat({
         eventId,
         expires_at: member.expires_at,
       });
+      if (stale()) return;
       setChatStatus("expired", "loadChat: membership expires_at in past");
       return;
     }
@@ -148,6 +168,7 @@ export function useEventChat({
       memberExpiresAt: member.expires_at ?? null,
     });
 
+    if (stale()) return;
     setExpiresAt(expiryForCountdown);
     startCountdown(expiryForCountdown, enforceTimerExpiry);
     // Let the user compose immediately; message/history fetch can lag without blocking UI.
@@ -168,6 +189,7 @@ export function useEventChat({
         .order("created_at", { ascending: true })
         .limit(200);
 
+      if (stale()) return;
       if (msgsError) {
         console.warn("[useEventChat] event_chat_messages load failed", msgsError);
         setMessages([]);
@@ -185,6 +207,7 @@ export function useEventChat({
             .from("profiles")
             .select("user_id, name, avatar_url")
             .in("user_id", uniqueIds);
+          if (stale()) return;
           if (profiles) {
             const map: Record<string, { name: string; avatar_url: string }> = {};
             profiles.forEach((p) => {
@@ -196,7 +219,7 @@ export function useEventChat({
       }
     } catch (err) {
       console.warn("[useEventChat] event_chat_messages load threw", err);
-      setMessages([]);
+      if (!stale()) setMessages([]);
     }
 
     try {
@@ -204,6 +227,7 @@ export function useEventChat({
         .from("event_chat_members")
         .select("*", { count: "exact", head: true })
         .eq("event_id", eventId);
+      if (stale()) return;
       if (countError) {
         console.warn("[useEventChat] event_chat_members count query failed; hiding count", countError);
         setMemberCount(null);
@@ -212,9 +236,17 @@ export function useEventChat({
       }
     } catch (err) {
       console.warn("[useEventChat] event_chat_members count query threw; hiding count", err);
-      setMemberCount(null);
+      if (!stale()) setMemberCount(null);
     }
-  }, [user, eventId, eventName, eventStartsAt, computedExpiresAt, startCountdown, setChatStatus]);
+  },
+    [user, eventId, eventName, eventStartsAt, computedExpiresAt, startCountdown, setChatStatus],
+  );
+
+  const loadChat = useCallback(async () => {
+    loadGenerationRef.current += 1;
+    const gen = loadGenerationRef.current;
+    await loadChatWithGeneration(gen);
+  }, [loadChatWithGeneration]);
 
   const subscribeRealtime = useCallback(() => {
     if (channelRef.current) supabase.removeChannel(channelRef.current);
@@ -251,14 +283,17 @@ export function useEventChat({
       logEventChat("effect", "loadChat skipped: loadEnabled=false", { eventId });
       return;
     }
-    logEventChat("effect", "loadChat effect run", { eventId, loadEnabled });
-    loadChat();
+    loadGenerationRef.current += 1;
+    const gen = loadGenerationRef.current;
+    logEventChat("effect", "loadChat effect run", { eventId, loadEnabled, gen });
+    void loadChatWithGeneration(gen);
     return () => {
-      logEventChat("effect cleanup", "clear channel + countdown timer", { eventId });
+      loadGenerationRef.current += 1;
+      logEventChat("effect cleanup", "invalidate load generation + clear channel + countdown timer", { eventId });
       if (channelRef.current) supabase.removeChannel(channelRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [loadEnabled, loadChat, eventId]);
+  }, [loadEnabled, loadChatWithGeneration, eventId]);
 
   useEffect(() => {
     if (!loadEnabled || status !== "active") return;

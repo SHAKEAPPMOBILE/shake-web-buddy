@@ -193,16 +193,64 @@ export default function EventChatPage() {
     chatStatusRef.current = status;
   }, [status]);
 
+  /** Strict Mode: closure `cancelled` was unreliable; generation + ref invalidates stale async work. */
+  const metaGenRef = useRef(0);
+  const lastInteractionRef = useRef(Date.now());
+  const noMemberExitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearNoMemberExitTimer = useCallback(() => {
+    if (noMemberExitTimerRef.current) {
+      clearTimeout(noMemberExitTimerRef.current);
+      noMemberExitTimerRef.current = null;
+    }
+  }, []);
+
+  const bumpInteraction = useCallback(() => {
+    lastInteractionRef.current = Date.now();
+    clearNoMemberExitTimer();
+  }, [clearNoMemberExitTimer]);
+
   useEffect(() => {
     if (!eventId || !user) return;
 
-    let cancelled = false;
+    const myGen = ++metaGenRef.current;
+    const stale = () => myGen !== metaGenRef.current;
+
     let attempts = 0;
     const MAX_RETRIES = 3;
     setHasFatalError(false);
 
+    const scheduleNoMemberNavigateWhenIdle = () => {
+      clearNoMemberExitTimer();
+      const step = () => {
+        if (stale()) return;
+        if (chatStatusRef.current === "active") {
+          console.log("[EventChatPage] skip no-member navigate — chat became active", { eventId });
+          return;
+        }
+        const idleMs = Date.now() - lastInteractionRef.current;
+        const idleNeedMs = 30_000;
+        if (idleMs < idleNeedMs) {
+          noMemberExitTimerRef.current = setTimeout(step, idleNeedMs - idleMs + 50);
+          return;
+        }
+        if (stale()) return;
+        if (chatStatusRef.current === "active") return;
+        try {
+          sessionStorage.setItem("eventsEntrySource", "home");
+        } catch {
+          /* ignore */
+        }
+        console.log("[EventChatPage] navigate → /events (confirmed no member row + 30s idle + chat not active)", {
+          eventId,
+        });
+        navigate("/events", { replace: true });
+      };
+      noMemberExitTimerRef.current = setTimeout(step, 0);
+    };
+
     const loadMeta = async () => {
-      if (cancelled) return;
+      if (stale()) return;
       let willRetry = false;
       setIsLoadingMeta(true);
       try {
@@ -218,8 +266,10 @@ export default function EventChatPage() {
           event_name?: string | null;
           event_starts_at?: string | null;
         } | null = null;
+        let hadSuccessfulMembershipRead = false;
+
         for (let attempt = 0; attempt < MEMBERSHIP_POLL_ATTEMPTS; attempt++) {
-          if (cancelled) return;
+          if (stale()) return;
           const { data: row, error: memberError } = await supabase
             .from("event_chat_members")
             .select("event_id, paid_at, expires_at, event_name, event_starts_at")
@@ -227,7 +277,8 @@ export default function EventChatPage() {
             .eq("user_id", user.id)
             .maybeSingle();
 
-          if (cancelled) return;
+          if (stale()) return;
+          if (!memberError) hadSuccessfulMembershipRead = true;
           if (memberError) {
             console.log("[EventChatPage] Error checking event_chat_members", attempt + 1, memberError);
             if (attempt < MEMBERSHIP_POLL_ATTEMPTS - 1) await sleep(MEMBERSHIP_POLL_MS);
@@ -241,47 +292,50 @@ export default function EventChatPage() {
         }
 
         if (!member) {
-          if (cancelled) {
-            console.log("[EventChatPage] skip navigate /events (effect cancelled, no member)", { eventId });
+          if (stale()) {
+            console.log("[EventChatPage] skip post-poll work (stale gen, no member yet)", { eventId });
             return;
           }
           if (chatStatusRef.current === "active") {
-            console.log("[EventChatPage] skip navigate /events — chat already active after poll miss (race)", {
+            console.log("[EventChatPage] skip late check — chat already active after poll miss (race)", {
               eventId,
             });
             return;
           }
-          const { data: lateMember } = await supabase
+          const { data: lateMember, error: lateErr } = await supabase
             .from("event_chat_members")
             .select("event_id, paid_at, expires_at, event_name, event_starts_at")
             .eq("event_id", eventId)
             .eq("user_id", user.id)
             .maybeSingle();
-          if (lateMember) {
-            member = lateMember;
-          }
+          if (!lateErr) hadSuccessfulMembershipRead = true;
+          if (lateMember) member = lateMember;
         }
 
         if (!member) {
+          if (stale()) return;
           if (chatStatusRef.current === "active") {
-            console.log("[EventChatPage] skip navigate /events — chat active, no row on final check", {
+            console.log("[EventChatPage] skip navigate — chat active, no row on final check", {
               eventId,
             });
             return;
           }
-          try {
-            sessionStorage.setItem("eventsEntrySource", "home");
-          } catch {
-            /* ignore */
+          if (!hadSuccessfulMembershipRead) {
+            console.log("[EventChatPage] skip navigate — membership queries never succeeded (network/RLS errors)", {
+              eventId,
+            });
+            setHasFatalError(true);
+            return;
           }
-          console.log("[EventChatPage] navigate → /events (no member after poll + final check)", {
+          setChatDataLoadEnabled(true);
+          scheduleNoMemberNavigateWhenIdle();
+          console.log("[EventChatPage] scheduled /events after idle — confirmed null member row from successful reads", {
             eventId,
-            attempts: MEMBERSHIP_POLL_ATTEMPTS,
-            chatStatus: chatStatusRef.current,
           });
-          navigate("/events", { replace: true });
           return;
         }
+
+        clearNoMemberExitTimer();
 
         if (isEventChatMembershipExplicitlyExpired(member)) {
           console.log("[EventChatPage] membership expires_at in past — enable chat UI for expired state", {
@@ -289,7 +343,6 @@ export default function EventChatPage() {
             expires_at: member.expires_at,
           });
           setChatDataLoadEnabled(true);
-          setIsLoadingMeta(false);
           return;
         }
 
@@ -310,14 +363,20 @@ export default function EventChatPage() {
         });
         setChatDataLoadEnabled(true);
 
-        // 2) User is a member — fetch event_chats (enrich name / start time)
         const { data: chatRow, error: chatError } = await supabase
           .from("event_chats")
           .select("name, expires_at, created_at")
           .eq("event_id", eventId)
           .maybeSingle();
 
-        if (cancelled) return;
+        console.log("[EventChatPage][event_chats lookup]", {
+          eventId,
+          found: !!chatRow,
+          name: chatRow?.name ?? null,
+          error: chatError?.message ?? null,
+        });
+
+        if (stale()) return;
         if (chatError) {
           console.log("[EventChatPage] Error loading event_chats", chatError);
         }
@@ -329,18 +388,16 @@ export default function EventChatPage() {
             const start = new Date(expires.getTime() - 12 * 60 * 60 * 1000);
             setEventStartsAt(start.toISOString());
           }
-          setIsLoadingMeta(false);
           return;
         }
 
-        // 3) Member but event_chats row missing — create from public_events (expires_at = event_starts_at + 12h)
         const { data: pub } = await supabase
           .from("public_events")
           .select("name, event_starts_at, image_url")
           .eq("id", eventId)
           .maybeSingle();
 
-        if (cancelled) return;
+        if (stale()) return;
 
         let expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
         if (pub?.event_starts_at) {
@@ -362,7 +419,7 @@ export default function EventChatPage() {
           { onConflict: "event_id" }
         );
 
-        if (cancelled) return;
+        if (stale()) return;
 
         attempts += 1;
         if (attempts <= MAX_RETRIES) {
@@ -381,19 +438,20 @@ export default function EventChatPage() {
         }
         setHasFatalError(true);
       } finally {
-        if (!cancelled && !willRetry) {
+        if (!stale() && !willRetry) {
           setIsLoadingMeta(false);
         }
       }
     };
 
-    loadMeta();
+    void loadMeta();
 
     return () => {
-      console.log("[EventChatPage] loadMeta effect cleanup (cancelled=true)", { eventId });
-      cancelled = true;
+      clearNoMemberExitTimer();
+      metaGenRef.current += 1;
+      console.log("[EventChatPage] loadMeta effect cleanup (invalidate gen)", { eventId });
     };
-  }, [eventId, user?.id, navigate]);
+  }, [eventId, user?.id, navigate, clearNoMemberExitTimer]);
 
   const [inputValue, setInputValue] = useState("");
 
@@ -453,6 +511,7 @@ export default function EventChatPage() {
       data: { session },
     } = await supabase.auth.getSession();
     if (!session?.access_token) return;
+    bumpInteraction();
     setIsVideoUploading(true);
     setVideoUploadRatio(0);
     setVideoClipError(null);
@@ -474,7 +533,7 @@ export default function EventChatPage() {
       setIsVideoUploading(false);
       setVideoUploadRatio(0);
     }
-  }, [videoDraft, eventId, user, sendMessage, clearVideoDraft]);
+  }, [videoDraft, eventId, user, sendMessage, clearVideoDraft, bumpInteraction]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -815,6 +874,7 @@ export default function EventChatPage() {
                     onClick={async (e) => {
                       const r = e.currentTarget.getBoundingClientRect();
                       try {
+                        bumpInteraction();
                         await sendMessage(id, "sticker");
                         setStickerConfetti((prev) => ({
                           seed: (prev?.seed ?? 0) + 1,
@@ -871,7 +931,10 @@ export default function EventChatPage() {
             <Input
               placeholder="Type a message..."
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => {
+                bumpInteraction();
+                setInputValue(e.target.value);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -879,6 +942,7 @@ export default function EventChatPage() {
                   const text = inputValue;
                   void (async () => {
                     try {
+                      bumpInteraction();
                       await sendMessage(text);
                       setInputValue("");
                     } catch (err) {
@@ -902,6 +966,7 @@ export default function EventChatPage() {
                 if (!inputValue.trim()) return;
                 const text = inputValue;
                 try {
+                  bumpInteraction();
                   await sendMessage(text);
                   setInputValue("");
                 } catch (err) {

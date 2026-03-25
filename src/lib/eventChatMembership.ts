@@ -4,11 +4,23 @@
  * - Only when `expires_at` is set to a valid timestamp in the past is access denied for expiry.
  */
 
-export function isEventChatMembershipExplicitlyExpired(m: { expires_at?: string | null } | null): boolean {
-  if (!m?.expires_at?.trim()) return false;
-  const d = new Date(m.expires_at);
-  if (Number.isNaN(d.getTime())) return false;
-  return d.getTime() <= Date.now();
+export function isEventChatMembershipExplicitlyExpired(
+  m: { expires_at?: string | null; paid_at?: string | null } | null,
+): boolean {
+  const expires_at = m?.expires_at ?? null;
+  const paid_at = m?.paid_at ?? null;
+  if (!expires_at?.trim()) {
+    console.log("[expiry-check]", { expires_at, paid_at, result: false, reason: "no_expires_at" });
+    return false;
+  }
+  const d = new Date(expires_at);
+  if (Number.isNaN(d.getTime())) {
+    console.log("[expiry-check]", { expires_at, paid_at, result: false, reason: "invalid_expires_at" });
+    return false;
+  }
+  const result = d.getTime() <= Date.now();
+  console.log("[expiry-check]", { expires_at, paid_at, result, reason: result ? "expires_at_in_past" : "still_valid" });
+  return result;
 }
 
 /**
