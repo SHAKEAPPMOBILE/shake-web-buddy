@@ -8,7 +8,7 @@ import {
   CarouselItem,
   CarouselApi,
 } from "@/components/ui/carousel";
-import { Check, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 import { getActivitiesWithDates, getTodayDefaultIndex } from "@/data/activityTypes";
 import { getTranslatedActivityLabel } from "@/lib/activity-translations";
 import { useUserActivities } from "@/hooks/useUserActivities";
@@ -16,7 +16,7 @@ import { PremiumDialog } from "@/components/PremiumDialog";
 import { ActivityConfirmationDialog } from "@/components/ActivityConfirmationDialog";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { playDingDingSound } from "@/lib/notification-sound";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useTranslation } from "react-i18next";
@@ -121,7 +121,6 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
 
       toast.success(t('activityDialog.planCreated', '{{activity}} Plan Created! 🎉', { activity: pendingActivity.label }), {
         description: t('activityDialog.planVisible', 'Your {{activity}} plan in {{city}} is now visible on the map', { activity: pendingActivity.label, city: selectedCity }),
-        icon: <Check className="w-4 h-4" />,
       });
 
       setTimeout(() => {

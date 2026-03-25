@@ -10,7 +10,7 @@ import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { GroupChatDialog } from "./GroupChatDialog";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import logoShake from "@/assets/logo_shake_original_color.png";
 
 export function Footer() {

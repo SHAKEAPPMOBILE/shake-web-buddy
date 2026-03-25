@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Check, X, Eye, Search, RefreshCw, Download } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { format } from "date-fns";
 
 interface Verification {

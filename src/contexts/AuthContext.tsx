@@ -12,6 +12,11 @@ interface AuthContextType {
   subscriptionEnd: string | null;
   didJustSignUp: boolean;
   sendOtp: (phone: string, purpose?: string) => Promise<{ error: Error | null; verificationId?: string }>;
+  sendOtpEmail: (
+    phone: string,
+    email: string,
+    purpose?: string,
+  ) => Promise<{ error: Error | null; verificationId?: string }>;
   verifyOtp: (phone: string, code: string, verificationId: string, options?: { purpose?: string; password?: string; name?: string }) => Promise<{ error: Error | null; data?: any }>;
   signInWithPassword: (phone: string, password: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
@@ -325,6 +330,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const sendOtpEmail = async (
+    phone: string,
+    email: string,
+    purpose = "login",
+  ): Promise<{ error: Error | null; verificationId?: string }> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("send-email-fallback-otp", {
+        body: { phone, email, purpose },
+      });
+
+      if (error) {
+        let errorMsg = error.message || "Failed to send code";
+        try {
+          const parsed = JSON.parse(error.message);
+          if (parsed?.error) errorMsg = parsed.error;
+        } catch {}
+        errorMsg = toUserFriendlyAuthError(errorMsg, "Unable to send email code. Please check your connection and try again.");
+        return { error: new Error(errorMsg) };
+      }
+
+      return { error: null, verificationId: data?.verificationId };
+    } catch (e: any) {
+      const msg = toUserFriendlyAuthError(e?.message || "", "Unable to send email code. Please check your connection and try again.");
+      return { error: new Error(msg) };
+    }
+  };
+
   // Verify OTP via Bird
   const verifyOtp = async (
     phone: string,
@@ -408,6 +440,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         subscriptionEnd,
         didJustSignUp,
         sendOtp,
+        sendOtpEmail,
         verifyOtp,
         signInWithPassword,
         updatePassword,

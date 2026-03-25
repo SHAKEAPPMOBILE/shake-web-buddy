@@ -10,7 +10,7 @@ import { PrivateChatDialog } from "@/components/PrivateChatDialog";
 import { Button } from "@/components/ui/button";
 import { SuperHumanIcon } from "./SuperHumanIcon";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { playNotificationSound, playWelcomeVoice } from "@/lib/notification-sound";
 import {
@@ -178,9 +178,6 @@ export function GlobalParticipantsSection() {
                 <Sparkles className="w-4 h-4 text-shake-yellow" />
                 <span><strong>{newMemberName}</strong> just joined!</span>
               </div>,
-              {
-                duration: 2000,
-              }
             );
           }
           

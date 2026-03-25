@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";

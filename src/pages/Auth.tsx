@@ -7,7 +7,7 @@ import { Browser } from "@capacitor/browser";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import logoShake from "@/assets/shake-logo-new.png";
 import { ArrowLeft, ChevronDown, Phone, User, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff, Mail } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -30,6 +30,9 @@ import { isNativePlatform } from "@/lib/platform-utils";
 /** App Store review: demo login without SMS (no effect on other numbers). */
 const DEMO_PHONE = "+15550000000";
 const DEMO_OTP = "123456";
+
+/** SMS/email resend cooldown after each send (App Review: visible retry without long wait). */
+const OTP_RESEND_SECONDS = 20;
 
 // Show user-friendly messages instead of technical errors (e.g. "Load failed", "Edge Function returned non-2xx") for App Store compliance
 function toFriendlyAuthMessage(raw: string, context: "login" | "otp" | "forgot" | "general"): string {
@@ -125,12 +128,15 @@ export default function Auth() {
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
+  const [otpFallbackEmail, setOtpFallbackEmail] = useState("");
+  const [otpEmailFallbackOpen, setOtpEmailFallbackOpen] = useState(false);
+  const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>(
     countryCodes.find(c => c.code === "PT") || countryCodes[0]
   );
   const [countrySearchOpen, setCountrySearchOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
-  const { user, sendOtp, signInWithPassword, updatePassword, verifyOtp } = useAuth();
+  const { user, sendOtp, sendOtpEmail, signInWithPassword, updatePassword, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -334,7 +340,9 @@ export default function Auth() {
 
       if (formattedPhone === DEMO_PHONE) {
         toast.info("Demo mode active — enter 123456 as your code");
-        setResendCountdown(60);
+        setResendCountdown(OTP_RESEND_SECONDS);
+        setOtpEmailFallbackOpen(false);
+        setOtpFallbackEmail("");
         setStep("otp");
         return;
       }
@@ -367,7 +375,9 @@ export default function Auth() {
       } else {
         setVerificationId(vId || "");
         toast.success(`Verification code sent via SMS to ${formattedPhone}`);
-        setResendCountdown(60);
+        setResendCountdown(OTP_RESEND_SECONDS);
+        setOtpEmailFallbackOpen(false);
+        setOtpFallbackEmail("");
         setStep('otp');
       }
     } catch (error) {
@@ -432,7 +442,9 @@ export default function Auth() {
       } else {
         setVerificationId(vId || "");
         toast.success(`Verification code sent via SMS to ${formattedPhone}`);
-        setResendCountdown(60);
+        setResendCountdown(OTP_RESEND_SECONDS);
+        setOtpEmailFallbackOpen(false);
+        setOtpFallbackEmail("");
         setStep('forgot');
       }
     } catch (error) {
@@ -442,10 +454,40 @@ export default function Auth() {
     }
   };
 
+  const handleSendOtpEmail = async (purpose: "login" | "signup" | "forgot_password") => {
+    const validation = validatePhoneNumber(phoneNumber);
+    if (!validation.isValid) {
+      toast.error(validation.error);
+      return;
+    }
+    const emailTrim = otpFallbackEmail.trim().toLowerCase();
+    if (!emailTrim || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    setIsSendingEmailOtp(true);
+    try {
+      const { error, verificationId: vId } = await sendOtpEmail(formattedPhone, emailTrim, purpose);
+      if (error) {
+        toast.error(toFriendlyAuthMessage(error.message, "otp"));
+      } else {
+        setVerificationId(vId || "");
+        setOtpCode("");
+        toast.success("Check your email for a 6-digit code.");
+        setResendCountdown(OTP_RESEND_SECONDS);
+      }
+    } finally {
+      setIsSendingEmailOtp(false);
+    }
+  };
+
   const handleVerifyForPasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (otpCode.length !== 6) {
+
+    const digits = otpCode.replace(/\D/g, "");
+    if (digits.length !== 6) {
       toast.error("Please enter the 6-digit code");
       return;
     }
@@ -454,7 +496,7 @@ export default function Auth() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const { error } = await verifyOtp(formattedPhone, otpCode, verificationId, { purpose: "forgot_password" });
+      const { error } = await verifyOtp(formattedPhone, digits, verificationId, { purpose: "forgot_password" });
       if (error) {
         toast.error(toFriendlyAuthMessage(error.message, "forgot"));
       } else {
@@ -485,8 +527,9 @@ export default function Auth() {
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
+      const digits = otpCode.replace(/\D/g, "");
       // Use verify-bird-otp with password to reset it server-side
-      const { error } = await verifyOtp(formattedPhone, otpCode, verificationId, {
+      const { error } = await verifyOtp(formattedPhone, digits, verificationId, {
         purpose: "forgot_password",
         password,
       });
@@ -627,8 +670,9 @@ export default function Auth() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (otpCode.length !== 6) {
+
+    const digits = otpCode.replace(/\D/g, "");
+    if (digits.length !== 6) {
       toast.error("Please enter the 6-digit code");
       return;
     }
@@ -638,7 +682,7 @@ export default function Auth() {
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
 
-      if (formattedPhone === DEMO_PHONE && otpCode === DEMO_OTP) {
+      if (formattedPhone === DEMO_PHONE && digits === DEMO_OTP) {
         const { error: demoError } = await supabase.auth.signInWithPassword({
           email: "demo@shakeapp.com",
           password: "DemoUser2024!",
@@ -653,7 +697,7 @@ export default function Auth() {
       }
 
       const purpose = isLogin ? "login" : "signup";
-      const { error, data } = await verifyOtp(formattedPhone, otpCode, verificationId, {
+      const { error, data } = await verifyOtp(formattedPhone, digits, verificationId, {
         purpose,
         password: !isLogin ? password : undefined,
         name: !isLogin ? name : undefined,
@@ -735,9 +779,13 @@ export default function Auth() {
     } else if (step === 'otp') {
       setStep('phone');
       setOtpCode("");
+      setOtpEmailFallbackOpen(false);
+      setOtpFallbackEmail("");
     } else if (step === 'forgot') {
       setStep('phone');
       setOtpCode("");
+      setOtpEmailFallbackOpen(false);
+      setOtpFallbackEmail("");
     } else if (step === 'reset') {
       setStep('phone');
       setPassword("");
@@ -1282,14 +1330,17 @@ export default function Auth() {
           {/* Forgot Password OTP Verification */}
           {step === 'forgot' && (
             <form onSubmit={handleVerifyForPasswordReset} className="space-y-6">
-              <div className="flex flex-col items-center space-y-4">
+              <div className="flex w-full flex-col items-center space-y-4 px-1">
                 <Label htmlFor="otp-forgot">Verification Code</Label>
                 <InputOTP
+                  id="otp-forgot"
                   maxLength={6}
                   value={otpCode}
                   onChange={(value) => setOtpCode(value)}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
                 >
-                  <InputOTPGroup>
+                  <InputOTPGroup className="w-full justify-center">
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
                     <InputOTPSlot index={2} />
@@ -1298,38 +1349,81 @@ export default function Auth() {
                     <InputOTPSlot index={5} />
                   </InputOTPGroup>
                 </InputOTP>
-                <button
-                  type="button"
-                  disabled={resendCountdown > 0}
-                  onClick={async () => {
-                    setOtpCode("");
-                    const { error, verificationId: vId } = await sendOtp(
-                      formatPhoneNumber(phoneNumber),
-                      "forgot_password",
-                    );
-                    if (error) {
-                      toast.error(toFriendlyAuthMessage(error.message, "otp"));
-                    } else {
-                      setVerificationId(vId || "");
-                      toast.success(
-                        `Verification code sent via SMS to ${formatPhoneNumber(phoneNumber)}`,
-                      );
-                      setResendCountdown(60);
-                    }
-                  }}
-                  className={`text-sm ${resendCountdown > 0 ? 'text-muted-foreground cursor-not-allowed' : 'text-primary hover:underline'}`}
-                >
-                  {resendCountdown > 0 
-                    ? `Resend code in ${resendCountdown}s` 
-                    : "Didn't receive a code? Resend"}
-                </button>
+
+                <div className="flex w-full max-w-sm flex-col items-stretch gap-3">
+                  {resendCountdown > 0 ? (
+                    <p className="text-center text-sm text-muted-foreground">
+                      Resend code in <span className="font-medium tabular-nums">{resendCountdown}</span>s
+                    </p>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="lg"
+                      className="w-full border-2"
+                      onClick={async () => {
+                        setOtpCode("");
+                        const { error, verificationId: vId } = await sendOtp(
+                          formatPhoneNumber(phoneNumber),
+                          "forgot_password",
+                        );
+                        if (error) {
+                          toast.error(toFriendlyAuthMessage(error.message, "otp"));
+                        } else {
+                          setVerificationId(vId || "");
+                          toast.success(
+                            `Verification code sent via SMS to ${formatPhoneNumber(phoneNumber)}`,
+                          );
+                          setResendCountdown(OTP_RESEND_SECONDS);
+                        }
+                      }}
+                    >
+                      Resend code
+                    </Button>
+                  )}
+                </div>
+
+                {formatPhoneNumber(phoneNumber) !== DEMO_PHONE && (
+                  <div className="w-full max-w-sm space-y-3 border-t border-border pt-4">
+                    <button
+                      type="button"
+                      className="w-full text-center text-sm text-primary underline underline-offset-4"
+                      onClick={() => setOtpEmailFallbackOpen(true)}
+                    >
+                      Send code via email instead
+                    </button>
+                    {otpEmailFallbackOpen && (
+                      <div className="space-y-2">
+                        <Input
+                          type="email"
+                          inputMode="email"
+                          autoComplete="email"
+                          placeholder="you@example.com"
+                          value={otpFallbackEmail}
+                          onChange={(e) => setOtpFallbackEmail(e.target.value)}
+                          className="w-full"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="lg"
+                          className="w-full"
+                          disabled={isSendingEmailOtp}
+                          onClick={() => handleSendOtpEmail("forgot_password")}
+                        >
+                          {isSendingEmailOtp ? "Sending…" : "Send code to email"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <Button
                 type="submit"
                 className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
                 size="lg"
-                disabled={isLoading || otpCode.length !== 6}
+                disabled={isLoading}
               >
                 {isLoading ? "Verifying..." : "Verify & Reset Password"}
               </Button>
@@ -1700,14 +1794,17 @@ export default function Auth() {
           {/* OTP Verification Form */}
           {step === 'otp' && (
             <form onSubmit={handleVerifyOtp} className="space-y-6">
-              <div className="flex flex-col items-center space-y-4">
-                <Label htmlFor="otp">Verification Code</Label>
+              <div className="flex w-full flex-col items-center space-y-4 px-1">
+                <Label htmlFor="otp-verify">Verification Code</Label>
                 <InputOTP
+                  id="otp-verify"
                   maxLength={6}
                   value={otpCode}
                   onChange={(value) => setOtpCode(value)}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
                 >
-                  <InputOTPGroup>
+                  <InputOTPGroup className="w-full justify-center">
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
                     <InputOTPSlot index={2} />
@@ -1716,38 +1813,81 @@ export default function Auth() {
                     <InputOTPSlot index={5} />
                   </InputOTPGroup>
                 </InputOTP>
-                <button
-                  type="button"
-                  disabled={resendCountdown > 0}
-                  onClick={async () => {
-                    setOtpCode("");
-                    const { error, verificationId: vId } = await sendOtp(
-                      formatPhoneNumber(phoneNumber),
-                      isLogin ? "login" : "signup",
-                    );
-                    if (error) {
-                      toast.error(toFriendlyAuthMessage(error.message, "otp"));
-                    } else {
-                      setVerificationId(vId || "");
-                      toast.success(
-                        `Verification code sent via SMS to ${formatPhoneNumber(phoneNumber)}`,
-                      );
-                      setResendCountdown(60);
-                    }
-                  }}
-                  className={`text-sm ${resendCountdown > 0 ? 'text-muted-foreground cursor-not-allowed' : 'text-primary hover:underline'}`}
-                >
-                  {resendCountdown > 0 
-                    ? `Resend code in ${resendCountdown}s` 
-                    : "Didn't receive a code? Resend"}
-                </button>
+
+                <div className="flex w-full max-w-sm flex-col items-stretch gap-3">
+                  {resendCountdown > 0 ? (
+                    <p className="text-center text-sm text-muted-foreground">
+                      Resend code in <span className="font-medium tabular-nums">{resendCountdown}</span>s
+                    </p>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="lg"
+                      className="w-full border-2"
+                      onClick={async () => {
+                        setOtpCode("");
+                        const { error, verificationId: vId } = await sendOtp(
+                          formatPhoneNumber(phoneNumber),
+                          isLogin ? "login" : "signup",
+                        );
+                        if (error) {
+                          toast.error(toFriendlyAuthMessage(error.message, "otp"));
+                        } else {
+                          setVerificationId(vId || "");
+                          toast.success(
+                            `Verification code sent via SMS to ${formatPhoneNumber(phoneNumber)}`,
+                          );
+                          setResendCountdown(OTP_RESEND_SECONDS);
+                        }
+                      }}
+                    >
+                      Resend code
+                    </Button>
+                  )}
+                </div>
+
+                {formatPhoneNumber(phoneNumber) !== DEMO_PHONE && (
+                  <div className="w-full max-w-sm space-y-3 border-t border-border pt-4">
+                    <button
+                      type="button"
+                      className="w-full text-center text-sm text-primary underline underline-offset-4"
+                      onClick={() => setOtpEmailFallbackOpen(true)}
+                    >
+                      Send code via email instead
+                    </button>
+                    {otpEmailFallbackOpen && (
+                      <div className="space-y-2">
+                        <Input
+                          type="email"
+                          inputMode="email"
+                          autoComplete="email"
+                          placeholder="you@example.com"
+                          value={otpFallbackEmail}
+                          onChange={(e) => setOtpFallbackEmail(e.target.value)}
+                          className="w-full"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="lg"
+                          className="w-full"
+                          disabled={isSendingEmailOtp}
+                          onClick={() => handleSendOtpEmail(isLogin ? "login" : "signup")}
+                        >
+                          {isSendingEmailOtp ? "Sending…" : "Send code to email"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <Button
                 type="submit"
                 className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
                 size="lg"
-                disabled={isLoading || otpCode.length !== 6}
+                disabled={isLoading}
               >
                 {isLoading ? "Verifying..." : "Verify & Continue"}
               </Button>

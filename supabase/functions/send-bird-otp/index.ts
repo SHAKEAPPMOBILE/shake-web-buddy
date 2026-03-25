@@ -118,7 +118,9 @@ serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // Rate limit: max 5 OTP requests per phone per hour (count our own otp_verifications)
+    // Shared hourly cap with send-email-fallback-otp (same otp_verifications rows).
+    // Kept generous so legitimate retries (App Review devices, delayed SMS) are not blocked by a tight cap.
+    const MAX_OTP_SENDS_PER_PHONE_PER_HOUR = 18;
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count, error: countError } = await admin
       .from("otp_verifications")
@@ -126,7 +128,7 @@ serve(async (req) => {
       .eq("phone_number", phone)
       .gte("created_at", oneHourAgo);
 
-    if (!countError && (count ?? 0) >= 5) {
+    if (!countError && (count ?? 0) >= MAX_OTP_SENDS_PER_PHONE_PER_HOUR) {
       return json(429, { error: "Too many codes requested. Please try again later." });
     }
 

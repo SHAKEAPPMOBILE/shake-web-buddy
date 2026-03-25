@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Purchases, PurchasesPackage, CustomerInfo, LOG_LEVEL } from '@revenuecat/purchases-capacitor';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { toast } from "@/lib/app-toast";
 import { isNativePlatform } from '@/lib/revenuecat';
 
 // RevenueCat entitlement identifier for premium access

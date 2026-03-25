@@ -22,7 +22,7 @@ import { useProximityCheckIn } from "@/hooks/useProximityCheckIn";
 import { usePaymentSuccessHandler } from "@/hooks/usePaymentSuccessHandler";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -327,8 +327,11 @@ export function IOSAppLayout() {
     setShowEvents(true);
   }, []);
 
-  const renderTab = () => {
+  /** Chat tab stays mounted (hidden when inactive) so `isActiveTab` can flip and refetch the list after event join. */
+  const renderNonChatTab = () => {
     switch (activeTab) {
+      case "chat":
+        return null;
       case "home":
         return (
           <HomeTab 
@@ -347,15 +350,6 @@ export function IOSAppLayout() {
             pendingPaidActivityId={pendingPaidActivityId}
             onPendingPaidActivityHandled={() => setPendingPaidActivityId(null)}
             onOpenEvents={() => openNearYou("plans")}
-          />
-        );
-      case "chat":
-        return (
-          <ChatTab 
-            onChatViewChange={handleChatViewChange} 
-            pendingActivity={pendingChatActivity}
-            onPendingActivityHandled={() => setPendingChatActivity(null)}
-            isActiveTab={activeTab === "chat"}
           />
         );
       case "profile":
@@ -437,7 +431,17 @@ export function IOSAppLayout() {
               }}
             />
           ) : (
-            renderTab()
+            <div className="relative h-full">
+              <div className={cn("h-full", activeTab === "chat" && "hidden")}>{renderNonChatTab()}</div>
+              <div className={cn("h-full", activeTab !== "chat" && "hidden")}>
+                <ChatTab
+                  onChatViewChange={handleChatViewChange}
+                  pendingActivity={pendingChatActivity}
+                  onPendingActivityHandled={() => setPendingChatActivity(null)}
+                  isActiveTab={activeTab === "chat"}
+                />
+              </div>
+            </div>
           )}
         </div>
       </main>

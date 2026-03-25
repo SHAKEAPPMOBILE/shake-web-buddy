@@ -14,7 +14,7 @@ import { formatDateWithTranslation } from "@/lib/date-utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";

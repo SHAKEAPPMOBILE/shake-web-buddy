@@ -17,7 +17,7 @@ import { PlanGroupChatDialog } from "@/components/PlanGroupChatDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { usePlanNotifications } from "@/hooks/usePushNotifications";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { playDingDingSound } from "@/lib/notification-sound";
 import { useIsMobile } from "@/hooks/use-mobile";

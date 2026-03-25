@@ -1,6 +1,14 @@
-import { useEffect, useLayoutEffect, useState, useRef, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Smile } from "lucide-react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+  type ChangeEvent,
+} from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Smile, Camera, X } from "lucide-react";
 import { useEventChat } from "@/hooks/useEventChat";
 import {
   EVENT_CHAT_STICKER_IDS,
@@ -9,11 +17,19 @@ import {
 } from "@/lib/eventChatStickers";
 import { EventStickerGraphic } from "@/components/eventChat/EventChatStickerSvgs";
 import { supabase } from "@/integrations/supabase/client";
+import type { EventChatLocationState } from "@/lib/eventChatNavigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import {
+  EVENT_CHAT_VIDEO_MAX_SECONDS,
+  formatVideoDuration,
+  getVideoDurationSeconds,
+  uploadEventChatVideoWithProgress,
+} from "@/lib/eventChatVideoUpload";
 
 interface EventChatPageParams {
   eventId?: string;
@@ -65,10 +81,18 @@ function StickerSendConfetti({ x, y, seed }: { x: number; y: number; seed: numbe
 export default function EventChatPage() {
   const { eventId } = useParams<EventChatPageParams>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefetch = (location.state as EventChatLocationState | null)?.eventPrefetch;
+  const prefetchStart =
+    prefetch?.eventStartsAt && !Number.isNaN(new Date(prefetch.eventStartsAt).getTime())
+      ? prefetch.eventStartsAt
+      : null;
   const { user } = useAuth();
-  const [eventName, setEventName] = useState<string>("Event chat");
-  const [eventStartsAt, setEventStartsAt] = useState<string>(new Date().toISOString());
-  const [eventImageUrl, setEventImageUrl] = useState<string | null>(null);
+  const [eventName, setEventName] = useState<string>(() => prefetch?.name?.trim() || "Event chat");
+  const [eventStartsAt, setEventStartsAt] = useState<string>(
+    () => prefetchStart ?? new Date().toISOString()
+  );
+  const [eventImageUrl, setEventImageUrl] = useState<string | null>(() => prefetch?.imageUrl ?? null);
   const [eventDate, setEventDate] = useState<string>("");
   const [isLoadingMeta, setIsLoadingMeta] = useState(true);
   const [hasFatalError, setHasFatalError] = useState(false);
@@ -79,6 +103,19 @@ export default function EventChatPage() {
   const [stickerConfetti, setStickerConfetti] = useState<{ seed: number; x: number; y: number } | null>(
     null
   );
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const [videoDraft, setVideoDraft] = useState<{
+    file: File;
+    previewUrl: string;
+    durationSec: number;
+  } | null>(null);
+  const [videoClipError, setVideoClipError] = useState<string | null>(null);
+  const [videoUploadRatio, setVideoUploadRatio] = useState(0);
+  const [isVideoUploading, setIsVideoUploading] = useState(false);
+  const [chatDataLoadEnabled, setChatDataLoadEnabled] = useState(false);
+  useEffect(() => {
+    setChatDataLoadEnabled(false);
+  }, [eventId]);
 
   useEffect(() => {
     if (!user) {
@@ -86,6 +123,13 @@ export default function EventChatPage() {
       return;
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (!prefetchStart) return;
+    const d = new Date(prefetchStart);
+    if (Number.isNaN(d.getTime())) return;
+    setEventDate(d.toLocaleDateString([], { month: "short", day: "numeric" }));
+  }, [prefetchStart]);
 
   /** Full-screen route sits outside IOSAppLayout; in light theme `body` is near-white and shows through safe-area / overscroll. */
   useLayoutEffect(() => {
@@ -170,9 +214,12 @@ export default function EventChatPage() {
 
         const memberExpiry = resolveMembershipExpiry(member);
         if (memberExpiry && memberExpiry.getTime() <= Date.now()) {
+          setChatDataLoadEnabled(true);
           setIsLoadingMeta(false);
           return;
         }
+
+        setChatDataLoadEnabled(true);
 
         // 2) User is a member — fetch event_chats
         const { data: chatRow, error: chatError } = await supabase
@@ -270,9 +317,89 @@ export default function EventChatPage() {
     eventId: eventId ?? "",
     eventName,
     eventStartsAt,
+    loadEnabled: chatDataLoadEnabled,
   });
 
   const [inputValue, setInputValue] = useState("");
+
+  const clearVideoDraft = useCallback(() => {
+    setVideoDraft((prev) => {
+      if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
+      return null;
+    });
+    setVideoClipError(null);
+    setVideoUploadRatio(0);
+    setIsVideoUploading(false);
+    if (videoInputRef.current) videoInputRef.current.value = "";
+  }, []);
+
+  const draftPreviewUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    draftPreviewUrlRef.current = videoDraft?.previewUrl ?? null;
+  }, [videoDraft?.previewUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (draftPreviewUrlRef.current) URL.revokeObjectURL(draftPreviewUrlRef.current);
+    };
+  }, []);
+
+  const onVideoFilePicked = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const input = e.target;
+      const file = input.files?.[0];
+      input.value = "";
+      setVideoClipError(null);
+      if (!file) return;
+      try {
+        const duration = await getVideoDurationSeconds(file);
+        if (duration > EVENT_CHAT_VIDEO_MAX_SECONDS + 0.25) {
+          setVideoClipError("Videos must be 60 seconds or less");
+          return;
+        }
+        setVideoDraft((prev) => {
+          if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
+          return {
+            file,
+            previewUrl: URL.createObjectURL(file),
+            durationSec: duration,
+          };
+        });
+      } catch {
+        setVideoClipError("Could not read this video. Try another file.");
+      }
+    },
+    []
+  );
+
+  const handleSendVideoClip = useCallback(async () => {
+    if (!videoDraft || !eventId || !user) return;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    setIsVideoUploading(true);
+    setVideoUploadRatio(0);
+    setVideoClipError(null);
+    try {
+      const publicUrl = await uploadEventChatVideoWithProgress(
+        videoDraft.file,
+        user.id,
+        eventId,
+        session.access_token,
+        (r) => setVideoUploadRatio(r)
+      );
+      await sendMessage(publicUrl, "video");
+      clearVideoDraft();
+      setShowStickerTray(false);
+    } catch (err) {
+      console.error("[EventChatPage] video upload/send failed", err);
+      setVideoClipError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setIsVideoUploading(false);
+      setVideoUploadRatio(0);
+    }
+  }, [videoDraft, eventId, user, sendMessage, clearVideoDraft]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -297,14 +424,24 @@ export default function EventChatPage() {
   }, [stickerConfetti]);
 
   const headerSubtitle = useMemo(() => {
-    if (minutesLeft !== null && status === "active") {
-      return `Chat closes in ${minutesLeft}m`;
+    if (isLoadingMeta || !chatDataLoadEnabled) return "Loading…";
+    if (status === "locked") {
+      return "Complete payment to join this chat.";
     }
     if (status === "expired") {
       return "This chat ended 12h after the event 🎤";
     }
+    if (status === "error") {
+      return "Something went wrong. Try again.";
+    }
+    if (minutesLeft !== null && (status === "active" || status === "loading")) {
+      return `Chat closes in ${minutesLeft}m`;
+    }
+    if (status === "loading") {
+      return "Loading messages…";
+    }
     return "Messages from this event will appear here.";
-  }, [minutesLeft, status]);
+  }, [isLoadingMeta, chatDataLoadEnabled, minutesLeft, status]);
 
   if (!eventId) {
     return null;
@@ -409,21 +546,27 @@ export default function EventChatPage() {
             </div>
           )}
 
-          {!isLoadingMeta && !hasFatalError && messages.length === 0 && status !== "error" && status !== "locked" && (
+          {!isLoadingMeta &&
+            chatDataLoadEnabled &&
+            !hasFatalError &&
+            messages.length === 0 &&
+            status === "active" && (
             <div className="flex flex-col items-center justify-center h-full text-white/40">
               <p className="text-center text-sm">
                 Start the conversation!<br />
-                <span className="text-xs">Messages from today will appear here.</span>
+                <span className="text-xs">Messages from this event will appear here.</span>
               </p>
             </div>
           )}
 
-          {messages.map((m) => {
+          {!isLoadingMeta &&
+            messages.map((m) => {
             const profile = senderMap[m.user_id];
             const displayName = profile?.name || "User";
             const avatarUrl = profile?.avatar_url;
             const isOwn = user?.id === m.user_id;
             const isSticker = m.message_type === "sticker";
+            const isVideo = m.message_type === "video" && /^https?:\/\//i.test(m.content);
             const stickerId = isSticker && isEventChatStickerId(m.content) ? m.content : null;
 
             return (
@@ -448,7 +591,15 @@ export default function EventChatPage() {
                     </span>
                   </div>
                   <div className={`mt-0.5 ${isOwn ? "flex justify-end" : "flex justify-start"}`}>
-                    {isSticker && stickerId ? (
+                    {isVideo ? (
+                      <video
+                        src={m.content}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="rounded-lg max-w-[260px] w-full bg-black/30"
+                      />
+                    ) : isSticker && stickerId ? (
                       <div
                         className="inline-flex items-center justify-center select-none"
                         style={{ width: 120, height: 120 }}
@@ -476,7 +627,7 @@ export default function EventChatPage() {
             );
           })}
 
-          {status === "locked" && (
+          {chatDataLoadEnabled && status === "locked" && (
             <p className="text-xs text-white/50 text-center mt-4">
               You don&apos;t have access to this chat yet. If you just paid, please wait a moment for the
               payment to be processed.
@@ -497,6 +648,71 @@ export default function EventChatPage() {
           ref={stickerBarRef}
           className="relative p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5"
         >
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            capture="environment"
+            className="hidden"
+            onChange={onVideoFilePicked}
+            aria-hidden
+            tabIndex={-1}
+          />
+
+          {videoClipError && !videoDraft ? (
+            <p className="text-xs text-red-400 mb-2 px-0.5" role="alert">
+              {videoClipError}
+            </p>
+          ) : null}
+
+          {videoDraft ? (
+            <div className="mb-2 rounded-xl border border-white/15 bg-white/5 p-2.5 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <video
+                  src={videoDraft.previewUrl}
+                  className="w-14 h-14 rounded-md object-cover bg-black shrink-0"
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-white/90">{formatVideoDuration(videoDraft.durationSec)}</p>
+                  {isVideoUploading ? (
+                    <Progress
+                      value={Math.min(100, Math.max(0, Math.round(videoUploadRatio * 100)))}
+                      className="h-2 mt-2 bg-white/10 [&>div]:bg-[#7c5cfc]"
+                    />
+                  ) : null}
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={clearVideoDraft}
+                  disabled={isVideoUploading}
+                  className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+                  aria-label="Cancel video"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void handleSendVideoClip()}
+                  disabled={isVideoUploading || isSending}
+                  className="shrink-0 h-9 px-3 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
+                >
+                  Send
+                </Button>
+              </div>
+              {videoClipError && videoDraft ? (
+                <p className="text-xs text-red-400" role="alert">
+                  {videoClipError}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           {showStickerTray && (
             <div
               className="absolute bottom-full left-0 right-0 mb-2 mx-1 rounded-2xl border border-white/10 bg-[#12121a]/95 backdrop-blur-md shadow-lg p-3 z-20"
@@ -510,7 +726,12 @@ export default function EventChatPage() {
                     key={id}
                     type="button"
                     className="flex h-20 w-20 mx-auto items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 shadow-inner hover:bg-white/25 active:scale-95 transition-all disabled:opacity-40"
-                    disabled={isSending || status !== "active"}
+                    disabled={
+                      isSending ||
+                      status !== "active" ||
+                      isVideoUploading ||
+                      !!videoDraft
+                    }
                     onClick={async (e) => {
                       const r = e.currentTarget.getBoundingClientRect();
                       try {
@@ -539,13 +760,33 @@ export default function EventChatPage() {
               variant="ghost"
               size="icon"
               className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
-              onClick={() => setShowStickerTray((v) => !v)}
-              disabled={isSending || status !== "active"}
+              onClick={() => {
+                setShowStickerTray((v) => !v);
+              }}
+              disabled={isSending || status !== "active" || isVideoUploading || !!videoDraft}
               aria-label="Stickers"
               aria-expanded={showStickerTray}
               aria-haspopup="dialog"
             >
               <Smile className="w-5 h-5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+              onClick={() => videoInputRef.current?.click()}
+              disabled={
+                isSending ||
+                status !== "active" ||
+                isVideoUploading ||
+                !!videoDraft ||
+                showStickerTray
+              }
+              aria-label="Record or attach video"
+              title="Video (max 60s)"
+            >
+              <Camera className="w-5 h-5" />
             </Button>
             <Input
               placeholder="Type a message..."
@@ -567,7 +808,13 @@ export default function EventChatPage() {
                 }
               }}
               className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
-              disabled={isSending || status !== "active"}
+              disabled={
+                isSending ||
+                status !== "active" ||
+                isVideoUploading ||
+                !!videoDraft ||
+                showStickerTray
+              }
             />
             <Button
               size="icon"
@@ -581,7 +828,14 @@ export default function EventChatPage() {
                   console.error("[EventChatPage] send failed", err);
                 }
               }}
-              disabled={isSending || !inputValue.trim()}
+              disabled={
+                isSending ||
+                status !== "active" ||
+                !inputValue.trim() ||
+                isVideoUploading ||
+                !!videoDraft ||
+                showStickerTray
+              }
               className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
             >
               {isSending ? <LoadingSpinner size="sm" /> : <span className="text-xs font-semibold">➤</span>}

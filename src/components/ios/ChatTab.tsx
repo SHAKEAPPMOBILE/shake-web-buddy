@@ -20,6 +20,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { buildEventChatNavigateState } from "@/lib/eventChatNavigation";
+import {
+  getPendingEventChatsForMerge,
+  removePendingEventChat,
+  PENDING_EVENT_CHAT_CHANGED,
+} from "@/lib/pendingEventChat";
 
 interface ChatActivity {
   id: string;
@@ -309,6 +315,41 @@ export function ChatTab({
         }
       }
 
+      const serverEventIds = new Set(
+        chatActivities.filter((a) => a.is_event && a.event_id).map((a) => a.event_id as string),
+      );
+      for (const p of getPendingEventChatsForMerge()) {
+        if (serverEventIds.has(p.event_id)) {
+          removePendingEventChat(p.event_id);
+          continue;
+        }
+        const exp = p.expires_at ? new Date(p.expires_at) : null;
+        const hasExp = exp && !Number.isNaN(exp.getTime());
+        const startFromPayload = p.event_starts_at ? new Date(p.event_starts_at as string) : null;
+        const hasValidStart = startFromPayload && !Number.isNaN(startFromPayload.getTime());
+        const scheduledFor = hasValidStart
+          ? startFromPayload!.toISOString()
+          : hasExp
+            ? exp!.toISOString()
+            : new Date().toISOString();
+        const cityLabel = (p.city && p.city.trim()) || "Event";
+        const displayName = (p.event_name && p.event_name.trim()) || "Event Chat";
+
+        chatActivities.push({
+          id: `event-${p.event_id}`,
+          activity_type: "event",
+          city: cityLabel,
+          scheduled_for: scheduledFor,
+          participant_count: 1,
+          is_plan: false,
+          is_event: true,
+          event_id: p.event_id,
+          event_name: displayName,
+          event_venue: cityLabel,
+          expires_at: hasExp ? exp!.toISOString() : undefined,
+        });
+      }
+
       // Sort with Today first, Tomorrow second, then chronologically
       chatActivities.sort((a, b) => {
         const dateA = new Date(a.scheduled_for);
@@ -338,13 +379,12 @@ export function ChatTab({
     }
   }, [user]);
 
-  // Fetch when tab is visible; refetch when returning from another tab (post-payment membership race).
+  // Refetch whenever the Chat tab becomes active (including after visiting another tab) so new
+  // event memberships appear; cleanup realtime while inactive.
   useEffect(() => {
-    if (!isActiveTab) return;
+    if (!isActiveTab || !user) return;
 
     void fetchActivities();
-
-    if (!user) return;
 
     const channel = supabase
       .channel(`chat-tab-${user.id}`)
@@ -379,6 +419,14 @@ export function ChatTab({
       supabase.removeChannel(channel);
     };
   }, [fetchActivities, user, isActiveTab]);
+
+  useEffect(() => {
+    const onPending = () => {
+      if (isActiveTab && user) void fetchActivities();
+    };
+    window.addEventListener(PENDING_EVENT_CHAT_CHANGED, onPending);
+    return () => window.removeEventListener(PENDING_EVENT_CHAT_CHANGED, onPending);
+  }, [isActiveTab, user, fetchActivities]);
 
   // Persist city filter to localStorage
   useEffect(() => {
@@ -430,7 +478,14 @@ export function ChatTab({
 
   const handleActivityClick = async (activity: ChatActivity) => {
     if (activity.is_event && activity.event_id) {
-      navigate(`/chat/event/${activity.event_id}`);
+      navigate(`/chat/event/${activity.event_id}`, {
+        state: buildEventChatNavigateState({
+          name: activity.event_name || "Event chat",
+          eventStartAt: activity.scheduled_for,
+          city: activity.city,
+          venue: activity.event_venue,
+        }),
+      });
       return;
     }
 

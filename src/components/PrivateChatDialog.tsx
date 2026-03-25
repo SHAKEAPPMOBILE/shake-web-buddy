@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { useTranslation } from "react-i18next";

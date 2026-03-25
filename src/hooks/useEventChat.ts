@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { EVENT_CHAT_STICKER_SET } from "@/lib/eventChatStickers";
+import { enqueuePendingEventChat } from "@/lib/pendingEventChat";
 
 export interface EventChatMessage {
   id: string;
@@ -17,18 +18,12 @@ export interface EventChatMessage {
 
 export type ChatStatus = "loading" | "expired" | "locked" | "active" | "error";
 
-/** Post-payment race: webhook / client upsert may lag behind navigation to the chat. */
-const EVENT_MEMBERSHIP_POLL_ATTEMPTS = 5;
-const EVENT_MEMBERSHIP_POLL_MS = 1000;
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 interface UseEventChatOptions {
   eventId: string;
   eventName: string;
   eventStartsAt: string;
+  /** False until the page has finished membership polling + meta; avoids duplicate access UI. */
+  loadEnabled?: boolean;
 }
 
 interface UseEventChatReturn {
@@ -38,12 +33,17 @@ interface UseEventChatReturn {
   memberCount: number | null;
   expiresAt: Date | null;
   minutesLeft: number | null;
-  sendMessage: (content: string, messageType?: "text" | "sticker") => Promise<void>;
+  sendMessage: (content: string, messageType?: "text" | "sticker" | "video") => Promise<void>;
   unlockChat: () => Promise<{ success: boolean; error?: string }>;
   isSending: boolean;
 }
 
-export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChatOptions): UseEventChatReturn {
+export function useEventChat({
+  eventId,
+  eventName,
+  eventStartsAt,
+  loadEnabled = true,
+}: UseEventChatOptions): UseEventChatReturn {
   const { user } = useAuth();
   const [status, setStatus] = useState<ChatStatus>("loading");
   const [messages, setMessages] = useState<EventChatMessage[]>([]);
@@ -91,37 +91,19 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
     if (!user) { setStatus("locked"); return; }
     if (isChatExpired()) { setStatus("expired"); return; }
 
-    let member: { id?: string; expires_at?: string | null; paid_at?: string | null } | null = null;
-    let lastMemberError: Error | { message?: string } | null = null;
-    for (let attempt = 0; attempt < EVENT_MEMBERSHIP_POLL_ATTEMPTS; attempt++) {
-      try {
-        const { data, error: memberError } = await supabase
-          .from("event_chat_members")
-          .select("event_id, user_id, expires_at, paid_at")
-          .eq("user_id", user.id)
-          .eq("event_id", eventId)
-          .maybeSingle();
-        lastMemberError = memberError ?? null;
-        if (memberError) {
-          console.warn("[useEventChat] event_chat_members membership query attempt", attempt + 1, memberError);
-          if (attempt < EVENT_MEMBERSHIP_POLL_ATTEMPTS - 1) await sleep(EVENT_MEMBERSHIP_POLL_MS);
-          continue;
-        }
-        if (data) {
-          member = data;
-          break;
-        }
-        if (attempt < EVENT_MEMBERSHIP_POLL_ATTEMPTS - 1) await sleep(EVENT_MEMBERSHIP_POLL_MS);
-      } catch (err) {
-        lastMemberError = err instanceof Error ? err : { message: String(err) };
-        console.warn("[useEventChat] event_chat_members membership query threw", attempt + 1, err);
-        if (attempt < EVENT_MEMBERSHIP_POLL_ATTEMPTS - 1) await sleep(EVENT_MEMBERSHIP_POLL_MS);
-      }
+    setStatus("loading");
+
+    const { data: member, error: memberError } = await supabase
+      .from("event_chat_members")
+      .select("event_id, user_id, expires_at, paid_at")
+      .eq("user_id", user.id)
+      .eq("event_id", eventId)
+      .maybeSingle();
+
+    if (memberError) {
+      console.warn("[useEventChat] event_chat_members query failed", memberError);
     }
     if (!member) {
-      if (lastMemberError) {
-        console.warn("[useEventChat] event_chat_members: no row after retries; locked", lastMemberError);
-      }
       setStatus("locked");
       return;
     }
@@ -134,38 +116,61 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
     const effectiveExpiry = memberExpiry ?? computedExpiresAt;
     setExpiresAt(effectiveExpiry);
     startCountdown(effectiveExpiry);
+    // Let the user compose immediately; message/history fetch can lag without blocking UI.
+    setStatus("active");
+    enqueuePendingEventChat({
+      event_id: eventId,
+      event_name: eventName?.trim() || "Event chat",
+      event_starts_at: eventStartsAt,
+      expires_at: effectiveExpiry.toISOString(),
+    });
 
-    const { data: msgs } = await supabase
-      .from("event_chat_messages").select("*")
-      .eq("event_id", eventId).gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: true }).limit(200);
+    try {
+      const { data: msgs, error: msgsError } = await supabase
+        .from("event_chat_messages")
+        .select("*")
+        .eq("event_id", eventId)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: true })
+        .limit(200);
 
-    setMessages(
-      (msgs ?? []).map((row) => ({
-        ...row,
-        message_type: row.message_type ?? "text",
-      }))
-    );
+      if (msgsError) {
+        console.warn("[useEventChat] event_chat_messages load failed", msgsError);
+        setMessages([]);
+      } else {
+        setMessages(
+          (msgs ?? []).map((row) => ({
+            ...row,
+            message_type: row.message_type ?? "text",
+          }))
+        );
 
-    const uniqueIds = [...new Set((msgs ?? []).map((m) => m.user_id))];
-    if (uniqueIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, name, avatar_url")
-        .in("user_id", uniqueIds);
-      if (profiles) {
-        const map: Record<string, { name: string; avatar_url: string }> = {};
-        profiles.forEach((p) => {
-          map[p.user_id] = { name: p.name ?? "User", avatar_url: p.avatar_url ?? "" };
-        });
-        setSenderMap(map);
+        const uniqueIds = [...new Set((msgs ?? []).map((m) => m.user_id))];
+        if (uniqueIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("user_id, name, avatar_url")
+            .in("user_id", uniqueIds);
+          if (profiles) {
+            const map: Record<string, { name: string; avatar_url: string }> = {};
+            profiles.forEach((p) => {
+              map[p.user_id] = { name: p.name ?? "User", avatar_url: p.avatar_url ?? "" };
+            });
+            setSenderMap(map);
+          }
+        }
       }
+    } catch (err) {
+      console.warn("[useEventChat] event_chat_messages load threw", err);
+      setMessages([]);
     }
 
     try {
       const { count, error: countError } = await supabase
-        .from("event_chat_members").select("*", { count: "exact", head: true })
-        .eq("event_id", eventId).gt("expires_at", new Date().toISOString());
+        .from("event_chat_members")
+        .select("*", { count: "exact", head: true })
+        .eq("event_id", eventId)
+        .gt("expires_at", new Date().toISOString());
       if (countError) {
         console.warn("[useEventChat] event_chat_members count query failed; hiding count", countError);
         setMemberCount(null);
@@ -176,8 +181,7 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
       console.warn("[useEventChat] event_chat_members count query threw; hiding count", err);
       setMemberCount(null);
     }
-    setStatus("active");
-  }, [user, eventId, computedExpiresAt, startCountdown]);
+  }, [user, eventId, eventName, eventStartsAt, computedExpiresAt, startCountdown]);
 
   const subscribeRealtime = useCallback(() => {
     if (channelRef.current) supabase.removeChannel(channelRef.current);
@@ -210,24 +214,30 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
   }, [eventId]);
 
   useEffect(() => {
+    if (!loadEnabled) return;
     loadChat();
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [loadChat]);
+  }, [loadEnabled, loadChat]);
 
   useEffect(() => {
-    if (status === "active") subscribeRealtime();
+    if (!loadEnabled || status !== "active") return;
+    subscribeRealtime();
     return () => { if (channelRef.current) supabase.removeChannel(channelRef.current); };
-  }, [status, subscribeRealtime]);
+  }, [loadEnabled, status, subscribeRealtime]);
 
   const sendMessage = useCallback(
-    async (content: string, messageType: "text" | "sticker" = "text") => {
+    async (content: string, messageType: "text" | "sticker" | "video" = "text") => {
       if (!user || status !== "active") return;
       const trimmed = content.trim();
       if (!trimmed) return;
-      if (messageType === "sticker" && !EVENT_CHAT_STICKER_SET.has(trimmed)) return;
+      if (messageType === "video") {
+        if (!/^https?:\/\//i.test(trimmed)) return;
+      } else if (messageType === "sticker") {
+        if (!EVENT_CHAT_STICKER_SET.has(trimmed)) return;
+      }
       setIsSending(true);
       try {
         const { data: row, error } = await supabase
@@ -298,6 +308,12 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
       if (error.code === "23505") { await loadChat(); return { success: true }; }
       return { success: false, error: error.message };
     }
+    enqueuePendingEventChat({
+      event_id: eventId,
+      event_name: eventName?.trim() || "Event chat",
+      event_starts_at: eventStartsAt,
+      expires_at: expiresAtIso,
+    });
     await loadChat();
     return { success: true };
   }, [user, eventId, eventName, eventStartsAt, loadChat]);

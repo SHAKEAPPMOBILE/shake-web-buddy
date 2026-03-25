@@ -273,6 +273,34 @@
   animation: carousel-breathe 8s ease-in-out infinite;
 }
 
+@keyframes notification-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes notification-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-notification-enter {
+  animation: notification-enter 200ms ease-out forwards;
+}
+
+.animate-notification-exit {
+  animation: notification-exit 200ms ease-out forwards;
+}
+
 /* iOS Safe Areas */
 .safe-area-top {
   padding-top: constant(safe-area-inset-top);

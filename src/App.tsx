@@ -2,8 +2,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -113,6 +112,7 @@ const App = () => {
 
   return (
   <ErrorBoundary>
+    <NotificationProvider>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <LanguageProvider>
@@ -121,8 +121,6 @@ const App = () => {
             <CityProvider>
               <VenueProvider>
                 <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
                 <BrowserRouter>
                   <ReferralTracker />
                   <Routes>
@@ -150,6 +148,7 @@ const App = () => {
       </LanguageProvider>
     </ThemeProvider>
   </QueryClientProvider>
+    </NotificationProvider>
   </ErrorBoundary>
   );
 };

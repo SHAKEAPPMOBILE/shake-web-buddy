@@ -27,7 +27,6 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
 import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
-import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
 const CURRENCIES = [
@@ -51,7 +50,6 @@ const MAX_CHARACTERS = 50;
 export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivityDialogProps) {
   const { user, isPremium } = useAuth();
   const { createActivity, isLoading, remainingActivities, myActivities, fetchMyActivities } = useUserActivities(city);
-  const { toast } = useToast();
   const { t } = useTranslation();
   
   const [planText, setPlanText] = useState("");

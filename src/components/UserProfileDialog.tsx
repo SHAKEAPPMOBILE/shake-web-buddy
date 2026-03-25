@@ -21,7 +21,7 @@ import { StatusVideoViewer } from "./StatusVideoViewer";
 import { cn } from "@/lib/utils";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 
 interface UserProfileDialogProps {
   open: boolean;

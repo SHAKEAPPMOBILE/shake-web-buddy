@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useActivityMute } from "@/hooks/useActivityMute";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";

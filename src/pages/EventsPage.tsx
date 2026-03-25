@@ -17,11 +17,13 @@ import {
   fetchTicketmasterEvents,
 } from "@/lib/ticketmaster";
 import { useEffect, useMemo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { addGroupChatAccess, hasGroupChatAccess } from "@/lib/groupChatAccess";
+import { buildEventChatNavigateState } from "@/lib/eventChatNavigation";
+import { enqueuePendingEventChat } from "@/lib/pendingEventChat";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { EventGroupChatBanner3D } from "@/components/EventGroupChatBanner3D";
 
@@ -520,7 +522,7 @@ function EventDetail({
   };
 
   const handleOpenChat = () => {
-    navigate(`/chat/event/${event.id}`);
+    navigate(`/chat/event/${event.id}`, { state: buildEventChatNavigateState(event) });
   };
 
   return (
@@ -789,6 +791,14 @@ export default function EventsPage({
         );
         if (membershipUpsertError) {
           console.warn("[EventsPage] event_chat_members upsert after payment (webhook may have succeeded)", membershipUpsertError);
+        } else {
+          enqueuePendingEventChat({
+            event_id: chatUnlockedId,
+            event_name: resolved.name,
+            city: resolved.city,
+            event_starts_at: resolved.eventStartAt ?? null,
+            expires_at: membershipExpiresAt.toISOString(),
+          });
         }
       } catch (error) {
         console.warn("[EventsPage] membership upsert after payment redirect", error);
@@ -1162,9 +1172,15 @@ export default function EventsPage({
         }
         onJoinGroupChat={() => {
           joiningEventChatRef.current = true;
-          const id = joinConfirmationEvent?.id;
+          const ev = joinConfirmationEvent;
+          const id = ev?.id;
           setJoinConfirmationEvent(null);
-          if (id) navigate(`/chat/event/${id}`, { replace: true });
+          if (id) {
+            navigate(`/chat/event/${id}`, {
+              replace: true,
+              state: ev ? buildEventChatNavigateState(ev) : undefined,
+            });
+          }
         }}
       />
     </div>

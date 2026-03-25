@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { X, Upload, Trash2, FileVideo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { uploadStatusVideo, deleteStatusVideo } from "@/hooks/useStatusVideo";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface StatusVideoRecorderProps {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { isAfricanCountry, getSmsAvailabilityMessage } from "@/data/smsEnabledCountries";
 import { countryCodes } from "@/data/countryCodes";
