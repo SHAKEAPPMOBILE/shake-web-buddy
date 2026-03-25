@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
@@ -5,6 +6,7 @@ import { useActivityVenue } from "@/contexts/VenueContext";
 import { getActivityEmoji } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/activity-translations";
 import { useTranslation } from "react-i18next";
+import { triggerConfettiBurstOnce } from "@/lib/confetti";
 
 interface ActivityJoinedConfirmationProps {
   open: boolean;
@@ -31,6 +33,12 @@ export function ActivityJoinedConfirmation({
   eventConfirmation,
 }: ActivityJoinedConfirmationProps) {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    if (!open || !eventConfirmation) return;
+    triggerConfettiBurstOnce();
+  }, [open, eventConfirmation?.name, eventConfirmation?.dateLine]);
+
   const emoji = getActivityEmoji(activityType);
   const label = getTranslatedActivityLabel(t, activityType);
   const activityDay = getTranslatedActivityDay(t, activityType);
@@ -51,11 +59,10 @@ export function ActivityJoinedConfirmation({
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 animate-bounce-subtle">
                 <span className="text-4xl">{eventConfirmation.emoji ?? "🎉"}</span>
               </div>
-              <h2 className="text-xl font-display font-bold text-foreground mb-1">
-                {t('joinConfirmation.youreInFor', "You're in for {{activity}}!", {
-                  activity: eventConfirmation.name,
-                })}
+              <h2 className="text-xl font-display font-bold text-foreground mb-2">
+                {t("joinConfirmation.youreGoing", "You're going!")}
               </h2>
+              <p className="text-base font-semibold text-foreground leading-snug mb-1">{eventConfirmation.name}</p>
               <p className="text-sm text-muted-foreground">{eventConfirmation.dateLine}</p>
             </div>
             <div className="px-6 pb-6">

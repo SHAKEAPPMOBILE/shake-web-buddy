@@ -20,7 +20,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
-import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { addGroupChatAccess, hasGroupChatAccess } from "@/lib/groupChatAccess";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { EventGroupChatBanner3D } from "@/components/EventGroupChatBanner3D";
@@ -133,6 +132,11 @@ const MOCK_EVENTS: EventItem[] = [
 
 const CATEGORIES = ["All", "Music", "Sports", "Art", "Comedy"];
 
+/** Ticketmaster segment maps to `EventItem.category` (e.g. "Music", "Sports"). */
+function isMusicEventCategory(category: string | undefined): boolean {
+  return (category ?? "").trim().toLowerCase() === "music";
+}
+
 const hue = (id: string) =>
   (parseInt(id.replace("tm", ""), 10) * 47) % 360;
 
@@ -154,6 +158,100 @@ function eventDateLineForConfirmation(event: EventItem): string {
   return event.date;
 }
 
+type PublicEventRow = {
+  id: string;
+  name: string | null;
+  image_url: string | null;
+  venue: string | null;
+  city: string | null;
+  event_starts_at: string | null;
+  ticket_url: string | null;
+};
+
+function eventItemFromPublicRow(row: PublicEventRow): EventItem {
+  const start = row.event_starts_at ? new Date(row.event_starts_at) : null;
+  const dateStr =
+    start && !isNaN(start.getTime())
+      ? start.toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
+      : "Date TBD";
+  return {
+    id: row.id,
+    name: row.name ?? "Event",
+    date: dateStr,
+    eventStartAt: row.event_starts_at ?? undefined,
+    imageUrl: row.image_url ?? undefined,
+    venue: row.venue ?? "Venue TBD",
+    city: row.city ?? "",
+    distance: "",
+    priceMin: 0,
+    priceMax: 0,
+    category: "Music",
+    emoji: "🎵",
+    chatCount: 0,
+    ticketsSold: 0,
+    isHot: false,
+    ticketmasterUrl: row.ticket_url ?? undefined,
+  };
+}
+
+function eventItemFromEventChatRow(
+  row: { event_id: string; name: string; expires_at: string },
+  cityFallback: string,
+): EventItem {
+  const exp = new Date(row.expires_at);
+  const start = !isNaN(exp.getTime()) ? new Date(exp.getTime() - 12 * 60 * 60 * 1000) : null;
+  const dateStr =
+    start && !isNaN(start.getTime())
+      ? start.toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
+      : "Date TBD";
+  return {
+    id: row.event_id,
+    name: row.name,
+    date: dateStr,
+    eventStartAt: start?.toISOString(),
+    venue: "Venue TBD",
+    city: cityFallback,
+    distance: "",
+    priceMin: 0,
+    priceMax: 0,
+    category: "Music",
+    emoji: "🎵",
+    chatCount: 0,
+    ticketsSold: 0,
+    isHot: false,
+  };
+}
+
+function minimalEventItemForPayment(eventId: string, cityFallback: string): EventItem {
+  return {
+    id: eventId,
+    name: "Your event",
+    date: "Date TBD",
+    venue: "See event details",
+    city: cityFallback,
+    distance: "",
+    priceMin: 0,
+    priceMax: 0,
+    category: "Music",
+    emoji: "🎉",
+    chatCount: 0,
+    ticketsSold: 0,
+    isHot: false,
+  };
+}
+
 function resolveMembershipExpiry(m: { expires_at?: string | null; paid_at?: string | null } | null) {
   if (!m) return null;
   if (m.expires_at) {
@@ -167,19 +265,22 @@ function resolveMembershipExpiry(m: { expires_at?: string | null; paid_at?: stri
   return null;
 }
 
-/** Speedrun-style banner: flowing iridescent gradient, copy left, 3D musical note on the right */
+/** Speedrun-style banner: flowing iridescent gradient, copy left; optional 3D note on the right for music events */
 function EventGroupChatEnterVisual({
   description,
   hasPaidAccess,
   isEnteringChat,
   membershipLoading,
   onClick,
+  showMusicNote = false,
 }: {
   description: string;
   hasPaidAccess: boolean;
   isEnteringChat: boolean;
   membershipLoading: boolean;
   onClick: () => void;
+  /** When true, show the rotating note; other categories leave the right side empty */
+  showMusicNote?: boolean;
 }) {
   const label =
     membershipLoading ? "Loading..." : isEnteringChat ? "Connecting..." : hasPaidAccess ? "Open Group Chat" : "Enter Group Chat";
@@ -257,7 +358,7 @@ function EventGroupChatEnterVisual({
           </Button>
         </div>
 
-        <EventGroupChatBanner3D />
+        {showMusicNote ? <EventGroupChatBanner3D /> : null}
       </div>
     </div>
   );
@@ -506,6 +607,7 @@ function EventDetail({
           isEnteringChat={isEnteringChat}
           membershipLoading={membershipLoading}
           onClick={hasPaidAccess ? handleOpenChat : handleEnterChat}
+          showMusicNote={isMusicEventCategory(event.category)}
         />
         {!hasPaidAccess && !membershipLoading && (
           <p className="text-muted-foreground text-xs mt-2 text-center sm:mt-3">
@@ -522,6 +624,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const joiningEventChatRef = useRef(false);
+  const paymentReturnHandledRef = useRef<string | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [cat, setCat] = useState("All");
@@ -535,48 +638,83 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const chatUnlockedId = searchParams.get("chat_unlocked") || searchParams.get("event_id");
   const paymentSuccess = searchParams.get("payment_success") === "true";
 
+  /** Deep link: ?event_id=… without payment — open detail when list contains the event */
   useEffect(() => {
-    // Only handle Stripe/payment redirects once events have finished loading
-    if (!chatUnlockedId || eventsLoading || events.length === 0) return;
-    const event = events.find((e) => e.id === chatUnlockedId);
-    if (!event) {
-      navigate("/events", { replace: true });
-      return;
-    }
+    if (!chatUnlockedId || paymentSuccess || !user) return;
+    if (eventsLoading || events.length === 0) return;
+    const ev = events.find((e) => e.id === chatUnlockedId);
+    if (!ev) return;
+    setSelected(ev);
+  }, [chatUnlockedId, paymentSuccess, user, eventsLoading, events]);
 
-    if (!paymentSuccess || !user) {
-      setSelected(event);
-      return;
-    }
+  /**
+   * Stripe returns to /events?payment_success=true&event_id=…
+   * Resolve the event from the list, public_events, event_chats, or a minimal placeholder.
+   * Never navigate away before showing ActivityJoinedConfirmation; clear params only after the modal is armed.
+   */
+  useEffect(() => {
+    if (!chatUnlockedId || !paymentSuccess || !user) return;
 
-    const createMembership = async () => {
+    const dedupeKey = `${user.id}:${chatUnlockedId}`;
+    if (paymentReturnHandledRef.current === dedupeKey) return;
+
+    let cancelled = false;
+
+    const run = async () => {
+      let resolved: EventItem | null = events.find((e) => e.id === chatUnlockedId) ?? null;
+
+      if (!resolved) {
+        const { data: pub } = await supabase.from("public_events").select("*").eq("id", chatUnlockedId).maybeSingle();
+        if (!cancelled && pub) {
+          resolved = eventItemFromPublicRow(pub as PublicEventRow);
+        }
+      }
+
+      if (!resolved) {
+        const { data: chat } = await supabase
+          .from("event_chats")
+          .select("event_id, name, expires_at")
+          .eq("event_id", chatUnlockedId)
+          .maybeSingle();
+        if (!cancelled && chat) {
+          resolved = eventItemFromEventChatRow(chat, selectedCity ?? "");
+        }
+      }
+
+      if (!resolved && eventsLoading) {
+        return;
+      }
+      if (!resolved) {
+        resolved = minimalEventItemForPayment(chatUnlockedId, selectedCity ?? "");
+      }
+
+      if (cancelled) return;
+
+      const start = resolved.eventStartAt ? new Date(resolved.eventStartAt) : new Date();
+      const expiresAt = new Date(
+        (isNaN(start.getTime()) ? Date.now() : start.getTime()) + 12 * 60 * 60 * 1000,
+      );
+
       try {
-        // 1. Upsert event_chats row with expires_at = eventStartAt + 12h (fallback: now + 12h)
-        const start = event.eventStartAt ? new Date(event.eventStartAt) : new Date();
-        const expiresAt = new Date(
-          (isNaN(start.getTime()) ? Date.now() : start.getTime()) + 12 * 60 * 60 * 1000,
-        );
-
         const { error: eventChatsUpsertError } = await supabase.from("event_chats").upsert(
           {
             event_id: chatUnlockedId,
-            name: event.name,
+            name: resolved.name,
             expires_at: expiresAt.toISOString(),
           },
           { onConflict: "event_id" },
         );
         if (eventChatsUpsertError) {
-          console.log("[EventsPage] event_chats upsert error after payment redirect", eventChatsUpsertError);
+          console.warn("[EventsPage] event_chats upsert after payment redirect", eventChatsUpsertError);
         }
 
         const paidAt = new Date();
-        const expiresAtFromStart = event.eventStartAt ? new Date(event.eventStartAt) : null;
+        const expiresAtFromStart = resolved.eventStartAt ? new Date(resolved.eventStartAt) : null;
         const hasValidStart = expiresAtFromStart && !isNaN(expiresAtFromStart.getTime());
         const membershipExpiresAt = hasValidStart
           ? new Date(expiresAtFromStart.getTime() + 12 * 60 * 60 * 1000)
           : new Date(paidAt.getTime() + 24 * 60 * 60 * 1000);
 
-        // 2. Upsert event_chat_members row
         const { error: membershipUpsertError } = await supabase.from("event_chat_members").upsert(
           {
             event_id: chatUnlockedId,
@@ -584,33 +722,43 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
             joined_at: new Date().toISOString(),
             paid_at: paidAt.toISOString(),
             expires_at: membershipExpiresAt.toISOString(),
-            event_name: event.name,
-            event_starts_at: event.eventStartAt ?? null,
+            event_name: resolved.name,
+            event_starts_at: resolved.eventStartAt ?? null,
           },
           { onConflict: "event_id,user_id" },
         );
         if (membershipUpsertError) {
-          console.log("[EventsPage] event_chat_members upsert error after payment redirect", membershipUpsertError);
-          return;
+          console.warn("[EventsPage] event_chat_members upsert after payment (webhook may have succeeded)", membershipUpsertError);
         }
-
-        setChatMembershipVersion((v) => v + 1);
-        addGroupChatAccess(user.id, chatUnlockedId);
-        setSelected(null);
-        setJoinConfirmationEvent(event);
       } catch (error) {
-        console.log("[EventsPage] Error creating membership after payment redirect", error);
+        console.warn("[EventsPage] membership upsert after payment redirect", error);
       }
+
+      if (cancelled) return;
+
+      paymentReturnHandledRef.current = dedupeKey;
+      setChatMembershipVersion((v) => v + 1);
+      addGroupChatAccess(user.id, chatUnlockedId);
+      setSelected(null);
+      setJoinConfirmationEvent(resolved);
+
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("payment_success");
+          next.delete("chat_unlocked");
+          next.delete("event_id");
+          return next;
+        },
+        { replace: true },
+      );
     };
 
-    void createMembership();
-  }, [chatUnlockedId, paymentSuccess, eventsLoading, events, user, navigate]);
-
-  useEffect(() => {
-    if (joinConfirmationEvent?.id) {
-      triggerConfettiWaterfall();
-    }
-  }, [joinConfirmationEvent?.id]);
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [chatUnlockedId, paymentSuccess, user, events, eventsLoading, selectedCity, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;

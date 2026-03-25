@@ -1,5 +1,25 @@
 import confetti from "canvas-confetti";
 
+/** Single celebratory burst for modals (lighter than the waterfall). Respects reduced motion. */
+export function triggerConfettiBurstOnce() {
+  if (typeof window === "undefined") return;
+  try {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  } catch {
+    /* ignore */
+  }
+  void confetti({
+    particleCount: 100,
+    spread: 72,
+    startVelocity: 38,
+    gravity: 1.05,
+    ticks: 200,
+    zIndex: 10000,
+    origin: { x: 0.5, y: 0.45 },
+    colors: ["#a78bfa", "#f472b6", "#38bdf8", "#fbbf24", "#34d399", "#fb7185"],
+  });
+}
+
 export const triggerConfettiWaterfall = () => {
   const duration = 3000;
   const animationEnd = Date.now() + duration;
