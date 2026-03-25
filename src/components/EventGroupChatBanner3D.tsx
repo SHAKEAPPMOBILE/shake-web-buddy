@@ -1,131 +1,220 @@
+import { useId, useMemo } from "react";
 import type { CSSProperties } from "react";
 
-const BANNER_3D_SIZE = 92;
+/** viewBox height for aspect ratio */
+const VIEWBOX_H = 178;
 
-const G_FRONT =
-  "linear-gradient(168deg, #f2d4bc 0%, #d4a078 38%, #a86b45 72%, #7a4a32 100%)";
-const G_SIDE = "linear-gradient(135deg, #e8c4a8 0%, #b8825c 45%, #6b4428 100%)";
-const G_BACK = "linear-gradient(195deg, #c9a080 0%, #8f5c3e 50%, #5c3824 100%)";
-const G_TOP =
-  "linear-gradient(155deg, #fff5eb 0%, #f0d4b8 35%, #e8b88a 70%, #d4986a 100%)";
-const G_BOTTOM = "linear-gradient(180deg, #a07050 0%, #6b4030 100%)";
+/** Display width; height follows viewBox aspect (larger = fills banner right side). */
+const NOTE_DISPLAY_W = 182;
+const NOTE_DISPLAY_H = Math.round((NOTE_DISPLAY_W * VIEWBOX_H) / 100);
 
-function faceShell(
-  w: number,
-  h: number,
-  mx: number,
-  my: number,
-  transform: string,
-  bg: string
-): CSSProperties {
+const LAYER_COUNT = 20;
+const DEPTH_STEP = 2.2;
+
+/** Head center + tilt (degrees, SVG rotate = CW; negative ≈ classic “up-right” oval). */
+const HEAD_CX = 37;
+const HEAD_CY = 131;
+const HEAD_ROT = -26;
+const HEAD_RX = 28;
+const HEAD_RY = 17;
+
+/** Bronze / rose-gold metallic stops; `t` = 0 (back) … 1 (front) for shading. */
+function metallicStops(t: number): { a: string; b: string; c: string } {
+  const lift = t * 14;
   return {
-    position: "absolute",
-    left: "50%",
-    top: "50%",
-    width: w,
-    height: h,
-    marginLeft: -mx,
-    marginTop: -my,
-    backfaceVisibility: "hidden",
-    border: "1px solid rgba(255,255,255,0.35)",
-    boxShadow:
-      "inset 0 2px 4px rgba(255,255,255,0.45), inset 0 -12px 24px rgba(60,30,20,0.25), 0 0 0 1px rgba(0,0,0,0.06)",
-    background: bg,
-    transform,
+    a: `rgb(${245 - lift * 0.4}, ${228 - lift * 0.5}, ${210 - lift * 0.45})`,
+    b: `rgb(${212 - lift * 0.35}, ${160 - lift * 0.3}, ${120 - lift * 0.25})`,
+    c: `rgb(${130 - lift * 0.4}, ${88 - lift * 0.35}, ${58 - lift * 0.3})`,
   };
 }
 
-/** Single rectangular prism centered on parent origin, bronze metallic faces. */
-function BronzePrism({
-  w,
-  h,
-  d,
-  groupTransform = "",
+/** Right-side attach point of rotated ellipse (stem joins here). */
+function stemAttachOnHead(): { x: number; y: number } {
+  const rad = (HEAD_ROT * Math.PI) / 180;
+  const x = HEAD_CX + HEAD_RX * Math.cos(rad);
+  const y = HEAD_CY + HEAD_RX * Math.sin(rad);
+  return { x, y };
+}
+
+/**
+ * Classic single eighth note (♪): filled tilted oval head, thick vertical stem, curved flag.
+ * Geometry aligned with engraved notation (stem from right of head).
+ */
+function EighthNoteSvg({
+  gradId,
+  layerIndex,
+  totalLayers,
 }: {
-  w: number;
-  h: number;
-  d: number;
-  groupTransform?: string;
+  gradId: string;
+  layerIndex: number;
+  totalLayers: number;
 }) {
-  const mx = w / 2;
-  const my = h / 2;
-  const mz = d / 2;
+  const t = totalLayers > 1 ? layerIndex / (totalLayers - 1) : 1;
+  const { a, b, c } = metallicStops(t);
+  const attach = stemAttachOnHead();
+  const stemLeft = attach.x - 3.2;
+  const stemRight = attach.x + 4.2;
+  const stemBottom = attach.y + 2.8;
+  const stemTop = 22;
+
+  const fill = `url(#${gradId})`;
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        left: "50%",
-        top: "50%",
-        width: 0,
-        height: 0,
-        transformStyle: "preserve-3d",
-        transform: groupTransform,
-      }}
+    <svg
+      width={NOTE_DISPLAY_W}
+      height={NOTE_DISPLAY_H}
+      viewBox={`0 0 100 ${VIEWBOX_H}`}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+      className="block"
     >
-      <div style={faceShell(w, h, mx, my, `rotateY(0deg) translateZ(${mz}px)`, G_FRONT)} />
-      <div style={faceShell(w, h, mx, my, `rotateY(180deg) translateZ(${mz}px)`, G_BACK)} />
-      <div style={faceShell(d, h, mz, my, `rotateY(90deg) translateZ(${mx}px)`, G_SIDE)} />
-      <div style={faceShell(d, h, mz, my, `rotateY(-90deg) translateZ(${mx}px)`, G_SIDE)} />
-      <div style={faceShell(w, d, mx, mz, `rotateX(90deg) translateZ(${my}px)`, G_TOP)} />
-      <div style={faceShell(w, d, mx, mz, `rotateX(-90deg) translateZ(${my}px)`, G_BOTTOM)} />
-    </div>
+      <defs>
+        <linearGradient id={gradId} x1="8%" y1="6%" x2="92%" y2="94%" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={a} />
+          <stop offset="48%" stopColor={b} />
+          <stop offset="100%" stopColor={c} />
+        </linearGradient>
+      </defs>
+
+      {/* Tilted filled note head — bold oval like reference icon */}
+      <g transform={`translate(${HEAD_CX} ${HEAD_CY}) rotate(${HEAD_ROT})`}>
+        <ellipse cx="0" cy="0" rx={HEAD_RX} ry={HEAD_RY} fill={fill} />
+      </g>
+
+      {/* Thick vertical stem from right of head */}
+      <path
+        fill={fill}
+        d={`M ${stemLeft.toFixed(2)} ${stemBottom.toFixed(2)}
+            L ${stemRight.toFixed(2)} ${stemBottom.toFixed(2)}
+            L ${stemRight.toFixed(2)} ${stemTop}
+            L ${stemLeft.toFixed(2)} ${stemTop}
+            Z`}
+      />
+
+      {/* Curved flag: swoops from stem top, tapers toward lower-right (fits viewBox width) */}
+      <path
+        fill={fill}
+        d={`M ${stemLeft} ${stemTop}
+            L ${stemRight} ${stemTop}
+            C 88 ${stemTop + 1} 100 24 99 46
+            C 98 64 91 84 83 91
+            C 75 96 65 93 59 82
+            C 53 70 51 57 54 45
+            C 55 35 55 30 ${stemLeft + 0.5} ${stemTop + 4}
+            Z`}
+      />
+
+      {layerIndex === totalLayers - 1 ? (
+        <>
+          <path
+            d={`M ${stemLeft} ${stemTop}
+              L ${stemRight} ${stemTop}
+              C 88 ${stemTop + 1} 100 24 99 46
+              C 98 64 91 84 83 91
+              C 75 96 65 93 59 82
+              C 53 70 51 57 54 45
+              C 55 35 55 30 ${stemLeft + 0.5} ${stemTop + 4}
+              Z`}
+            fill="none"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="0.4"
+          />
+          <g transform={`translate(${HEAD_CX} ${HEAD_CY}) rotate(${HEAD_ROT})`}>
+            <ellipse
+              cx="0"
+              cy="0"
+              rx={HEAD_RX}
+              ry={HEAD_RY}
+              fill="none"
+              stroke="rgba(255,255,255,0.16)"
+              strokeWidth="0.4"
+            />
+          </g>
+        </>
+      ) : null}
+    </svg>
   );
 }
 
-/** Eighth-note style: oval head, stem, angled flag — all CSS 3D prisms. */
-function MusicalNote3D() {
+function ExtrudedEighthNote({ uid }: { uid: string }) {
+  const totalDepth = (LAYER_COUNT - 1) * DEPTH_STEP;
+  const zOffset = totalDepth / 2;
+
+  const layers = useMemo(
+    () =>
+      Array.from({ length: LAYER_COUNT }, (_, i) => ({
+        i,
+        z: i * DEPTH_STEP - zOffset,
+        gradId: `note-metal-${uid}-${i}`,
+      })),
+    [uid, zOffset]
+  );
+
   return (
     <>
-      {/* Note head (oval as thin prism) */}
-      <BronzePrism w={30} h={22} d={11} groupTransform="translate3d(-6px, 12px, 0)" />
-      {/* Stem */}
-      <BronzePrism w={7} h={48} d={7} groupTransform="translate3d(11px, -14px, 0)" />
-      {/* Flag (angled beam from stem) */}
-      <BronzePrism
-        w={5}
-        h={28}
-        d={11}
-        groupTransform="translate3d(13px, -40px, 3px) rotateZ(-32deg) rotateX(12deg)"
-      />
+      {layers.map(({ i, z, gradId }) => (
+        <div
+          key={gradId}
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            width: NOTE_DISPLAY_W,
+            height: NOTE_DISPLAY_H,
+            marginLeft: -NOTE_DISPLAY_W / 2,
+            marginTop: -NOTE_DISPLAY_H / 2,
+            transform: `translateZ(${z}px)`,
+            transformStyle: "preserve-3d",
+            backfaceVisibility: "hidden",
+            opacity: 0.88 + (i / (LAYER_COUNT - 1 || 1)) * 0.12,
+          }}
+        >
+          <EighthNoteSvg gradId={gradId} layerIndex={i} totalLayers={LAYER_COUNT} />
+        </div>
+      ))}
     </>
   );
 }
 
 export function EventGroupChatBanner3D() {
+  const uid = useId().replace(/:/g, "");
+
+  const outerStyle: CSSProperties = {
+    perspective: 640,
+    perspectiveOrigin: "52% 42%",
+    filter: "drop-shadow(14px 22px 34px rgba(40, 20, 10, 0.28))",
+  };
+
   return (
     <div
-      className="flex shrink-0 self-center justify-end sm:pr-2 py-0 sm:py-2 max-sm:scale-[0.68] sm:scale-100 origin-center"
-      style={{
-        perspective: 520,
-        perspectiveOrigin: "55% 40%",
-        filter: "drop-shadow(12px 20px 28px rgba(40, 20, 10, 0.22))",
-      }}
+      className="flex shrink-0 self-center justify-end overflow-visible sm:pr-0 py-0 sm:py-1 max-sm:scale-[0.86] sm:scale-100 origin-center"
+      style={outerStyle}
     >
       <style>
         {`
           @keyframes eventDetailChatObjectDrift {
-            from { transform: rotateX(-20deg) rotateY(28deg); }
-            to { transform: rotateX(-20deg) rotateY(388deg); }
+            from { transform: rotateX(-18deg) rotateY(26deg); }
+            to { transform: rotateX(-18deg) rotateY(386deg); }
           }
           @media (prefers-reduced-motion: reduce) {
             .event-detail-chat-object-spin {
               animation: none !important;
-              transform: rotateX(-20deg) rotateY(42deg) !important;
+              transform: rotateX(-18deg) rotateY(44deg) !important;
             }
           }
         `}
       </style>
       <div
-        className="event-detail-chat-object-spin relative"
+        className="event-detail-chat-object-spin relative overflow-visible"
         style={{
-          width: BANNER_3D_SIZE,
-          height: BANNER_3D_SIZE,
+          width: NOTE_DISPLAY_W,
+          height: NOTE_DISPLAY_H,
           transformStyle: "preserve-3d",
           animation: "eventDetailChatObjectDrift 20s linear infinite",
         }}
       >
-        <MusicalNote3D />
+        <ExtrudedEighthNote uid={uid} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MessageSquare, Users, Plane, Calendar, Ticket } from "lucide-react";
+import { MessageSquare, Users, Plane, Ticket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useNavigate } from "react-router-dom";
@@ -498,16 +498,16 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
   }
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950">
+    <div className="flex flex-col h-full bg-[#121417]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-950 shrink-0">
-        <h2 className="text-lg font-display font-bold text-zinc-100">{t('chat.title')}</h2>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2e33] bg-[#121417] shrink-0">
+        <h2 className="text-lg font-display font-bold text-white">{t('chat.title')}</h2>
         <div className="flex items-center gap-2">
           {/* City Filter */}
           {availableCities.length > 1 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-800 text-zinc-200 rounded-full text-sm font-medium border border-zinc-700/80">
+                <button className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1e2124] text-[#e4e4e7] rounded-full text-sm font-medium border border-[#3f444c]">
                   <Plane className="w-4 h-4" />
                   {cityFilter !== "all" && <span>{cityFilter}</span>}
                 </button>
@@ -535,29 +535,29 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
       </div>
 
       {/* Activities List */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-zinc-950 min-h-0">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#121417] min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
           </div>
         ) : filteredActivities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
-            <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mb-4 border border-zinc-700/80">
-              <MessageSquare className="w-8 h-8 text-zinc-500" />
+            <div className="w-16 h-16 rounded-full bg-[#1e2124] flex items-center justify-center mb-4 border border-[#3f444c]">
+              <MessageSquare className="w-8 h-8 text-[#9ca3af]" />
             </div>
             {activities.length === 0 ? (
               <>
-                <p className="text-zinc-400 mb-1">{t('common.noActiveChats')}</p>
-                <p className="text-sm text-zinc-500">
+                <p className="text-[#9ca3af] mb-1">{t('common.noActiveChats')}</p>
+                <p className="text-sm text-[#9ca3af]/80">
                   {t('common.joinActivityToChat')}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-zinc-400">{t('common.noChatsInCity', { city: cityFilter })}</p>
+                <p className="text-[#9ca3af]">{t('common.noChatsInCity', { city: cityFilter })}</p>
                 <button
                   onClick={() => setCityFilter("all")}
-                  className="mt-3 text-sm text-sky-400 hover:text-sky-300 hover:underline"
+                  className="mt-3 text-sm text-[#a0c1f9] hover:text-[#b8d0fb] hover:underline"
                 >
                   {t('common.showAllCities')}
                 </button>
@@ -566,7 +566,17 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
           </div>
         ) : (
           <>
-          {filteredActivities.map((activity) => (
+          {filteredActivities.map((activity) => {
+            const locationLine = activity.is_event
+              ? (activity.event_venue ?? activity.city)
+              : activity.city;
+            const dateFormatted = formatDateWithTranslation(
+              new Date(activity.scheduled_for),
+              "EEE, d MMM",
+              selectedLanguage.code
+            );
+
+            return (
             <div
               key={activity.id}
               role="button"
@@ -578,7 +588,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                   handleActivityClick(activity);
                 }
               }}
-              className="w-full text-left rounded-2xl p-4 transition-colors cursor-pointer relative border-2 border-transparent bg-[#1e2128] hover:border-sky-500/45 focus-visible:outline-none focus-visible:border-sky-500/90 active:scale-[0.99]"
+              className="w-full text-left rounded-xl p-4 transition-colors cursor-pointer relative border-2 border-transparent bg-[#1e2124] hover:border-[#a0c1f9]/55 focus-visible:outline-none focus-visible:border-[#a0c1f9] active:scale-[0.99]"
             >
               {/* Unread badge */}
               {(activity.unread_count ?? 0) > 0 && (
@@ -587,30 +597,30 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                 </div>
               )}
 
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3.5">
                 <div className="relative shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-sky-500/20 border border-sky-400/15 flex items-center justify-center shadow-inner">
+                  <div className="w-12 h-12 rounded-full bg-[#a0c1f9] flex items-center justify-center shadow-sm">
                     {activity.is_event ? (
-                      <Ticket className="w-6 h-6 text-zinc-100" strokeWidth={2} />
+                      <Ticket className="w-6 h-6 text-white drop-shadow-sm" strokeWidth={2.25} />
                     ) : (
-                      <span className="text-2xl leading-none drop-shadow-sm" aria-hidden>
+                      <span className="text-2xl leading-none" aria-hidden>
                         {getActivityEmoji(activity.activity_type)}
                       </span>
                     )}
                   </div>
                   {activity.is_plan && activity.creator_avatar && (
-                    <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-[#1e2128]">
+                    <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-[#1e2124]">
                       <AvatarImage src={activity.creator_avatar} alt={activity.creator_name} />
-                      <AvatarFallback className="bg-zinc-700 text-zinc-200 text-xs font-semibold">
+                      <AvatarFallback className="bg-[#2a2e32] text-[#e4e4e7] text-xs font-semibold">
                         {activity.creator_name?.charAt(0)?.toUpperCase() || "?"}
                       </AvatarFallback>
                     </Avatar>
                   )}
                 </div>
 
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 pt-0.5">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <h3 className="font-semibold text-zinc-100 text-[15px] leading-snug">
+                    <h3 className="font-bold text-white text-[15px] leading-snug">
                       {activity.is_plan && activity.note
                         ? activity.note
                         : activity.is_event && activity.event_name
@@ -618,65 +628,61 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
                         : getActivityLabel(activity.activity_type)}
                     </h3>
                     {activity.is_plan && (
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-400 bg-zinc-800/90 px-1.5 py-0.5 rounded-md border border-zinc-700/70">
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-[#9ca3af] bg-[#2a2e32] px-1.5 py-0.5 rounded-md border border-[#3f444c]">
                         {t('common.plan')}
                       </span>
                     )}
                     {activity.is_event && (
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-400 bg-zinc-800/90 px-1.5 py-0.5 rounded-md border border-zinc-700/70">
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-[#9ca3af] bg-[#2a2e32] px-1.5 py-0.5 rounded-md border border-[#3f444c]">
                         EVENT
                       </span>
                     )}
                     {activity.is_event && (
-                      <span className="text-[10px] font-medium text-zinc-500 bg-zinc-900/80 px-1.5 py-0.5 rounded-md border border-zinc-700/60">
+                      <span className="text-[10px] font-medium text-[#9ca3af] bg-[#252a2e] px-1.5 py-0.5 rounded-md border border-[#3f444c]">
                         12h access
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1 mt-1.5 text-xs text-zinc-500">
-                    <span className="inline-flex opacity-80" aria-hidden>
-                      📍
-                    </span>
-                    <span>
-                      {activity.is_event ? (activity.event_venue ?? activity.city) : activity.city}
-                    </span>
-                    {activity.is_plan && activity.creator_name && (
-                      <span className="text-zinc-600">
-                        · {t('common.by')} {activity.creator_name}
-                      </span>
-                    )}
-                  </div>
-
-                  {!activity.is_plan && (
-                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                      <span className="text-xs text-zinc-500">
-                        {formatDateWithTranslation(new Date(activity.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
+                  {activity.is_plan ? (
+                    <p className="mt-1.5 text-[13px] leading-snug text-[#9ca3af]">
+                      {activity.city} · {dateFormatted}
+                      {activity.creator_name ? (
+                        <span>
+                          {" "}
+                          · {t('common.by')} {activity.creator_name}
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : (
+                    <p className="mt-1.5 text-[13px] leading-snug text-[#9ca3af] flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                      <span>
+                        {locationLine} · {dateFormatted}
                       </span>
                       {isToday(new Date(activity.scheduled_for)) && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-200/90 bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-200/90 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md">
                           {t('common.today')}
                         </span>
                       )}
                       {isTomorrow(new Date(activity.scheduled_for)) && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-sky-200/90 bg-sky-500/15 border border-sky-500/25 px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#a0c1f9] bg-[#a0c1f9]/10 border border-[#a0c1f9]/25 px-1.5 py-0.5 rounded-md">
                           {t('common.tomorrow')}
                         </span>
                       )}
-                    </div>
+                    </p>
                   )}
 
                   <div className="flex items-center gap-1.5 mt-1.5">
-                    <Users className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                    <span className="text-xs text-zinc-500">
+                    <Users className="w-3.5 h-3.5 text-[#9ca3af] shrink-0" />
+                    <span className="text-[13px] text-[#9ca3af]">
                       {activity.participant_count} {activity.participant_count === 1 ? t('common.person') : t('common.people')}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
           </>
         )}
       </div>

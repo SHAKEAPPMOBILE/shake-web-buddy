@@ -185,7 +185,7 @@ function EventGroupChatEnterVisual({
     membershipLoading ? "Loading..." : isEnteringChat ? "Connecting..." : hasPaidAccess ? "Open Group Chat" : "Enter Group Chat";
 
   return (
-    <div className="relative w-full rounded-2xl sm:rounded-[28px] overflow-hidden border border-black/5 shadow-xl mb-3 sm:mb-4 ring-1 ring-black/[0.04]">
+    <div className="relative w-full rounded-2xl sm:rounded-[28px] overflow-visible border border-black/5 shadow-xl mb-3 sm:mb-4 ring-1 ring-black/[0.04]">
       <style>
         {`
           @keyframes eventChatIridescentFlow {
@@ -202,9 +202,11 @@ function EventGroupChatEnterVisual({
         `}
       </style>
 
+      {/* Clip iridescent layers to rounded card; content row stays overflow-visible for 3D note */}
+      <div className="absolute inset-0 -z-0 overflow-hidden rounded-2xl sm:rounded-[28px] pointer-events-none">
       {/* Living gradient: large tiled bg + position drift (teal → purple → pink → amber) */}
       <div
-        className="event-chat-gradient-flow absolute inset-0 -z-0"
+        className="event-chat-gradient-flow absolute inset-0"
         style={{
           background: `
             radial-gradient(ellipse 90% 70% at 80% 40%, rgba(253, 230, 200, 0.55), transparent 50%),
@@ -226,11 +228,12 @@ function EventGroupChatEnterVisual({
         }}
       />
       <div
-        className="absolute inset-0 -z-0 pointer-events-none bg-gradient-to-br from-white/50 via-transparent to-amber-100/30 dark:from-white/10 dark:to-transparent"
+        className="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/50 via-transparent to-amber-100/30 dark:from-white/10 dark:to-transparent"
         aria-hidden
       />
+      </div>
 
-      <div className="relative z-10 flex flex-row gap-2 items-start p-3 sm:items-center sm:justify-between sm:gap-8 sm:p-6">
+      <div className="relative z-10 flex flex-row gap-2 items-start p-3 sm:items-center sm:justify-between sm:gap-8 sm:p-6 overflow-visible">
         {/* Copy + CTA; 3D note sits on the right (compact on mobile, unchanged desktop) */}
         <div className="min-w-0 flex-1 flex flex-col items-stretch text-left">
           <h2 className="text-lg font-extrabold tracking-tight text-neutral-950 dark:text-neutral-100 mb-1 sm:text-xl sm:mb-2">
