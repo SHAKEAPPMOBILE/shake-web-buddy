@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { EVENT_CHAT_STICKER_SET } from "@/lib/eventChatStickers";
 
 export interface EventChatMessage {
   id: string;
@@ -9,6 +10,7 @@ export interface EventChatMessage {
   content: string;
   created_at: string;
   expires_at: string;
+  message_type?: string | null;
   sender_name?: string;
   sender_avatar?: string;
 }
@@ -28,7 +30,7 @@ interface UseEventChatReturn {
   memberCount: number | null;
   expiresAt: Date | null;
   minutesLeft: number | null;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, messageType?: "text" | "sticker") => Promise<void>;
   unlockChat: () => Promise<{ success: boolean; error?: string }>;
   isSending: boolean;
 }
@@ -47,7 +49,12 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
   const senderMapRef = useRef(senderMap);
   senderMapRef.current = senderMap;
 
-  const computedExpiresAt = new Date(new Date(eventStartsAt).getTime() + 12 * 60 * 60 * 1000);
+  // Must be stable across renders: a new Date() each tick was changing loadChat’s identity and
+  // re-running the fetch + realtime effect every frame (flicker).
+  const computedExpiresAt = useMemo(
+    () => new Date(new Date(eventStartsAt).getTime() + 12 * 60 * 60 * 1000),
+    [eventStartsAt]
+  );
   const isChatExpired = () => new Date() > computedExpiresAt;
   const resolveMembershipExpiry = (membership: { expires_at?: string | null; paid_at?: string | null }) => {
     if (membership.expires_at) {
@@ -108,7 +115,12 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
       .eq("event_id", eventId).gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: true }).limit(200);
 
-    setMessages(msgs ?? []);
+    setMessages(
+      (msgs ?? []).map((row) => ({
+        ...row,
+        message_type: row.message_type ?? "text",
+      }))
+    );
 
     const uniqueIds = [...new Set((msgs ?? []).map((m) => m.user_id))];
     if (uniqueIds.length > 0) {
@@ -147,7 +159,11 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
     const channel = supabase.channel(`event-chat-${eventId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "event_chat_messages", filter: `event_id=eq.${eventId}` },
         async (payload) => {
-          const newMsg = payload.new as EventChatMessage;
+          const raw = payload.new as EventChatMessage;
+          const newMsg: EventChatMessage = {
+            ...raw,
+            message_type: raw.message_type ?? "text",
+          };
           if (new Date(newMsg.expires_at) > new Date()) {
             setMessages((prev) => (prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg]));
             if (!senderMapRef.current[newMsg.user_id]) {
@@ -181,15 +197,27 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
     return () => { if (channelRef.current) supabase.removeChannel(channelRef.current); };
   }, [status, subscribeRealtime]);
 
-  const sendMessage = useCallback(async (content: string) => {
-    if (!user || status !== "active" || !content.trim()) return;
-    setIsSending(true);
-    await supabase.from("event_chat_messages").insert({
-      event_id: eventId, user_id: user.id,
-      content: content.trim(), expires_at: computedExpiresAt.toISOString(),
-    });
-    setIsSending(false);
-  }, [user, status, eventId, computedExpiresAt]);
+  const sendMessage = useCallback(
+    async (content: string, messageType: "text" | "sticker" = "text") => {
+      if (!user || status !== "active") return;
+      const trimmed = content.trim();
+      if (!trimmed) return;
+      if (messageType === "sticker" && !EVENT_CHAT_STICKER_SET.has(trimmed)) return;
+      setIsSending(true);
+      try {
+        await supabase.from("event_chat_messages").insert({
+          event_id: eventId,
+          user_id: user.id,
+          content: trimmed,
+          expires_at: computedExpiresAt.toISOString(),
+          message_type: messageType,
+        });
+      } finally {
+        setIsSending(false);
+      }
+    },
+    [user, status, eventId, computedExpiresAt]
+  );
 
   const unlockChat = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "Not signed in" };

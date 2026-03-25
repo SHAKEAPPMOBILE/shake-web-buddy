@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import type { CSSProperties } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   ChevronLeft,
@@ -24,6 +23,7 @@ import { useCity } from "@/contexts/CityContext";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { addGroupChatAccess, hasGroupChatAccess } from "@/lib/groupChatAccess";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { EventGroupChatBanner3D } from "@/components/EventGroupChatBanner3D";
 
 // Fallback when no API key or API returns empty
 const MOCK_EVENTS: EventItem[] = [
@@ -167,10 +167,7 @@ function resolveMembershipExpiry(m: { expires_at?: string | null; paid_at?: stri
   return null;
 }
 
-const EVENT_CHAT_CUBE_SIZE = 92;
-const EVENT_CHAT_CUBE_Z = EVENT_CHAT_CUBE_SIZE / 2;
-
-/** Speedrun-style banner: flowing iridescent gradient, copy left, rose-gold 3D cube + SVG chat mark right */
+/** Speedrun-style banner: flowing iridescent gradient, copy left, 3D musical note on the right */
 function EventGroupChatEnterVisual({
   description,
   hasPaidAccess,
@@ -184,58 +181,11 @@ function EventGroupChatEnterVisual({
   membershipLoading: boolean;
   onClick: () => void;
 }) {
-  const faceBase: CSSProperties = {
-    position: "absolute",
-    width: EVENT_CHAT_CUBE_SIZE,
-    height: EVENT_CHAT_CUBE_SIZE,
-    left: 0,
-    top: 0,
-    backfaceVisibility: "hidden",
-    border: "1px solid rgba(255,255,255,0.35)",
-    boxShadow:
-      "inset 0 2px 4px rgba(255,255,255,0.45), inset 0 -12px 24px rgba(60,30,20,0.25), 0 0 0 1px rgba(0,0,0,0.06)",
-  };
-
-  const z = EVENT_CHAT_CUBE_Z;
   const label =
     membershipLoading ? "Loading..." : isEnteringChat ? "Connecting..." : hasPaidAccess ? "Open Group Chat" : "Enter Group Chat";
 
-  const faceTop: CSSProperties = {
-    ...faceBase,
-    background:
-      "linear-gradient(155deg, #fff5eb 0%, #f0d4b8 35%, #e8b88a 70%, #d4986a 100%)",
-  };
-  const faceFront: CSSProperties = {
-    ...faceBase,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background:
-      "linear-gradient(168deg, #f2d4bc 0%, #d4a078 38%, #a86b45 72%, #7a4a32 100%)",
-  };
-  const faceBack: CSSProperties = {
-    ...faceBase,
-    background:
-      "linear-gradient(195deg, #c9a080 0%, #8f5c3e 50%, #5c3824 100%)",
-  };
-  const faceRight: CSSProperties = {
-    ...faceBase,
-    background:
-      "linear-gradient(135deg, #e8c4a8 0%, #b8825c 45%, #6b4428 100%)",
-  };
-  const faceLeft: CSSProperties = {
-    ...faceBase,
-    background:
-      "linear-gradient(225deg, #edd0b8 0%, #c99570 50%, #8b5a3a 100%)",
-  };
-  const faceBottom: CSSProperties = {
-    ...faceBase,
-    background:
-      "linear-gradient(180deg, #a07050 0%, #6b4030 100%)",
-  };
-
   return (
-    <div className="relative w-full rounded-[28px] overflow-hidden border border-black/5 shadow-xl mb-4 ring-1 ring-black/[0.04]">
+    <div className="relative w-full rounded-2xl sm:rounded-[28px] overflow-hidden border border-black/5 shadow-xl mb-3 sm:mb-4 ring-1 ring-black/[0.04]">
       <style>
         {`
           @keyframes eventChatIridescentFlow {
@@ -243,15 +193,7 @@ function EventGroupChatEnterVisual({
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
           }
-          @keyframes eventDetailChatCubeDrift {
-            from { transform: rotateX(-20deg) rotateY(28deg); }
-            to { transform: rotateX(-20deg) rotateY(388deg); }
-          }
           @media (prefers-reduced-motion: reduce) {
-            .event-detail-chat-cube-spin {
-              animation: none !important;
-              transform: rotateX(-20deg) rotateY(42deg) !important;
-            }
             .event-chat-gradient-flow {
               animation: none !important;
               background-position: 40% 50% !important;
@@ -288,19 +230,19 @@ function EventGroupChatEnterVisual({
         aria-hidden
       />
 
-      <div className="relative z-10 flex flex-col gap-6 p-5 sm:p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
-        {/* Left: title, body, CTA — dark text on light iridescent */}
+      <div className="relative z-10 flex flex-row gap-2 items-start p-3 sm:items-center sm:justify-between sm:gap-8 sm:p-6">
+        {/* Copy + CTA; 3D note sits on the right (compact on mobile, unchanged desktop) */}
         <div className="min-w-0 flex-1 flex flex-col items-stretch text-left">
-          <h2 className="text-xl font-extrabold tracking-tight text-neutral-950 dark:text-neutral-100 mb-2">
+          <h2 className="text-lg font-extrabold tracking-tight text-neutral-950 dark:text-neutral-100 mb-1 sm:text-xl sm:mb-2">
             Event Group Chat
           </h2>
-          <p className="text-sm leading-relaxed text-neutral-800/90 dark:text-neutral-200/90 mb-5 max-w-md">
+          <p className="text-xs leading-snug text-neutral-800/90 dark:text-neutral-200/90 mb-3 max-w-md sm:text-sm sm:leading-relaxed sm:mb-5">
             {description}
           </p>
           <Button
             type="button"
             onClick={onClick}
-            className="w-full sm:w-auto sm:self-start rounded-full font-bold text-sm uppercase tracking-wide py-3 px-8 h-auto bg-neutral-950 text-white hover:bg-neutral-900 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 border-0 shadow-lg disabled:opacity-60"
+            className="w-full sm:w-auto sm:self-start rounded-full font-bold uppercase tracking-wide py-2.5 px-6 h-auto text-xs sm:py-3 sm:px-8 sm:text-sm bg-neutral-950 text-white hover:bg-neutral-900 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 border-0 shadow-lg disabled:opacity-60"
             disabled={isEnteringChat || membershipLoading}
           >
             {isEnteringChat || membershipLoading ? (
@@ -312,56 +254,7 @@ function EventGroupChatEnterVisual({
           </Button>
         </div>
 
-        {/* Right: 3D rose-gold cube + soft float shadow */}
-        <div
-          className="flex shrink-0 justify-center sm:justify-end sm:pr-2 py-2"
-          style={{
-            perspective: 520,
-            perspectiveOrigin: "55% 40%",
-            filter: "drop-shadow(12px 20px 28px rgba(40, 20, 10, 0.22))",
-          }}
-        >
-          <div
-            className="event-detail-chat-cube-spin relative"
-            style={{
-              width: EVENT_CHAT_CUBE_SIZE,
-              height: EVENT_CHAT_CUBE_SIZE,
-              transformStyle: "preserve-3d",
-              animation: "eventDetailChatCubeDrift 20s linear infinite",
-            }}
-          >
-            <div style={{ ...faceFront, transform: `rotateY(0deg) translateZ(${z}px)` }}>
-              <svg
-                width={36}
-                height={36}
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
-                aria-hidden
-              >
-                <path
-                  d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2h-3l-3 3-3-3H6a2 2 0 01-2-2V6z"
-                  fill="url(#eventChatBubbleMetal)"
-                  stroke="rgba(255,255,255,0.55)"
-                  strokeWidth="0.75"
-                />
-                <defs>
-                  <linearGradient id="eventChatBubbleMetal" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#fff8f0" />
-                    <stop offset="0.45" stopColor="#e8d5c4" />
-                    <stop offset="1" stopColor="#8b5a3a" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <div style={{ ...faceBack, transform: `rotateY(180deg) translateZ(${z}px)` }} />
-            <div style={{ ...faceRight, transform: `rotateY(90deg) translateZ(${z}px)` }} />
-            <div style={{ ...faceLeft, transform: `rotateY(-90deg) translateZ(${z}px)` }} />
-            <div style={{ ...faceTop, transform: `rotateX(90deg) translateZ(${z}px)` }} />
-            <div style={{ ...faceBottom, transform: `rotateX(-90deg) translateZ(${z}px)` }} />
-          </div>
-        </div>
+        <EventGroupChatBanner3D />
       </div>
     </div>
   );
@@ -517,7 +410,7 @@ function EventDetail({
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-y-auto">
       {/* Hero */}
-      <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
+      <div className="relative w-full aspect-[2/1] sm:aspect-[16/9] bg-black overflow-hidden">
         {event.imageUrl ? (
           <>
             <img
@@ -553,11 +446,11 @@ function EventDetail({
         )}
       </div>
 
-      <div className="flex-1 px-4 pt-5 pb-24">
-        <h1 className="text-2xl font-extrabold text-foreground leading-tight mb-4">
+      <div className="flex-1 px-4 pt-3 pb-20 sm:pt-5 sm:pb-24">
+        <h1 className="text-xl font-extrabold text-foreground leading-tight mb-2 sm:text-2xl sm:mb-4">
           {event.name}
         </h1>
-        <div className="space-y-2 mb-4">
+        <div className="space-y-1.5 mb-3 sm:space-y-2 sm:mb-4">
           <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin className="w-4 h-4 text-primary shrink-0" />
             <span className="text-sm">{event.venue}, {event.city}</span>
@@ -568,7 +461,7 @@ function EventDetail({
           </div>
         </div>
         {event.ticketsSold ? (
-          <div className="flex items-center gap-2 mb-5 text-muted-foreground">
+          <div className="flex items-center gap-2 mb-3 text-muted-foreground sm:mb-5">
             <Users className="w-4 h-4 text-primary shrink-0" />
             <span className="text-sm">
               {event.ticketsSold.toLocaleString()} tickets sold
@@ -591,12 +484,12 @@ function EventDetail({
             })();
           if (!hasRealUrl) return null;
           return (
-            <div className="mt-1 mb-6">
+            <div className="mt-1 mb-3 sm:mb-6">
               <a
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-base no-underline hover:opacity-90"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm sm:text-base no-underline hover:opacity-90"
               >
                 Get Tickets <ExternalLink className="w-4 h-4" />
               </a>
@@ -612,7 +505,7 @@ function EventDetail({
           onClick={hasPaidAccess ? handleOpenChat : handleEnterChat}
         />
         {!hasPaidAccess && !membershipLoading && (
-          <p className="text-muted-foreground text-xs mt-3 text-center">
+          <p className="text-muted-foreground text-xs mt-2 text-center sm:mt-3">
             One-time fee · Chat expires 12h after event starts
           </p>
         )}

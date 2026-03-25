@@ -1,7 +1,13 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut } from "lucide-react";
+import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Smile } from "lucide-react";
 import { useEventChat } from "@/hooks/useEventChat";
+import {
+  EVENT_CHAT_STICKER_IDS,
+  EVENT_CHAT_STICKER_LABELS,
+  isEventChatStickerId,
+} from "@/lib/eventChatStickers";
+import { EventStickerGraphic } from "@/components/eventChat/EventChatStickerSvgs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -11,6 +17,49 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface EventChatPageParams {
   eventId?: string;
+}
+
+/** One-shot confetti from the tap point when sending a sticker (viewport coords). */
+function StickerSendConfetti({ x, y, seed }: { x: number; y: number; seed: number }) {
+  const particles = useMemo(() => {
+    const colors = ["#f472b6", "#a78bfa", "#38bdf8", "#fbbf24", "#34d399", "#fb7185"];
+    return colors.map((color, i) => {
+      const ang = (i / colors.length) * Math.PI * 2 + 0.4;
+      const d = 46 + (i % 3) * 9;
+      return {
+        color,
+        tx: Math.round(Math.cos(ang) * d),
+        ty: Math.round(Math.sin(ang) * d),
+        i,
+      };
+    });
+  }, []);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[100]" aria-hidden>
+      <style>
+        {particles.map(
+          (p) => `
+          @keyframes ec-send-${seed}-${p.i} {
+            to { transform: translate(${p.tx}px, ${p.ty}px); opacity: 0; }
+          }
+        `
+        ).join("")}
+      </style>
+      {particles.map((p) => (
+        <span
+          key={p.i}
+          className="absolute w-2.5 h-2.5 rounded-full shadow-sm"
+          style={{
+            left: x - 5,
+            top: y - 5,
+            background: p.color,
+            animation: `ec-send-${seed}-${p.i} 0.55s ease-out forwards`,
+          }}
+        />
+      ))}
+    </div>
+  );
 }
 
 export default function EventChatPage() {
@@ -25,6 +74,11 @@ export default function EventChatPage() {
   const [hasFatalError, setHasFatalError] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const stickerBarRef = useRef<HTMLDivElement | null>(null);
+  const [showStickerTray, setShowStickerTray] = useState(false);
+  const [stickerConfetti, setStickerConfetti] = useState<{ seed: number; x: number; y: number } | null>(
+    null
+  );
 
   useEffect(() => {
     if (!user) {
@@ -205,6 +259,23 @@ export default function EventChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    if (!showStickerTray) return;
+    const onDoc = (e: MouseEvent) => {
+      if (stickerBarRef.current && !stickerBarRef.current.contains(e.target as Node)) {
+        setShowStickerTray(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [showStickerTray]);
+
+  useEffect(() => {
+    if (!stickerConfetti) return;
+    const t = window.setTimeout(() => setStickerConfetti(null), 600);
+    return () => clearTimeout(t);
+  }, [stickerConfetti]);
+
   const headerSubtitle = useMemo(() => {
     if (minutesLeft !== null && status === "active") {
       return `Chat closes in ${minutesLeft}m`;
@@ -219,27 +290,11 @@ export default function EventChatPage() {
     return null;
   }
 
-  const handleTabChange = (tab: string) => {
-    switch (tab) {
-      case "home":
-        navigate("/");
-        break;
-      case "plans":
-        navigate("/");
-        break;
-      case "chat":
-        navigate(-1);
-        break;
-      case "profile":
-        navigate("/profile");
-        break;
-      default:
-        navigate("/");
-    }
-  };
-
   return (
     <>
+    {stickerConfetti ? (
+      <StickerSendConfetti x={stickerConfetti.x} y={stickerConfetti.y} seed={stickerConfetti.seed} />
+    ) : null}
     <div className="fixed inset-0 flex flex-col bg-[#06060a] z-40">
       <div
         className="absolute inset-0 pointer-events-none z-0"
@@ -348,9 +403,11 @@ export default function EventChatPage() {
             const displayName = profile?.name || "User";
             const avatarUrl = profile?.avatar_url;
             const isOwn = user?.id === m.user_id;
+            const isSticker = m.message_type === "sticker";
+            const stickerId = isSticker && isEventChatStickerId(m.content) ? m.content : null;
 
             return (
-              <div key={m.id} className={`group flex gap-3 ${isOwn ? "flex-row-reverse" : ""}`}>
+              <div key={m.id} className={`group flex gap-3 items-end ${isOwn ? "flex-row-reverse" : ""}`}>
                 <Avatar className="w-8 h-8 shrink-0 rounded-full border border-white/10 bg-white/5">
                   <AvatarImage src={avatarUrl || undefined} alt={displayName} className="object-cover" />
                   <AvatarFallback className="bg-white/5 flex items-center justify-center">
@@ -359,8 +416,10 @@ export default function EventChatPage() {
                     </span>
                   </AvatarFallback>
                 </Avatar>
-                <div className={`flex-1 max-w-[70%] ${isOwn ? "text-right" : ""}`}>
-                  <div className={`flex items-baseline gap-2 ${isOwn ? "justify-end" : ""}`}>
+                <div
+                  className={`min-w-0 w-fit max-w-[70%] ${isOwn ? "text-right" : "text-left"}`}
+                >
+                  <div className={`flex items-baseline gap-2 flex-wrap ${isOwn ? "justify-end" : "justify-start"}`}>
                     <span className="font-semibold text-sm text-white">
                       {isOwn ? "You" : displayName}
                     </span>
@@ -368,14 +427,29 @@ export default function EventChatPage() {
                       {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
-                  <div className={`flex items-center gap-1 ${isOwn ? "flex-row-reverse" : ""}`}>
-                    <div
-                      className={`text-sm mt-0.5 px-3 py-2 rounded-xl inline-block ${
-                        isOwn ? "bg-[#7c5cfc] text-white" : "bg-white/10 text-white border border-white/10"
-                      }`}
-                    >
-                      <span>{m.content}</span>
-                    </div>
+                  <div className={`mt-0.5 ${isOwn ? "flex justify-end" : "flex justify-start"}`}>
+                    {isSticker && stickerId ? (
+                      <div
+                        className="inline-flex items-center justify-center select-none"
+                        style={{ width: 120, height: 120 }}
+                        role="img"
+                        aria-label={EVENT_CHAT_STICKER_LABELS[stickerId]}
+                      >
+                        <EventStickerGraphic stickerId={stickerId} size={120} className="drop-shadow-md" />
+                      </div>
+                    ) : isSticker ? (
+                      <span className="mt-1 text-2xl opacity-70" aria-label="Sticker">
+                        {m.content}
+                      </span>
+                    ) : (
+                      <div
+                        className={`text-sm px-3 py-2 rounded-xl inline-block text-left ${
+                          isOwn ? "bg-[#7c5cfc] text-white" : "bg-white/10 text-white border border-white/10"
+                        }`}
+                      >
+                        <span>{m.content}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -399,36 +473,84 @@ export default function EventChatPage() {
         </div>
 
         {/* Input bar */}
-        <div className="p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5">
-            <div className="flex items-center gap-2">
-              <Input
-                placeholder="Type a message..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (!inputValue.trim()) return;
-                    void sendMessage(inputValue);
-                    setInputValue("");
-                  }
-                }}
-                className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
-                disabled={isSending || status !== "active"}
-              />
-              <Button
-                size="icon"
-                onClick={async () => {
-                  if (!inputValue.trim()) return;
-                  await sendMessage(inputValue);
-                  setInputValue("");
-                }}
-                disabled={isSending || !inputValue.trim()}
-                className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
-              >
-                {isSending ? <LoadingSpinner size="sm" /> : <span className="text-xs font-semibold">➤</span>}
-              </Button>
+        <div
+          ref={stickerBarRef}
+          className="relative p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5"
+        >
+          {showStickerTray && (
+            <div
+              className="absolute bottom-full left-0 right-0 mb-2 mx-1 rounded-2xl border border-white/10 bg-[#12121a]/95 backdrop-blur-md shadow-lg p-3 z-20"
+              role="dialog"
+              aria-label="Sticker picker"
+            >
+              <p className="text-[10px] uppercase tracking-wider text-white/40 mb-2 px-0.5">Event stickers</p>
+              <div className="grid grid-cols-4 gap-2">
+                {EVENT_CHAT_STICKER_IDS.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className="flex h-20 w-20 mx-auto items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 shadow-inner hover:bg-white/25 active:scale-95 transition-all disabled:opacity-40"
+                    disabled={isSending || status !== "active"}
+                    onClick={(e) => {
+                      const r = e.currentTarget.getBoundingClientRect();
+                      setStickerConfetti((prev) => ({
+                        seed: (prev?.seed ?? 0) + 1,
+                        x: r.left + r.width / 2,
+                        y: r.top + r.height / 2,
+                      }));
+                      void sendMessage(id, "sticker");
+                      setShowStickerTray(false);
+                    }}
+                    aria-label={`Send ${EVENT_CHAT_STICKER_LABELS[id]} sticker`}
+                  >
+                    <EventStickerGraphic stickerId={id} size={68} />
+                  </button>
+                ))}
+              </div>
             </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+              onClick={() => setShowStickerTray((v) => !v)}
+              disabled={isSending || status !== "active"}
+              aria-label="Stickers"
+              aria-expanded={showStickerTray}
+              aria-haspopup="dialog"
+            >
+              <Smile className="w-5 h-5" />
+            </Button>
+            <Input
+              placeholder="Type a message..."
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!inputValue.trim()) return;
+                  void sendMessage(inputValue);
+                  setInputValue("");
+                }
+              }}
+              className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
+              disabled={isSending || status !== "active"}
+            />
+            <Button
+              size="icon"
+              onClick={async () => {
+                if (!inputValue.trim()) return;
+                await sendMessage(inputValue);
+                setInputValue("");
+              }}
+              disabled={isSending || !inputValue.trim()}
+              className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
+            >
+              {isSending ? <LoadingSpinner size="sm" /> : <span className="text-xs font-semibold">➤</span>}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

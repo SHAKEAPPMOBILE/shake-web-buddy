@@ -421,22 +421,28 @@ export type Database = {
           id: string
           event_id: string
           user_id: string
-          message: string
+          content: string
           created_at: string
+          expires_at: string
+          message_type: string
         }
         Insert: {
           id?: string
           event_id: string
           user_id: string
-          message: string
+          content: string
           created_at?: string
+          expires_at: string
+          message_type?: string
         }
         Update: {
           id?: string
           event_id?: string
           user_id?: string
-          message?: string
+          content?: string
           created_at?: string
+          expires_at?: string
+          message_type?: string
         }
         Relationships: [
           {
