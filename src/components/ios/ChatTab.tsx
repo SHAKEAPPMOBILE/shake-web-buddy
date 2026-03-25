@@ -453,7 +453,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+      <div className="flex flex-col items-center justify-center h-full px-6 text-center bg-white">
         <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
           <MessageSquare className="w-10 h-10 text-muted-foreground" />
         </div>
@@ -498,10 +498,10 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#121417]">
+    <div className="flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2e33] bg-[#121417] shrink-0">
-        <h2 className="text-lg font-display font-bold text-white">{t('chat.title')}</h2>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 bg-white shrink-0">
+        <h2 className="text-lg font-display font-bold text-neutral-900">{t('chat.title')}</h2>
         <div className="flex items-center gap-2">
           {/* City Filter */}
           {availableCities.length > 1 && (
@@ -535,7 +535,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
       </div>
 
       {/* Activities List */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#121417] min-h-0">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-white min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
@@ -547,14 +547,14 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
             </div>
             {activities.length === 0 ? (
               <>
-                <p className="text-[#9ca3af] mb-1">{t('common.noActiveChats')}</p>
-                <p className="text-sm text-[#9ca3af]/80">
+                <p className="text-neutral-600 mb-1">{t('common.noActiveChats')}</p>
+                <p className="text-sm text-neutral-500">
                   {t('common.joinActivityToChat')}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-[#9ca3af]">{t('common.noChatsInCity', { city: cityFilter })}</p>
+                <p className="text-neutral-600">{t('common.noChatsInCity', { city: cityFilter })}</p>
                 <button
                   onClick={() => setCityFilter("all")}
                   className="mt-3 text-sm text-[#a0c1f9] hover:text-[#b8d0fb] hover:underline"
