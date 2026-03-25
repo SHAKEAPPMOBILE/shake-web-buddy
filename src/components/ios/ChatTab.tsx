@@ -45,9 +45,16 @@ interface ChatTabProps {
   onChatViewChange?: (isInChat: boolean) => void;
   pendingActivity?: { activityType: string; city: string } | null;
   onPendingActivityHandled?: () => void;
+  /** False while another bottom tab is selected; refetch when user returns so new memberships appear. */
+  isActiveTab?: boolean;
 }
 
-export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHandled }: ChatTabProps = {}) {
+export function ChatTab({
+  onChatViewChange,
+  pendingActivity,
+  onPendingActivityHandled,
+  isActiveTab = true,
+}: ChatTabProps = {}) {
   const { t, i18n } = useTranslation();
   const { selectedLanguage } = useLanguage();
   const { user } = useAuth();
@@ -331,9 +338,11 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
     }
   }, [user]);
 
-  // Initial fetch and realtime subscription
+  // Fetch when tab is visible; refetch when returning from another tab (post-payment membership race).
   useEffect(() => {
-    fetchActivities();
+    if (!isActiveTab) return;
+
+    void fetchActivities();
 
     if (!user) return;
 
@@ -369,7 +378,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchActivities, user]);
+  }, [fetchActivities, user, isActiveTab]);
 
   // Persist city filter to localStorage
   useEffect(() => {
@@ -507,9 +516,15 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
           {availableCities.length > 1 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1e2124] text-[#e4e4e7] rounded-full text-sm font-medium border border-[#3f444c]">
-                  <Plane className="w-4 h-4 shrink-0 text-violet-400" aria-hidden />
-                  {cityFilter !== "all" && <span>{cityFilter}</span>}
+                <button
+                  type="button"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium text-white border-0 shadow-sm max-w-[min(50vw,200px)]"
+                  style={{
+                    background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+                  }}
+                >
+                  <Plane className="w-4 h-4 shrink-0 text-white" aria-hidden />
+                  {cityFilter !== "all" && <span className="truncate">{cityFilter}</span>}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-card border-border z-50">

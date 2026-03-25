@@ -355,6 +355,7 @@ export function IOSAppLayout() {
             onChatViewChange={handleChatViewChange} 
             pendingActivity={pendingChatActivity}
             onPendingActivityHandled={() => setPendingChatActivity(null)}
+            isActiveTab={activeTab === "chat"}
           />
         );
       case "profile":

@@ -117,19 +117,6 @@ export default function EventChatPage() {
       let willRetry = false;
       setIsLoadingMeta(true);
       try {
-        // 1) First check if user is in event_chat_members for this event
-        const { data: member, error: memberError } = await supabase
-          .from("event_chat_members")
-          .select("event_id, paid_at, expires_at")
-          .eq("event_id", eventId)
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (cancelled) return;
-        if (memberError) {
-          console.log("[EventChatPage] Error checking event_chat_members", memberError);
-        }
-
         const resolveMembershipExpiry = (m: { expires_at?: string | null; paid_at?: string | null } | null) => {
           if (!m) return null;
           if (m.expires_at) {
@@ -143,37 +130,48 @@ export default function EventChatPage() {
           return null;
         };
 
-        if (!member) {
-          // Wait 3 seconds before concluding user is not a member, to allow frontend upsert to complete
-          await new Promise((resolve) => setTimeout(resolve, 3000));
+        /** Post-payment race: membership row may not be visible on first read. */
+        const MEMBERSHIP_POLL_ATTEMPTS = 5;
+        const MEMBERSHIP_POLL_MS = 1000;
+        const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-          const { data: recheckMember } = await supabase
+        let member: { event_id: string; paid_at?: string | null; expires_at?: string | null } | null = null;
+        for (let attempt = 0; attempt < MEMBERSHIP_POLL_ATTEMPTS; attempt++) {
+          if (cancelled) return;
+          const { data: row, error: memberError } = await supabase
             .from("event_chat_members")
             .select("event_id, paid_at, expires_at")
             .eq("event_id", eventId)
             .eq("user_id", user.id)
             .maybeSingle();
 
-          if (!recheckMember) {
-            try {
-              sessionStorage.setItem("eventsEntrySource", "home");
-            } catch {
-              /* ignore */
-            }
-            navigate("/events", { replace: true });
-            return;
+          if (cancelled) return;
+          if (memberError) {
+            console.log("[EventChatPage] Error checking event_chat_members", attempt + 1, memberError);
+            if (attempt < MEMBERSHIP_POLL_ATTEMPTS - 1) await sleep(MEMBERSHIP_POLL_MS);
+            continue;
           }
-          const recheckExpiry = resolveMembershipExpiry(recheckMember);
-          if (recheckExpiry && recheckExpiry.getTime() <= Date.now()) {
-            setIsLoadingMeta(false);
-            return;
+          if (row) {
+            member = row;
+            break;
           }
-        } else {
-          const memberExpiry = resolveMembershipExpiry(member);
-          if (memberExpiry && memberExpiry.getTime() <= Date.now()) {
-            setIsLoadingMeta(false);
-            return;
+          if (attempt < MEMBERSHIP_POLL_ATTEMPTS - 1) await sleep(MEMBERSHIP_POLL_MS);
+        }
+
+        if (!member) {
+          try {
+            sessionStorage.setItem("eventsEntrySource", "home");
+          } catch {
+            /* ignore */
           }
+          navigate("/events", { replace: true });
+          return;
+        }
+
+        const memberExpiry = resolveMembershipExpiry(member);
+        if (memberExpiry && memberExpiry.getTime() <= Date.now()) {
+          setIsLoadingMeta(false);
+          return;
         }
 
         // 2) User is a member — fetch event_chats

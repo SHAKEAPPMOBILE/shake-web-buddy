@@ -17,6 +17,14 @@ export interface EventChatMessage {
 
 export type ChatStatus = "loading" | "expired" | "locked" | "active" | "error";
 
+/** Post-payment race: webhook / client upsert may lag behind navigation to the chat. */
+const EVENT_MEMBERSHIP_POLL_ATTEMPTS = 5;
+const EVENT_MEMBERSHIP_POLL_MS = 1000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 interface UseEventChatOptions {
   eventId: string;
   eventName: string;
@@ -84,22 +92,39 @@ export function useEventChat({ eventId, eventName, eventStartsAt }: UseEventChat
     if (isChatExpired()) { setStatus("expired"); return; }
 
     let member: { id?: string; expires_at?: string | null; paid_at?: string | null } | null = null;
-    try {
-      const { data, error: memberError } = await supabase
-        .from("event_chat_members").select("event_id, user_id, expires_at, paid_at")
-        .eq("user_id", user.id).eq("event_id", eventId).maybeSingle();
-      if (memberError) {
-        console.warn("[useEventChat] event_chat_members membership query failed; defaulting to locked", memberError);
-        setStatus("locked");
-        return;
+    let lastMemberError: Error | { message?: string } | null = null;
+    for (let attempt = 0; attempt < EVENT_MEMBERSHIP_POLL_ATTEMPTS; attempt++) {
+      try {
+        const { data, error: memberError } = await supabase
+          .from("event_chat_members")
+          .select("event_id, user_id, expires_at, paid_at")
+          .eq("user_id", user.id)
+          .eq("event_id", eventId)
+          .maybeSingle();
+        lastMemberError = memberError ?? null;
+        if (memberError) {
+          console.warn("[useEventChat] event_chat_members membership query attempt", attempt + 1, memberError);
+          if (attempt < EVENT_MEMBERSHIP_POLL_ATTEMPTS - 1) await sleep(EVENT_MEMBERSHIP_POLL_MS);
+          continue;
+        }
+        if (data) {
+          member = data;
+          break;
+        }
+        if (attempt < EVENT_MEMBERSHIP_POLL_ATTEMPTS - 1) await sleep(EVENT_MEMBERSHIP_POLL_MS);
+      } catch (err) {
+        lastMemberError = err instanceof Error ? err : { message: String(err) };
+        console.warn("[useEventChat] event_chat_members membership query threw", attempt + 1, err);
+        if (attempt < EVENT_MEMBERSHIP_POLL_ATTEMPTS - 1) await sleep(EVENT_MEMBERSHIP_POLL_MS);
       }
-      member = data;
-    } catch (err) {
-      console.warn("[useEventChat] event_chat_members membership query threw; defaulting to locked", err);
+    }
+    if (!member) {
+      if (lastMemberError) {
+        console.warn("[useEventChat] event_chat_members: no row after retries; locked", lastMemberError);
+      }
       setStatus("locked");
       return;
     }
-    if (!member) { setStatus("locked"); return; }
     const memberExpiry = resolveMembershipExpiry(member);
     if (memberExpiry && memberExpiry.getTime() <= Date.now()) {
       setStatus("expired");
