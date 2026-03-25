@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   ChevronLeft,
@@ -369,6 +370,7 @@ function EventDetail({
   onClose,
   membershipVersion = 0,
   onJoinedEvent,
+  eventsEntrySource = "home",
 }: {
   event: EventItem;
   onClose: () => void;
@@ -376,6 +378,8 @@ function EventDetail({
   membershipVersion?: number;
   /** After user gains membership — show confirmation; do not navigate to chat here. */
   onJoinedEvent: (event: EventItem) => void;
+  /** Tab user opened Near You from (survives Stripe via sessionStorage). */
+  eventsEntrySource?: "home" | "plans";
 }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -489,7 +493,15 @@ function EventDetail({
       }
 
       if (data?.url) {
-        window.location.href = data.url;
+        try {
+          sessionStorage.setItem("eventsEntrySource", eventsEntrySource);
+        } catch {
+          /* ignore quota / private mode */
+        }
+        flushSync(() => {
+          navigate("/events", { replace: true, state: { eventsEntrySource } });
+        });
+        window.location.replace(data.url);
       } else {
         toast.error("Failed to create payment session");
       }
@@ -619,7 +631,15 @@ function EventDetail({
   );
 }
 
-export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
+const EVENTS_ENTRY_STORAGE_KEY = "eventsEntrySource";
+
+export default function EventsPage({
+  onClose,
+  eventsEntrySource: eventsEntrySourceProp = "home",
+}: {
+  onClose?: (tab: "home" | "plans") => void;
+  eventsEntrySource?: "home" | "plans";
+} = {}) {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -637,6 +657,46 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
 
   const chatUnlockedId = searchParams.get("chat_unlocked") || searchParams.get("event_id");
   const paymentSuccess = searchParams.get("payment_success") === "true";
+  const paymentCancelled = searchParams.get("payment_cancelled") === "true";
+
+  const resolveEventsBackTab = useCallback((): "home" | "plans" => {
+    let fromStorage: "home" | "plans" | null = null;
+    try {
+      const raw = sessionStorage.getItem(EVENTS_ENTRY_STORAGE_KEY);
+      if (raw === "plans" || raw === "home") fromStorage = raw;
+    } catch {
+      /* ignore */
+    }
+    const tab = fromStorage ?? eventsEntrySourceProp ?? "home";
+    return tab === "plans" ? "plans" : "home";
+  }, [eventsEntrySourceProp]);
+
+  const handleEventsBack = useCallback(() => {
+    const tab = resolveEventsBackTab();
+    try {
+      sessionStorage.removeItem(EVENTS_ENTRY_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    if (onClose) {
+      onClose(tab);
+      return;
+    }
+    navigate("/", { replace: true, state: { activeTab: tab } });
+  }, [onClose, navigate, resolveEventsBackTab]);
+
+  useEffect(() => {
+    if (!paymentCancelled) return;
+    toast.info("Payment cancelled");
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("payment_cancelled");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [paymentCancelled, setSearchParams]);
 
   /** Deep link: ?event_id=… without payment — open detail when list contains the event */
   useEffect(() => {
@@ -853,7 +913,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => (onClose ? onClose() : navigate(-1))}
+              onClick={handleEventsBack}
               className="shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Back"
             >
@@ -1054,6 +1114,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
           event={selected}
           onClose={() => setSelected(null)}
           membershipVersion={chatMembershipVersion}
+          eventsEntrySource={resolveEventsBackTab()}
           onJoinedEvent={(ev) => {
             setSelected(null);
             setJoinConfirmationEvent(ev);

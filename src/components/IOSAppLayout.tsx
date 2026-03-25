@@ -42,6 +42,7 @@ export function IOSAppLayout() {
   const [isHeroShaking, setIsHeroShaking] = useState(false);
   const [isInFullPageChat, setIsInFullPageChat] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
+  const [eventsEntrySource, setEventsEntrySource] = useState<"home" | "plans">("home");
   
   // State for navigating to chat tab with a specific activity
   const [pendingChatActivity, setPendingChatActivity] = useState<{ activityType: string; city: string } | null>(null);
@@ -88,6 +89,7 @@ export function IOSAppLayout() {
       openTab?: string;
       openSubscription?: boolean;
       openEvents?: boolean;
+      activeTab?: string;
     } | null;
     if (!state) return;
 
@@ -95,6 +97,14 @@ export function IOSAppLayout() {
     if (state.openTab === "profile" && state.openSubscription) {
       setActiveTab("profile");
       setOpenSubscriptionOnMount(true);
+      shouldClear = true;
+    }
+    if (state.activeTab === "plans") {
+      setActiveTab("plans");
+      shouldClear = true;
+    }
+    if (state.activeTab === "home") {
+      setActiveTab("home");
       shouldClear = true;
     }
     if (state.openEvents) {
@@ -307,6 +317,16 @@ export function IOSAppLayout() {
     setIsInFullPageChat(isInChat);
   }, []);
 
+  const openNearYou = useCallback((from: "home" | "plans") => {
+    try {
+      sessionStorage.setItem("eventsEntrySource", from);
+    } catch {
+      /* ignore */
+    }
+    setEventsEntrySource(from);
+    setShowEvents(true);
+  }, []);
+
   const renderTab = () => {
     switch (activeTab) {
       case "home":
@@ -316,7 +336,7 @@ export function IOSAppLayout() {
             onSelectActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
             isShaking={isHeroShaking}
-            onOpenEvents={() => setShowEvents(true)}
+            onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
           />
         );
@@ -326,7 +346,7 @@ export function IOSAppLayout() {
             onChatViewChange={handleChatViewChange}
             pendingPaidActivityId={pendingPaidActivityId}
             onPendingPaidActivityHandled={() => setPendingPaidActivityId(null)}
-            onOpenEvents={() => setShowEvents(true)}
+            onOpenEvents={() => openNearYou("plans")}
           />
         );
       case "chat":
@@ -346,7 +366,7 @@ export function IOSAppLayout() {
               onSelectActivity={handleHomeActivitySelect}
               onCloseActivities={() => setShowHomeActivities(false)}
               isShaking={isHeroShaking}
-              onOpenEvents={() => setShowEvents(true)}
+              onOpenEvents={() => openNearYou("home")}
               onUpgradeClick={() => setShowPremiumDialog(true)}
             />
           );
@@ -365,7 +385,7 @@ export function IOSAppLayout() {
             onSelectActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
             isShaking={isHeroShaking}
-            onOpenEvents={() => setShowEvents(true)}
+            onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
           />
         );
@@ -408,7 +428,13 @@ export function IOSAppLayout() {
       >
         <div className="h-full">
           {showEvents ? (
-            <EventsPage onClose={() => setShowEvents(false)} />
+            <EventsPage
+              eventsEntrySource={eventsEntrySource}
+              onClose={(tab) => {
+                setShowEvents(false);
+                setActiveTab(tab);
+              }}
+            />
           ) : (
             renderTab()
           )}

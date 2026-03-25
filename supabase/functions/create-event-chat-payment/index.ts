@@ -121,8 +121,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${origin}/events?payment_success=true&event_id=${encodeURIComponent(eventId)}&chat_unlocked=${encodeURIComponent(eventId)}`,
-      cancel_url: `${origin}/events`,
+      success_url: `${origin}/events/return?payment_success=true&event_id=${encodeURIComponent(eventId)}&chat_unlocked=${encodeURIComponent(eventId)}`,
+      cancel_url: `${origin}/events/return?payment_cancelled=true`,
       customer_email: payerEmail || undefined,
       metadata: {
         event_id: eventId,

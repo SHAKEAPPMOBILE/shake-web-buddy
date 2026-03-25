@@ -155,6 +155,11 @@ export default function EventChatPage() {
             .maybeSingle();
 
           if (!recheckMember) {
+            try {
+              sessionStorage.setItem("eventsEntrySource", "home");
+            } catch {
+              /* ignore */
+            }
             navigate("/events", { replace: true });
             return;
           }

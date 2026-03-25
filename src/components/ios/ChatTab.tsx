@@ -508,7 +508,7 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1e2124] text-[#e4e4e7] rounded-full text-sm font-medium border border-[#3f444c]">
-                  <Plane className="w-4 h-4" />
+                  <Plane className="w-4 h-4 shrink-0 text-violet-400" aria-hidden />
                   {cityFilter !== "all" && <span>{cityFilter}</span>}
                 </button>
               </DropdownMenuTrigger>
@@ -599,7 +599,13 @@ export function ChatTab({ onChatViewChange, pendingActivity, onPendingActivityHa
 
               <div className="flex items-start gap-3.5">
                 <div className="relative shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-[#a0c1f9] flex items-center justify-center shadow-sm">
+                  <div
+                    className={
+                      activity.is_event
+                        ? "w-12 h-12 rounded-full bg-[#a0c1f9] flex items-center justify-center shadow-sm"
+                        : "w-12 h-12 rounded-full bg-white border border-neutral-200 shadow-md flex items-center justify-center text-2xl"
+                    }
+                  >
                     {activity.is_event ? (
                       <Ticket className="w-6 h-6 text-white drop-shadow-sm" strokeWidth={2.25} />
                     ) : (
