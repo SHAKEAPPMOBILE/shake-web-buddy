@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logPostgrestError } from "@/lib/supabaseErrorLog";
 
 export function useOnboarding(userId: string | undefined, didJustSignUp: boolean) {
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -27,18 +28,21 @@ export function useOnboarding(userId: string | undefined, didJustSignUp: boolean
       try {
         const { data, error } = await supabase
           .from("profiles_private")
-          .select("onboarding_completed")
+          .select("*")
           .eq("user_id", userId)
           .maybeSingle();
 
         if (cancelled) return;
 
         if (error) {
-          console.error("Error checking onboarding status:", error);
+          logPostgrestError("useOnboarding profiles_private select", error);
           setShowOnboarding(false);
         } else if (data) {
-          // Show onboarding only if not completed
-          setShowOnboarding(!data.onboarding_completed);
+          if (typeof data.onboarding_completed === "boolean") {
+            setShowOnboarding(!data.onboarding_completed);
+          } else {
+            setShowOnboarding(false);
+          }
         } else {
           // No profile yet - don't show onboarding (profile will be created during signup)
           setShowOnboarding(false);
@@ -73,7 +77,7 @@ export function useOnboarding(userId: string | undefined, didJustSignUp: boolean
         .eq("user_id", userId);
 
       if (error) {
-        console.error("Error completing onboarding:", error);
+        logPostgrestError("useOnboarding profiles_private update complete", error);
       }
     } catch (err) {
       console.error("Failed to complete onboarding:", err);
@@ -92,7 +96,7 @@ export function useOnboarding(userId: string | undefined, didJustSignUp: boolean
         .eq("user_id", userId);
 
       if (error) {
-        console.error("Error resetting onboarding:", error);
+        logPostgrestError("useOnboarding profiles_private update reset", error);
         return;
       }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logPostgrestError } from "@/lib/supabaseErrorLog";
 
 interface WelcomeBonusState {
   isComplete: boolean;
@@ -24,18 +25,22 @@ export function useWelcomeBonus(userId: string | undefined) {
 
     try {
       // Fetch both profiles
-      const [{ data: profile }, { data: privateProfile }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("name, avatar_url, nationality, occupation")
-          .eq("user_id", userId)
-          .maybeSingle(),
-        supabase
-          .from("profiles_private")
-          .select("date_of_birth, billing_email, welcome_bonus_claimed")
-          .eq("user_id", userId)
-          .maybeSingle(),
-      ]);
+      const [{ data: profile, error: profileError }, { data: privateProfile, error: privateError }] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select("name, avatar_url, nationality, occupation")
+            .eq("user_id", userId)
+            .maybeSingle(),
+          supabase
+            .from("profiles_private")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle(),
+        ]);
+
+      if (profileError) logPostgrestError("useWelcomeBonus profiles select", profileError);
+      if (privateError) logPostgrestError("useWelcomeBonus profiles_private select", privateError);
 
       const missing: string[] = [];
       

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePushNotifications } from "./usePushNotifications";
+import { logPostgrestError } from "@/lib/supabaseErrorLog";
 
 export function usePrivateMessageNotifications(
   onMessageNotification?: (senderId: string, senderName: string, message: string) => void
@@ -16,13 +17,17 @@ export function usePrivateMessageNotifications(
     if (!user) return;
 
     const fetchPreference = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles_private")
-        .select("push_notifications_enabled")
+        .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (data) {
+      if (error) {
+        logPostgrestError("usePrivateMessageNotifications profiles_private", error);
+        return;
+      }
+      if (data && typeof data.push_notifications_enabled === "boolean") {
         setPushEnabled(data.push_notifications_enabled);
       }
     };

@@ -3,6 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { EVENT_CHAT_STICKER_SET } from "@/lib/eventChatStickers";
 import { enqueuePendingEventChat } from "@/lib/pendingEventChat";
+import {
+  isEventChatMembershipExplicitlyExpired,
+  resolveEventChatAccessExpiryForUi,
+} from "@/lib/eventChatMembership";
 
 export interface EventChatMessage {
   id: string;
@@ -17,6 +21,10 @@ export interface EventChatMessage {
 }
 
 export type ChatStatus = "loading" | "expired" | "locked" | "active" | "error";
+
+function logEventChat(hook: string, message: string, data?: Record<string, unknown>) {
+  console.log(`[useEventChat:${hook}] ${message}`, data ?? "");
+}
 
 interface UseEventChatOptions {
   eventId: string;
@@ -57,41 +65,55 @@ export function useEventChat({
   const senderMapRef = useRef(senderMap);
   senderMapRef.current = senderMap;
 
+  const setChatStatus = useCallback((next: ChatStatus, reason: string) => {
+    logEventChat("setStatus", reason, { next, eventId });
+    setStatus(next);
+  }, [eventId]);
+
+  useEffect(() => {
+    setStatus("loading");
+    setMessages([]);
+    setSenderMap({});
+    setMemberCount(null);
+    setExpiresAt(null);
+    setMinutesLeft(null);
+  }, [eventId]);
+
   // Must be stable across renders: a new Date() each tick was changing loadChat’s identity and
   // re-running the fetch + realtime effect every frame (flicker).
   const computedExpiresAt = useMemo(
     () => new Date(new Date(eventStartsAt).getTime() + 12 * 60 * 60 * 1000),
     [eventStartsAt]
   );
-  const isChatExpired = () => new Date() > computedExpiresAt;
-  const resolveMembershipExpiry = (membership: { expires_at?: string | null; paid_at?: string | null }) => {
-    if (membership.expires_at) {
-      const expires = new Date(membership.expires_at);
-      if (!isNaN(expires.getTime())) return expires;
-    }
-    if (membership.paid_at) {
-      const paidAt = new Date(membership.paid_at);
-      if (!isNaN(paidAt.getTime())) return new Date(paidAt.getTime() + 24 * 60 * 60 * 1000);
-    }
-    return null;
-  };
 
-  const startCountdown = useCallback((expiry: Date) => {
+  const enforceTimerExpiryRef = useRef(true);
+
+  const startCountdown = useCallback((expiry: Date, enforceTimerExpiry: boolean) => {
+    enforceTimerExpiryRef.current = enforceTimerExpiry;
     if (timerRef.current) clearInterval(timerRef.current);
     const tick = () => {
       const diff = Math.max(0, expiry.getTime() - Date.now());
       setMinutesLeft(Math.floor(diff / 60000));
-      if (diff <= 0) { clearInterval(timerRef.current!); setStatus("expired"); }
+      if (diff <= 0 && enforceTimerExpiryRef.current) {
+        clearInterval(timerRef.current!);
+        logEventChat("countdown", "Timer reached zero → expired", {
+          eventId,
+          expiry: expiry.toISOString(),
+        });
+        setChatStatus("expired", "countdown tick: access window ended");
+      }
     };
     tick();
     timerRef.current = setInterval(tick, 30_000);
-  }, []);
+  }, [eventId, setChatStatus]);
 
   const loadChat = useCallback(async () => {
-    if (!user) { setStatus("locked"); return; }
-    if (isChatExpired()) { setStatus("expired"); return; }
+    if (!user) {
+      setChatStatus("locked", "loadChat: no user");
+      return;
+    }
 
-    setStatus("loading");
+    setChatStatus("loading", "loadChat: start (membership check first; no early isChatExpired on props)");
 
     const { data: member, error: memberError } = await supabase
       .from("event_chat_members")
@@ -104,25 +126,37 @@ export function useEventChat({
       console.warn("[useEventChat] event_chat_members query failed", memberError);
     }
     if (!member) {
-      setStatus("locked");
-      return;
-    }
-    const memberExpiry = resolveMembershipExpiry(member);
-    if (memberExpiry && memberExpiry.getTime() <= Date.now()) {
-      setStatus("expired");
+      logEventChat("loadChat", "No membership row → locked", { eventId, userId: user.id });
+      setChatStatus("locked", "loadChat: no event_chat_members row");
       return;
     }
 
-    const effectiveExpiry = memberExpiry ?? computedExpiresAt;
-    setExpiresAt(effectiveExpiry);
-    startCountdown(effectiveExpiry);
+    if (isEventChatMembershipExplicitlyExpired(member)) {
+      logEventChat("loadChat", "expires_at set and in past → expired", {
+        eventId,
+        expires_at: member.expires_at,
+      });
+      setChatStatus("expired", "loadChat: membership expires_at in past");
+      return;
+    }
+
+    const { expiryForCountdown, enforceTimerExpiry } = resolveEventChatAccessExpiryForUi(member, computedExpiresAt);
+    logEventChat("loadChat", "access window for UI", {
+      eventId,
+      expiryForCountdown: expiryForCountdown.toISOString(),
+      enforceTimerExpiry,
+      memberExpiresAt: member.expires_at ?? null,
+    });
+
+    setExpiresAt(expiryForCountdown);
+    startCountdown(expiryForCountdown, enforceTimerExpiry);
     // Let the user compose immediately; message/history fetch can lag without blocking UI.
-    setStatus("active");
+    setChatStatus("active", "loadChat: member valid, chat active");
     enqueuePendingEventChat({
       event_id: eventId,
       event_name: eventName?.trim() || "Event chat",
       event_starts_at: eventStartsAt,
-      expires_at: effectiveExpiry.toISOString(),
+      expires_at: expiryForCountdown.toISOString(),
     });
 
     try {
@@ -169,8 +203,7 @@ export function useEventChat({
       const { count, error: countError } = await supabase
         .from("event_chat_members")
         .select("*", { count: "exact", head: true })
-        .eq("event_id", eventId)
-        .gt("expires_at", new Date().toISOString());
+        .eq("event_id", eventId);
       if (countError) {
         console.warn("[useEventChat] event_chat_members count query failed; hiding count", countError);
         setMemberCount(null);
@@ -181,7 +214,7 @@ export function useEventChat({
       console.warn("[useEventChat] event_chat_members count query threw; hiding count", err);
       setMemberCount(null);
     }
-  }, [user, eventId, eventName, eventStartsAt, computedExpiresAt, startCountdown]);
+  }, [user, eventId, eventName, eventStartsAt, computedExpiresAt, startCountdown, setChatStatus]);
 
   const subscribeRealtime = useCallback(() => {
     if (channelRef.current) supabase.removeChannel(channelRef.current);
@@ -214,19 +247,28 @@ export function useEventChat({
   }, [eventId]);
 
   useEffect(() => {
-    if (!loadEnabled) return;
+    if (!loadEnabled) {
+      logEventChat("effect", "loadChat skipped: loadEnabled=false", { eventId });
+      return;
+    }
+    logEventChat("effect", "loadChat effect run", { eventId, loadEnabled });
     loadChat();
     return () => {
+      logEventChat("effect cleanup", "clear channel + countdown timer", { eventId });
       if (channelRef.current) supabase.removeChannel(channelRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [loadEnabled, loadChat]);
+  }, [loadEnabled, loadChat, eventId]);
 
   useEffect(() => {
     if (!loadEnabled || status !== "active") return;
+    logEventChat("effect", "subscribeRealtime", { eventId, status });
     subscribeRealtime();
-    return () => { if (channelRef.current) supabase.removeChannel(channelRef.current); };
-  }, [loadEnabled, status, subscribeRealtime]);
+    return () => {
+      logEventChat("effect cleanup", "remove realtime channel", { eventId });
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
+    };
+  }, [loadEnabled, status, subscribeRealtime, eventId]);
 
   const sendMessage = useCallback(
     async (content: string, messageType: "text" | "sticker" | "video" = "text") => {
@@ -287,7 +329,13 @@ export function useEventChat({
 
   const unlockChat = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "Not signed in" };
-    if (isChatExpired()) return { success: false, error: "Event has ended" };
+    if (new Date() > computedExpiresAt) {
+      logEventChat("unlockChat", "blocked: event window over (computed from eventStartsAt)", {
+        eventStartsAt,
+        computedExpiresAt: computedExpiresAt.toISOString(),
+      });
+      return { success: false, error: "Event has ended" };
+    }
     const paidAtIso = new Date().toISOString();
     const parsedStart = eventStartsAt ? new Date(eventStartsAt) : null;
     const hasValidStart = parsedStart && !isNaN(parsedStart.getTime());
@@ -316,7 +364,7 @@ export function useEventChat({
     });
     await loadChat();
     return { success: true };
-  }, [user, eventId, eventName, eventStartsAt, loadChat]);
+  }, [user, eventId, eventName, eventStartsAt, computedExpiresAt, loadChat]);
 
   return { status, messages, senderMap, memberCount, expiresAt, minutesLeft, sendMessage, unlockChat, isSending };
 }

@@ -7,6 +7,8 @@ export type EventChatLocationState = {
     city?: string;
     venue?: string;
   };
+  /** Where to return when leaving chat so Near You state / refetch is correct (embedded vs /events). */
+  eventsReturn?: { mode: "standalone_events" | "home_near_you" };
 };
 
 export function buildEventChatNavigateState(ev: {

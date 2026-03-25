@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { addGroupChatAccess, hasGroupChatAccess } from "@/lib/groupChatAccess";
 import { buildEventChatNavigateState } from "@/lib/eventChatNavigation";
+import { eventChatMembershipGrantsAccess } from "@/lib/eventChatMembership";
 import { enqueuePendingEventChat } from "@/lib/pendingEventChat";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { EventGroupChatBanner3D } from "@/components/EventGroupChatBanner3D";
@@ -255,19 +256,6 @@ function minimalEventItemForPayment(eventId: string, cityFallback: string): Even
   };
 }
 
-function resolveMembershipExpiry(m: { expires_at?: string | null; paid_at?: string | null } | null) {
-  if (!m) return null;
-  if (m.expires_at) {
-    const d = new Date(m.expires_at);
-    if (!isNaN(d.getTime())) return d;
-  }
-  if (m.paid_at) {
-    const d = new Date(m.paid_at);
-    if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
-  }
-  return null;
-}
-
 /** Speedrun-style banner: flowing iridescent gradient, copy left; optional 3D note on the right for music events */
 function EventGroupChatEnterVisual({
   description,
@@ -373,6 +361,7 @@ function EventDetail({
   membershipVersion = 0,
   onJoinedEvent,
   eventsEntrySource = "home",
+  eventsReturnMode = "standalone_events",
 }: {
   event: EventItem;
   onClose: () => void;
@@ -382,6 +371,8 @@ function EventDetail({
   onJoinedEvent: (event: EventItem) => void;
   /** Tab user opened Near You from (survives Stripe via sessionStorage). */
   eventsEntrySource?: "home" | "plans";
+  /** So event chat can return to embedded Near You vs standalone /events (layout remount loses overlay state). */
+  eventsReturnMode?: "standalone_events" | "home_near_you";
 }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -422,8 +413,7 @@ function EventDetail({
         setMembershipLoading(false);
         return;
       }
-      const expiry = resolveMembershipExpiry(existingMember);
-      const active = !!(existingMember && (!expiry || expiry.getTime() > Date.now()));
+      const active = eventChatMembershipGrantsAccess(existingMember);
       setHasActiveMembership(active);
       if (active && user?.id) {
         addGroupChatAccess(user.id, event.id);
@@ -458,13 +448,10 @@ function EventDetail({
         console.log("[EventsPage] Error checking existing event_chat_members", memberError);
       }
 
-      if (existingMember) {
-        const expiry = resolveMembershipExpiry(existingMember);
-        if (!expiry || expiry.getTime() > Date.now()) {
-          if (user?.id) addGroupChatAccess(user.id, event.id);
-          onJoinedEvent(event);
-          return;
-        }
+      if (existingMember && eventChatMembershipGrantsAccess(existingMember)) {
+        if (user?.id) addGroupChatAccess(user.id, event.id);
+        onJoinedEvent(event);
+        return;
       }
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -522,7 +509,12 @@ function EventDetail({
   };
 
   const handleOpenChat = () => {
-    navigate(`/chat/event/${event.id}`, { state: buildEventChatNavigateState(event) });
+    navigate(`/chat/event/${event.id}`, {
+      state: {
+        ...buildEventChatNavigateState(event),
+        eventsReturn: { mode: eventsReturnMode },
+      },
+    });
   };
 
   return (
@@ -644,6 +636,8 @@ export default function EventsPage({
 } = {}) {
   const navigate = useNavigate();
   const location = useLocation();
+  const isStandaloneEventsRoute = location.pathname === "/events";
+  const standaloneListFetchKey = isStandaloneEventsRoute ? location.key : "";
   const [searchParams, setSearchParams] = useSearchParams();
   const joiningEventChatRef = useRef(false);
   const paymentReturnHandledRef = useRef<string | null>(null);
@@ -878,7 +872,13 @@ export default function EventsPage({
     return () => {
       cancelled = true;
     };
-  }, [selectedCity, isCityLoading, isCityOutOfRange, isManuallySelected]);
+  }, [
+    selectedCity,
+    isCityLoading,
+    isCityOutOfRange,
+    isManuallySelected,
+    standaloneListFetchKey,
+  ]);
 
   /** Default to Music for each city; empty-category fallback still handled below */
   useEffect(() => {
@@ -1125,6 +1125,7 @@ export default function EventsPage({
           onClose={() => setSelected(null)}
           membershipVersion={chatMembershipVersion}
           eventsEntrySource={resolveEventsBackTab()}
+          eventsReturnMode={isStandaloneEventsRoute ? "standalone_events" : "home_near_you"}
           onJoinedEvent={(ev) => {
             setSelected(null);
             setJoinConfirmationEvent(ev);
@@ -1178,7 +1179,14 @@ export default function EventsPage({
           if (id) {
             navigate(`/chat/event/${id}`, {
               replace: true,
-              state: ev ? buildEventChatNavigateState(ev) : undefined,
+              state: ev
+                ? {
+                    ...buildEventChatNavigateState(ev),
+                    eventsReturn: {
+                      mode: isStandaloneEventsRoute ? "standalone_events" : "home_near_you",
+                    },
+                  }
+                : undefined,
             });
           }
         }}

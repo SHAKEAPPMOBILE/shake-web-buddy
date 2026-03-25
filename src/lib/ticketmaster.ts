@@ -73,9 +73,11 @@ export async function fetchTicketmasterEvents(options?: {
         return cName.includes(cityQueryPrimary) || cityQueryPrimary.includes(cName);
       }));
 
-  const resolvedLatlong =
+  const rawLatlong =
     options?.latlong ??
     (cityMatch ? `${cityMatch.lat},${cityMatch.lng}` : undefined);
+  const resolvedLatlong =
+    typeof rawLatlong === "string" ? rawLatlong.trim().replace(/\s+/g, "") : rawLatlong;
 
   const cityForEdge = strippedForMatch ?? resolvedCityName ?? undefined;
 

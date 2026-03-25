@@ -18,7 +18,9 @@ import {
 import { EventStickerGraphic } from "@/components/eventChat/EventChatStickerSvgs";
 import { supabase } from "@/integrations/supabase/client";
 import type { EventChatLocationState } from "@/lib/eventChatNavigation";
+import { isEventChatMembershipExplicitlyExpired } from "@/lib/eventChatMembership";
 import { useAuth } from "@/contexts/AuthContext";
+import type { ChatStatus } from "@/hooks/useEventChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -82,12 +84,29 @@ export default function EventChatPage() {
   const { eventId } = useParams<EventChatPageParams>();
   const navigate = useNavigate();
   const location = useLocation();
-  const prefetch = (location.state as EventChatLocationState | null)?.eventPrefetch;
+  const chatNavState = location.state as EventChatLocationState | null;
+  const prefetch = chatNavState?.eventPrefetch;
+
+  const navigateBackFromEventChat = useCallback(() => {
+    const mode = (location.state as EventChatLocationState | null)?.eventsReturn?.mode;
+    if (mode === "home_near_you") {
+      console.log("[EventChatPage] navigate → / with openEvents (restore embedded Near You)");
+      navigate("/", { replace: true, state: { openEvents: true } });
+      return;
+    }
+    if (mode === "standalone_events") {
+      console.log("[EventChatPage] navigate → /events replace (refetch Near You list)");
+      navigate("/events", { replace: true });
+      return;
+    }
+    console.log("[EventChatPage] navigate back (-1) (no eventsReturn in state)");
+    navigate(-1);
+  }, [navigate, location.state]);
   const prefetchStart =
     prefetch?.eventStartsAt && !Number.isNaN(new Date(prefetch.eventStartsAt).getTime())
       ? prefetch.eventStartsAt
       : null;
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [eventName, setEventName] = useState<string>(() => prefetch?.name?.trim() || "Event chat");
   const [eventStartsAt, setEventStartsAt] = useState<string>(
     () => prefetchStart ?? new Date().toISOString()
@@ -118,11 +137,12 @@ export default function EventChatPage() {
   }, [eventId]);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
+      console.log("[EventChatPage] navigate → /auth (no user, auth finished loading)");
       navigate("/auth");
-      return;
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (!prefetchStart) return;
@@ -148,6 +168,31 @@ export default function EventChatPage() {
     };
   }, []);
 
+  const chatStatusRef = useRef<ChatStatus>("loading");
+
+  const {
+    status,
+    messages,
+    senderMap,
+    memberCount,
+    minutesLeft,
+    sendMessage,
+    isSending,
+  } = useEventChat({
+    eventId: eventId ?? "",
+    eventName,
+    eventStartsAt,
+    loadEnabled: chatDataLoadEnabled,
+  });
+
+  useEffect(() => {
+    chatStatusRef.current = "loading";
+  }, [eventId]);
+
+  useEffect(() => {
+    chatStatusRef.current = status;
+  }, [status]);
+
   useEffect(() => {
     if (!eventId || !user) return;
 
@@ -161,30 +206,23 @@ export default function EventChatPage() {
       let willRetry = false;
       setIsLoadingMeta(true);
       try {
-        const resolveMembershipExpiry = (m: { expires_at?: string | null; paid_at?: string | null } | null) => {
-          if (!m) return null;
-          if (m.expires_at) {
-            const d = new Date(m.expires_at);
-            if (!isNaN(d.getTime())) return d;
-          }
-          if (m.paid_at) {
-            const d = new Date(m.paid_at);
-            if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
-          }
-          return null;
-        };
-
         /** Post-payment race: membership row may not be visible on first read. */
         const MEMBERSHIP_POLL_ATTEMPTS = 5;
         const MEMBERSHIP_POLL_MS = 1000;
         const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-        let member: { event_id: string; paid_at?: string | null; expires_at?: string | null } | null = null;
+        let member: {
+          event_id: string;
+          paid_at?: string | null;
+          expires_at?: string | null;
+          event_name?: string | null;
+          event_starts_at?: string | null;
+        } | null = null;
         for (let attempt = 0; attempt < MEMBERSHIP_POLL_ATTEMPTS; attempt++) {
           if (cancelled) return;
           const { data: row, error: memberError } = await supabase
             .from("event_chat_members")
-            .select("event_id, paid_at, expires_at")
+            .select("event_id, paid_at, expires_at, event_name, event_starts_at")
             .eq("event_id", eventId)
             .eq("user_id", user.id)
             .maybeSingle();
@@ -203,25 +241,76 @@ export default function EventChatPage() {
         }
 
         if (!member) {
+          if (cancelled) {
+            console.log("[EventChatPage] skip navigate /events (effect cancelled, no member)", { eventId });
+            return;
+          }
+          if (chatStatusRef.current === "active") {
+            console.log("[EventChatPage] skip navigate /events — chat already active after poll miss (race)", {
+              eventId,
+            });
+            return;
+          }
+          const { data: lateMember } = await supabase
+            .from("event_chat_members")
+            .select("event_id, paid_at, expires_at, event_name, event_starts_at")
+            .eq("event_id", eventId)
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (lateMember) {
+            member = lateMember;
+          }
+        }
+
+        if (!member) {
+          if (chatStatusRef.current === "active") {
+            console.log("[EventChatPage] skip navigate /events — chat active, no row on final check", {
+              eventId,
+            });
+            return;
+          }
           try {
             sessionStorage.setItem("eventsEntrySource", "home");
           } catch {
             /* ignore */
           }
+          console.log("[EventChatPage] navigate → /events (no member after poll + final check)", {
+            eventId,
+            attempts: MEMBERSHIP_POLL_ATTEMPTS,
+            chatStatus: chatStatusRef.current,
+          });
           navigate("/events", { replace: true });
           return;
         }
 
-        const memberExpiry = resolveMembershipExpiry(member);
-        if (memberExpiry && memberExpiry.getTime() <= Date.now()) {
+        if (isEventChatMembershipExplicitlyExpired(member)) {
+          console.log("[EventChatPage] membership expires_at in past — enable chat UI for expired state", {
+            eventId,
+            expires_at: member.expires_at,
+          });
           setChatDataLoadEnabled(true);
           setIsLoadingMeta(false);
           return;
         }
 
+        if (typeof member.event_starts_at === "string" && member.event_starts_at.trim()) {
+          const es = new Date(member.event_starts_at);
+          if (!Number.isNaN(es.getTime())) {
+            setEventStartsAt(member.event_starts_at);
+            setEventDate(es.toLocaleDateString([], { month: "short", day: "numeric" }));
+          }
+        }
+        if (typeof member.event_name === "string" && member.event_name.trim()) {
+          setEventName(member.event_name.trim());
+        }
+
+        console.log("[EventChatPage] setChatDataLoadEnabled(true) after membership row (event_starts_at/name from DB)", {
+          eventId,
+          event_starts_at: member.event_starts_at,
+        });
         setChatDataLoadEnabled(true);
 
-        // 2) User is a member — fetch event_chats
+        // 2) User is a member — fetch event_chats (enrich name / start time)
         const { data: chatRow, error: chatError } = await supabase
           .from("event_chats")
           .select("name, expires_at, created_at")
@@ -301,24 +390,10 @@ export default function EventChatPage() {
     loadMeta();
 
     return () => {
+      console.log("[EventChatPage] loadMeta effect cleanup (cancelled=true)", { eventId });
       cancelled = true;
     };
-  }, [eventId, user, navigate]);
-
-  const {
-    status,
-    messages,
-    senderMap,
-    memberCount,
-    minutesLeft,
-    sendMessage,
-    isSending,
-  } = useEventChat({
-    eventId: eventId ?? "",
-    eventName,
-    eventStartsAt,
-    loadEnabled: chatDataLoadEnabled,
-  });
+  }, [eventId, user?.id, navigate]);
 
   const [inputValue, setInputValue] = useState("");
 
@@ -465,7 +540,11 @@ export default function EventChatPage() {
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-white/5">
           <button
-            onClick={() => navigate(-1)}
+            type="button"
+            onClick={() => {
+              console.log("[EventChatPage] header back");
+              navigateBackFromEventChat();
+            }}
             className="shrink-0 p-1.5 text-white/80 hover:text-white"
             aria-label="Back"
           >
@@ -528,7 +607,8 @@ export default function EventChatPage() {
                   .delete()
                   .eq("event_id", eventId)
                   .eq("user_id", user.id);
-                navigate(-1);
+                console.log("[EventChatPage] leave chat → navigate away");
+                navigateBackFromEventChat();
               }}
               className="shrink-0 text-white/50 hover:text-red-400 hover:bg-white/5 h-8 w-8"
               title="Leave chat"

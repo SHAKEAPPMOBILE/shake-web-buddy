@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { logPostgrestError } from "@/lib/supabaseErrorLog";
 
 interface PayPalConnectState {
   isConnected: boolean;
@@ -24,11 +25,14 @@ export function usePayPalConnect() {
     try {
       const { data, error } = await supabase
         .from("profiles_private")
-        .select("paypal_email, paypal_connected")
+        .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
-      
-      if (error) throw error;
+
+      if (error) {
+        logPostgrestError("usePayPalConnect profiles_private select", error);
+        throw error;
+      }
 
       setState({
         isConnected: data?.paypal_connected || false,

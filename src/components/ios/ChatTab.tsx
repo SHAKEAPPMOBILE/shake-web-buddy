@@ -21,11 +21,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { buildEventChatNavigateState } from "@/lib/eventChatNavigation";
+import { isEventChatMembershipExplicitlyExpired } from "@/lib/eventChatMembership";
 import {
   getPendingEventChatsForMerge,
   removePendingEventChat,
   PENDING_EVENT_CHAT_CHANGED,
 } from "@/lib/pendingEventChat";
+import { logPostgrestError } from "@/lib/supabaseErrorLog";
+
+function safeActivityDate(iso: string | undefined): Date {
+  if (!iso) return new Date();
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
 
 interface ChatActivity {
   id: string;
@@ -98,6 +106,9 @@ export function ChatTab({
       setIsLoading(false);
       return;
     }
+
+    const fetchNonce = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    console.log("[ChatTab] fetchActivities start (fresh query)", { fetchNonce, userId: user.id });
 
     setIsLoading(true);
 
@@ -248,44 +259,74 @@ export function ChatTab({
         });
       }
 
-      const resolveEventMembershipExpiry = (m: { expires_at?: string | null; paid_at?: string | null }) => {
-        if (m.expires_at) {
-          const d = new Date(m.expires_at);
-          if (!isNaN(d.getTime())) return d;
-        }
-        if (m.paid_at) {
-          const d = new Date(m.paid_at);
-          if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
-        }
-        return null;
-      };
-
       // Event chats the user has joined (merged into same list as activity chats)
-      const { data: eventMemberships, error: eventMembershipsError } = await supabase
-        .from("event_chat_members")
-        .select("event_id, paid_at, expires_at, event_name, event_starts_at")
-        .eq("user_id", user.id);
+      const {
+        data: eventMembershipsRaw,
+        error: eventMembershipsError,
+      } = await supabase.from("event_chat_members").select("*").eq("user_id", user.id);
 
-      console.log("[ChatTab] Event memberships query", {
-        count: eventMemberships?.length ?? 0,
-        error: eventMembershipsError?.message,
+      if (eventMembershipsError) {
+        logPostgrestError("ChatTab event_chat_members select", eventMembershipsError);
+        console.error(
+          "[ChatTab] event_chat_members error body",
+          JSON.stringify({
+            message: eventMembershipsError.message,
+            details: eventMembershipsError.details,
+            hint: eventMembershipsError.hint,
+            code: eventMembershipsError.code,
+          }),
+        );
+      }
+
+      const eventMemberships = Array.isArray(eventMembershipsRaw) ? eventMembershipsRaw : [];
+
+      console.log("[ChatTab] event_chat_members response", {
+        fetchNonce,
+        isArray: Array.isArray(eventMembershipsRaw),
+        rowCount: eventMemberships.length,
+        error: eventMembershipsError?.message ?? null,
+        rows: eventMemberships,
       });
 
-      if (eventMemberships && eventMemberships.length > 0) {
-        for (const membership of eventMemberships as any[]) {
-          const expiresAt = resolveEventMembershipExpiry(membership);
-          if (expiresAt && expiresAt.getTime() <= Date.now()) continue;
+      if (eventMemberships.length > 0) {
+        for (const membership of eventMemberships as Record<string, unknown>[]) {
+          if (isEventChatMembershipExplicitlyExpired(membership as { expires_at?: string | null })) {
+            console.log("[ChatTab] skip event row (explicit expires_at in past)", {
+              event_id: membership.event_id,
+            });
+            continue;
+          }
 
-          const parsedName = typeof membership.event_name === "string" && membership.event_name.trim()
-            ? membership.event_name.trim()
-            : "Event Chat";
+          const eventId = membership.event_id as string | undefined;
+          if (!eventId) {
+            console.warn("[ChatTab] skip event membership row missing event_id", membership);
+            continue;
+          }
+
+          const expiresAt =
+            typeof membership.expires_at === "string" && membership.expires_at.trim()
+              ? (() => {
+                  const d = new Date(membership.expires_at as string);
+                  return Number.isNaN(d.getTime()) ? null : d;
+                })()
+              : membership.paid_at
+                ? (() => {
+                    const p = new Date(membership.paid_at as string);
+                    return Number.isNaN(p.getTime()) ? null : new Date(p.getTime() + 24 * 60 * 60 * 1000);
+                  })()
+                : null;
+
+          const parsedName =
+            typeof membership.event_name === "string" && membership.event_name.trim()
+              ? membership.event_name.trim()
+              : "Event Chat";
           const fallbackVenue = parsedName.includes(" · ") ? parsedName.split(" · ")[1] : "Event";
           const parsedVenue = fallbackVenue;
 
           const startFromDb = membership.event_starts_at
             ? new Date(membership.event_starts_at as string)
             : null;
-          const hasValidStart = startFromDb && !isNaN(startFromDb.getTime());
+          const hasValidStart = startFromDb && !Number.isNaN(startFromDb.getTime());
           const scheduledFor =
             hasValidStart
               ? startFromDb!.toISOString()
@@ -297,20 +338,38 @@ export function ChatTab({
           const { count: participantCount } = await supabase
             .from("event_chat_members")
             .select("*", { count: "exact", head: true })
-            .eq("event_id", membership.event_id);
+            .eq("event_id", eventId);
+
+          const { data: lastMsg } = await supabase
+            .from("event_chat_messages")
+            .select("content, created_at")
+            .eq("event_id", eventId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
           chatActivities.push({
-            id: `event-${membership.event_id}`,
+            id: `event-${eventId}`,
             activity_type: "event",
             city: parsedVenue,
             scheduled_for: scheduledFor,
             participant_count: participantCount || 1,
             is_plan: false,
             is_event: true,
-            event_id: membership.event_id,
+            event_id: eventId,
             event_name: parsedName,
             event_venue: parsedVenue,
             expires_at: expiresAt ? expiresAt.toISOString() : undefined,
+          });
+
+          console.log("[ChatTab] merged event chat entry", {
+            fetchNonce,
+            event_id: eventId,
+            event_name: parsedName,
+            scheduled_for: scheduledFor,
+            participant_count: participantCount ?? 1,
+            last_message_preview: lastMsg?.content?.slice(0, 80) ?? null,
+            last_message_at: lastMsg?.created_at ?? null,
           });
         }
       }
@@ -350,10 +409,26 @@ export function ChatTab({
         });
       }
 
+      const eventSlice = chatActivities.filter((a) => a.is_event);
+      console.log("[ChatTab] chatActivities before sort (includes event + carousel + plans)", {
+        fetchNonce,
+        length: chatActivities.length,
+        eventCount: eventSlice.length,
+        activities: chatActivities.map((a) => ({
+          id: a.id,
+          is_event: a.is_event,
+          event_id: a.event_id,
+          event_name: a.event_name,
+          city: a.city,
+          scheduled_for: a.scheduled_for,
+          expires_at: a.expires_at,
+        })),
+      });
+
       // Sort with Today first, Tomorrow second, then chronologically
       chatActivities.sort((a, b) => {
-        const dateA = new Date(a.scheduled_for);
-        const dateB = new Date(b.scheduled_for);
+        const dateA = safeActivityDate(a.scheduled_for);
+        const dateB = safeActivityDate(b.scheduled_for);
         const isTodayA = isToday(dateA);
         const isTodayB = isToday(dateB);
         const isTomorrowA = isTomorrow(dateA);
@@ -379,12 +454,16 @@ export function ChatTab({
     }
   }, [user]);
 
-  // Refetch whenever the Chat tab becomes active (including after visiting another tab) so new
-  // event memberships appear; cleanup realtime while inactive.
+  // Fresh list every time the Chat tab becomes active (not only on first mount).
+  useEffect(() => {
+    if (!user?.id) return;
+    if (!isActiveTab) return;
+    void fetchActivities();
+  }, [user?.id, isActiveTab, fetchActivities]);
+
+  // Realtime while Chat tab is active; cleanup while inactive.
   useEffect(() => {
     if (!isActiveTab || !user) return;
-
-    void fetchActivities();
 
     const channel = supabase
       .channel(`chat-tab-${user.id}`)
@@ -439,10 +518,10 @@ export function ChatTab({
     return cities.sort();
   }, [activities]);
 
-  // Filter activities based on selected city
+  // Filter activities based on selected city (event chats always show — city is venue/name fragment, not user city)
   const filteredActivities = useMemo(() => {
     if (cityFilter === "all") return activities;
-    return activities.filter(a => a.city === cityFilter);
+    return activities.filter((a) => a.is_event || a.city === cityFilter);
   }, [activities, cityFilter]);
 
   const getActivityEmoji = (type: string) => {
@@ -641,7 +720,7 @@ export function ChatTab({
               ? (activity.event_venue ?? activity.city)
               : activity.city;
             const dateFormatted = formatDateWithTranslation(
-              new Date(activity.scheduled_for),
+              safeActivityDate(activity.scheduled_for),
               "EEE, d MMM",
               selectedLanguage.code
             );
@@ -735,12 +814,12 @@ export function ChatTab({
                       <span>
                         {locationLine} · {dateFormatted}
                       </span>
-                      {isToday(new Date(activity.scheduled_for)) && (
+                      {isToday(safeActivityDate(activity.scheduled_for)) && (
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-200/90 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md">
                           {t('common.today')}
                         </span>
                       )}
-                      {isTomorrow(new Date(activity.scheduled_for)) && (
+                      {isTomorrow(safeActivityDate(activity.scheduled_for)) && (
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-[#a0c1f9] bg-[#a0c1f9]/10 border border-[#a0c1f9]/25 px-1.5 py-0.5 rounded-md">
                           {t('common.tomorrow')}
                         </span>

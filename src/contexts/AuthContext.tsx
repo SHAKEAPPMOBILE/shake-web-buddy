@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredReferralCode, clearStoredReferralCode } from "@/hooks/useReferralTracking";
+import { logPostgrestError } from "@/lib/supabaseErrorLog";
 
 interface AuthContextType {
   user: User | null;
@@ -40,14 +41,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const ensureProfilesExist = async (currentUser: User) => {
     try {
       // Public profile
-      const { data: publicProfile } = await supabase
+      const { data: publicProfile, error: publicErr } = await supabase
         .from("profiles")
         .select("id")
         .eq("user_id", currentUser.id)
         .maybeSingle();
 
+      if (publicErr) {
+        logPostgrestError("AuthContext ensureProfilesExist profiles select", publicErr);
+      }
+
       if (!publicProfile) {
-        await supabase.from("profiles").insert({
+        const { error: insertPublicErr } = await supabase.from("profiles").insert({
           user_id: currentUser.id,
           name:
             (currentUser.user_metadata?.name as string | undefined) ||
@@ -58,20 +63,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             (currentUser.user_metadata?.picture as string | undefined) ||
             null,
         });
+        if (insertPublicErr) {
+          logPostgrestError("AuthContext ensureProfilesExist profiles insert", insertPublicErr);
+        }
       }
 
-      // Private profile
-      const { data: privateProfile } = await supabase
-        .from("profiles_private")
-        .select("id")
-        .eq("user_id", currentUser.id)
-        .maybeSingle();
+      // Private profile — never throw; 400/missing columns must not break session or routes (e.g. event chat).
+      let privateProfile: { id?: string } | null = null;
+      try {
+        const { data, error: privateProfileError } = await supabase
+          .from("profiles_private")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .maybeSingle();
+
+        if (privateProfileError) {
+          logPostgrestError("AuthContext ensureProfilesExist profiles_private select", privateProfileError);
+          console.error(
+            "[AuthContext] profiles_private select body (stringify)",
+            JSON.stringify({
+              message: privateProfileError.message,
+              details: privateProfileError.details,
+              hint: privateProfileError.hint,
+              code: privateProfileError.code,
+            }),
+          );
+        } else {
+          privateProfile = data;
+        }
+      } catch (e) {
+        console.error("[AuthContext] profiles_private select threw (ignored):", e);
+      }
 
       if (!privateProfile) {
-        await supabase.from("profiles_private").insert({
-          user_id: currentUser.id,
-          phone_number: (currentUser.phone as string | undefined) || null,
-        });
+        try {
+          const { error: insertPrivateErr } = await supabase.from("profiles_private").insert({
+            user_id: currentUser.id,
+            phone_number: (currentUser.phone as string | undefined) || null,
+          });
+          if (insertPrivateErr) {
+            logPostgrestError("AuthContext ensureProfilesExist profiles_private insert", insertPrivateErr);
+          }
+        } catch (e) {
+          console.error("[AuthContext] profiles_private insert threw (ignored):", e);
+        }
       }
     } catch (e) {
       // Never block app load on this; we just want best-effort stability.

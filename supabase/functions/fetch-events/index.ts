@@ -370,61 +370,83 @@ async function fetchTicketmasterDiscoveryOnce(
   displayCity: string,
 ): Promise<EventItem[]> {
   const tmBase = "https://app.ticketmaster.com/discovery/v2/events.json";
-  const ticketmasterParams: Record<string, string> = {
-    apikey: ticketmasterKey,
-    ...baseParams,
-    classificationName: "music,sports,arts,comedy,family",
-    sort: "date,asc",
-    includeFamily: "yes",
+
+  const buildParams = (includeClassification: boolean): Record<string, string> => {
+    // Unknown params (e.g. includeFamily) cause 400. classificationName must match TM segments or API returns 400.
+    const ticketmasterParams: Record<string, string> = {
+      apikey: ticketmasterKey,
+      ...baseParams,
+      sort: "date,asc",
+    };
+    if (includeClassification) {
+      ticketmasterParams.classificationName = "Music,Sports,Arts & Theatre,Film,Miscellaneous";
+    }
+    if (geoOrCity.kind === "geo") {
+      ticketmasterParams.latlong = geoOrCity.latlong.replace(/\s+/g, "");
+      if (geoOrCity.countryCode) ticketmasterParams.countryCode = geoOrCity.countryCode;
+    } else {
+      ticketmasterParams.city = geoOrCity.city;
+      ticketmasterParams.countryCode = geoOrCity.countryCode;
+    }
+    return ticketmasterParams;
   };
-  if (geoOrCity.kind === "geo") {
-    ticketmasterParams.latlong = geoOrCity.latlong;
-    if (geoOrCity.countryCode) ticketmasterParams.countryCode = geoOrCity.countryCode;
-  } else {
-    ticketmasterParams.city = geoOrCity.city;
-    ticketmasterParams.countryCode = geoOrCity.countryCode;
-  }
 
-  const tmUrl = `${tmBase}?${new URLSearchParams(ticketmasterParams).toString()}`;
-  const logUrl = redactTicketmasterApiKeyFromUrl(tmUrl);
+  const attempts: { label: string; includeClassification: boolean }[] = [
+    { label: "with classificationName", includeClassification: true },
+    { label: "without classificationName (broader search)", includeClassification: false },
+  ];
 
-  console.log("[fetch-events] Ticketmaster full URL (apikey redacted):", logUrl);
-  console.log("[fetch-events] Calling Ticketmaster", {
-    mode: geoOrCity.kind === "geo" ? "latlong+radius" : "city+countryCode",
-    url: logUrl,
-  });
+  for (const attempt of attempts) {
+    const tmUrl = `${tmBase}?${new URLSearchParams(buildParams(attempt.includeClassification)).toString()}`;
+    const logUrl = redactTicketmasterApiKeyFromUrl(tmUrl);
 
-  try {
-    const res = await fetchWithTimeout(tmUrl, {}, 10000);
-    const textBody = await res.text();
-    if (!res.ok) {
-      console.warn("[fetch-events] Ticketmaster API error:", res.status, textBody.slice(0, 500));
-      return [];
-    }
-    let data: TicketmasterDiscoveryResponse;
-    try {
-      data = JSON.parse(textBody) as TicketmasterDiscoveryResponse;
-    } catch {
-      console.warn("[fetch-events] Ticketmaster JSON parse failed", textBody.slice(0, 300));
-      return [];
-    }
-    const events = data._embedded?.events ?? [];
-    console.log("[fetch-events] Ticketmaster response OK", {
-      embeddedEventCount: events.length,
-      mode: geoOrCity.kind,
+    console.log("[fetch-events] Ticketmaster full URL (apikey redacted):", logUrl);
+    console.log("[fetch-events] Calling Ticketmaster", {
+      attempt: attempt.label,
+      mode: geoOrCity.kind === "geo" ? "latlong+radius" : "city+countryCode",
+      url: logUrl,
     });
-    if (!events.length) {
-      console.warn("[fetch-events] Ticketmaster returned 0 events (empty _embedded.events)");
+
+    try {
+      const res = await fetchWithTimeout(tmUrl, {}, 10000);
+      const textBody = await res.text();
+      if (!res.ok) {
+        console.warn("[fetch-events] Ticketmaster API error:", res.status, textBody.slice(0, 500));
+        if (res.status === 400 && attempt.includeClassification) {
+          console.warn("[fetch-events] Retrying Ticketmaster without classificationName after 400");
+          continue;
+        }
+        return [];
+      }
+      let data: TicketmasterDiscoveryResponse;
+      try {
+        data = JSON.parse(textBody) as TicketmasterDiscoveryResponse;
+      } catch {
+        console.warn("[fetch-events] Ticketmaster JSON parse failed", textBody.slice(0, 300));
+        return [];
+      }
+      const events = data._embedded?.events ?? [];
+      console.log("[fetch-events] Ticketmaster response OK", {
+        embeddedEventCount: events.length,
+        mode: geoOrCity.kind,
+        attempt: attempt.label,
+      });
+      if (!events.length) {
+        console.warn("[fetch-events] Ticketmaster returned 0 events (empty _embedded.events)");
+        if (attempt.includeClassification) continue;
+        return [];
+      }
+      return events
+        .filter((e) => Boolean(e?.id) && Boolean(e?.name))
+        .map((e) => mapTicketmasterEventToItem(e, displayCity));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn("[fetch-events] Ticketmaster fetch failed:", msg);
       return [];
     }
-    return events
-      .filter((e) => Boolean(e?.id) && Boolean(e?.name))
-      .map((e) => mapTicketmasterEventToItem(e, displayCity));
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn("[fetch-events] Ticketmaster fetch failed:", msg);
-    return [];
   }
+
+  return [];
 }
 
 function dedupeByEventNameKeepingEarliestStart(events: EventItem[]): EventItem[] {
@@ -515,7 +537,7 @@ serve(async (req) => {
       }
 
       if (body && typeof body.latlong === "string") {
-        const trimmed = body.latlong.trim();
+        const trimmed = body.latlong.trim().replace(/\s+/g, "");
         latlong = trimmed.length ? trimmed : null;
       }
 

@@ -26,6 +26,7 @@ import { PayPalConnectDialog } from "../PayPalConnectDialog";
 import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { IDVerificationDialog } from "../IDVerificationDialog";
 import { ContactSupport } from "../ContactSupport";
+import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -177,7 +178,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         .maybeSingle(),
       supabase
         .from("profiles_private")
-        .select("preferred_payout_method")
+        .select("*")
         .eq("user_id", user.id)
         .maybeSingle()
     ]);
@@ -185,8 +186,11 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setAvatarUrl(publicProfile.data.avatar_url);
       setUserName(publicProfile.data.name);
     }
+    if (privateProfile.error) {
+      logPostgrestError("ProfileTab profiles_private select", privateProfile.error);
+    }
     if (privateProfile.data) {
-      setPreferredMethod(privateProfile.data.preferred_payout_method);
+      setPreferredMethod(privateProfile.data.preferred_payout_method ?? null);
     }
   }, [user]);
 

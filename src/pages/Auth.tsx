@@ -26,6 +26,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { isNativePlatform } from "@/lib/platform-utils";
+import { logPostgrestError } from "@/lib/supabaseErrorLog";
 
 /** App Store review: demo login without SMS (no effect on other numbers). */
 const DEMO_PHONE = "+15550000000";
@@ -221,20 +222,24 @@ export default function Auth() {
 
     setTimeout(() => {
       (async () => {
-        const [{ data: profile }, { data: profilePrivate }] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("name")
-            .eq("user_id", user.id)
-            .maybeSingle(),
-          supabase
-            .from("profiles_private")
-            .select("date_of_birth")
-            .eq("user_id", user.id)
-            .maybeSingle(),
-        ]);
+        const [{ data: profile, error: profileErr }, { data: profilePrivate, error: privateErr }] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select("name")
+              .eq("user_id", user.id)
+              .maybeSingle(),
+            supabase
+              .from("profiles_private")
+              .select("*")
+              .eq("user_id", user.id)
+              .maybeSingle(),
+          ]);
 
         if (cancelled) return;
+
+        if (profileErr) logPostgrestError("Auth.tsx profiles select (post sign-in)", profileErr);
+        if (privateErr) logPostgrestError("Auth.tsx profiles_private select (post sign-in)", privateErr);
 
         const needsProfile = !profile?.name || !profilePrivate?.date_of_birth;
 

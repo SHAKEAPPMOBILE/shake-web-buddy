@@ -26,6 +26,7 @@ import { toast } from "@/lib/app-toast";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { hasValidAvatarUrl } from "@/lib/avatar";
 import { getOrderedActivities, getNextOccurrenceDate } from "@/data/activityTypes";
 import EventsPage from "@/pages/EventsPage";
@@ -180,10 +181,17 @@ export function IOSAppLayout() {
           { data: profilePrivate, error: privateError },
         ] = await Promise.all([
           supabase.from("profiles").select("name, avatar_url").eq("user_id", user.id).maybeSingle(),
-          supabase.from("profiles_private").select("date_of_birth").eq("user_id", user.id).maybeSingle(),
+          supabase.from("profiles_private").select("*").eq("user_id", user.id).maybeSingle(),
         ]);
 
         if (cancelled) return;
+
+        if (privateError) {
+          logPostgrestError("IOSAppLayout profiles_private select", privateError);
+        }
+        if (profileError) {
+          logPostgrestError("IOSAppLayout profiles select", profileError);
+        }
 
         if ((profileError || privateError || (!profile && !profilePrivate)) && retryCount < maxRetries) {
           retryCount++;

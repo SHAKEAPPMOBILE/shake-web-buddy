@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
+import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { Camera, ChevronLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -101,12 +102,12 @@ export default function Profile() {
       // Fetch private profile for phone number, email and push notifications
       const { data: privateProfile, error: privateError } = await supabase
         .from("profiles_private")
-        .select("phone_number, billing_email, push_notifications_enabled")
+        .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 
       if (privateError) {
-        console.error("Error fetching private profile:", privateError);
+        logPostgrestError("Profile.tsx profiles_private select", privateError);
       } else if (privateProfile) {
         setPhoneNumber(privateProfile.phone_number || "");
         setBillingEmail(privateProfile.billing_email || "");

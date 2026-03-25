@@ -59,25 +59,19 @@ serve(async (req) => {
       logStep("Membership precheck query failed", { error: existingMembershipError.message, eventId, userId: user.id });
     }
 
-    const resolveMembershipExpiry = (m: { expires_at?: string | null; paid_at?: string | null } | null) => {
-      if (!m) return null;
-      if (m.expires_at) {
-        const d = new Date(m.expires_at);
-        if (!isNaN(d.getTime())) return d;
-      }
-      if (m.paid_at) {
-        const d = new Date(m.paid_at);
-        if (!isNaN(d.getTime())) return new Date(d.getTime() + 24 * 60 * 60 * 1000);
-      }
-      return null;
+    /** Match app: null expires_at = still entitled; only a real expires_at in the past ends access. */
+    const isMembershipExplicitlyExpired = (m: { expires_at?: string | null } | null): boolean => {
+      if (!m?.expires_at?.trim()) return false;
+      const d = new Date(m.expires_at);
+      if (Number.isNaN(d.getTime())) return false;
+      return d.getTime() <= Date.now();
     };
 
-    const existingExpiry = resolveMembershipExpiry(existingMembership as { expires_at?: string | null; paid_at?: string | null } | null);
-    if (existingMembership && (!existingExpiry || existingExpiry.getTime() > Date.now())) {
+    if (existingMembership && !isMembershipExplicitlyExpired(existingMembership)) {
       logStep("Active membership found, skipping Stripe checkout", {
         eventId,
         userId: user.id,
-        expiresAt: existingExpiry?.toISOString() ?? null,
+        expiresAt: existingMembership.expires_at ?? null,
       });
       return new Response(
         JSON.stringify({
