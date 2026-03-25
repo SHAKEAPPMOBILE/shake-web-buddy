@@ -627,7 +627,7 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
   const paymentReturnHandledRef = useRef<string | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
-  const [cat, setCat] = useState("All");
+  const [cat, setCat] = useState("Music");
   const [selected, setSelected] = useState<EventItem | null>(null);
   const [joinConfirmationEvent, setJoinConfirmationEvent] = useState<EventItem | null>(null);
   const [chatMembershipVersion, setChatMembershipVersion] = useState(0);
@@ -810,9 +810,9 @@ export default function EventsPage({ onClose }: { onClose?: () => void } = {}) {
     };
   }, [selectedCity, isCityLoading, isCityOutOfRange, isManuallySelected]);
 
-  /** Ticketmaster/edge currently tag most API events as "Music" — other tabs would show empty unless we reset */
+  /** Default to Music for each city; empty-category fallback still handled below */
   useEffect(() => {
-    setCat("All");
+    setCat("Music");
   }, [selectedCity]);
 
   useEffect(() => {
