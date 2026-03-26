@@ -521,12 +521,68 @@ serve(async (req) => {
   }
 
   try {
+    let body: Record<string, unknown> | null = null;
+    try {
+      body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+    } catch {
+      body = null;
+    }
+
+    /** Single-event lookup for chat header / polaroid (Ticketmaster `images[0].url`). */
+    if (body && typeof body.eventDetailId === "string" && body.eventDetailId.trim()) {
+      const ticketmasterKey = Deno.env.get("TICKETMASTER_API_KEY");
+      if (!ticketmasterKey) {
+        return new Response(
+          JSON.stringify({ eventDetail: null, error: "TICKETMASTER_API_KEY not configured" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+        );
+      }
+      const routeId = body.eventDetailId.trim();
+      const tmId = routeId.startsWith("tm-") ? routeId.slice(3) : routeId;
+      const detailUrl =
+        `https://app.ticketmaster.com/discovery/v2/events/${encodeURIComponent(tmId)}.json?apikey=${ticketmasterKey}`;
+      console.log("[fetch-events] event detail request", {
+        routeId,
+        tmId,
+        url: redactTicketmasterApiKeyFromUrl(detailUrl),
+      });
+      try {
+        const res = await fetchWithTimeout(detailUrl, {}, 10_000);
+        const text = await res.text();
+        if (!res.ok) {
+          console.warn("[fetch-events] Ticketmaster event detail error:", res.status, text.slice(0, 400));
+          return new Response(
+            JSON.stringify({ eventDetail: null, error: `Ticketmaster ${res.status}` }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+          );
+        }
+        const e = JSON.parse(text) as TicketmasterEvent;
+        const imageUrl = e.images?.[0]?.url?.trim() ?? undefined;
+        return new Response(
+          JSON.stringify({
+            eventDetail: {
+              id: routeId,
+              name: e.name ?? undefined,
+              imageUrl: imageUrl ?? null,
+            },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn("[fetch-events] Ticketmaster event detail fetch failed:", msg);
+        return new Response(
+          JSON.stringify({ eventDetail: null, error: msg }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+        );
+      }
+    }
+
     let cityFilter: string | null = null;
     let latlong: string | null = null;
     let radiusKm: number | null = null;
     let sizeLimit = 50;
     try {
-      const body = await req.json().catch(() => null);
       if (body && typeof body.city === "string") {
         const trimmed = body.city.trim();
         cityFilter = trimmed.length ? trimmed : null;

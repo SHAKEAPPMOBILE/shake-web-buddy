@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { EVENT_CHAT_STICKER_SET } from "@/lib/eventChatStickers";
 import { enqueuePendingEventChat } from "@/lib/pendingEventChat";
 import {
   isEventChatMembershipExplicitlyExpired,
@@ -75,7 +74,7 @@ interface UseEventChatReturn {
   memberCount: number | null;
   expiresAt: Date | null;
   minutesLeft: number | null;
-  sendMessage: (content: string, messageType?: "text" | "sticker" | "video") => Promise<void>;
+  sendMessage: (content: string, messageType?: "text" | "video" | "gif") => Promise<void>;
   unlockChat: () => Promise<{ success: boolean; error?: string }>;
   isSending: boolean;
 }
@@ -396,7 +395,7 @@ export function useEventChat({
   }, [loadEnabled, status, subscribeRealtime, eventId, eventChatUuid]);
 
   const sendMessage = useCallback(
-    async (content: string, messageType: "text" | "sticker" | "video" = "text") => {
+    async (content: string, messageType: "text" | "video" | "gif" = "text") => {
       if (!user) {
         console.warn("[useEventChat] sendMessage skipped: no user");
         return;
@@ -411,10 +410,8 @@ export function useEventChat({
       }
       const trimmed = content.trim();
       if (!trimmed) return;
-      if (messageType === "video") {
+      if (messageType === "video" || messageType === "gif") {
         if (!/^https?:\/\//i.test(trimmed)) return;
-      } else if (messageType === "sticker") {
-        if (!EVENT_CHAT_STICKER_SET.has(trimmed)) return;
       }
 
       const messageExpiresAtIso = getMessageExpiresAtIso();

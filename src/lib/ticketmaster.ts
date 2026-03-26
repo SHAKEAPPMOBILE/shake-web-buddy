@@ -167,3 +167,56 @@ export async function fetchTicketmasterEvents(options?: {
     return [];
   }
 }
+
+export type TicketmasterEventDetail = {
+  id: string;
+  name?: string;
+  imageUrl: string | null;
+};
+
+/**
+ * Fetches one Ticketmaster event (poster + name) via the `fetch-events` edge function.
+ * `eventId` is the in-app route id, usually `tm-{TicketmasterEventId}`.
+ */
+export async function fetchTicketmasterEventDetail(eventId: string): Promise<TicketmasterEventDetail | null> {
+  const trimmed = eventId.trim();
+  if (!trimmed) return null;
+
+  const anonOrPublishableKey =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY ?? "";
+
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userAccessToken = sessionData.session?.access_token;
+    const authorization = userAccessToken
+      ? `Bearer ${userAccessToken}`
+      : anonOrPublishableKey
+        ? `Bearer ${anonOrPublishableKey}`
+        : undefined;
+
+    const { data, error } = await supabase.functions.invoke<{
+      eventDetail?: { id?: string; name?: string; imageUrl?: string | null } | null;
+      error?: string;
+    }>("fetch-events", {
+      body: { eventDetailId: trimmed },
+      ...(authorization ? { headers: { Authorization: authorization } } : {}),
+    });
+
+    if (error) {
+      console.warn("[fetchTicketmasterEventDetail] invoke error", error.message);
+      return null;
+    }
+    const d = data?.eventDetail;
+    if (!d || typeof d.imageUrl !== "string" || !d.imageUrl.trim()) {
+      return null;
+    }
+    return {
+      id: d.id ?? trimmed,
+      name: d.name,
+      imageUrl: d.imageUrl.trim(),
+    };
+  } catch (err) {
+    console.error("[fetchTicketmasterEventDetail]", err);
+    return null;
+  }
+}

@@ -7,16 +7,11 @@ import {
   useCallback,
 } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Smile, Camera } from "lucide-react";
+import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Images, Camera } from "lucide-react";
 import { useEventChat } from "@/hooks/useEventChat";
-import {
-  EVENT_CHAT_STICKER_IDS,
-  EVENT_CHAT_STICKER_LABELS,
-  isEventChatStickerId,
-} from "@/lib/eventChatStickers";
-import { EventStickerGraphic } from "@/components/eventChat/EventChatStickerSvgs";
 import { supabase } from "@/integrations/supabase/client";
 import type { EventChatLocationState } from "@/lib/eventChatNavigation";
+import { resolveEventChatPosterUrl } from "@/lib/eventChatEventPoster";
 import { isEventChatMembershipExplicitlyExpired } from "@/lib/eventChatMembership";
 import { useAuth } from "@/contexts/AuthContext";
 import type { ChatStatus } from "@/hooks/useEventChat";
@@ -25,53 +20,11 @@ import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VideoUploadModal } from "@/components/VideoUploadModal";
+import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
 import { EVENT_CHAT_VIDEO_MAX_SECONDS, uploadEventChatVideoWithProgress } from "@/lib/eventChatVideoUpload";
 
 interface EventChatPageParams {
   eventId?: string;
-}
-
-/** One-shot confetti from the tap point when sending a sticker (viewport coords). */
-function StickerSendConfetti({ x, y, seed }: { x: number; y: number; seed: number }) {
-  const particles = useMemo(() => {
-    const colors = ["#f472b6", "#a78bfa", "#38bdf8", "#fbbf24", "#34d399", "#fb7185"];
-    return colors.map((color, i) => {
-      const ang = (i / colors.length) * Math.PI * 2 + 0.4;
-      const d = 46 + (i % 3) * 9;
-      return {
-        color,
-        tx: Math.round(Math.cos(ang) * d),
-        ty: Math.round(Math.sin(ang) * d),
-        i,
-      };
-    });
-  }, []);
-
-  return (
-    <div className="fixed inset-0 pointer-events-none z-[100]" aria-hidden>
-      <style>
-        {particles.map(
-          (p) => `
-          @keyframes ec-send-${seed}-${p.i} {
-            to { transform: translate(${p.tx}px, ${p.ty}px); opacity: 0; }
-          }
-        `
-        ).join("")}
-      </style>
-      {particles.map((p) => (
-        <span
-          key={p.i}
-          className="absolute w-2.5 h-2.5 rounded-full shadow-sm"
-          style={{
-            left: x - 5,
-            top: y - 5,
-            background: p.color,
-            animation: `ec-send-${seed}-${p.i} 0.55s ease-out forwards`,
-          }}
-        />
-      ))}
-    </div>
-  );
 }
 
 export default function EventChatPage() {
@@ -112,11 +65,7 @@ export default function EventChatPage() {
   const [hasFatalError, setHasFatalError] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const stickerBarRef = useRef<HTMLDivElement | null>(null);
-  const [showStickerTray, setShowStickerTray] = useState(false);
-  const [stickerConfetti, setStickerConfetti] = useState<{ seed: number; x: number; y: number } | null>(
-    null
-  );
+  const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [chatDataLoadEnabled, setChatDataLoadEnabled] = useState(false);
   useEffect(() => {
@@ -138,20 +87,25 @@ export default function EventChatPage() {
     setEventDate(d.toLocaleDateString([], { month: "short", day: "numeric" }));
   }, [prefetchStart]);
 
-  /** Polaroid image: navigation state (e.g. Events) + always merge public_events so Chat tab / chatRow-only meta still get a poster. */
+  /**
+   * Polaroid: authoritative poster from `public_events` or Ticketmaster event detail (`images[0].url`).
+   * Optional `eventPrefetch.imageUrl` only fills the gap until resolve completes (e.g. confirmation modal).
+   */
   useEffect(() => {
     if (!eventId) return;
     setPolaroidExpanded(false);
-    const st = location.state as EventChatLocationState | null;
-    const fromNav = st?.eventPrefetch?.imageUrl?.trim() || null;
-    setEventImageUrl(fromNav);
+    const prefetchUrl = (location.state as EventChatLocationState | null)?.eventPrefetch?.imageUrl?.trim() || null;
+    setEventImageUrl(prefetchUrl);
 
     let cancelled = false;
     void (async () => {
-      const { data } = await supabase.from("public_events").select("image_url").eq("id", eventId).maybeSingle();
+      const url = await resolveEventChatPosterUrl(eventId);
       if (cancelled) return;
-      const url = data?.image_url?.trim();
-      if (url) setEventImageUrl(url);
+      if (url) {
+        setEventImageUrl(url);
+        return;
+      }
+      setEventImageUrl(prefetchUrl);
     })();
 
     return () => {
@@ -405,14 +359,6 @@ export default function EventChatPage() {
             const start = new Date(expires.getTime() - 12 * 60 * 60 * 1000);
             setEventStartsAt(start.toISOString());
           }
-          const { data: pubImg } = await supabase
-            .from("public_events")
-            .select("image_url")
-            .eq("id", eventId)
-            .maybeSingle();
-          if (stale()) return;
-          const u = pubImg?.image_url?.trim();
-          if (u) setEventImageUrl(u);
           return;
         }
 
@@ -432,7 +378,6 @@ export default function EventChatPage() {
             setEventDate(start.toLocaleDateString([], { month: "short", day: "numeric" }));
           }
         }
-        if (pub?.image_url) setEventImageUrl(pub.image_url);
         if (pub?.name) setEventName(pub.name);
 
         await supabase.from("event_chats").upsert(
@@ -485,23 +430,6 @@ export default function EventChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-    if (!showStickerTray) return;
-    const onDoc = (e: PointerEvent) => {
-      if (stickerBarRef.current && !stickerBarRef.current.contains(e.target as Node)) {
-        setShowStickerTray(false);
-      }
-    };
-    document.addEventListener("pointerdown", onDoc);
-    return () => document.removeEventListener("pointerdown", onDoc);
-  }, [showStickerTray]);
-
-  useEffect(() => {
-    if (!stickerConfetti) return;
-    const t = window.setTimeout(() => setStickerConfetti(null), 600);
-    return () => clearTimeout(t);
-  }, [stickerConfetti]);
-
   const headerSubtitle = useMemo(() => {
     if (isLoadingMeta || !chatDataLoadEnabled) return "Loading…";
     if (status === "locked") {
@@ -528,9 +456,6 @@ export default function EventChatPage() {
 
   return (
     <>
-    {stickerConfetti ? (
-      <StickerSendConfetti x={stickerConfetti.x} y={stickerConfetti.y} seed={stickerConfetti.seed} />
-    ) : null}
     {polaroidExpanded && eventImageUrl ? (
       <div
         className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 p-4"
@@ -571,12 +496,22 @@ export default function EventChatPage() {
               onProgress
             );
             await sendMessage(publicUrl, "video");
-            setShowStickerTray(false);
+            setGiphyPickerOpen(false);
             return true;
           } catch (err) {
             console.error("[EventChatPage] video upload/send failed", err);
             return false;
           }
+        }}
+      />
+    ) : null}
+    {eventId && user ? (
+      <EventChatGiphyPickerModal
+        open={giphyPickerOpen}
+        onOpenChange={setGiphyPickerOpen}
+        onGifSelect={async (url) => {
+          bumpInteraction();
+          await sendMessage(url, "gif");
         }}
       />
     ) : null}
@@ -724,9 +659,8 @@ export default function EventChatPage() {
             const displayName = profile?.name || "User";
             const avatarUrl = profile?.avatar_url;
             const isOwn = user?.id === m.user_id;
-            const isSticker = m.message_type === "sticker";
             const isVideo = m.message_type === "video" && /^https?:\/\//i.test(m.content);
-            const stickerId = isSticker && isEventChatStickerId(m.content) ? m.content : null;
+            const isGif = m.message_type === "gif" && /^https?:\/\//i.test(m.content);
 
             return (
               <div key={m.id} className={`group flex gap-3 items-end ${isOwn ? "flex-row-reverse" : ""}`}>
@@ -758,19 +692,13 @@ export default function EventChatPage() {
                         preload="metadata"
                         className="rounded-lg max-w-[260px] w-full bg-black/30"
                       />
-                    ) : isSticker && stickerId ? (
-                      <div
-                        className="inline-flex items-center justify-center select-none"
-                        style={{ width: 120, height: 120 }}
-                        role="img"
-                        aria-label={EVENT_CHAT_STICKER_LABELS[stickerId]}
-                      >
-                        <EventStickerGraphic stickerId={stickerId} size={120} className="drop-shadow-md" />
-                      </div>
-                    ) : isSticker ? (
-                      <span className="mt-1 text-2xl opacity-70" aria-label="Sticker">
-                        {m.content}
-                      </span>
+                    ) : isGif ? (
+                      <img
+                        src={m.content}
+                        alt=""
+                        loading="lazy"
+                        className="rounded-lg max-w-[260px] w-full h-auto object-cover bg-black/20 ring-1 ring-white/10"
+                      />
                     ) : (
                       <div
                         className={`text-sm px-3 py-2 rounded-xl inline-block text-left ${
@@ -803,66 +731,19 @@ export default function EventChatPage() {
         </div>
 
         {/* Input bar */}
-        <div
-          ref={stickerBarRef}
-          className="relative p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5"
-        >
-          {showStickerTray && (
-            <div
-              className="absolute bottom-full left-0 right-0 mb-2 mx-1 rounded-2xl border border-white/10 bg-[#12121a]/95 backdrop-blur-md shadow-lg p-3 z-20"
-              role="dialog"
-              aria-label="Sticker picker"
-            >
-              <p className="text-[10px] uppercase tracking-wider text-white/40 mb-2 px-0.5">Event stickers</p>
-              <div className="grid grid-cols-4 gap-2">
-                {EVENT_CHAT_STICKER_IDS.map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className="flex h-20 w-20 mx-auto items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 shadow-inner hover:bg-white/25 active:scale-95 transition-all disabled:opacity-40"
-                    disabled={
-                      isSending ||
-                      status !== "active" ||
-                      videoModalOpen
-                    }
-                    onClick={async (e) => {
-                      const r = e.currentTarget.getBoundingClientRect();
-                      try {
-                        bumpInteraction();
-                        await sendMessage(id, "sticker");
-                        setStickerConfetti((prev) => ({
-                          seed: (prev?.seed ?? 0) + 1,
-                          x: r.left + r.width / 2,
-                          y: r.top + r.height / 2,
-                        }));
-                        setShowStickerTray(false);
-                      } catch (err) {
-                        console.error("[EventChatPage] sticker send failed", err);
-                      }
-                    }}
-                    aria-label={`Send ${EVENT_CHAT_STICKER_LABELS[id]} sticker`}
-                  >
-                    <EventStickerGraphic stickerId={id} size={68} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="relative p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5">
           <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
-              onClick={() => {
-                setShowStickerTray((v) => !v);
-              }}
+              onClick={() => setGiphyPickerOpen(true)}
               disabled={isSending || status !== "active" || videoModalOpen}
-              aria-label="Stickers"
-              aria-expanded={showStickerTray}
-              aria-haspopup="dialog"
+              aria-label="GIFs"
+              title="GIFs"
             >
-              <Smile className="w-5 h-5" />
+              <Images className="w-5 h-5" />
             </Button>
             <Button
               type="button"
@@ -874,7 +755,7 @@ export default function EventChatPage() {
                 isSending ||
                 status !== "active" ||
                 videoModalOpen ||
-                showStickerTray
+                giphyPickerOpen
               }
               aria-label="Record or attach video"
               title="Video (max 60s)"
@@ -913,7 +794,7 @@ export default function EventChatPage() {
                 isSending ||
                 status !== "active" ||
                 videoModalOpen ||
-                showStickerTray
+                giphyPickerOpen
               }
             />
             <Button
@@ -938,7 +819,7 @@ export default function EventChatPage() {
                 status !== "active" ||
                 !inputValue.trim() ||
                 videoModalOpen ||
-                showStickerTray
+                giphyPickerOpen
               }
               className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
             >
