@@ -1,4 +1,5 @@
 -- Emoji reactions on event chat messages (toggle per user per emoji).
+-- After deploy: in SQL Editor run once if PostgREST cache is stale: NOTIFY pgrst, 'reload schema';
 CREATE TABLE public.event_chat_reactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   message_id uuid NOT NULL REFERENCES public.event_chat_messages (id) ON DELETE CASCADE,
