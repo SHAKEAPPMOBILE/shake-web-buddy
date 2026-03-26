@@ -248,6 +248,19 @@ export function useEventChat({
     await loadChatWithGeneration(gen);
   }, [loadChatWithGeneration]);
 
+  /** Message + list filters use expires_at; must stay in the future until the chat window ends (not raw event+12h if that is past). */
+  const getMessageExpiresAtIso = useCallback((): string => {
+    const minFuture = Date.now() + 60_000;
+    if (expiresAt && !isNaN(expiresAt.getTime())) {
+      return new Date(Math.max(expiresAt.getTime(), minFuture)).toISOString();
+    }
+    const c = computedExpiresAt.getTime();
+    if (!isNaN(c)) {
+      return new Date(Math.max(c, minFuture)).toISOString();
+    }
+    return new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  }, [expiresAt, computedExpiresAt]);
+
   const subscribeRealtime = useCallback(() => {
     if (channelRef.current) supabase.removeChannel(channelRef.current);
     const channel = supabase.channel(`event-chat-${eventId}`)
@@ -258,7 +271,8 @@ export function useEventChat({
             ...raw,
             message_type: raw.message_type ?? "text",
           };
-          if (new Date(newMsg.expires_at) > new Date()) {
+          // Include slight clock skew; avoid dropping rows whose expires_at equals "now"
+          if (new Date(newMsg.expires_at).getTime() > Date.now() - 5000) {
             setMessages((prev) => (prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg]));
             if (!senderMapRef.current[newMsg.user_id]) {
               const { data: profile } = await supabase
@@ -307,7 +321,18 @@ export function useEventChat({
 
   const sendMessage = useCallback(
     async (content: string, messageType: "text" | "sticker" | "video" = "text") => {
-      if (!user || status !== "active") return;
+      if (!user) {
+        console.warn("[useEventChat] sendMessage skipped: no user");
+        return;
+      }
+      if (status !== "active") {
+        console.warn("[useEventChat] sendMessage skipped: status is not active", { status, eventId });
+        return;
+      }
+      if (!eventId?.trim()) {
+        console.error("[useEventChat] sendMessage aborted: eventId missing", { eventId });
+        return;
+      }
       const trimmed = content.trim();
       if (!trimmed) return;
       if (messageType === "video") {
@@ -315,25 +340,64 @@ export function useEventChat({
       } else if (messageType === "sticker") {
         if (!EVENT_CHAT_STICKER_SET.has(trimmed)) return;
       }
+
+      const messageExpiresAtIso = getMessageExpiresAtIso();
+      console.log("[event-chat-send]", {
+        note: "event_chat_messages.event_id is text (e.g. tm-…), same as event_chats.event_id — there is no separate UUID id in schema",
+        event_id: eventId,
+        user_id: user.id,
+        messageExpiresAtIso,
+        hookExpiresAt: expiresAt?.toISOString() ?? null,
+        eventStartsAt,
+      });
+
       setIsSending(true);
       try {
+        const { error: chatRowError } = await supabase.from("event_chats").upsert(
+          {
+            event_id: eventId,
+            name: eventName?.trim() || eventId,
+            expires_at: messageExpiresAtIso,
+          },
+          { onConflict: "event_id" },
+        );
+        if (chatRowError) {
+          console.error("[useEventChat] sendMessage: event_chats upsert failed (FK for messages)", {
+            message: chatRowError.message,
+            code: chatRowError.code,
+            details: chatRowError.details,
+            hint: chatRowError.hint,
+            event_id: eventId,
+          });
+          throw chatRowError;
+        }
+
         const { data: row, error } = await supabase
           .from("event_chat_messages")
           .insert({
             event_id: eventId,
             user_id: user.id,
             content: trimmed,
-            expires_at: computedExpiresAt.toISOString(),
+            expires_at: messageExpiresAtIso,
             message_type: messageType,
           })
           .select()
           .single();
 
         if (error) {
-          console.error("[useEventChat] sendMessage insert failed", error);
+          console.error("[useEventChat] sendMessage: event_chat_messages insert failed", {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            event_id: eventId,
+          });
           throw error;
         }
-        if (!row) return;
+        if (!row) {
+          console.error("[useEventChat] sendMessage: insert returned no row", { event_id: eventId });
+          return;
+        }
 
         const newMsg: EventChatMessage = {
           ...(row as EventChatMessage),
@@ -355,11 +419,14 @@ export function useEventChat({
             }));
           }
         }
+      } catch (err) {
+        console.error("[useEventChat] sendMessage failed (full error)", err);
+        throw err;
       } finally {
         setIsSending(false);
       }
     },
-    [user, status, eventId, computedExpiresAt]
+    [user, status, eventId, eventName, eventStartsAt, expiresAt, getMessageExpiresAtIso]
   );
 
   const unlockChat = useCallback(async (): Promise<{ success: boolean; error?: string }> => {

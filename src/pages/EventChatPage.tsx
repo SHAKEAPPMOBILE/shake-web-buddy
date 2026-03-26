@@ -943,6 +943,10 @@ export default function EventChatPage() {
                   void (async () => {
                     try {
                       bumpInteraction();
+                      console.log("[EventChatPage] send text", {
+                        routeEventId: eventId,
+                        chatStatus: status,
+                      });
                       await sendMessage(text);
                       setInputValue("");
                     } catch (err) {
@@ -967,6 +971,10 @@ export default function EventChatPage() {
                 const text = inputValue;
                 try {
                   bumpInteraction();
+                  console.log("[EventChatPage] send text (button)", {
+                    routeEventId: eventId,
+                    chatStatus: status,
+                  });
                   await sendMessage(text);
                   setInputValue("");
                 } catch (err) {
