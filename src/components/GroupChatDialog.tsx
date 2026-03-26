@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Globe, Trash2, Plane } from "lucide-react";
+import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Globe, Trash2, Plane, Images } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,8 @@ import { VenueSuggestionCarousel } from "./VenueSuggestionCarousel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { DbVenue } from "@/hooks/useDatabaseVenues";
+import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
+import { InlineChatGif } from "@/components/chat/InlineChatGif";
 interface GroupChatDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,6 +45,7 @@ interface Message {
   activity_type: string;
   city: string;
   message: string;
+  message_type?: string | null;
   created_at: string;
 }
 
@@ -147,6 +150,7 @@ export function GroupChatDialog({
   const [isSending, setIsSending] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [showParticipantsList, setShowParticipantsList] = useState(false);
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
@@ -312,6 +316,10 @@ export function GroupChatDialog({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    if (!open) setGiphyPickerOpen(false);
+  }, [open]);
+
   const handleSendMessage = async () => {
     // Handle text message
     if (!message.trim() || !user) {
@@ -348,6 +356,38 @@ export function GroupChatDialog({
     }
 
     setIsSending(false);
+  };
+
+  const handleGifSelect = async (url: string) => {
+    if (!user || isSending) return;
+    const trimmed = url.trim();
+    if (!/^https?:\/\//i.test(trimmed)) return;
+
+    if (!isPremium && !canSendText) {
+      setShowPremiumDialog(true);
+      toast.error(
+        "You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!"
+      );
+      throw new Error("Character limit reached");
+    }
+
+    setIsSending(true);
+    try {
+      const { error } = await supabase.from("activity_messages").insert({
+        user_id: user.id,
+        activity_type: activityType,
+        city: city,
+        message: trimmed,
+        message_type: "gif",
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error sending GIF:", error);
+      toast.error("Failed to send GIF");
+      throw error;
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleDeleteMessage = async (messageId: string) => {
@@ -425,6 +465,7 @@ export function GroupChatDialog({
   const showAttendees = attendeeCount > 0;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className={`sm:max-w-lg flex flex-col p-0 relative bg-[#06060a] overflow-hidden backdrop-blur-xl border-white/10 [&>button.dialog-close]:text-white transition-all duration-300 ${isChatExpanded ? 'h-[600px]' : 'h-auto'}`}
@@ -607,6 +648,8 @@ export function GroupChatDialog({
                   const avatarUrl = isOwnMessage
                     ? (ownProfile?.avatar_url ?? profile?.avatar_url)
                     : profile?.avatar_url;
+                  const isGif =
+                    (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
                   
                   return (
                     <div 
@@ -619,7 +662,7 @@ export function GroupChatDialog({
                           <User className="w-4 h-4 text-white/40" />
                         </AvatarFallback>
                       </Avatar>
-                      <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
+                      <div className={`flex-1 max-w-[70%] ${isGif ? 'shrink-0 overflow-visible' : ''} ${isOwnMessage ? 'text-right' : ''}`}>
                         <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
                           <button 
                             className={`font-semibold text-sm text-white ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
@@ -641,13 +684,23 @@ export function GroupChatDialog({
                           </span>
                         </div>
                         <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                          <div className={`text-sm mt-0.5 px-3 py-2 rounded-xl inline-block ${
-                            isOwnMessage 
-                              ? 'bg-[#7c5cfc] text-white'
-                              : 'bg-white/10 text-white border border-white/10'
-                          }`}>
-                            <span>{msg.message}</span>
-                          </div>
+                          {isGif ? (
+                            <InlineChatGif
+                              src={msg.message}
+                              variant="dark"
+                              onLoad={() =>
+                                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+                              }
+                            />
+                          ) : (
+                            <div className={`text-sm mt-0.5 px-3 py-2 rounded-xl inline-block ${
+                              isOwnMessage 
+                                ? 'bg-[#7c5cfc] text-white'
+                                : 'bg-white/10 text-white border border-white/10'
+                            }`}>
+                              <span>{msg.message}</span>
+                            </div>
+                          )}
                           {isOwnMessage && (
                             <button
                               onClick={() => handleDeleteMessage(msg.id)}
@@ -700,18 +753,30 @@ export function GroupChatDialog({
                     ))}
                   </div>
                 )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+                  onClick={() => setGiphyPickerOpen(true)}
+                  disabled={isSending || giphyPickerOpen}
+                  aria-label="GIFs"
+                  title="GIFs"
+                >
+                  <Images className="w-5 h-5" />
+                </Button>
                 <Input
                   placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
-                  disabled={isSending || (!isPremium && !canSendText)}
+                  disabled={isSending || (!isPremium && !canSendText) || giphyPickerOpen}
                 />
                 <Button
                   size="icon"
                   onClick={handleSendMessage}
-                  disabled={isSending || !message.trim()}
+                  disabled={isSending || !message.trim() || giphyPickerOpen}
                   className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
                 >
                   {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
@@ -746,5 +811,13 @@ export function GroupChatDialog({
         />
       </DialogContent>
     </Dialog>
+    {open && user ? (
+      <EventChatGiphyPickerModal
+        open={giphyPickerOpen}
+        onOpenChange={setGiphyPickerOpen}
+        onGifSelect={handleGifSelect}
+      />
+    ) : null}
+    </>
   );
 }

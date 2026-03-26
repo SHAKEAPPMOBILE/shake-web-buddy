@@ -20,21 +20,21 @@ export function useTextMessageLimit() {
       // Count characters from activity_messages (excluding audio-only messages)
       const { data: activityMessages, error: activityError } = await supabase
         .from("activity_messages")
-        .select("message")
+        .select("message, message_type")
         .eq("user_id", user.id)
         .is("audio_url", null);
 
       // Count characters from plan_messages (excluding audio-only messages)
       const { data: planMessages, error: planError } = await supabase
         .from("plan_messages")
-        .select("message")
+        .select("message, message_type")
         .eq("user_id", user.id)
         .is("audio_url", null);
 
       // Count characters from private_messages (excluding audio-only messages)
       const { data: privateMessages, error: privateError } = await supabase
         .from("private_messages")
-        .select("message")
+        .select("message, message_type")
         .eq("sender_id", user.id)
         .is("audio_url", null);
 
@@ -50,18 +50,21 @@ export function useTextMessageLimit() {
       const voiceNotePlaceholder = "🎤 Voice note";
       
       activityMessages?.forEach((msg) => {
+        if (msg.message_type === "gif") return;
         if (msg.message !== voiceNotePlaceholder) {
           totalChars += msg.message.length;
         }
       });
       
       planMessages?.forEach((msg) => {
+        if (msg.message_type === "gif") return;
         if (msg.message !== voiceNotePlaceholder) {
           totalChars += msg.message.length;
         }
       });
       
       privateMessages?.forEach((msg) => {
+        if (msg.message_type === "gif") return;
         if (msg.message !== voiceNotePlaceholder) {
           totalChars += msg.message.length;
         }

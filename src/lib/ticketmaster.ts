@@ -175,12 +175,22 @@ export type TicketmasterImageLogEntry = {
   urlSample: string;
 };
 
+/** One entry from Ticketmaster Discovery `event.images`. */
+export type TicketmasterEventImage = {
+  url?: string | null;
+  width?: number | null;
+  height?: number | null;
+  ratio?: string | null;
+};
+
 export type TicketmasterEventDetail = {
   id: string;
   name?: string;
   imageUrl: string | null;
   /** Present when the edge function returned Ticketmaster `images` (for debugging / polaroid). */
   imagesLog?: TicketmasterImageLogEntry[];
+  /** Raw `images` from the Discovery event detail response (for debugging). */
+  eventImages?: TicketmasterEventImage[] | null;
 };
 
 /**
@@ -209,6 +219,7 @@ export async function fetchTicketmasterEventDetail(eventId: string): Promise<Tic
         name?: string;
         imageUrl?: string | null;
         imagesLog?: TicketmasterImageLogEntry[];
+        eventImages?: TicketmasterEventImage[] | null;
       } | null;
       error?: string;
     }>("fetch-events", {
@@ -221,7 +232,23 @@ export async function fetchTicketmasterEventDetail(eventId: string): Promise<Tic
       return null;
     }
     const d = data?.eventDetail;
-    if (!d) return null;
+    if (!d) {
+      console.log("[fetchTicketmasterEventDetail] no eventDetail in response", {
+        eventId: trimmed,
+        edgeError: data?.error ?? null,
+      });
+      return null;
+    }
+
+    console.log("[fetchTicketmasterEventDetail] full event payload from edge", {
+      id: d.id ?? trimmed,
+      name: d.name,
+      imageUrl: d.imageUrl ?? null,
+      eventImages: d.eventImages,
+      imagesLog: d.imagesLog,
+    });
+    console.log("[fetchTicketmasterEventDetail] event.images (Ticketmaster)", d.eventImages);
+
     const imageUrl =
       typeof d.imageUrl === "string" && d.imageUrl.trim() ? d.imageUrl.trim() : null;
     return {
@@ -229,6 +256,7 @@ export async function fetchTicketmasterEventDetail(eventId: string): Promise<Tic
       name: d.name,
       imageUrl,
       imagesLog: Array.isArray(d.imagesLog) ? d.imagesLog : undefined,
+      eventImages: d.eventImages ?? undefined,
     };
   } catch (err) {
     console.error("[fetchTicketmasterEventDetail]", err);

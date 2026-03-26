@@ -110,7 +110,10 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                   isActive ? "text-primary" : "text-muted-foreground"
                 )} />
                 {hasNotification && (
-                  <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
+                  <span
+                    className="absolute -top-0.5 -right-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-card"
+                    aria-label={`${totalUnread} unread messages`}
+                  >
                     {totalUnread > 99 ? "99+" : totalUnread}
                   </span>
                 )}

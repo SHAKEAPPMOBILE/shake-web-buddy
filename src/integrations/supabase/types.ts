@@ -60,6 +60,7 @@ export type Database = {
           created_at: string
           id: string
           message: string
+          message_type: string
           user_id: string
         }
         Insert: {
@@ -69,6 +70,7 @@ export type Database = {
           created_at?: string
           id?: string
           message: string
+          message_type?: string
           user_id: string
         }
         Update: {
@@ -78,9 +80,39 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
+          message_type?: string
           user_id?: string
         }
         Relationships: []
+      }
+      activity_message_reactions: {
+        Row: {
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "activity_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       activity_read_status: {
         Row: {
@@ -326,6 +358,7 @@ export type Database = {
           created_at: string
           id: string
           message: string
+          message_type: string
           user_id: string
         }
         Insert: {
@@ -334,6 +367,7 @@ export type Database = {
           created_at?: string
           id?: string
           message: string
+          message_type?: string
           user_id: string
         }
         Update: {
@@ -342,6 +376,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
+          message_type?: string
           user_id?: string
         }
         Relationships: [
@@ -350,6 +385,35 @@ export type Database = {
             columns: ["activity_id"]
             isOneToOne: false
             referencedRelation: "user_activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_message_reactions: {
+        Row: {
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "plan_messages"
             referencedColumns: ["id"]
           },
         ]
@@ -495,6 +559,7 @@ export type Database = {
           created_at: string
           id: string
           message: string
+          message_type: string
           read_at: string | null
           receiver_id: string
           sender_id: string
@@ -504,6 +569,7 @@ export type Database = {
           created_at?: string
           id?: string
           message: string
+          message_type?: string
           read_at?: string | null
           receiver_id: string
           sender_id: string
@@ -513,6 +579,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
+          message_type?: string
           read_at?: string | null
           receiver_id?: string
           sender_id?: string

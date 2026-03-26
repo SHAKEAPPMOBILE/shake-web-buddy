@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isEventChatMembershipExplicitlyExpired } from "@/lib/eventChatMembership";
+import { EVENT_CHAT_VIEWED_EVENT, readEventChatLastSeenMap } from "@/lib/eventChatLastSeen";
 
 export function useTotalUnreadChats() {
   const { user } = useAuth();
@@ -93,6 +95,57 @@ export function useTotalUnreadChats() {
         total += count || 0;
       }
 
+      // Event group chats (Ticketmaster / route id on `event_chat_members.event_id`)
+      const { data: eventMembers } = await supabase
+        .from("event_chat_members")
+        .select("event_id, joined_at, expires_at, paid_at")
+        .eq("user_id", user.id);
+
+      const activeEventRows = (eventMembers ?? []).filter(
+        (m) => m.event_id && !isEventChatMembershipExplicitlyExpired(m),
+      );
+
+      const uniqueByEventId = new Map<string, (typeof activeEventRows)[0]>();
+      for (const m of activeEventRows) {
+        const eid = m.event_id as string;
+        if (!uniqueByEventId.has(eid)) uniqueByEventId.set(eid, m);
+      }
+      const dedupedEventMembers = Array.from(uniqueByEventId.values());
+
+      if (dedupedEventMembers.length > 0) {
+        const eventIds = dedupedEventMembers.map((m) => m.event_id as string);
+        const { data: chatRows } = await supabase.from("event_chats").select("id, event_id").in("event_id", eventIds);
+
+        const lastSeenMap = readEventChatLastSeenMap();
+
+        const eventUnread = await Promise.all(
+          dedupedEventMembers.map(async (m) => {
+            const event_id = m.event_id as string;
+            const chat = chatRows?.find((c) => c.event_id === event_id);
+            if (!chat?.id) return 0;
+
+            const stored = lastSeenMap[event_id]?.trim();
+            const joined = typeof m.joined_at === "string" ? m.joined_at.trim() : "";
+            const lastSeen = stored || joined || new Date(0).toISOString();
+
+            const { count, error } = await supabase
+              .from("event_chat_messages")
+              .select("*", { count: "exact", head: true })
+              .eq("event_chat_id", chat.id)
+              .gt("created_at", lastSeen)
+              .neq("user_id", user.id);
+
+            if (error) {
+              console.warn("[useTotalUnreadChats] event_chat_messages count failed", error.message);
+              return 0;
+            }
+            return count ?? 0;
+          }),
+        );
+
+        for (const n of eventUnread) total += n;
+      }
+
       setTotalUnread(total);
     } catch (error) {
       console.error("Error checking unread messages:", error);
@@ -139,9 +192,23 @@ export function useTotalUnreadChats() {
           checkUnreadMessages();
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "event_chat_messages" },
+        (payload) => {
+          const row = payload.new as { user_id?: string };
+          if (row.user_id !== user.id) checkUnreadMessages();
+        }
+      )
       .subscribe();
 
+    const onEventChatViewed = () => {
+      void checkUnreadMessages();
+    };
+    window.addEventListener(EVENT_CHAT_VIEWED_EVENT, onEventChatViewed);
+
     return () => {
+      window.removeEventListener(EVENT_CHAT_VIEWED_EVENT, onEventChatViewed);
       supabase.removeChannel(channel);
     };
   }, [user, checkUnreadMessages]);

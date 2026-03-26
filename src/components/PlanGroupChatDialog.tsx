@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, Trash2, Calendar, Smile, X } from "lucide-react";
+import { ArrowLeft, Send, Users, User, Trash2, Calendar, Smile, X, Images } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,12 +17,15 @@ import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
+import { InlineChatGif } from "@/components/chat/InlineChatGif";
 
 interface PlanMessage {
   id: string;
   activity_id: string;
   user_id: string;
   message: string;
+  message_type?: string | null;
   created_at: string;
 }
 
@@ -91,6 +94,7 @@ export function PlanGroupChatDialog({
     avatarUrl: string | null;
   } | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
 
   const { canSendText, addCharacters } = useTextMessageLimit();
@@ -186,16 +190,17 @@ export function PlanGroupChatDialog({
   useEffect(() => {
     if (!open) {
       setShowStickerPicker(false);
+      setGiphyPickerOpen(false);
       setMessage("");
     }
   }, [open]);
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim() || !user || isSending) return;
+  const insertPlanMessage = async (text: string, messageType: "text" | "gif" = "text") => {
+    if (!text.trim() || !user || isSending) return false;
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
       toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
-      return;
+      return false;
     }
     setIsSending(true);
     try {
@@ -203,25 +208,35 @@ export function PlanGroupChatDialog({
         activity_id: activity.id,
         user_id: user.id,
         message: text.trim(),
+        message_type: messageType,
       });
       if (error) throw error;
-      addCharacters(text.trim().length);
+      if (messageType === "text") addCharacters(text.trim().length);
+      return true;
     } catch {
       toast.error("Failed to send message");
+      return false;
     } finally {
       setIsSending(false);
     }
   };
 
-  const handleSendMessage = () => {
-    sendMessage(message);
-    setMessage("");
+  const handleSendMessage = async () => {
+    const ok = await insertPlanMessage(message, "text");
+    if (ok) setMessage("");
   };
 
-  const handleSendSticker = (sticker: string) => {
-    sendMessage(sticker);
-    setShowStickerPicker(false);
-    inputRef.current?.focus();
+  const handleSendSticker = async (sticker: string) => {
+    const ok = await insertPlanMessage(sticker, "text");
+    if (ok) {
+      setShowStickerPicker(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleGifSelect = async (url: string) => {
+    const ok = await insertPlanMessage(url, "gif");
+    if (!ok) throw new Error("Failed to send GIF");
   };
 
   const handleDeleteMessage = async (messageId: string) => {
@@ -247,6 +262,7 @@ export function PlanGroupChatDialog({
   if (!open) return null;
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex flex-col bg-[#06060a] overflow-hidden" style={{ animation: "slideInFromRight 0.25s ease-out" }}>
       {/* Purple / pink radial gradient background */}
       <div
@@ -333,7 +349,9 @@ export function PlanGroupChatDialog({
             const profile = profiles[msg.user_id];
             const displayName = isOwn ? "You" : profile?.name || "Shaker";
             const avatarUrl = isOwn ? (ownProfile?.avatar_url ?? profile?.avatar_url) : profile?.avatar_url;
-            const stickerMsg = isSticker(msg.message);
+            const isGif =
+              (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+            const stickerMsg = !isGif && isSticker(msg.message);
 
             return (
               <div key={msg.id} className={`group flex gap-3 ${isOwn ? "flex-row-reverse" : ""}`}>
@@ -352,7 +370,7 @@ export function PlanGroupChatDialog({
                   </button>
                 )}
 
-                <div className={`flex-1 max-w-[75%] ${isOwn ? "text-right" : ""} ${stickerMsg ? "max-w-full" : ""}`}>
+                <div className={`flex-1 max-w-[75%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwn ? "text-right" : ""} ${stickerMsg ? "max-w-full" : ""}`}>
                   {!stickerMsg && (
                     <div className={`flex items-baseline gap-2 mb-0.5 ${isOwn ? "justify-end" : ""}`}>
                       <button
@@ -374,6 +392,14 @@ export function PlanGroupChatDialog({
                         </span>
                         <span className="text-xs text-white/25">{format(new Date(msg.created_at), "h:mm a")}</span>
                       </div>
+                    ) : isGif ? (
+                      <InlineChatGif
+                        src={msg.message}
+                        variant="dark"
+                        onLoad={() =>
+                          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+                        }
+                      />
                     ) : (
                       <div className={`text-sm px-3 py-2 rounded-2xl inline-block ${
                         isOwn
@@ -461,11 +487,29 @@ export function PlanGroupChatDialog({
       <div className="relative z-10 p-3 border-t border-white/8 shrink-0">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowStickerPicker((v) => !v)}
+            type="button"
+            onClick={() => {
+              setGiphyPickerOpen(false);
+              setShowStickerPicker((v) => !v);
+            }}
             className={`shrink-0 p-2 rounded-full transition-colors ${showStickerPicker ? "bg-[#7c5cfc] text-white" : "text-white/50 hover:text-white hover:bg-white/10"}`}
             title="Stickers"
+            disabled={!user || giphyPickerOpen}
           >
             <Smile className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowStickerPicker(false);
+              setGiphyPickerOpen(true);
+            }}
+            className={`shrink-0 p-2 rounded-full transition-colors ${giphyPickerOpen ? "bg-[#7c5cfc] text-white" : "text-white/50 hover:text-white hover:bg-white/10"}`}
+            title="GIFs"
+            aria-label="GIFs"
+            disabled={!user || isSending}
+          >
+            <Images className="w-5 h-5" />
           </button>
           <Input
             ref={inputRef}
@@ -473,14 +517,14 @@ export function PlanGroupChatDialog({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            disabled={!user || (!isPremium && !canSendText)}
+            disabled={!user || (!isPremium && !canSendText) || giphyPickerOpen}
             className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/35 min-h-9 rounded-full px-4"
             onFocus={() => setShowStickerPicker(false)}
           />
           <Button
             size="icon"
             onClick={handleSendMessage}
-            disabled={isSending || !message.trim() || !user}
+            disabled={isSending || !message.trim() || !user || giphyPickerOpen}
             className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0 rounded-full"
           >
             {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
@@ -516,5 +560,13 @@ export function PlanGroupChatDialog({
         }
       `}</style>
     </div>
+    {user ? (
+      <EventChatGiphyPickerModal
+        open={giphyPickerOpen}
+        onOpenChange={setGiphyPickerOpen}
+        onGifSelect={handleGifSelect}
+      />
+    ) : null}
+    </>
   );
 }

@@ -1,7 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, Send, Users, User, BellOff, Bell, LogOut, Trash2, Plane } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, Users, User, BellOff, Bell, LogOut, Trash2, Plane, Images } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
+import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
+import { MessageBubbleReactions } from "@/components/chat/MessageBubbleReactions";
+import { aggregateReactionsByMessage, sortedReactionEntries } from "@/lib/eventChatReactions";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +25,8 @@ import { getVenueTypeForActivity, DbVenue } from "@/hooks/useDatabaseVenues";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
+import { InlineChatGif } from "@/components/chat/InlineChatGif";
 
 interface GroupChatViewProps {
   activityType: string;
@@ -36,6 +42,7 @@ interface Message {
   activity_type: string;
   city: string;
   message: string;
+  message_type?: string | null;
   created_at: string;
 }
 
@@ -123,6 +130,7 @@ export function GroupChatView({
   const [isSending, setIsSending] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [showParticipantsList, setShowParticipantsList] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
     userId: string;
@@ -139,7 +147,23 @@ export function GroupChatView({
   const { t } = useTranslation();
   
   const { canSendText, addCharacters } = useTextMessageLimit();
-  
+
+  const messageIds = useMemo(() => messages.map((msg) => msg.id), [messages]);
+  const reactionsEnabled = Boolean(user && activityType && city);
+  const { rows: reactionRows, toggleReaction } = useMessageReactionsForTable({
+    table: "activity_message_reactions",
+    realtimeChannelId: `activity-msg-reactions:${activityType}:${city}`,
+    messageIds,
+    userId: user?.id,
+    enabled: reactionsEnabled,
+  });
+  const reactionsByMessage = useMemo(
+    () => aggregateReactionsByMessage(reactionRows, user?.id),
+    [reactionRows, user?.id]
+  );
+  const { reactionBarMessageId, mobileReactionBarRef, onMessagePointerDown, onMessagePointerEnd } =
+    useMessageReactionBarState(reactionsEnabled);
+
   // Get unique user IDs from messages for profile fetching (include current user)
   const userIds = useMemo(() => {
     const ids = new Set(messages.map((msg) => msg.user_id));
@@ -390,6 +414,38 @@ export function GroupChatView({
       handleSendMessage();
     }
   };
+
+  const handleGifSelect = useCallback(
+    async (url: string) => {
+      if (!user || isSending) return;
+      const trimmed = url.trim();
+      if (!/^https?:\/\//i.test(trimmed)) return;
+
+      if (!isPremium && !canSendText) {
+        setShowPremiumDialog(true);
+        throw new Error("Character limit reached");
+      }
+
+      setIsSending(true);
+      try {
+        const { error } = await supabase.from("activity_messages").insert({
+          user_id: user.id,
+          activity_type: activityType,
+          city: city,
+          message: trimmed,
+          message_type: "gif",
+        });
+        if (error) throw error;
+      } catch (error) {
+        console.error("Error sending GIF:", error);
+        toast.error("Failed to send GIF");
+        throw error;
+      } finally {
+        setIsSending(false);
+      }
+    },
+    [user, isSending, isPremium, canSendText, activityType, city]
+  );
   
   const handlePrevVenue = () => {
     setCurrentVenueIndex((prev) => (prev === 0 ? cityVenues.length - 1 : prev - 1));
@@ -427,7 +483,7 @@ export function GroupChatView({
     <div className="fixed inset-0 flex flex-col bg-[#06060a] z-50">
       <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(circle at 8% 0%, rgba(139,92,246,0.65) 0%, transparent 55%), radial-gradient(circle at 92% 18%, rgba(236,72,153,0.6) 0%, transparent 55%), radial-gradient(circle at 50% 100%, rgba(56,189,248,0.5) 0%, transparent 60%)' }} aria-hidden />
       <div className="relative z-10 flex flex-col flex-1 min-h-0">
-      <div className="flex items-center gap-3 px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-white/5">
+      <div className="relative z-30 flex shrink-0 items-center gap-3 border-b border-white/5 bg-[#06060a] px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <button onClick={onBack} className="shrink-0 p-1.5 text-white/80 hover:text-white">
           <ChevronLeft className="w-6 h-6" />
         </button>
@@ -547,7 +603,7 @@ export function GroupChatView({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-14 space-y-3">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-white/60">
             <p className="text-center text-sm">
@@ -561,49 +617,86 @@ export function GroupChatView({
             const profile = profiles[msg.user_id];
             const displayName = isOwnMessage ? 'You' : profile?.name || 'Shaker';
             const avatarUrl = isOwnMessage ? (ownProfile?.avatar_url ?? profile?.avatar_url) : profile?.avatar_url;
+            const msgReactions = reactionsByMessage[msg.id];
+            const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
+            const isGif =
+              (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
             return (
-              <div key={msg.id} className={`group flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+              <div key={msg.id} className={`group flex gap-3 items-end ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
                 <Avatar className="w-8 h-8 shrink-0 rounded-full border border-white/10 bg-white/5">
                   <AvatarImage src={getDisplayAvatarUrl(avatarUrl)} alt={displayName} className="object-cover" />
                   <AvatarFallback className="bg-white/5 flex items-center justify-center">
                     <User className="w-4 h-4 text-white/40" />
                   </AvatarFallback>
                 </Avatar>
-                <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'text-right' : ''}`}>
-                  <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
-                    <button
-                      className={`font-semibold text-sm text-white ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
-                      onClick={() => {
-                        if (!isOwnMessage) {
-                          setSelectedUserProfile({
-                            userId: msg.user_id,
-                            userName: profile?.name || null,
-                            avatarUrl: profile?.avatar_url || null,
-                          });
-                        }
-                      }}
-                      disabled={isOwnMessage}
-                    >
-                      {displayName}
-                    </button>
-                    <span className="text-xs text-white/35">{format(new Date(msg.created_at), 'h:mm a')}</span>
-                  </div>
-                  <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                    <div className={`text-sm mt-0.5 px-3 py-2 rounded-xl inline-block ${
-                      isOwnMessage ? 'bg-[#7c5cfc] text-white' : 'bg-white/10 text-white border border-white/10'
-                    }`}>
-                      <span>{msg.message}</span>
+                <div
+                  className={`min-w-0 max-w-[70%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
+                >
+                  <MessageBubbleReactions
+                    variant="dark"
+                    isOwn={isOwnMessage}
+                    messageId={msg.id}
+                    enabled={reactionsEnabled}
+                    reactionBarMessageId={reactionBarMessageId}
+                    mobileReactionBarRef={mobileReactionBarRef}
+                    reactionChips={reactionChips}
+                    onToggleReaction={toggleReaction}
+                    onPointerDown={onMessagePointerDown(msg.id)}
+                    onPointerUp={onMessagePointerEnd}
+                    onPointerCancel={onMessagePointerEnd}
+                    onPointerLeave={onMessagePointerEnd}
+                    header={
+                      <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                        <button
+                          type="button"
+                          className={`font-semibold text-sm text-white ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
+                          onClick={() => {
+                            if (!isOwnMessage) {
+                              setSelectedUserProfile({
+                                userId: msg.user_id,
+                                userName: profile?.name || null,
+                                avatarUrl: profile?.avatar_url || null,
+                              });
+                            }
+                          }}
+                          disabled={isOwnMessage}
+                        >
+                          {displayName}
+                        </button>
+                        <span className="text-xs text-white/35">{format(new Date(msg.created_at), 'h:mm a')}</span>
+                      </div>
+                    }
+                  >
+                    <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                      {isGif ? (
+                        <InlineChatGif
+                          src={msg.message}
+                          variant="dark"
+                          onLoad={() =>
+                            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+                          }
+                        />
+                      ) : (
+                        <div
+                          className={`text-sm px-3 py-2 rounded-xl inline-block ${
+                            isOwnMessage ? 'bg-[#7c5cfc] text-white' : 'bg-white/10 text-white border border-white/10'
+                          }`}
+                        >
+                          <span>{msg.message}</span>
+                        </div>
+                      )}
+                      {isOwnMessage && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-white/40 hover:text-red-400 transition-all"
+                          title="Delete message"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
-                    {isOwnMessage && (
-                      <button
-                        onClick={() => handleDeleteMessage(msg.id)}
-                        className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-white/40 hover:text-red-400 transition-all"
-                        title="Delete message"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
+                  </MessageBubbleReactions>
                 </div>
               </div>
             );
@@ -630,24 +723,44 @@ export function GroupChatView({
 
       <div className="p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5">
         <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+            onClick={() => setGiphyPickerOpen(true)}
+            disabled={isSending || giphyPickerOpen}
+            aria-label="GIFs"
+            title="GIFs"
+          >
+            <Images className="w-5 h-5" />
+          </Button>
           <Input
             placeholder={canSendText ? "Type a message..." : "Character limit reached"}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
-            disabled={isSending || (!isPremium && !canSendText)}
+            disabled={isSending || (!isPremium && !canSendText) || giphyPickerOpen}
           />
           <Button
             size="icon"
             onClick={handleSendMessage}
-            disabled={isSending || !message.trim()}
+            disabled={isSending || !message.trim() || giphyPickerOpen}
             className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
           >
             {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
       </div>
+
+      {user ? (
+        <EventChatGiphyPickerModal
+          open={giphyPickerOpen}
+          onOpenChange={setGiphyPickerOpen}
+          onGifSelect={handleGifSelect}
+        />
+      ) : null}
 
       {/* Premium Dialog */}
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />

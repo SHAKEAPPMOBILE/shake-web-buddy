@@ -275,10 +275,10 @@ export function VideoUploadModal({
                 loop
               />
             ) : previewUrl ? (
-              <>
+              <div className="absolute inset-0">
                 <video
                   src={previewUrl}
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                   controls
                   autoPlay
                   loop
@@ -292,15 +292,16 @@ export function VideoUploadModal({
                     e.stopPropagation();
                     void handleUpload();
                   }}
-                  className={`absolute bottom-[12px] right-[12px] z-20 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-40 ${
+                  className={`absolute z-20 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-40 ${
                     floatingSendUsesChatPurple
                       ? "bg-[#7c5cfc] hover:bg-[#8b6dfc]"
                       : "bg-shake-green hover:bg-shake-green/90"
                   }`}
+                  style={{ bottom: 12, right: 12 }}
                 >
                   <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
                 </button>
-              </>
+              </div>
             ) : validating ? (
               <div className="flex flex-col items-center gap-4 text-white/70">
                 <div className="w-12 h-12 border-2 border-white/30 border-t-white rounded-full animate-spin" />

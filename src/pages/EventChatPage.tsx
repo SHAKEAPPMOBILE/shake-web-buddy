@@ -5,7 +5,6 @@ import {
   useRef,
   useMemo,
   useCallback,
-  type PointerEvent,
 } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Images, Camera } from "lucide-react";
@@ -22,13 +21,13 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VideoUploadModal } from "@/components/VideoUploadModal";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
+import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { EVENT_CHAT_VIDEO_MAX_SECONDS, uploadEventChatVideoWithProgress } from "@/lib/eventChatVideoUpload";
 import { useEventChatReactions } from "@/hooks/useEventChatReactions";
-import {
-  EVENT_CHAT_QUICK_REACTIONS,
-  aggregateReactionsByMessage,
-  sortedReactionEntries,
-} from "@/lib/eventChatReactions";
+import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
+import { MessageBubbleReactions } from "@/components/chat/MessageBubbleReactions";
+import { aggregateReactionsByMessage, sortedReactionEntries } from "@/lib/eventChatReactions";
+import { markEventChatViewedNow } from "@/lib/eventChatLastSeen";
 
 interface EventChatPageParams {
   eventId?: string;
@@ -74,10 +73,6 @@ export default function EventChatPage() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const [reactionBarMessageId, setReactionBarMessageId] = useState<string | null>(null);
-  const mobileReactionBarRef = useRef<HTMLDivElement | null>(null);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressMessageIdRef = useRef<string | null>(null);
   const [chatDataLoadEnabled, setChatDataLoadEnabled] = useState(false);
   useEffect(() => {
     setChatDataLoadEnabled(false);
@@ -92,6 +87,11 @@ export default function EventChatPage() {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
+    if (!eventId || !user) return;
+    markEventChatViewedNow(eventId);
+  }, [eventId, user?.id]);
+
+  useEffect(() => {
     if (!prefetchStart) return;
     const d = new Date(prefetchStart);
     if (Number.isNaN(d.getTime())) return;
@@ -99,7 +99,7 @@ export default function EventChatPage() {
   }, [prefetchStart]);
 
   /**
-   * Polaroid: authoritative poster from `public_events` or Ticketmaster detail (16_9 widest, else fallback).
+   * Polaroid: `public_events.image_url` (Supabase) or Ticketmaster Discovery event detail `images` (widest first).
    * Optional `eventPrefetch.imageUrl` only fills the gap until resolve completes (e.g. confirmation modal).
    */
   useEffect(() => {
@@ -126,6 +126,14 @@ export default function EventChatPage() {
       cancelled = true;
     };
   }, [eventId, location.key]);
+
+  useEffect(() => {
+    console.log("[EventChatPage] Polaroid header <img> src", {
+      eventImageUrl: eventImageUrl ?? null,
+      eventId: eventId ?? null,
+      isNullish: eventImageUrl == null || eventImageUrl === "",
+    });
+  }, [eventImageUrl, eventId]);
 
   useEffect(() => {
     if (!polaroidExpanded) return;
@@ -184,41 +192,8 @@ export default function EventChatPage() {
     [reactionRows, user?.id]
   );
 
-  const clearLongPressTimer = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    longPressMessageIdRef.current = null;
-  }, []);
-
-  const onMessagePointerDown = useCallback(
-    (messageId: string) => (e: PointerEvent) => {
-      if (e.button !== 0 || !reactionsEnabled) return;
-      clearLongPressTimer();
-      longPressMessageIdRef.current = messageId;
-      longPressTimerRef.current = window.setTimeout(() => {
-        longPressTimerRef.current = null;
-        setReactionBarMessageId(messageId);
-      }, 480);
-    },
-    [reactionsEnabled, clearLongPressTimer]
-  );
-
-  const onMessagePointerEnd = useCallback(() => {
-    clearLongPressTimer();
-  }, [clearLongPressTimer]);
-
-  useEffect(() => {
-    if (!reactionBarMessageId) return;
-    const onDocPointerDown = (e: PointerEvent) => {
-      const t = e.target as Node;
-      if (mobileReactionBarRef.current?.contains(t)) return;
-      setReactionBarMessageId(null);
-    };
-    document.addEventListener("pointerdown", onDocPointerDown);
-    return () => document.removeEventListener("pointerdown", onDocPointerDown);
-  }, [reactionBarMessageId]);
+  const { reactionBarMessageId, mobileReactionBarRef, onMessagePointerDown, onMessagePointerEnd } =
+    useMessageReactionBarState(reactionsEnabled);
 
   useEffect(() => {
     chatStatusRef.current = "loading";
@@ -489,10 +464,15 @@ export default function EventChatPage() {
 
   const [inputValue, setInputValue] = useState("");
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const scrollMessagesToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
+  }, []);
+
+  // Auto-scroll when list changes; rAF so flex/media layout (e.g. GIF height) is applied first
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(() => scrollMessagesToBottom("smooth"));
+    return () => cancelAnimationFrame(id);
+  }, [messages, scrollMessagesToBottom]);
 
   const headerSubtitle = useMemo(() => {
     if (isLoadingMeta || !chatDataLoadEnabled) return "Loading…";
@@ -591,7 +571,7 @@ export default function EventChatPage() {
       />
       <div className="relative z-10 flex flex-col flex-1 min-h-0">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-white/5">
+        <div className="relative z-30 flex shrink-0 items-center gap-3 border-b border-white/5 px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))]">
           <button
             type="button"
             onClick={() => {
@@ -697,8 +677,8 @@ export default function EventChatPage() {
           </div>
         </div>
 
-        {/* Chat body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {/* Chat body — extra bottom padding so last message clears the input bar */}
+        <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto space-y-3 px-4 pt-14 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           {isLoadingMeta && (
             <div className="flex items-center justify-center py-8">
               <LoadingSpinner size="lg" />
@@ -741,73 +721,33 @@ export default function EventChatPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div
-                  className={`relative min-w-0 w-fit max-w-[70%] group/msg ${isOwn ? "text-right" : "text-left"}`}
-                  onPointerDown={onMessagePointerDown(m.id)}
-                  onPointerUp={onMessagePointerEnd}
-                  onPointerCancel={onMessagePointerEnd}
-                  onPointerLeave={onMessagePointerEnd}
-                  onContextMenu={(e) => e.preventDefault()}
+                  className={`w-fit max-w-[70%] min-w-0 ${isGif || isVideo ? "shrink-0 overflow-visible" : ""} ${isOwn ? "text-right" : "text-left"}`}
                 >
-                  {/* Desktop: hover reaction bar */}
-                  {reactionsEnabled ? (
-                    <div
-                      className={`pointer-events-none absolute z-30 -top-11 hidden max-w-[100vw] gap-0.5 rounded-full border border-white/15 bg-[#1a1a24]/98 px-1.5 py-1 shadow-lg backdrop-blur-sm md:flex md:opacity-0 md:transition-opacity md:duration-150 ${
-                        isOwn ? "right-0" : "left-0"
-                      } group-hover/msg:pointer-events-auto group-hover/msg:opacity-100`}
-                    >
-                      {EVENT_CHAT_QUICK_REACTIONS.map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          className="pointer-events-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg leading-none hover:bg-white/15 active:scale-95"
-                          aria-label={`React ${emoji}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            bumpInteraction();
-                            void toggleReaction(m.id, emoji);
-                          }}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {/* Mobile / touch: long-press bar */}
-                  {reactionsEnabled && reactionBarMessageId === m.id ? (
-                    <div
-                      ref={mobileReactionBarRef}
-                      className={`absolute z-30 -top-11 flex max-w-[100vw] gap-0.5 rounded-full border border-white/15 bg-[#1a1a24]/98 px-1.5 py-1 shadow-lg backdrop-blur-sm md:hidden ${
-                        isOwn ? "right-0" : "left-0"
-                      }`}
-                    >
-                      {EVENT_CHAT_QUICK_REACTIONS.map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg leading-none hover:bg-white/15 active:scale-95"
-                          aria-label={`React ${emoji}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            bumpInteraction();
-                            void toggleReaction(m.id, emoji);
-                          }}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  <div className={`flex items-baseline gap-2 flex-wrap ${isOwn ? "justify-end" : "justify-start"}`}>
-                    <span className="font-semibold text-sm text-white">
-                      {isOwn ? "You" : displayName}
-                    </span>
-                    <span className="text-xs text-white/35">
-                      {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                  <div className={`mt-0.5 ${isOwn ? "flex justify-end" : "flex justify-start"}`}>
+                  <MessageBubbleReactions
+                    variant="dark"
+                    isOwn={isOwn}
+                    messageId={m.id}
+                    enabled={reactionsEnabled}
+                    reactionBarMessageId={reactionBarMessageId}
+                    mobileReactionBarRef={mobileReactionBarRef}
+                    reactionChips={reactionChips}
+                    onToggleReaction={toggleReaction}
+                    onInteraction={bumpInteraction}
+                    onPointerDown={onMessagePointerDown(m.id)}
+                    onPointerUp={onMessagePointerEnd}
+                    onPointerCancel={onMessagePointerEnd}
+                    onPointerLeave={onMessagePointerEnd}
+                    header={
+                      <div className={`flex items-baseline gap-2 flex-wrap ${isOwn ? "justify-end" : "justify-start"}`}>
+                        <span className="font-semibold text-sm text-white">
+                          {isOwn ? "You" : displayName}
+                        </span>
+                        <span className="text-xs text-white/35">
+                          {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    }
+                  >
                     {isVideo ? (
                       <video
                         src={m.content}
@@ -817,11 +757,10 @@ export default function EventChatPage() {
                         className="rounded-lg max-w-[260px] w-full bg-black/30"
                       />
                     ) : isGif ? (
-                      <img
+                      <InlineChatGif
                         src={m.content}
-                        alt=""
-                        loading="lazy"
-                        className="rounded-lg max-w-[260px] w-full h-auto object-cover bg-black/20 ring-1 ring-white/10"
+                        variant="dark"
+                        onLoad={() => scrollMessagesToBottom("smooth")}
                       />
                     ) : (
                       <div
@@ -832,33 +771,7 @@ export default function EventChatPage() {
                         <span>{m.content}</span>
                       </div>
                     )}
-                  </div>
-
-                  {reactionsEnabled && reactionChips.length > 0 ? (
-                    <div
-                      className={`mt-1.5 flex flex-wrap gap-1 ${isOwn ? "justify-end" : "justify-start"}`}
-                    >
-                      {reactionChips.map(({ emoji, count, mine }) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => {
-                            bumpInteraction();
-                            void toggleReaction(m.id, emoji);
-                          }}
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors ${
-                            mine
-                              ? "border-[#a78bfa]/70 bg-[#7c5cfc]/25 text-white ring-1 ring-[#c4b5fd]/50"
-                              : "border-white/15 bg-white/5 text-white/85 hover:bg-white/10"
-                          }`}
-                          aria-label={mine ? `Remove your ${emoji} reaction (${count})` : `Add ${emoji} reaction (${count})`}
-                        >
-                          <span aria-hidden>{emoji}</span>
-                          <span className={mine ? "text-white/90" : "text-white/55"}>{count}</span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
+                  </MessageBubbleReactions>
                 </div>
               </div>
             );
@@ -877,7 +790,11 @@ export default function EventChatPage() {
             </p>
           )}
 
-          <div ref={messagesEndRef} />
+          <div
+            ref={messagesEndRef}
+            className="h-px w-full shrink-0 scroll-mb-[calc(5.5rem+env(safe-area-inset-bottom))]"
+            aria-hidden
+          />
         </div>
 
         {/* Input bar */}

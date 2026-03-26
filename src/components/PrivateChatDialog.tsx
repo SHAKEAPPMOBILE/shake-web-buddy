@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, User } from "lucide-react";
+import { Send, User, Images } from "lucide-react";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -20,6 +20,8 @@ import { toast } from "@/lib/app-toast";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { useTranslation } from "react-i18next";
+import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
+import { InlineChatGif } from "@/components/chat/InlineChatGif";
 
 interface PrivateChatDialogProps {
   open: boolean;
@@ -44,6 +46,7 @@ export function PrivateChatDialog({
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   
@@ -77,6 +80,16 @@ export function PrivateChatDialog({
     }
   }, [open, markAsRead]);
 
+  useEffect(() => {
+    if (!open) setGiphyPickerOpen(false);
+  }, [open]);
+
+  const scrollMessagesToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -99,7 +112,29 @@ export function PrivateChatDialog({
     }
   };
 
+  const handleGifSelect = async (url: string) => {
+    if (isSending) return;
+
+    if (!isPremium && !canSendText) {
+      setShowPremiumDialog(true);
+      toast.error(
+        "You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!"
+      );
+      throw new Error("Character limit reached");
+    }
+
+    setIsSending(true);
+    const { error } = await sendMessage(url, "gif");
+    setIsSending(false);
+
+    if (error) {
+      toast.error("Failed to send GIF");
+      throw error;
+    }
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className="sm:max-w-md bg-[hsl(50,40%,92%)] backdrop-blur-xl border-border/50 flex flex-col max-h-[80vh] [&>button.dialog-close]:text-black"
@@ -144,26 +179,45 @@ export function PrivateChatDialog({
             <div className="space-y-3 px-1">
               {messages.map((msg) => {
                 const isMe = msg.sender_id === user?.id;
+                const isGif =
+                  (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
                 return (
                   <div
                     key={msg.id}
                     className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[80%] px-3 py-2 rounded-2xl ${
-                        isMe
-                          ? "bg-black text-white rounded-br-sm"
-                          : "bg-blue-500 text-white rounded-bl-sm"
+                      className={`max-w-[80%] ${isGif ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"} ${
+                        isGif
+                          ? ""
+                          : isMe
+                            ? "bg-black text-white rounded-br-sm"
+                            : "bg-blue-500 text-white rounded-bl-sm"
                       }`}
                     >
-                      <p className="text-sm break-words">{msg.message}</p>
-                      <p
-                        className={`text-[10px] mt-1 ${
-                          isMe ? "text-white/60" : "text-white/60"
-                        }`}
-                      >
-                        {format(new Date(msg.created_at), "HH:mm")}
-                      </p>
+                      {isGif ? (
+                        <>
+                          <InlineChatGif
+                            src={msg.message}
+                            variant="light"
+                            onLoad={scrollMessagesToBottom}
+                          />
+                          <p className="text-[10px] mt-1 text-black/50">
+                            {format(new Date(msg.created_at), "HH:mm")}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm break-words">{msg.message}</p>
+                          <p
+                            className={`text-[10px] mt-1 ${
+                              isMe ? "text-white/60" : "text-white/60"
+                            }`}
+                          >
+                            {format(new Date(msg.created_at), "HH:mm")}
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -173,7 +227,7 @@ export function PrivateChatDialog({
         </ScrollArea>
 
         {/* Quick suggestions - show when input is empty */}
-        {user && !newMessage.trim() && (
+        {user && !newMessage.trim() && !giphyPickerOpen && (
           <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
             <div className="flex gap-2 w-max">
               {chatSuggestions.map((suggestion) => (
@@ -192,17 +246,29 @@ export function PrivateChatDialog({
         {/* Input */}
         <form onSubmit={handleSend} className="pt-4 px-4 pb-4">
           <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
+              onClick={() => setGiphyPickerOpen(true)}
+              disabled={!user || isSending || giphyPickerOpen}
+              aria-label="GIFs"
+              title="GIFs"
+            >
+              <Images className="w-5 h-5" />
+            </Button>
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
               className="flex-1"
-              disabled={isSending || (!isPremium && !canSendText)}
+              disabled={isSending || (!isPremium && !canSendText) || giphyPickerOpen}
             />
             <Button
               type="submit"
               size="icon"
-              disabled={!newMessage.trim() || isSending}
+              disabled={!newMessage.trim() || isSending || giphyPickerOpen}
               variant="shake"
             >
               {isSending ? (
@@ -214,8 +280,15 @@ export function PrivateChatDialog({
           </div>
         </form>
       </DialogContent>
-      
-      <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     </Dialog>
+    <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+    {open && user ? (
+      <EventChatGiphyPickerModal
+        open={giphyPickerOpen}
+        onOpenChange={setGiphyPickerOpen}
+        onGifSelect={handleGifSelect}
+      />
+    ) : null}
+    </>
   );
 }

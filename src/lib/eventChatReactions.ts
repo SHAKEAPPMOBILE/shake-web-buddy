@@ -10,7 +10,7 @@ export type EventChatReactionRow = {
 
 export type ReactionChip = { emoji: string; count: number; mine: boolean };
 
-/** Group raw rows into per-message emoji counts; `mine` if current user reacted with that emoji. */
+/** Group raw rows into per-message emoji counts; `mine` if current user's single reaction is that emoji. */
 export function aggregateReactionsByMessage(
   rows: Pick<EventChatReactionRow, "message_id" | "user_id" | "emoji">[],
   currentUserId: string | undefined

@@ -324,14 +324,12 @@ function pickTicketmasterPosterUrl(images: TicketmasterImage[] | null | undefine
     return { url: null, imagesLog };
   }
 
+  // Widest image wins (Ticketmaster lists multiple ratios); do not require 16_9 — that often yielded null.
   const withUrl = images.filter((im) => im.url && String(im.url).trim());
-  const sixteenNine = withUrl.filter((im) => String(im.ratio ?? "") === "16_9");
-  const pool = sixteenNine.length > 0 ? sixteenNine : withUrl;
-  const sorted = [...pool].sort((a, b) => (Number(b.width) || 0) - (Number(a.width) || 0));
-  const url =
-    sorted[0]?.url?.trim() ??
-    images[0]?.url?.trim() ??
-    null;
+  const sorted = [...withUrl].sort((a, b) => (Number(b.width) || 0) - (Number(a.width) || 0));
+  const fromSorted = sorted[0]?.url?.trim();
+  const fromFirst = String(images[0]?.url ?? "").trim();
+  const url = (fromSorted ?? fromFirst) || null;
 
   return { url, imagesLog };
 }
@@ -593,6 +591,12 @@ serve(async (req) => {
           );
         }
         const e = JSON.parse(text) as TicketmasterEvent;
+        console.log("[fetch-events] Ticketmaster event detail (raw)", {
+          discoveryId: e.id,
+          name: e.name,
+          images: e.images,
+          imageCount: e.images?.length ?? 0,
+        });
         const { url: imageUrl, imagesLog } = pickTicketmasterPosterUrl(e.images);
         return new Response(
           JSON.stringify({
@@ -601,6 +605,8 @@ serve(async (req) => {
               name: e.name ?? undefined,
               imageUrl: imageUrl ?? null,
               imagesLog,
+              /** Full `images` array from Discovery API (browser logs / debugging). */
+              eventImages: e.images ?? null,
             },
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },

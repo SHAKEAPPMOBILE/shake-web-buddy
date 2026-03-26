@@ -7,6 +7,7 @@ interface PrivateMessage {
   sender_id: string;
   receiver_id: string;
   message: string;
+  message_type?: string | null;
   created_at: string;
   read_at: string | null;
 }
@@ -42,13 +43,19 @@ export function usePrivateMessages(otherUserId: string | null) {
   }, [user, otherUserId]);
 
   // Send a message
-  const sendMessage = async (message: string) => {
+  const sendMessage = async (message: string, messageType: "text" | "gif" = "text") => {
     if (!user || !otherUserId) return { error: new Error("Not authenticated") };
+
+    const trimmed = message.trim();
+    if (messageType === "gif" && !/^https?:\/\//i.test(trimmed)) {
+      return { error: new Error("Invalid GIF URL") };
+    }
 
     const { error } = await supabase.from("private_messages").insert({
       sender_id: user.id,
       receiver_id: otherUserId,
-      message,
+      message: trimmed,
+      message_type: messageType,
     });
 
     if (!error) {
