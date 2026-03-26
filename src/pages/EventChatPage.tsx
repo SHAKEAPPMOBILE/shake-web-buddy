@@ -542,6 +542,7 @@ export default function EventChatPage() {
         onOpenChange={setVideoModalOpen}
         title="Video"
         maxDurationSeconds={EVENT_CHAT_VIDEO_MAX_SECONDS}
+        floatingSendUsesChatPurple
         primaryButtonLabel="Send"
         uploadSuccessToast="Video sent!"
         uploadErrorToast="Failed to send video"

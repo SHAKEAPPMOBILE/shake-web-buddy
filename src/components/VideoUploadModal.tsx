@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Upload, Trash2 } from "lucide-react";
+import { X, Upload, Trash2, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/lib/app-toast";
@@ -23,6 +23,8 @@ export interface VideoUploadModalProps {
   deleteSuccessToast?: string;
   deleteErrorToast?: string;
   fileMaxSizeMb?: number;
+  /** When true, floating preview send uses chat purple (#7c5cfc); otherwise matches primary (e.g. shake-green for status). */
+  floatingSendUsesChatPurple?: boolean;
 }
 
 export function VideoUploadModal({
@@ -42,6 +44,7 @@ export function VideoUploadModal({
   deleteSuccessToast = "Video deleted",
   deleteErrorToast = "Failed to delete video",
   fileMaxSizeMb = 50,
+  floatingSendUsesChatPurple = false,
 }: VideoUploadModalProps) {
   const { isPremium } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -51,6 +54,7 @@ export function VideoUploadModal({
   const [validating, setValidating] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadInFlightRef = useRef(false);
 
   const resetSelection = useCallback(() => {
     setSelectedFile(null);
@@ -69,15 +73,6 @@ export function VideoUploadModal({
     setUploadRatio(0);
     onOpenChange(false);
   }, [uploading, resetSelection, onOpenChange]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !uploading) handleClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, uploading, handleClose]);
 
   const validateVideoDuration = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -132,8 +127,9 @@ export function VideoUploadModal({
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
+  const handleUpload = useCallback(async () => {
+    if (!selectedFile || uploadInFlightRef.current) return;
+    uploadInFlightRef.current = true;
 
     setUploading(true);
     setUploadRatio(0);
@@ -142,9 +138,11 @@ export function VideoUploadModal({
       ok = await onUploadFile(selectedFile, setUploadRatio);
     } catch {
       ok = false;
+    } finally {
+      uploadInFlightRef.current = false;
+      setUploading(false);
+      setUploadRatio(0);
     }
-    setUploading(false);
-    setUploadRatio(0);
 
     if (ok) {
       toast.success(uploadSuccessToast);
@@ -154,7 +152,51 @@ export function VideoUploadModal({
     } else {
       toast.error(uploadErrorToast);
     }
-  };
+  }, [
+    selectedFile,
+    onUploadFile,
+    onSuccess,
+    resetSelection,
+    onOpenChange,
+    uploadSuccessToast,
+    uploadErrorToast,
+  ]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !uploading) {
+        handleClose();
+        return;
+      }
+      if (
+        e.key === "Enter" &&
+        !e.shiftKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !uploading &&
+        previewUrl &&
+        selectedFile &&
+        !existingVideoUrl
+      ) {
+        const t = e.target as HTMLElement | null;
+        if (t?.closest("input, textarea, [contenteditable=true]")) return;
+        e.preventDefault();
+        void handleUpload();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [
+    open,
+    uploading,
+    handleClose,
+    previewUrl,
+    selectedFile,
+    existingVideoUrl,
+    handleUpload,
+  ]);
 
   const handleDelete = async () => {
     if (!onDeleteExisting) return;
@@ -233,13 +275,32 @@ export function VideoUploadModal({
                 loop
               />
             ) : previewUrl ? (
-              <video
-                src={previewUrl}
-                className="w-full h-full object-cover"
-                controls
-                autoPlay
-                loop
-              />
+              <>
+                <video
+                  src={previewUrl}
+                  className="w-full h-full object-cover"
+                  controls
+                  autoPlay
+                  loop
+                />
+                <button
+                  type="button"
+                  disabled={uploading}
+                  aria-label={primaryButtonLabel}
+                  title={primaryButtonLabel}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleUpload();
+                  }}
+                  className={`absolute top-2 right-2 z-20 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-40 ${
+                    floatingSendUsesChatPurple
+                      ? "bg-[#7c5cfc] hover:bg-[#8b6dfc]"
+                      : "bg-shake-green hover:bg-shake-green/90"
+                  }`}
+                >
+                  <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+                </button>
+              </>
             ) : validating ? (
               <div className="flex flex-col items-center gap-4 text-white/70">
                 <div className="w-12 h-12 border-2 border-white/30 border-t-white rounded-full animate-spin" />
