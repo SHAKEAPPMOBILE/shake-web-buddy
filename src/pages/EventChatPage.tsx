@@ -5,6 +5,7 @@ import {
   useRef,
   useMemo,
   useCallback,
+  type PointerEvent,
 } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Images, Camera } from "lucide-react";
@@ -22,6 +23,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VideoUploadModal } from "@/components/VideoUploadModal";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
 import { EVENT_CHAT_VIDEO_MAX_SECONDS, uploadEventChatVideoWithProgress } from "@/lib/eventChatVideoUpload";
+import { useEventChatReactions } from "@/hooks/useEventChatReactions";
+import {
+  EVENT_CHAT_QUICK_REACTIONS,
+  aggregateReactionsByMessage,
+  sortedReactionEntries,
+} from "@/lib/eventChatReactions";
 
 interface EventChatPageParams {
   eventId?: string;
@@ -67,6 +74,10 @@ export default function EventChatPage() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [reactionBarMessageId, setReactionBarMessageId] = useState<string | null>(null);
+  const mobileReactionBarRef = useRef<HTMLDivElement | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressMessageIdRef = useRef<string | null>(null);
   const [chatDataLoadEnabled, setChatDataLoadEnabled] = useState(false);
   useEffect(() => {
     setChatDataLoadEnabled(false);
@@ -155,6 +166,56 @@ export default function EventChatPage() {
     eventStartsAt,
     loadEnabled: chatDataLoadEnabled,
   });
+
+  const messageIds = useMemo(() => messages.map((m) => m.id), [messages]);
+  const reactionsEnabled =
+    !!eventId && chatDataLoadEnabled && status === "active" && !!user;
+  const { rows: reactionRows, toggleReaction } = useEventChatReactions({
+    eventId: eventId ?? "",
+    messageIds,
+    userId: user?.id,
+    enabled: reactionsEnabled,
+  });
+  const reactionsByMessage = useMemo(
+    () => aggregateReactionsByMessage(reactionRows, user?.id),
+    [reactionRows, user?.id]
+  );
+
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressMessageIdRef.current = null;
+  }, []);
+
+  const onMessagePointerDown = useCallback(
+    (messageId: string) => (e: PointerEvent) => {
+      if (e.button !== 0 || !reactionsEnabled) return;
+      clearLongPressTimer();
+      longPressMessageIdRef.current = messageId;
+      longPressTimerRef.current = window.setTimeout(() => {
+        longPressTimerRef.current = null;
+        setReactionBarMessageId(messageId);
+      }, 480);
+    },
+    [reactionsEnabled, clearLongPressTimer]
+  );
+
+  const onMessagePointerEnd = useCallback(() => {
+    clearLongPressTimer();
+  }, [clearLongPressTimer]);
+
+  useEffect(() => {
+    if (!reactionBarMessageId) return;
+    const onDocPointerDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (mobileReactionBarRef.current?.contains(t)) return;
+      setReactionBarMessageId(null);
+    };
+    document.addEventListener("pointerdown", onDocPointerDown);
+    return () => document.removeEventListener("pointerdown", onDocPointerDown);
+  }, [reactionBarMessageId]);
 
   useEffect(() => {
     chatStatusRef.current = "loading";
@@ -662,8 +723,11 @@ export default function EventChatPage() {
             const isVideo = m.message_type === "video" && /^https?:\/\//i.test(m.content);
             const isGif = m.message_type === "gif" && /^https?:\/\//i.test(m.content);
 
+            const msgReactions = reactionsByMessage[m.id];
+            const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
+
             return (
-              <div key={m.id} className={`group flex gap-3 items-end ${isOwn ? "flex-row-reverse" : ""}`}>
+              <div key={m.id} className={`flex gap-3 items-end ${isOwn ? "flex-row-reverse" : ""}`}>
                 <Avatar className="w-8 h-8 shrink-0 rounded-full border border-white/10 bg-white/5">
                   <AvatarImage src={avatarUrl || undefined} alt={displayName} className="object-cover" />
                   <AvatarFallback className="bg-white/5 flex items-center justify-center">
@@ -673,8 +737,64 @@ export default function EventChatPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div
-                  className={`min-w-0 w-fit max-w-[70%] ${isOwn ? "text-right" : "text-left"}`}
+                  className={`relative min-w-0 w-fit max-w-[70%] group/msg ${isOwn ? "text-right" : "text-left"}`}
+                  onPointerDown={onMessagePointerDown(m.id)}
+                  onPointerUp={onMessagePointerEnd}
+                  onPointerCancel={onMessagePointerEnd}
+                  onPointerLeave={onMessagePointerEnd}
+                  onContextMenu={(e) => e.preventDefault()}
                 >
+                  {/* Desktop: hover reaction bar */}
+                  {reactionsEnabled ? (
+                    <div
+                      className={`pointer-events-none absolute z-30 -top-11 hidden max-w-[100vw] gap-0.5 rounded-full border border-white/15 bg-[#1a1a24]/98 px-1.5 py-1 shadow-lg backdrop-blur-sm md:flex md:opacity-0 md:transition-opacity md:duration-150 ${
+                        isOwn ? "right-0" : "left-0"
+                      } group-hover/msg:pointer-events-auto group-hover/msg:opacity-100`}
+                    >
+                      {EVENT_CHAT_QUICK_REACTIONS.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          className="pointer-events-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg leading-none hover:bg-white/15 active:scale-95"
+                          aria-label={`React ${emoji}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            bumpInteraction();
+                            void toggleReaction(m.id, emoji);
+                          }}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {/* Mobile / touch: long-press bar */}
+                  {reactionsEnabled && reactionBarMessageId === m.id ? (
+                    <div
+                      ref={mobileReactionBarRef}
+                      className={`absolute z-30 -top-11 flex max-w-[100vw] gap-0.5 rounded-full border border-white/15 bg-[#1a1a24]/98 px-1.5 py-1 shadow-lg backdrop-blur-sm md:hidden ${
+                        isOwn ? "right-0" : "left-0"
+                      }`}
+                    >
+                      {EVENT_CHAT_QUICK_REACTIONS.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg leading-none hover:bg-white/15 active:scale-95"
+                          aria-label={`React ${emoji}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            bumpInteraction();
+                            void toggleReaction(m.id, emoji);
+                          }}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+
                   <div className={`flex items-baseline gap-2 flex-wrap ${isOwn ? "justify-end" : "justify-start"}`}>
                     <span className="font-semibold text-sm text-white">
                       {isOwn ? "You" : displayName}
@@ -709,6 +829,32 @@ export default function EventChatPage() {
                       </div>
                     )}
                   </div>
+
+                  {reactionsEnabled && reactionChips.length > 0 ? (
+                    <div
+                      className={`mt-1.5 flex flex-wrap gap-1 ${isOwn ? "justify-end" : "justify-start"}`}
+                    >
+                      {reactionChips.map(({ emoji, count, mine }) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => {
+                            bumpInteraction();
+                            void toggleReaction(m.id, emoji);
+                          }}
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors ${
+                            mine
+                              ? "border-[#a78bfa]/70 bg-[#7c5cfc]/25 text-white ring-1 ring-[#c4b5fd]/50"
+                              : "border-white/15 bg-white/5 text-white/85 hover:bg-white/10"
+                          }`}
+                          aria-label={mine ? `Remove your ${emoji} reaction (${count})` : `Add ${emoji} reaction (${count})`}
+                        >
+                          <span aria-hidden>{emoji}</span>
+                          <span className={mine ? "text-white/90" : "text-white/55"}>{count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             );
