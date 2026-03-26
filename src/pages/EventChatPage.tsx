@@ -112,6 +112,7 @@ export default function EventChatPage() {
     () => prefetchStart ?? new Date().toISOString()
   );
   const [eventImageUrl, setEventImageUrl] = useState<string | null>(() => prefetch?.imageUrl ?? null);
+  const [polaroidExpanded, setPolaroidExpanded] = useState(false);
   const [eventDate, setEventDate] = useState<string>("");
   const [isLoadingMeta, setIsLoadingMeta] = useState(true);
   const [hasFatalError, setHasFatalError] = useState(false);
@@ -150,6 +151,36 @@ export default function EventChatPage() {
     if (Number.isNaN(d.getTime())) return;
     setEventDate(d.toLocaleDateString([], { month: "short", day: "numeric" }));
   }, [prefetchStart]);
+
+  /** Polaroid image: navigation state (e.g. Events) + always merge public_events so Chat tab / chatRow-only meta still get a poster. */
+  useEffect(() => {
+    if (!eventId) return;
+    setPolaroidExpanded(false);
+    const st = location.state as EventChatLocationState | null;
+    const fromNav = st?.eventPrefetch?.imageUrl?.trim() || null;
+    setEventImageUrl(fromNav);
+
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase.from("public_events").select("image_url").eq("id", eventId).maybeSingle();
+      if (cancelled) return;
+      const url = data?.image_url?.trim();
+      if (url) setEventImageUrl(url);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId, location.key]);
+
+  useEffect(() => {
+    if (!polaroidExpanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPolaroidExpanded(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [polaroidExpanded]);
 
   /** Full-screen route sits outside IOSAppLayout; in light theme `body` is near-white and shows through safe-area / overscroll. */
   useLayoutEffect(() => {
@@ -388,6 +419,14 @@ export default function EventChatPage() {
             const start = new Date(expires.getTime() - 12 * 60 * 60 * 1000);
             setEventStartsAt(start.toISOString());
           }
+          const { data: pubImg } = await supabase
+            .from("public_events")
+            .select("image_url")
+            .eq("id", eventId)
+            .maybeSingle();
+          if (stale()) return;
+          const u = pubImg?.image_url?.trim();
+          if (u) setEventImageUrl(u);
           return;
         }
 
@@ -586,6 +625,22 @@ export default function EventChatPage() {
     {stickerConfetti ? (
       <StickerSendConfetti x={stickerConfetti.x} y={stickerConfetti.y} seed={stickerConfetti.seed} />
     ) : null}
+    {polaroidExpanded && eventImageUrl ? (
+      <div
+        className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 p-4"
+        onClick={() => setPolaroidExpanded(false)}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Event poster"
+      >
+        <img
+          src={eventImageUrl}
+          alt={eventName}
+          className="max-h-[min(85dvh,900px)] max-w-full w-auto object-contain rounded shadow-2xl ring-1 ring-white/10"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    ) : null}
     <div className="fixed inset-0 z-40 flex min-h-[100dvh] flex-col bg-[#06060a]">
       <div
         className="absolute inset-0 pointer-events-none z-0"
@@ -610,7 +665,31 @@ export default function EventChatPage() {
             <ChevronLeft className="w-6 h-6" />
           </button>
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            {eventImageUrl && (
+            {eventImageUrl ? (
+              <button
+                type="button"
+                className="shrink-0 flex flex-col items-center text-left border-0 p-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7c5cfc]/70 rounded-sm"
+                style={{
+                  background: "white",
+                  padding: "3px 3px 8px 3px",
+                  borderRadius: "2px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+                  transform: "rotate(-2deg)",
+                  width: "46px",
+                }}
+                aria-label="Expand event poster"
+                onClick={() => setPolaroidExpanded(true)}
+              >
+                <img
+                  src={eventImageUrl}
+                  alt=""
+                  style={{ width: "40px", height: "40px", objectFit: "cover", display: "block" }}
+                />
+                <span style={{ fontSize: "6px", color: "#555", marginTop: "2px", maxWidth: "40px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {eventDate || "—"}
+                </span>
+              </button>
+            ) : (
               <div
                 className="shrink-0 flex flex-col items-center"
                 style={{
@@ -621,14 +700,16 @@ export default function EventChatPage() {
                   transform: "rotate(-2deg)",
                   width: "46px",
                 }}
+                aria-hidden
               >
-                <img
-                  src={eventImageUrl}
-                  alt={eventName}
-                  style={{ width: "40px", height: "40px", objectFit: "cover", display: "block" }}
-                />
+                <div
+                  className="flex items-center justify-center bg-zinc-200 text-zinc-600 text-lg leading-none select-none"
+                  style={{ width: "40px", height: "40px" }}
+                >
+                  🎵
+                </div>
                 <span style={{ fontSize: "6px", color: "#555", marginTop: "2px", maxWidth: "40px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {eventDate}
+                  {eventDate || "—"}
                 </span>
               </div>
             )}
