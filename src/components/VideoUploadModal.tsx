@@ -292,7 +292,7 @@ export function VideoUploadModal({
                     e.stopPropagation();
                     void handleUpload();
                   }}
-                  className={`absolute top-2 right-2 z-20 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-40 ${
+                  className={`absolute bottom-[12px] right-[12px] z-20 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-40 ${
                     floatingSendUsesChatPurple
                       ? "bg-[#7c5cfc] hover:bg-[#8b6dfc]"
                       : "bg-shake-green hover:bg-shake-green/90"
