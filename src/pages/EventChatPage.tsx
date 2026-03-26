@@ -5,10 +5,9 @@ import {
   useRef,
   useMemo,
   useCallback,
-  type ChangeEvent,
 } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Smile, Camera, X } from "lucide-react";
+import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Smile, Camera } from "lucide-react";
 import { useEventChat } from "@/hooks/useEventChat";
 import {
   EVENT_CHAT_STICKER_IDS,
@@ -25,13 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import {
-  EVENT_CHAT_VIDEO_MAX_SECONDS,
-  formatVideoDuration,
-  getVideoDurationSeconds,
-  uploadEventChatVideoWithProgress,
-} from "@/lib/eventChatVideoUpload";
+import { VideoUploadModal } from "@/components/VideoUploadModal";
+import { EVENT_CHAT_VIDEO_MAX_SECONDS, uploadEventChatVideoWithProgress } from "@/lib/eventChatVideoUpload";
 
 interface EventChatPageParams {
   eventId?: string;
@@ -123,15 +117,7 @@ export default function EventChatPage() {
   const [stickerConfetti, setStickerConfetti] = useState<{ seed: number; x: number; y: number } | null>(
     null
   );
-  const videoInputRef = useRef<HTMLInputElement | null>(null);
-  const [videoDraft, setVideoDraft] = useState<{
-    file: File;
-    previewUrl: string;
-    durationSec: number;
-  } | null>(null);
-  const [videoClipError, setVideoClipError] = useState<string | null>(null);
-  const [videoUploadRatio, setVideoUploadRatio] = useState(0);
-  const [isVideoUploading, setIsVideoUploading] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [chatDataLoadEnabled, setChatDataLoadEnabled] = useState(false);
   useEffect(() => {
     setChatDataLoadEnabled(false);
@@ -494,86 +480,6 @@ export default function EventChatPage() {
 
   const [inputValue, setInputValue] = useState("");
 
-  const clearVideoDraft = useCallback(() => {
-    setVideoDraft((prev) => {
-      if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
-      return null;
-    });
-    setVideoClipError(null);
-    setVideoUploadRatio(0);
-    setIsVideoUploading(false);
-    if (videoInputRef.current) videoInputRef.current.value = "";
-  }, []);
-
-  const draftPreviewUrlRef = useRef<string | null>(null);
-  useEffect(() => {
-    draftPreviewUrlRef.current = videoDraft?.previewUrl ?? null;
-  }, [videoDraft?.previewUrl]);
-
-  useEffect(() => {
-    return () => {
-      if (draftPreviewUrlRef.current) URL.revokeObjectURL(draftPreviewUrlRef.current);
-    };
-  }, []);
-
-  const onVideoFilePicked = useCallback(
-    async (e: ChangeEvent<HTMLInputElement>) => {
-      const input = e.target;
-      const file = input.files?.[0];
-      input.value = "";
-      setVideoClipError(null);
-      if (!file) return;
-      try {
-        const duration = await getVideoDurationSeconds(file);
-        if (duration > EVENT_CHAT_VIDEO_MAX_SECONDS + 0.25) {
-          setVideoClipError("Videos must be 60 seconds or less");
-          return;
-        }
-        setVideoDraft((prev) => {
-          if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
-          return {
-            file,
-            previewUrl: URL.createObjectURL(file),
-            durationSec: duration,
-          };
-        });
-      } catch {
-        setVideoClipError("Could not read this video. Try another file.");
-      }
-    },
-    []
-  );
-
-  const handleSendVideoClip = useCallback(async () => {
-    if (!videoDraft || !eventId || !user) return;
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
-    bumpInteraction();
-    setIsVideoUploading(true);
-    setVideoUploadRatio(0);
-    setVideoClipError(null);
-    try {
-      const publicUrl = await uploadEventChatVideoWithProgress(
-        videoDraft.file,
-        user.id,
-        eventId,
-        session.access_token,
-        (r) => setVideoUploadRatio(r)
-      );
-      await sendMessage(publicUrl, "video");
-      clearVideoDraft();
-      setShowStickerTray(false);
-    } catch (err) {
-      console.error("[EventChatPage] video upload/send failed", err);
-      setVideoClipError(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setIsVideoUploading(false);
-      setVideoUploadRatio(0);
-    }
-  }, [videoDraft, eventId, user, sendMessage, clearVideoDraft, bumpInteraction]);
-
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -640,6 +546,39 @@ export default function EventChatPage() {
           onClick={(e) => e.stopPropagation()}
         />
       </div>
+    ) : null}
+    {eventId && user ? (
+      <VideoUploadModal
+        open={videoModalOpen}
+        onOpenChange={setVideoModalOpen}
+        title="Video"
+        maxDurationSeconds={EVENT_CHAT_VIDEO_MAX_SECONDS}
+        primaryButtonLabel="Send"
+        uploadSuccessToast="Video sent!"
+        uploadErrorToast="Failed to send video"
+        onUploadFile={async (file, onProgress) => {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (!session?.access_token) return false;
+          bumpInteraction();
+          try {
+            const publicUrl = await uploadEventChatVideoWithProgress(
+              file,
+              user.id,
+              eventId,
+              session.access_token,
+              onProgress
+            );
+            await sendMessage(publicUrl, "video");
+            setShowStickerTray(false);
+            return true;
+          } catch (err) {
+            console.error("[EventChatPage] video upload/send failed", err);
+            return false;
+          }
+        }}
+      />
     ) : null}
     <div className="fixed inset-0 z-40 flex min-h-[100dvh] flex-col bg-[#06060a]">
       <div
@@ -868,71 +807,6 @@ export default function EventChatPage() {
           ref={stickerBarRef}
           className="relative p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5"
         >
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/*"
-            capture="environment"
-            className="hidden"
-            onChange={onVideoFilePicked}
-            aria-hidden
-            tabIndex={-1}
-          />
-
-          {videoClipError && !videoDraft ? (
-            <p className="text-xs text-red-400 mb-2 px-0.5" role="alert">
-              {videoClipError}
-            </p>
-          ) : null}
-
-          {videoDraft ? (
-            <div className="mb-2 rounded-xl border border-white/15 bg-white/5 p-2.5 flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <video
-                  src={videoDraft.previewUrl}
-                  className="w-14 h-14 rounded-md object-cover bg-black shrink-0"
-                  muted
-                  playsInline
-                  preload="metadata"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white/90">{formatVideoDuration(videoDraft.durationSec)}</p>
-                  {isVideoUploading ? (
-                    <Progress
-                      value={Math.min(100, Math.max(0, Math.round(videoUploadRatio * 100)))}
-                      className="h-2 mt-2 bg-white/10 [&>div]:bg-[#7c5cfc]"
-                    />
-                  ) : null}
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={clearVideoDraft}
-                  disabled={isVideoUploading}
-                  className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
-                  aria-label="Cancel video"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => void handleSendVideoClip()}
-                  disabled={isVideoUploading || isSending}
-                  className="shrink-0 h-9 px-3 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
-                >
-                  Send
-                </Button>
-              </div>
-              {videoClipError && videoDraft ? (
-                <p className="text-xs text-red-400" role="alert">
-                  {videoClipError}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
           {showStickerTray && (
             <div
               className="absolute bottom-full left-0 right-0 mb-2 mx-1 rounded-2xl border border-white/10 bg-[#12121a]/95 backdrop-blur-md shadow-lg p-3 z-20"
@@ -949,8 +823,7 @@ export default function EventChatPage() {
                     disabled={
                       isSending ||
                       status !== "active" ||
-                      isVideoUploading ||
-                      !!videoDraft
+                      videoModalOpen
                     }
                     onClick={async (e) => {
                       const r = e.currentTarget.getBoundingClientRect();
@@ -984,7 +857,7 @@ export default function EventChatPage() {
               onClick={() => {
                 setShowStickerTray((v) => !v);
               }}
-              disabled={isSending || status !== "active" || isVideoUploading || !!videoDraft}
+              disabled={isSending || status !== "active" || videoModalOpen}
               aria-label="Stickers"
               aria-expanded={showStickerTray}
               aria-haspopup="dialog"
@@ -996,12 +869,11 @@ export default function EventChatPage() {
               variant="ghost"
               size="icon"
               className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
-              onClick={() => videoInputRef.current?.click()}
+              onClick={() => setVideoModalOpen(true)}
               disabled={
                 isSending ||
                 status !== "active" ||
-                isVideoUploading ||
-                !!videoDraft ||
+                videoModalOpen ||
                 showStickerTray
               }
               aria-label="Record or attach video"
@@ -1040,8 +912,7 @@ export default function EventChatPage() {
               disabled={
                 isSending ||
                 status !== "active" ||
-                isVideoUploading ||
-                !!videoDraft ||
+                videoModalOpen ||
                 showStickerTray
               }
             />
@@ -1066,8 +937,7 @@ export default function EventChatPage() {
                 isSending ||
                 status !== "active" ||
                 !inputValue.trim() ||
-                isVideoUploading ||
-                !!videoDraft ||
+                videoModalOpen ||
                 showStickerTray
               }
               className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
