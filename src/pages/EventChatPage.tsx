@@ -99,7 +99,7 @@ export default function EventChatPage() {
   }, [prefetchStart]);
 
   /**
-   * Polaroid: authoritative poster from `public_events` or Ticketmaster event detail (`images[0].url`).
+   * Polaroid: authoritative poster from `public_events` or Ticketmaster detail (16_9 widest, else fallback).
    * Optional `eventPrefetch.imageUrl` only fills the gap until resolve completes (e.g. confirmation modal).
    */
   useEffect(() => {
@@ -110,10 +110,13 @@ export default function EventChatPage() {
 
     let cancelled = false;
     void (async () => {
-      const url = await resolveEventChatPosterUrl(eventId);
+      const { posterUrl, ticketmasterImagesLog } = await resolveEventChatPosterUrl(eventId);
       if (cancelled) return;
-      if (url) {
-        setEventImageUrl(url);
+      if (ticketmasterImagesLog?.length) {
+        console.log("[EventChatPage] Ticketmaster event.images (detail API)", ticketmasterImagesLog);
+      }
+      if (posterUrl) {
+        setEventImageUrl(posterUrl);
         return;
       }
       setEventImageUrl(prefetchUrl);

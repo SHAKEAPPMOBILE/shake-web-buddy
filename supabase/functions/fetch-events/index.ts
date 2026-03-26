@@ -301,11 +301,46 @@ function resolveCityAndCountryCode(cityFilter: string | null): {
   return { city: cityObj?.name ?? cityFilter, countryCode: country?.code ?? null };
 }
 
+/** Ticketmaster Discovery image object (event detail + search). */
+interface TicketmasterImage {
+  url?: string | null;
+  width?: number | null;
+  height?: number | null;
+  ratio?: string | null;
+}
+
+function pickTicketmasterPosterUrl(images: TicketmasterImage[] | null | undefined): {
+  url: string | null;
+  imagesLog: { ratio?: string; width?: number; height?: number; urlSample: string }[];
+} {
+  const imagesLog = (images ?? []).map((im) => ({
+    ratio: im.ratio ?? undefined,
+    width: im.width != null ? Number(im.width) : undefined,
+    height: im.height != null ? Number(im.height) : undefined,
+    urlSample: (typeof im.url === "string" ? im.url : "").slice(0, 140),
+  }));
+
+  if (!images?.length) {
+    return { url: null, imagesLog };
+  }
+
+  const withUrl = images.filter((im) => im.url && String(im.url).trim());
+  const sixteenNine = withUrl.filter((im) => String(im.ratio ?? "") === "16_9");
+  const pool = sixteenNine.length > 0 ? sixteenNine : withUrl;
+  const sorted = [...pool].sort((a, b) => (Number(b.width) || 0) - (Number(a.width) || 0));
+  const url =
+    sorted[0]?.url?.trim() ??
+    images[0]?.url?.trim() ??
+    null;
+
+  return { url, imagesLog };
+}
+
 interface TicketmasterEvent {
   id: string;
   name: string;
   url?: string | null;
-  images?: Array<{ url?: string | null }> | null;
+  images?: TicketmasterImage[] | null;
   dates?: { start?: { dateTime?: string | null; localDate?: string | null } | null } | null;
   classifications?: Array<{
     segment?: { name?: string | null } | null;
@@ -334,7 +369,8 @@ function mapTicketmasterEventToItem(e: TicketmasterEvent, fallbackCity?: string 
 
   const venueName = e._embedded?.venues?.[0]?.name ?? "—";
   const cityName = e._embedded?.venues?.[0]?.city?.name ?? fallbackCity ?? "—";
-  const imageUrl = e.images?.[0]?.url ?? undefined;
+  const { url: pickedImage } = pickTicketmasterPosterUrl(e.images);
+  const imageUrl = pickedImage ?? undefined;
 
   const segmentName = extractTicketmasterSegmentName(e);
   const { category, emoji } = mapTicketmasterSegment(segmentName);
@@ -557,13 +593,14 @@ serve(async (req) => {
           );
         }
         const e = JSON.parse(text) as TicketmasterEvent;
-        const imageUrl = e.images?.[0]?.url?.trim() ?? undefined;
+        const { url: imageUrl, imagesLog } = pickTicketmasterPosterUrl(e.images);
         return new Response(
           JSON.stringify({
             eventDetail: {
               id: routeId,
               name: e.name ?? undefined,
               imageUrl: imageUrl ?? null,
+              imagesLog,
             },
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },

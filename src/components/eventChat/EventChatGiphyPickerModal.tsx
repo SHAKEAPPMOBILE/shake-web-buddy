@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type SyntheticEvent,
+} from "react";
 import { X } from "lucide-react";
 import { Grid } from "@giphy/react-components";
 import { GiphyFetch } from "@giphy/js-fetch-api";
@@ -26,7 +34,7 @@ export function EventChatGiphyPickerModal({
   onOpenChange,
   onGifSelect,
 }: EventChatGiphyPickerModalProps) {
-  const apiKey = import.meta.env.NEXT_PUBLIC_GIPHY_API_KEY?.trim() ?? "";
+  const apiKey = import.meta.env.VITE_GIPHY_API_KEY?.trim() ?? "";
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -34,10 +42,16 @@ export function EventChatGiphyPickerModal({
 
   const gf = useMemo(() => (apiKey ? new GiphyFetch(apiKey) : null), [apiKey]);
 
+  /** Empty search → trending immediately; non-empty → debounce search. */
   useEffect(() => {
     if (!open) return;
-    const t = window.setTimeout(() => setDebouncedQuery(searchInput.trim()), 350);
-    return () => window.clearTimeout(t);
+    const q = searchInput.trim();
+    if (q === "") {
+      setDebouncedQuery("");
+      return;
+    }
+    const t = window.setTimeout(() => setDebouncedQuery(q), 350);
+    return () => clearTimeout(t);
   }, [searchInput, open]);
 
   useEffect(() => {
@@ -83,7 +97,7 @@ export function EventChatGiphyPickerModal({
   );
 
   const onGifClick = useCallback(
-    (gif: IGif, e: React.SyntheticEvent<HTMLElement, Event>) => {
+    (gif: IGif, e: SyntheticEvent<HTMLElement, Event>) => {
       e.preventDefault();
       const url = gifToShareUrl(gif);
       if (!url) return;
@@ -147,8 +161,8 @@ export function EventChatGiphyPickerModal({
         <div ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-3">
           {!apiKey || !gf ? (
             <p className="px-3 py-6 text-center text-sm text-white/60">
-              Add <code className="rounded bg-white/10 px-1 text-xs">NEXT_PUBLIC_GIPHY_API_KEY</code> to{" "}
-              <code className="rounded bg-white/10 px-1 text-xs">.env.local</code> to load GIFs.
+              Add <code className="rounded bg-white/10 px-1 text-xs">VITE_GIPHY_API_KEY</code> to{" "}
+              <code className="rounded bg-white/10 px-1 text-xs">.env.local</code> and restart the dev server.
             </p>
           ) : (
             <div className="giphy-grid-wrap [&_a]:no-underline">

@@ -168,10 +168,19 @@ export async function fetchTicketmasterEvents(options?: {
   }
 }
 
+export type TicketmasterImageLogEntry = {
+  ratio?: string;
+  width?: number;
+  height?: number;
+  urlSample: string;
+};
+
 export type TicketmasterEventDetail = {
   id: string;
   name?: string;
   imageUrl: string | null;
+  /** Present when the edge function returned Ticketmaster `images` (for debugging / polaroid). */
+  imagesLog?: TicketmasterImageLogEntry[];
 };
 
 /**
@@ -195,7 +204,12 @@ export async function fetchTicketmasterEventDetail(eventId: string): Promise<Tic
         : undefined;
 
     const { data, error } = await supabase.functions.invoke<{
-      eventDetail?: { id?: string; name?: string; imageUrl?: string | null } | null;
+      eventDetail?: {
+        id?: string;
+        name?: string;
+        imageUrl?: string | null;
+        imagesLog?: TicketmasterImageLogEntry[];
+      } | null;
       error?: string;
     }>("fetch-events", {
       body: { eventDetailId: trimmed },
@@ -207,13 +221,14 @@ export async function fetchTicketmasterEventDetail(eventId: string): Promise<Tic
       return null;
     }
     const d = data?.eventDetail;
-    if (!d || typeof d.imageUrl !== "string" || !d.imageUrl.trim()) {
-      return null;
-    }
+    if (!d) return null;
+    const imageUrl =
+      typeof d.imageUrl === "string" && d.imageUrl.trim() ? d.imageUrl.trim() : null;
     return {
       id: d.id ?? trimmed,
       name: d.name,
-      imageUrl: d.imageUrl.trim(),
+      imageUrl,
+      imagesLog: Array.isArray(d.imagesLog) ? d.imagesLog : undefined,
     };
   } catch (err) {
     console.error("[fetchTicketmasterEventDetail]", err);
