@@ -121,8 +121,11 @@ serve(async (req) => {
       metadata: {
         event_id: eventId,
         payer_user_id: user.id,
+        // Duplicate for webhook / dashboards that expect `user_id`
+        user_id: user.id,
         event_name: eventName,
         event_starts_at: eventStartsAt,
+        amount_cents: "100",
       },
     });
 

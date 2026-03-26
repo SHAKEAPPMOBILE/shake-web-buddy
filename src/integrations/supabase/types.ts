@@ -385,6 +385,7 @@ export type Database = {
           event_name: string | null
           event_venue: string | null
           event_starts_at: string | null
+          amount_cents: number | null
         }
         Insert: {
           event_id: string
@@ -395,6 +396,7 @@ export type Database = {
           event_name?: string | null
           event_venue?: string | null
           event_starts_at?: string | null
+          amount_cents?: number | null
         }
         Update: {
           event_id?: string
@@ -405,6 +407,7 @@ export type Database = {
           event_name?: string | null
           event_venue?: string | null
           event_starts_at?: string | null
+          amount_cents?: number | null
         }
         Relationships: [
           {

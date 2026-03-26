@@ -23,14 +23,13 @@ serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     if (!webhookSecret) throw new Error("STRIPE_WEBHOOK_SECRET is not set");
-    if (!resendApiKey) throw new Error("RESEND_API_KEY is not set");
+    // Resend is only used for subscription-cancellation emails — do not require it for checkout webhooks
+    // or every Stripe event would 500 when RESEND_API_KEY is missing from Edge Function secrets.
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const resend = new Resend(resendApiKey);
 
     const signature = req.headers.get("stripe-signature");
     if (!signature) {
@@ -53,13 +52,23 @@ serve(async (req) => {
 
     logStep("Event received", { type: event.type });
 
-    // Handle checkout session completed for activity or event payments
-    if (event.type === "checkout.session.completed") {
+    // One-time Checkout: completed may arrive before payment settles (e.g. async methods). async_payment_succeeded is the reliable "paid" signal.
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
+      try {
       const session = event.data.object as Stripe.Checkout.Session;
+      const isAsyncPaymentSuccess = event.type === "checkout.session.async_payment_succeeded";
       const metadata = session.metadata || {};
       const activityId = metadata.activity_id;
-      const eventId = metadata.event_id;
-      const payerUserId = metadata.payer_user_id;
+      const eventId = String(metadata.event_id ?? "").trim();
+      const payerUserId = String(metadata.payer_user_id ?? metadata.user_id ?? "").trim();
+
+      const paymentReady =
+        isAsyncPaymentSuccess ||
+        session.mode !== "payment" ||
+        session.payment_status === "paid";
 
       const supabaseClient = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
@@ -68,7 +77,7 @@ serve(async (req) => {
       );
 
       // Activity payments: add user to activity_joins
-      if (activityId && payerUserId) {
+      if (activityId && payerUserId && paymentReady) {
         logStep("Processing activity payment completion", { activityId, payerUserId });
 
         const { data: activity } = await supabaseClient
@@ -88,76 +97,155 @@ serve(async (req) => {
             });
 
           if (joinError) {
-            logStep("Error joining activity after payment", { error: joinError.message });
+            logStep("Error joining activity after payment (acknowledging webhook anyway)", {
+              error: joinError.message,
+              code: joinError.code,
+            });
           } else {
             logStep("User joined activity after payment", { activityId, payerUserId });
           }
         }
       }
 
-      // Event chat payments: ensure event chat + membership
-      if (eventId && payerUserId) {
-        const eventName = metadata.event_name || "Event chat";
-        const startsAtRaw = metadata.event_starts_at;
+      // Event chat payments: parent row first, then membership (FK). Log DB errors but return 200 so Stripe does not
+      // disable the endpoint; investigate via logs / resend failed events after deploy.
+      const isEventChatCheckout = Boolean(eventId && payerUserId);
+      if (isEventChatCheckout) {
+        if (!paymentReady) {
+          logStep("Deferring event chat fulfillment until payment is paid (async or later webhook)", {
+            eventId,
+            payerUserId,
+            payment_status: session.payment_status,
+            sessionId: session.id,
+            eventType: event.type,
+          });
+        } else {
+          const eventName = (metadata.event_name || "Event chat").trim() || "Event chat";
+          const startsAtRaw = String(metadata.event_starts_at ?? "").trim() || null;
+          const amountParsed = parseInt(metadata.amount_cents ?? "", 10);
+          const amountCents = Number.isFinite(amountParsed) && amountParsed > 0 ? amountParsed : 100;
 
-        logStep("Event chat metadata from Stripe (must match frontend event.id)", {
-          metadata_event_id: eventId,
-          metadata_event_id_type: typeof eventId,
-          payerUserId,
-        });
+          logStep("Event chat metadata from Stripe (must match frontend event.id)", {
+            metadata_event_id: eventId,
+            payerUserId,
+            has_event_starts_at: Boolean(startsAtRaw),
+            amount_cents: amountCents,
+          });
 
-        let expiresAt = new Date();
-        if (startsAtRaw) {
-          const start = new Date(startsAtRaw);
-          if (!isNaN(start.getTime())) {
-            expiresAt = new Date(start.getTime() + 12 * 60 * 60 * 1000);
+          let expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
+          let eventStartsAtIso: string | null = null;
+          if (startsAtRaw) {
+            const start = new Date(startsAtRaw);
+            if (!isNaN(start.getTime())) {
+              eventStartsAtIso = start.toISOString();
+              expiresAt = new Date(start.getTime() + 12 * 60 * 60 * 1000);
+            }
           }
-        } else {
-          // Fallback: 12h from now
-          expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
-        }
 
-        logStep("Processing event chat payment completion", {
-          eventId,
-          payerUserId,
-          eventName,
-          expiresAt: expiresAt.toISOString(),
-        });
+          logStep("Processing event chat payment completion", {
+            eventId,
+            payerUserId,
+            eventName,
+            expiresAt: expiresAt.toISOString(),
+            event_starts_at: eventStartsAtIso,
+          });
 
-        // Create or update event_chats row (expires_at = event_starts_at + 12h)
-        const { error: upsertError } = await supabaseClient
-          .from("event_chats")
-          .upsert(
-            {
+          const { error: upsertChatError } = await supabaseClient
+            .from("event_chats")
+            .upsert(
+              {
+                event_id: eventId,
+                name: eventName,
+                expires_at: expiresAt.toISOString(),
+              },
+              { onConflict: "event_id" },
+            );
+
+          if (upsertChatError) {
+            logStep("ERROR: event_chats upsert failed after payment", {
+              error: upsertChatError.message,
+              code: upsertChatError.code,
+              eventId,
+            });
+          }
+
+          const paidAtIso = new Date().toISOString();
+
+          if (upsertChatError) {
+            logStep("Skipping event_chat_members upsert (event_chats row missing)", { eventId, payerUserId });
+          } else {
+            logStep("Upserting event_chat_members", {
               event_id: eventId,
-              name: eventName,
-              expires_at: expiresAt.toISOString(),
-            },
-            { onConflict: "event_id" },
-          );
+              user_id: payerUserId,
+              paid_at: paidAtIso,
+            });
 
-        if (upsertError) {
-          logStep("Error upserting event_chats", { error: upsertError.message });
+            let memberError = (
+              await supabaseClient
+                .from("event_chat_members")
+                .upsert(
+                  {
+                    event_id: eventId,
+                    user_id: payerUserId,
+                    paid_at: paidAtIso,
+                    expires_at: expiresAt.toISOString(),
+                    event_name: eventName,
+                    event_starts_at: eventStartsAtIso,
+                    amount_cents: amountCents,
+                  },
+                  { onConflict: "event_id,user_id" },
+                )
+            ).error;
+
+            // If DB has not migrated `amount_cents` yet, retry without it so fulfillment still succeeds.
+            if (
+              memberError &&
+              /amount_cents/i.test(memberError.message ?? "") &&
+              /does not exist|schema cache/i.test(memberError.message ?? "")
+            ) {
+              logStep("WARN: retrying event_chat_members upsert without amount_cents", { eventId });
+              memberError = (
+                await supabaseClient
+                  .from("event_chat_members")
+                  .upsert(
+                    {
+                      event_id: eventId,
+                      user_id: payerUserId,
+                      paid_at: paidAtIso,
+                      expires_at: expiresAt.toISOString(),
+                      event_name: eventName,
+                      event_starts_at: eventStartsAtIso,
+                    },
+                    { onConflict: "event_id,user_id" },
+                  )
+              ).error;
+            }
+
+            if (memberError) {
+              logStep("ERROR: event_chat_members upsert failed after payment", {
+                error: memberError.message,
+                code: memberError.code,
+                eventId,
+                payerUserId,
+              });
+            } else {
+              logStep("User joined event chat after payment", { eventId, payerUserId });
+            }
+          }
         }
-
-        // Upsert member row so payment retries/webhooks do not fail with conflict.
-        logStep("Upserting event_chat_members", { event_id: eventId, user_id: payerUserId });
-        const paidAtIso = new Date().toISOString();
-        const { error: memberError } = await supabaseClient
-          .from("event_chat_members")
-          .upsert({
-            event_id: eventId,
-            user_id: payerUserId,
-            paid_at: paidAtIso,
-            expires_at: expiresAt.toISOString(),
-            event_name: eventName,
-          }, { onConflict: "event_id,user_id" });
-
-        if (memberError) {
-          logStep("Error upserting event_chat_member", { error: memberError.message });
-        } else {
-          logStep("User joined event chat after payment", { eventId, payerUserId });
-        }
+      } else if (session.mode === "payment" && metadata.event_name && !activityId) {
+        logStep("WARN: paid checkout has event_name but missing event_id or user id in metadata", {
+          sessionId: session.id,
+          metadata_keys: Object.keys(metadata),
+        });
+      }
+      } catch (checkoutHandlerErr) {
+        const msg = checkoutHandlerErr instanceof Error ? checkoutHandlerErr.message : String(checkoutHandlerErr);
+        const stack = checkoutHandlerErr instanceof Error ? checkoutHandlerErr.stack : undefined;
+        logStep("ERROR: checkout session handler threw (acknowledging webhook to Stripe)", {
+          message: msg,
+          stack,
+        });
       }
 
       return new Response(JSON.stringify({ received: true }), {
@@ -170,7 +258,7 @@ serve(async (req) => {
     if (event.type === "customer.subscription.deleted" || 
         (event.type === "customer.subscription.updated" && 
          (event.data.object as Stripe.Subscription).cancel_at_period_end === true)) {
-      
+      try {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
 
@@ -309,19 +397,33 @@ serve(async (req) => {
         });
       }
 
-      // Send the email using Resend
-      const { error: emailError } = await resend.emails.send({
-        from: "SHAKE <noreply@shakeapp.today>",
-        to: [customerEmail],
-        subject: subject,
-        html: htmlContent,
-      });
-
-      if (emailError) {
-        logStep("Failed to send cancellation email", { error: emailError });
-        // Don't throw - we still want to acknowledge the webhook
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+      if (!resendApiKey) {
+        logStep("RESEND_API_KEY not set; skipping cancellation email (webhook still OK)", {
+          customerEmail,
+        });
       } else {
-        logStep("Cancellation email sent successfully", { email: customerEmail });
+        const resend = new Resend(resendApiKey);
+        const { error: emailError } = await resend.emails.send({
+          from: "SHAKE <noreply@shakeapp.today>",
+          to: [customerEmail],
+          subject: subject,
+          html: htmlContent,
+        });
+
+        if (emailError) {
+          logStep("Failed to send cancellation email", { error: emailError });
+        } else {
+          logStep("Cancellation email sent successfully", { email: customerEmail });
+        }
+      }
+      } catch (subscriptionHandlerErr) {
+        const msg = subscriptionHandlerErr instanceof Error ? subscriptionHandlerErr.message : String(subscriptionHandlerErr);
+        const stack = subscriptionHandlerErr instanceof Error ? subscriptionHandlerErr.stack : undefined;
+        logStep("ERROR: subscription cancellation handler threw (acknowledging webhook to Stripe)", {
+          message: msg,
+          stack,
+        });
       }
     }
 

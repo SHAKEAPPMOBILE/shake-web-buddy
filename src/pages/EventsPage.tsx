@@ -780,6 +780,7 @@ export default function EventsPage({
             expires_at: membershipExpiresAt.toISOString(),
             event_name: resolved.name,
             event_starts_at: resolved.eventStartAt ?? null,
+            amount_cents: 100,
           },
           { onConflict: "event_id,user_id" },
         );
