@@ -340,13 +340,21 @@ export function ChatTab({
             .select("*", { count: "exact", head: true })
             .eq("event_id", eventId);
 
-          const { data: lastMsg } = await supabase
-            .from("event_chat_messages")
-            .select("content, created_at")
+          const { data: chatMeta } = await supabase
+            .from("event_chats")
+            .select("id")
             .eq("event_id", eventId)
-            .order("created_at", { ascending: false })
-            .limit(1)
             .maybeSingle();
+
+          const { data: lastMsg } = chatMeta?.id
+            ? await supabase
+                .from("event_chat_messages")
+                .select("content, created_at")
+                .eq("event_chat_id", chatMeta.id)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle()
+            : { data: null };
 
           chatActivities.push({
             id: `event-${eventId}`,

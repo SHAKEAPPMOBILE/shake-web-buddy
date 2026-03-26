@@ -356,18 +356,21 @@ export type Database = {
       }
       event_chats: {
         Row: {
+          id: string
           event_id: string
           name: string
           expires_at: string
           created_at: string
         }
         Insert: {
+          id?: string
           event_id: string
           name: string
           expires_at: string
           created_at?: string
         }
         Update: {
+          id?: string
           event_id?: string
           name?: string
           expires_at?: string
@@ -422,7 +425,7 @@ export type Database = {
       event_chat_messages: {
         Row: {
           id: string
-          event_id: string
+          event_chat_id: string
           user_id: string
           content: string
           created_at: string
@@ -431,7 +434,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          event_id: string
+          event_chat_id: string
           user_id: string
           content: string
           created_at?: string
@@ -440,7 +443,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          event_id?: string
+          event_chat_id?: string
           user_id?: string
           content?: string
           created_at?: string
@@ -449,11 +452,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "event_chat_messages_event_id_fkey"
-            columns: ["event_id"]
+            foreignKeyName: "event_chat_messages_event_chat_id_fkey"
+            columns: ["event_chat_id"]
             isOneToOne: false
             referencedRelation: "event_chats"
-            referencedColumns: ["event_id"]
+            referencedColumns: ["id"]
           },
         ]
       }
