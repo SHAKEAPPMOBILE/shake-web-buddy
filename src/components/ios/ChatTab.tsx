@@ -699,8 +699,8 @@ export function ChatTab({
           </div>
         ) : filteredActivities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
-            <div className="w-16 h-16 rounded-full bg-[#1e2124] flex items-center justify-center mb-4 border border-[#3f444c]">
-              <MessageSquare className="w-8 h-8 text-[#9ca3af]" />
+            <div className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center mb-4">
+              <MessageSquare className="w-8 h-8 text-white" />
             </div>
             {activities.length === 0 ? (
               <>
