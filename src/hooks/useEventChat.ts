@@ -158,61 +158,31 @@ export function useEventChat({
     }
 
     if (stale()) return;
-    setChatStatus("loading", "loadChat: start (membership check first; no early isChatExpired on props)");
+    setChatStatus("loading", "loadChat: start");
 
-    const { data: member, error: memberError } = await supabase
-      .from("event_chat_members")
-      .select("event_id, user_id, expires_at, paid_at")
-      .eq("user_id", user.id)
-      .eq("event_id", eventId)
-      .maybeSingle();
+    logEventChat("loadChat", "event chats free for logged-in users → active immediately", {
+      eventId,
+      userId: user.id,
+    });
 
-    if (stale()) {
-      logEventChat("loadChat", "aborted after membership fetch (stale generation)", { gen, eventId });
-      return;
-    }
+    if (stale()) return;
+    const computedExpiresAt = new Date(new Date(eventStartsAt).getTime() + 12 * 60 * 60 * 1000);
+    const { expiryForCountdown, enforceTimerExpiry } = resolveEventChatAccessExpiryForUi(
+      { expires_at: computedExpiresAt.toISOString(), paid_at: null },
+      computedExpiresAt,
+    );
 
-    if (memberError) {
-      console.warn("[useEventChat] event_chat_members query failed", memberError);
-    }
-    if (!member) {
-      logEventChat("loadChat", "No membership row → locked", { eventId, userId: user.id });
-      if (stale()) return;
-      setChatStatus("locked", "loadChat: no event_chat_members row");
-      return;
-    }
-
-    const memberPaidAt = member?.paid_at?.trim();
-
-    if (memberPaidAt) {
-      logEventChat("loadChat", "paid_at exists → always active (ignoring expires_at)", {
-        eventId,
-        expires_at: member.expires_at,
-        paid_at: member.paid_at,
-      });
-    } else if (isEventChatMembershipExplicitlyExpired(member)) {
-      logEventChat("loadChat", "no paid_at and expires_at in past → expired", {
-        eventId,
-        expires_at: member.expires_at,
-      });
-      if (stale()) return;
-      setChatStatus("expired", "loadChat: membership expires_at in past and not paid");
-      return;
-    }
-
-    const { expiryForCountdown, enforceTimerExpiry } = resolveEventChatAccessExpiryForUi(member, computedExpiresAt);
     logEventChat("loadChat", "access window for UI", {
       eventId,
       expiryForCountdown: expiryForCountdown.toISOString(),
       enforceTimerExpiry,
-      memberExpiresAt: member.expires_at ?? null,
     });
 
     if (stale()) return;
     setExpiresAt(expiryForCountdown);
     startCountdown(expiryForCountdown, enforceTimerExpiry);
     // Let the user compose immediately; message/history fetch can lag without blocking UI.
-    setChatStatus("active", "loadChat: member valid, chat active");
+    setChatStatus("active", "loadChat: logged-in user, chat active");
     enqueuePendingEventChat({
       event_id: eventId,
       event_name: eventName?.trim() || "Event chat",
