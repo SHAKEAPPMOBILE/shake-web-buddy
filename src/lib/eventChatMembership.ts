@@ -1,8 +1,7 @@
 /**
  * Rules for event_chat_members access:
- * - If `expires_at` is null/empty, the member is not treated as expired (paid row is valid).
- * - If `paid_at` is present and not stale (24h grace), membership should remain accessible.
- * - Only when `expires_at` is set to a valid timestamp in the past and no paid grace applies is access denied.
+ * - If `paid_at` exists (any value, no time window), membership is always active.
+ * - Only when `expires_at` is set to a valid timestamp in the past AND no paid_at, access is denied.
  */
 
 export function isEventChatMembershipExplicitlyExpired(
@@ -12,20 +11,13 @@ export function isEventChatMembershipExplicitlyExpired(
   const paid_at = m?.paid_at ?? null;
 
   if (paid_at?.trim()) {
-    const parsedPaidAt = new Date(paid_at);
-    if (!Number.isNaN(parsedPaidAt.getTime())) {
-      const paidGraceMillis = 24 * 60 * 60 * 1000;
-      const endOfPaidGrace = parsedPaidAt.getTime() + paidGraceMillis;
-      if (endOfPaidGrace > Date.now()) {
-        console.log("[expiry-check]", {
-          expires_at,
-          paid_at,
-          result: false,
-          reason: "paid_at_within_grace_period",
-        });
-        return false;
-      }
-    }
+    console.log("[expiry-check]", {
+      expires_at,
+      paid_at,
+      result: false,
+      reason: "paid_at_present_always_active",
+    });
+    return false;
   }
 
   if (!expires_at?.trim()) {
@@ -47,6 +39,7 @@ export function isEventChatMembershipExplicitlyExpired(
 /**
  * Countdown target and whether the interval may flip status to "expired".
  * When `expires_at` is unset, we never expire the chat from the timer alone.
+ * When `paid_at` exists and `expires_at` is in the past, use paid_at + 24h (or now + 24h if that's later).
  */
 export function resolveEventChatAccessExpiryForUi(
   member: { expires_at?: string | null; paid_at?: string | null },
@@ -62,8 +55,10 @@ export function resolveEventChatAccessExpiryForUi(
       if (expiresInPast && paidAt) {
         const paidDate = new Date(paidAt);
         if (!Number.isNaN(paidDate.getTime())) {
-          const paidExpiry = new Date(paidDate.getTime() + 24 * 60 * 60 * 1000);
-          return { expiryForCountdown: paidExpiry, enforceTimerExpiry: true };
+          const paidExpiry = paidDate.getTime() + 24 * 60 * 60 * 1000;
+          const nowPlus24h = Date.now() + 24 * 60 * 60 * 1000;
+          const expiryForCountdown = new Date(Math.max(paidExpiry, nowPlus24h));
+          return { expiryForCountdown, enforceTimerExpiry: true };
         }
       }
       return { expiryForCountdown: expiresDate, enforceTimerExpiry: true };

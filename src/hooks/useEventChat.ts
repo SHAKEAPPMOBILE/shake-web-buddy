@@ -183,23 +183,20 @@ export function useEventChat({
     }
 
     const memberPaidAt = member?.paid_at?.trim();
-    const expiresAt = member?.expires_at?.trim();
-    const expiresAtDate = expiresAt ? new Date(expiresAt) : null;
-    const expiresAtInPast = expiresAtDate ? !Number.isNaN(expiresAtDate.getTime()) && expiresAtDate.getTime() <= Date.now() : false;
 
-    if (memberPaidAt && expiresAtInPast) {
-      logEventChat("loadChat", "paid_at present and expires_at past → keep active", {
+    if (memberPaidAt) {
+      logEventChat("loadChat", "paid_at exists → always active (ignoring expires_at)", {
         eventId,
         expires_at: member.expires_at,
         paid_at: member.paid_at,
       });
     } else if (isEventChatMembershipExplicitlyExpired(member)) {
-      logEventChat("loadChat", "expires_at set and in past → expired", {
+      logEventChat("loadChat", "no paid_at and expires_at in past → expired", {
         eventId,
         expires_at: member.expires_at,
       });
       if (stale()) return;
-      setChatStatus("expired", "loadChat: membership expires_at in past");
+      setChatStatus("expired", "loadChat: membership expires_at in past and not paid");
       return;
     }
 
