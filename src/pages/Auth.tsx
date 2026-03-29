@@ -285,8 +285,8 @@ export default function Auth() {
   const formatPhoneNumber = (phone: string): string => {
     // Remove all non-digit characters
     const cleaned = phone.replace(/\D/g, '');
-    // Combine with selected country dial code
-    return selectedCountry.dialCode + cleaned;
+    // Combine with selected country dial code, strip the + sign
+    return selectedCountry.dialCode.replace('+', '') + cleaned;
   };
 
   const filteredCountries = countryCodes.filter(country =>

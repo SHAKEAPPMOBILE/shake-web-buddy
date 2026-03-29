@@ -347,7 +347,16 @@ export default function EventChatPage() {
 
         clearNoMemberExitTimer();
 
-        if (isEventChatMembershipExplicitlyExpired(member)) {
+        const memberIsExplicitlyExpired = isEventChatMembershipExplicitlyExpired(member);
+        const memberPaidAt = member.paid_at?.trim();
+
+        if (memberIsExplicitlyExpired && memberPaidAt) {
+          console.log("[EventChatPage] membership is explicitly expired but has paid_at; keeping chat enabled", {
+            eventId,
+            expires_at: member.expires_at,
+            paid_at: member.paid_at,
+          });
+        } else if (memberIsExplicitlyExpired) {
           console.log("[EventChatPage] membership expires_at in past — enable chat UI for expired state", {
             eventId,
             expires_at: member.expires_at,

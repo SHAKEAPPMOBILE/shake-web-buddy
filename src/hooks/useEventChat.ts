@@ -182,7 +182,18 @@ export function useEventChat({
       return;
     }
 
-    if (isEventChatMembershipExplicitlyExpired(member)) {
+    const memberPaidAt = member?.paid_at?.trim();
+    const expiresAt = member?.expires_at?.trim();
+    const expiresAtDate = expiresAt ? new Date(expiresAt) : null;
+    const expiresAtInPast = expiresAtDate ? !Number.isNaN(expiresAtDate.getTime()) && expiresAtDate.getTime() <= Date.now() : false;
+
+    if (memberPaidAt && expiresAtInPast) {
+      logEventChat("loadChat", "paid_at present and expires_at past → keep active", {
+        eventId,
+        expires_at: member.expires_at,
+        paid_at: member.paid_at,
+      });
+    } else if (isEventChatMembershipExplicitlyExpired(member)) {
       logEventChat("loadChat", "expires_at set and in past → expired", {
         eventId,
         expires_at: member.expires_at,
