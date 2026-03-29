@@ -455,8 +455,90 @@ function EventDetail({
       }
 
       // Free join — no payment required
-      if (user?.id) addGroupChatAccess(user.id, event.id);
-      onJoinedEvent(event);
+      // Check capacity and rotate venue if needed (dinner/lunch/brunch/drinks)
+      const ACTIVITY_TYPES = ["dinner", "lunch", "brunch", "drinks"];
+      const VENUE_TYPE_MAP: Record<string, string> = {
+        dinner: "lunch_dinner",
+        lunch: "lunch_dinner",
+        brunch: "brunch",
+        drinks: "drinks",
+      };
+      const MAX_CHAT_SIZE = 7;
+      const activityType = (event.category ?? "").toLowerCase();
+
+      let targetEventId = event.id;
+
+      if (ACTIVITY_TYPES.includes(activityType)) {
+        // Count current members in this event chat
+        const { count: currentCount } = await supabase
+          .from("event_chat_members")
+          .select("*", { count: "exact", head: true })
+          .eq("event_id", event.id);
+
+        if ((currentCount ?? 0) >= MAX_CHAT_SIZE) {
+          // Find or create a new event chat with a different venue
+          const venueType = VENUE_TYPE_MAP[activityType];
+          const city = event.city ?? "";
+
+          // Get all venues for this activity type and city
+          const { data: venues } = await supabase
+            .from("venues")
+            .select("id, name")
+            .eq("venue_type", venueType)
+            .eq("city", city)
+            .eq("is_active", true);
+
+          if (venues && venues.length > 0) {
+            // Find venue not already used by a full chat of this activity today
+            const today = new Date().toISOString().split("T")[0];
+            const { data: todayChats } = await supabase
+              .from("event_chats")
+              .select("event_id, venue_id, member_count")
+              .eq("activity_type", activityType)
+              .eq("city", city)
+              .gte("created_at", today);
+
+            // Find a chat with space first
+            const chatWithSpace = todayChats?.find(
+              (c) => (c.member_count ?? 0) < MAX_CHAT_SIZE
+            );
+
+            if (chatWithSpace) {
+              targetEventId = chatWithSpace.event_id;
+            } else {
+              // All chats full — pick next venue in rotation
+              const usedVenueIds = new Set(todayChats?.map((c) => c.venue_id));
+              const nextVenue = venues.find((v) => !usedVenueIds.has(v.id)) ?? venues[0];
+              const newEventId = `${activityType}-${city}-${Date.now()}`.toLowerCase().replace(/\s+/g, "-");
+
+              await supabase.from("event_chats").insert({
+                event_id: newEventId,
+                name: `${event.title ?? activityType} @ ${nextVenue.name}`,
+                expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                activity_type: activityType,
+                city: city,
+                venue_name: nextVenue.name,
+                venue_id: nextVenue.id,
+              });
+
+              targetEventId = newEventId;
+            }
+          }
+        } else {
+          // Chat has space — make sure event_chats row exists with venue info
+          await supabase.from("event_chats").upsert({
+            event_id: event.id,
+            name: event.title ?? activityType,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            activity_type: activityType,
+            city: event.city ?? "",
+            venue_name: event.venue ?? "",
+          }, { onConflict: "event_id", ignoreDuplicates: true });
+        }
+      }
+
+      if (user?.id) addGroupChatAccess(user.id, targetEventId);
+      onJoinedEvent({ ...event, id: targetEventId });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes("401") || message.toLowerCase().includes("unauthorized") || message.toLowerCase().includes("authenticated")) {
