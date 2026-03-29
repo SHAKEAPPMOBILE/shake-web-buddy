@@ -454,46 +454,9 @@ function EventDetail({
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error("Please sign in to unlock the group chat.");
-        return;
-      }
-      const { data, error } = await supabase.functions.invoke("create-event-chat-payment", {
-        body: {
-          eventId: event.id,
-          eventName: `${event.name} · ${event.venue}, ${event.city}`,
-          eventStartsAt,
-        },
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-
-      if (error) throw error;
-
-      if (data?.error) {
-        toast.error(data.error);
-        return;
-      }
-
-      if (data?.alreadyJoined) {
-        if (user?.id) addGroupChatAccess(user.id, event.id);
-        onJoinedEvent(event);
-        return;
-      }
-
-      if (data?.url) {
-        try {
-          sessionStorage.setItem("eventsEntrySource", eventsEntrySource);
-        } catch {
-          /* ignore quota / private mode */
-        }
-        flushSync(() => {
-          navigate("/events", { replace: true, state: { eventsEntrySource } });
-        });
-        window.location.replace(data.url);
-      } else {
-        toast.error("Failed to create payment session");
-      }
+      // Free join — no payment required
+      if (user?.id) addGroupChatAccess(user.id, event.id);
+      onJoinedEvent(event);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes("401") || message.toLowerCase().includes("unauthorized") || message.toLowerCase().includes("authenticated")) {
@@ -501,7 +464,7 @@ function EventDetail({
         await signOut();
         navigate("/auth", { state: { message: "Your session expired. Please sign in again." }, replace: true });
       } else {
-        toast.error("Failed to process payment. Please try again.");
+        toast.error("Failed to join chat. Please try again.");
       }
     } finally {
       setIsEnteringChat(false);
