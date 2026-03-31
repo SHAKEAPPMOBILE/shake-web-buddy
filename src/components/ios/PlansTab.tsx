@@ -374,6 +374,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     return activity?.emoji || "📍";
   };
 
+  const getActivityIcon = (type: string) => {
+    const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
+    return activity?.icon;
+  };
+
   // Map activity type to translation key
   const activityKeyMap: Record<string, string> = {
     lunch: "lunch",
@@ -638,8 +643,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 {/* Profile Picture or Activity Emoji */}
                 <div className="relative">
                   {plan.isCarouselJoin ? (
-                    <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-2xl">
-                      {getActivityEmoji(plan.activity_type)}
+                    <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center overflow-hidden">
+                      {getActivityIcon(plan.activity_type) ? (
+                        <img src={getActivityIcon(plan.activity_type)} alt={plan.activity_type} className="w-9 h-9 object-contain mix-blend-multiply" />
+                      ) : (
+                        <span className="text-2xl">{getActivityEmoji(plan.activity_type)}</span>
+                      )}
                     </div>
                   ) : (
                     <Avatar className="w-12 h-12 border-2 border-white/50 shadow-md">

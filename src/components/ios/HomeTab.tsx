@@ -66,6 +66,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     id: string;
     label: string;
     emoji: string;
+    icon?: string;
     dayNumber: number | null;
     nextDate: Date | null;
     isProposePlan?: boolean;
@@ -83,6 +84,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
         id: activity.id,
         label: getTranslatedActivityLabel(t, activity.id),
         emoji: activity.emoji,
+        icon: activity.icon,
         dayNumber: activity.dayNumber,
         nextDate: activity.nextDate,
         isProposePlan: false,
@@ -330,7 +332,15 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
                 }}
                 onClick={handleActivitySelect}
               >
-                <span className="text-6xl animate-scale-in">{currentActivity?.emoji}</span>
+                {currentActivity?.icon ? (
+                  <img
+                    src={currentActivity.icon}
+                    alt={currentActivity.label || ''}
+                    className="w-20 h-20 object-contain mix-blend-multiply animate-scale-in"
+                  />
+                ) : (
+                  <span className="text-6xl animate-scale-in">{currentActivity?.emoji}</span>
+                )}
               </div>
 
               {/* Right Arrow */}

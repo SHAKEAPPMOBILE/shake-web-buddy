@@ -1,8 +1,4 @@
 // Activity types configuration
-import iconLunch from "@/assets/icon-lunch.png";
-import iconDinner from "@/assets/icon-dinner.png";
-import iconDrinks from "@/assets/icon-drinks.png";
-import iconHike from "@/assets/icon-hike.png";
 import bgBarManCook from "@/assets/bar-man-and-cook.png";
 import bgHiker from "@/assets/hiker-illustration.png";
 
@@ -110,7 +106,7 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     id: "lunch", 
     label: "Lunch", 
     emoji: "🍽️",
-    icon: iconLunch,
+    icon: "/icons/activities/lunch-icon.jpg",
     color: "bg-shake-coral/20 hover:bg-shake-coral/30",
     bgImage: bgBarManCook,
     defaultDay: 4 // Thursday
@@ -119,7 +115,7 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     id: "dinner", 
     label: "Dinner", 
     emoji: "🍝",
-    icon: iconDinner,
+    icon: "/icons/activities/dinner-icon.jpg",
     color: "bg-shake-purple/20 hover:bg-shake-purple/30",
     bgImage: bgBarManCook,
     defaultDay: 6 // Saturday
@@ -128,7 +124,7 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     id: "drinks", 
     label: "Drinks", 
     emoji: "🍹",
-    icon: iconDrinks,
+    icon: "/icons/activities/drinks-icon.jpg",
     color: "bg-shake-teal/20 hover:bg-shake-teal/30",
     bgImage: bgBarManCook,
     defaultDay: 5 // Friday
@@ -137,7 +133,7 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     id: "brunch", 
     label: "Brunch", 
     emoji: "🥐",
-    icon: iconLunch,
+    icon: "/icons/activities/brunch-icon.jpg",
     color: "bg-shake-yellow/20 hover:bg-shake-yellow/30",
     bgImage: bgBarManCook,
     defaultDay: 0 // Sunday
@@ -146,7 +142,7 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     id: "hike", 
     label: "Hike", 
     emoji: "⛰️",
-    icon: iconHike,
+    icon: "/icons/activities/hike-icon.jpg",
     color: "bg-shake-green/20 hover:bg-shake-green/30",
     bgImage: bgHiker,
     defaultDay: 0 // Sunday
@@ -176,6 +172,10 @@ export const getActivityLabel = (id: string): string => {
 
 export const getActivityColor = (id: string): string => {
   return getActivityById(id)?.color || "bg-muted/20";
+};
+
+export const getActivityIcon = (id: string): string | undefined => {
+  return getActivityById(id)?.icon;
 };
 
 // Get default activity based on current day of week

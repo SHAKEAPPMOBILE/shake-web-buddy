@@ -7,7 +7,7 @@ import { SHAKE_CITIES, REGIONS } from "@/data/cities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { SuperHumanIcon } from "@/components/SuperHumanIcon";
-import { getActivityDay } from "@/data/activityTypes";
+import { getActivityDay, getActivityById } from "@/data/activityTypes";
 import { getTranslatedActivityDay } from "@/lib/activity-translations";
 import { useTranslation } from "react-i18next";
 
@@ -71,7 +71,8 @@ export function ActivityConfirmationDialog({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-        <DialogContent className="sm:max-w-md rounded-2xl">
+        <DialogContent className="sm:max-w-md rounded-2xl [&>button]:hidden">
+          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
           <div className="p-6 pb-4 border-b border-border/30">
             <button
               onClick={() => onOpenChange(false)}
@@ -81,8 +82,12 @@ export function ActivityConfirmationDialog({
               ✕
             </button>
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white shadow-lg flex items-center justify-center">
-                <span className="text-3xl">{activity.emoji}</span>
+              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
+                {getActivityById(activity.id)?.icon ? (
+                  <img src={getActivityById(activity.id)!.icon} alt={activity.label} className="w-12 h-12 object-contain mix-blend-multiply" />
+                ) : (
+                  <span className="text-3xl">{activity.emoji}</span>
+                )}
               </div>
               <h2 className="text-xl font-display font-bold">
                 {t('activityDialog.selectCityFor', 'Select a city for {{activity}}', { activity: activity.label })}
@@ -131,7 +136,8 @@ export function ActivityConfirmationDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-        <DialogContent className="sm:max-w-md rounded-2xl">
+        <DialogContent className="sm:max-w-md rounded-2xl [&>button]:hidden">
+          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
           <button
             onClick={() => onOpenChange(false)}
             className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted/50 transition-colors"
@@ -141,9 +147,13 @@ export function ActivityConfirmationDialog({
           </button>
 
           <div className="flex flex-col items-center px-6 pb-6 space-y-4">
-            {/* Activity emoji */}
-            <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle">
-              <span className="text-4xl">{activity.emoji}</span>
+            {/* Activity icon */}
+            <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle overflow-hidden">
+              {getActivityById(activity.id)?.icon ? (
+                <img src={getActivityById(activity.id)!.icon} alt={activity.label} className="w-16 h-16 object-contain mix-blend-multiply" />
+              ) : (
+                <span className="text-4xl">{activity.emoji}</span>
+              )}
             </div>
 
             {/* Activity name and details */}

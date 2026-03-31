@@ -9,7 +9,7 @@ import {
   CarouselApi,
 } from "@/components/ui/carousel";
 import { Clock } from "lucide-react";
-import { getActivitiesWithDates, getTodayDefaultIndex } from "@/data/activityTypes";
+import { getActivitiesWithDates, getTodayDefaultIndex, getActivityById } from "@/data/activityTypes";
 import { getTranslatedActivityLabel } from "@/lib/activity-translations";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { PremiumDialog } from "@/components/PremiumDialog";
@@ -176,8 +176,12 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
               className="animate-scale-in"
               style={{ animationDuration: '0.4s' }}
             >
-              <div className="w-28 h-28 rounded-full bg-white shadow-lg flex items-center justify-center">
-                <span className="text-6xl">{successActivity.emoji}</span>
+              <div className="w-28 h-28 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
+                {getActivityById(successActivity.id)?.icon ? (
+                  <img src={getActivityById(successActivity.id)!.icon} alt={successActivity.label} className="w-20 h-20 object-contain mix-blend-multiply" />
+                ) : (
+                  <span className="text-6xl">{successActivity.emoji}</span>
+                )}
               </div>
             </div>
             
