@@ -19,6 +19,12 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const navigate = useNavigate();
   const [isShaking, setIsShaking] = useState(false);
 
+  // Determine shake button color based on day of week
+  // 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+  const dayOfWeek = new Date().getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const shakeButtonColor = isWeekend ? "bg-green-500" : "bg-blue-500";
+
   const tabs = [
     { id: "home", icon: Home, label: t('home.title', 'Home') },
     { id: "plans", icon: MapPin, label: t('plans.title') },
@@ -69,9 +75,10 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                     />
                   )}
                   
-                  {/* Center circle - always green, independent of daily theme */}
+                  {/* Center circle - color changes based on day of week */}
                   <div className={cn(
-                    "w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg transition-all",
+                    "w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all",
+                    shakeButtonColor,
                     isActive && "scale-110",
                     isShaking && "animate-shake-center"
                   )}>
@@ -87,7 +94,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                 </div>
                 <span className={cn(
                   "text-[10px] mt-1 font-medium",
-                  isActive ? "text-emerald-500" : "text-muted-foreground"
+                  isActive ? (isWeekend ? "text-green-500" : "text-blue-500") : "text-muted-foreground"
                 )}>
                   {tab.label}
                 </span>
