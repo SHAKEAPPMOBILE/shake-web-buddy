@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Dialog, DialogContent, DialogOverlay } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import { loadModels, captureFaceDescriptor } from '@/services/faceAuthService';
 
@@ -122,42 +121,38 @@ export function FaceCaptureModal({
 
   return (
     <Dialog open={open} onOpenChange={() => onCancel()}>
-      <DialogOverlay className="fixed inset-0 bg-black z-50" />
-      <DialogContent className="fixed inset-0 z-50 p-0 bg-transparent border-0">
-        {/* Video element covering full screen */}
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+      <DialogPortal>
+        <DialogOverlay className="bg-black/80" />
+        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full object-cover"
+          />
 
-        {/* Circular guide */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-64 h-64 rounded-full border-4 border-white relative">
-            {/* Inner circle for better visibility */}
-            <div className="absolute inset-2 rounded-full border border-white/50" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="w-64 h-64 rounded-full border-4 border-white relative">
+              <div className="absolute inset-2 rounded-full border border-white/50" />
+            </div>
           </div>
-        </div>
 
-        {/* Status text */}
-        <div className="absolute bottom-32 left-0 right-0 text-center">
-          <p className="text-white text-xl font-semibold bg-black/50 px-4 py-2 rounded-lg inline-block">
-            {status}
-          </p>
-        </div>
+          <div className="absolute bottom-24 left-0 right-0 text-center text-white">
+            <p className="text-xl font-semibold bg-black/50 px-4 py-2 rounded-lg inline-block">
+              {status}
+            </p>
+          </div>
 
-        {/* Cancel button */}
-        <Button
-          onClick={onCancel}
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 right-4 text-white hover:bg-white/20"
-        >
-          <X className="w-6 h-6" />
-        </Button>
-      </DialogContent>
+          <button
+            onClick={onCancel}
+            className="absolute top-6 left-6 text-white"
+            aria-label="Close Face Capture"
+          >
+            <X className="w-7 h-7" />
+          </button>
+        </div>
+      </DialogPortal>
     </Dialog>
   );
 }
