@@ -71,18 +71,14 @@ export function ActivityConfirmationDialog({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-        <DialogContent className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl max-h-[90vh] w-full sm:max-w-none bg-card/95 backdrop-blur-xl border-border/50 p-0 pb-[env(safe-area-inset-bottom)]">
-          {/* Drag handle */}
-          <div className="flex shrink-0 justify-center pt-3 pb-2" aria-hidden>
-            <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
-          </div>
-
+        <DialogContent className="sm:max-w-md rounded-2xl">
           <div className="p-6 pb-4 border-b border-border/30">
             <button
-              onClick={() => setShowCityPicker(false)}
-              className="absolute top-4 left-4 p-2 rounded-full hover:bg-muted/50 transition-colors"
+              onClick={() => onOpenChange(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted/50 transition-colors"
             >
-              <ChevronRight className="w-5 h-5 rotate-180" />
+              <span className="sr-only">Close</span>
+              ✕
             </button>
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white shadow-lg flex items-center justify-center">
@@ -135,11 +131,14 @@ export function ActivityConfirmationDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-        <DialogContent className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl max-h-[90vh] w-full sm:max-w-none bg-card/95 backdrop-blur-xl border-border/50 p-0 pb-[env(safe-area-inset-bottom)]">
-          {/* Drag handle */}
-          <div className="flex shrink-0 justify-center pt-3 pb-2" aria-hidden>
-            <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
-          </div>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <button
+            onClick={() => onOpenChange(false)}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted/50 transition-colors"
+          >
+            <span className="sr-only">Close</span>
+            ✕
+          </button>
 
           <div className="flex flex-col items-center px-6 pb-6 space-y-4">
             {/* Activity emoji */}
