@@ -47,6 +47,9 @@ const DEMO_OTP = "123456";
 /** SMS/email resend cooldown after each send (App Review: visible retry without long wait). */
 const OTP_RESEND_SECONDS = 20;
 
+// Temporary rollout flag: keep implementation in codebase but hide from users.
+const FACE_ID_FEATURE_ENABLED = false;
+
 // Show user-friendly messages instead of technical errors (e.g. "Load failed", "Edge Function returned non-2xx") for App Store compliance
 function toFriendlyAuthMessage(raw: string, context: "login" | "otp" | "forgot" | "general"): string {
   const lower = (raw || "").toLowerCase();
@@ -734,9 +737,11 @@ export default function Auth() {
             toast.error(toFriendlyAuthMessage(signInError.message, "login"));
           } else {
             toast.success("Phone verified! Now complete your profile.");
-            const { data: authData } = await supabase.auth.getUser();
-            setPendingFaceSetupUserId(authData.user?.id ?? null);
-            setShowFaceSetupPrompt(true);
+            if (FACE_ID_FEATURE_ENABLED) {
+              const { data: authData } = await supabase.auth.getUser();
+              setPendingFaceSetupUserId(authData.user?.id ?? null);
+              setShowFaceSetupPrompt(true);
+            }
             setStep('name');
           }
         } else {
@@ -2015,7 +2020,7 @@ export default function Auth() {
             </form>
           )}
 
-          {(step === 'phone' || step === 'otp') && isLogin && (
+          {(step === 'phone' || step === 'otp') && isLogin && FACE_ID_FEATURE_ENABLED && (
             <div className="mt-4 space-y-2">
               <p className="text-xs text-muted-foreground text-center">No phone access? Use your face</p>
               <Button
@@ -2045,47 +2050,51 @@ export default function Auth() {
         </div>
       </div>
 
-      <AlertDialog open={showFaceSetupPrompt} onOpenChange={setShowFaceSetupPrompt}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Set up Face ID for faster login next time?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You can skip now and enable it later from your profile settings.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => {
-                setShowFaceSetupPrompt(false);
-                setPendingFaceSetupUserId(null);
-              }}
-            >
-              Skip
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setShowFaceSetupPrompt(false);
-                setFaceMode('enroll');
-                setIsFaceCaptureOpen(true);
-              }}
-            >
-              Yes
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {FACE_ID_FEATURE_ENABLED && (
+        <>
+          <AlertDialog open={showFaceSetupPrompt} onOpenChange={setShowFaceSetupPrompt}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Set up Face ID for faster login next time?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You can skip now and enable it later from your profile settings.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel
+                  onClick={() => {
+                    setShowFaceSetupPrompt(false);
+                    setPendingFaceSetupUserId(null);
+                  }}
+                >
+                  Skip
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setShowFaceSetupPrompt(false);
+                    setFaceMode('enroll');
+                    setIsFaceCaptureOpen(true);
+                  }}
+                >
+                  Yes
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
-      <FaceCaptureModal
-        open={isFaceCaptureOpen}
-        mode={faceMode}
-        onSuccess={handleFaceCaptureSuccess}
-        onCancel={() => {
-          setIsFaceCaptureOpen(false);
-          if (faceMode === 'enroll') {
-            setPendingFaceSetupUserId(null);
-          }
-        }}
-      />
+          <FaceCaptureModal
+            open={isFaceCaptureOpen}
+            mode={faceMode}
+            onSuccess={handleFaceCaptureSuccess}
+            onCancel={() => {
+              setIsFaceCaptureOpen(false);
+              if (faceMode === 'enroll') {
+                setPendingFaceSetupUserId(null);
+              }
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

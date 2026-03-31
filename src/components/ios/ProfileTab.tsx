@@ -54,6 +54,9 @@ interface ProfileTabProps {
   onSubscriptionOpened?: () => void;
 }
 
+// Temporary rollout flag: keep implementation in codebase but hide from users.
+const FACE_ID_FEATURE_ENABLED = false;
+
 export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionOpened }: ProfileTabProps) {
   const { t } = useTranslation();
   const { user, isPremium, isManualOverride, signOut } = useAuth();
@@ -941,41 +944,42 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           </div>
         </div>
 
-        {/* Face ID Login */}
-        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
-          <div className="flex items-center gap-4 px-4 py-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <ScanFace className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1">
-              <span className="font-medium">Face ID Login</span>
-              <p className="text-xs text-muted-foreground">
-                {faceAuthEnabled ? "Use your face to sign in" : "Set up face login"}
-              </p>
-            </div>
-
-            {!faceAuthEnabled ? (
-              <button
-                onClick={() => setShowFaceCapture(true)}
-                disabled={isUpdatingFaceAuth}
-                className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
-              >
-                {isUpdatingFaceAuth ? "Setting up..." : "Set up"}
-              </button>
-            ) : (
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-shake-green">Enabled ✓</span>
-                <button
-                  onClick={() => setShowRemoveFaceConfirm(true)}
-                  disabled={isUpdatingFaceAuth}
-                  className="text-xs font-medium text-destructive hover:underline disabled:opacity-50"
-                >
-                  Remove
-                </button>
+        {FACE_ID_FEATURE_ENABLED && (
+          <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+            <div className="flex items-center gap-4 px-4 py-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <ScanFace className="w-5 h-5 text-primary" />
               </div>
-            )}
+              <div className="flex-1">
+                <span className="font-medium">Face ID Login</span>
+                <p className="text-xs text-muted-foreground">
+                  {faceAuthEnabled ? "Use your face to sign in" : "Set up face login"}
+                </p>
+              </div>
+
+              {!faceAuthEnabled ? (
+                <button
+                  onClick={() => setShowFaceCapture(true)}
+                  disabled={isUpdatingFaceAuth}
+                  className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
+                >
+                  {isUpdatingFaceAuth ? "Setting up..." : "Set up"}
+                </button>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-shake-green">Enabled ✓</span>
+                  <button
+                    onClick={() => setShowRemoveFaceConfirm(true)}
+                    disabled={isUpdatingFaceAuth}
+                    className="text-xs font-medium text-destructive hover:underline disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Paranormal Activity Dialog */}
         <Dialog open={showParanormal} onOpenChange={setShowParanormal}>
@@ -1175,26 +1179,27 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Remove Face ID Confirmation */}
-      <AlertDialog open={showRemoveFaceConfirm} onOpenChange={setShowRemoveFaceConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Face ID?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You&apos;ll need to use another login method until you set Face ID up again.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isUpdatingFaceAuth}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRemoveFaceId}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isUpdatingFaceAuth ? "Removing..." : "Remove"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {FACE_ID_FEATURE_ENABLED && (
+        <AlertDialog open={showRemoveFaceConfirm} onOpenChange={setShowRemoveFaceConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Face ID?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You&apos;ll need to use another login method until you set Face ID up again.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isUpdatingFaceAuth}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleRemoveFaceId}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isUpdatingFaceAuth ? "Removing..." : "Remove"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       {/* ID Verification Dialog */}
       <IDVerificationDialog
@@ -1208,12 +1213,14 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         onOpenChange={setShowManagePlanDialog}
       />
 
-      <FaceCaptureModal
-        open={showFaceCapture}
-        mode="enroll"
-        onSuccess={handleFaceEnrollSuccess}
-        onCancel={() => setShowFaceCapture(false)}
-      />
+      {FACE_ID_FEATURE_ENABLED && (
+        <FaceCaptureModal
+          open={showFaceCapture}
+          mode="enroll"
+          onSuccess={handleFaceEnrollSuccess}
+          onCancel={() => setShowFaceCapture(false)}
+        />
+      )}
 
     </div>
   );
