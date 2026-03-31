@@ -230,17 +230,7 @@ export function IOSAppLayout() {
 
   const shakeDebounceRef = useRef(false);
 
-  const triggerHapticFeedback = useCallback(async () => {
-    try {
-      if (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) {
-        // @ts-ignore: optional dependency only available on native platforms
-        const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
-        await Haptics.impact({ style: ImpactStyle.Medium });
-        return;
-      }
-    } catch {
-      // not on native, fall through
-    }
+  const triggerHapticFeedback = useCallback(() => {
     navigator.vibrate?.(200);
   }, []);
 
