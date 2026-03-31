@@ -232,19 +232,16 @@ export function IOSAppLayout() {
 
   const triggerHapticFeedback = useCallback(async () => {
     try {
-      // @ts-ignore: optional dependency in web environment
-      const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
-      if (Haptics && Haptics.impact) {
+      if (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) {
+        // @ts-ignore: optional dependency only available on native platforms
+        const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
         await Haptics.impact({ style: ImpactStyle.Medium });
         return;
       }
-    } catch (error) {
-      // Capacitor Haptics not available, fallback to vibration
+    } catch {
+      // not on native, fall through
     }
-
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate?.(200);
-    }
+    navigator.vibrate?.(200);
   }, []);
 
   const executeShakeAction = useCallback(async () => {
