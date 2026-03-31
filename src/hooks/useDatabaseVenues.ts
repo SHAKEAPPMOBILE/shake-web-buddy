@@ -112,6 +112,8 @@ export function useVenuesForActivity(city: string, activityType: string) {
         return [] as DbVenue[];
       }
 
+      console.log('[VenueDebug] venueType mapped:', { activityType, venueType, normalizedCity });
+
       console.log('[VenueDebug] direct Supabase query:', {
         table: 'venues',
         filters: {
