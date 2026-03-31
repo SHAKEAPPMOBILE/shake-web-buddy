@@ -21,8 +21,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
 
   // Determine shake button color based on day of week
   // 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
-  const dayOfWeek = new Date().getDay();
-  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const isWeekend = [0, 6].includes(new Date().getDay());
   const shakeButtonColor = isWeekend ? "bg-green-500" : "bg-blue-500";
 
   const tabs = [
