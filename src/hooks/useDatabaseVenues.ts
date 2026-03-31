@@ -27,13 +27,15 @@ export function normalizeCity(city: string): string {
 
 // Map activity types to venue types
 export function getVenueTypeForActivity(activityType: string): 'lunch_dinner' | 'brunch' | 'drinks' | null {
-  if (activityType === 'lunch' || activityType === 'dinner') {
+  const normalizedActivityType = (activityType || '').trim().toLowerCase();
+
+  if (normalizedActivityType === 'lunch' || normalizedActivityType === 'dinner') {
     return 'lunch_dinner';
   }
-  if (activityType === 'brunch') {
+  if (normalizedActivityType === 'brunch') {
     return 'brunch';
   }
-  if (activityType === 'drinks') {
+  if (normalizedActivityType === 'drinks') {
     return 'drinks';
   }
   return null;
@@ -100,19 +102,20 @@ export function useVenuesByCity(city: string) {
 }
 
 export function useVenuesForActivity(city: string, activityType: string) {
+  const normalizedCity = (city || '').trim();
   const venueType = getVenueTypeForActivity(activityType);
 
   return useQuery({
-    queryKey: ['db-venues', city, venueType],
+    queryKey: ['db-venues', 'activity', normalizedCity, venueType],
     queryFn: async () => {
-      if (!city || !venueType) {
+      if (!normalizedCity || !venueType) {
         return [] as DbVenue[];
       }
 
       console.log('[VenueDebug] direct Supabase query:', {
         table: 'venues',
         filters: {
-          city,
+          city: normalizedCity,
           venue_type: venueType,
           is_active: true,
         },
@@ -121,7 +124,7 @@ export function useVenuesForActivity(city: string, activityType: string) {
       const { data, error } = await supabase
         .from('venues')
         .select('*')
-        .eq('city', city)
+        .eq('city', normalizedCity)
         .eq('venue_type', venueType)
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
@@ -129,7 +132,7 @@ export function useVenuesForActivity(city: string, activityType: string) {
       if (error) throw error;
       return (data ?? []) as DbVenue[];
     },
-    enabled: !!city && !!venueType,
+    enabled: !!normalizedCity && !!venueType,
     staleTime: 1000 * 60 * 5,
   });
 }
