@@ -1,5 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
@@ -70,12 +69,9 @@ export function ActivityConfirmationDialog({
   // City picker view
   if (showCityPicker) {
     return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent 
-          side="bottom"
-          hideClose
-          className="flex max-h-[80vh] flex-col gap-0 overflow-hidden rounded-t-3xl border-border/50 bg-card/95 backdrop-blur-xl p-0 pb-[env(safe-area-inset-bottom)]"
-        >
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
+        <DialogContent className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl max-h-[90vh] w-full sm:max-w-none bg-card/95 backdrop-blur-xl border-border/50 p-0 pb-[env(safe-area-inset-bottom)]">
           {/* Drag handle */}
           <div className="flex shrink-0 justify-center pt-3 pb-2" aria-hidden>
             <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
@@ -129,20 +125,17 @@ export function ActivityConfirmationDialog({
               )
             ))}
           </ScrollArea>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   // Main confirmation view
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent 
-          side="bottom"
-          hideClose
-          className="flex max-h-[80vh] flex-col gap-0 overflow-hidden rounded-t-3xl border-border/50 bg-card/95 backdrop-blur-xl p-0 pb-[env(safe-area-inset-bottom)]"
-        >
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
+        <DialogContent className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl max-h-[90vh] w-full sm:max-w-none bg-card/95 backdrop-blur-xl border-border/50 p-0 pb-[env(safe-area-inset-bottom)]">
           {/* Drag handle */}
           <div className="flex shrink-0 justify-center pt-3 pb-2" aria-hidden>
             <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
@@ -222,8 +215,8 @@ export function ActivityConfirmationDialog({
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     </>
