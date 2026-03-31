@@ -20,7 +20,7 @@ import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { useVenueContext } from "@/contexts/VenueContext";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { LoadingSpinner } from "../LoadingSpinner";
-import { getActivityLabel, getActivityEmoji, getNextOccurrenceDate } from "@/data/activityTypes";
+import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
 import { getVenueTypeForActivity, DbVenue } from "@/hooks/useDatabaseVenues";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -139,6 +139,7 @@ export function GroupChatView({
   } | null>(null);
   const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
   const [currentVenueIndex, setCurrentVenueIndex] = useState(0);
+  const [headerVenueName, setHeaderVenueName] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user, isPremium } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
@@ -200,6 +201,42 @@ export function GroupChatView({
   // Current venue location info
   const location = getLocationString(city, activityType);
   const mapsUrl = getMapsUrl(city, activityType);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const fetchHeaderVenue = async () => {
+      if (!venueType || !city) {
+        if (!isCancelled) setHeaderVenueName(null);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("venues")
+        .select("name")
+        .ilike("city", city.trim())
+        .eq("venue_type", venueType)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .limit(1);
+
+      if (error) {
+        console.error("Error fetching header venue:", error);
+        if (!isCancelled) setHeaderVenueName(null);
+        return;
+      }
+
+      if (!isCancelled) {
+        setHeaderVenueName(data?.[0]?.name ?? null);
+      }
+    };
+
+    fetchHeaderVenue();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activityType, city, venueType]);
 
   // Fetch participants
   useEffect(() => {
@@ -474,9 +511,8 @@ export function GroupChatView({
     }
   };
 
-  const subtitleDate = getNextOccurrenceDate(activityType);
-  const headerSubtitle = format(subtitleDate, "EEEE d");
   const title = `${getActivityEmoji(activityType)} ${getActivityLabel(activityType)}`;
+  const headerSubtitle = headerVenueName || city;
   const showAttendees = attendeeCount > 0;
 
   return (
@@ -497,7 +533,7 @@ export function GroupChatView({
               </span>
             )}
           </h1>
-          <p className="text-xs text-white/70">{headerSubtitle}</p>
+          <p className="text-xs text-muted-foreground">{headerSubtitle}</p>
         </div>
         <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-white/60 hover:text-white hover:bg-white/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>

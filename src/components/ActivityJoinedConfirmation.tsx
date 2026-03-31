@@ -3,7 +3,6 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import { useActivityVenue } from "@/contexts/VenueContext";
-import { getActivityEmoji } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/activity-translations";
 import { useTranslation } from "react-i18next";
 import { triggerConfettiBurstOnce } from "@/lib/confetti";
@@ -33,17 +32,21 @@ export function ActivityJoinedConfirmation({
   eventConfirmation,
 }: ActivityJoinedConfirmationProps) {
   const { t } = useTranslation();
+  const { location: venueInfo, mapsUrl, isTBD, isLoading: venueLoading, venueError, refetchVenues } = useActivityVenue(city, activityType);
 
   useEffect(() => {
     if (!open || !eventConfirmation) return;
     triggerConfettiBurstOnce();
   }, [open, eventConfirmation?.name, eventConfirmation?.dateLine]);
 
-  const emoji = getActivityEmoji(activityType);
+  useEffect(() => {
+    if (!open || !!eventConfirmation) return;
+    refetchVenues();
+  }, [open, activityType, city, eventConfirmation, refetchVenues]);
+
   const label = getTranslatedActivityLabel(t, activityType);
   const activityDay = getTranslatedActivityDay(t, activityType);
   const activityTime = activityType === 'lunch' ? '12:30 PM' : activityType === 'dinner' ? '7:00 PM' : activityType === 'drinks' ? '8:00 PM' : null;
-  const { location: venueInfo, mapsUrl, isTBD, isLoading: venueLoading, venueError, refetchVenues } = useActivityVenue(city, activityType);
 
   const handleJoinChat = () => {
     onJoinGroupChat();
@@ -52,7 +55,8 @@ export function ActivityJoinedConfirmation({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm mx-auto p-0 gap-0 rounded-3xl border-0 overflow-hidden bg-card">
+      <DialogContent className="max-w-sm mx-auto p-0 gap-0 rounded-3xl border-0 overflow-hidden bg-card [&>button]:hidden">
+        <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
         {eventConfirmation ? (
           <>
             <div className="pt-8 pb-4 px-6 text-center">
@@ -83,8 +87,8 @@ export function ActivityJoinedConfirmation({
           <>
             {/* Success header */}
             <div className="pt-8 pb-4 px-6 text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 animate-bounce-subtle">
-                <span className="text-4xl">{emoji}</span>
+              <div className="w-20 h-20 rounded-full bg-white overflow-hidden flex items-center justify-center mx-auto mb-4 animate-bounce-subtle">
+                <img src={`/icons/activities/${activityType}-icon.jpg`} alt={activityType} className="w-full h-full object-cover" />
               </div>
 
               <h2 className="text-xl font-display font-bold text-foreground mb-1">
@@ -114,7 +118,7 @@ export function ActivityJoinedConfirmation({
 
                     {venueLoading ? (
                       <p className="text-sm font-medium text-foreground animate-pulse">
-                        {t('joinConfirmation.loadingVenue', 'Loading...')}
+                        {t('joinConfirmation.loadingVenueForCity', 'Finding a venue in {{city}}...', { city })}
                       </p>
                     ) : venueError ? (
                       <div className="space-y-2">
@@ -127,7 +131,7 @@ export function ActivityJoinedConfirmation({
                       </div>
                     ) : isTBD ? (
                       <p className="text-sm font-medium text-foreground">
-                        {t('joinConfirmation.tbdVoteInChat', 'TBD - Vote in chat!')}
+                        {t('joinConfirmation.tbdVoteInChatWithCity', 'No venue set for {{city}} yet — vote in chat!', { city })}
                       </p>
                     ) : mapsUrl ? (
                       <a
