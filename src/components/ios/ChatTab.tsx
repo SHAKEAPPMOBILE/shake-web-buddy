@@ -791,17 +791,17 @@ export function ChatTab({
                         : getActivityLabel(activity.activity_type)}
                     </h3>
                     {activity.is_plan && (
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-[#9ca3af] bg-[#2a2e32] px-1.5 py-0.5 rounded-md border border-[#3f444c]">
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-[#9ca3af] bg-[#2a2e32] px-1.5 py-0.5 rounded-xl border border-[#3f444c]">
                         {t('common.plan')}
                       </span>
                     )}
                     {activity.is_event && (
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-[#9ca3af] bg-[#2a2e32] px-1.5 py-0.5 rounded-md border border-[#3f444c]">
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-[#9ca3af] bg-[#2a2e32] px-1.5 py-0.5 rounded-xl border border-[#3f444c]">
                         EVENT
                       </span>
                     )}
                     {activity.is_event && (
-                      <span className="text-[10px] font-medium text-[#9ca3af] bg-[#252a2e] px-1.5 py-0.5 rounded-md border border-[#3f444c]">
+                      <span className="text-[10px] font-medium text-[#9ca3af] bg-[#252a2e] px-1.5 py-0.5 rounded-xl border border-[#3f444c]">
                         12h access
                       </span>
                     )}
@@ -823,12 +823,12 @@ export function ChatTab({
                         {locationLine} · {dateFormatted}
                       </span>
                       {isToday(safeActivityDate(activity.scheduled_for)) && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-200/90 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-200/90 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-xl">
                           {t('common.today')}
                         </span>
                       )}
                       {isTomorrow(safeActivityDate(activity.scheduled_for)) && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#a0c1f9] bg-[#a0c1f9]/10 border border-[#a0c1f9]/25 px-1.5 py-0.5 rounded-md">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#a0c1f9] bg-[#a0c1f9]/10 border border-[#a0c1f9]/25 px-1.5 py-0.5 rounded-xl">
                           {t('common.tomorrow')}
                         </span>
                       )}

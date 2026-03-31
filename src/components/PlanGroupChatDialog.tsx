@@ -403,8 +403,8 @@ export function PlanGroupChatDialog({
                     ) : (
                       <div className={`text-sm px-3 py-2 rounded-2xl inline-block ${
                         isOwn
-                          ? "bg-[#7c5cfc] text-white rounded-tr-sm"
-                          : "bg-white/10 text-white border border-white/10 rounded-tl-sm"
+                          ? "bg-[#7c5cfc] text-white rounded-xl-sm"
+                          : "bg-white/10 text-white border border-white/10 rounded-xl-sm"
                       }`}>
                         {msg.message}
                       </div>

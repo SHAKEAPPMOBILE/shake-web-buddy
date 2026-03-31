@@ -166,7 +166,7 @@ export function PlanParticipantsDialog({
                       key={participant.user_id}
                       onClick={() => handleParticipantClick(participant)}
                       disabled={isCurrentUser}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                      className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors ${
                         isCurrentUser 
                           ? 'bg-muted/50 cursor-default' 
                           : 'hover:bg-muted/50 cursor-pointer'
@@ -212,7 +212,7 @@ export function PlanParticipantsDialog({
                         className="relative"
                       >
                         <div
-                          className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 blur-sm pointer-events-none select-none"
+                          className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 blur-sm pointer-events-none select-none"
                         >
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
                             {participant.avatar_url ? (
@@ -257,7 +257,7 @@ export function PlanParticipantsDialog({
                           key={participant.user_id}
                           onClick={() => handleParticipantClick(participant)}
                           disabled={isCurrentUser}
-                          className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                          className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors ${
                             isCurrentUser 
                               ? 'bg-muted/50 cursor-default' 
                               : 'hover:bg-muted/50 cursor-pointer'

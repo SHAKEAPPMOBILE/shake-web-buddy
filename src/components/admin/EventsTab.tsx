@@ -315,7 +315,7 @@ export function EventsTab() {
                 {form.image_url && (
                   <div className="mt-2">
                     <div className="text-xs text-muted-foreground mb-1">Preview</div>
-                    <div className="w-full max-w-xs aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
+                    <div className="w-full max-w-xs aspect-[4/3] rounded-2xl overflow-hidden border border-border bg-muted">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={form.image_url}

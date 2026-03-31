@@ -116,7 +116,7 @@ export function GreetingsIndicator() {
                   {pendingReceived.map((greeting) => (
                     <div
                       key={greeting.id}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
+                      className="flex items-center gap-3 p-3 rounded-2xl bg-muted/50"
                     >
                       <Avatar className="w-10 h-10 rounded-full border border-border bg-muted shrink-0">
                         <AvatarImage src={getDisplayAvatarUrl(greeting.from_user?.avatar_url)} alt={greeting.from_user?.name || "User"} className="object-cover" />
@@ -173,7 +173,7 @@ export function GreetingsIndicator() {
                           match.from_user?.avatar_url || null
                         )
                       }
-                      className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      className="w-full flex items-center gap-3 p-3 rounded-2xl bg-muted/50 hover:bg-muted transition-colors"
                     >
                       <Avatar className="w-10 h-10 rounded-full border-2 border-shake-yellow bg-muted shrink-0">
                         <AvatarImage src={getDisplayAvatarUrl(match.from_user?.avatar_url)} alt={match.from_user?.name || "User"} className="object-cover" />

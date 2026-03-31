@@ -324,7 +324,7 @@ export function PayoutsTab({ adminPassword }: { adminPassword: string }) {
                 {filteredPayouts.map((payout) => {
                   const isExpanded = expandedCreators.has(payout.user_id);
                   return (
-                    <div key={payout.user_id} className="border rounded-lg overflow-hidden">
+                    <div key={payout.user_id} className="border rounded-2xl overflow-hidden">
                       {/* Header Row */}
                       <div 
                         className="flex items-center gap-4 p-4 bg-card hover:bg-muted/50 cursor-pointer"

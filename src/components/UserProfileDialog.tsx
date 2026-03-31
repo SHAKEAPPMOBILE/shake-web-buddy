@@ -322,7 +322,7 @@ export function UserProfileDialog({
                 {activityHistory.map((activity) => (
                   <div 
                     key={activity.id}
-                    className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                    className="flex items-center gap-3 p-2 rounded-2xl bg-muted/50"
                   >
                     <span className="text-lg">
                       {getActivityEmoji(activity.activity_type)}

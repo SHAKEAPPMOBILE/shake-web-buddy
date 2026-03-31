@@ -130,7 +130,7 @@ export function IDVerificationDialog({
     // Default: Upload form
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-muted/50">
           <Shield className="w-5 h-5 text-primary shrink-0" />
           <p className="text-sm text-muted-foreground">
             {t("idVerification.securityNote")}
@@ -145,7 +145,7 @@ export function IDVerificationDialog({
             <img 
               src={previewUrl} 
               alt="ID Preview" 
-              className="max-h-48 rounded-lg object-contain mb-4"
+              className="max-h-48 rounded-2xl object-contain mb-4"
             />
           ) : (
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">

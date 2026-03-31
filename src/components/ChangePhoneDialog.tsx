@@ -181,7 +181,7 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
               const message = detectedCountry ? getSmsAvailabilityMessage(detectedCountry) : null;
               if (message) {
                 return (
-                  <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-md">
+                  <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-xl">
                     ⚠️ {message}
                   </p>
                 );

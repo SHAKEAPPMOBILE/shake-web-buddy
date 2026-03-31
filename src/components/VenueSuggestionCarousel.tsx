@@ -82,7 +82,7 @@ export function VenueSuggestionCarousel({
             return (
               <div
                 key={venue.id}
-                className={`flex-shrink-0 min-w-[180px] max-w-[200px] rounded-lg border p-2.5 shadow-sm ${
+                className={`flex-shrink-0 min-w-[180px] max-w-[200px] rounded-2xl border p-2.5 shadow-sm ${
                   isOurPick
                     ? "bg-shake-green/10 border-shake-green/40"
                     : "bg-shake-yellow/10 border-shake-yellow/40"

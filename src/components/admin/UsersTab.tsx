@@ -109,7 +109,7 @@ function TestUserForm({ password, onUserCreated }: TestUserFormProps) {
             />
           </div>
         </div>
-        <div className="flex items-center gap-3 mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+        <div className="flex items-center gap-3 mt-4 p-3 bg-amber-50 rounded-2xl border border-amber-200">
           <Switch
             checked={isPremium}
             onCheckedChange={setIsPremium}

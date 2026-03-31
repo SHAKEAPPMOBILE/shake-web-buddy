@@ -300,7 +300,7 @@ export function GlobalParticipantsSection() {
                   return (
                     <div
                       key={participant.user_id}
-                      className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50"
+                      className="flex items-center gap-3 p-3 rounded-2xl transition-colors hover:bg-muted/50"
                     >
                       <button
                         onClick={() => handleParticipantClick(participant)}
@@ -350,7 +350,7 @@ export function GlobalParticipantsSection() {
                         className="relative"
                       >
                         <div
-                          className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 blur-sm pointer-events-none select-none"
+                          className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 blur-sm pointer-events-none select-none"
                         >
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
                             {participant.avatar_url ? (
@@ -396,7 +396,7 @@ export function GlobalParticipantsSection() {
                       return (
                         <div
                           key={participant.user_id}
-                          className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50"
+                          className="flex items-center gap-3 p-3 rounded-2xl transition-colors hover:bg-muted/50"
                         >
                           <button
                             onClick={() => handleParticipantClick(participant)}

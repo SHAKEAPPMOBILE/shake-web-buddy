@@ -59,7 +59,7 @@ export function StripeCountrySelectorDialog({
         </DialogHeader>
 
         {isReset && (
-          <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+          <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl">
             <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-600">
               {t('stripe.resetWarning', 'This will delete your current Stripe Connect account and create a new one. You\'ll need to complete verification again.')}
@@ -82,7 +82,7 @@ export function StripeCountrySelectorDialog({
           <button
             onClick={handleContinue}
             disabled={!selectedCountry || isLoading}
-            className="w-full py-3 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 text-sm font-medium text-white bg-primary rounded-2xl hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>

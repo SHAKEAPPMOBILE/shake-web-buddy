@@ -12,7 +12,7 @@ export function PolaroidGallery() {
             className="relative transform -rotate-6 hover:-rotate-3 transition-transform duration-300 animate-fade-up"
             style={{ animationDelay: "50ms" }}
           >
-            <div className="bg-white p-3 pb-12 shadow-2xl rounded-sm">
+            <div className="bg-white p-3 pb-12 shadow-2xl rounded-xl">
               <div className="w-56 h-72 md:w-64 md:h-80 overflow-hidden">
                 <img 
                   src={polaroidActivities} 
@@ -30,7 +30,7 @@ export function PolaroidGallery() {
             className="relative transform rotate-3 hover:rotate-1 transition-transform duration-300 animate-fade-up"
             style={{ animationDelay: "150ms" }}
           >
-            <div className="bg-white p-3 pb-12 shadow-2xl rounded-sm">
+            <div className="bg-white p-3 pb-12 shadow-2xl rounded-xl">
               <div className="w-64 h-80 md:w-72 md:h-96 overflow-hidden">
                 <img 
                   src={polaroidFriends} 
@@ -48,7 +48,7 @@ export function PolaroidGallery() {
             className="relative transform rotate-6 hover:rotate-3 transition-transform duration-300 animate-fade-up"
             style={{ animationDelay: "250ms" }}
           >
-            <div className="bg-white p-3 pb-12 shadow-2xl rounded-sm">
+            <div className="bg-white p-3 pb-12 shadow-2xl rounded-xl">
               <div className="w-56 h-72 md:w-64 md:h-80 overflow-hidden">
                 <img 
                   src={polaroidDrinks} 

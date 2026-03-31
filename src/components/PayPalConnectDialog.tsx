@@ -113,7 +113,7 @@ export function PayPalConnectDialog({
           <button
             onClick={handleConnect}
             disabled={!isValid || isLoading}
-            className="w-full py-3 text-sm font-medium text-white bg-[#0070BA] rounded-lg hover:bg-[#005ea6] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 text-sm font-medium text-white bg-[#0070BA] rounded-2xl hover:bg-[#005ea6] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>

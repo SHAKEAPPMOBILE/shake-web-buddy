@@ -150,7 +150,7 @@ export function ReportUserDialog({
         <ScrollArea className="flex-1 min-h-0">
           <div className="px-6 py-4 space-y-4">
             {/* Warning notice */}
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-destructive/10 border border-destructive/20">
               <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">
                 {t("report.warning")}
@@ -168,7 +168,7 @@ export function ReportUserDialog({
                 {REPORT_REASONS.map((item) => (
                   <div
                     key={item.value}
-                    className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors cursor-pointer ${
+                    className={`flex items-start space-x-3 p-3 rounded-2xl border transition-colors cursor-pointer ${
                       reason === item.value
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"

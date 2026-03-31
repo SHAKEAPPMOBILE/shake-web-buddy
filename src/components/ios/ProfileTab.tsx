@@ -285,7 +285,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               ? "ring-4 ring-shake-green ring-offset-2 ring-offset-background"
               : "border-2 border-border"
           )}>
-            <Avatar className="w-full h-full rounded-none">
+            <Avatar className="w-full h-full rounded-2xl">
               <AvatarImage
                 src={getDisplayAvatarUrl(avatarUrl ?? undefined)}
                 alt=""
@@ -369,7 +369,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     setShowEditProfileDropdown(false);
                     navigate("/profile");
                   }}
-                  className="w-full py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
+                  className="w-full py-2 text-sm font-medium text-primary border border-primary/30 rounded-2xl hover:bg-primary/10 transition-colors"
                 >
                   {t('profile.editProfile')}
                 </button>
@@ -426,7 +426,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   </div>
                   <button
                     onClick={handleOpenManagePlan}
-                    className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-lg hover:bg-shake-green/10 transition-colors"
+                    className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-2xl hover:bg-shake-green/10 transition-colors"
                   >
                     {t('profile.managePlan', 'Manage Plan')}
                   </button>
@@ -472,13 +472,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           </button>
           {showReferralLink && referralCode && (
             <div className="px-4 pb-3 pt-0 animate-fade-in">
-              <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 bg-muted/50 rounded-2xl px-3 py-2">
                 <span className="flex-1 text-sm text-muted-foreground truncate">
                   {getReferralLink(referralCode)}
                 </span>
                 <button
                   onClick={handleCopyReferralLink}
-                  className="p-1.5 hover:bg-muted rounded-md transition-colors"
+                  className="p-1.5 hover:bg-muted rounded-xl transition-colors"
                   title="Copy link"
                 >
                   {copiedLink ? (
@@ -489,7 +489,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 </button>
                 <button
                   onClick={handleShareReferralLink}
-                  className="p-1.5 hover:bg-muted rounded-md transition-colors"
+                  className="p-1.5 hover:bg-muted rounded-xl transition-colors"
                   title="Share link"
                 >
                   <Share2 className="w-4 h-4 text-primary" />
@@ -548,7 +548,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
               <div className="space-y-4 pt-3">
                 {/* Earnings Summary */}
-                <div className="border rounded-lg p-3 bg-gradient-to-r from-shake-yellow/10 to-shake-green/10">
+                <div className="border rounded-2xl p-3 bg-gradient-to-r from-shake-yellow/10 to-shake-green/10">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-shake-green" />
@@ -594,7 +594,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <button
                   onClick={() => setShowIDVerificationDialog(true)}
                   className={cn(
-                    "w-full border rounded-lg p-3 text-left transition-colors hover:bg-muted/30",
+                    "w-full border rounded-2xl p-3 text-left transition-colors hover:bg-muted/30",
                     isVerified 
                       ? "border-shake-green/30 bg-shake-green/5" 
                       : isPending 
@@ -607,7 +607,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className={cn(
-                        "w-6 h-6 rounded flex items-center justify-center",
+                        "w-6 h-6 rounded-xl flex items-center justify-center",
                         isVerified 
                           ? "bg-shake-green/20" 
                           : isPending 
@@ -663,7 +663,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
                 {/* Connected Status Summary */}
                 {((stripeConnected && stripeStatus === "complete") || paypalConnected) && (
-                  <div className="flex items-center gap-2 p-2 bg-shake-green/10 rounded-lg">
+                  <div className="flex items-center gap-2 p-2 bg-shake-green/10 rounded-2xl">
                     <Check className="w-4 h-4 text-shake-green" />
                     <span className="text-sm text-shake-green font-medium">
                       {t('profile.payoutsReady', 'Ready to receive payouts')}
@@ -672,10 +672,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 )}
 
                 {/* Stripe Section */}
-                <div className={`border rounded-lg p-3 space-y-2 ${preferredMethod === "stripe" ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                <div className={`border rounded-2xl p-3 space-y-2 ${preferredMethod === "stripe" ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-[#635BFF] rounded flex items-center justify-center">
+                      <div className="w-6 h-6 bg-[#635BFF] rounded-xl flex items-center justify-center">
                         <span className="text-white text-[10px] font-bold">S</span>
                       </div>
                       <span className="text-sm font-medium">Stripe</span>
@@ -704,7 +704,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       {preferredMethod !== "stripe" && paypalConnected && (
                         <button
                           onClick={() => handleSetPreferredMethod("stripe")}
-                          className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-lg hover:bg-[#635BFF]/10 transition-colors"
+                          className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-2xl hover:bg-[#635BFF]/10 transition-colors"
                         >
                           {t('profile.useStripe', 'Use Stripe for payouts')}
                         </button>
@@ -725,7 +725,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                         <button
                           onClick={checkStripeStatus}
                           disabled={stripeLoading}
-                          className="flex-1 py-2 text-xs font-medium text-amber-600 border border-amber-500/30 rounded-lg hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                          className="flex-1 py-2 text-xs font-medium text-amber-600 border border-amber-500/30 rounded-2xl hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                         >
                           {stripeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                           {t('profile.checkStatus', 'Check Status')}
@@ -744,7 +744,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                             setShowPayoutOptions(false);
                           }}
                           disabled={stripeLoading}
-                          className="flex-1 py-2 text-xs font-medium text-amber-600 border border-amber-500/30 rounded-lg hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                          className="flex-1 py-2 text-xs font-medium text-amber-600 border border-amber-500/30 rounded-2xl hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                         >
                           {stripeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
                           {t('profile.completeOnboarding', 'Complete Setup')}
@@ -752,7 +752,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                         <button
                           onClick={checkStripeStatus}
                           disabled={stripeLoading}
-                          className="py-2 px-3 text-xs text-muted-foreground border border-border rounded-lg hover:bg-muted/50 transition-colors disabled:opacity-50"
+                          className="py-2 px-3 text-xs text-muted-foreground border border-border rounded-2xl hover:bg-muted/50 transition-colors disabled:opacity-50"
                         >
                           <RefreshCw className="w-3 h-3" />
                         </button>
@@ -762,7 +762,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                             setShowResetCountrySelector(true);
                           }}
                           disabled={stripeLoading}
-                          className="py-2 px-3 text-xs text-destructive border border-destructive/30 rounded-lg hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                          className="py-2 px-3 text-xs text-destructive border border-destructive/30 rounded-2xl hover:bg-destructive/10 transition-colors disabled:opacity-50"
                         >
                           <RotateCcw className="w-3 h-3" />
                         </button>
@@ -778,7 +778,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                           startOnboarding();
                         }}
                         disabled={stripeLoading}
-                        className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-lg hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                        className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-2xl hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
                         {stripeLoading ? (
                           <>
@@ -797,10 +797,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 </div>
 
                 {/* PayPal Section */}
-                <div className={`border rounded-lg p-3 space-y-2 ${preferredMethod === "paypal" ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                <div className={`border rounded-2xl p-3 space-y-2 ${preferredMethod === "paypal" ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-[#0070BA] rounded flex items-center justify-center">
+                      <div className="w-6 h-6 bg-[#0070BA] rounded-xl flex items-center justify-center">
                         <span className="text-white text-[10px] font-bold">PP</span>
                       </div>
                       <span className="text-sm font-medium">PayPal</span>
@@ -822,7 +822,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       {preferredMethod !== "paypal" && stripeConnected && stripeStatus === "complete" && (
                         <button
                           onClick={() => handleSetPreferredMethod("paypal")}
-                          className="w-full py-2 text-xs font-medium text-[#0070BA] border border-[#0070BA]/30 rounded-lg hover:bg-[#0070BA]/10 transition-colors"
+                          className="w-full py-2 text-xs font-medium text-[#0070BA] border border-[#0070BA]/30 rounded-2xl hover:bg-[#0070BA]/10 transition-colors"
                         >
                           {t('profile.usePayPal', 'Use PayPal for payouts')}
                         </button>
@@ -830,7 +830,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       <button
                         onClick={() => setShowPayPalDisconnectConfirm(true)}
                         disabled={paypalLoading}
-                        className="w-full py-2 text-xs font-medium text-destructive border border-destructive/30 rounded-lg hover:bg-destructive/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                        className="w-full py-2 text-xs font-medium text-destructive border border-destructive/30 rounded-2xl hover:bg-destructive/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
                         <Trash2 className="w-3 h-3" />
                         {t('profile.disconnectPayPal', 'Disconnect PayPal')}
@@ -847,7 +847,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                           setShowPayPalDialog(true);
                         }}
                         disabled={paypalLoading}
-                        className="w-full py-2 text-xs font-medium text-[#0070BA] border border-[#0070BA]/30 rounded-lg hover:bg-[#0070BA]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                        className="w-full py-2 text-xs font-medium text-[#0070BA] border border-[#0070BA]/30 rounded-2xl hover:bg-[#0070BA]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
                         {paypalLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
                         {t('profile.connectPayPal', 'Connect PayPal')}

@@ -25,7 +25,7 @@ export function InlineChatGif({
         alt=""
         loading="lazy"
         decoding="async"
-        className={`block h-auto max-h-none w-full max-w-[260px] rounded-lg object-contain ${variantClasses[variant]}`}
+        className={`block h-auto max-h-none w-full max-w-[260px] rounded-2xl object-contain ${variantClasses[variant]}`}
         onLoad={onLoad}
       />
     </div>

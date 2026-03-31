@@ -49,7 +49,7 @@ export function StatusVideoViewer({
       )}
 
       {/* Video */}
-      <div className="relative w-full max-w-md aspect-[9/16] bg-black rounded-lg overflow-hidden">
+      <div className="relative w-full max-w-md aspect-[9/16] bg-black rounded-2xl overflow-hidden">
         <video
           src={videoUrl}
           className="w-full h-full object-cover"

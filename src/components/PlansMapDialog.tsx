@@ -296,7 +296,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                 />
                 {/* City suggestions dropdown */}
                 {showCitySuggestions && citySuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                     {citySuggestions.map((cityItem) => (
                       <button
                         key={cityItem.name}
@@ -335,7 +335,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                   </div>
                   {/* City suggestions dropdown */}
                   {showCitySuggestions && citySuggestions.length > 0 && (
-                    <div className="absolute top-full right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                    <div className="absolute top-full right-0 mt-1 w-48 bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                       {citySuggestions.map((cityItem) => (
                         <button
                           key={cityItem.name}
@@ -403,7 +403,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                         />
                         {/* City suggestions dropdown */}
                         {showCitySuggestions && citySuggestions.length > 0 && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                             {citySuggestions.map((cityItem) => (
                               <button
                                 key={cityItem.name}
@@ -467,7 +467,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                                     {getTranslatedActivityLabel(t, activity.activity_type)}
                                   </p>
                                   {isOwner && (
-                                    <span className="text-[10px] px-1 py-0.5 bg-primary/10 text-primary rounded">
+                                    <span className="text-[10px] px-1 py-0.5 bg-primary/10 text-primary rounded-xl">
                                       You
                                     </span>
                                   )}
@@ -577,7 +577,7 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                                     {getTranslatedActivityLabel(t, activity.activity_type)}
                                   </p>
                                   {isOwner && (
-                                    <span className="text-[10px] px-1 py-0.5 bg-primary/10 text-primary rounded">
+                                    <span className="text-[10px] px-1 py-0.5 bg-primary/10 text-primary rounded-xl">
                                       You
                                     </span>
                                   )}

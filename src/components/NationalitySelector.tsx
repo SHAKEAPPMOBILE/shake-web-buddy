@@ -55,7 +55,7 @@ export function NationalitySelector({
         <button
           type="button"
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-10 w-full items-center justify-between rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
             !value && "text-muted-foreground"
           )}
         >
@@ -108,7 +108,7 @@ export function NationalitySelector({
                   type="button"
                   onClick={() => handleSelect(country)}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                    "flex w-full items-center gap-2 rounded-xl px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
                     value === country.name && "bg-accent"
                   )}
                 >

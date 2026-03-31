@@ -18,6 +18,7 @@ interface ActivityConfirmationDialogProps {
   currentCity: string;
   onConfirm: (city: string) => void;
   onExplore: () => void;
+  autoTriggered?: boolean;
 }
 
 export function ActivityConfirmationDialog({
@@ -27,6 +28,7 @@ export function ActivityConfirmationDialog({
   currentCity,
   onConfirm,
   onExplore,
+  autoTriggered = false,
 }: ActivityConfirmationDialogProps) {
   const { t } = useTranslation();
   const { isPremium } = useAuth();
@@ -134,6 +136,12 @@ export function ActivityConfirmationDialog({
             <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle">
               <span className="text-4xl">{activity.emoji}</span>
             </div>
+
+            {autoTriggered && (
+              <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 text-xs font-medium border border-emerald-200">
+                🤙 Shake matched you!
+              </div>
+            )}
 
             {/* Activity name and details */}
             <div className="text-center space-y-1.5">

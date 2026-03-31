@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { IOSTabBar } from "./IOSTabBar";
 import { HomeTab } from "./ios/HomeTab";
 import { PlansTab } from "./ios/PlansTab";
@@ -8,6 +8,7 @@ import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { ActivityConfirmationDialog } from "./ActivityConfirmationDialog";
 import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
+import { getShakeActivity } from "@/lib/getShakeActivity";
 import { OnboardingScreens } from "./OnboardingScreens";
 import { MandatoryPhotoScreen } from "./MandatoryPhotoScreen";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -39,6 +40,7 @@ export function IOSAppLayout() {
   
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
+  const [autoTriggeredShake, setAutoTriggeredShake] = useState(false);
   const [showHomeActivities, setShowHomeActivities] = useState(false);
   const [isHeroShaking, setIsHeroShaking] = useState(false);
   const [isInFullPageChat, setIsInFullPageChat] = useState(false);
@@ -226,11 +228,47 @@ export function IOSAppLayout() {
     };
   }, [user, isLoading, navigate]);
 
+  const shakeDebounceRef = useRef(false);
+
+  const triggerHapticFeedback = useCallback(async () => {
+    try {
+      // @ts-ignore: optional dependency in web environment
+      const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
+      if (Haptics && Haptics.impact) {
+        await Haptics.impact({ style: ImpactStyle.Medium });
+        return;
+      }
+    } catch (error) {
+      // Capacitor Haptics not available, fallback to vibration
+    }
+
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate?.(200);
+    }
+  }, []);
+
+  const executeShakeAction = useCallback(async () => {
+    if (!user) return;
+
+    const activity = getShakeActivity(getOrderedActivities());
+    if (!activity) return;
+
+    await triggerHapticFeedback();
+
+    setTimeout(() => {
+      setSelectedActivity(activity.id);
+      setPendingHomeActivity({ id: activity.id, label: activity.label, emoji: activity.emoji });
+      setAutoTriggeredShake(true);
+      setShowHomeConfirmation(true);
+    }, 600);
+  }, [user, triggerHapticFeedback]);
+
   const handleShakeClick = () => {
     if (!user) {
       navigate("/auth");
       return;
     }
+
     // Switch to home tab and show activities
     setShowEvents(false);
     setActiveTab("home");
@@ -318,11 +356,21 @@ export function IOSAppLayout() {
   }, []);
 
   const handleTabBarShake = useCallback(() => {
+    if (shakeDebounceRef.current) {
+      return;
+    }
+    shakeDebounceRef.current = true;
+    setTimeout(() => {
+      shakeDebounceRef.current = false;
+    }, 300);
+
     setIsHeroShaking(true);
     setTimeout(() => {
       setIsHeroShaking(false);
     }, 3000);
-  }, []);
+
+    executeShakeAction();
+  }, [executeShakeAction]);
 
   const handleChatViewChange = useCallback((isInChat: boolean) => {
     setIsInFullPageChat(isInChat);
@@ -477,9 +525,16 @@ export function IOSAppLayout() {
 
       <ActivityConfirmationDialog
         open={showHomeConfirmation}
-        onOpenChange={setShowHomeConfirmation}
+        onOpenChange={(open) => {
+          setShowHomeConfirmation(open);
+          if (!open) {
+            setAutoTriggeredShake(false);
+            setPendingHomeActivity(null);
+          }
+        }}
         activity={pendingHomeActivity}
         currentCity={selectedCity}
+        autoTriggered={autoTriggeredShake}
         onExplore={() => {
           setShowHomeConfirmation(false);
           setPendingHomeActivity(null);
@@ -488,6 +543,7 @@ export function IOSAppLayout() {
           if (!pendingHomeActivity) return;
           setShowHomeConfirmation(false);
           setShowHomeActivities(false);
+          setAutoTriggeredShake(false);
           const id = pendingHomeActivity.id;
           setPendingHomeActivity(null);
           await actuallyJoinActivity(id, city);

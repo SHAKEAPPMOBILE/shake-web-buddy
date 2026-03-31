@@ -434,7 +434,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
           <div className="flex justify-center">
             <div className="inline-flex items-center gap-2 animate-pulse">
               <LocationPinEmoji className="text-xl" />
-              <div className="h-4 w-[140px] rounded bg-muted/60" />
+              <div className="h-4 w-[140px] rounded-xl bg-muted/60" />
             </div>
           </div>
         ) : (

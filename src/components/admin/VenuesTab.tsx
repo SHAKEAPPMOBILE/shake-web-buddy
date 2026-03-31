@@ -516,7 +516,7 @@ function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete }: 
   const hasMissingCoords = venue.latitude === null || venue.longitude === null;
   
   return (
-    <div className={`p-3 rounded-lg border ${isCurrent ? 'bg-primary/10 border-primary' : hasMissingCoords ? 'bg-amber-500/10 border-amber-500/50' : 'bg-muted/50'}`}>
+    <div className={`p-3 rounded-2xl border ${isCurrent ? 'bg-primary/10 border-primary' : hasMissingCoords ? 'bg-amber-500/10 border-amber-500/50' : 'bg-muted/50'}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

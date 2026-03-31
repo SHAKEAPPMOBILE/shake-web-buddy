@@ -26,7 +26,7 @@ export function CityPickerModal({ open, onOpenChange, title = "Choose your city"
           hideClose
           overlayClassName="bg-black/50 backdrop-blur-md"
           className={cn(
-            "flex max-h-[75vh] flex-col gap-0 overflow-hidden rounded-t-[20px] border border-border/60 bg-card p-0 pb-[env(safe-area-inset-bottom)] shadow-2xl",
+            "flex max-h-[75vh] flex-col gap-0 overflow-hidden rounded-xl-[20px] border border-border/60 bg-card p-0 pb-[env(safe-area-inset-bottom)] shadow-2xl",
           )}
         >
           {/* Drag handle */}

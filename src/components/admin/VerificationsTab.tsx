@@ -295,7 +295,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
 
           <div className="space-y-4">
             {/* User Info */}
-            <div className="p-3 rounded-lg bg-muted/50 space-y-1">
+            <div className="p-3 rounded-2xl bg-muted/50 space-y-1">
               <p className="text-sm"><strong>User:</strong> {selectedVerification?.user_name}</p>
               <p className="text-sm"><strong>Email:</strong> {selectedVerification?.user_email}</p>
               <p className="text-sm">
@@ -309,7 +309,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
             </div>
 
             {/* Document Preview */}
-            <div className="border rounded-lg p-4 bg-muted/30">
+            <div className="border rounded-2xl p-4 bg-muted/30">
               {previewUrl === "error" ? (
                 <div className="text-center py-8">
                   <p className="text-destructive">Failed to load document</p>
@@ -335,7 +335,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
                   <img
                     src={previewUrl}
                     alt="ID Document"
-                    className="max-w-full max-h-96 mx-auto rounded-lg object-contain"
+                    className="max-w-full max-h-96 mx-auto rounded-2xl object-contain"
                     onError={() => {
                       console.error("Image failed to load");
                       setPreviewUrl("error");
@@ -381,7 +381,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
             )}
 
             {selectedVerification?.status === "rejected" && selectedVerification.rejection_reason && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <div className="p-3 rounded-2xl bg-destructive/10 border border-destructive/20">
                 <p className="text-sm font-medium text-destructive">Rejection Reason:</p>
                 <p className="text-sm">{selectedVerification.rejection_reason}</p>
               </div>

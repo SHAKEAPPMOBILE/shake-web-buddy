@@ -265,7 +265,7 @@ export function VideoUploadModal({
         </div>
 
         <div className="p-4 flex flex-col flex-1 min-h-0">
-          <div className="relative w-full max-w-md mx-auto aspect-[9/16] bg-black rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+          <div className="relative w-full max-w-md mx-auto aspect-[9/16] bg-black rounded-2xl overflow-hidden flex items-center justify-center shrink-0">
             {existingVideoUrl ? (
               <video
                 src={existingVideoUrl}

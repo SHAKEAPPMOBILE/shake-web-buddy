@@ -609,13 +609,13 @@ export function GroupChatDialog({
                 {(activityType === "lunch" || activityType === "dinner" || activityType === "brunch" || activityType === "drinks") && (
                   <button
                     onClick={() => setShowVenueSuggestions(!showVenueSuggestions)}
-                    className={`p-1.5 rounded-md ${showVenueSuggestions ? 'text-primary bg-primary/20' : 'text-white/60 hover:text-white'}`}
+                    className={`p-1.5 rounded-xl ${showVenueSuggestions ? 'text-primary bg-primary/20' : 'text-white/60 hover:text-white'}`}
                     title={t('chat.suggestVenue', 'Suggest a venue')}
                   >
                     <span className="inline-flex items-center justify-center w-4 h-4">📍</span>
                   </button>
                 )}
-                <button onClick={handleMuteToggle} className="p-1.5 text-white/60 hover:text-white rounded-md" title={isMuted ? "Unmute" : "Mute"}>
+                <button onClick={handleMuteToggle} className="p-1.5 text-white/60 hover:text-white rounded-xl" title={isMuted ? "Unmute" : "Mute"}>
                   {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                 </button>
               </div>

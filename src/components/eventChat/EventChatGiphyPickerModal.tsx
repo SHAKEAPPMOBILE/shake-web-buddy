@@ -161,8 +161,8 @@ export function EventChatGiphyPickerModal({
         <div ref={bodyRef} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-3">
           {!apiKey || !gf ? (
             <p className="px-3 py-6 text-center text-sm text-white/60">
-              Add <code className="rounded bg-white/10 px-1 text-xs">VITE_GIPHY_API_KEY</code> to{" "}
-              <code className="rounded bg-white/10 px-1 text-xs">.env.local</code> and restart the dev server.
+              Add <code className="rounded-xl bg-white/10 px-1 text-xs">VITE_GIPHY_API_KEY</code> to{" "}
+              <code className="rounded-xl bg-white/10 px-1 text-xs">.env.local</code> and restart the dev server.
             </p>
           ) : (
             <div className="giphy-grid-wrap [&_a]:no-underline">

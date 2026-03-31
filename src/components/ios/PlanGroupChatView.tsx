@@ -406,7 +406,7 @@ export function PlanGroupChatView({
                         />
                       ) : (
                         <div
-                          className={`text-sm p-2 rounded-lg inline-block ${
+                          className={`text-sm p-2 rounded-2xl inline-block ${
                             isOwnMessage ? "bg-black text-white" : "bg-blue-500 text-white"
                           }`}
                         >

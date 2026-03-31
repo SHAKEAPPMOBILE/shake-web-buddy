@@ -191,8 +191,8 @@ export function PrivateChatDialog({
                         isGif
                           ? ""
                           : isMe
-                            ? "bg-black text-white rounded-br-sm"
-                            : "bg-blue-500 text-white rounded-bl-sm"
+                            ? "bg-black text-white rounded-xl-sm"
+                            : "bg-blue-500 text-white rounded-xl-sm"
                       }`}
                     >
                       {isGif ? (
