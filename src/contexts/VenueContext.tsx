@@ -74,10 +74,13 @@ export function useVenueContext() {
   return context;
 }
 
-// Convenience hook for getting activity location details
+// Convenience hook for getting activity location details.
+// Uses a server-filtered Supabase query (city + venue_type + is_active) exclusively.
+// No fallback to the all-venues cache — if Supabase returns 0 rows the venue is genuinely absent.
 export function useActivityVenue(city: string, activityType: string) {
-  const { getVenueForActivity, isLoading, error: venueError, refetchVenues } = useVenueContext();
+  const { refetchVenues } = useVenueContext();
   const mappedVenueType = getVenueTypeForActivity(activityType);
+
   const {
     data: queriedVenues = [],
     isLoading: queryLoading,
@@ -85,50 +88,33 @@ export function useActivityVenue(city: string, activityType: string) {
     refetch: refetchQueriedVenues,
   } = useVenuesForActivity(city, activityType);
 
-  const fallbackVenue = getVenueForActivity(city, activityType);
-  const queriedVenue = useMemo(
+  const venue = useMemo(
     () => getCurrentVenueForActivity(queriedVenues, city, activityType),
     [queriedVenues, city, activityType]
   );
-  const venue = queriedVenue ?? fallbackVenue;
   const location = getVenueLocationString(venue, activityType);
   const mapsUrl = getVenueMapsUrlFromDb(venue);
 
   console.log('[VenueDebug] query path:', {
-    supabaseTable: 'venues',
-    supabaseSelect: '*',
-    supabaseOrderBy: ['sort_order ASC'],
     serverFilters: city && mappedVenueType
-      ? {
-          city,
-          venue_type: mappedVenueType,
-          is_active: true,
-        }
-      : {
-          skipped: true,
-          city: city || '(missing)',
-          venue_type: mappedVenueType || '(missing)',
-        },
-    clientFilters: {
-      city: city,
-      normalizedCity: normalizeCity(city),
-      activityType,
-      mappedVenueType,
-      venueSelection: 'weekly for lunch/dinner/brunch, daily for drinks',
-    },
+      ? { city, venue_type: mappedVenueType, is_active: true }
+      : { skipped: true, city: city || '(missing)', venue_type: mappedVenueType || '(missing)' },
+    queriedVenuesCount: queriedVenues.length,
+    selectedVenue: venue?.name ?? null,
+    queryLoading,
   });
-  
+
   return {
     venue,
     location,
     mapsUrl,
-    isLoading: isLoading || queryLoading,
-    venueError: ((queryError as Error | null) ?? (venueError as Error | null)) as Error | null,
+    isLoading: queryLoading,
+    venueError: queryError as Error | null,
     refetchVenues: () => {
       void refetchQueriedVenues();
       void refetchVenues();
     },
-    isTBD: !(isLoading || queryLoading) && location === "TBD - Vote in chat!",
+    isTBD: !queryLoading && location === "TBD - Vote in chat!",
     venueName: venue?.name || null,
   };
 }
