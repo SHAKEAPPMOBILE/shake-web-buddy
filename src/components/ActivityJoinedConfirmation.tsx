@@ -39,11 +39,6 @@ export function ActivityJoinedConfirmation({
     triggerConfettiBurstOnce();
   }, [open, eventConfirmation?.name, eventConfirmation?.dateLine]);
 
-  useEffect(() => {
-    if (!open || !!eventConfirmation) return;
-    refetchVenues();
-  }, [open, activityType, city, eventConfirmation, refetchVenues]);
-
   const label = getTranslatedActivityLabel(t, activityType);
   const activityDay = getTranslatedActivityDay(t, activityType);
   const activityTime = activityType === 'lunch' ? '12:30 PM' : activityType === 'dinner' ? '7:00 PM' : activityType === 'drinks' ? '8:00 PM' : null;
@@ -118,7 +113,7 @@ export function ActivityJoinedConfirmation({
 
                     {venueLoading ? (
                       <p className="text-sm font-medium text-foreground animate-pulse">
-                        {t('joinConfirmation.loadingVenueForCity', 'Finding a venue in {{city}}...', { city })}
+                        {t('joinConfirmation.loadingVenue', 'Loading...')}
                       </p>
                     ) : venueError ? (
                       <div className="space-y-2">
@@ -131,7 +126,7 @@ export function ActivityJoinedConfirmation({
                       </div>
                     ) : isTBD ? (
                       <p className="text-sm font-medium text-foreground">
-                        {t('joinConfirmation.tbdVoteInChatWithCity', 'No venue set for {{city}} yet — vote in chat!', { city })}
+                        {t('joinConfirmation.tbdVoteInChat', 'TBD - Vote in chat!')}
                       </p>
                     ) : mapsUrl ? (
                       <a

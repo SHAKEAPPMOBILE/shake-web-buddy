@@ -493,14 +493,30 @@ function EventDetail({
             const today = new Date().toISOString().split("T")[0];
             const { data: todayChats } = await supabase
               .from("event_chats")
-              .select("event_id, venue_id, member_count")
+              .select("event_id, venue_id")
               .eq("activity_type", activityType)
               .eq("city", city)
               .gte("created_at", today);
 
+            const todayEventIds = [...new Set((todayChats ?? []).map((c) => c.event_id).filter(Boolean))];
+            let memberCountByEvent: Record<string, number> = {};
+
+            if (todayEventIds.length > 0) {
+              const { data: memberRows } = await supabase
+                .from("event_chat_members")
+                .select("event_id")
+                .in("event_id", todayEventIds);
+
+              memberCountByEvent = (memberRows ?? []).reduce<Record<string, number>>((acc, row) => {
+                const id = row.event_id;
+                acc[id] = (acc[id] ?? 0) + 1;
+                return acc;
+              }, {});
+            }
+
             // Find a chat with space first
             const chatWithSpace = todayChats?.find(
-              (c) => (c.member_count ?? 0) < MAX_CHAT_SIZE
+              (c) => (memberCountByEvent[c.event_id] ?? 0) < MAX_CHAT_SIZE
             );
 
             if (chatWithSpace) {
