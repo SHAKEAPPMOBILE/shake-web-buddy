@@ -1,4 +1,5 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
@@ -18,7 +19,6 @@ interface ActivityConfirmationDialogProps {
   currentCity: string;
   onConfirm: (city: string) => void;
   onExplore: () => void;
-  autoTriggered?: boolean;
 }
 
 export function ActivityConfirmationDialog({
@@ -28,7 +28,6 @@ export function ActivityConfirmationDialog({
   currentCity,
   onConfirm,
   onExplore,
-  autoTriggered = false,
 }: ActivityConfirmationDialogProps) {
   const { t } = useTranslation();
   const { isPremium } = useAuth();
@@ -71,8 +70,17 @@ export function ActivityConfirmationDialog({
   // City picker view
   if (showCityPicker) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50 p-0 max-h-[80vh]">
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent 
+          side="bottom"
+          hideClose
+          className="flex max-h-[80vh] flex-col gap-0 overflow-hidden rounded-t-3xl border-border/50 bg-card/95 backdrop-blur-xl p-0 pb-[env(safe-area-inset-bottom)]"
+        >
+          {/* Drag handle */}
+          <div className="flex shrink-0 justify-center pt-3 pb-2" aria-hidden>
+            <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+          </div>
+
           <div className="p-6 pb-4 border-b border-border/30">
             <button
               onClick={() => setShowCityPicker(false)}
@@ -121,27 +129,30 @@ export function ActivityConfirmationDialog({
               )
             ))}
           </ScrollArea>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     );
   }
 
   // Main confirmation view
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
-          <div className="flex flex-col items-center py-4 space-y-4">
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent 
+          side="bottom"
+          hideClose
+          className="flex max-h-[80vh] flex-col gap-0 overflow-hidden rounded-t-3xl border-border/50 bg-card/95 backdrop-blur-xl p-0 pb-[env(safe-area-inset-bottom)]"
+        >
+          {/* Drag handle */}
+          <div className="flex shrink-0 justify-center pt-3 pb-2" aria-hidden>
+            <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+          </div>
+
+          <div className="flex flex-col items-center px-6 pb-6 space-y-4">
             {/* Activity emoji */}
             <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle">
               <span className="text-4xl">{activity.emoji}</span>
             </div>
-
-            {autoTriggered && (
-              <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 text-xs font-medium border border-emerald-200">
-                🤙 Shake matched you!
-              </div>
-            )}
 
             {/* Activity name and details */}
             <div className="text-center space-y-1.5">
@@ -211,8 +222,8 @@ export function ActivityConfirmationDialog({
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     </>

@@ -34,7 +34,6 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
 
   const handleShakeAnimation = () => {
     setIsShaking(true);
-    onShakeStart?.(); // Notify parent
     setTimeout(() => {
       setIsShaking(false);
     }, 3000);

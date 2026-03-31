@@ -40,7 +40,6 @@ export function IOSAppLayout() {
   
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
-  const [autoTriggeredShake, setAutoTriggeredShake] = useState(false);
   const [showHomeActivities, setShowHomeActivities] = useState(false);
   const [isHeroShaking, setIsHeroShaking] = useState(false);
   const [isInFullPageChat, setIsInFullPageChat] = useState(false);
@@ -245,7 +244,6 @@ export function IOSAppLayout() {
     setTimeout(() => {
       setSelectedActivity(activity.id);
       setPendingHomeActivity({ id: activity.id, label: activity.label, emoji: activity.emoji });
-      setAutoTriggeredShake(true);
       setShowHomeConfirmation(true);
     }, 600);
   }, [user, triggerHapticFeedback]);
@@ -362,6 +360,77 @@ export function IOSAppLayout() {
   const handleChatViewChange = useCallback((isInChat: boolean) => {
     setIsInFullPageChat(isInChat);
   }, []);
+
+  // Device motion detection for physical shake
+  useEffect(() => {
+    if (!user) return;
+
+    let lastAcceleration = { x: 0, y: 0, z: 0 };
+    let lastShakeTime = 0;
+    const shakeThreshold = 18; // Acceleration threshold for shake detection
+    const shakeCooldown = 1000; // Minimum time between shakes in milliseconds
+
+    const requestDeviceMotionPermission = async () => {
+      // Check if DeviceMotionEvent.requestPermission exists (iOS 13+)
+      if (typeof (DeviceMotionEvent as any).requestPermission === 'function') {
+        try {
+          const permission = await (DeviceMotionEvent as any).requestPermission();
+          if (permission !== 'granted') {
+            console.log('Device motion permission denied');
+            return false;
+          }
+        } catch (error) {
+          console.log('Error requesting device motion permission:', error);
+          return false;
+        }
+      }
+      return true;
+    };
+
+    const handleDeviceMotion = (event: DeviceMotionEvent) => {
+      const acceleration = event.accelerationIncludingGravity;
+      if (!acceleration) return;
+
+      const { x = 0, y = 0, z = 0 } = acceleration;
+      const currentTime = Date.now();
+
+      // Calculate acceleration change
+      const deltaX = Math.abs(x - lastAcceleration.x);
+      const deltaY = Math.abs(y - lastAcceleration.y);
+      const deltaZ = Math.abs(z - lastAcceleration.z);
+
+      // Check if acceleration exceeds threshold and cooldown has passed
+      if ((deltaX > shakeThreshold || deltaY > shakeThreshold || deltaZ > shakeThreshold) &&
+          (currentTime - lastShakeTime > shakeCooldown)) {
+        lastShakeTime = currentTime;
+        handleTabBarShake();
+      }
+
+      lastAcceleration = { x, y, z };
+    };
+
+    const setupDeviceMotion = async () => {
+      // Check if device motion is supported
+      if (!window.DeviceMotionEvent) {
+        console.log('Device motion not supported');
+        return;
+      }
+
+      // Request permission on iOS
+      const hasPermission = await requestDeviceMotionPermission();
+      if (!hasPermission) return;
+
+      // Add event listener
+      window.addEventListener('devicemotion', handleDeviceMotion, { passive: true });
+    };
+
+    setupDeviceMotion();
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('devicemotion', handleDeviceMotion);
+    };
+  }, [user, handleTabBarShake]);
 
   const openNearYou = useCallback((from: "home" | "plans") => {
     try {
@@ -515,13 +584,11 @@ export function IOSAppLayout() {
         onOpenChange={(open) => {
           setShowHomeConfirmation(open);
           if (!open) {
-            setAutoTriggeredShake(false);
             setPendingHomeActivity(null);
           }
         }}
         activity={pendingHomeActivity}
         currentCity={selectedCity}
-        autoTriggered={autoTriggeredShake}
         onExplore={() => {
           setShowHomeConfirmation(false);
           setPendingHomeActivity(null);
@@ -530,7 +597,6 @@ export function IOSAppLayout() {
           if (!pendingHomeActivity) return;
           setShowHomeConfirmation(false);
           setShowHomeActivities(false);
-          setAutoTriggeredShake(false);
           const id = pendingHomeActivity.id;
           setPendingHomeActivity(null);
           await actuallyJoinActivity(id, city);
