@@ -48,11 +48,7 @@ export function useAllVenues() {
   return useQuery({
     queryKey: ['db-venues'],
     queryFn: async () => {
-      console.log('[VenueDebug] Supabase query:', {
-        table: 'venues',
-        select: '*',
-        orderBy: ['city ASC', 'venue_type ASC', 'sort_order ASC'],
-      });
+      console.log('[VenueDebug] useAllVenues: fetching ALL venues (no city/type filter — used by VenueProvider cache only)');
 
       const { data, error } = await supabase
         .from('venues')
@@ -67,7 +63,7 @@ export function useAllVenues() {
       }
       const list = (data ?? []) as DbVenue[];
       const active = list.filter((v) => v.is_active !== false);
-      console.log('[VenueDebug] Supabase result:', {
+      console.log('[VenueDebug] useAllVenues result:', {
         totalRows: list.length,
         activeRows: active.length,
       });
@@ -132,7 +128,13 @@ export function useVenuesForActivity(city: string, activityType: string) {
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
-      return (data ?? []) as DbVenue[];
+      const rows = (data ?? []) as DbVenue[];
+      console.log('[VenueDebug] useVenuesForActivity response:', {
+        rowCount: rows.length,
+        firstRow: rows[0] ?? null,
+        error: null,
+      });
+      return rows;
     },
     enabled: !!normalizedCity && !!venueType,
     staleTime: 1000 * 60 * 5,
