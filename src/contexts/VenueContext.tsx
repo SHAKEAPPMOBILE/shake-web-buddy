@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useMemo, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAllVenues, DbVenue, getCurrentVenueForActivity, getVenueLocationString, getVenueMapsUrlFromDb, normalizeCity, getVenueTypeForActivity } from "@/hooks/useDatabaseVenues";
 
 interface VenueContextType {
@@ -77,22 +78,89 @@ export function useVenueContext() {
 // Convenience hook for getting activity location details
 export function useActivityVenue(city: string, activityType: string) {
   const { getVenueForActivity, getLocationString, getMapsUrl, isLoading, error: venueError, refetchVenues } = useVenueContext();
+
+  const [queriedVenue, setQueriedVenue] = useState<DbVenue | null>(null);
+  const [queryLoading, setQueryLoading] = useState(false);
+  const [queryError, setQueryError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadVenue = async () => {
+      const venueType = getVenueTypeForActivity(activityType);
+      if (!city || !venueType) {
+        if (!cancelled) {
+          setQueriedVenue(null);
+          setQueryError(null);
+        }
+        return;
+      }
+
+      setQueryLoading(true);
+      setQueryError(null);
+
+      console.log('[VenueDebug] direct Supabase query:', {
+        table: 'venues',
+        filters: {
+          city,
+          venue_type: venueType,
+          is_active: true,
+        },
+      });
+
+      const { data, error } = await supabase
+        .from('venues')
+        .select('*')
+        .eq('city', city)
+        .eq('venue_type', venueType)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) {
+        if (!cancelled) {
+          setQueryError(error as Error);
+          setQueriedVenue(null);
+          setQueryLoading(false);
+        }
+        return;
+      }
+
+      const venueRows = (data ?? []) as DbVenue[];
+      const selected = getCurrentVenueForActivity(venueRows, city, activityType);
+
+      if (!cancelled) {
+        setQueriedVenue(selected);
+        setQueryLoading(false);
+      }
+    };
+
+    void loadVenue();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [city, activityType]);
   
-  const venue = getVenueForActivity(city, activityType);
-  const location = getLocationString(city, activityType);
-  const mapsUrl = getMapsUrl(city, activityType);
+  const fallbackVenue = getVenueForActivity(city, activityType);
+  const venue = queriedVenue ?? fallbackVenue;
+  const location = getVenueLocationString(venue, activityType);
+  const mapsUrl = getVenueMapsUrlFromDb(venue);
 
   console.log('[VenueDebug] query path:', {
     supabaseTable: 'venues',
     supabaseSelect: '*',
-    supabaseOrderBy: ['city ASC', 'venue_type ASC', 'sort_order ASC'],
-    serverFilters: 'none (all venues fetched)',
+    supabaseOrderBy: ['sort_order ASC'],
+    serverFilters: {
+      city,
+      venue_type: getVenueTypeForActivity(activityType),
+      is_active: true,
+    },
     clientFilters: {
       city: city,
       normalizedCity: normalizeCity(city),
       activityType,
       mappedVenueType: getVenueTypeForActivity(activityType),
-      is_active: 'filtered in useAllVenues()',
+      venueSelection: 'weekly for lunch/dinner/brunch, daily for drinks',
     },
   });
   
@@ -100,10 +168,10 @@ export function useActivityVenue(city: string, activityType: string) {
     venue,
     location,
     mapsUrl,
-    isLoading,
-    venueError: venueError as Error | null,
+    isLoading: isLoading || queryLoading,
+    venueError: (queryError ?? (venueError as Error | null)) as Error | null,
     refetchVenues,
-    isTBD: !isLoading && location === "TBD - Vote in chat!",
+    isTBD: !(isLoading || queryLoading) && location === "TBD - Vote in chat!",
     venueName: venue?.name || null,
   };
 }

@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:venues": "node --env-file=.env scripts/seed-venues-from-venue-data.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
