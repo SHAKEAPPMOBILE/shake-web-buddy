@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
-import { NotificationProvider } from "@/components/notifications/NotificationProvider";
+import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -14,9 +14,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { IOSAppLayout } from "@/components/IOSAppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useReferralTracking } from "@/hooks/useReferralTracking";
-import { LanguageSync } from "@/components/LanguageSync";
 import { initializeRevenueCat } from "./lib/revenuecat";
-import { getTodaysTheme, hexToHslCssVars } from "@/lib/themes";
 import Auth from "./pages/Auth";
 import OAuthCallback from "./pages/OAuthCallback";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,10 +26,6 @@ import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import NotFound from "./pages/NotFound";
 import Welcome from "./pages/Welcome";
 import Admin from "./pages/Admin";
-import PublicVenues from "./pages/PublicVenues";
-import EventsPage from "./pages/EventsPage";
-import EventChatPage from "./pages/EventChatPage";
-import EventStripeReturn from "./pages/EventStripeReturn";
 
 const queryClient = new QueryClient();
 
@@ -45,20 +39,6 @@ const App = () => {
   // Initialize RevenueCat on app load
   useEffect(() => {
     initializeRevenueCat();
-  }, []);
-
-  // Daily rotating theme (consistent for all users)
-  useEffect(() => {
-    const theme = getTodaysTheme();
-    document.documentElement.style.setProperty("--primary-hex", theme.primary);
-
-    const hsl = hexToHslCssVars(theme.primary);
-    if (hsl) {
-      document.documentElement.style.setProperty("--primary", hsl);
-      document.documentElement.style.setProperty("--ring", hsl);
-      document.documentElement.style.setProperty("--sidebar-primary", hsl);
-      document.documentElement.style.setProperty("--sidebar-ring", hsl);
-    }
   }, []);
 
   // Handle deep link callbacks from OAuth redirects
@@ -112,20 +92,18 @@ const App = () => {
 
   return (
   <ErrorBoundary>
-    <NotificationProvider>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <LanguageProvider>
           <AuthProvider>
-            <LanguageSync />
             <CityProvider>
               <VenueProvider>
                 <TooltipProvider>
+                  <Toaster />
                 <BrowserRouter>
                   <ReferralTracker />
                   <Routes>
-                    <Route path="/venues" element={<PublicVenues />} />
-                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/*" element={<IOSAppLayout />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/auth/callback" element={<OAuthCallback />} />
                     <Route path="/welcome" element={<Welcome />} />
@@ -134,10 +112,8 @@ const App = () => {
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                     <Route path="/terms-of-service" element={<TermsOfService />} />
                     <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-                    <Route path="/events/return" element={<EventStripeReturn />} />
-                    <Route path="/events" element={<EventsPage />} />
-                    <Route path="/chat/event/:eventId" element={<EventChatPage />} />
-                    <Route path="/*" element={<IOSAppLayout />} />
+                    <Route path="/admin" element={<Admin />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>
@@ -148,7 +124,6 @@ const App = () => {
       </LanguageProvider>
     </ThemeProvider>
   </QueryClientProvider>
-    </NotificationProvider>
   </ErrorBoundary>
   );
 };
