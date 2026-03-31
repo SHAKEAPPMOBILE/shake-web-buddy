@@ -52,6 +52,7 @@
     "@revenuecat/purchases-capacitor": "^12.1.0",
     "@supabase/supabase-js": "2.89.0",
     "@tanstack/react-query": "^5.83.0",
+    "@vladmandic/face-api": "^1.7.15",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

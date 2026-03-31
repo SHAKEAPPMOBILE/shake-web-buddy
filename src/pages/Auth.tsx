@@ -27,6 +27,18 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { isNativePlatform } from "@/lib/platform-utils";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
+import { FaceCaptureModal } from "@/components/FaceCaptureModal";
+import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /** App Store review: demo login without SMS (no effect on other numbers). */
 const DEMO_PHONE = "+15550000000";
@@ -132,6 +144,11 @@ export default function Auth() {
   const [otpFallbackEmail, setOtpFallbackEmail] = useState("");
   const [otpEmailFallbackOpen, setOtpEmailFallbackOpen] = useState(false);
   const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
+  const [isFaceCaptureOpen, setIsFaceCaptureOpen] = useState(false);
+  const [faceMode, setFaceMode] = useState<'enroll' | 'authenticate'>('authenticate');
+  const [isFaceAuthLoading, setIsFaceAuthLoading] = useState(false);
+  const [showFaceSetupPrompt, setShowFaceSetupPrompt] = useState(false);
+  const [pendingFaceSetupUserId, setPendingFaceSetupUserId] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>(
     countryCodes.find(c => c.code === "PT") || countryCodes[0]
   );
@@ -717,6 +734,9 @@ export default function Auth() {
             toast.error(toFriendlyAuthMessage(signInError.message, "login"));
           } else {
             toast.success("Phone verified! Now complete your profile.");
+            const { data: authData } = await supabase.auth.getUser();
+            setPendingFaceSetupUserId(authData.user?.id ?? null);
+            setShowFaceSetupPrompt(true);
             setStep('name');
           }
         } else {
@@ -744,6 +764,102 @@ export default function Auth() {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleOpenFaceAuth = () => {
+    setFaceMode('authenticate');
+    setIsFaceCaptureOpen(true);
+  };
+
+  const handleFaceCaptureSuccess = async (descriptor?: Float32Array) => {
+    if (!descriptor) {
+      toast.warning("Face not recognized. Try again or use another method");
+      setIsFaceCaptureOpen(false);
+      return;
+    }
+
+    if (faceMode === 'enroll') {
+      try {
+        const fallbackUser = (await supabase.auth.getUser()).data.user;
+        const targetUserId = pendingFaceSetupUserId ?? fallbackUser?.id;
+        if (!targetUserId) {
+          toast.error("Could not set up Face ID right now");
+          setIsFaceCaptureOpen(false);
+          return;
+        }
+
+        await storeFaceDescriptor(targetUserId, descriptor);
+        toast.success("Face ID set up! You can now sign in with your face");
+      } catch (error) {
+        console.error("Failed to store Face ID descriptor", error);
+        toast.error("Could not set up Face ID. Please try again later");
+      } finally {
+        setPendingFaceSetupUserId(null);
+        setIsFaceCaptureOpen(false);
+      }
+      return;
+    }
+
+    setIsFaceAuthLoading(true);
+    try {
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("user_id, face_descriptor")
+        .not("face_descriptor", "is", null);
+
+      if (profilesError) {
+        throw profilesError;
+      }
+
+      const matchingProfile = (profilesData ?? []).find((profile: any) => {
+        if (!Array.isArray(profile.face_descriptor)) return false;
+        try {
+          return compareFaces(profile.face_descriptor as number[], descriptor);
+        } catch {
+          return false;
+        }
+      });
+
+      if (!matchingProfile?.user_id) {
+        toast.warning("Face not recognized. Try again or use another method");
+        return;
+      }
+
+      const { data: faceAuthData, error: faceAuthError } = await supabase.functions.invoke("face-auth", {
+        body: { userId: matchingProfile.user_id },
+      });
+
+      if (faceAuthError) {
+        throw faceAuthError;
+      }
+
+      const accessToken = faceAuthData?.session?.access_token ?? faceAuthData?.access_token;
+      const refreshToken = faceAuthData?.session?.refresh_token ?? faceAuthData?.refresh_token;
+
+      if (!accessToken || !refreshToken) {
+        throw new Error("Face auth session token missing");
+      }
+
+      // @ts-ignore - setSession exists on the auth client
+      const { error: setSessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (setSessionError) {
+        throw setSessionError;
+      }
+
+      toast.success("Welcome!");
+      setIsFaceCaptureOpen(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Face auth failed", error);
+      toast.warning("Face not recognized. Try again or use another method");
+    } finally {
+      setIsFaceAuthLoading(false);
+      setIsFaceCaptureOpen(false);
     }
   };
 
@@ -1899,6 +2015,22 @@ export default function Auth() {
             </form>
           )}
 
+          {(step === 'phone' || step === 'otp') && isLogin && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs text-muted-foreground text-center">No phone access? Use your face</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="w-full"
+                onClick={handleOpenFaceAuth}
+                disabled={isLoading || isFaceAuthLoading}
+              >
+                Continue with Face ID 👤
+              </Button>
+            </div>
+          )}
+
           {/* Phone step: no sign up/sign in toggle copy */}
 
           {/* Subtle progress dots for profile creation steps */}
@@ -1912,6 +2044,48 @@ export default function Auth() {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showFaceSetupPrompt} onOpenChange={setShowFaceSetupPrompt}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Set up Face ID for faster login next time?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You can skip now and enable it later from your profile settings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setShowFaceSetupPrompt(false);
+                setPendingFaceSetupUserId(null);
+              }}
+            >
+              Skip
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowFaceSetupPrompt(false);
+                setFaceMode('enroll');
+                setIsFaceCaptureOpen(true);
+              }}
+            >
+              Yes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <FaceCaptureModal
+        open={isFaceCaptureOpen}
+        mode={faceMode}
+        onSuccess={handleFaceCaptureSuccess}
+        onCancel={() => {
+          setIsFaceCaptureOpen(false);
+          if (faceMode === 'enroll') {
+            setPendingFaceSetupUserId(null);
+          }
+        }}
+      />
     </div>
   );
 }

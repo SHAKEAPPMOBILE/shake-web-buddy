@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +45,8 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { FaceCaptureModal } from "@/components/FaceCaptureModal";
+import { storeFaceDescriptor } from "@/services/faceAuthService";
 
 interface ProfileTabProps {
   onSignOut?: () => void;
@@ -86,6 +88,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [showParanormal, setShowParanormal] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState<{ user_id: string; name: string; avatar_url: string | null }[]>([]);
   const [isLoadingParanormal, setIsLoadingParanormal] = useState(false);
+  const [faceAuthEnabled, setFaceAuthEnabled] = useState(false);
+  const [showFaceCapture, setShowFaceCapture] = useState(false);
+  const [isUpdatingFaceAuth, setIsUpdatingFaceAuth] = useState(false);
+  const [showRemoveFaceConfirm, setShowRemoveFaceConfirm] = useState(false);
 
   const handleOpenManagePlan = () => {
     setShowSubscriptionDropdown(false);
@@ -168,12 +174,83 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     }
   };
 
+  const handleFaceEnrollSuccess = async (descriptor?: Float32Array) => {
+    if (!user) return;
+    if (!descriptor) {
+      toast({
+        title: "Face setup failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+      setShowFaceCapture(false);
+      return;
+    }
+
+    setIsUpdatingFaceAuth(true);
+    try {
+      await storeFaceDescriptor(user.id, descriptor);
+      const { error } = await supabase
+        .from("profiles")
+        .update({ face_auth_enabled: true })
+        .eq("user_id", user.id);
+      if (error) throw error;
+
+      setFaceAuthEnabled(true);
+      toast({
+        title: "Face ID enabled",
+        description: "You can now sign in with Face ID.",
+      });
+    } catch (error) {
+      console.error("Error enabling Face ID:", error);
+      toast({
+        title: "Failed to enable Face ID",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingFaceAuth(false);
+      setShowFaceCapture(false);
+    }
+  };
+
+  const handleRemoveFaceId = async () => {
+    if (!user) return;
+    setIsUpdatingFaceAuth(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          face_descriptor: null,
+          face_auth_enabled: false,
+        })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      setFaceAuthEnabled(false);
+      setShowRemoveFaceConfirm(false);
+      toast({
+        title: "Face ID removed",
+        description: "Face login has been disabled.",
+      });
+    } catch (error) {
+      console.error("Error removing Face ID:", error);
+      toast({
+        title: "Failed to remove Face ID",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingFaceAuth(false);
+    }
+  };
+
   const fetchProfile = useCallback(async () => {
     if (!user) return;
     const [publicProfile, privateProfile] = await Promise.all([
       supabase
         .from("profiles")
-        .select("avatar_url, name")
+        .select("avatar_url, name, face_auth_enabled")
         .eq("user_id", user.id)
         .maybeSingle(),
       supabase
@@ -185,6 +262,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     if (publicProfile.data) {
       setAvatarUrl(publicProfile.data.avatar_url);
       setUserName(publicProfile.data.name);
+      setFaceAuthEnabled(Boolean(publicProfile.data.face_auth_enabled));
     }
     if (privateProfile.error) {
       logPostgrestError("ProfileTab profiles_private select", privateProfile.error);
@@ -863,6 +941,42 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           </div>
         </div>
 
+        {/* Face ID Login */}
+        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center gap-4 px-4 py-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <ScanFace className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <span className="font-medium">Face ID Login</span>
+              <p className="text-xs text-muted-foreground">
+                {faceAuthEnabled ? "Use your face to sign in" : "Set up face login"}
+              </p>
+            </div>
+
+            {!faceAuthEnabled ? (
+              <button
+                onClick={() => setShowFaceCapture(true)}
+                disabled={isUpdatingFaceAuth}
+                className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
+              >
+                {isUpdatingFaceAuth ? "Setting up..." : "Set up"}
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-shake-green">Enabled ✓</span>
+                <button
+                  onClick={() => setShowRemoveFaceConfirm(true)}
+                  disabled={isUpdatingFaceAuth}
+                  className="text-xs font-medium text-destructive hover:underline disabled:opacity-50"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Paranormal Activity Dialog */}
         <Dialog open={showParanormal} onOpenChange={setShowParanormal}>
           <DialogContent className="max-w-md">
@@ -1061,6 +1175,27 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Remove Face ID Confirmation */}
+      <AlertDialog open={showRemoveFaceConfirm} onOpenChange={setShowRemoveFaceConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Face ID?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You&apos;ll need to use another login method until you set Face ID up again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUpdatingFaceAuth}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRemoveFaceId}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isUpdatingFaceAuth ? "Removing..." : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* ID Verification Dialog */}
       <IDVerificationDialog
         open={showIDVerificationDialog}
@@ -1071,6 +1206,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       <ManagePlanDialog
         open={showManagePlanDialog}
         onOpenChange={setShowManagePlanDialog}
+      />
+
+      <FaceCaptureModal
+        open={showFaceCapture}
+        mode="enroll"
+        onSuccess={handleFaceEnrollSuccess}
+        onCancel={() => setShowFaceCapture(false)}
       />
 
     </div>
