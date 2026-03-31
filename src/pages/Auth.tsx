@@ -1062,7 +1062,7 @@ export default function Auth() {
                   We'll send you a verification code via SMS
                 </p>
                 {isAfricanCountry(selectedCountry.code) && (
-                  <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-md mt-2">
+                  <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded-2xl mt-2">
                     ⚠️ {getSmsAvailabilityMessage(selectedCountry.code)}
                   </p>
                 )}

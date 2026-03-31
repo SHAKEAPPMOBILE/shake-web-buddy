@@ -257,7 +257,7 @@ export default function SubscriptionSuccess() {
           <button
             type="button"
             onClick={() => navigate("/", { replace: true })}
-            className="w-full max-w-sm rounded-lg border border-[#3b82f6] bg-transparent py-3.5 px-6 text-base font-medium text-[#3b82f6] transition-all duration-300 hover:bg-[#3b82f6] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] active:scale-[0.99]"
+            className="w-full max-w-sm rounded-2xl border border-[#3b82f6] bg-transparent py-3.5 px-6 text-base font-medium text-[#3b82f6] transition-all duration-300 hover:bg-[#3b82f6] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] active:scale-[0.99]"
           >
             Start Exploring!
           </button>

@@ -652,7 +652,7 @@ export default function EventChatPage() {
                         controls
                         playsInline
                         preload="metadata"
-                        className="rounded-lg max-w-[260px] w-full bg-black/30"
+                        className="rounded-2xl max-w-[260px] w-full bg-black/30"
                       />
                     ) : isGif ? (
                       <InlineChatGif
