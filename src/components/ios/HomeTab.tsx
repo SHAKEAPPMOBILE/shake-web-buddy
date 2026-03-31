@@ -322,7 +322,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
 
               {/* Circle with float animation */}
               <div 
-                className="w-40 h-40 mx-6 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
+                className="w-40 h-40 mx-6 rounded-full overflow-hidden bg-white border-2 border-primary/50 flex items-center justify-center shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
                 onTouchStart={(e) => {
                   e.stopPropagation();
                   tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
@@ -335,8 +335,8 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
                 {currentActivity?.icon ? (
                   <img
                     src={currentActivity.icon}
-                    alt={currentActivity.label || ''}
-                    className="w-20 h-20 object-contain mix-blend-multiply animate-scale-in"
+                    alt={currentActivity.label}
+                    className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
                   <span className="text-6xl animate-scale-in">{currentActivity?.emoji}</span>
