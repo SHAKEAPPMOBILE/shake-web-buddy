@@ -148,9 +148,13 @@ export function ActivityConfirmationDialog({
 
           <div className="flex flex-col items-center px-6 pb-6 space-y-4">
             {/* Activity icon */}
-            <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center animate-bounce-subtle overflow-hidden">
+            <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mx-auto shadow-lg animate-bounce-subtle">
               {getActivityById(activity.id)?.icon ? (
-                <img src={getActivityById(activity.id)!.icon} alt={activity.label} className="w-16 h-16 object-contain mix-blend-multiply" />
+                <img
+                  src={`/icons/activities/${activity.id}-icon.jpg`}
+                  alt={activity.label}
+                  className="w-16 h-16 object-contain"
+                />
               ) : (
                 <span className="text-4xl">{activity.emoji}</span>
               )}
