@@ -45,13 +45,22 @@ export function useActivityJoins(city: string) {
 
     setIsLoading(true);
 
-    // Check if user already joined this activity type in this city
+    const existingJoin = activeJoins.find(
+      (join) => join.user_id === user.id && join.activity_type === activityType
+    );
+
+    if (existingJoin) {
+      toast.info("You've already joined this activity today!");
+      setIsLoading(false);
+      return { success: true, isNewJoin: false };
+    }
+
+    // Check if user already joined this activity type in any city
     const { data: existingJoins, error: checkError } = await supabase
       .from("activity_joins")
       .select("*")
       .eq("user_id", user.id)
       .eq("activity_type", activityType)
-      .eq("city", targetCity)
       .gt("expires_at", new Date().toISOString());
 
     if (checkError) {
@@ -76,6 +85,12 @@ export function useActivityJoins(city: string) {
       });
 
     if (insertError) {
+      if (insertError.code === "23505") {
+        toast.info("You've already joined this activity today!");
+        setIsLoading(false);
+        return { success: true, isNewJoin: false };
+      }
+
       console.error("Error joining activity:", insertError);
       toast.error("Failed to join activity");
       setIsLoading(false);
