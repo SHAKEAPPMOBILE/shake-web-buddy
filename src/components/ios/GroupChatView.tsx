@@ -17,11 +17,11 @@ import { playNotificationSound } from "@/lib/notification-sound";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
-import { useVenueContext } from "@/contexts/VenueContext";
+import { useActivityVenue } from "@/contexts/VenueContext";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityLabel } from "@/data/activityTypes";
-import { getVenueTypeForActivity, DbVenue } from "@/hooks/useDatabaseVenues";
+import { getVenueTypeForActivity, useVenuesForActivity } from "@/hooks/useDatabaseVenues";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
@@ -143,7 +143,7 @@ export function GroupChatView({
   const { user, isPremium } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
   const { leaveActivity } = useActivityJoins(city);
-  const { venues, getLocationString, getMapsUrl, getVenueForActivity } = useVenueContext();
+  const { venue: assignedVenue, location, mapsUrl } = useActivityVenue(city, activityType);
   const { t } = useTranslation();
   
   const { canSendText, addCharacters } = useTextMessageLimit();
@@ -178,11 +178,11 @@ export function GroupChatView({
   
   // Get the assigned venue (from weekly rotation) and all venues for this city/activity
   const venueType = getVenueTypeForActivity(activityType);
-  const assignedVenue = getVenueForActivity(city, activityType);
+  const { data: filteredVenues = [] } = useVenuesForActivity(city, activityType);
   
   const cityVenues = useMemo(() => {
     if (!venueType) return [];
-    const allVenues = venues.filter(v => v.city === city && v.venue_type === venueType);
+    const allVenues = filteredVenues;
     
     // Ensure assigned venue is first in the list
     if (assignedVenue) {
@@ -190,7 +190,7 @@ export function GroupChatView({
       return [assignedVenue, ...withoutAssigned];
     }
     return allVenues;
-  }, [venues, city, venueType, assignedVenue]);
+  }, [filteredVenues, venueType, assignedVenue]);
   
   const currentVenue = cityVenues[currentVenueIndex];
   const hasMultipleVenues = cityVenues.length > 1;
@@ -207,10 +207,6 @@ export function GroupChatView({
     });
   }, [assignedVenue, activityType, city, venueType, cityVenues.length]);
   
-  // Current venue location info
-  const location = getLocationString(city, activityType);
-  const mapsUrl = getMapsUrl(city, activityType);
-
   // Fetch participants
   useEffect(() => {
     const fetchParticipants = async () => {

@@ -99,6 +99,41 @@ export function useVenuesByCity(city: string) {
   });
 }
 
+export function useVenuesForActivity(city: string, activityType: string) {
+  const venueType = getVenueTypeForActivity(activityType);
+
+  return useQuery({
+    queryKey: ['db-venues', city, venueType],
+    queryFn: async () => {
+      if (!city || !venueType) {
+        return [] as DbVenue[];
+      }
+
+      console.log('[VenueDebug] direct Supabase query:', {
+        table: 'venues',
+        filters: {
+          city,
+          venue_type: venueType,
+          is_active: true,
+        },
+      });
+
+      const { data, error } = await supabase
+        .from('venues')
+        .select('*')
+        .eq('city', city)
+        .eq('venue_type', venueType)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) throw error;
+      return (data ?? []) as DbVenue[];
+    },
+    enabled: !!city && !!venueType,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 // Get weekly rotating venue from a list of venues
 export function getWeeklyVenueFromList(venues: DbVenue[]): DbVenue | null {
   if (!venues || venues.length === 0) return null;
