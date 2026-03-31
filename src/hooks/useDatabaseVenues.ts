@@ -55,7 +55,8 @@ export function useAllVenues() {
         .select('*')
         .order('city', { ascending: true })
         .order('venue_type', { ascending: true })
-        .order('sort_order', { ascending: true });
+        .order('sort_order', { ascending: true })
+        .limit(5000); // Prevent PostgREST default max_rows (1000) from silently truncating
       
       if (error) {
         console.warn('[Venues] Failed to load from Supabase:', error.message, error.code, error);
