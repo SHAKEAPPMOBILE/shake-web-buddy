@@ -46,6 +46,12 @@ export function useAllVenues() {
   return useQuery({
     queryKey: ['db-venues'],
     queryFn: async () => {
+      console.log('[VenueDebug] Supabase query:', {
+        table: 'venues',
+        select: '*',
+        orderBy: ['city ASC', 'venue_type ASC', 'sort_order ASC'],
+      });
+
       const { data, error } = await supabase
         .from('venues')
         .select('*')
@@ -59,6 +65,10 @@ export function useAllVenues() {
       }
       const list = (data ?? []) as DbVenue[];
       const active = list.filter((v) => v.is_active !== false);
+      console.log('[VenueDebug] Supabase result:', {
+        totalRows: list.length,
+        activeRows: active.length,
+      });
       if (typeof window !== 'undefined') {
         console.info('[Venues] Loaded', active.length, 'active venues (total rows:', list.length, ')');
       }

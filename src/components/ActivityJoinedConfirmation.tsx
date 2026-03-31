@@ -32,7 +32,19 @@ export function ActivityJoinedConfirmation({
   eventConfirmation,
 }: ActivityJoinedConfirmationProps) {
   const { t } = useTranslation();
-  const { location: venueInfo, mapsUrl, isTBD, isLoading: venueLoading, venueError, refetchVenues } = useActivityVenue(city, activityType);
+  const { venue, location: venueInfo, mapsUrl, isTBD, isLoading: venueLoading, venueError, refetchVenues } = useActivityVenue(city, activityType);
+
+  useEffect(() => {
+    console.log('venue fetch result:', {
+      activityType,
+      city,
+      venue,
+      error: venueError,
+      venueInfo,
+      venueLoading,
+      isTBD,
+    });
+  }, [activityType, city, venue, venueError, venueInfo, venueLoading, isTBD]);
 
   useEffect(() => {
     if (!open || !eventConfirmation) return;

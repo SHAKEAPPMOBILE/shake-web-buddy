@@ -196,6 +196,16 @@ export function GroupChatView({
   const hasMultipleVenues = cityVenues.length > 1;
   const hasVenues = cityVenues.length > 0;
   const isCurrentVenueAssigned = assignedVenue ? currentVenue?.id === assignedVenue.id : false;
+
+  useEffect(() => {
+    console.log('chat header venue:', {
+      assignedVenue,
+      activityType,
+      city,
+      venueType,
+      cityVenuesCount: cityVenues.length,
+    });
+  }, [assignedVenue, activityType, city, venueType, cityVenues.length]);
   
   // Current venue location info
   const location = getLocationString(city, activityType);

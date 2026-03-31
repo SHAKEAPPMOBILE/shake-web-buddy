@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo } from "react";
-import { useAllVenues, DbVenue, getCurrentVenueForActivity, getVenueLocationString, getVenueMapsUrlFromDb, normalizeCity } from "@/hooks/useDatabaseVenues";
+import { useAllVenues, DbVenue, getCurrentVenueForActivity, getVenueLocationString, getVenueMapsUrlFromDb, normalizeCity, getVenueTypeForActivity } from "@/hooks/useDatabaseVenues";
 
 interface VenueContextType {
   venues: DbVenue[];
@@ -81,6 +81,20 @@ export function useActivityVenue(city: string, activityType: string) {
   const venue = getVenueForActivity(city, activityType);
   const location = getLocationString(city, activityType);
   const mapsUrl = getMapsUrl(city, activityType);
+
+  console.log('[VenueDebug] query path:', {
+    supabaseTable: 'venues',
+    supabaseSelect: '*',
+    supabaseOrderBy: ['city ASC', 'venue_type ASC', 'sort_order ASC'],
+    serverFilters: 'none (all venues fetched)',
+    clientFilters: {
+      city: city,
+      normalizedCity: normalizeCity(city),
+      activityType,
+      mappedVenueType: getVenueTypeForActivity(activityType),
+      is_active: 'filtered in useAllVenues()',
+    },
+  });
   
   return {
     venue,
