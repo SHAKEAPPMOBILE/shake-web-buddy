@@ -274,7 +274,7 @@ export function VenuesTab() {
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
-              <Utensils className="w-4 h-4 text-orange-500" />
+              <Utensils className="w-4 h-4 text-yellow-500" />
               <span className="text-2xl font-bold">{totals.lunchDinner}</span>
             </div>
             <p className="text-xs text-muted-foreground">Lunch/Dinner</p>

@@ -25,7 +25,7 @@ export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
       title: t("onboarding.joinActivitiesTitle"),
       description: t("onboarding.joinActivitiesDescription"),
       icon: Users,
-      color: "from-orange-500/20 to-orange-500/5",
+      color: "from-yellow-500/20 to-yellow-500/5",
     },
     {
       emoji: "💬",

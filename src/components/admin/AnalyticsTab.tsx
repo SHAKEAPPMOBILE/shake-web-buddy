@@ -155,7 +155,7 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+        <Card className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center justify-center w-8 h-8 opacity-80">📍</span>
