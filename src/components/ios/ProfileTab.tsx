@@ -499,22 +499,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           )}
         </div>
 
-        {/* Help & Support */}
-        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
-          <div className="w-full flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1 text-left">
-                <span className="font-medium">Support</span>
-                <p className="text-xs text-muted-foreground">Need help? Contact our team.</p>
-              </div>
-            </div>
-            <ContactSupport />
-          </div>
-        </div>
-
         {/* Creator Payouts - Stripe or PayPal */}
         <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
           <button
@@ -865,6 +849,20 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           )}
         </div>
 
+        {/* Language Selector */}
+        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center gap-4 px-4 py-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Globe className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <span className="font-medium">{t('profile.language', 'Language')}</span>
+              <p className="text-xs text-muted-foreground">{t('profile.selectLanguage', 'Select your preferred language')}</p>
+            </div>
+            <LanguageSelector showLabel={false} />
+          </div>
+        </div>
+
         {/* Paranormal Activity Dialog */}
         <Dialog open={showParanormal} onOpenChange={setShowParanormal}>
           <DialogContent className="max-w-md">
@@ -933,17 +931,19 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           </div>
         </button>
 
-        {/* Language Selector */}
+        {/* Help & Support */}
         <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
-          <div className="flex items-center gap-4 px-4 py-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Globe className="w-5 h-5 text-primary" />
+          <div className="w-full flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 text-left">
+                <span className="font-medium">Support</span>
+                <p className="text-xs text-muted-foreground">Need help? Contact our team.</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <span className="font-medium">{t('profile.language', 'Language')}</span>
-              <p className="text-xs text-muted-foreground">{t('profile.selectLanguage', 'Select your preferred language')}</p>
-            </div>
-            <LanguageSelector showLabel={false} />
+            <ContactSupport />
           </div>
         </div>
 
