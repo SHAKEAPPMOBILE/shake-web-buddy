@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
+import { getNextOccurrenceDate } from "@/data/activityTypes";
 
 interface ActivityJoin {
   id: string;
@@ -75,13 +76,18 @@ export function useActivityJoins(city: string) {
       return { success: true, isNewJoin: false }; // Already joined, no animation
     }
 
-    // Insert new join
+    // Insert new join — expires at 23:59:59 UTC on the activity's next scheduled day
+    const nextOccurrence = getNextOccurrenceDate(activityType);
+    nextOccurrence.setUTCHours(23, 59, 59, 999);
+    const expiresAt = nextOccurrence.toISOString();
+
     const { error: insertError } = await supabase
       .from("activity_joins")
       .insert({
         user_id: user.id,
         activity_type: activityType,
         city: targetCity,
+        expires_at: expiresAt,
       });
 
     if (insertError) {
