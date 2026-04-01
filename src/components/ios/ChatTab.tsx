@@ -106,70 +106,360 @@ export function ChatTab({
       setIsLoading(false);
       return;
     }
+
+    const fetchNonce = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    console.log("[ChatTab] fetchActivities start (fresh query)", { fetchNonce, userId: user.id });
+
     setIsLoading(true);
 
-    // 1) Carousel joins (activity_id is null) — no expires_at filter
-    const { data: carouselJoins, error: carouselError } = await supabase
-      .from("activity_joins")
-      .select("activity_type, city")
-      .eq("user_id", user.id)
-      .is("activity_id", null);
+    try {
+      // Get user's active carousel joins (activity_id is null)
+      const { data: carouselJoins, error: carouselError } = await supabase
+        .from("activity_joins")
+        .select("activity_type, city, joined_at, expires_at")
+        .eq("user_id", user.id)
+        .is("activity_id", null)
+        .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
 
-    // 2) Raw debug log for carousel joins
-    console.log("[ChatTab] raw carousel joins", { data: carouselJoins, error: carouselError });
+      if (carouselError) throw carouselError;
 
-    // 3) Build carousel entries
-    const carouselActivities: ChatActivity[] = (carouselJoins || []).map((join) => {
-      const nextOccurrence = getNextOccurrenceDate(join.activity_type);
-      return {
-        id: `carousel-${join.activity_type}-${join.city}`,
-        activity_type: join.activity_type,
-        city: join.city,
-        scheduled_for: nextOccurrence.toISOString(),
-        participant_count: 1,
-        unread_count: 0,
-        is_plan: false,
-        note: getActivityDay(join.activity_type) ? `This ${getActivityDay(join.activity_type)}` : null,
-      };
-    });
+      // Get user's plan joins (activity_id is not null)
+      const { data: planJoins, error: planJoinsError } = await supabase
+        .from("activity_joins")
+        .select("activity_id")
+        .eq("user_id", user.id)
+        .not("activity_id", "is", null)
+        .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
 
-    // 4) Plan joins (activity_id is not null) — no expires_at filter
-    const { data: planJoins, error: planJoinsError } = await supabase
-      .from("activity_joins")
-      .select("activity_id")
-      .eq("user_id", user.id)
-      .not("activity_id", "is", null);
+      if (planJoinsError) throw planJoinsError;
 
-    // 5) Raw debug log for plan joins
-    console.log("[ChatTab] raw plan joins", { data: planJoins, error: planJoinsError });
+      // Get user's own plans
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
 
-    // Build plan entries
-    const joinedPlanIds = (planJoins || []).map((j) => j.activity_id).filter(Boolean) as string[];
-    let planActivities: ChatActivity[] = [];
-
-    if (joinedPlanIds.length > 0) {
-      const { data: joinedPlans } = await supabase
+      const { data: userPlans, error: userPlansError } = await supabase
         .from("user_activities")
-        .select("id, activity_type, city, scheduled_for, note")
-        .in("id", joinedPlanIds)
-        .eq("is_active", true);
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .gte("scheduled_for", startOfToday.toISOString());
 
-      planActivities = (joinedPlans || []).map((plan) => ({
-        id: plan.id,
-        activity_type: plan.activity_type,
-        city: plan.city,
-        scheduled_for: plan.scheduled_for,
-        participant_count: 1,
-        unread_count: 0,
-        is_plan: true,
-        plan_id: plan.id,
-        note: plan.note,
-      }));
+      if (userPlansError) throw userPlansError;
+
+      // Get joined plans
+      const joinedPlanIds = (planJoins || []).map(j => j.activity_id).filter(Boolean) as string[];
+      let joinedPlans: any[] = [];
+      
+      if (joinedPlanIds.length > 0) {
+        const { data: joinedPlansData } = await supabase
+          .from("user_activities")
+          .select("*")
+          .in("id", joinedPlanIds)
+          .eq("is_active", true)
+          .gte("scheduled_for", startOfToday.toISOString());
+        
+        joinedPlans = joinedPlansData || [];
+      }
+
+      // Build activities list
+      const chatActivities: ChatActivity[] = [];
+
+      // Add carousel joins
+      for (const join of carouselJoins || []) {
+        const { count } = await supabase
+          .from("activity_joins")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_type", join.activity_type)
+          .eq("city", join.city)
+          .is("activity_id", null)
+          .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
+
+        // Get unread count for activity messages
+        const { data: readStatus } = await supabase
+          .from("activity_read_status")
+          .select("last_read_at")
+          .eq("user_id", user.id)
+          .eq("activity_type", join.activity_type)
+          .eq("city", join.city)
+          .maybeSingle();
+
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const lastReadAt = readStatus?.last_read_at || todayStart.toISOString();
+
+        const { count: unreadCount } = await supabase
+          .from("activity_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_type", join.activity_type)
+          .eq("city", join.city)
+          .gt("created_at", lastReadAt)
+          .neq("user_id", user.id);
+
+        // Calculate the actual next occurrence date for this activity
+        const nextOccurrence = getNextOccurrenceDate(join.activity_type);
+
+        chatActivities.push({
+          id: `carousel-${join.activity_type}-${join.city}`,
+          activity_type: join.activity_type,
+          city: join.city,
+          scheduled_for: nextOccurrence.toISOString(),
+          participant_count: count || 1,
+          unread_count: unreadCount || 0,
+          is_plan: false,
+          note: getActivityDay(join.activity_type) ? `This ${getActivityDay(join.activity_type)}` : null,
+        });
+      }
+
+      // Add user's own plans and joined plans
+      const allPlans = [...(userPlans || []), ...joinedPlans];
+      const uniquePlans = new Map();
+      allPlans.forEach(p => uniquePlans.set(p.id, p));
+
+      for (const plan of uniquePlans.values()) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name, avatar_url")
+          .eq("user_id", plan.user_id)
+          .maybeSingle();
+
+        const { count } = await supabase
+          .from("activity_joins")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_id", plan.id);
+
+        // Get unread count for plan messages
+        const { data: planReadStatus } = await supabase
+          .from("activity_read_status")
+          .select("last_read_at")
+          .eq("user_id", user.id)
+          .eq("activity_type", plan.id)
+          .maybeSingle();
+
+        const lastPlanRead = planReadStatus?.last_read_at || plan.created_at;
+
+        const { count: unreadPlanCount } = await supabase
+          .from("plan_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_id", plan.id)
+          .gt("created_at", lastPlanRead)
+          .neq("user_id", user.id);
+
+        chatActivities.push({
+          id: plan.id,
+          activity_type: plan.activity_type,
+          city: plan.city,
+          scheduled_for: plan.scheduled_for,
+          participant_count: (count || 0),
+          unread_count: unreadPlanCount || 0,
+          is_plan: true,
+          plan_id: plan.id,
+          creator_name: profile?.name || "Anonymous",
+          creator_avatar: profile?.avatar_url,
+          note: plan.note,
+        });
+      }
+
+      // Event chats the user has joined (merged into same list as activity chats)
+      const {
+        data: eventMembershipsRaw,
+        error: eventMembershipsError,
+      } = await supabase.from("event_chat_members").select("*").eq("user_id", user.id);
+
+      if (eventMembershipsError) {
+        logPostgrestError("ChatTab event_chat_members select", eventMembershipsError);
+        console.error(
+          "[ChatTab] event_chat_members error body",
+          JSON.stringify({
+            message: eventMembershipsError.message,
+            details: eventMembershipsError.details,
+            hint: eventMembershipsError.hint,
+            code: eventMembershipsError.code,
+          }),
+        );
+      }
+
+      const eventMemberships = Array.isArray(eventMembershipsRaw) ? eventMembershipsRaw : [];
+
+      console.log("[ChatTab] event_chat_members response", {
+        fetchNonce,
+        isArray: Array.isArray(eventMembershipsRaw),
+        rowCount: eventMemberships.length,
+        error: eventMembershipsError?.message ?? null,
+        rows: eventMemberships,
+      });
+
+      if (eventMemberships.length > 0) {
+        for (const membership of eventMemberships as Record<string, unknown>[]) {
+          if (isEventChatMembershipExplicitlyExpired(membership as { expires_at?: string | null; event_starts_at?: string | null })) {
+            console.log("[ChatTab] skip event row (explicit expires_at in past)", {
+              event_id: membership.event_id,
+            });
+            continue;
+          }
+
+          const eventId = membership.event_id as string | undefined;
+          if (!eventId) {
+            console.warn("[ChatTab] skip event membership row missing event_id", membership);
+            continue;
+          }
+
+          const expiresAt =
+            typeof membership.event_starts_at === "string" && membership.event_starts_at.trim()
+              ? (() => {
+                  const s = new Date(membership.event_starts_at as string);
+                  return Number.isNaN(s.getTime()) ? null : new Date(s.getTime() + 12 * 60 * 60 * 1000);
+                })()
+              : typeof membership.expires_at === "string" && membership.expires_at.trim()
+                ? (() => {
+                    const d = new Date(membership.expires_at as string);
+                    return Number.isNaN(d.getTime()) ? null : d;
+                  })()
+                : null;
+
+          const parsedName =
+            typeof membership.event_name === "string" && membership.event_name.trim()
+              ? membership.event_name.trim()
+              : "Event Chat";
+          const fallbackVenue = parsedName.includes(" · ") ? parsedName.split(" · ")[1] : "Event";
+          const parsedVenue = fallbackVenue;
+
+          const startFromDb = membership.event_starts_at
+            ? new Date(membership.event_starts_at as string)
+            : null;
+          const hasValidStart = startFromDb && !Number.isNaN(startFromDb.getTime());
+          const scheduledFor =
+            hasValidStart
+              ? startFromDb!.toISOString()
+              : expiresAt
+                ? expiresAt.toISOString()
+                : new Date().toISOString();
+
+          // Count participants for this event chat
+          const { count: participantCount } = await supabase
+            .from("event_chat_members")
+            .select("*", { count: "exact", head: true })
+            .eq("event_id", eventId);
+
+          const { data: chatMeta } = await supabase
+            .from("event_chats")
+            .select("id")
+            .eq("event_id", eventId)
+            .maybeSingle();
+
+          const { data: lastMsg } = chatMeta?.id
+            ? await supabase
+                .from("event_chat_messages")
+                .select("content, created_at")
+                .eq("event_chat_id", chatMeta.id)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle()
+            : { data: null };
+
+          chatActivities.push({
+            id: `event-${eventId}`,
+            activity_type: "event",
+            city: parsedVenue,
+            scheduled_for: scheduledFor,
+            participant_count: participantCount || 1,
+            is_plan: false,
+            is_event: true,
+            event_id: eventId,
+            event_name: parsedName,
+            event_venue: parsedVenue,
+            expires_at: expiresAt ? expiresAt.toISOString() : undefined,
+          });
+
+          console.log("[ChatTab] merged event chat entry", {
+            fetchNonce,
+            event_id: eventId,
+            event_name: parsedName,
+            scheduled_for: scheduledFor,
+            participant_count: participantCount ?? 1,
+            last_message_preview: lastMsg?.content?.slice(0, 80) ?? null,
+            last_message_at: lastMsg?.created_at ?? null,
+          });
+        }
+      }
+
+      const serverEventIds = new Set(
+        chatActivities.filter((a) => a.is_event && a.event_id).map((a) => a.event_id as string),
+      );
+      for (const p of getPendingEventChatsForMerge()) {
+        if (serverEventIds.has(p.event_id)) {
+          removePendingEventChat(p.event_id);
+          continue;
+        }
+        const exp = p.expires_at ? new Date(p.expires_at) : null;
+        const hasExp = exp && !Number.isNaN(exp.getTime());
+        const startFromPayload = p.event_starts_at ? new Date(p.event_starts_at as string) : null;
+        const hasValidStart = startFromPayload && !Number.isNaN(startFromPayload.getTime());
+        const scheduledFor = hasValidStart
+          ? startFromPayload!.toISOString()
+          : hasExp
+            ? exp!.toISOString()
+            : new Date().toISOString();
+        const cityLabel = (p.city && p.city.trim()) || "Event";
+        const displayName = (p.event_name && p.event_name.trim()) || "Event Chat";
+
+        chatActivities.push({
+          id: `event-${p.event_id}`,
+          activity_type: "event",
+          city: cityLabel,
+          scheduled_for: scheduledFor,
+          participant_count: 1,
+          is_plan: false,
+          is_event: true,
+          event_id: p.event_id,
+          event_name: displayName,
+          event_venue: cityLabel,
+          expires_at: hasExp ? exp!.toISOString() : undefined,
+        });
+      }
+
+      const eventSlice = chatActivities.filter((a) => a.is_event);
+      console.log("[ChatTab] chatActivities before sort (includes event + carousel + plans)", {
+        fetchNonce,
+        length: chatActivities.length,
+        eventCount: eventSlice.length,
+        activities: chatActivities.map((a) => ({
+          id: a.id,
+          is_event: a.is_event,
+          event_id: a.event_id,
+          event_name: a.event_name,
+          city: a.city,
+          scheduled_for: a.scheduled_for,
+          expires_at: a.expires_at,
+        })),
+      });
+
+      // Sort with Today first, Tomorrow second, then chronologically
+      chatActivities.sort((a, b) => {
+        const dateA = safeActivityDate(a.scheduled_for);
+        const dateB = safeActivityDate(b.scheduled_for);
+        const isTodayA = isToday(dateA);
+        const isTodayB = isToday(dateB);
+        const isTomorrowA = isTomorrow(dateA);
+        const isTomorrowB = isTomorrow(dateB);
+        
+        // Today first
+        if (isTodayA && !isTodayB) return -1;
+        if (!isTodayA && isTodayB) return 1;
+        
+        // Tomorrow second
+        if (isTomorrowA && !isTomorrowB) return -1;
+        if (!isTomorrowA && isTomorrowB) return 1;
+        
+        // Then chronologically
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      setActivities(chatActivities);
+    } catch (error) {
+      console.error("Error fetching chat activities:", error);
+    } finally {
+      setIsLoading(false);
     }
-
-    // 6) Combine and set
-    setActivities([...carouselActivities, ...planActivities]);
-    setIsLoading(false);
   }, [user]);
 
   // Fresh list every time the Chat tab becomes active (not only on first mount).
