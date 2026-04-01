@@ -119,7 +119,7 @@ export function ChatTab({
         .select("activity_type, city, joined_at, expires_at")
         .eq("user_id", user.id)
         .is("activity_id", null)
-        .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
+        ;
 
       if (carouselError) throw carouselError;
 
@@ -129,7 +129,7 @@ export function ChatTab({
         .select("activity_id")
         .eq("user_id", user.id)
         .not("activity_id", "is", null)
-        .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
+        ;
 
       if (planJoinsError) throw planJoinsError;
 
@@ -172,7 +172,7 @@ export function ChatTab({
           .eq("activity_type", join.activity_type)
           .eq("city", join.city)
           .is("activity_id", null)
-          .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
+          ;
 
         // Get unread count for activity messages
         const { data: readStatus } = await supabase
