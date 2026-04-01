@@ -142,7 +142,7 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     id: "hike", 
     label: "Hike", 
     emoji: "⛰️",
-    icon: "/icons/activities/hike-icon.jpg",
+    icon: "",
     color: "bg-shake-green/20 hover:bg-shake-green/30",
     bgImage: bgHiker,
     defaultDay: 0 // Sunday
