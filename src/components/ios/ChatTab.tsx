@@ -1,4 +1,3 @@
-  hike: \"hike\",
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { MessageSquare, Users, Plane, Ticket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
