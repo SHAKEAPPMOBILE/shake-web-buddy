@@ -121,6 +121,7 @@ export function ChatTab({
         .is("activity_id", null);
 
       if (carouselError) throw carouselError;
+      console.log("[DEBUG] carouselJoins raw", carouselJoins?.length, carouselJoins);
 
       // Get user's plan joins (activity_id is not null)
       const { data: planJoins, error: planJoinsError } = await supabase
@@ -130,6 +131,7 @@ export function ChatTab({
         .not("activity_id", "is", null);
 
       if (planJoinsError) throw planJoinsError;
+      console.log("[DEBUG] planJoins raw", planJoins?.length, planJoins);
 
       // Get user's own plans
       const startOfToday = new Date();
@@ -452,6 +454,7 @@ export function ChatTab({
         return dateA.getTime() - dateB.getTime();
       });
 
+      console.log("[DEBUG] chatActivities assembled", chatActivities?.length, chatActivities);
       setActivities(chatActivities);
     } catch (error) {
       console.error("Error fetching chat activities:", error);
