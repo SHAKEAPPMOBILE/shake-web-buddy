@@ -62,7 +62,7 @@ export function ActivityJoinedConfirmation({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm mx-auto p-0 gap-0 rounded-3xl border-0 overflow-hidden bg-card [&>button]:hidden">
+      <DialogContent className="max-w-sm mx-auto p-0 gap-0 rounded-3xl border-0 overflow-hidden bg-card [&>button:first-child]:hidden">
         <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
         {eventConfirmation ? (
           <>

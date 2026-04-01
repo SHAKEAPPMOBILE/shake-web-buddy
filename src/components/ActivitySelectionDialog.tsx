@@ -169,7 +169,8 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   if (showSuccess && successActivity) {
     return (
       <Dialog open={open} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50 [&>button:first-child]:hidden">
+          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
           <div className="flex flex-col items-center justify-center py-12 space-y-6">
             {/* Activity emoji with animation */}
             <div 
@@ -216,9 +217,10 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
     <>
     <Dialog open={open} onOpenChange={isCreatingPlan ? () => {} : onOpenChange}>
       <DialogContent 
-        className="sm:max-w-md bg-transparent border-none shadow-none"
+        className="sm:max-w-md bg-transparent border-none shadow-none [&>button:first-child]:hidden"
         {...(isMobile && !isCreatingPlan ? swipeHandlers : {})}
       >
+        <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
         {isMobile && (
           <div className="flex justify-center py-2 shrink-0">
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />

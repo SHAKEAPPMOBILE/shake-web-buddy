@@ -71,7 +71,7 @@ export function ActivityConfirmationDialog({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-        <DialogContent className="sm:max-w-md rounded-2xl [&>button]:hidden">
+        <DialogContent className="sm:max-w-md rounded-2xl [&>button:first-child]:hidden">
           <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
           <div className="p-6 pb-4 border-b border-border/30">
             <button
@@ -136,7 +136,7 @@ export function ActivityConfirmationDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-        <DialogContent className="sm:max-w-md rounded-2xl [&>button]:hidden">
+        <DialogContent className="sm:max-w-md rounded-2xl [&>button:first-child]:hidden">
           <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
           <button
             onClick={() => onOpenChange(false)}
