@@ -93,7 +93,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       .select("activity_type, city, user_id")
       .eq("user_id", user.id)
       .is("activity_id", null)
-      .or(`expires_at.gt.${nowIso},expires_at.is.null`);
+      
     const userOwnCarouselJoins = myCarouselJoinsData || [];
 
     // --- 2. Public discovery: all active activities in the selected city ---
@@ -122,7 +122,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       .select("activity_id")
       .eq("user_id", user.id)
       .not("activity_id", "is", null)
-      .or(`expires_at.gt.${nowIso},expires_at.is.null`);
+      
     const joinedActivityIds = (joins || []).map(j => j.activity_id).filter(Boolean) as string[];
 
     // --- 4. City-wide carousel joins for participant-count enrichment (only if city is set) ---
@@ -133,7 +133,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .select("activity_type, city, user_id")
         .eq("city", selectedCity)
         .is("activity_id", null)
-        .or(`expires_at.gt.${nowIso},expires_at.is.null`);
+        
       allCarouselJoins = cityCarouselData || [];
     }
 
