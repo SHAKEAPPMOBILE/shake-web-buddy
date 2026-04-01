@@ -73,71 +73,74 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   // Fetch all plans for the selected city (global CityContext)
   const fetchPlans = useCallback(async () => {
-    if (!selectedCity) {
+    // Only skip if there's no logged-in user — selectedCity being null is fine
+    // (we still show the user's own joined plans and carousel joins from any city)
+    if (!user) {
       setActivities([]);
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
-    
-    // Fetch all active activities in the searched city
-    const { data: cityActivities, error: cityError } = await supabase
-      .from("user_activities")
-      .select("*")
-      .eq("city", selectedCity)
-      .eq("is_active", true)
-      .gte("scheduled_for", startOfToday.toISOString())
-      .order("scheduled_for", { ascending: true });
+    const nowIso = new Date().toISOString();
 
-    if (cityError) {
-      console.error("Error fetching city activities:", cityError);
-      setIsLoading(false);
-      return;
-    }
-
-    // Fetch activities user has joined (with activity_id - actual plans)
-    let joinedActivityIds: string[] = [];
-    if (user) {
-      const { data: joins } = await supabase
-        .from("activity_joins")
-        .select("activity_id")
-        .eq("user_id", user.id)
-        .not("activity_id", "is", null);
-      
-      joinedActivityIds = (joins || []).map(j => j.activity_id).filter(Boolean) as string[];
-    }
-
-    // Fetch ALL carousel joins (without activity_id) for the searched city - show activities with participants
-    const { data: allCarouselJoins } = await supabase
+    // --- 1. User's OWN carousel joins from ALL cities (always, regardless of selectedCity) ---
+    const { data: myCarouselJoinsData } = await supabase
       .from("activity_joins")
       .select("activity_type, city, user_id")
-      .eq("city", selectedCity)
+      .eq("user_id", user.id)
       .is("activity_id", null)
-      .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
+      .or(`expires_at.gt.${nowIso},expires_at.is.null`);
+    const userOwnCarouselJoins = myCarouselJoinsData || [];
 
-    // Also fetch user's carousel joins from OTHER cities (so they see their cross-city joins)
-    let userOtherCityJoins: { activity_type: string; city: string; user_id: string }[] = [];
-    if (user) {
-      const { data: otherCityJoins } = await supabase
-        .from("activity_joins")
-        .select("activity_type, city, user_id")
-        .eq("user_id", user.id)
-        .neq("city", selectedCity)
-        .is("activity_id", null)
-        .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
-      
-      userOtherCityJoins = otherCityJoins || [];
+    // --- 2. Public discovery: all active activities in the selected city ---
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let cityActivities: any[] = [];
+    if (selectedCity) {
+      const { data: cityData, error: cityError } = await supabase
+        .from("user_activities")
+        .select("*")
+        .eq("city", selectedCity)
+        .eq("is_active", true)
+        .gte("scheduled_for", startOfToday.toISOString())
+        .order("scheduled_for", { ascending: true });
+
+      if (cityError) {
+        console.error("Error fetching city activities:", cityError);
+        setIsLoading(false);
+        return;
+      }
+      cityActivities = cityData || [];
     }
 
-    // Combine and group by activity_type + city to create unique carousel activities
+    // --- 3. User's real plan joins (activity_id is not null) ---
+    const { data: joins } = await supabase
+      .from("activity_joins")
+      .select("activity_id")
+      .eq("user_id", user.id)
+      .not("activity_id", "is", null)
+      .or(`expires_at.gt.${nowIso},expires_at.is.null`);
+    const joinedActivityIds = (joins || []).map(j => j.activity_id).filter(Boolean) as string[];
+
+    // --- 4. City-wide carousel joins for participant-count enrichment (only if city is set) ---
+    let allCarouselJoins: { activity_type: string; city: string; user_id: string }[] = [];
+    if (selectedCity) {
+      const { data: cityCarouselData } = await supabase
+        .from("activity_joins")
+        .select("activity_type, city, user_id")
+        .eq("city", selectedCity)
+        .is("activity_id", null)
+        .or(`expires_at.gt.${nowIso},expires_at.is.null`);
+      allCarouselJoins = cityCarouselData || [];
+    }
+
+    // --- Build carouselMap: seed with user's OWN joins first so they always appear ---
     const carouselMap = new Map<string, { activity_type: string; city: string; userIds: string[] }>();
-    
-    // Add all joins from the searched city
-    (allCarouselJoins || []).forEach(join => {
+
+    const addToCarouselMap = (join: { activity_type: string; city: string; user_id: string }) => {
       const key = `${join.activity_type}-${join.city}`;
       if (!carouselMap.has(key)) {
         carouselMap.set(key, { activity_type: join.activity_type, city: join.city, userIds: [] });
@@ -146,22 +149,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       if (!entry.userIds.includes(join.user_id)) {
         entry.userIds.push(join.user_id);
       }
-    });
+    };
 
-    // Add user's joins from other cities
-    userOtherCityJoins.forEach(join => {
-      const key = `${join.activity_type}-${join.city}`;
-      if (!carouselMap.has(key)) {
-        carouselMap.set(key, { activity_type: join.activity_type, city: join.city, userIds: [] });
-      }
-      const entry = carouselMap.get(key)!;
-      if (!entry.userIds.includes(join.user_id)) {
-        entry.userIds.push(join.user_id);
-      }
-    });
+    // User's own joins first (guarantees they appear even if city doesn't match selectedCity)
+    userOwnCarouselJoins.forEach(addToCarouselMap);
+    // Then city-wide joins for participant-count enrichment
+    allCarouselJoins.forEach(addToCarouselMap);
 
-    // Get joined activities that might be in other cities (for the user's own joined plans)
-    let joinedActivities: typeof cityActivities = [];
+    // Get joined activities — from any city (all cities mode) or filtered to explicit city
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let joinedActivities: any[] = [];
     if (joinedActivityIds.length > 0) {
       const { data: joinedData } = await supabase
         .from("user_activities")
@@ -169,11 +166,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .in("id", joinedActivityIds)
         .eq("is_active", true)
         .gte("scheduled_for", startOfToday.toISOString());
-      
+
       // If user explicitly selected a filter city in Plans header, apply it.
       // Otherwise (default), include joined plans from all cities.
       joinedActivities = joinedPlansCityFilter
-        ? (joinedData || []).filter(a => a.city === joinedPlansCityFilter)
+        ? (joinedData || []).filter((a: { city: string }) => a.city === joinedPlansCityFilter)
         : (joinedData || []);
     }
 
@@ -209,10 +206,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       })
     );
 
-    // Create virtual plans from carousel joins that have participants
+    // Create virtual plans — only for carousel activities the current user has actually joined
+    const userJoinedCarouselEntries = Array.from(carouselMap.values()).filter(
+      (c) => c.userIds.includes(user.id)
+    );
+
     const virtualPlans: PlanActivity[] = await Promise.all(
-      Array.from(carouselMap.values()).map(async (carouselActivity) => {
-        // Get first participant's profile as the "creator" display
+      userJoinedCarouselEntries.map(async (carouselActivity) => {
+        // Use the user themselves as the "creator" display when they're the only participant
         const firstUserId = carouselActivity.userIds[0];
         const { data: profile } = await supabase
           .from("profiles")
@@ -220,12 +221,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           .eq("user_id", firstUserId)
           .maybeSingle();
 
-        // Check if current user has joined this carousel activity
-        const userHasJoined = user ? carouselActivity.userIds.includes(user.id) : false;
-
         // Get the day for this activity type
         const dayLabel = getActivityDay(carouselActivity.activity_type);
-        
+
         // Calculate the actual next occurrence date for this activity
         const nextOccurrence = getNextOccurrenceDate(carouselActivity.activity_type);
 
@@ -240,7 +238,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           creator_name: profile?.name || "Anonymous",
           creator_avatar: profile?.avatar_url,
           participant_count: carouselActivity.userIds.length,
-          isJoined: userHasJoined,
+          isJoined: true, // always true — we only create entries for user's own joins
           isCarouselJoin: true,
         };
       })
