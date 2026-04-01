@@ -117,7 +117,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       .select("activity_type, city, user_id")
       .eq("city", selectedCity)
       .is("activity_id", null)
-      .gt("expires_at", new Date().toISOString());
+      .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
 
     // Also fetch user's carousel joins from OTHER cities (so they see their cross-city joins)
     let userOtherCityJoins: { activity_type: string; city: string; user_id: string }[] = [];
@@ -128,7 +128,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .eq("user_id", user.id)
         .neq("city", selectedCity)
         .is("activity_id", null)
-        .gt("expires_at", new Date().toISOString());
+        .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
       
       userOtherCityJoins = otherCityJoins || [];
     }
