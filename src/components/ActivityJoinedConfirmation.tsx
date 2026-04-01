@@ -95,7 +95,12 @@ export function ActivityJoinedConfirmation({
             {/* Success header */}
             <div className="pt-8 pb-4 px-6 text-center">
               <div className="w-20 h-20 rounded-full bg-white overflow-hidden flex items-center justify-center mx-auto mb-4 animate-bounce-subtle">
-                <img src={`/icons/activities/${activityType}-icon.jpg`} alt={activityType} className="w-full h-full object-cover" />
+                <img
+                  src={`/icons/activities/${activityType}-icon.jpg`}
+                  alt={activityType}
+                  className="block w-full h-full object-cover"
+                  style={{ objectFit: "cover" }}
+                />
               </div>
 
               <h2 className="text-xl font-display font-bold text-foreground mb-1">
