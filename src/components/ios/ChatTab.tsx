@@ -172,7 +172,7 @@ export function ChatTab({
           .eq("activity_type", join.activity_type)
           .eq("city", join.city)
           .is("activity_id", null)
-          .gt("expires_at", new Date().toISOString());
+          .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
 
         // Get unread count for activity messages
         const { data: readStatus } = await supabase
