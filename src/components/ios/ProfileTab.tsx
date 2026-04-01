@@ -983,7 +983,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
         {/* Paranormal Activity Dialog */}
         <Dialog open={showParanormal} onOpenChange={setShowParanormal}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md [&>button:last-child]:hidden">
             <DialogHeader>
               <DialogTitle>👻 Paranormal Activity</DialogTitle>
             </DialogHeader>
