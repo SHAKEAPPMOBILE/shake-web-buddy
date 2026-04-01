@@ -100,7 +100,7 @@ export function getStartingIndexByProximity(): number {
   return closestIndex;
 }
 
-// Carousel activities with specific days (lunch, dinner, drinks, hike)
+// Carousel activities with specific days (lunch, dinner, drinks, brunch)
 export const ACTIVITY_TYPES: ActivityType[] = [
   { 
     id: "lunch", 

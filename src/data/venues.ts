@@ -1,5 +1,5 @@
 // Venue data for lunch, dinner, and brunch activities
-// For drinks and hike, we keep "TBD - Vote in chat!"
+// For drinks, we keep "TBD - Vote in chat!"
 
 export interface Venue {
   name: string;
@@ -1023,6 +1023,11 @@ export function getActivityLocation(activityType: string, city: string): string 
   }
   
   // Drinks have rotating bars - no fallback to other cities
+  // Hike always shows vote message
+  if (activityType === "hike") {
+    return "TBD - Vote in chat!";
+  }
+  
   if (activityType === "drinks") {
     const bar = getTodaysBar(city);
     if (bar) {
@@ -1030,9 +1035,6 @@ export function getActivityLocation(activityType: string, city: string): string 
     }
     return "TBD - Vote in chat!";
   }
-  
-  // Hike always shows vote message
-  return "TBD - Vote in chat!";
 }
 
 /**

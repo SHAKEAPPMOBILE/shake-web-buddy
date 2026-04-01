@@ -101,11 +101,11 @@ export function ActivityGrid() {
   const activities = [
     {
       id: "1",
-      title: "Sunset Hike at Runyon Canyon",
-      category: "Hike",
-      location: "Runyon Canyon Park, LA",
-      date: "Sat, Dec 21",
-      time: "4:00 PM",
+      title: "Brunch at the Market",
+      category: "Brunch",
+      location: "Farmers Market, LA",
+      date: "Sun, Dec 22",
+      time: "11:00 AM",
       spotsLeft: 3,
       totalSpots: 8,
       image: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=600",
