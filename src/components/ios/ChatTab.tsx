@@ -118,8 +118,7 @@ export function ChatTab({
         .from("activity_joins")
         .select("activity_type, city, joined_at, expires_at")
         .eq("user_id", user.id)
-        .is("activity_id", null)
-        .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
+        .is("activity_id", null);
 
       if (carouselError) throw carouselError;
 
@@ -128,8 +127,7 @@ export function ChatTab({
         .from("activity_joins")
         .select("activity_id")
         .eq("user_id", user.id)
-        .not("activity_id", "is", null)
-        .or(`expires_at.gt.${new Date().toISOString()},expires_at.is.null`);
+        .not("activity_id", "is", null);
 
       if (planJoinsError) throw planJoinsError;
 
