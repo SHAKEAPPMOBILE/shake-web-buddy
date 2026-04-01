@@ -121,6 +121,12 @@ export function ChatTab({
         .is("activity_id", null)
         ;
 
+      console.log("[ChatTab] carouselJoins fetched", {
+        count: carouselJoins?.length,
+        data: carouselJoins,
+        error: carouselError,
+      });
+
       if (carouselError) throw carouselError;
 
       // Get user's plan joins (activity_id is not null)
@@ -130,6 +136,10 @@ export function ChatTab({
         .eq("user_id", user.id)
         .not("activity_id", "is", null)
         ;
+
+      console.log("[ChatTab] planJoins fetched", {
+        count: planJoins?.length,
+      });
 
       if (planJoinsError) throw planJoinsError;
 
@@ -454,7 +464,13 @@ export function ChatTab({
         return dateA.getTime() - dateB.getTime();
       });
 
-      setActivities(chatActivities);
+      const finalActivities = chatActivities;
+      console.log("[ChatTab] final activities to set", {
+        count: finalActivities.length,
+        activities: finalActivities,
+      });
+
+      setActivities(finalActivities);
     } catch (error) {
       console.error("Error fetching chat activities:", error);
     } finally {
