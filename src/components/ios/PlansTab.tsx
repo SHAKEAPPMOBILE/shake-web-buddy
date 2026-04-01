@@ -1,4 +1,3 @@
-  hike: \"hike\",
 import { useState, useEffect, useCallback } from "react";
 import { Calendar, Users, Plus, Plane, Share2, Trash2, Music2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
