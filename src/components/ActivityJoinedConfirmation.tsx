@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import { useActivityVenue } from "@/contexts/VenueContext";
+import { getActivityById } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/activity-translations";
 import { useTranslation } from "react-i18next";
 import { triggerConfettiBurstOnce } from "@/lib/confetti";
@@ -54,6 +55,7 @@ export function ActivityJoinedConfirmation({
   const label = getTranslatedActivityLabel(t, activityType);
   const activityDay = getTranslatedActivityDay(t, activityType);
   const activityTime = activityType === 'lunch' ? '12:30 PM' : activityType === 'dinner' ? '7:00 PM' : activityType === 'drinks' ? '8:00 PM' : null;
+  const activityMeta = getActivityById(activityType);
 
   const handleJoinChat = () => {
     onJoinGroupChat();
@@ -95,12 +97,16 @@ export function ActivityJoinedConfirmation({
             {/* Success header */}
             <div className="pt-8 pb-4 px-6 text-center">
               <div className="w-20 h-20 rounded-full bg-white overflow-hidden flex items-center justify-center mx-auto mb-4 animate-bounce-subtle">
-                <img
-                  src={`/icons/activities/${activityType}-icon.jpg`}
-                  alt={activityType}
-                  className="block w-full h-full object-cover"
-                  style={{ objectFit: "cover" }}
-                />
+                {activityMeta?.icon ? (
+                  <img
+                    src={activityMeta.icon}
+                    alt={activityType}
+                    className="block w-full h-full object-cover"
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <span className="text-4xl">{activityMeta?.emoji ?? "📍"}</span>
+                )}
               </div>
 
               <h2 className="text-xl font-display font-bold text-foreground mb-1">

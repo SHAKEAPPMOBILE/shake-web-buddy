@@ -151,7 +151,7 @@ export function ActivityConfirmationDialog({
             <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mx-auto shadow-lg animate-bounce-subtle">
               {getActivityById(activity.id)?.icon ? (
                 <img
-                  src={`/icons/activities/${activity.id}-icon.jpg`}
+                  src={getActivityById(activity.id)!.icon}
                   alt={activity.label}
                   className="w-16 h-16 object-contain"
                 />

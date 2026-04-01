@@ -20,7 +20,7 @@ import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { useActivityVenue } from "@/contexts/VenueContext";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { LoadingSpinner } from "../LoadingSpinner";
-import { getActivityLabel } from "@/data/activityTypes";
+import { getActivityById, getActivityLabel } from "@/data/activityTypes";
 import { getVenueTypeForActivity, useVenuesForActivity } from "@/hooks/useDatabaseVenues";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -490,6 +490,7 @@ export function GroupChatView({
   };
 
   const title = getActivityLabel(activityType);
+  const activityMeta = getActivityById(activityType);
   const headerSubtitle = assignedVenue?.name || city;
   const showAttendees = attendeeCount > 0;
 
@@ -504,11 +505,15 @@ export function GroupChatView({
         <div className="flex-1 min-w-0">
           <h1 className="text-base font-medium text-white flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
-              <img
-                src={`/icons/activities/${activityType}-icon.jpg`}
-                alt={activityType}
-                className="w-full h-full object-contain"
-              />
+              {activityMeta?.icon ? (
+                <img
+                  src={activityMeta.icon}
+                  alt={activityType}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="text-sm">{activityMeta?.emoji ?? "📍"}</span>
+              )}
             </div>
             <span className="truncate">{title}</span>
             {isCrossCity && (
