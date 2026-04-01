@@ -61,6 +61,15 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     };
   }, [meetPhrases.length]);
 
+  useEffect(() => {
+    const activities = getActivitiesWithDates();
+    activities.forEach((activity) => {
+      if (!activity.icon) return;
+      const img = new Image();
+      img.src = activity.icon;
+    });
+  }, []);
+
   // Extended type for carousel items including "propose plan"
   type CarouselItem = {
     id: string;
