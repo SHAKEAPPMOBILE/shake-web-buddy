@@ -403,7 +403,7 @@ function EventDetail({
     (async () => {
       const { data: existingMember, error: memberError } = await supabase
         .from("event_chat_members")
-        .select("event_id, paid_at, expires_at")
+        .select("event_id, paid_at, expires_at, event_starts_at")
         .eq("event_id", event.id)
         .eq("user_id", user.id)
         .maybeSingle();
@@ -438,7 +438,7 @@ function EventDetail({
       console.log("[EventsPage] Before event_chat_members check", { eventId: event.id, userId: user.id });
       const { data: existingMember, error: memberError } = await supabase
         .from("event_chat_members")
-        .select("event_id, paid_at, expires_at")
+        .select("event_id, paid_at, expires_at, event_starts_at")
         .eq("event_id", event.id)
         .eq("user_id", user.id)
         .maybeSingle();

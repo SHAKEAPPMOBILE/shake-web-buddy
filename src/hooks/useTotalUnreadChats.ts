@@ -98,7 +98,7 @@ export function useTotalUnreadChats() {
       // Event group chats (Ticketmaster / route id on `event_chat_members.event_id`)
       const { data: eventMembers } = await supabase
         .from("event_chat_members")
-        .select("event_id, joined_at, expires_at, paid_at")
+        .select("event_id, joined_at, expires_at, paid_at, event_starts_at")
         .eq("user_id", user.id);
 
       const activeEventRows = (eventMembers ?? []).filter(

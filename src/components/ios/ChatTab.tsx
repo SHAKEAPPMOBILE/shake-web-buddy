@@ -290,7 +290,7 @@ export function ChatTab({
 
       if (eventMemberships.length > 0) {
         for (const membership of eventMemberships as Record<string, unknown>[]) {
-          if (isEventChatMembershipExplicitlyExpired(membership as { expires_at?: string | null })) {
+          if (isEventChatMembershipExplicitlyExpired(membership as { expires_at?: string | null; event_starts_at?: string | null })) {
             console.log("[ChatTab] skip event row (explicit expires_at in past)", {
               event_id: membership.event_id,
             });
@@ -304,15 +304,15 @@ export function ChatTab({
           }
 
           const expiresAt =
-            typeof membership.expires_at === "string" && membership.expires_at.trim()
+            typeof membership.event_starts_at === "string" && membership.event_starts_at.trim()
               ? (() => {
-                  const d = new Date(membership.expires_at as string);
-                  return Number.isNaN(d.getTime()) ? null : d;
+                  const s = new Date(membership.event_starts_at as string);
+                  return Number.isNaN(s.getTime()) ? null : new Date(s.getTime() + 12 * 60 * 60 * 1000);
                 })()
-              : membership.paid_at
+              : typeof membership.expires_at === "string" && membership.expires_at.trim()
                 ? (() => {
-                    const p = new Date(membership.paid_at as string);
-                    return Number.isNaN(p.getTime()) ? null : new Date(p.getTime() + 24 * 60 * 60 * 1000);
+                    const d = new Date(membership.expires_at as string);
+                    return Number.isNaN(d.getTime()) ? null : d;
                   })()
                 : null;
 
