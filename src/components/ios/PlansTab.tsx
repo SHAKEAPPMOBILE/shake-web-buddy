@@ -67,6 +67,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const isMobile = useIsMobile();
   const [activities, setActivities] = useState<PlanActivity[]>([]);
   const [isCitySheetOpen, setIsCitySheetOpen] = useState(false);
+  const [joinedPlansCityFilter, setJoinedPlansCityFilter] = useState<string | null>(null);
+  const [cityAtPickerOpen, setCityAtPickerOpen] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch all plans for the selected city (global CityContext)
@@ -168,8 +170,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .eq("is_active", true)
         .gte("scheduled_for", startOfToday.toISOString());
       
-      // Only include joined activities from the searched city
-      joinedActivities = (joinedData || []).filter(a => a.city === selectedCity);
+      // If user explicitly selected a filter city in Plans header, apply it.
+      // Otherwise (default), include joined plans from all cities.
+      joinedActivities = joinedPlansCityFilter
+        ? (joinedData || []).filter(a => a.city === joinedPlansCityFilter)
+        : (joinedData || []);
     }
 
     // Combine and deduplicate
@@ -267,7 +272,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     setActivities(allPlans);
     setIsLoading(false);
-  }, [selectedCity, user]);
+  }, [selectedCity, user, joinedPlansCityFilter]);
 
   // Initial fetch and realtime subscription
   useEffect(() => {
@@ -291,6 +296,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       supabase.removeChannel(channel);
     };
   }, [fetchPlans, selectedCity]);
+
+  // Only treat city changes as explicit plans-filter choices when the header picker is open.
+  useEffect(() => {
+    if (!isCitySheetOpen) return;
+    if (!selectedCity) return;
+    if (cityAtPickerOpen && selectedCity === cityAtPickerOpen) return;
+    setJoinedPlansCityFilter(selectedCity);
+  }, [isCitySheetOpen, selectedCity, cityAtPickerOpen]);
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
@@ -438,6 +451,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     fetchPlans();
   };
 
+  const openCityPicker = () => {
+    setCityAtPickerOpen(selectedCity ?? null);
+    setIsCitySheetOpen(true);
+  };
+
+  const clearJoinedPlansCityFilter = () => {
+    setJoinedPlansCityFilter(null);
+    setIsCitySheetOpen(false);
+  };
+
   const handleDeletePlan = async () => {
     if (!planToDelete || !user) return;
 
@@ -551,7 +574,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             </button>
             <button
               type="button"
-              onClick={() => setIsCitySheetOpen(true)}
+              onClick={openCityPicker}
               className={`flex items-center gap-1 max-w-[min(50vw,200px)] px-2.5 py-1.5 rounded-full text-sm font-medium transition-all ${
                 browsingDifferentFromDetected
                   ? "bg-primary text-primary-foreground"
@@ -559,8 +582,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               }`}
             >
               <Plane className="w-4 h-4 shrink-0" />
-              <span className="truncate">{selectedCity || t("plans.searchCity")}</span>
+              <span className="truncate">{joinedPlansCityFilter || t("plans.allCities", "All cities")}</span>
             </button>
+            {joinedPlansCityFilter && (
+              <button
+                type="button"
+                onClick={clearJoinedPlansCityFilter}
+                className="flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-muted text-foreground"
+              >
+                {t("plans.clearCityFilter", "All cities")}
+              </button>
+            )}
             <button
               onClick={handleCreatePlan}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
@@ -581,6 +613,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         onOpenChange={setIsCitySheetOpen}
         title={t("plans.chooseYourCity", "Choose your city")}
       >
+        <button
+          type="button"
+          onClick={clearJoinedPlansCityFilter}
+          className="w-full mb-3 rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+        >
+          {t("plans.allCities", "All cities")}
+        </button>
         <CitySelector
           variant="picker"
           autoFocusSearch={isCitySheetOpen}
@@ -605,7 +644,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               </span>
             </div>
             <p className="text-muted-foreground">
-              {t("plans.noPlansInCity", { city: selectedCity || "—" })}
+              {joinedPlansCityFilter
+                ? t("plans.noPlansInCity", { city: joinedPlansCityFilter })
+                : t("plans.noPlansAllCities", "No joined plans found in any city")}
             </p>
             {browsingDifferentFromDetected && (
               <button
