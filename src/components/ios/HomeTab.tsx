@@ -262,7 +262,9 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             style={{
               animationDelay: "300ms",
               animationFillMode: "forwards",
-              background: "linear-gradient(to right, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.8))",
+              background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
+              backgroundSize: "400% 400%",
+              animation: "gradientShift 4s ease infinite",
             }}
           >
             {t('home.letsShake', "Let's Shake!")}
