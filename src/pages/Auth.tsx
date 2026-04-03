@@ -557,16 +557,14 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-white">
+      {step === 'method' && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-10">
+          <img src={logoShake} alt="SHAKE" className="h-12" />
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-md space-y-6">
-          {/* Logo and Language Selector */}
-          {step === 'method' && (
-            <div className="flex items-center justify-between">
-              <img src={logoShake} alt="SHAKE" className="h-12" />
-              <LanguageSelector />
-            </div>
-          )}
-
           {/* Back Button */}
           {step !== 'method' && step !== 'confirmation' && (
             <button
@@ -601,7 +599,7 @@ export default function Auth() {
                     setIsLogin(true);
                     setStep('email');
                   }}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="w-full text-white animate-gradient-shift hover:opacity-95"
                   size="lg"
                 >
                   Sign In
@@ -1025,6 +1023,12 @@ export default function Auth() {
           )}
         </div>
       </div>
+
+      {step === 'method' && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10">
+          <LanguageSelector />
+        </div>
+      )}
 
       {FACE_ID_FEATURE_ENABLED && (
         <>

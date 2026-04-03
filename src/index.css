@@ -233,6 +233,12 @@
   }
 }
 
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .animate-carousel-breathe {
   animation: carousel-breathe 12s ease-in-out infinite;
 }
@@ -271,6 +277,12 @@
 
 .animate-carousel-breathe {
   animation: carousel-breathe 8s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  background: linear-gradient(270deg, #7c3aed, #a855f7, #6d28d9, #9333ea);
+  background-size: 400% 400%;
+  animation: gradientShift 3s ease infinite;
 }
 
 @keyframes notification-enter {
