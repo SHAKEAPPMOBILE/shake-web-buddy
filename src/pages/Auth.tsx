@@ -262,25 +262,15 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      // For signup, validate password
-      if (!isLogin) {
-        if (!password || password.length < 6) {
-          toast.error("Password must be at least 6 characters");
-          setIsLoading(false);
-          return;
-        }
-        if (password !== confirmPassword) {
-          toast.error("Passwords do not match");
-          setIsLoading(false);
-          return;
-        }
-      }
-
       const { error } = await sendEmailOtp(email, isLogin ? "login" : "signup");
       if (error) {
         toast.error(toFriendlyAuthMessage(error.message, "email"));
       } else {
-        toast.success("Check your email for a magic link to sign in!");
+        toast.success(
+          isLogin
+            ? "Magic link sent! Check your email."
+            : "Check your email to verify and finish creating your account!"
+        );
         setStep('confirmation');
       }
     } catch (error) {
@@ -661,8 +651,8 @@ export default function Auth() {
                   className="w-full border-2"
                   size="lg"
                 >
-                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17.05 13.5c-.6-1.3 1.2-3.4 2-4.7.5-.9.5-1.5 0-2.1-.5-1.1-1.6-1.8-2.8-1.8-2.6 0-4.3 1.6-5.3 2.7-.4.4-.7.9-1.3 1.1l-.8 0c-1.1-.2-1.8.3-2.2 1-.3.5-.3 1.1 0 1.5.7 1.6 1.5 3.3 3.8 5.5 2.3 2.2 4.4 3.5 5.9 3.5 1.4 0 2.4-.7 2.8-1.9.4-1.2 0-2.5-1.1-4.8z"/>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" className="mr-2">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
                   </svg>
                   Apple
                 </Button>
@@ -697,56 +687,6 @@ export default function Auth() {
                   />
                 </div>
               </div>
-
-              {!isLogin && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-black">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="At least 6 characters"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 pr-10"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm-password" className="text-black">Confirm Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="signup-confirm-password"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Re-enter your password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="pl-10 pr-10"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
 
               <Button
                 type="submit"

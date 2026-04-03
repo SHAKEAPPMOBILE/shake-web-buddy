@@ -344,16 +344,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ? "http://localhost:5173/auth/callback"
         : "https://app.shakeapp.today/auth/callback";
 
+      // For login: only send magic link to existing email accounts (no auto-create)
+      // For signup: allow creating a new account via magic link
+      const shouldCreateUser = purpose === "signup";
+
       const { error } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase().trim(),
         options: {
           emailRedirectTo: redirectUrl,
+          shouldCreateUser,
         },
       });
 
       if (error) {
         let errorMsg = error.message || "Failed to send magic link";
-        errorMsg = toUserFriendlyAuthError(errorMsg, "Unable to send magic link. Please check your connection and try again.");
+        const lower = errorMsg.toLowerCase();
+
+        if (lower.includes("signups not allowed") || lower.includes("otp_disabled") || lower.includes("user not found")) {
+          errorMsg = "No account found with this email. Please create an account.";
+        } else if (
+          lower.includes("duplicate key") ||
+          lower.includes("users_email_partial_key") ||
+          lower.includes("already registered")
+        ) {
+          errorMsg = "An account with this email already exists. Please sign in instead.";
+        } else {
+          errorMsg = toUserFriendlyAuthError(errorMsg, "Unable to send magic link. Please check your connection and try again.");
+        }
         return { error: new Error(errorMsg) };
       }
 
