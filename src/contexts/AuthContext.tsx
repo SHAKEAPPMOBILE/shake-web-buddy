@@ -344,16 +344,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ? "http://localhost:5173/auth/callback"
         : "https://app.shakeapp.today/auth/callback";
 
-      // For login: only send magic link to existing email accounts (no auto-create)
-      // For signup: allow creating a new account via magic link
-      const shouldCreateUser = purpose === "signup";
-
       const { error } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase().trim(),
-        options: {
-          emailRedirectTo: redirectUrl,
-          shouldCreateUser,
-        },
+        options:
+          purpose === "signup"
+            ? {
+                emailRedirectTo: redirectUrl,
+                shouldCreateUser: true,
+              }
+            : {
+                emailRedirectTo: redirectUrl,
+              },
       });
 
       if (error) {

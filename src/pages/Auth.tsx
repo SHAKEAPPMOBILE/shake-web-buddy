@@ -94,7 +94,7 @@ async function signInWithOAuth(provider: 'google' | 'apple') {
     }
   } catch (error) {
     console.error(`OAuth error (${provider}):`, error);
-    toast.error(`Failed to sign in with ${provider}`);
+    toast.error(`Failed to log in with ${provider}`);
   }
 }
 
@@ -601,7 +601,7 @@ export default function Auth() {
               <div className="space-y-2 text-center">
                 <img src={logoShake} alt="SHAKE" className="h-20 w-20 mx-auto mb-6" />
                 <h1 className="text-2xl font-bold text-black">Welcome to SHAKE</h1>
-                <p className="text-muted-foreground">Sign in or create your account</p>
+                <p className="text-muted-foreground">Log In or create your account</p>
               </div>
 
               <div className="space-y-3">
@@ -613,7 +613,7 @@ export default function Auth() {
                   className="w-full text-white animate-gradient-shift hover:opacity-95"
                   size="lg"
                 >
-                  Sign In
+                  Log In
                 </Button>
 
                 <Button
@@ -674,10 +674,10 @@ export default function Auth() {
             <form onSubmit={handleSendMagicLink} className="space-y-4">
               <div className="space-y-2 text-center">
                 <h2 className="text-xl font-bold text-black">
-                  {isLogin ? "Sign In with Email" : "Create Account"}
+                  {isLogin ? "Log In with Email" : "Create Account"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {isLogin ? "We'll send you a magic link to sign in" : "We'll send you a link to verify your email"}
+                  {isLogin ? "We'll send you a magic link to log in" : "We'll send you a link to verify your email"}
                 </p>
               </div>
 
@@ -715,7 +715,7 @@ export default function Auth() {
                   }}
                   className="w-full text-sm text-primary hover:underline"
                 >
-                  Sign in with password instead
+                  Log in with password instead
                 </button>
               )}
             </form>
@@ -730,7 +730,7 @@ export default function Auth() {
                   We sent a magic link to <span className="font-medium">{email}</span>
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Click the link to {isLogin ? "sign in" : "verify your email and create your account"}
+                  Click the link to {isLogin ? "log in" : "verify your email and create your account"}
                 </p>
               </div>
 
@@ -751,7 +751,7 @@ export default function Auth() {
                 className="w-full border-2"
                 size="lg"
               >
-                Back to Sign In
+                Back to Log In
               </Button>
             </div>
           )}
