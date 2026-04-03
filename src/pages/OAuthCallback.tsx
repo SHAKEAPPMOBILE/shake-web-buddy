@@ -31,11 +31,20 @@ export default function OAuthCallback() {
         }
 
         // 3) Support OAuth code in query OR hash
-        const code = params.get("code") || hashParams.get("code");
+        const rawCode = params.get("code") || hashParams.get("code");
+        const code = rawCode && rawCode !== "undefined" && rawCode !== "null" ? rawCode : null;
 
         // 4) Support magic-link tokens in hash OR query
-        const accessToken = hashParams.get("access_token") || params.get("access_token");
-        const refreshToken = hashParams.get("refresh_token") || params.get("refresh_token");
+        const rawAccessToken = hashParams.get("access_token") || params.get("access_token");
+        const rawRefreshToken = hashParams.get("refresh_token") || params.get("refresh_token");
+        const accessToken =
+          rawAccessToken && rawAccessToken !== "undefined" && rawAccessToken !== "null"
+            ? rawAccessToken
+            : null;
+        const refreshToken =
+          rawRefreshToken && rawRefreshToken !== "undefined" && rawRefreshToken !== "null"
+            ? rawRefreshToken
+            : null;
 
         // 5) If callback URL has no auth payload, fail soft to /auth
         if (!code && !(accessToken && refreshToken)) {

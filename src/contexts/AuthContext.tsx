@@ -361,7 +361,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const lower = errorMsg.toLowerCase();
 
         if (lower.includes("signups not allowed") || lower.includes("otp_disabled") || lower.includes("user not found")) {
-          errorMsg = "No account found with this email. Please create an account.";
+          errorMsg = "No account found with this email. Would you like to create one?";
         } else if (
           lower.includes("duplicate key") ||
           lower.includes("users_email_partial_key") ||

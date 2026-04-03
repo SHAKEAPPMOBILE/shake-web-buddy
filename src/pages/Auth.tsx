@@ -120,6 +120,7 @@ export default function Auth() {
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCreateAccountPrompt, setShowCreateAccountPrompt] = useState(false);
   const [isFaceCaptureOpen, setIsFaceCaptureOpen] = useState(false);
   const [faceMode, setFaceMode] = useState<'enroll' | 'authenticate'>('authenticate');
   const [isFaceAuthLoading, setIsFaceAuthLoading] = useState(false);
@@ -264,7 +265,18 @@ export default function Auth() {
     try {
       const { error } = await sendEmailOtp(email, isLogin ? "login" : "signup");
       if (error) {
-        toast.error(toFriendlyAuthMessage(error.message, "email"));
+        const lower = (error.message || "").toLowerCase();
+        const isNoAccountError =
+          lower.includes("no account found") ||
+          lower.includes("signups not allowed") ||
+          lower.includes("otp_disabled") ||
+          lower.includes("user not found");
+
+        if (isLogin && isNoAccountError) {
+          setShowCreateAccountPrompt(true);
+        } else {
+          toast.error(toFriendlyAuthMessage(error.message, "email"));
+        }
       } else {
         toast.success(
           isLogin
@@ -559,7 +571,7 @@ export default function Auth() {
     <div className="min-h-screen w-full flex flex-col bg-white">
       <div
         className={`flex-1 flex flex-col items-center px-4 ${
-          step === 'method' ? 'justify-start pt-14 pb-8' : 'justify-center py-8'
+          step === 'method' ? 'justify-center py-8' : 'justify-center py-8'
         }`}
       >
         <div className="w-full max-w-md px-6 sm:px-0 space-y-6">
@@ -711,7 +723,7 @@ export default function Auth() {
 
           {/* Confirmation Screen */}
           {step === 'confirmation' && (
-            <div className="space-y-6">
+            <div className="space-y-6 text-center">
               <div className="space-y-2 text-center">
                 <h2 className="text-xl font-bold text-black">Check your email</h2>
                 <p className="text-sm text-muted-foreground">
@@ -722,7 +734,7 @@ export default function Auth() {
                 </p>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
                 <p className="text-sm text-blue-900">
                   💡 If you don't see the email, check your spam folder or try another email address.
                 </p>
@@ -1028,6 +1040,29 @@ export default function Auth() {
           <LanguageSelector />
         </div>
       )}
+
+      <AlertDialog open={showCreateAccountPrompt} onOpenChange={setShowCreateAccountPrompt}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>No account found with this email</AlertDialogTitle>
+            <AlertDialogDescription>
+              No account found with this email. Would you like to create one?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowCreateAccountPrompt(false);
+                setIsLogin(false);
+                setStep('email');
+              }}
+            >
+              Create Account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {FACE_ID_FEATURE_ENABLED && (
         <>
