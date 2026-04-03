@@ -557,8 +557,12 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-white">
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md space-y-6">
+      <div
+        className={`flex-1 flex flex-col items-center px-4 ${
+          step === 'method' ? 'justify-start pt-14 pb-8' : 'justify-center py-8'
+        }`}
+      >
+        <div className="w-full max-w-md px-6 sm:px-0 space-y-6">
           {/* Back Button */}
           {step !== 'method' && step !== 'confirmation' && (
             <button
@@ -572,10 +576,10 @@ export default function Auth() {
                 setPassword("");
                 setConfirmPassword("");
               }}
-              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-4"
+              aria-label="Back"
+              className="absolute top-4 left-4 text-primary hover:text-primary/80"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back
             </button>
           )}
 
@@ -583,7 +587,7 @@ export default function Auth() {
           {step === 'method' && (
             <div className="space-y-4">
               <div className="space-y-2 text-center">
-                <img src={logoShake} alt="SHAKE" className="h-20 w-20 mx-auto mb-4" />
+                <img src={logoShake} alt="SHAKE" className="h-20 w-20 mx-auto mb-6" />
                 <h1 className="text-2xl font-bold text-black">Welcome to SHAKE</h1>
                 <p className="text-muted-foreground">Sign in or create your account</p>
               </div>
