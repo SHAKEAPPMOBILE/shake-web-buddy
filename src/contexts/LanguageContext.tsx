@@ -107,6 +107,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [detectedLanguage, setDetectedLanguage] = useState<Language | null>(null);
   const [isDetecting, setIsDetecting] = useState(true);
 
+  const setSelectedLanguage = (language: Language) => {
+    setSelectedLanguageState(language);
+    localStorage.setItem("shake-language", JSON.stringify({ code: language.code }));
+
+    // Update i18n language - use the language if translated, otherwise fallback to English
+    const i18nLang = translatedLanguages.includes(language.code) ? language.code : 'en';
+    i18n.changeLanguage(i18nLang);
+  };
+
   // Auto-detect language based on browser settings and location
   // IMPORTANT: Only auto-select from languages we have translations for
   useEffect(() => {
@@ -143,10 +152,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       // Use browser language immediately (fast, reliable)
       if (bestMatch) {
         setDetectedLanguage(bestMatch);
-        setSelectedLanguageState(bestMatch);
+        setSelectedLanguage(bestMatch);
       } else if (browserLanguage) {
         setDetectedLanguage(browserLanguage);
-        setSelectedLanguageState(browserLanguage);
+        setSelectedLanguage(browserLanguage);
       }
       // If no translated language matches browser, default English is already set
 
@@ -167,7 +176,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
             // (user might be traveling but phone language unchanged)
             if (ipLanguage && (!bestMatch || ipLanguage.code !== bestMatch.code)) {
               setDetectedLanguage(ipLanguage);
-              setSelectedLanguageState(ipLanguage);
+              setSelectedLanguage(ipLanguage);
             }
           }
         }
@@ -181,15 +190,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     detectLanguage();
   }, []);
-
-  const setSelectedLanguage = (language: Language) => {
-    setSelectedLanguageState(language);
-    localStorage.setItem("shake-language", JSON.stringify({ code: language.code }));
-    
-    // Update i18n language - use the language if translated, otherwise fallback to English
-    const i18nLang = translatedLanguages.includes(language.code) ? language.code : 'en';
-    i18n.changeLanguage(i18nLang);
-  };
 
   return (
     <LanguageContext.Provider

@@ -557,12 +557,6 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-white">
-      {step === 'method' && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-10">
-          <img src={logoShake} alt="SHAKE" className="h-12" />
-        </div>
-      )}
-
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-md space-y-6">
           {/* Back Button */}
@@ -589,6 +583,7 @@ export default function Auth() {
           {step === 'method' && (
             <div className="space-y-4">
               <div className="space-y-2 text-center">
+                <img src={logoShake} alt="SHAKE" className="h-12 mx-auto mb-2" />
                 <h1 className="text-2xl font-bold text-black">Welcome to SHAKE</h1>
                 <p className="text-muted-foreground">Sign in or create your account</p>
               </div>

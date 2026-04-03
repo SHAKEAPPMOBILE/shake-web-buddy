@@ -13,6 +13,10 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
   const { t } = useTranslation();
   const { selectedLanguage, setSelectedLanguage, isDetecting } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({
+    top: "auto",
+    transform: "translateX(-50%)",
+  });
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +47,42 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Keep dropdown visible even when selector is fixed near screen bottom
+  useEffect(() => {
+    if (!isOpen || !containerRef.current) return;
+
+    const updateDropdownPosition = () => {
+      if (!containerRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const estimatedDropdownHeight = 200;
+      const spaceBelow = window.innerHeight - rect.bottom;
+
+      if (spaceBelow < estimatedDropdownHeight) {
+        setDropdownStyle({
+          bottom: `${window.innerHeight - rect.top + 8}px`,
+          top: "auto",
+          transform: "translateX(-50%)",
+        });
+      } else {
+        setDropdownStyle({
+          top: `${rect.bottom + 8}px`,
+          bottom: "auto",
+          transform: "translateX(-50%)",
+        });
+      }
+    };
+
+    updateDropdownPosition();
+    window.addEventListener("resize", updateDropdownPosition);
+    window.addEventListener("scroll", updateDropdownPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", updateDropdownPosition, true);
+    };
+  }, [isOpen]);
 
   const handleLanguageSelect = (language: Language) => {
     setSelectedLanguage(language);
@@ -84,12 +124,7 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
       {isOpen && (
         <div
           className="fixed left-1/2 z-50"
-          style={{
-            top: containerRef.current
-              ? containerRef.current.getBoundingClientRect().bottom + 8
-              : "auto",
-            transform: "translateX(-50%)",
-          }}
+          style={dropdownStyle}
         >
           <div
             className={cn(

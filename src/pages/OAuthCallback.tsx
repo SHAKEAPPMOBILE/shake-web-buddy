@@ -11,43 +11,44 @@ export default function OAuthCallback() {
     let cancelled = false;
 
     const run = async () => {
-      // 1) Check for OAuth error in query or hash (Supabase sends error/error_description)
-      const params = new URLSearchParams(window.location.search);
-      const hash = window.location.hash?.replace(/^#/, "") || "";
-      const hashParams = new URLSearchParams(hash);
-      const error = params.get("error") || hashParams.get("error");
-      const errorDescription =
-        params.get("error_description") || hashParams.get("error_description");
+      try {
+        // 1) Parse query/hash params once
+        const params = new URLSearchParams(window.location.search);
+        const hash = window.location.hash?.replace(/^#/, "") || "";
+        const hashParams = new URLSearchParams(hash);
 
-      if (error) {
-        const message =
-          errorDescription?.replace(/\+/g, " ") || "Sign-in was cancelled or failed.";
-        toast.error(message);
-        navigate("/auth", { replace: true });
-        return;
-      }
+        // 2) Check for provider errors
+        const error = params.get("error") || hashParams.get("error");
+        const errorDescription =
+          params.get("error_description") || hashParams.get("error_description");
 
-      // 2) Handle OAuth code exchange (for Apple and Google OAuth flows)
-      const code = params.get("code");
-      if (code) {
-        try {
+        if (error) {
+          const message =
+            errorDescription?.replace(/\+/g, " ") || "Sign-in was cancelled or failed.";
+          toast.error(message);
+          navigate("/auth", { replace: true });
+          return;
+        }
+
+        // 3) Support OAuth code in query OR hash
+        const code = params.get("code") || hashParams.get("code");
+
+        // 4) Support magic-link tokens in hash OR query
+        const accessToken = hashParams.get("access_token") || params.get("access_token");
+        const refreshToken = hashParams.get("refresh_token") || params.get("refresh_token");
+
+        // 5) If callback URL has no auth payload, fail soft to /auth
+        if (!code && !(accessToken && refreshToken)) {
+          navigate("/auth", { replace: true });
+          return;
+        }
+
+        if (code) {
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
             throw exchangeError;
           }
-        } catch (e: any) {
-          console.error("Code exchange error:", e);
-          toast.error("Sign-in failed. Please try again.");
-          navigate("/auth", { replace: true });
-          return;
-        }
-      }
-
-      // 3) Handle magic link tokens in hash (for email OTP flow)
-      const accessToken = hashParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token");
-      if (accessToken && refreshToken) {
-        try {
+        } else if (accessToken && refreshToken) {
           const { error: setSessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
@@ -55,38 +56,28 @@ export default function OAuthCallback() {
           if (setSessionError) {
             throw setSessionError;
           }
-        } catch (e: any) {
-          console.error("Session set error:", e);
-          toast.error("Sign-in failed. Please try again.");
-          navigate("/auth", { replace: true });
-          return;
         }
-      }
 
-      // 4) Give Supabase a moment to process the redirect (hash or query tokens)
-      await new Promise((r) => setTimeout(r, 400));
+        // 6) Give Supabase a moment to settle state
+        await new Promise((r) => setTimeout(r, 300));
 
-      if (cancelled) return;
+        if (cancelled) return;
 
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
-      if (sessionError) {
-        toast.error("Sign-in didn’t complete. Please try again.");
+        if (sessionError) {
+          throw sessionError;
+        }
+
+        navigate(session ? "/" : "/auth", { replace: true });
+      } catch (e: any) {
+        console.error("OAuth callback error:", e);
+        toast.error("Sign-in failed. Please try again.");
         navigate("/auth", { replace: true });
-        return;
       }
-
-      if (session) {
-        navigate("/", { replace: true });
-        return;
-      }
-
-      // No error in URL but no session (e.g. user closed provider window)
-      toast.error("Sign-in didn’t complete. Please try again.");
-      navigate("/auth", { replace: true });
     };
 
     run();
