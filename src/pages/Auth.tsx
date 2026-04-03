@@ -583,7 +583,7 @@ export default function Auth() {
           {step === 'method' && (
             <div className="space-y-4">
               <div className="space-y-2 text-center">
-                <img src={logoShake} alt="SHAKE" className="h-12 mx-auto mb-2" />
+                <img src={logoShake} alt="SHAKE" className="h-20 w-20 mx-auto mb-4" />
                 <h1 className="text-2xl font-bold text-black">Welcome to SHAKE</h1>
                 <p className="text-muted-foreground">Sign in or create your account</p>
               </div>
