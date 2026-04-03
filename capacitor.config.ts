@@ -9,7 +9,11 @@ const config: CapacitorConfig = {
       androidKey: 'YOUR_GOOGLE_PLAY_PUBLIC_KEY', // Add later
       iosKey: 'YOUR_APPLE_APP_STORE_KEY', // Add later
     }
-  }
+  },
+  server: {
+    androidScheme: 'https',
+    iosScheme: 'https',
+  },
 };
 
 export default config;

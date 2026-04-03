@@ -12,14 +12,10 @@ interface AuthContextType {
   isManualOverride: boolean;
   subscriptionEnd: string | null;
   didJustSignUp: boolean;
-  sendOtp: (phone: string, purpose?: string) => Promise<{ error: Error | null; verificationId?: string }>;
-  sendOtpEmail: (
-    phone: string,
-    email: string,
-    purpose?: string,
-  ) => Promise<{ error: Error | null; verificationId?: string }>;
-  verifyOtp: (phone: string, code: string, verificationId: string, options?: { purpose?: string; password?: string; name?: string }) => Promise<{ error: Error | null; data?: any }>;
-  signInWithPassword: (phone: string, password: string) => Promise<{ error: Error | null }>;
+  sendEmailOtp: (email: string, purpose?: string) => Promise<{ error: Error | null }>;
+  verifyEmailOtp: (email: string, token: string, purpose?: string) => Promise<{ error: Error | null; data?: any }>;
+  signUpWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   checkSubscription: () => Promise<void>;
@@ -341,82 +337,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return raw || fallback;
   };
 
-  // Send OTP via SMS (Bird)
-  const sendOtp = async (phone: string, purpose = "auth"): Promise<{ error: Error | null; verificationId?: string }> => {
+  // Send magic link OTP via email using Supabase
+  const sendEmailOtp = async (email: string, purpose = "login"): Promise<{ error: Error | null }> => {
     try {
-      const { data, error } = await supabase.functions.invoke("send-bird-otp", {
-        body: { phone, purpose },
-      });
+      const redirectUrl = import.meta.env.DEV
+        ? "http://localhost:5173/auth/callback"
+        : "https://shake-web-app.netlify.app/auth/callback";
 
-      if (error) {
-        let errorMsg = error.message || "Failed to send code";
-        try {
-          const parsed = JSON.parse(error.message);
-          if (parsed?.error) errorMsg = parsed.error;
-        } catch {}
-        errorMsg = toUserFriendlyAuthError(errorMsg, "Unable to send verification code. Please check your connection and try again.");
-        return { error: new Error(errorMsg) };
-      }
-
-      return { error: null, verificationId: data?.verificationId };
-    } catch (e: any) {
-      const msg = toUserFriendlyAuthError(e?.message || "", "Unable to send verification code. Please check your connection and try again.");
-      return { error: new Error(msg) };
-    }
-  };
-
-  const sendOtpEmail = async (
-    phone: string,
-    email: string,
-    purpose = "login",
-  ): Promise<{ error: Error | null; verificationId?: string }> => {
-    try {
-      const { data, error } = await supabase.functions.invoke("send-email-fallback-otp", {
-        body: { phone, email, purpose },
-      });
-
-      if (error) {
-        let errorMsg = error.message || "Failed to send code";
-        try {
-          const parsed = JSON.parse(error.message);
-          if (parsed?.error) errorMsg = parsed.error;
-        } catch {}
-        errorMsg = toUserFriendlyAuthError(errorMsg, "Unable to send email code. Please check your connection and try again.");
-        return { error: new Error(errorMsg) };
-      }
-
-      return { error: null, verificationId: data?.verificationId };
-    } catch (e: any) {
-      const msg = toUserFriendlyAuthError(e?.message || "", "Unable to send email code. Please check your connection and try again.");
-      return { error: new Error(msg) };
-    }
-  };
-
-  // Verify OTP via Bird
-  const verifyOtp = async (
-    phone: string,
-    code: string,
-    verificationId: string,
-    options?: { purpose?: string; password?: string; name?: string }
-  ): Promise<{ error: Error | null; data?: any }> => {
-    try {
-      const { data, error } = await supabase.functions.invoke("verify-bird-otp", {
-        body: {
-          phone,
-          code,
-          verificationId,
-          purpose: options?.purpose || "login",
-          password: options?.password || "",
-          name: options?.name || "",
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.toLowerCase().trim(),
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: { purpose },
         },
       });
 
       if (error) {
+        let errorMsg = error.message || "Failed to send magic link";
+        errorMsg = toUserFriendlyAuthError(errorMsg, "Unable to send magic link. Please check your connection and try again.");
+        return { error: new Error(errorMsg) };
+      }
+
+      return { error: null };
+    } catch (e: any) {
+      const msg = toUserFriendlyAuthError(e?.message || "", "Unable to send magic link. Please check your connection and try again.");
+      return { error: new Error(msg) };
+    }
+  };
+
+  // Verify OTP token from magic link (called from auth callback)
+  const verifyEmailOtp = async (
+    email: string,
+    token: string,
+    purpose?: string
+  ): Promise<{ error: Error | null; data?: any }> => {
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: email.toLowerCase().trim(),
+        token,
+        type: "email",
+      });
+
+      if (error) {
         let errorMsg = error.message || "Verification failed";
-        try {
-          const parsed = JSON.parse(error.message);
-          if (parsed?.error) errorMsg = parsed.error;
-        } catch {}
         errorMsg = toUserFriendlyAuthError(errorMsg, "Verification failed. Please check your connection and try again.");
         return { error: new Error(errorMsg) };
       }
@@ -428,9 +391,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithPassword = async (phone: string, password: string) => {
+  const signUpWithPassword = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email: email.toLowerCase().trim(),
+      password,
+      options: {
+        emailRedirectTo: import.meta.env.DEV
+          ? "http://localhost:5173/auth/callback"
+          : "https://shake-web-app.netlify.app/auth/callback",
+      },
+    });
+    if (error) {
+      const friendly = toUserFriendlyAuthError(
+        error.message,
+        "Unable to sign up. Please check your connection and try again."
+      );
+      return { error: new Error(friendly) };
+    }
+    return { error: null };
+  };
+
+  const signInWithPassword = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
-      phone,
+      email: email.toLowerCase().trim(),
       password,
     });
     if (error) {
@@ -474,9 +457,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isManualOverride,
         subscriptionEnd,
         didJustSignUp,
-        sendOtp,
-        sendOtpEmail,
-        verifyOtp,
+        sendEmailOtp,
+        verifyEmailOtp,
+        signUpWithPassword,
         signInWithPassword,
         updatePassword,
         signOut,
