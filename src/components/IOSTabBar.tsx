@@ -40,12 +40,13 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   };
 
   const handleTabClick = (tabId: string) => {
+    // Block navigation if user is not logged in
+    if (!user) {
+      return;
+    }
+    
     if (tabId === "shake") {
       handleShakeAnimation();
-    }
-    if (tabId === "profile" && !user) {
-      navigate("/auth");
-      return;
     }
     onTabChange(tabId);
   };
@@ -63,7 +64,11 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
-                className="relative -mt-6 flex flex-col items-center"
+                disabled={!user}
+                className={cn(
+                  "relative -mt-6 flex flex-col items-center",
+                  !user && "opacity-50 cursor-not-allowed"
+                )}
               >
                 <div className="flex items-center gap-1">
                   {/* Left arrow - only visible during shake (fixed green, not themed) */}
@@ -104,7 +109,11 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className="relative flex flex-col items-center py-1 px-3 min-w-[60px]"
+              disabled={!user}
+              className={cn(
+                "relative flex flex-col items-center py-1 px-3 min-w-[60px]",
+                !user && "opacity-50 cursor-not-allowed"
+              )}
             >
               <div className={cn(
                 "relative p-2 rounded-xl transition-all",

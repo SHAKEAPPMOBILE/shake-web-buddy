@@ -342,13 +342,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const redirectUrl = import.meta.env.DEV
         ? "http://localhost:5173/auth/callback"
-        : "https://shake-web-app.netlify.app/auth/callback";
+        : "https://app.shakeapp.today/auth/callback";
 
       const { error } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase().trim(),
         options: {
           emailRedirectTo: redirectUrl,
-          data: { purpose },
         },
       });
 
@@ -398,7 +397,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       options: {
         emailRedirectTo: import.meta.env.DEV
           ? "http://localhost:5173/auth/callback"
-          : "https://shake-web-app.netlify.app/auth/callback",
+          : "https://app.shakeapp.today/auth/callback",
       },
     });
     if (error) {

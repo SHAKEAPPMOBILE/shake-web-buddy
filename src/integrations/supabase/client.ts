@@ -24,6 +24,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  redirectTo: typeof window !== "undefined" && window.location.hostname !== "localhost" ? "https://shake-web-app.netlify.app/auth/callback" : "com.shake.app://auth/callback",
+  redirectTo: typeof window !== "undefined" && window.location.hostname !== "localhost" ? "https://app.shakeapp.today/auth/callback" : "com.shakeapp.shakeapp://auth/callback",
   }
 });
