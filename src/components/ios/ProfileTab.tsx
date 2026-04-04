@@ -522,11 +522,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           <button
             onClick={() => setShowPremiumDialog(true)}
             className="w-full flex items-center gap-4 px-4 py-3 rounded-xl"
-            style={{
-              background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
-              backgroundSize: "400% 400%",
-              animation: "gradientShift 4s ease infinite",
-            }}
+            style={profileIconGradientStyle}
           >
             <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
               <SuperHumanIcon size={24} />

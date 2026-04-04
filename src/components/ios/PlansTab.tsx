@@ -623,7 +623,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         <button
           type="button"
           onClick={clearJoinedPlansCityFilter}
-          className="w-full mb-3 rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+          className="w-full mb-3 rounded-xl px-3 py-2 text-left text-sm text-white font-medium transition-colors hover:opacity-90"
+          style={plansSettlingGradientStyle}
         >
           {t("plans.allCities", "All cities")}
         </button>

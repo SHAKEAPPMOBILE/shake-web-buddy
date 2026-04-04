@@ -16,11 +16,11 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const { t } = useTranslation();
   const { user } = useAuth();
   const { totalUnread } = useTotalUnreadChats();
-  const { style: animatedShakeGradientStyle } = useSettlingGradient("bottom-nav-shake", { alwaysAnimated: true });
+  const { style: settlingGradientStyle } = useSettlingGradient("bottom-nav-shake");
   const [isShaking, setIsShaking] = useState(false);
 
-  // Apply rainbow gradient only when user is logged in, otherwise use solid blue
-  const shakeButtonStyle = user ? animatedShakeGradientStyle : { background: "rgb(59, 130, 246)" }; // bg-blue-500
+  // Apply settling gradient only when user is logged in, otherwise use solid blue
+  const shakeButtonStyle = user ? settlingGradientStyle : { background: "rgb(59, 130, 246)" }; // bg-blue-500
 
   const tabs = [
     { id: "home", icon: Home, label: t('home.title', 'Home') },
@@ -74,7 +74,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                     />
                   )}
                   
-                  {/* Center circle - rainbow gradient when logged in, solid blue when not */}
+                  {/* Center circle - 2s rainbow gradient then settles to random color (when logged in) */}
                   <div className={cn(
                     "w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all",
                     isActive && "scale-110",
