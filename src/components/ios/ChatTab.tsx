@@ -755,7 +755,7 @@ export function ChatTab({
                   handleActivityClick(activity);
                 }
               }}
-              className="w-full text-left rounded-xl p-4 transition-colors cursor-pointer relative border-2 border-transparent bg-[#1e2124] hover:border-[#a0c1f9]/55 focus-visible:outline-none focus-visible:border-[#a0c1f9] active:scale-[0.99]"
+              className="w-full text-left rounded-xl p-4 transition-colors cursor-pointer relative border border-gray-200 bg-gray-50 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.99]"
             >
               {/* Unread badge */}
               {(activity.unread_count ?? 0) > 0 && (
@@ -782,9 +782,9 @@ export function ChatTab({
                     )}
                   </div>
                   {activity.is_plan && activity.creator_avatar && (
-                    <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-[#1e2124]">
+                    <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-gray-50">
                       <AvatarImage src={activity.creator_avatar} alt={activity.creator_name} />
-                      <AvatarFallback className="bg-[#2a2e32] text-[#e4e4e7] text-xs font-semibold">
+                      <AvatarFallback className="bg-gray-200 text-gray-700 text-xs font-semibold">
                         {activity.creator_name?.charAt(0)?.toUpperCase() || "?"}
                       </AvatarFallback>
                     </Avatar>
@@ -793,7 +793,7 @@ export function ChatTab({
 
                 <div className="flex-1 min-w-0 pt-0.5">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <h3 className="font-bold text-white text-[15px] leading-snug">
+                    <h3 className="font-bold text-gray-900 text-[15px] leading-snug">
                       {activity.is_plan && activity.note
                         ? activity.note
                         : activity.is_event && activity.event_name
@@ -801,24 +801,24 @@ export function ChatTab({
                         : getActivityLabel(activity.activity_type)}
                     </h3>
                     {activity.is_plan && (
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-[#9ca3af] bg-[#2a2e32] px-1.5 py-0.5 rounded-xl border border-[#3f444c]">
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded-xl border border-gray-300">
                         {t('common.plan')}
                       </span>
                     )}
                     {activity.is_event && (
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-[#9ca3af] bg-[#2a2e32] px-1.5 py-0.5 rounded-xl border border-[#3f444c]">
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded-xl border border-gray-300">
                         EVENT
                       </span>
                     )}
                     {activity.is_event && (
-                      <span className="text-[10px] font-medium text-[#9ca3af] bg-[#252a2e] px-1.5 py-0.5 rounded-xl border border-[#3f444c]">
+                      <span className="text-[10px] font-medium text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded-xl border border-gray-300">
                         12h access
                       </span>
                     )}
                   </div>
 
                   {activity.is_plan ? (
-                    <p className="mt-1.5 text-[13px] leading-snug text-[#9ca3af]">
+                    <p className="mt-1.5 text-[13px] leading-snug text-gray-600">
                       {activity.city} · {dateFormatted}
                       {activity.creator_name ? (
                         <span>
@@ -828,7 +828,7 @@ export function ChatTab({
                       ) : null}
                     </p>
                   ) : (
-                    <p className="mt-1.5 text-[13px] leading-snug text-[#9ca3af] flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                    <p className="mt-1.5 text-[13px] leading-snug text-gray-600 flex flex-wrap items-center gap-x-1.5 gap-y-1">
                       <span>
                         {locationLine} · {dateFormatted}
                       </span>
@@ -838,7 +838,7 @@ export function ChatTab({
                         </span>
                       )}
                       {isTomorrow(safeActivityDate(activity.scheduled_for)) && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#a0c1f9] bg-[#a0c1f9]/10 border border-[#a0c1f9]/25 px-1.5 py-0.5 rounded-xl">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-xl">
                           {t('common.tomorrow')}
                         </span>
                       )}
@@ -846,8 +846,8 @@ export function ChatTab({
                   )}
 
                   <div className="flex items-center gap-1.5 mt-1.5">
-                    <Users className="w-3.5 h-3.5 text-[#9ca3af] shrink-0" />
-                    <span className="text-[13px] text-[#9ca3af]">
+                    <Users className="w-3.5 h-3.5 text-gray-600 shrink-0" />
+                    <span className="text-[13px] text-gray-600">
                       {activity.participant_count} {activity.participant_count === 1 ? t('common.person') : t('common.people')}
                     </span>
                   </div>
