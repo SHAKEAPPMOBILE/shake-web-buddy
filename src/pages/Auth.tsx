@@ -365,22 +365,6 @@ export default function Auth() {
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name.trim()) {
-      toast.error("Please enter your name");
-      return;
-    }
-
-    if (!dateOfBirth) {
-      toast.error("Please enter your date of birth");
-      return;
-    }
-
-    const age = calculateAge(dateOfBirth);
-    if (age < 18) {
-      toast.error("You must be 18 or older to use Shake");
-      return;
-    }
 
     if (!selectedAvatar) {
       toast.error("Please choose a profile picture or avatar");
@@ -388,40 +372,87 @@ export default function Auth() {
     }
 
     setIsLoading(true);
+    let shouldNavigateHome = true;
 
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) {
         toast.error("Not logged in");
+        navigate("/", { replace: true });
         return;
+      }
+
+      const [{ data: existingProfile, error: existingProfileError }, { data: existingPrivate, error: existingPrivateError }] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select("name, avatar_url")
+            .eq("user_id", currentUser.id)
+            .maybeSingle(),
+          supabase
+            .from("profiles_private")
+            .select("date_of_birth, nationality, occupation")
+            .eq("user_id", currentUser.id)
+            .maybeSingle(),
+        ]);
+
+      if (existingProfileError) {
+        logPostgrestError("Auth.tsx profiles select (handleSaveProfile)", existingProfileError);
+      }
+      if (existingPrivateError) {
+        logPostgrestError("Auth.tsx profiles_private select (handleSaveProfile)", existingPrivateError);
+      }
+
+      const resolvedName =
+        name.trim() ||
+        existingProfile?.name?.trim() ||
+        String(currentUser.user_metadata?.full_name ?? currentUser.user_metadata?.name ?? "").trim() ||
+        currentUser.email?.split("@")[0]?.trim() ||
+        "Shake User";
+
+      const resolvedDateOfBirth = dateOfBirth || existingPrivate?.date_of_birth || null;
+
+      if (resolvedDateOfBirth) {
+        const age = calculateAge(resolvedDateOfBirth);
+        if (age < 18) {
+          shouldNavigateHome = false;
+          toast.error("You must be 18 or older to use Shake");
+          return;
+        }
       }
 
       let avatarUrl: string | null = null;
       if (selectedAvatar === "custom" && customAvatarPreview) {
         const fileName = `${currentUser.id}-${Date.now()}`;
-        const { data, error } = await supabase.storage
-          .from("avatars")
-          .upload(fileName, await (await fetch(customAvatarPreview)).blob());
-        
-        if (error) {
-          console.error("Avatar upload error:", error);
-          toast.error("Failed to upload avatar");
-          return;
-        }
+        try {
+          const avatarBlob = await (await fetch(customAvatarPreview)).blob();
+          const { error } = await supabase.storage
+            .from("avatars")
+            .upload(fileName, avatarBlob, { upsert: true });
 
-        const { data: publicUrlData } = supabase.storage
-          .from("avatars")
-          .getPublicUrl(fileName);
-        avatarUrl = publicUrlData.publicUrl;
+          if (error) {
+            throw error;
+          }
+
+          const { data: publicUrlData } = supabase.storage
+            .from("avatars")
+            .getPublicUrl(fileName);
+          avatarUrl = publicUrlData.publicUrl;
+        } catch (avatarError) {
+          console.error("Avatar upload error:", avatarError);
+          toast.error("Failed to upload avatar, but your setup will still continue");
+          avatarUrl = customAvatarPreview;
+        }
       } else if (selectedAvatar && selectedAvatar !== "custom") {
-        avatarUrl = `/avatars/${selectedAvatar}`;
+        avatarUrl = avatarOptions.find((avatar) => avatar.id === selectedAvatar)?.src || existingProfile?.avatar_url || null;
       }
 
-      // Update profiles table
+      let profileSaveSucceeded = false;
+
       const { error: profileError } = await supabase.from("profiles").upsert(
         {
           user_id: currentUser.id,
-          name: name.trim(),
+          name: resolvedName,
           avatar_url: avatarUrl,
           instagram_url: instagramUrl || null,
           linkedin_url: linkedinUrl || null,
@@ -432,41 +463,40 @@ export default function Auth() {
 
       if (profileError) {
         logPostgrestError("Auth.tsx profiles upsert", profileError);
-        toast.error("Failed to save profile");
-        return;
+        toast.error("Failed to save part of your profile, but we'll still continue");
+      } else {
+        profileSaveSucceeded = true;
       }
 
-      // Update profiles_private table
       const { error: privateError } = await supabase.from("profiles_private").upsert(
         {
           user_id: currentUser.id,
-          date_of_birth: dateOfBirth,
-          nationality: nationality || null,
-          occupation: occupation || null,
+          date_of_birth: resolvedDateOfBirth,
+          nationality: nationality || existingPrivate?.nationality || null,
+          occupation: occupation || existingPrivate?.occupation || null,
         },
         { onConflict: "user_id" }
       );
 
       if (privateError) {
         logPostgrestError("Auth.tsx profiles_private upsert", privateError);
-        toast.error("Failed to save profile");
-        return;
+        toast.error("Failed to save some profile details, but we'll still continue");
+      } else {
+        profileSaveSucceeded = true;
       }
 
-      toast.success("Profile complete!");
-      triggerConfettiWaterfall();
-
-      if (FACE_ID_FEATURE_ENABLED) {
-        setPendingFaceSetupUserId(currentUser.id);
-        setShowFaceSetupPrompt(true);
-      } else {
-        navigate("/");
+      if (profileSaveSucceeded) {
+        toast.success("Profile complete!");
+        triggerConfettiWaterfall();
       }
     } catch (error) {
       console.error("Profile save error:", error);
-      toast.error("An unexpected error occurred");
+      toast.error("We couldn't save everything, but we'll still take you to the app");
     } finally {
       setIsLoading(false);
+      if (shouldNavigateHome) {
+        navigate("/", { replace: true });
+      }
     }
   };
 
