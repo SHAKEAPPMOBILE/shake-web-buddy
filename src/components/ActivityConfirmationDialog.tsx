@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Globe, ChevronRight, Calendar, CheckCircle2, Search, Plane, RotateCcw } from "lucide-react";
 import { SHAKE_CITIES, REGIONS } from "@/data/cities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,7 @@ import { SuperHumanIcon } from "@/components/SuperHumanIcon";
 import { getActivityDay, getActivityById } from "@/data/activityTypes";
 import { getTranslatedActivityDay } from "@/lib/activity-translations";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 
 interface ActivityConfirmationDialogProps {
   open: boolean;
@@ -33,12 +34,16 @@ export function ActivityConfirmationDialog({
   const [showCityPicker, setShowCityPicker] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [dragStart, setDragStart] = useState<number | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Reset state when dialog opens or activity changes
   useEffect(() => {
     if (open) {
       setShowCityPicker(false);
       setSelectedCity(null);
+      setDragOffset(0);
     }
   }, [open, activity?.id]);
 
@@ -59,6 +64,27 @@ export function ActivityConfirmationDialog({
   const handleSelectCity = (cityName: string) => {
     setSelectedCity(cityName);
     setShowCityPicker(false);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setDragStart(e.clientY);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (dragStart === null) return;
+    const offset = e.clientY - dragStart;
+    if (offset > 0) {
+      setDragOffset(offset);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (dragOffset > 80) {
+      // User dragged down enough to close
+      onOpenChange(false);
+    }
+    setDragStart(null);
+    setDragOffset(0);
   };
 
   const groupedCities = REGIONS.reduce((acc, region) => {
@@ -131,105 +157,123 @@ export function ActivityConfirmationDialog({
     );
   }
 
-  // Main confirmation view
+  // Main confirmation view - full page bottom sheet
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-        <DialogContent className="sm:max-w-md rounded-2xl [&>button:first-child]:hidden">
-          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
-          <button
+      {open && (
+        <div className="fixed inset-0 z-50 flex flex-col pointer-events-auto">
+          {/* Semi-transparent overlay */}
+          <div
+            className="flex-1 bg-black/20 backdrop-blur-sm pointer-events-auto"
             onClick={() => onOpenChange(false)}
-            className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted/50 transition-colors"
+          />
+
+          {/* Bottom sheet content */}
+          <div
+            ref={contentRef}
+            className="bg-card rounded-t-3xl overflow-hidden flex flex-col max-h-[90vh] pointer-events-auto"
+            style={{
+              transform: `translateY(${dragOffset}px)`,
+              transition: dragStart === null ? 'transform 0.2s ease-out' : 'none',
+            }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
           >
-            <span className="sr-only">Close</span>
-            ✕
-          </button>
-
-          <div className="flex flex-col items-center px-6 pb-6 space-y-4">
-            {/* Activity icon */}
-            <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mx-auto shadow-lg animate-bounce-subtle">
-              {getActivityById(activity.id)?.icon ? (
-                <img
-                  src={getActivityById(activity.id)!.icon}
-                  alt={activity.label}
-                  className="w-16 h-16 object-contain"
-                />
-              ) : (
-                <span className="text-4xl">{activity.emoji}</span>
-              )}
+            {/* Draggable handle bar */}
+            <div className="flex flex-col items-center py-3 px-6 pb-2 bg-card border-b border-border/30">
+              <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full cursor-grab active:cursor-grabbing" />
             </div>
 
-            {/* Activity name and details */}
-            <div className="text-center space-y-1.5">
-              <p className="text-xl font-bold text-foreground">
-                {activity.label}
-              </p>
-              {activityDay && (
-                <div className="flex items-center justify-center gap-1.5 text-primary font-medium text-sm">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{activityDay}</span>
+            {/* Scrollable content */}
+            <ScrollArea className="flex-1">
+              <div className="flex flex-col items-center px-6 pb-6 space-y-4 pt-4">
+                {/* Activity icon */}
+                <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mx-auto shadow-lg animate-bounce-subtle">
+                  {getActivityById(activity.id)?.icon ? (
+                    <img
+                      src={getActivityById(activity.id)!.icon}
+                      alt={activity.label}
+                      className="w-16 h-16 object-contain"
+                    />
+                  ) : (
+                    <span className="text-4xl">{activity.emoji}</span>
+                  )}
                 </div>
-              )}
-              {activityTime && (
-                <div className="flex items-center justify-center gap-1.5 text-primary font-medium text-sm">
-                  <span>🕐 {activityTime}</span>
+
+                {/* Activity name and details */}
+                <div className="text-center space-y-1.5">
+                  <p className="text-xl font-bold text-foreground">
+                    {activity.label}
+                  </p>
+                  {activityDay && (
+                    <div className="flex items-center justify-center gap-1.5 text-primary font-medium text-sm">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>{activityDay}</span>
+                    </div>
+                  )}
+                  {activityTime && (
+                    <div className="flex items-center justify-center gap-1.5 text-primary font-medium text-sm">
+                      <span>🕐 {activityTime}</span>
+                    </div>
+                  )}
+                  <div className={`flex items-center justify-center gap-1.5 text-sm ${selectedCity ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                    {selectedCity ? (
+                      <Plane className="w-3.5 h-3.5" />
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-3.5 h-3.5">📍</span>
+                    )}
+                    <span>{t('activityDialog.inCity', 'in {{city}}', { city: displayCity })}</span>
+                  </div>
+                  {selectedCity && (
+                    <button
+                      onClick={() => setSelectedCity(null)}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>{t('activityDialog.resetToMyCity', 'Reset to my city')}</span>
+                    </button>
+                  )}
                 </div>
-              )}
-              <div className={`flex items-center justify-center gap-1.5 text-sm ${selectedCity ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
-                {selectedCity ? (
-                  <Plane className="w-3.5 h-3.5" />
-                ) : (
-                  <span className="inline-flex items-center justify-center w-3.5 h-3.5">📍</span>
-                )}
-                <span>{t('activityDialog.inCity', 'in {{city}}', { city: displayCity })}</span>
-              </div>
-              {selectedCity && (
+
+                {/* Action buttons */}
+                <div className="w-full space-y-2">
+                  <Button
+                    onClick={() => onConfirm(displayCity)}
+                    className="w-full h-9 text-sm font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] text-white gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3 h-3 text-white" />
+                    <span>Yes!</span>
+                  </Button>
+                  
+                  <Button
+                    onClick={onExplore}
+                    variant="outline"
+                    className="w-full h-9 text-sm font-medium gap-1.5"
+                  >
+                    <Search className="w-3 h-3 text-primary" />
+                    <span>Hum!</span>
+                  </Button>
+                </div>
+
+                {/* Change city option */}
                 <button
-                  onClick={() => setSelectedCity(null)}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={handleChangeCity}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
                 >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>{t('activityDialog.resetToMyCity', 'Reset to my city')}</span>
+                  <Globe className="w-4 h-4" />
+                  <span>{t('activityDialog.joinDifferentCity', 'Join in a different city')}</span>
+                  {!isPremium && (
+                    <SuperHumanIcon className="w-4 h-4" />
+                  )}
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
-              )}
-            </div>
-
-            {/* Action buttons */}
-            <div className="w-full space-y-2">
-              <Button
-                onClick={() => onConfirm(displayCity)}
-                className="w-full h-9 text-sm font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] text-white gap-1.5"
-              >
-                <CheckCircle2 className="w-3 h-3 text-white" />
-                <span>Yes!</span>
-              </Button>
-              
-              <Button
-                onClick={onExplore}
-                variant="outline"
-                className="w-full h-9 text-sm font-medium gap-1.5"
-              >
-                <Search className="w-3 h-3 text-primary" />
-                <span>Hum!</span>
-              </Button>
-            </div>
-
-            {/* Change city option */}
-            <button
-              onClick={handleChangeCity}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
-            >
-              <Globe className="w-4 h-4" />
-              <span>{t('activityDialog.joinDifferentCity', 'Join in a different city')}</span>
-              {!isPremium && (
-                <SuperHumanIcon className="w-4 h-4" />
-              )}
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+              </div>
+            </ScrollArea>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     </>
