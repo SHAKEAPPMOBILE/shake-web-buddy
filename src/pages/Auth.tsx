@@ -589,7 +589,7 @@ export default function Auth() {
                 setConfirmPassword("");
               }}
               aria-label="Back"
-              className="absolute top-4 left-4 text-primary hover:text-primary/80"
+              className="absolute top-4 left-4 p-0 bg-transparent border-0 text-primary hover:text-primary/80 leading-none"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
@@ -699,25 +699,12 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                className="w-full text-white animate-gradient-shift hover:opacity-95"
                 size="lg"
                 disabled={isLoading}
               >
                 {isLoading ? "Sending..." : isLogin ? "Send Magic Link" : "Create Account"}
               </Button>
-
-              {isLogin && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPassword("");
-                    // Can add password login option here if needed
-                  }}
-                  className="w-full text-sm text-primary hover:underline"
-                >
-                  Log in with password instead
-                </button>
-              )}
             </form>
           )}
 
