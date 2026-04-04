@@ -19,6 +19,9 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const { style: animatedShakeGradientStyle } = useSettlingGradient("bottom-nav-shake", { alwaysAnimated: true });
   const [isShaking, setIsShaking] = useState(false);
 
+  // Apply rainbow gradient only when user is logged in, otherwise use solid blue
+  const shakeButtonStyle = user ? animatedShakeGradientStyle : { background: "rgb(59, 130, 246)" }; // bg-blue-500
+
   const tabs = [
     { id: "home", icon: Home, label: t('home.title', 'Home') },
     { id: "plans", icon: MapPin, label: t('plans.title') },
@@ -71,12 +74,12 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                     />
                   )}
                   
-                  {/* Center circle - always animated rainbow gradient */}
+                  {/* Center circle - rainbow gradient when logged in, solid blue when not */}
                   <div className={cn(
                     "w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all",
                     isActive && "scale-110",
                     isShaking && "animate-shake-center"
-                  )} style={animatedShakeGradientStyle}>
+                  )} style={shakeButtonStyle}>
                     <Plus className="w-8 h-8 text-white" />
                   </div>
                   
