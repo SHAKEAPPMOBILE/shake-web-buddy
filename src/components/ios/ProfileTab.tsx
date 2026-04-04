@@ -431,8 +431,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             onClick={() => setShowEditProfileDropdown(!showEditProfileDropdown)}
             className="w-full flex items-center gap-4 px-4 py-3"
           >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Settings className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+              <Settings className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.editProfile')}</span>
@@ -469,7 +469,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             onClick={() => setShowPointsDialog(!showPointsDialog)}
             className="w-full flex items-center gap-4 px-4 py-3"
           >
-            <div className="w-10 h-10 rounded-full bg-shake-yellow/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
               <img src={shakeCoin} alt="Points" className="w-6 h-6" />
             </div>
             <div className="flex-1 text-left">
@@ -521,7 +521,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             onClick={() => setShowPremiumDialog(true)}
             className="w-full flex items-center gap-4 px-4 py-3 rounded-xl"
             style={{
-              background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
+              background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
+              backgroundSize: "400% 400%",
+              animation: "gradientShift 4s ease infinite",
             }}
           >
             <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
@@ -543,8 +545,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             onClick={() => setShowReferralLink(!showReferralLink)}
             className="w-full flex items-center gap-4 px-4 py-3"
           >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Share2 className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+              <Share2 className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.shareReferral')}</span>
@@ -587,10 +589,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             className="w-full flex items-center gap-4 px-4 py-3"
           >
             <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center",
-              (stripeConnected && stripeStatus === "complete") || paypalConnected ? "bg-shake-green/10" : "bg-primary/10"
+              "w-10 h-10 rounded-full flex items-center justify-center animate-gradient-shift"
             )}>
-              <Wallet className={cn("w-5 h-5", (stripeConnected && stripeStatus === "complete") || paypalConnected ? "text-shake-green" : "text-primary")} />
+              <Wallet className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.creatorPayouts', 'Creator Payouts')}</span>
@@ -933,8 +934,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         {/* Language Selector */}
         <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
           <div className="flex items-center gap-4 px-4 py-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Globe className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+              <Globe className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
               <span className="font-medium">{t('profile.language', 'Language')}</span>
@@ -1040,8 +1041,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           onClick={() => setShowParanormal(true)}
           className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-primary/40 rounded-xl hover:bg-muted/30 transition-colors"
         >
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Ghost className="w-5 h-5 text-primary" />
+          <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+            <Ghost className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 text-left">
             <span className="font-medium">Paranormal Activity</span>
@@ -1053,8 +1054,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
           <div className="w-full flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-primary" />
+              <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+                <Mail className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 text-left">
                 <span className="font-medium">Support</span>

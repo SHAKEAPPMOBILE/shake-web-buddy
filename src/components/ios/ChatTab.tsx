@@ -617,7 +617,9 @@ export function ChatTab({
           onClick={() => navigate("/auth")}
           className="px-6 py-3 rounded-full font-medium text-white hover:opacity-90 transition-all"
           style={{
-            background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+            background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
+            backgroundSize: "400% 400%",
+            animation: "gradientShift 4s ease infinite",
           }}
         >
           {t('common.signIn')}
@@ -663,7 +665,9 @@ export function ChatTab({
                   type="button"
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium text-white border-0 shadow-sm max-w-[min(50vw,200px)]"
                   style={{
-                    background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+                    background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
+                    backgroundSize: "400% 400%",
+                    animation: "gradientShift 4s ease infinite",
                   }}
                 >
                   <Plane className="w-4 h-4 shrink-0 text-white" aria-hidden />
@@ -700,7 +704,14 @@ export function ChatTab({
           </div>
         ) : filteredActivities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
-            <div className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center mb-4">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+              style={{
+                background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
+                backgroundSize: "400% 400%",
+                animation: "gradientShift 4s ease infinite",
+              }}
+            >
               <MessageSquare className="w-8 h-8 text-white" />
             </div>
             {activities.length === 0 ? (

@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
+import logoShake from "@/assets/shake-logo-new.png";
 
 export default function OAuthCallback() {
   const navigate = useNavigate();
@@ -96,8 +96,15 @@ export default function OAuthCallback() {
   }, [navigate, location]);
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-white">
-      <LoadingSpinner />
+    <div className="h-screen w-screen bg-white flex items-center justify-center">
+      <div className="flex flex-col items-center">
+        <img
+          src={logoShake}
+          alt="SHAKE"
+          className="h-20 w-20 object-contain animate-pulse"
+        />
+        <div className="mt-5 h-5 w-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      </div>
     </div>
   );
 }

@@ -578,6 +578,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-foreground"
               }`}
+              style={
+                browsingDifferentFromDetected
+                  ? {
+                      background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
+                      backgroundSize: "400% 400%",
+                      animation: "gradientShift 4s ease infinite",
+                    }
+                  : undefined
+              }
             >
               <Plane className="w-4 h-4 shrink-0" />
               <span className="truncate">{joinedPlansCityFilter || t("plans.allCities", "All cities")}</span>
@@ -595,7 +604,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               onClick={handleCreatePlan}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
               style={{
-                background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+                background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
+                backgroundSize: "400% 400%",
+                animation: "gradientShift 4s ease infinite",
               }}
             >
               <Plus className="w-4 h-4" />
@@ -659,7 +670,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               onClick={handleCreatePlan}
               className="mt-3 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
               style={{
-                background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+                background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
+                backgroundSize: "400% 400%",
+                animation: "gradientShift 4s ease infinite",
               }}
             >
               <Plus className="w-4 h-4" />
@@ -753,7 +766,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         </span>
                       )}
                       {isTomorrow(new Date(plan.scheduled_for)) && (
-                        <span className="text-xs bg-primary/80 text-white font-semibold px-2 py-0.5 rounded-full">
+                        <span
+                          className="text-xs text-white font-semibold px-2 py-0.5 rounded-full"
+                          style={{
+                            background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
+                            backgroundSize: "400% 400%",
+                            animation: "gradientShift 4s ease infinite",
+                          }}
+                        >
                           {t('common.tomorrow')}
                         </span>
                       )}
