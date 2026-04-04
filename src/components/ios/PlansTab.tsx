@@ -665,14 +665,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 {t("plans.resetToMyCity")}
               </button>
             )}
-            <button
-              onClick={handleCreatePlan}
-              className="mt-3 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
-              style={plansSettlingGradientStyle}
-            >
-              <Plus className="w-4 h-4" />
-              {t('plans.createOne')}
-            </button>
           </div>
         ) : (
           activities.map((plan) => (
