@@ -97,10 +97,10 @@ export function ActivityJoinedConfirmation({
           onClick={() => onOpenChange(false)}
         />
 
-        {/* Bottom sheet content */}
+        {/* Bottom sheet content - positioned above nav bar */}
         <div
           ref={contentRef}
-          className="bg-card rounded-t-3xl overflow-hidden flex flex-col max-h-[90vh] pointer-events-auto"
+          className="bg-card rounded-t-3xl overflow-hidden flex flex-col max-h-[65vh] pointer-events-auto safe-area-bottom"
           style={{
             transform: `translateY(${dragOffset}px)`,
             transition: dragStart === null ? 'transform 0.2s ease-out' : 'none',
@@ -111,42 +111,40 @@ export function ActivityJoinedConfirmation({
           onMouseLeave={handleMouseUp}
         >
           {/* Draggable handle bar */}
-          <div className="flex flex-col items-center py-3 px-6 pb-2 bg-card border-b border-border/30">
+          <div className="flex flex-col items-center py-3 px-6 pb-2 bg-card border-b border-border/30 flex-shrink-0">
             <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full cursor-grab active:cursor-grabbing" />
           </div>
 
           {/* Scrollable content */}
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 overflow-y-auto">
             {eventConfirmation ? (
-              <>
-                <div className="pt-8 pb-4 px-6 text-center">
+              <div className="px-6 py-4 space-y-4">
+                <div className="text-center">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 animate-bounce-subtle">
                     <span className="text-4xl">{eventConfirmation.emoji ?? "🎉"}</span>
                   </div>
-                  <h2 className="text-xl font-display font-bold text-foreground mb-2">
+                  <h2 className="text-lg font-display font-bold text-foreground mb-2">
                     {t("joinConfirmation.youreGoing", "You're going!")}
                   </h2>
                   <p className="text-base font-semibold text-foreground leading-snug mb-1">{eventConfirmation.name}</p>
                   <p className="text-sm text-muted-foreground">{eventConfirmation.dateLine}</p>
                 </div>
-                <div className="px-6 pb-6">
-                  <div className="rounded-2xl bg-muted/50 p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>
-                      </div>
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <p className="text-sm font-medium text-foreground break-words">{eventConfirmation.venue}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{eventConfirmation.city}</p>
-                      </div>
+                <div className="rounded-2xl bg-muted/50 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>
+                    </div>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <p className="text-sm font-medium text-foreground break-words">{eventConfirmation.venue}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{eventConfirmation.city}</p>
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
-              <>
+              <div className="px-6 py-4 space-y-4">
                 {/* Success header */}
-                <div className="pt-8 pb-4 px-6 text-center">
+                <div className="text-center">
                   <div className="w-20 h-20 rounded-full bg-white overflow-hidden flex items-center justify-center mx-auto mb-4 animate-bounce-subtle">
                     {activityMeta?.icon ? (
                       <img
@@ -160,7 +158,7 @@ export function ActivityJoinedConfirmation({
                     )}
                   </div>
 
-                  <h2 className="text-xl font-display font-bold text-foreground mb-1">
+                  <h2 className="text-lg font-display font-bold text-foreground mb-1">
                     {t('joinConfirmation.youreInFor', "You're in for {{activity}}!", { activity: label })}
                   </h2>
 
@@ -177,56 +175,54 @@ export function ActivityJoinedConfirmation({
                 </div>
 
                 {/* Venue info */}
-                <div className="px-6 pb-6">
-                  <div className="rounded-2xl bg-muted/50 p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>
-                      </div>
-                      <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="rounded-2xl bg-muted/50 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>
+                    </div>
+                    <div className="flex-1 min-w-0 overflow-hidden">
 
-                        {venueLoading ? (
-                          <p className="text-sm font-medium text-foreground animate-pulse">
-                            {t('joinConfirmation.loadingVenue', 'Loading...')}
+                      {venueLoading ? (
+                        <p className="text-sm font-medium text-foreground animate-pulse">
+                          {t('joinConfirmation.loadingVenue', 'Loading...')}
+                        </p>
+                      ) : venueError ? (
+                        <div className="space-y-2">
+                          <p className="text-sm text-amber-600 dark:text-amber-400">
+                            {t('joinConfirmation.venueLoadFailed', "Couldn't load venue info.")}
                           </p>
-                        ) : venueError ? (
-                          <div className="space-y-2">
-                            <p className="text-sm text-amber-600 dark:text-amber-400">
-                              {t('joinConfirmation.venueLoadFailed', "Couldn't load venue info.")}
-                            </p>
-                            <Button type="button" variant="outline" size="sm" onClick={() => refetchVenues()}>
-                              {t('joinConfirmation.retry', 'Retry')}
-                            </Button>
-                          </div>
-                        ) : isTBD ? (
-                          <p className="text-sm font-medium text-foreground">
-                            {t('joinConfirmation.tbdVoteInChat', 'TBD - Vote in chat!')}
-                          </p>
-                        ) : mapsUrl ? (
-                          <a
-                            href={mapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm font-medium text-primary hover:underline break-words"
-                          >
-                            {venueInfo}
-                          </a>
-                        ) : (
-                          <p className="text-sm font-medium text-foreground break-words">
-                            {venueInfo}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">{city}</p>
-                      </div>
+                          <Button type="button" variant="outline" size="sm" onClick={() => refetchVenues()}>
+                            {t('joinConfirmation.retry', 'Retry')}
+                          </Button>
+                        </div>
+                      ) : isTBD ? (
+                        <p className="text-sm font-medium text-foreground">
+                          {t('joinConfirmation.tbdVoteInChat', 'TBD - Vote in chat!')}
+                        </p>
+                      ) : mapsUrl ? (
+                        <a
+                          href={mapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-primary hover:underline break-words"
+                        >
+                          {venueInfo}
+                        </a>
+                      ) : (
+                        <p className="text-sm font-medium text-foreground break-words">
+                          {venueInfo}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">{city}</p>
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </ScrollArea>
 
           {/* Actions - fixed at bottom */}
-          <div className="px-6 pb-6 bg-card border-t border-border/30 space-y-3">
+          <div className="px-6 py-4 bg-card border-t border-border/30 space-y-3 flex-shrink-0">
             <Button
               onClick={handleJoinChat}
               className="w-full h-12 rounded-full font-semibold text-base gap-2"

@@ -162,16 +162,16 @@ export function ActivityConfirmationDialog({
     <>
       {open && (
         <div className="fixed inset-0 z-50 flex flex-col pointer-events-auto">
-          {/* Semi-transparent overlay */}
+          {/* Semi-transparent overlay - clickable to close */}
           <div
             className="flex-1 bg-black/20 backdrop-blur-sm pointer-events-auto"
             onClick={() => onOpenChange(false)}
           />
 
-          {/* Bottom sheet content */}
+          {/* Bottom sheet content - positioned above nav bar */}
           <div
             ref={contentRef}
-            className="bg-card rounded-t-3xl overflow-hidden flex flex-col max-h-[90vh] pointer-events-auto"
+            className="bg-card rounded-t-3xl overflow-hidden flex flex-col max-h-[65vh] pointer-events-auto safe-area-bottom"
             style={{
               transform: `translateY(${dragOffset}px)`,
               transition: dragStart === null ? 'transform 0.2s ease-out' : 'none',
@@ -182,15 +182,15 @@ export function ActivityConfirmationDialog({
             onMouseLeave={handleMouseUp}
           >
             {/* Draggable handle bar */}
-            <div className="flex flex-col items-center py-3 px-6 pb-2 bg-card border-b border-border/30">
+            <div className="flex flex-col items-center py-3 px-6 pb-2 bg-card border-b border-border/30 flex-shrink-0">
               <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full cursor-grab active:cursor-grabbing" />
             </div>
 
             {/* Scrollable content */}
-            <ScrollArea className="flex-1">
-              <div className="flex flex-col items-center px-6 pb-6 space-y-4 pt-4">
+            <ScrollArea className="flex-1 overflow-y-auto">
+              <div className="flex flex-col items-center px-6 py-4 space-y-4">
                 {/* Activity icon */}
-                <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mx-auto shadow-lg animate-bounce-subtle">
+                <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mx-auto shadow-lg animate-bounce-subtle flex-shrink-0">
                   {getActivityById(activity.id)?.icon ? (
                     <img
                       src={getActivityById(activity.id)!.icon}
@@ -203,8 +203,8 @@ export function ActivityConfirmationDialog({
                 </div>
 
                 {/* Activity name and details */}
-                <div className="text-center space-y-1.5">
-                  <p className="text-xl font-bold text-foreground">
+                <div className="text-center space-y-1.5 w-full">
+                  <p className="text-lg font-bold text-foreground">
                     {activity.label}
                   </p>
                   {activityDay && (
@@ -229,7 +229,7 @@ export function ActivityConfirmationDialog({
                   {selectedCity && (
                     <button
                       onClick={() => setSelectedCity(null)}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors justify-center"
                     >
                       <RotateCcw className="w-3 h-3" />
                       <span>{t('activityDialog.resetToMyCity', 'Reset to my city')}</span>
@@ -238,7 +238,7 @@ export function ActivityConfirmationDialog({
                 </div>
 
                 {/* Action buttons */}
-                <div className="w-full space-y-2">
+                <div className="w-full space-y-2 pt-2">
                   <Button
                     onClick={() => onConfirm(displayCity)}
                     className="w-full h-9 text-sm font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] text-white gap-1.5"
@@ -260,14 +260,14 @@ export function ActivityConfirmationDialog({
                 {/* Change city option */}
                 <button
                   onClick={handleChangeCity}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group pb-2"
                 >
-                  <Globe className="w-4 h-4" />
+                  <Globe className="w-4 h-4 flex-shrink-0" />
                   <span>{t('activityDialog.joinDifferentCity', 'Join in a different city')}</span>
                   {!isPremium && (
-                    <SuperHumanIcon className="w-4 h-4" />
+                    <SuperHumanIcon className="w-4 h-4 flex-shrink-0" />
                   )}
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </button>
               </div>
             </ScrollArea>
