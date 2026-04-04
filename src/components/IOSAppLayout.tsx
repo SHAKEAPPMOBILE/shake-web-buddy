@@ -5,7 +5,6 @@ import { PlansTab } from "./ios/PlansTab";
 import { ChatTab } from "./ios/ChatTab";
 import { ProfileTab } from "./ios/ProfileTab";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
-import { ActivityConfirmationDialog } from "./ActivityConfirmationDialog";
 import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
 import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { getShakeActivity } from "@/lib/getShakeActivity";
@@ -48,10 +47,6 @@ export function IOSAppLayout() {
   
   // State for navigating to chat tab with a specific activity
   const [pendingChatActivity, setPendingChatActivity] = useState<{ activityType: string; city: string } | null>(null);
-
-  // Confirmation state for the HomeTab carousel (the big circle swipe carousel)
-  const [showHomeConfirmation, setShowHomeConfirmation] = useState(false);
-  const [pendingHomeActivity, setPendingHomeActivity] = useState<{ id: string; label: string; emoji: string } | null>(null);
   
   // Track the city used for the current activity/chat (for cross-city joins)
   const [activityCity, setActivityCity] = useState<string>("");
@@ -243,8 +238,9 @@ export function IOSAppLayout() {
 
     setTimeout(() => {
       setSelectedActivity(activity.id);
-      setPendingHomeActivity({ id: activity.id, label: activity.label, emoji: activity.emoji });
-      setShowHomeConfirmation(true);
+      setShowEvents(false);
+      setActiveTab("home");
+      setShowHomeActivities(true);
     }, 600);
   }, [user, triggerHapticFeedback]);
 
@@ -323,17 +319,15 @@ export function IOSAppLayout() {
     setShowHomeActivities(false);
   }, [selectedActivity, activityCity, selectedCity]);
 
-  const handleHomeActivitySelect = async (activity: { id: string; label: string; emoji: string }) => {
+  const handleHomeActivitySelect = async (activity: { id: string; label: string; emoji: string }, cityOverride?: string) => {
     if (!user) {
       toast.error("Please sign in to join an activity");
       navigate("/auth");
       return;
     }
 
-    // Use the activity object passed directly - no lookup needed
-    // This prevents race conditions on mobile where the carousel might change
-    setPendingHomeActivity(activity);
-    setShowHomeConfirmation(true);
+    setShowHomeActivities(false);
+    await actuallyJoinActivity(activity.id, cityOverride);
   };
 
   const handleSignOut = useCallback(() => {
@@ -452,6 +446,7 @@ export function IOSAppLayout() {
           <HomeTab 
             showActivities={showHomeActivities} 
             onSelectActivity={handleHomeActivitySelect}
+            onConfirmActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
             isShaking={isHeroShaking}
             onOpenEvents={() => openNearYou("home")}
@@ -474,6 +469,7 @@ export function IOSAppLayout() {
             <HomeTab 
               showActivities={showHomeActivities} 
               onSelectActivity={handleHomeActivitySelect}
+              onConfirmActivity={handleHomeActivitySelect}
               onCloseActivities={() => setShowHomeActivities(false)}
               isShaking={isHeroShaking}
               onOpenEvents={() => openNearYou("home")}
@@ -493,6 +489,7 @@ export function IOSAppLayout() {
           <HomeTab 
             showActivities={showHomeActivities} 
             onSelectActivity={handleHomeActivitySelect}
+            onConfirmActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
             isShaking={isHeroShaking}
             onOpenEvents={() => openNearYou("home")}
@@ -577,30 +574,6 @@ export function IOSAppLayout() {
         onSelectActivity={handleSelectActivity}
         onPlanCreated={handlePlanCreated}
         city={selectedCity}
-      />
-
-      <ActivityConfirmationDialog
-        open={showHomeConfirmation}
-        onOpenChange={(open) => {
-          setShowHomeConfirmation(open);
-          if (!open) {
-            setPendingHomeActivity(null);
-          }
-        }}
-        activity={pendingHomeActivity}
-        currentCity={selectedCity}
-        onExplore={() => {
-          setShowHomeConfirmation(false);
-          setPendingHomeActivity(null);
-        }}
-        onConfirm={async (city) => {
-          if (!pendingHomeActivity) return;
-          setShowHomeConfirmation(false);
-          setShowHomeActivities(false);
-          const id = pendingHomeActivity.id;
-          setPendingHomeActivity(null);
-          await actuallyJoinActivity(id, city);
-        }}
       />
 
       <ShakingClockAnimation

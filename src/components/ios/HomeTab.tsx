@@ -15,8 +15,10 @@ import { CreateActivityDialog } from "@/components/CreateActivityDialog";
 import { CitySelector } from "@/components/CitySelector";
 import { CityPickerModal } from "@/components/CityPickerModal";
 import { LocationPinEmoji } from "@/components/LocationPinEmoji";
+import { REGIONS, SHAKE_CITIES } from "@/data/cities";
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
+  onConfirmActivity?: (activity: { id: string; label: string; emoji: string }, cityOverride?: string) => void | Promise<void>;
   showActivities?: boolean;
   onCloseActivities?: () => void;
   isShaking?: boolean;
@@ -26,13 +28,16 @@ interface HomeTabProps {
 
 // Separate dialog state for "Propose a plan" flow
 
-export function HomeTab({ onSelectActivity, showActivities = false, onCloseActivities, isShaking = false, onOpenEvents, onUpgradeClick: _onUpgradeClick }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, isShaking = false, onOpenEvents, onUpgradeClick }: HomeTabProps) {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const navigate = useNavigate();
   const { selectedCity, isLoading: isCityLoading, isCityOutOfRange } = useCity();
   const [isCitySelectorOpen, setIsCitySelectorOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showActivityDetails, setShowActivityDetails] = useState(false);
+  const [selectedJoinCity, setSelectedJoinCity] = useState<string | null>(null);
+  const [showCityChoices, setShowCityChoices] = useState(false);
   // Rotating text for "Meet new..." phrases
   const meetPhrases = useMemo(() => [
     t('home.meetPeople', 'Meet new people.'),
@@ -117,6 +122,9 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   useEffect(() => {
     if (showActivities) {
       setCurrentActivityIndex(getStartingIndexByProximity());
+      setShowActivityDetails(false);
+      setSelectedJoinCity(null);
+      setShowCityChoices(false);
     }
   }, [showActivities]);
 
@@ -141,14 +149,31 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
     }
 
     if (activityToSelect) {
-      onSelectActivity?.({
-        id: activityToSelect.id,
-        label: activityToSelect.label,
-        emoji: activityToSelect.emoji,
-      });
+      setShowActivityDetails(true);
     }
 
     tappedActivityRef.current = null;
+  };
+
+  const handleConfirmSelection = async () => {
+    if (!currentActivity || currentActivity.isProposePlan) return;
+    if (onConfirmActivity) {
+      await onConfirmActivity(
+        {
+          id: currentActivity.id,
+          label: currentActivity.label,
+          emoji: currentActivity.emoji,
+        },
+        selectedJoinCity || selectedCity || undefined,
+      );
+      return;
+    }
+
+    onSelectActivity?.({
+      id: currentActivity.id,
+      label: currentActivity.label,
+      emoji: currentActivity.emoji,
+    });
     onCloseActivities?.();
   };
 
@@ -165,6 +190,25 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   }, [CAROUSEL_ITEMS.length]);
 
   const currentActivity = CAROUSEL_ITEMS[currentActivityIndex];
+  const currentDayName = currentActivity?.nextDate
+    ? getTranslatedDayName(t, currentActivity.nextDate.getDay())
+    : "";
+  const currentTime = currentActivity?.id === "lunch"
+    ? "12:30 PM"
+    : currentActivity?.id === "dinner"
+      ? "7:00 PM"
+      : currentActivity?.id === "drinks"
+        ? "8:00 PM"
+        : null;
+  const joinCity = selectedJoinCity || selectedCity || "";
+  const groupedCities = useMemo(
+    () =>
+      REGIONS.reduce((acc, region) => {
+        acc[region] = SHAKE_CITIES.filter((city) => city.region === region && city.name !== joinCity);
+        return acc;
+      }, {} as Record<string, typeof SHAKE_CITIES>),
+    [joinCity],
+  );
 
   // Swipe handlers — track whether a real move occurred to prevent tap-induced skips
   const didSwipe = useRef(false);
@@ -200,12 +244,18 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
   // IMPORTANT: must be declared before any conditional returns to keep hook order stable.
   const handleBackdropClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
+      if (showActivityDetails) {
+        setShowActivityDetails(false);
+        setShowCityChoices(false);
+        return;
+      }
+
       // Only close if clicking the backdrop itself, not the carousel
       if (e.target === e.currentTarget) {
         onCloseActivities?.();
       }
     },
-    [onCloseActivities]
+    [onCloseActivities, showActivityDetails]
   );
 
   // Landing page for logged out users
@@ -292,7 +342,7 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
       {/* Carousel Overlay - Fixed fullscreen, no scroll, perfectly centered */}
       {showActivities && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md"
+          className="fixed inset-x-0 top-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-40 flex items-center justify-center bg-background/95 backdrop-blur-md"
           onClick={handleBackdropClick}
         >
           <div 
@@ -302,87 +352,173 @@ export function HomeTab({ onSelectActivity, showActivities = false, onCloseActiv
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            {/* Date display - Above the circle (or "Propose a plan" text) */}
-            <div className="mb-8 animate-fade-in text-center">
-              {currentActivity?.isProposePlan ? (
-                <div className="text-5xl md:text-6xl font-handwritten text-foreground">
-                  {t('home.proposePlan', 'Propose a plan')}
-                </div>
-              ) : (
-                <div className="text-5xl md:text-6xl font-handwritten text-foreground">
-                  {currentActivity?.dayNumber}, {currentActivity?.nextDate ? getTranslatedDayName(t, currentActivity.nextDate.getDay()) : ''}
-                </div>
-              )}
-            </div>
-
-            {/* Activity circle with arrows on sides */}
-            <div className="flex items-center justify-center w-full max-w-sm mx-auto">
-              {/* Left Arrow */}
-              <button
-                onClick={goToPrevious}
-                className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors shrink-0"
-              >
-                <ChevronLeft className="w-6 h-6 text-foreground" />
-              </button>
-
-              {/* Circle with float animation */}
-              <div 
-                className="w-32 h-32 mx-6 rounded-full bg-white overflow-hidden flex items-center justify-center border-2 border-primary/50 shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
-                onTouchStart={(e) => {
-                  e.stopPropagation();
-                  tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
-                }}
-                onPointerDown={() => {
-                  tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
-                }}
-                onClick={handleActivitySelect}
-              >
-                {currentActivity?.icon ? (
-                  <img
-                    src={currentActivity.icon}
-                    alt={currentActivity.label}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-5xl flex items-center justify-center w-full h-full animate-scale-in">
-                    {currentActivity?.emoji}
-                  </span>
-                )}
-              </div>
-
-              {/* Right Arrow */}
-              <button
-                onClick={goToNext}
-                className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors shrink-0"
-              >
-                <ChevronRight className="w-6 h-6 text-foreground" />
-              </button>
-            </div>
-
-            {/* Activity Label - Below the circle */}
-            <div className="mt-8 animate-fade-in text-center">
-              <div className="text-xl font-semibold text-foreground">
-                {currentActivity?.isProposePlan 
-                  ? t('home.anytimeAnywhere', 'Anytime, Anywhere.')
-                  : currentActivity?.label}
-              </div>
-            </div>
-
-
-            {/* Dot Indicators */}
-            <div className="flex justify-center gap-2 mt-6">
-              {CAROUSEL_ITEMS.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentActivityIndex(index)}
-                  className={cn(
-                    "h-2.5 rounded-full transition-all",
-                    index === currentActivityIndex 
-                      ? "bg-primary w-5" 
-                      : "bg-muted-foreground/30 w-2.5"
+            <div className="relative w-full max-w-sm">
+              <div className={cn("transition-opacity duration-200", showActivityDetails ? "opacity-0 pointer-events-none" : "opacity-100")}>
+                {/* Date display - Above the circle (or "Propose a plan" text) */}
+                <div className="mb-8 animate-fade-in text-center">
+                  {currentActivity?.isProposePlan ? (
+                    <div className="text-5xl md:text-6xl font-handwritten text-foreground">
+                      {t('home.proposePlan', 'Propose a plan')}
+                    </div>
+                  ) : (
+                    <div className="text-5xl md:text-6xl font-handwritten text-foreground">
+                      {currentActivity?.dayNumber}, {currentDayName}
+                    </div>
                   )}
-                />
-              ))}
+                </div>
+
+                {/* Activity circle with arrows on sides */}
+                <div className="flex items-center justify-center w-full max-w-sm mx-auto">
+                  <button
+                    onClick={goToPrevious}
+                    className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors shrink-0"
+                  >
+                    <ChevronLeft className="w-6 h-6 text-foreground" />
+                  </button>
+
+                  <div 
+                    className="w-32 h-32 mx-6 rounded-full bg-white overflow-hidden flex items-center justify-center border-2 border-primary/50 shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                      tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
+                    }}
+                    onPointerDown={() => {
+                      tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
+                    }}
+                    onClick={handleActivitySelect}
+                  >
+                    {currentActivity?.icon ? (
+                      <img
+                        src={currentActivity.icon}
+                        alt={currentActivity.label}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-5xl flex items-center justify-center w-full h-full animate-scale-in">
+                        {currentActivity?.emoji}
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={goToNext}
+                    className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors shrink-0"
+                  >
+                    <ChevronRight className="w-6 h-6 text-foreground" />
+                  </button>
+                </div>
+
+                <div className="mt-8 animate-fade-in text-center">
+                  <div className="text-xl font-semibold text-foreground">
+                    {currentActivity?.isProposePlan 
+                      ? t('home.anytimeAnywhere', 'Anytime, Anywhere.')
+                      : currentActivity?.label}
+                  </div>
+                </div>
+
+                <div className="flex justify-center gap-2 mt-6">
+                  {CAROUSEL_ITEMS.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentActivityIndex(index)}
+                      className={cn(
+                        "h-2.5 rounded-full transition-all",
+                        index === currentActivityIndex 
+                          ? "bg-primary w-5" 
+                          : "bg-muted-foreground/30 w-2.5"
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  "absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-200",
+                  showActivityDetails ? "opacity-100" : "opacity-0 pointer-events-none"
+                )}
+                onClick={() => {
+                  setShowActivityDetails(false);
+                  setShowCityChoices(false);
+                }}
+              >
+                <div className="w-full rounded-2xl border border-border/40 bg-card/80 backdrop-blur-sm p-5 text-center space-y-3">
+                  <div className="w-24 h-24 mx-auto rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
+                    {currentActivity?.icon ? (
+                      <img src={currentActivity.icon} alt={currentActivity.label} className="w-16 h-16 object-contain" />
+                    ) : (
+                      <span className="text-5xl">{currentActivity?.emoji}</span>
+                    )}
+                  </div>
+
+                  <p className="text-2xl font-display font-bold text-foreground">{currentActivity?.label}</p>
+                  {!!currentDayName && <p className="text-xl font-semibold text-primary">{currentDayName}</p>}
+                  {!!currentTime && <p className="text-lg font-semibold text-primary">{currentTime}</p>}
+                  <p className="text-base text-muted-foreground">
+                    {t('activityDialog.inCity', 'in {{city}}', { city: joinCity })}
+                  </p>
+
+                  <div className="space-y-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={handleConfirmSelection}
+                      className="w-full rounded-full px-4 py-2.5 text-white font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] transition-colors"
+                    >
+                      Yes!
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowActivityDetails(false);
+                        setShowCityChoices(false);
+                      }}
+                      className="w-full rounded-full px-4 py-2.5 font-medium border border-border bg-background hover:bg-muted/60 transition-colors"
+                    >
+                      Hum!
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!isPremium) {
+                          onUpgradeClick?.();
+                          return;
+                        }
+                        setShowCityChoices((prev) => !prev);
+                      }}
+                      className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                    >
+                      {t('activityDialog.joinDifferentCity', 'Join in a different city')}
+                    </button>
+                  </div>
+
+                  {showCityChoices && (
+                    <div className="mt-1 max-h-48 overflow-y-auto rounded-xl border border-border bg-background p-2 text-left">
+                      {Object.entries(groupedCities).map(([region, cities]) => (
+                        cities.length > 0 && (
+                          <div key={region} className="mb-2 last:mb-0">
+                            <p className="px-1 pb-1 text-[10px] font-semibold uppercase text-muted-foreground">{region}</p>
+                            <div className="space-y-1">
+                              {cities.map((city) => (
+                                <button
+                                  key={city.name}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedJoinCity(city.name);
+                                    setShowCityChoices(false);
+                                  }}
+                                  className="w-full rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted transition-colors"
+                                >
+                                  {city.name}, {city.country}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
