@@ -442,7 +442,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   setShowCityChoices(false);
                 }}
               >
-                <div className="w-full rounded-2xl border border-border/40 bg-card/80 backdrop-blur-sm p-5 text-center space-y-3">
+                <div className="w-full p-5 text-center space-y-3 bg-transparent border-0 shadow-none">
                   <div className="w-24 h-24 mx-auto rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
                     {currentActivity?.icon ? (
                       <img src={currentActivity.icon} alt={currentActivity.label} className="w-16 h-16 object-contain" />

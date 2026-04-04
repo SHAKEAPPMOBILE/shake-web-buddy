@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import { useActivityVenue } from "@/contexts/VenueContext";
@@ -7,7 +6,6 @@ import { getActivityById } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/activity-translations";
 import { useTranslation } from "react-i18next";
 import { triggerConfettiBurstOnce } from "@/lib/confetti";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ActivityJoinedConfirmationProps {
   open: boolean;
@@ -35,9 +33,6 @@ export function ActivityJoinedConfirmation({
 }: ActivityJoinedConfirmationProps) {
   const { t } = useTranslation();
   const { venue, location: venueInfo, mapsUrl, isTBD, isLoading: venueLoading, venueError, refetchVenues } = useActivityVenue(city, activityType);
-  const [dragStart, setDragStart] = useState<number | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     console.log('venue fetch result:', {
@@ -66,57 +61,18 @@ export function ActivityJoinedConfirmation({
     onOpenChange(false);
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setDragStart(e.clientY);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (dragStart === null) return;
-    const offset = e.clientY - dragStart;
-    if (offset > 0) {
-      setDragOffset(offset);
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (dragOffset > 80) {
-      // User dragged down enough to close
-      onOpenChange(false);
-    }
-    setDragStart(null);
-    setDragOffset(0);
-  };
-
-  // Full page bottom sheet implementation
   if (open) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col pointer-events-auto">
-        {/* Semi-transparent overlay */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-auto">
         <div
-          className="flex-1 bg-black/20 backdrop-blur-sm pointer-events-auto"
+          className="absolute inset-0 bg-black/30 backdrop-blur-sm pointer-events-auto"
           onClick={() => onOpenChange(false)}
         />
 
-        {/* Bottom sheet content - positioned above nav bar */}
         <div
-          ref={contentRef}
-          className="bg-card rounded-t-3xl overflow-hidden flex flex-col max-h-[65vh] pointer-events-auto safe-area-bottom"
-          style={{
-            transform: `translateY(${dragOffset}px)`,
-            transition: dragStart === null ? 'transform 0.2s ease-out' : 'none',
-          }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl pointer-events-auto"
         >
-          {/* Draggable handle bar */}
-          <div className="flex flex-col items-center py-3 px-6 pb-2 bg-card border-b border-border/30 flex-shrink-0">
-            <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full cursor-grab active:cursor-grabbing" />
-          </div>
-
-          {/* Scrollable content */}
-          <ScrollArea className="flex-1 overflow-y-auto">
+          <div className="max-h-[min(80vh,680px)] overflow-y-auto">
             {eventConfirmation ? (
               <div className="px-6 py-4 space-y-4">
                 <div className="text-center">
@@ -143,7 +99,6 @@ export function ActivityJoinedConfirmation({
               </div>
             ) : (
               <div className="px-6 py-4 space-y-4">
-                {/* Success header */}
                 <div className="text-center">
                   <div className="w-20 h-20 rounded-full bg-white overflow-hidden flex items-center justify-center mx-auto mb-4 animate-bounce-subtle">
                     {activityMeta?.icon ? (
@@ -219,10 +174,9 @@ export function ActivityJoinedConfirmation({
                 </div>
               </div>
             )}
-          </ScrollArea>
+          </div>
 
-          {/* Actions - fixed at bottom */}
-          <div className="px-6 py-4 bg-card border-t border-border/30 space-y-3 flex-shrink-0">
+          <div className="px-6 py-4 bg-white border-t border-border/30 space-y-3">
             <Button
               onClick={handleJoinChat}
               className="w-full h-12 rounded-full font-semibold text-base gap-2"
