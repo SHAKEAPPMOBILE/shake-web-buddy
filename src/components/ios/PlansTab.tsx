@@ -582,11 +582,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               }`}
               style={
                 browsingDifferentFromDetected
-                  ? {
-                      background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
-                      backgroundSize: "400% 400%",
-                      animation: "gradientShift 4s ease infinite",
-                    }
+                  ? plansSettlingGradientStyle
                   : undefined
               }
             >
