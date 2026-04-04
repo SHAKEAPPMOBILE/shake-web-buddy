@@ -676,15 +676,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 {/* Profile Picture or Activity Emoji */}
                 <div className="relative">
                   {plan.isCarouselJoin ? (
-                    <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center overflow-hidden">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 shadow-md flex items-center justify-center overflow-hidden">
                       {getActivityIcon(plan.activity_type) ? (
-                        <img src={getActivityIcon(plan.activity_type)} alt={plan.activity_type} className="w-9 h-9 object-contain mix-blend-multiply" />
+                        <img src={getActivityIcon(plan.activity_type)} alt={plan.activity_type} className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-2xl">{getActivityEmoji(plan.activity_type)}</span>
                       )}
                     </div>
                   ) : (
-                    <Avatar className="w-12 h-12 border-2 border-gray-200 shadow-md">
+                    <Avatar className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
                       <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
                       <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
                         {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
@@ -705,7 +705,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     )}
                     {/* Price badge for paid activities */}
                     {plan.price_amount && !plan.isCarouselJoin && (
-                      <span className="text-xs bg-green-500/80 text-white font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="text-xs bg-green-50 text-green-700 border border-green-200 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
                         {plan.price_amount}
                       </span>
                     )}
@@ -742,19 +742,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         {formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
                       </span>
                       {isToday(new Date(plan.scheduled_for)) && (
-                        <span className="text-xs bg-shake-yellow text-black font-semibold px-2 py-0.5 rounded-full animate-pulse">
+                        <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full animate-pulse">
                           {t('common.today')}
                         </span>
                       )}
                       {isTomorrow(new Date(plan.scheduled_for)) && (
-                        <span
-                          className="text-xs text-gray-900 font-semibold px-2 py-0.5 rounded-full"
-                          style={{
-                            background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
-                            backgroundSize: "400% 400%",
-                            animation: "gradientShift 4s ease infinite",
-                          }}
-                        >
+                        <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">
                           {t('common.tomorrow')}
                         </span>
                       )}
