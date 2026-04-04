@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Home, MapPin, MessageSquare, User, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { useTotalUnreadChats } from "@/hooks/useTotalUnreadChats";
 import { useTranslation } from "react-i18next";
+import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 
 interface IOSTabBarProps {
   activeTab: string;
@@ -16,13 +16,8 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const { t } = useTranslation();
   const { user } = useAuth();
   const { totalUnread } = useTotalUnreadChats();
-  const navigate = useNavigate();
+  const { style: animatedShakeGradientStyle } = useSettlingGradient("bottom-nav-shake", { alwaysAnimated: true });
   const [isShaking, setIsShaking] = useState(false);
-
-  // Determine shake button color based on day of week
-  // 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
-  const isWeekend = [0, 6].includes(new Date().getDay());
-  const shakeButtonColor = isWeekend ? "bg-green-500" : "bg-blue-500";
 
   const tabs = [
     { id: "home", icon: Home, label: t('home.title', 'Home') },
@@ -63,12 +58,10 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => handleTabClick(tab.id)}
-                disabled={!user}
-                className={cn(
-                  "relative -mt-6 flex flex-col items-center",
-                  !user && "opacity-50 cursor-not-allowed"
-                )}
+                aria-disabled={!user}
+                className="relative -mt-6 flex flex-col items-center"
               >
                 <div className="flex items-center gap-1">
                   {/* Left arrow - only visible during shake (fixed green, not themed) */}
@@ -78,13 +71,12 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                     />
                   )}
                   
-                  {/* Center circle - color changes based on day of week */}
+                  {/* Center circle - always animated rainbow gradient */}
                   <div className={cn(
                     "w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all",
-                    shakeButtonColor,
                     isActive && "scale-110",
                     isShaking && "animate-shake-center"
-                  )}>
+                  )} style={animatedShakeGradientStyle}>
                     <Plus className="w-8 h-8 text-white" />
                   </div>
                   
@@ -97,7 +89,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                 </div>
                 <span className={cn(
                   "text-[10px] mt-1 font-medium",
-                  isActive ? (isWeekend ? "text-green-500" : "text-blue-500") : "text-muted-foreground"
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}>
                   {tab.label}
                 </span>

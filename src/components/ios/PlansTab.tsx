@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
 import { ActivityDetailDialog } from "@/components/ActivityDetailDialog";
+import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +60,7 @@ interface PlansTabProps {
 
 export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, onOpenEvents }: PlansTabProps = {}) {
   const { t, i18n } = useTranslation();
+  const { style: plansSettlingGradientStyle } = useSettlingGradient("plans");
   const { selectedLanguage } = useLanguage();
   const { selectedCity, detectedCity, revertToDetectedLocation } = useCity();
   const { user } = useAuth();
@@ -603,11 +605,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             <button
               onClick={handleCreatePlan}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
-              style={{
-                background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
-                backgroundSize: "400% 400%",
-                animation: "gradientShift 4s ease infinite",
-              }}
+              style={plansSettlingGradientStyle}
             >
               <Plus className="w-4 h-4" />
               {t('common.create')}
@@ -669,11 +667,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             <button
               onClick={handleCreatePlan}
               className="mt-3 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
-              style={{
-                background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
-                backgroundSize: "400% 400%",
-                animation: "gradientShift 4s ease infinite",
-              }}
+              style={plansSettlingGradientStyle}
             >
               <Plus className="w-4 h-4" />
               {t('plans.createOne')}

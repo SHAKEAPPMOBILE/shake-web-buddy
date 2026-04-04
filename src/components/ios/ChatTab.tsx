@@ -28,6 +28,7 @@ import {
   PENDING_EVENT_CHAT_CHANGED,
 } from "@/lib/pendingEventChat";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
+import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 
 function safeActivityDate(iso: string | undefined): Date {
   if (!iso) return new Date();
@@ -70,6 +71,7 @@ export function ChatTab({
   isActiveTab = true,
 }: ChatTabProps = {}) {
   const { t, i18n } = useTranslation();
+  const { style: chatSettlingGradientStyle } = useSettlingGradient("chat");
   const { selectedLanguage } = useLanguage();
   const { user } = useAuth();
   const { selectedCity } = useCity();
@@ -706,11 +708,7 @@ export function ChatTab({
           <div className="flex flex-col items-center justify-center h-40 text-center">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-              style={{
-                background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
-                backgroundSize: "400% 400%",
-                animation: "gradientShift 4s ease infinite",
-              }}
+              style={chatSettlingGradientStyle}
             >
               <MessageSquare className="w-8 h-8 text-white" />
             </div>

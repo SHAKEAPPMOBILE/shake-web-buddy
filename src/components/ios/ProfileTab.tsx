@@ -27,6 +27,7 @@ import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { IDVerificationDialog } from "../IDVerificationDialog";
 import { ContactSupport } from "../ContactSupport";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
+import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,6 +61,7 @@ const FACE_ID_FEATURE_ENABLED = false;
 export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionOpened }: ProfileTabProps) {
   const { t } = useTranslation();
   const { user, isPremium, isManualOverride, signOut } = useAuth();
+  const { style: profileIconGradientStyle } = useSettlingGradient("profile");
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -431,7 +433,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             onClick={() => setShowEditProfileDropdown(!showEditProfileDropdown)}
             className="w-full flex items-center gap-4 px-4 py-3"
           >
-            <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
               <Settings className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 text-left">
@@ -469,7 +471,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             onClick={() => setShowPointsDialog(!showPointsDialog)}
             className="w-full flex items-center gap-4 px-4 py-3"
           >
-            <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
               <img src={shakeCoin} alt="Points" className="w-6 h-6" />
             </div>
             <div className="flex-1 text-left">
@@ -545,7 +547,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             onClick={() => setShowReferralLink(!showReferralLink)}
             className="w-full flex items-center gap-4 px-4 py-3"
           >
-            <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
               <Share2 className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 text-left">
@@ -589,8 +591,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             className="w-full flex items-center gap-4 px-4 py-3"
           >
             <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center animate-gradient-shift"
-            )}>
+              "w-10 h-10 rounded-full flex items-center justify-center"
+            )} style={profileIconGradientStyle}>
               <Wallet className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 text-left">
@@ -934,7 +936,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         {/* Language Selector */}
         <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
           <div className="flex items-center gap-4 px-4 py-3">
-            <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
               <Globe className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
@@ -1041,7 +1043,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           onClick={() => setShowParanormal(true)}
           className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-primary/40 rounded-xl hover:bg-muted/30 transition-colors"
         >
-          <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
             <Ghost className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 text-left">
@@ -1054,7 +1056,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
           <div className="w-full flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full animate-gradient-shift flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
                 <Mail className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 text-left">
