@@ -458,7 +458,7 @@ export default function EventChatPage() {
         }}
       />
     ) : null}
-    <div className="fixed inset-0 z-40 flex min-h-[100dvh] flex-col bg-[#06060a]">
+    <div className="fixed inset-0 z-40 flex min-h-[100dvh] flex-col">
       <div
         className="absolute inset-0 pointer-events-none z-0"
         style={{
