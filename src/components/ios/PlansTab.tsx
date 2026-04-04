@@ -673,10 +673,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               canDelete={plan.user_id === user?.id && !plan.isCarouselJoin}
               onDelete={() => setPlanToDelete(plan)}
               onClick={() => handlePlanClick(plan)}
-              className="w-full text-left p-4 space-y-3 hover:opacity-90 cursor-pointer"
-              style={{
-                background: "linear-gradient(to right, rgba(88, 28, 135, 0.6), rgba(67, 56, 202, 0.5))",
-              }}
+              className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+              style={{}}
             >
               <div className="flex items-start gap-3">
                 {/* Profile Picture or Activity Emoji */}
@@ -690,9 +688,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       )}
                     </div>
                   ) : (
-                    <Avatar className="w-12 h-12 border-2 border-white/50 shadow-md">
+                    <Avatar className="w-12 h-12 border-2 border-gray-200 shadow-md">
                       <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
-                      <AvatarFallback className="bg-white text-muted-foreground text-lg font-semibold">
+                      <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
                         {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
                       </AvatarFallback>
                     </Avatar>
@@ -701,11 +699,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-white">
+                    <h3 className="font-semibold text-gray-900">
                       {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || t('plans.untitledPlan', 'Untitled Plan'))}
                     </h3>
                     {plan.isJoined && (
-                      <span className="text-xs bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">
+                      <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">
                         {t('common.joined')}
                       </span>
                     )}
@@ -718,10 +716,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   </div>
 
                   <div className="flex items-center gap-1 mt-0.5">
-                    <span className="inline-flex items-center justify-center w-3 h-3 text-white/60">📍</span>
-                    <span className="text-xs text-white/70">{plan.city}</span>
+                    <span className="inline-flex items-center justify-center w-3 h-3 text-gray-600">📍</span>
+                    <span className="text-xs text-gray-600">{plan.city}</span>
                     {!plan.isCarouselJoin && (
-                      <span className="text-xs text-white/50">
+                      <span className="text-xs text-gray-500">
                         • {t('common.by')}{' '}
                         <button
                           type="button"
@@ -733,7 +731,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                               avatarUrl: plan.creator_avatar || null,
                             });
                           }}
-                          className="underline hover:text-white/80 transition-colors"
+                          className="underline hover:text-gray-700 transition-colors"
                         >
                           {plan.creator_name || "Anonymous"}
                         </button>
@@ -743,8 +741,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
                   {plan.isCarouselJoin && (
                     <div className="flex items-center gap-2 mt-1">
-                      <Calendar className="w-3.5 h-3.5 text-white/70" />
-                      <span className="text-sm text-white/70">
+                      <Calendar className="w-3.5 h-3.5 text-gray-600" />
+                      <span className="text-sm text-gray-600">
                         {formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
                       </span>
                       {isToday(new Date(plan.scheduled_for)) && (
@@ -754,7 +752,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       )}
                       {isTomorrow(new Date(plan.scheduled_for)) && (
                         <span
-                          className="text-xs text-white font-semibold px-2 py-0.5 rounded-full"
+                          className="text-xs text-gray-900 font-semibold px-2 py-0.5 rounded-full"
                           style={{
                             background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
                             backgroundSize: "400% 400%",
@@ -796,7 +794,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       e.stopPropagation();
                       handleSharePlan(plan, e);
                     }}
-                    className="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full transition-all shadow-sm"
+                    className="p-2.5 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-full transition-all shadow-sm"
                     title="Share with friends"
                     aria-label="Share plan"
                   >
@@ -808,7 +806,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               {/* Show participant count if someone joined */}
               {plan.participant_count > 0 && (
                 <div className="flex items-center gap-1.5 mt-2">
-                  <span className="text-sm text-white/70">+{plan.participant_count} {t('common.joined').toLowerCase()}</span>
+                  <span className="text-sm text-gray-600">+{plan.participant_count} {t('common.joined').toLowerCase()}</span>
                 </div>
               )}
             </SwipeableCard>
