@@ -266,7 +266,7 @@ export default function Auth() {
       const result = await sendEmailOtp(email, isLogin ? "login" : "signup", attemptNumber);
       
       if (!result.success) {
-        // Check if this is a retryable error
+        // Retry only when AuthContext explicitly marks it retryable (otp_disabled only)
         if (result.retryable) {
           console.log("[Auth][handleSendMagicLink] Retryable error detected, retrying in 3 seconds", {
             attempt: attemptNumber,

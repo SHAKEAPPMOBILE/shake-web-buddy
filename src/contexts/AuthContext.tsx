@@ -387,11 +387,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const errorStatus = (error as any)?.status;
         const lower = (error.message || "").toLowerCase();
 
-        // Check if this is a retryable error (otp_disabled or rate limit)
-        const isRetryable = 
-          lower.includes("otp_disabled") || 
-          errorStatus === 429 || 
-          lower.includes("too many");
+        // ONLY retry for otp_disabled, never for rate limits
+        const isRetryable = errorCode === "otp_disabled" || lower.includes("otp_disabled");
 
         if (isRetryable && attemptNumber === 1) {
           console.log("[AuthContext][sendEmailOtp] Retryable error detected, will retry after 3 seconds", {
@@ -411,8 +408,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (lower.includes("otp_disabled")) {
           errorMsg = "Email login is temporarily unavailable. Please try again shortly or use another sign-in method.";
-        } else if (errorStatus === 429 || lower.includes("too many")) {
-          errorMsg = "Too many attempts. Please wait a minute and try again.";
+        } else if (
+          errorCode === "over_email_send_rate_limit" ||
+          errorStatus === 429 ||
+          lower.includes("too many")
+        ) {
+          const waitSecondsMatch = (error.message || "").match(/after\s+(\d+)\s+seconds?/i);
+          const waitSeconds = waitSecondsMatch?.[1] ? Number(waitSecondsMatch[1]) : null;
+          errorMsg = waitSeconds && Number.isFinite(waitSeconds)
+            ? `Please wait ${waitSeconds} seconds before trying again.`
+            : "Too many attempts. Please wait a minute and try again.";
         } else if (lower.includes("signups not allowed")) {
           errorMsg = "Signups are currently disabled. Please contact support.";
         } else if (lower.includes("user not found")) {
