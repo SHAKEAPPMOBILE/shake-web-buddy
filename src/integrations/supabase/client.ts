@@ -24,5 +24,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    // Disable auto-detection so the SDK does NOT consume + clear the URL hash
+    // before OAuthCallback can read the magic-link tokens. OAuthCallback handles
+    // all token exchange explicitly.
+    detectSessionInUrl: false,
   }
 });

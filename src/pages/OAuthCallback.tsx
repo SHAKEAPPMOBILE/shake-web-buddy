@@ -14,6 +14,19 @@ export default function OAuthCallback() {
 
     const run = async () => {
       try {
+        // 0) Fast-path: if a session is already established (e.g. the user navigated
+        //    back here while already logged in, or an older SDK auto-processed the URL)
+        //    there is nothing to exchange — just send them into the app.
+        const { data: { session: earlySession } } = await supabase.auth.getSession();
+        if (earlySession && !cancelled) {
+          console.log("[OAuthCallback] Session already established on entry, redirecting to app", {
+            userId: earlySession.user?.id,
+            timestamp: new Date().toISOString(),
+          });
+          navigate("/", { replace: true });
+          return;
+        }
+
         // 1) Parse query/hash params once
         const params = new URLSearchParams(window.location.search);
         const hash = window.location.hash?.replace(/^#/, "") || "";
@@ -72,8 +85,19 @@ export default function OAuthCallback() {
           timestamp: new Date().toISOString(),
         });
 
-        // 5) If callback URL has no auth payload, fail soft to /auth
+        // 5) If callback URL has no auth payload, do one final session check before
+        //    giving up — covers any edge case where the session was set between the
+        //    early check and now (e.g. very tight race with SDK auto-detection).
         if (!code && !(accessToken && refreshToken)) {
+          const { data: { session: lateSession } } = await supabase.auth.getSession();
+          if (lateSession && !cancelled) {
+            console.log("[OAuthCallback] No tokens in URL but session found on late check, redirecting", {
+              userId: lateSession.user?.id,
+              timestamp: new Date().toISOString(),
+            });
+            navigate("/", { replace: true });
+            return;
+          }
           console.warn("[OAuthCallback] No auth payload detected", {
             reason: "Neither code nor token pair found",
             timestamp: new Date().toISOString(),
