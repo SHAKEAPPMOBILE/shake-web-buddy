@@ -4,6 +4,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import logoShake from "@/assets/shake-logo-new.png";
 
+const STORAGE_SIGNUP_EMAIL = "shake_signup_magic_link_sent";
+const STORAGE_NEED_PASSWORD = "shake_post_signup_set_password";
+
+/** After email signup magic link, send user to /auth to create a password before the main app. */
+function resolveDestinationAfterAuth(session: { user?: { email?: string | null } } | null): string {
+  if (!session?.user) return "/auth";
+  const params = new URLSearchParams(window.location.search);
+  const signupIntent = params.get("intent") === "signup";
+  let pendingEmailMatch = false;
+  try {
+    const sent = sessionStorage.getItem(STORAGE_SIGNUP_EMAIL);
+    const em = session.user.email?.toLowerCase()?.trim() ?? "";
+    pendingEmailMatch = !!(sent && em && sent === em);
+  } catch {
+    /* ignore */
+  }
+  if (signupIntent || pendingEmailMatch) {
+    try {
+      sessionStorage.removeItem(STORAGE_SIGNUP_EMAIL);
+      sessionStorage.setItem(STORAGE_NEED_PASSWORD, "1");
+    } catch {
+      /* ignore */
+    }
+    return "/auth?setPassword=1";
+  }
+  return "/";
+}
+
 type EmailOtpType = "signup" | "invite" | "magiclink" | "recovery" | "email_change" | "email";
 
 function otpTypesToTry(typeParam: string | null): EmailOtpType[] {
@@ -71,11 +99,11 @@ export default function OAuthCallback() {
       try {
         const { data: { session: earlySession } } = await supabase.auth.getSession();
         if (earlySession && !cancelled) {
-          console.log("[OAuthCallback] Session already established on entry, redirecting to app", {
+          console.log("[OAuthCallback] Session already established on entry, redirecting", {
             userId: earlySession.user?.id,
             timestamp: new Date().toISOString(),
           });
-          navigate("/", { replace: true });
+          navigate(resolveDestinationAfterAuth(earlySession), { replace: true });
           return;
         }
 
@@ -147,7 +175,7 @@ export default function OAuthCallback() {
               userId: lateSession.user?.id,
               timestamp: new Date().toISOString(),
             });
-            navigate("/", { replace: true });
+            navigate(resolveDestinationAfterAuth(lateSession), { replace: true });
             return;
           }
           console.warn("[OAuthCallback] No auth payload detected", {
@@ -224,7 +252,7 @@ export default function OAuthCallback() {
           timestamp: new Date().toISOString(),
         });
 
-        navigate(session ? "/" : "/auth", { replace: true });
+        navigate(session ? resolveDestinationAfterAuth(session) : "/auth", { replace: true });
       } catch (e: unknown) {
         const callbackDuration = performance.now() - callbackStartTime;
         const err = e as { message?: string; code?: string; status?: number };

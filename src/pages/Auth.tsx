@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,9 @@ import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
 const FACE_ID_FEATURE_ENABLED = false;
+
+const STORAGE_SIGNUP_EMAIL = "shake_signup_magic_link_sent";
+const STORAGE_NEED_PASSWORD = "shake_post_signup_set_password";
 
 // Show user-friendly messages instead of technical errors
 function toFriendlyAuthMessage(raw: string, context: "login" | "signup" | "email" | "general"): string {
@@ -99,8 +102,18 @@ async function signInWithOAuth(provider: 'google' | 'apple') {
 }
 
 export default function Auth() {
-  const [step, setStep] = useState<'method' | 'email' | 'confirmation' | 'name' | 'nationality' | 'occupation' | 'social' | 'avatar' | 'password'>('method');
-  const [isLogin, setIsLogin] = useState(true);
+  const [step, setStep] = useState<
+    | "method"
+    | "login"
+    | "email"
+    | "confirmation"
+    | "setPassword"
+    | "name"
+    | "nationality"
+    | "occupation"
+    | "social"
+    | "avatar"
+  >("method");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -120,15 +133,15 @@ export default function Auth() {
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showCreateAccountPrompt, setShowCreateAccountPrompt] = useState(false);
   const [isFaceCaptureOpen, setIsFaceCaptureOpen] = useState(false);
   const [faceMode, setFaceMode] = useState<'enroll' | 'authenticate'>('authenticate');
   const [isFaceAuthLoading, setIsFaceAuthLoading] = useState(false);
   const [showFaceSetupPrompt, setShowFaceSetupPrompt] = useState(false);
   const [pendingFaceSetupUserId, setPendingFaceSetupUserId] = useState<string | null>(null);
   
-  const { user, sendEmailOtp, signUpWithPassword, signInWithPassword, updatePassword } = useAuth();
+  const { user, sendEmailOtp, signInWithPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -199,7 +212,14 @@ export default function Auth() {
     return maxDate.toISOString().split('T')[0];
   };
 
-  // After any sign-in (including Google), route new users into profile completion
+  useEffect(() => {
+    if (searchParams.get("setPassword") === "1" && user) {
+      setStep("setPassword");
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, user]);
+
+  // After sign-in: magic-link signup users must set a password first; then profile completion or home.
   useEffect(() => {
     if (!user) return;
 
@@ -207,6 +227,17 @@ export default function Auth() {
 
     setTimeout(() => {
       (async () => {
+        let needSetPassword = false;
+        try {
+          needSetPassword = sessionStorage.getItem(STORAGE_NEED_PASSWORD) === "1";
+        } catch {
+          needSetPassword = false;
+        }
+        if (needSetPassword) {
+          if (!cancelled) setStep("setPassword");
+          return;
+        }
+
         const [{ data: profile, error: profileErr }, { data: profilePrivate, error: privateErr }] =
           await Promise.all([
             supabase
@@ -229,10 +260,7 @@ export default function Auth() {
         const needsProfile = !profile?.name?.trim() || !profilePrivate?.date_of_birth;
 
         if (needsProfile) {
-          setIsLogin(false);
           setStep("name");
-
-          // Prefill name from Google if available
           setName((prev) =>
             prev ||
             String(
@@ -268,7 +296,7 @@ export default function Auth() {
 
   const handleSendMagicLink = async (e: React.FormEvent, attemptNumber = 1) => {
     e.preventDefault();
-    
+
     const validation = validateEmail(email);
     if (!validation.isValid) {
       toast.error(validation.error);
@@ -278,23 +306,20 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const result = await sendEmailOtp(email, isLogin ? "login" : "signup", attemptNumber);
-      
+      const result = await sendEmailOtp(email, "signup", attemptNumber);
+
       if (!result.success) {
-        // Retry only when AuthContext explicitly marks it retryable (otp_disabled only)
         if (result.retryable) {
           console.log("[Auth][handleSendMagicLink] Retryable error detected, retrying in 3 seconds", {
             attempt: attemptNumber,
           });
-          
+
           toast.info("Retrying... please wait", undefined);
           setIsLoading(true);
-          
-          // Wait 3 seconds before retrying
+
           await new Promise((resolve) => setTimeout(resolve, 3000));
-          
-          // Recursively call with attempt number incremented
-          if (!email) return; // Safety check
+
+          if (!email) return;
           await handleSendMagicLink(
             { preventDefault: () => {} } as React.FormEvent,
             attemptNumber + 1
@@ -302,27 +327,15 @@ export default function Auth() {
           return;
         }
 
-        const lower = (result.message || "").toLowerCase();
-        const isNoAccountError =
-          lower.includes("no account found") ||
-          lower.includes("no passwordless login") ||
-          lower.includes("use create account") ||
-          lower.includes("signups not allowed") ||
-          lower.includes("user not found");
-
-        if (isLogin && isNoAccountError) {
-          toast.info(toFriendlyAuthMessage(result.message, "email"));
-          setShowCreateAccountPrompt(true);
-        } else {
-          toast.error(toFriendlyAuthMessage(result.message, "email"));
-        }
+        toast.error(toFriendlyAuthMessage(result.message, "email"));
       } else {
-        toast.success(
-          isLogin
-            ? "Magic link sent! Check your email."
-            : "Check your email to verify and finish creating your account!"
-        );
-        setStep('confirmation');
+        try {
+          sessionStorage.setItem(STORAGE_SIGNUP_EMAIL, email.toLowerCase().trim());
+        } catch {
+          /* ignore */
+        }
+        toast.success("Check your email — open the link, then you'll create a password.");
+        setStep("confirmation");
       }
     } catch (error) {
       toast.error("An unexpected error occurred");
@@ -331,37 +344,56 @@ export default function Auth() {
     }
   };
 
-  const handleSignUpWithPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const validation = validateEmail(email);
-    if (!validation.isValid) {
-      toast.error(validation.error);
-      return;
+  const routeAfterPasswordOrProfile = async () => {
+    const { data: { user: u } } = await supabase.auth.getUser();
+    if (!u) return;
+    const [{ data: profile, error: profileErr }, { data: profilePrivate, error: privateErr }] =
+      await Promise.all([
+        supabase.from("profiles").select("name").eq("user_id", u.id).maybeSingle(),
+        supabase.from("profiles_private").select("*").eq("user_id", u.id).maybeSingle(),
+      ]);
+    if (profileErr) logPostgrestError("Auth.tsx profiles select (post password)", profileErr);
+    if (privateErr) logPostgrestError("Auth.tsx profiles_private select (post password)", privateErr);
+    const needsProfile = !profile?.name?.trim() || !profilePrivate?.date_of_birth;
+    if (needsProfile) {
+      setStep("name");
+      setName((prev) =>
+        prev ||
+        String((u.user_metadata?.full_name ?? u.user_metadata?.name ?? "") as string)
+      );
+    } else {
+      navigate("/", { replace: true });
     }
+  };
 
+  const handleCompleteSignupPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!password || password.length < 6) {
       toast.error("Password must be at least 6 characters");
       return;
     }
-
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
-
     setIsLoading(true);
-
     try {
-      const { error } = await signUpWithPassword(email, password);
+      const { error } = await updatePassword(password);
       if (error) {
         toast.error(toFriendlyAuthMessage(error.message, "signup"));
-      } else {
-        toast.success("Account created! Check your email to verify.");
-        setStep('name');
+        return;
       }
-    } catch (error) {
-      toast.error("An unexpected error occurred");
+      try {
+        sessionStorage.removeItem(STORAGE_NEED_PASSWORD);
+      } catch {
+        /* ignore */
+      }
+      setPassword("");
+      setConfirmPassword("");
+      toast.success("Password saved. You're signed in.");
+      await routeAfterPasswordOrProfile();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -716,7 +748,7 @@ export default function Auth() {
       >
         <div className="w-full max-w-md px-6 sm:px-0 space-y-6">
           {/* Back Button */}
-          {step !== 'method' && step !== 'confirmation' && (
+          {step !== "method" && step !== "confirmation" && step !== "setPassword" && (
             <button
               onClick={() => {
                 if (step === 'email') {
@@ -747,8 +779,7 @@ export default function Auth() {
               <div className="space-y-3">
                 <Button
                   onClick={() => {
-                    setIsLogin(true);
-                    setStep('email');
+                    setStep("login");
                   }}
                   className="w-full text-white animate-gradient-shift hover:opacity-95"
                   size="lg"
@@ -758,8 +789,7 @@ export default function Auth() {
 
                 <Button
                   onClick={() => {
-                    setIsLogin(false);
-                    setStep('email');
+                    setStep("email");
                   }}
                   variant="outline"
                   className="w-full border-2"
@@ -809,31 +839,15 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Email Login/Signup */}
-          {step === 'email' && (
+          {/* Sign up: verify email with magic link, then create password on return */}
+          {step === "email" && (
             <form onSubmit={handleSendMagicLink} className="space-y-4">
               <div className="space-y-2 text-center">
-                <h2 className="text-xl font-bold text-black">
-                  {isLogin ? "Log In with Email" : "Create Account"}
-                </h2>
+                <h2 className="text-xl font-bold text-black">Create Account</h2>
                 <p className="text-sm text-muted-foreground">
-                  {isLogin ? "We'll send you a magic link to log in" : "We'll send you a link to verify your email"}
+                  We&apos;ll email you a link to verify this address. After you open it, you&apos;ll choose a password
+                  for next time.
                 </p>
-                {isLogin ? (
-                  <p className="text-xs text-muted-foreground text-center px-1 leading-snug">
-                    Magic link is only sent if this email already has an account. First time? Use{" "}
-                    <button
-                      type="button"
-                      className="text-primary underline font-medium"
-                      onClick={() => {
-                        setIsLogin(false);
-                      }}
-                    >
-                      Create Account
-                    </button>{" "}
-                    instead.
-                  </p>
-                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -858,7 +872,141 @@ export default function Auth() {
                 size="lg"
                 disabled={isLoading}
               >
-                {isLoading ? "Sending..." : isLogin ? "Send Magic Link" : "Create Account"}
+                {isLoading ? "Sending..." : "Send verification link"}
+              </Button>
+            </form>
+          )}
+
+          {/* Log in: email + password (stored in Supabase Auth) */}
+          {step === "login" && (
+            <form onSubmit={handleSignInWithPassword} className="space-y-4">
+              <div className="space-y-2 text-center">
+                <h2 className="text-xl font-bold text-black">Log In</h2>
+                <p className="text-sm text-muted-foreground">Use the email and password for your SHAKE account.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="login-email" className="text-black">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="login-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="login-password" className="text-black">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full text-white animate-gradient-shift hover:opacity-95"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing in..." : "Log In"}
+              </Button>
+            </form>
+          )}
+
+          {step === "setPassword" && (
+            <form onSubmit={handleCompleteSignupPassword} className="space-y-4">
+              <div className="space-y-2 text-center">
+                <h2 className="text-xl font-bold text-black">Create your password</h2>
+                <p className="text-sm text-muted-foreground">
+                  Choose a password for <span className="font-medium">{user?.email ?? email}</span>. You&apos;ll use it
+                  next time you log in.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="new-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="At least 6 characters"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    minLength={6}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirm-new-password">Confirm password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="confirm-new-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    minLength={6}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    onClick={() => setShowConfirmPassword((s) => !s)}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-shake-green text-background hover:bg-shake-green/90"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? "Saving..." : "Continue"}
               </Button>
             </form>
           )}
@@ -872,7 +1020,7 @@ export default function Auth() {
                   We sent a magic link to <span className="font-medium">{email}</span>
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Click the link to {isLogin ? "log in" : "verify your email and create your account"}
+                  Click the link to verify your email — then you&apos;ll set your password on the next screen.
                 </p>
               </div>
 
@@ -1182,29 +1330,6 @@ export default function Auth() {
           <LanguageSelector />
         </div>
       )}
-
-      <AlertDialog open={showCreateAccountPrompt} onOpenChange={setShowCreateAccountPrompt}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>No account found with this email</AlertDialogTitle>
-            <AlertDialogDescription>
-              No account found with this email. Would you like to create one?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setShowCreateAccountPrompt(false);
-                setIsLogin(false);
-                setStep('email');
-              }}
-            >
-              Create Account
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {FACE_ID_FEATURE_ENABLED && (
         <>

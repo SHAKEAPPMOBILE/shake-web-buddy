@@ -18,7 +18,7 @@ interface AuthContextType {
   isManualOverride: boolean;
   subscriptionEnd: string | null;
   didJustSignUp: boolean;
-  sendEmailOtp: (email: string, purpose?: string, attemptNumber?: number) => Promise<OtpResult>;
+  sendEmailOtp: (email: string, purpose?: "signup", attemptNumber?: number) => Promise<OtpResult>;
   verifyEmailOtp: (email: string, token: string, purpose?: string) => Promise<{ error: Error | null; data?: any }>;
   signUpWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -343,15 +343,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return raw || fallback;
   };
 
-  // Send magic link OTP via email using Supabase
-  const sendEmailOtp = async (email: string, purpose = "login", attemptNumber = 1): Promise<OtpResult> => {
-    try {
-      // Keep this as a plain URL string (do not pre-encode); Supabase handles query encoding.
-      const redirectUrl = import.meta.env.DEV
-        ? "http://localhost:8080/auth/callback"
-        : "https://app.shakeapp.today/auth/callback";
+  const authCallbackBaseUrl = import.meta.env.DEV
+    ? "http://localhost:8080/auth/callback"
+    : "https://app.shakeapp.today/auth/callback";
 
-      // Log the redirect URL being used for validation
+  // Signup magic link uses `?intent=signup` so OAuthCallback can route to set-password.
+  // Add the full URL with query to Supabase Auth → Redirect URLs if your project requires exact matches.
+
+  // Send magic link OTP via email using Supabase (signup only in UI — login uses password)
+  const sendEmailOtp = async (email: string, purpose: "signup" = "signup", attemptNumber = 1): Promise<OtpResult> => {
+    try {
+      const redirectUrl =
+        purpose === "signup" ? `${authCallbackBaseUrl}?intent=signup` : authCallbackBaseUrl;
+
       console.log("[AuthContext][sendEmailOtp] Initiating magic link send", {
         email: email.toLowerCase().trim(),
         purpose,
@@ -362,16 +366,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { error } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase().trim(),
-        options:
-          purpose === "signup"
-            ? {
-                emailRedirectTo: redirectUrl,
-                shouldCreateUser: true,
-              }
-            : {
-                emailRedirectTo: redirectUrl,
-                shouldCreateUser: false,
-              },
+        options: {
+          emailRedirectTo: redirectUrl,
+          shouldCreateUser: true,
+        },
       });
 
       if (error) {
@@ -432,12 +430,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           errorCode === "identity_not_found" ||
           lower.includes("user not found")
         ) {
-          if (purpose === "login") {
-            errorMsg =
-              "No passwordless login email was sent. Either there is no account for this email yet (use Create Account), or this account only uses Google/Apple sign-in.";
-          } else {
-            errorMsg = "Failed to send verification link. Please try again.";
-          }
+          errorMsg = "Failed to send verification link. Please try again.";
         } else if (
           lower.includes("duplicate key") ||
           lower.includes("users_email_partial_key") ||
@@ -520,9 +513,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: email.toLowerCase().trim(),
       password,
       options: {
-        emailRedirectTo: import.meta.env.DEV
-          ? "http://localhost:8080/auth/callback"
-          : "https://app.shakeapp.today/auth/callback",
+        emailRedirectTo: authCallbackBaseUrl,
       },
     });
     if (error) {
@@ -550,9 +541,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   };
 
+  /** Sets password on the current session (e.g. after email magic-link signup). Merges `password_set_at` into user_metadata. */
   const updatePassword = async (password: string) => {
+    const { data: { user: u } } = await supabase.auth.getUser();
     const { error } = await supabase.auth.updateUser({
       password,
+      data: {
+        ...(u?.user_metadata ?? {}),
+        password_set_at: new Date().toISOString(),
+      },
     });
     return { error: error as Error | null };
   };
