@@ -4,6 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { getStoredReferralCode, clearStoredReferralCode } from "@/hooks/useReferralTracking";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 
+export type OtpResult = {
+  success: boolean;
+  retryable: boolean;
+  message: string;
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -12,7 +18,7 @@ interface AuthContextType {
   isManualOverride: boolean;
   subscriptionEnd: string | null;
   didJustSignUp: boolean;
-  sendEmailOtp: (email: string, purpose?: string, attemptNumber?: number) => Promise<{ error: Error | null }>;
+  sendEmailOtp: (email: string, purpose?: string, attemptNumber?: number) => Promise<OtpResult>;
   verifyEmailOtp: (email: string, token: string, purpose?: string) => Promise<{ error: Error | null; data?: any }>;
   signUpWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -338,7 +344,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Send magic link OTP via email using Supabase
-  const sendEmailOtp = async (email: string, purpose = "login", attemptNumber = 1): Promise<{ error: Error | null }> => {
+  const sendEmailOtp = async (email: string, purpose = "login", attemptNumber = 1): Promise<OtpResult> => {
     try {
       const redirectUrl = import.meta.env.DEV
         ? "http://localhost:5173/auth/callback"
@@ -391,8 +397,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             code: errorCode,
             status: errorStatus,
           });
-          // Return a special error that signals the component to retry
-          return { error: new Error(`__RETRY_${errorCode || "UNKNOWN"}__`) };
+          // Return retryable result
+          return {
+            success: false,
+            retryable: true,
+            message: "Temporarily unavailable. Retrying...",
+          };
         }
 
         // Generate user-facing error messages based on error type
@@ -425,14 +435,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           errorMsg = toUserFriendlyAuthError(errorMsg, "Unable to send magic link. Please check your connection and try again.");
         }
 
-        return { error: new Error(errorMsg) };
+        return {
+          success: false,
+          retryable: false,
+          message: errorMsg,
+        };
       }
 
       console.log("[AuthContext][sendEmailOtp] Magic link sent successfully", {
         email: email.toLowerCase().trim(),
         timestamp: new Date().toISOString(),
       });
-      return { error: null };
+      return {
+        success: true,
+        retryable: false,
+        message: "Magic link sent successfully",
+      };
     } catch (e: any) {
       console.error("[AuthContext][sendEmailOtp] Exception thrown", {
         message: e?.message,
@@ -445,7 +463,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         e?.message || "",
         "Unable to send magic link. Please check your connection and try again."
       );
-      return { error: new Error(msg) };
+      return {
+        success: false,
+        retryable: false,
+        message: msg,
+      };
     }
   };
 

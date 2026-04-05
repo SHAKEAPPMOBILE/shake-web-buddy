@@ -263,16 +263,12 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const { error } = await sendEmailOtp(email, isLogin ? "login" : "signup", attemptNumber);
-      if (error) {
-        const errorMsg = error.message || "";
-        const lower = errorMsg.toLowerCase();
-
-        // Check if this is a retry signal (special marker from sendEmailOtp)
-        if (errorMsg.startsWith("__RETRY_")) {
-          const retryCode = errorMsg.replace("__RETRY_", "").replace("__", "");
+      const result = await sendEmailOtp(email, isLogin ? "login" : "signup", attemptNumber);
+      
+      if (!result.success) {
+        // Check if this is a retryable error
+        if (result.retryable) {
           console.log("[Auth][handleSendMagicLink] Retryable error detected, retrying in 3 seconds", {
-            code: retryCode,
             attempt: attemptNumber,
           });
           
@@ -291,16 +287,16 @@ export default function Auth() {
           return;
         }
 
+        const lower = (result.message || "").toLowerCase();
         const isNoAccountError =
           lower.includes("no account found") ||
           lower.includes("signups not allowed") ||
-          lower.includes("otp_disabled") ||
           lower.includes("user not found");
 
         if (isLogin && isNoAccountError) {
           setShowCreateAccountPrompt(true);
         } else {
-          toast.error(toFriendlyAuthMessage(errorMsg, "email"));
+          toast.error(toFriendlyAuthMessage(result.message, "email"));
         }
       } else {
         toast.success(
