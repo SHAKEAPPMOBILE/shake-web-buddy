@@ -162,7 +162,7 @@ export function IOSAppLayout() {
 
     let cancelled = false;
     let retryCount = 0;
-    const maxRetries = 3;
+    const maxRetries = 6;
 
     const checkProfileCompletion = async () => {
       try {
@@ -203,8 +203,27 @@ export function IOSAppLayout() {
         }
 
         if (profile !== null || profilePrivate !== null) {
-          const needsProfile = !profile?.name || !profilePrivate?.date_of_birth;
+          const needsProfile = !profile?.name?.trim() || !profilePrivate?.date_of_birth;
+          if (!needsProfile) {
+            try {
+              sessionStorage.removeItem("shake_profile_just_saved");
+            } catch {
+              /* ignore */
+            }
+          }
           if (needsProfile && !avatarMissing) {
+            let justSavedTs = 0;
+            try {
+              justSavedTs = Number(sessionStorage.getItem("shake_profile_just_saved") || 0);
+            } catch {
+              justSavedTs = 0;
+            }
+            const inGracePeriod = justSavedTs > 0 && Date.now() - justSavedTs < 20000;
+            if (inGracePeriod && retryCount < maxRetries) {
+              retryCount++;
+              setTimeout(checkProfileCompletion, 450 * Math.min(retryCount, 8));
+              return;
+            }
             navigate("/auth");
           }
         }

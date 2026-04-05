@@ -226,7 +226,7 @@ export default function Auth() {
         if (profileErr) logPostgrestError("Auth.tsx profiles select (post sign-in)", profileErr);
         if (privateErr) logPostgrestError("Auth.tsx profiles_private select (post sign-in)", privateErr);
 
-        const needsProfile = !profile?.name || !profilePrivate?.date_of_birth;
+        const needsProfile = !profile?.name?.trim() || !profilePrivate?.date_of_birth;
 
         if (needsProfile) {
           setIsLogin(false);
@@ -408,13 +408,13 @@ export default function Auth() {
     }
 
     setIsLoading(true);
-    let shouldNavigateHome = true;
+    let shouldNavigateHome = false;
 
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) {
         toast.error("Not logged in");
-        navigate("/", { replace: true });
+        navigate("/auth", { replace: true });
         return;
       }
 
@@ -448,13 +448,20 @@ export default function Auth() {
 
       const resolvedDateOfBirth = dateOfBirth || existingPrivate?.date_of_birth || null;
 
-      if (resolvedDateOfBirth) {
-        const age = calculateAge(resolvedDateOfBirth);
-        if (age < 18) {
-          shouldNavigateHome = false;
-          toast.error("You must be 18 or older to use Shake");
-          return;
-        }
+      if (!resolvedDateOfBirth) {
+        toast.error("Please enter your date of birth");
+        return;
+      }
+
+      const age = calculateAge(resolvedDateOfBirth);
+      if (age < 18) {
+        toast.error("You must be 18 or older to use Shake");
+        return;
+      }
+
+      if (!resolvedName.trim()) {
+        toast.error("Please enter your name");
+        return;
       }
 
       let avatarUrl: string | null = null;
@@ -483,12 +490,10 @@ export default function Auth() {
         avatarUrl = avatarOptions.find((avatar) => avatar.id === selectedAvatar)?.src || existingProfile?.avatar_url || null;
       }
 
-      let profileSaveSucceeded = false;
-
       const { error: profileError } = await supabase.from("profiles").upsert(
         {
           user_id: currentUser.id,
-          name: resolvedName,
+          name: resolvedName.trim(),
           avatar_url: avatarUrl,
           instagram_url: instagramUrl || null,
           linkedin_url: linkedinUrl || null,
@@ -499,9 +504,8 @@ export default function Auth() {
 
       if (profileError) {
         logPostgrestError("Auth.tsx profiles upsert", profileError);
-        toast.error("Failed to save part of your profile, but we'll still continue");
-      } else {
-        profileSaveSucceeded = true;
+        toast.error("Could not save your profile. Please check your connection and try again.");
+        return;
       }
 
       const { error: privateError } = await supabase.from("profiles_private").upsert(
@@ -516,18 +520,38 @@ export default function Auth() {
 
       if (privateError) {
         logPostgrestError("Auth.tsx profiles_private upsert", privateError);
-        toast.error("Failed to save some profile details, but we'll still continue");
-      } else {
-        profileSaveSucceeded = true;
+        toast.error("Could not save your date of birth. Please try again.");
+        return;
       }
 
-      if (profileSaveSucceeded) {
-        toast.success("Profile complete!");
-        triggerConfettiWaterfall();
+      const { data: verifyProfile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+      const { data: verifyPrivate } = await supabase
+        .from("profiles_private")
+        .select("date_of_birth")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+      if (!verifyProfile?.name?.trim() || !verifyPrivate?.date_of_birth) {
+        toast.error("Profile saved but could not be verified. Please tap Complete Setup again.");
+        return;
       }
+
+      try {
+        sessionStorage.setItem("shake_profile_just_saved", String(Date.now()));
+      } catch {
+        /* ignore */
+      }
+
+      toast.success("Profile complete!");
+      triggerConfettiWaterfall();
+      shouldNavigateHome = true;
     } catch (error) {
       console.error("Profile save error:", error);
-      toast.error("We couldn't save everything, but we'll still take you to the app");
+      toast.error("Something went wrong while saving. Please try again.");
     } finally {
       setIsLoading(false);
       if (shouldNavigateHome) {

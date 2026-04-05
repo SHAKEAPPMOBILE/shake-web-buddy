@@ -82,15 +82,6 @@ const chatSuggestions: Record<string, string[]> = {
     "I'm running late!",
     "On my way! 🏃",
   ],
-  hike: [
-    "Morning everyone! Ready to hit the trail?",
-    "Where's the meeting point?",
-    "What should I bring?",
-    "Count me in!",
-    "See you there! 👋",
-    "I'm running late!",
-    "On my way! 🏃",
-  ],
   surf: [
     "What's the wave forecast? 🌊",
     "Which beach are we hitting?",

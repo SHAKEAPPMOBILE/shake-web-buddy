@@ -370,6 +370,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             : {
                 emailRedirectTo: redirectUrl,
+                shouldCreateUser: false,
               },
       });
 

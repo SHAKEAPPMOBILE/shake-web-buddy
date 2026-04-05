@@ -4,19 +4,71 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import logoShake from "@/assets/shake-logo-new.png";
 
+type EmailOtpType = "signup" | "invite" | "magiclink" | "recovery" | "email_change" | "email";
+
+function otpTypesToTry(typeParam: string | null): EmailOtpType[] {
+  const raw = (typeParam || "").toLowerCase().trim();
+  const out: EmailOtpType[] = [];
+
+  const push = (t: EmailOtpType) => {
+    if (!out.includes(t)) out.push(t);
+  };
+
+  if (raw === "signup") {
+    push("signup");
+  } else if (raw === "magiclink") {
+    push("magiclink");
+    push("email");
+  } else if (raw === "recovery") {
+    push("recovery");
+  } else if (raw === "email_change") {
+    push("email_change");
+  } else if (raw === "invite") {
+    push("invite");
+  } else if (raw === "email") {
+    push("email");
+    push("magiclink");
+  } else {
+    push("email");
+    push("magiclink");
+  }
+
+  return out;
+}
+
+async function verifyEmailLinkWithTokenHash(
+  tokenHash: string,
+  typeParam: string | null
+): Promise<{ ok: boolean; error?: Error }> {
+  const types = otpTypesToTry(typeParam);
+  let lastErr: Error | undefined;
+
+  for (const type of types) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type,
+    });
+    if (!error && data?.session) {
+      return { ok: true };
+    }
+    if (error) {
+      lastErr = error as Error;
+    }
+  }
+
+  return { ok: false, error: lastErr };
+}
+
 export default function OAuthCallback() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   useEffect(() => {
     let cancelled = false;
     const callbackStartTime = performance.now();
 
     const run = async () => {
       try {
-        // 0) Fast-path: if a session is already established (e.g. the user navigated
-        //    back here while already logged in, or an older SDK auto-processed the URL)
-        //    there is nothing to exchange — just send them into the app.
         const { data: { session: earlySession } } = await supabase.auth.getSession();
         if (earlySession && !cancelled) {
           console.log("[OAuthCallback] Session already established on entry, redirecting to app", {
@@ -27,12 +79,10 @@ export default function OAuthCallback() {
           return;
         }
 
-        // 1) Parse query/hash params once
         const params = new URLSearchParams(window.location.search);
         const hash = window.location.hash?.replace(/^#/, "") || "";
         const hashParams = new URLSearchParams(hash);
 
-        // Log the full URL and params for debugging
         console.log("[OAuthCallback] Callback initiated", {
           fullUrl: window.location.href,
           search: window.location.search,
@@ -40,7 +90,6 @@ export default function OAuthCallback() {
           timestamp: new Date().toISOString(),
         });
 
-        // 2) Check for provider errors
         const error = params.get("error") || hashParams.get("error");
         const errorDescription =
           params.get("error_description") || hashParams.get("error_description");
@@ -59,11 +108,16 @@ export default function OAuthCallback() {
           return;
         }
 
-        // 3) Support OAuth code in query OR hash
         const rawCode = params.get("code") || hashParams.get("code");
         const code = rawCode && rawCode !== "undefined" && rawCode !== "null" ? rawCode : null;
 
-        // 4) Support magic-link tokens in hash OR query
+        const rawTokenHash = params.get("token_hash") || hashParams.get("token_hash") || null;
+        const tokenHash =
+          rawTokenHash && rawTokenHash !== "undefined" && rawTokenHash !== "null"
+            ? rawTokenHash
+            : null;
+        const linkType = params.get("type") || hashParams.get("type");
+
         const rawAccessToken = hashParams.get("access_token") || params.get("access_token");
         const rawRefreshToken = hashParams.get("refresh_token") || params.get("refresh_token");
         const accessToken =
@@ -75,9 +129,9 @@ export default function OAuthCallback() {
             ? rawRefreshToken
             : null;
 
-        // Log token presence and source
         console.log("[OAuthCallback] Auth tokens parsed", {
           hasCode: !!code,
+          hasTokenHash: !!tokenHash,
           hasAccessToken: !!accessToken,
           hasRefreshToken: !!refreshToken,
           accessTokenSource: rawAccessToken ? (hashParams.get("access_token") ? "hash" : "query") : "none",
@@ -85,10 +139,8 @@ export default function OAuthCallback() {
           timestamp: new Date().toISOString(),
         });
 
-        // 5) If callback URL has no auth payload, do one final session check before
-        //    giving up — covers any edge case where the session was set between the
-        //    early check and now (e.g. very tight race with SDK auto-detection).
-        if (!code && !(accessToken && refreshToken)) {
+        const hasTokenPair = !!(accessToken && refreshToken);
+        if (!code && !tokenHash && !hasTokenPair) {
           const { data: { session: lateSession } } = await supabase.auth.getSession();
           if (lateSession && !cancelled) {
             console.log("[OAuthCallback] No tokens in URL but session found on late check, redirecting", {
@@ -99,7 +151,7 @@ export default function OAuthCallback() {
             return;
           }
           console.warn("[OAuthCallback] No auth payload detected", {
-            reason: "Neither code nor token pair found",
+            reason: "Neither code, token_hash, nor token pair found",
             timestamp: new Date().toISOString(),
           });
           navigate("/auth", { replace: true });
@@ -115,10 +167,16 @@ export default function OAuthCallback() {
           if (exchangeError) {
             console.error("[OAuthCallback] Code exchange failed", {
               error: exchangeError.message,
-              code: (exchangeError as any)?.code,
+              code: (exchangeError as { code?: string })?.code,
               timestamp: new Date().toISOString(),
             });
             throw exchangeError;
+          }
+        } else if (tokenHash) {
+          const { ok, error: verifyError } = await verifyEmailLinkWithTokenHash(tokenHash, linkType);
+          if (!ok) {
+            console.error("[OAuthCallback] token_hash verify failed:", verifyError);
+            throw verifyError ?? new Error("Invalid or expired email link");
           }
         } else if (accessToken && refreshToken) {
           console.log("[OAuthCallback] Setting session from magic link tokens", {
@@ -133,14 +191,13 @@ export default function OAuthCallback() {
           if (setSessionError) {
             console.error("[OAuthCallback] Session set failed", {
               error: setSessionError.message,
-              code: (setSessionError as any)?.code,
+              code: (setSessionError as { code?: string })?.code,
               timestamp: new Date().toISOString(),
             });
             throw setSessionError;
           }
         }
 
-        // 6) Give Supabase a moment to settle state
         await new Promise((r) => setTimeout(r, 300));
 
         if (cancelled) return;
@@ -153,7 +210,7 @@ export default function OAuthCallback() {
         if (sessionError) {
           console.error("[OAuthCallback] Get session failed", {
             error: sessionError.message,
-            code: (sessionError as any)?.code,
+            code: (sessionError as { code?: string })?.code,
             timestamp: new Date().toISOString(),
           });
           throw sessionError;
@@ -168,12 +225,13 @@ export default function OAuthCallback() {
         });
 
         navigate(session ? "/" : "/auth", { replace: true });
-      } catch (e: any) {
+      } catch (e: unknown) {
         const callbackDuration = performance.now() - callbackStartTime;
+        const err = e as { message?: string; code?: string; status?: number };
         console.error("[OAuthCallback] Callback error", {
-          message: e?.message,
-          code: e?.code,
-          status: (e as any)?.status,
+          message: err?.message,
+          code: err?.code,
+          status: err?.status,
           durationMs: Math.round(callbackDuration),
           timestamp: new Date().toISOString(),
         });
