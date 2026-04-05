@@ -251,7 +251,7 @@ export default function Auth() {
     }
   };
 
-  const handleSendMagicLink = async (e: React.FormEvent) => {
+  const handleSendMagicLink = async (e: React.FormEvent, attemptNumber = 1) => {
     e.preventDefault();
     
     const validation = validateEmail(email);
@@ -263,9 +263,34 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const { error } = await sendEmailOtp(email, isLogin ? "login" : "signup");
+      const { error } = await sendEmailOtp(email, isLogin ? "login" : "signup", attemptNumber);
       if (error) {
-        const lower = (error.message || "").toLowerCase();
+        const errorMsg = error.message || "";
+        const lower = errorMsg.toLowerCase();
+
+        // Check if this is a retry signal (special marker from sendEmailOtp)
+        if (errorMsg.startsWith("__RETRY_")) {
+          const retryCode = errorMsg.replace("__RETRY_", "").replace("__", "");
+          console.log("[Auth][handleSendMagicLink] Retryable error detected, retrying in 3 seconds", {
+            code: retryCode,
+            attempt: attemptNumber,
+          });
+          
+          toast.info("Retrying... please wait", undefined);
+          setIsLoading(true);
+          
+          // Wait 3 seconds before retrying
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          
+          // Recursively call with attempt number incremented
+          if (!email) return; // Safety check
+          await handleSendMagicLink(
+            { preventDefault: () => {} } as React.FormEvent,
+            attemptNumber + 1
+          );
+          return;
+        }
+
         const isNoAccountError =
           lower.includes("no account found") ||
           lower.includes("signups not allowed") ||
@@ -275,7 +300,7 @@ export default function Auth() {
         if (isLogin && isNoAccountError) {
           setShowCreateAccountPrompt(true);
         } else {
-          toast.error(toFriendlyAuthMessage(error.message, "email"));
+          toast.error(toFriendlyAuthMessage(errorMsg, "email"));
         }
       } else {
         toast.success(

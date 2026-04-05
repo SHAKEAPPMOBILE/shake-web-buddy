@@ -7,8 +7,10 @@ import logoShake from "@/assets/shake-logo-new.png";
 export default function OAuthCallback() {
   const navigate = useNavigate();
   const location = useLocation();
+  
   useEffect(() => {
     let cancelled = false;
+    const callbackStartTime = performance.now();
 
     const run = async () => {
       try {
@@ -16,6 +18,14 @@ export default function OAuthCallback() {
         const params = new URLSearchParams(window.location.search);
         const hash = window.location.hash?.replace(/^#/, "") || "";
         const hashParams = new URLSearchParams(hash);
+
+        // Log the full URL and params for debugging
+        console.log("[OAuthCallback] Callback initiated", {
+          fullUrl: window.location.href,
+          search: window.location.search,
+          hash: window.location.hash,
+          timestamp: new Date().toISOString(),
+        });
 
         // 2) Check for provider errors
         const error = params.get("error") || hashParams.get("error");
@@ -25,6 +35,12 @@ export default function OAuthCallback() {
         if (error) {
           const message =
             errorDescription?.replace(/\+/g, " ") || "Sign-in was cancelled or failed.";
+          console.error("[OAuthCallback] Auth error detected", {
+            error,
+            errorDescription: message,
+            source: params.get("error") ? "query" : "hash",
+            timestamp: new Date().toISOString(),
+          });
           toast.error(message);
           navigate("/auth", { replace: true });
           return;
@@ -46,23 +62,56 @@ export default function OAuthCallback() {
             ? rawRefreshToken
             : null;
 
+        // Log token presence and source
+        console.log("[OAuthCallback] Auth tokens parsed", {
+          hasCode: !!code,
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          accessTokenSource: rawAccessToken ? (hashParams.get("access_token") ? "hash" : "query") : "none",
+          refreshTokenSource: rawRefreshToken ? (hashParams.get("refresh_token") ? "hash" : "query") : "none",
+          timestamp: new Date().toISOString(),
+        });
+
         // 5) If callback URL has no auth payload, fail soft to /auth
         if (!code && !(accessToken && refreshToken)) {
+          console.warn("[OAuthCallback] No auth payload detected", {
+            reason: "Neither code nor token pair found",
+            timestamp: new Date().toISOString(),
+          });
           navigate("/auth", { replace: true });
           return;
         }
 
         if (code) {
+          console.log("[OAuthCallback] Exchanging OAuth code for session", {
+            codeLength: code.length,
+            timestamp: new Date().toISOString(),
+          });
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
+            console.error("[OAuthCallback] Code exchange failed", {
+              error: exchangeError.message,
+              code: (exchangeError as any)?.code,
+              timestamp: new Date().toISOString(),
+            });
             throw exchangeError;
           }
         } else if (accessToken && refreshToken) {
+          console.log("[OAuthCallback] Setting session from magic link tokens", {
+            accessTokenLength: accessToken.length,
+            refreshTokenLength: refreshToken.length,
+            timestamp: new Date().toISOString(),
+          });
           const { error: setSessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
           if (setSessionError) {
+            console.error("[OAuthCallback] Session set failed", {
+              error: setSessionError.message,
+              code: (setSessionError as any)?.code,
+              timestamp: new Date().toISOString(),
+            });
             throw setSessionError;
           }
         }
@@ -78,12 +127,32 @@ export default function OAuthCallback() {
         } = await supabase.auth.getSession();
 
         if (sessionError) {
+          console.error("[OAuthCallback] Get session failed", {
+            error: sessionError.message,
+            code: (sessionError as any)?.code,
+            timestamp: new Date().toISOString(),
+          });
           throw sessionError;
         }
 
+        const callbackDuration = performance.now() - callbackStartTime;
+        console.log("[OAuthCallback] Callback completed successfully", {
+          sessionExists: !!session,
+          userId: session?.user?.id,
+          durationMs: Math.round(callbackDuration),
+          timestamp: new Date().toISOString(),
+        });
+
         navigate(session ? "/" : "/auth", { replace: true });
       } catch (e: any) {
-        console.error("OAuth callback error:", e);
+        const callbackDuration = performance.now() - callbackStartTime;
+        console.error("[OAuthCallback] Callback error", {
+          message: e?.message,
+          code: e?.code,
+          status: (e as any)?.status,
+          durationMs: Math.round(callbackDuration),
+          timestamp: new Date().toISOString(),
+        });
         toast.error("Sign-in failed. Please try again.");
         navigate("/auth", { replace: true });
       }

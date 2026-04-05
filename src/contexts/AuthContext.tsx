@@ -12,7 +12,7 @@ interface AuthContextType {
   isManualOverride: boolean;
   subscriptionEnd: string | null;
   didJustSignUp: boolean;
-  sendEmailOtp: (email: string, purpose?: string) => Promise<{ error: Error | null }>;
+  sendEmailOtp: (email: string, purpose?: string, attemptNumber?: number) => Promise<{ error: Error | null }>;
   verifyEmailOtp: (email: string, token: string, purpose?: string) => Promise<{ error: Error | null; data?: any }>;
   signUpWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -338,11 +338,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Send magic link OTP via email using Supabase
-  const sendEmailOtp = async (email: string, purpose = "login"): Promise<{ error: Error | null }> => {
+  const sendEmailOtp = async (email: string, purpose = "login", attemptNumber = 1): Promise<{ error: Error | null }> => {
     try {
       const redirectUrl = import.meta.env.DEV
         ? "http://localhost:5173/auth/callback"
         : "https://app.shakeapp.today/auth/callback";
+
+      // Log the redirect URL being used for validation
+      console.log("[AuthContext][sendEmailOtp] Initiating magic link send", {
+        email: email.toLowerCase().trim(),
+        purpose,
+        redirectUrl,
+        timestamp: new Date().toISOString(),
+        attempt: attemptNumber,
+      });
 
       const { error } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase().trim(),
@@ -358,26 +367,84 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        let errorMsg = error.message || "Failed to send magic link";
-        const lower = errorMsg.toLowerCase();
+        // Log the full error with code, message, and status for debugging
+        console.error("[AuthContext][sendEmailOtp] Supabase error", {
+          code: (error as any)?.code,
+          message: error.message,
+          status: (error as any)?.status,
+          timestamp: new Date().toISOString(),
+          attempt: attemptNumber,
+        });
 
-        if (lower.includes("signups not allowed") || lower.includes("otp_disabled") || lower.includes("user not found")) {
-          errorMsg = "No account found with this email. Would you like to create one?";
+        const errorCode = (error as any)?.code;
+        const errorStatus = (error as any)?.status;
+        const lower = (error.message || "").toLowerCase();
+
+        // Check if this is a retryable error (otp_disabled or rate limit)
+        const isRetryable = 
+          lower.includes("otp_disabled") || 
+          errorStatus === 429 || 
+          lower.includes("too many");
+
+        if (isRetryable && attemptNumber === 1) {
+          console.log("[AuthContext][sendEmailOtp] Retryable error detected, will retry after 3 seconds", {
+            code: errorCode,
+            status: errorStatus,
+          });
+          // Return a special error that signals the component to retry
+          return { error: new Error(`__RETRY_${errorCode || "UNKNOWN"}__`) };
+        }
+
+        // Generate user-facing error messages based on error type
+        let errorMsg = error.message || "Failed to send magic link";
+
+        if (lower.includes("otp_disabled")) {
+          errorMsg = "Email login is temporarily unavailable. Please try again shortly or use another sign-in method.";
+        } else if (errorStatus === 429 || lower.includes("too many")) {
+          errorMsg = "Too many attempts. Please wait a minute and try again.";
+        } else if (lower.includes("signups not allowed")) {
+          errorMsg = "Signups are currently disabled. Please contact support.";
+        } else if (lower.includes("user not found")) {
+          if (purpose === "login") {
+            errorMsg = "No account found with this email. Would you like to create one?";
+          } else {
+            errorMsg = "Failed to send verification link. Please try again.";
+          }
         } else if (
           lower.includes("duplicate key") ||
           lower.includes("users_email_partial_key") ||
           lower.includes("already registered")
         ) {
           errorMsg = "An account with this email already exists. Please sign in instead.";
+        } else if (lower.includes("network") || lower.includes("failed to fetch")) {
+          errorMsg = "Connection issue. Check your internet and try again.";
         } else {
+          // Generic error with code for support purposes
+          const code = errorCode || "UNKNOWN";
+          errorMsg = `Something went wrong. Error: ${code}. Please check your connection and try again.`;
           errorMsg = toUserFriendlyAuthError(errorMsg, "Unable to send magic link. Please check your connection and try again.");
         }
+
         return { error: new Error(errorMsg) };
       }
 
+      console.log("[AuthContext][sendEmailOtp] Magic link sent successfully", {
+        email: email.toLowerCase().trim(),
+        timestamp: new Date().toISOString(),
+      });
       return { error: null };
     } catch (e: any) {
-      const msg = toUserFriendlyAuthError(e?.message || "", "Unable to send magic link. Please check your connection and try again.");
+      console.error("[AuthContext][sendEmailOtp] Exception thrown", {
+        message: e?.message,
+        name: e?.name,
+        timestamp: new Date().toISOString(),
+        attempt: attemptNumber,
+      });
+
+      const msg = toUserFriendlyAuthError(
+        e?.message || "",
+        "Unable to send magic link. Please check your connection and try again."
+      );
       return { error: new Error(msg) };
     }
   };
