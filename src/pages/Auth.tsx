@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,6 +131,21 @@ export default function Auth() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const fallingStars = useMemo(
+    () =>
+      Array.from({ length: 42 }, (_, index) => ({
+        id: index,
+        left: Math.random() * 100,
+        size: 2 + Math.random() * 4,
+        opacity: 0.3 + Math.random() * 0.6,
+        duration: 3 + Math.random() * 5,
+        delay: Math.random() * 8,
+        twinkleDuration: 1.8 + Math.random() * 2.6,
+        twinkleDelay: Math.random() * 2,
+      })),
+    []
+  );
 
   const calculateAge = (birthDate: string): number => {
     const today = new Date();
@@ -619,9 +634,56 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-white">
+    <div className="relative min-h-screen w-full flex flex-col bg-white overflow-hidden">
+      {step === 'confirmation' && (
+        <>
+          <div className="pointer-events-none absolute inset-0 z-0">
+            <div className="absolute inset-0 bg-gradient-to-b from-violet-100/45 via-purple-50/35 to-white" />
+            {fallingStars.map((star) => (
+              <span
+                key={star.id}
+                className="absolute text-violet-500"
+                style={{
+                  left: `${star.left}%`,
+                  top: "-10%",
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  fontSize: `${star.size * 1.8}px`,
+                  lineHeight: 1,
+                  opacity: star.opacity,
+                  animation: `fallStar ${star.duration}s linear ${star.delay}s infinite, twinkleStar ${star.twinkleDuration}s ease-in-out ${star.twinkleDelay}s infinite`,
+                }}
+              >
+                ✦
+              </span>
+            ))}
+          </div>
+          <style>{`
+            @keyframes fallStar {
+              0% {
+                transform: translateY(-8vh) translateX(0);
+              }
+              100% {
+                transform: translateY(110vh) translateX(8px);
+              }
+            }
+
+            @keyframes twinkleStar {
+              0%,
+              100% {
+                opacity: 0.25;
+                transform: scale(0.85);
+              }
+              50% {
+                opacity: 1;
+                transform: scale(1.2);
+              }
+            }
+          `}</style>
+        </>
+      )}
       <div
-        className={`flex-1 flex flex-col items-center px-4 ${
+        className={`relative z-10 flex-1 flex flex-col items-center px-4 ${
           step === 'method' ? 'justify-center py-8' : 'justify-center py-8'
         }`}
       >
