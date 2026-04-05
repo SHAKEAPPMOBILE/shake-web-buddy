@@ -305,10 +305,13 @@ export default function Auth() {
         const lower = (result.message || "").toLowerCase();
         const isNoAccountError =
           lower.includes("no account found") ||
+          lower.includes("no passwordless login") ||
+          lower.includes("use create account") ||
           lower.includes("signups not allowed") ||
           lower.includes("user not found");
 
         if (isLogin && isNoAccountError) {
+          toast.info(toFriendlyAuthMessage(result.message, "email"));
           setShowCreateAccountPrompt(true);
         } else {
           toast.error(toFriendlyAuthMessage(result.message, "email"));
@@ -816,6 +819,21 @@ export default function Auth() {
                 <p className="text-sm text-muted-foreground">
                   {isLogin ? "We'll send you a magic link to log in" : "We'll send you a link to verify your email"}
                 </p>
+                {isLogin ? (
+                  <p className="text-xs text-muted-foreground text-center px-1 leading-snug">
+                    Magic link is only sent if this email already has an account. First time? Use{" "}
+                    <button
+                      type="button"
+                      className="text-primary underline font-medium"
+                      onClick={() => {
+                        setIsLogin(false);
+                      }}
+                    >
+                      Create Account
+                    </button>{" "}
+                    instead.
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-2">

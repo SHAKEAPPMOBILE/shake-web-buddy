@@ -419,11 +419,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           errorMsg = waitSeconds && Number.isFinite(waitSeconds)
             ? `Please wait ${waitSeconds} seconds before trying again.`
             : "Too many attempts. Please wait a minute and try again.";
-        } else if (lower.includes("signups not allowed")) {
+        } else if (lower.includes("signups not allowed") || errorCode === "signup_disabled") {
           errorMsg = "Signups are currently disabled. Please contact support.";
-        } else if (lower.includes("user not found")) {
+        } else if (errorCode === "email_address_not_authorized") {
+          errorMsg =
+            "This email is not allowed to sign in (project email rules). Try another address or ask an admin to allow it in Supabase.";
+        } else if (errorCode === "email_address_invalid") {
+          errorMsg = "This email address looks invalid to the server. Check for typos.";
+        } else if (
+          errorCode === "user_not_found" ||
+          errorCode === "invalid_credentials" ||
+          errorCode === "identity_not_found" ||
+          lower.includes("user not found")
+        ) {
           if (purpose === "login") {
-            errorMsg = "No account found with this email. Would you like to create one?";
+            errorMsg =
+              "No passwordless login email was sent. Either there is no account for this email yet (use Create Account), or this account only uses Google/Apple sign-in.";
           } else {
             errorMsg = "Failed to send verification link. Please try again.";
           }
