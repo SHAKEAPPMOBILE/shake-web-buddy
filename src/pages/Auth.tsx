@@ -37,6 +37,19 @@ const FACE_ID_FEATURE_ENABLED = false;
 const STORAGE_SIGNUP_EMAIL = "shake_signup_magic_link_sent";
 const STORAGE_NEED_PASSWORD = "shake_post_signup_set_password";
 
+/** Steps where we must not reset to "name" or navigate away — avoids races when `user` refreshes mid-wizard. */
+const AUTH_WIZARD_STEPS = new Set([
+  "name",
+  "nationality",
+  "occupation",
+  "social",
+  "avatar",
+  "email",
+  "confirmation",
+  "login",
+  "setPassword",
+]);
+
 // Show user-friendly messages instead of technical errors
 function toFriendlyAuthMessage(raw: string, context: "login" | "signup" | "email" | "general"): string {
   const lower = (raw || "").toLowerCase();
@@ -238,6 +251,10 @@ export default function Auth() {
           return;
         }
 
+        if (AUTH_WIZARD_STEPS.has(step)) {
+          return;
+        }
+
         const [{ data: profile, error: profileErr }, { data: profilePrivate, error: privateErr }] =
           await Promise.all([
             supabase
@@ -280,7 +297,7 @@ export default function Auth() {
     return () => {
       cancelled = true;
     };
-  }, [user, navigate]);
+  }, [user, navigate, step]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -559,20 +576,27 @@ export default function Auth() {
         return;
       }
 
-      const { data: verifyProfile } = await supabase
-        .from("profiles")
-        .select("name")
-        .eq("user_id", currentUser.id)
-        .maybeSingle();
-      const { data: verifyPrivate } = await supabase
-        .from("profiles_private")
-        .select("date_of_birth")
-        .eq("user_id", currentUser.id)
-        .maybeSingle();
+      let verifyProfile: { name: string | null } | null = null;
+      let verifyPrivate: { date_of_birth: string | null } | null = null;
+      for (let attempt = 0; attempt < 6; attempt++) {
+        if (attempt > 0) {
+          await new Promise((r) => setTimeout(r, 280 * attempt));
+        }
+        const [vp, vpriv] = await Promise.all([
+          supabase.from("profiles").select("name").eq("user_id", currentUser.id).maybeSingle(),
+          supabase.from("profiles_private").select("date_of_birth").eq("user_id", currentUser.id).maybeSingle(),
+        ]);
+        if (vp.error) logPostgrestError("Auth.tsx profiles verify read", vp.error);
+        if (vpriv.error) logPostgrestError("Auth.tsx profiles_private verify read", vpriv.error);
+        verifyProfile = vp.data ?? null;
+        verifyPrivate = vpriv.data ?? null;
+        if (verifyProfile?.name?.trim() && verifyPrivate?.date_of_birth) {
+          break;
+        }
+      }
 
       if (!verifyProfile?.name?.trim() || !verifyPrivate?.date_of_birth) {
-        toast.error("Profile saved but could not be verified. Please tap Complete Setup again.");
-        return;
+        console.warn("[Auth] Post-save verify still empty after retries; proceeding because upserts reported success");
       }
 
       try {
