@@ -348,7 +348,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Keep this as a plain URL string (do not pre-encode); Supabase handles query encoding.
       const redirectUrl = import.meta.env.DEV
-        ? "http://localhost:5173/auth/callback"
+        ? "http://localhost:8080/auth/callback"
         : "https://app.shakeapp.today/auth/callback";
 
       // Log the redirect URL being used for validation
@@ -509,7 +509,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
       options: {
         emailRedirectTo: import.meta.env.DEV
-          ? "http://localhost:5173/auth/callback"
+          ? "http://localhost:8080/auth/callback"
           : "https://app.shakeapp.today/auth/callback",
       },
     });

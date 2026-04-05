@@ -76,7 +76,7 @@ async function signInWithOAuth(provider: 'google' | 'apple') {
     } else {
       // Web (desktop + mobile browser): full redirect to Google/Apple, then back to /auth/callback
       const redirectTo = import.meta.env.DEV
-        ? "http://localhost:5173/auth/callback"
+        ? "http://localhost:8080/auth/callback"
         : "https://app.shakeapp.today/auth/callback";
 
       const options: any = { redirectTo };
