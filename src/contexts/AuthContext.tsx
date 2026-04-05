@@ -346,6 +346,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Send magic link OTP via email using Supabase
   const sendEmailOtp = async (email: string, purpose = "login", attemptNumber = 1): Promise<OtpResult> => {
     try {
+      // Keep this as a plain URL string (do not pre-encode); Supabase handles query encoding.
       const redirectUrl = import.meta.env.DEV
         ? "http://localhost:5173/auth/callback"
         : "https://app.shakeapp.today/auth/callback";
