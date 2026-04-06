@@ -152,8 +152,9 @@ export default function Auth() {
   const [isFaceAuthLoading, setIsFaceAuthLoading] = useState(false);
   const [showFaceSetupPrompt, setShowFaceSetupPrompt] = useState(false);
   const [pendingFaceSetupUserId, setPendingFaceSetupUserId] = useState<string | null>(null);
+  const [isResolvingSessionRoute, setIsResolvingSessionRoute] = useState(true);
   
-  const { user, sendEmailOtp, signInWithPassword, updatePassword } = useAuth();
+  const { user, isLoading: isAuthLoading, sendEmailOtp, signInWithPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -279,15 +280,21 @@ export default function Auth() {
   useEffect(() => {
     if (searchParams.get("setPassword") === "1" && user) {
       setStep("setPassword");
+      setIsResolvingSessionRoute(false);
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams, user]);
 
   // After sign-in: magic-link signup users must set a password first; then profile completion or home.
   useEffect(() => {
-    if (!user) return;
+    if (isAuthLoading) return;
+    if (!user) {
+      setIsResolvingSessionRoute(false);
+      return;
+    }
 
     let cancelled = false;
+    setIsResolvingSessionRoute(true);
 
     setTimeout(() => {
       (async () => {
@@ -298,11 +305,15 @@ export default function Auth() {
           needSetPassword = false;
         }
         if (needSetPassword) {
-          if (!cancelled) setStep("setPassword");
+          if (!cancelled) {
+            setStep("setPassword");
+            setIsResolvingSessionRoute(false);
+          }
           return;
         }
 
         if (AUTH_WIZARD_STEPS.has(step)) {
+          setIsResolvingSessionRoute(false);
           return;
         }
 
@@ -321,11 +332,15 @@ export default function Auth() {
                 "") as string
             )
           );
+            setIsResolvingSessionRoute(false);
           return;
         }
 
         navigate("/", { replace: true });
       })().catch(() => {
+          if (!cancelled) {
+            setIsResolvingSessionRoute(false);
+          }
         // If anything fails, don't block the user
       });
     }, 0);
@@ -333,7 +348,7 @@ export default function Auth() {
     return () => {
       cancelled = true;
     };
-  }, [user, navigate, step]);
+  }, [user, isAuthLoading, navigate, step]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -480,6 +495,14 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
+
+  if (isResolvingSessionRoute && (isAuthLoading || !!user)) {
+    return (
+      <div className="h-[100dvh] bg-white flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      </div>
+    );
+  }
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
