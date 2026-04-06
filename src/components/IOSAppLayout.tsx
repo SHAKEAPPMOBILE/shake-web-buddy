@@ -80,19 +80,14 @@ export function IOSAppLayout() {
       };
     }
 
-    const [
-      { data: profile, error: profileError },
-      { data: profilePrivate, error: privateError },
-    ] = await Promise.all([
-      supabase.from("profiles").select("name, avatar_url").eq("user_id", user.id).maybeSingle(),
-      supabase.from("profiles_private").select("date_of_birth").eq("user_id", user.id).maybeSingle(),
-    ]);
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("name, avatar_url")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
     let resolvedProfile = profile;
 
-    if (privateError) {
-      logPostgrestError("IOSAppLayout profiles_private select", privateError);
-    }
     if (profileError) {
       logPostgrestError("IOSAppLayout profiles select", profileError);
     }
@@ -125,14 +120,14 @@ export function IOSAppLayout() {
     }
 
     const avatarMissing = !hasValidAvatarUrl(resolvedProfile?.avatar_url);
-    const needsProfile = (resolvedProfile !== null || profilePrivate !== null)
-      ? !resolvedProfile?.name || !profilePrivate?.date_of_birth
+    const needsProfile = resolvedProfile !== null
+      ? !resolvedProfile?.name?.trim() || !hasValidAvatarUrl(resolvedProfile?.avatar_url)
       : false;
 
     return {
       avatarMissing,
       needsProfile,
-      shouldRetry: Boolean(profileError || privateError || (!resolvedProfile && !profilePrivate)),
+      shouldRetry: Boolean(profileError || !resolvedProfile),
     };
   }, [user]);
 
@@ -229,7 +224,7 @@ export function IOSAppLayout() {
   // Initialize push notifications for private messages
   usePrivateMessageNotifications();
 
-  // Check if user needs to complete profile (avatar required; name/dob for auth redirect)
+  // Check if user needs to complete profile (name and avatar required for auth redirect)
   useEffect(() => {
     if (isLoading || !user) {
       if (pendingProfileCheckTimeoutRef.current !== null) {

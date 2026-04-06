@@ -244,30 +244,18 @@ export default function Auth() {
         await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
       }
 
-      const [{ data: profile, error: profileErr }, { data: profilePrivate, error: privateErr }] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("name, avatar_url")
-            .eq("user_id", authUser.id)
-            .maybeSingle(),
-          supabase
-            .from("profiles_private")
-            .select("date_of_birth")
-            .eq("user_id", authUser.id)
-            .maybeSingle(),
-        ]);
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("name, avatar_url")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
 
       if (profileErr) {
         sawReadError = true;
         logPostgrestError("Auth.tsx profiles select (completion check)", profileErr);
       }
-      if (privateErr) {
-        sawReadError = true;
-        logPostgrestError("Auth.tsx profiles_private select (completion check)", privateErr);
-      }
 
-      if (!profileErr && !privateErr) {
+      if (!profileErr) {
         let resolvedProfile = profile;
 
         if (!resolvedProfile) {
@@ -294,11 +282,10 @@ export default function Auth() {
 
         const hasName = !!resolvedProfile?.name?.trim();
         const hasAvatar = hasValidAvatarUrl(resolvedProfile?.avatar_url);
-        const hasDateOfBirth = !!profilePrivate?.date_of_birth;
 
         return {
-          isComplete: hasName && hasAvatar && hasDateOfBirth,
-          isIncomplete: !hasName || !hasAvatar || !hasDateOfBirth,
+          isComplete: hasName && hasAvatar,
+          isIncomplete: !hasName || !hasAvatar,
         };
       }
     }
@@ -551,12 +538,12 @@ export default function Auth() {
         await Promise.all([
           supabase
             .from("profiles")
-            .select("name, avatar_url")
+            .select("name, avatar_url, nationality, occupation")
             .eq("user_id", currentUser.id)
             .maybeSingle(),
           supabase
             .from("profiles_private")
-            .select("date_of_birth, occupation")
+            .select("date_of_birth")
             .eq("user_id", currentUser.id)
             .maybeSingle(),
         ]);
@@ -629,6 +616,8 @@ export default function Auth() {
           user_id: currentUser.id,
           name: resolvedName.trim(),
           avatar_url: avatarUrl,
+          nationality: nationality || existingProfile?.nationality || null,
+          occupation: occupation || existingProfile?.occupation || null,
           instagram_url: instagramUrl || null,
           linkedin_url: linkedinUrl || null,
           twitter_url: twitterUrl || null,
@@ -651,7 +640,6 @@ export default function Auth() {
         {
           user_id: currentUser.id,
           date_of_birth: resolvedDateOfBirth,
-          occupation: occupation || existingPrivate?.occupation || null,
         },
         { onConflict: "user_id" }
       ).select("user_id, date_of_birth").single();
