@@ -478,7 +478,7 @@ export default function Auth() {
             .maybeSingle(),
           supabase
             .from("profiles_private")
-            .select("date_of_birth, nationality, occupation")
+            .select("date_of_birth, occupation")
             .eq("user_id", currentUser.id)
             .maybeSingle(),
         ]);
@@ -573,7 +573,6 @@ export default function Auth() {
         {
           user_id: currentUser.id,
           date_of_birth: resolvedDateOfBirth,
-          nationality: nationality || existingPrivate?.nationality || null,
           occupation: occupation || existingPrivate?.occupation || null,
         },
         { onConflict: "user_id" }
