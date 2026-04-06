@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
-import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { getDisplayAvatarUrl, hasValidAvatarUrl } from "@/lib/avatar";
 
 interface MandatoryPhotoScreenProps {
   userId: string;
-  onComplete: () => void;
+  onComplete: (savedAvatarUrl?: string) => void | Promise<void>;
 }
 
 export function MandatoryPhotoScreen({ userId, onComplete }: MandatoryPhotoScreenProps) {
@@ -74,14 +74,25 @@ export function MandatoryPhotoScreen({ userId, onComplete }: MandatoryPhotoScree
         avatarUrl = preset.src;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
-        .update({ avatar_url: avatarUrl })
-        .eq("user_id", userId);
+        .upsert(
+          {
+            user_id: userId,
+            avatar_url: avatarUrl,
+          },
+          { onConflict: "user_id" }
+        )
+        .select("user_id, avatar_url")
+        .single();
 
       if (error) throw error;
+      if (!hasValidAvatarUrl(data?.avatar_url)) {
+        throw new Error("Avatar save could not be verified");
+      }
+
       toast.success("Photo saved!");
-      onComplete();
+      await onComplete(data.avatar_url);
     } catch (err) {
       console.error("Error saving avatar:", err);
       toast.error("Failed to save photo");

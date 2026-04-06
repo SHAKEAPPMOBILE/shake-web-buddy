@@ -64,15 +64,6 @@ const chatSuggestions: Record<string, string[]> = {
     "I'm running late!",
     "Where should we meet?",
   ],
-    hike: [
-      "Morning everyone! Ready to hit the trail?",
-      "Where's the meeting point?",
-      "What should I bring?",
-      "Count me in!",
-      "See you there! 👋",
-      "I'm running late!",
-      "On my way! 🏃",
-    ],
   drinks: [
     "Who's ready for happy hour? 🍻",
     "What time are we meeting up?",

@@ -28,6 +28,7 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { isNativePlatform } from "@/lib/platform-utils";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
+import { hasValidAvatarUrl } from "@/lib/avatar";
 import { FaceCaptureModal } from "@/components/FaceCaptureModal";
 import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
 
@@ -460,8 +461,6 @@ export default function Auth() {
     }
 
     setIsLoading(true);
-    let shouldNavigateHome = false;
-
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) {
@@ -542,7 +541,12 @@ export default function Auth() {
         avatarUrl = avatarOptions.find((avatar) => avatar.id === selectedAvatar)?.src || existingProfile?.avatar_url || null;
       }
 
-      const { error: profileError } = await supabase.from("profiles").upsert(
+      if (!hasValidAvatarUrl(avatarUrl)) {
+        toast.error("Please choose a valid profile picture or avatar");
+        return;
+      }
+
+      const { data: savedProfile, error: profileError } = await supabase.from("profiles").upsert(
         {
           user_id: currentUser.id,
           name: resolvedName.trim(),
@@ -552,15 +556,20 @@ export default function Auth() {
           twitter_url: twitterUrl || null,
         },
         { onConflict: "user_id" }
-      );
+      ).select("user_id, name, avatar_url").single();
 
       if (profileError) {
         logPostgrestError("Auth.tsx profiles upsert", profileError);
-        toast.error("Could not save your profile. Please check your connection and try again.");
+        toast.error("We couldn't save your profile photo. Please try again.");
         return;
       }
 
-      const { error: privateError } = await supabase.from("profiles_private").upsert(
+      if (!savedProfile?.name?.trim() || !hasValidAvatarUrl(savedProfile.avatar_url)) {
+        toast.error("We couldn't verify your profile photo. Please try again.");
+        return;
+      }
+
+      const { data: savedPrivate, error: privateError } = await supabase.from("profiles_private").upsert(
         {
           user_id: currentUser.id,
           date_of_birth: resolvedDateOfBirth,
@@ -568,35 +577,17 @@ export default function Auth() {
           occupation: occupation || existingPrivate?.occupation || null,
         },
         { onConflict: "user_id" }
-      );
+      ).select("user_id, date_of_birth").single();
 
       if (privateError) {
         logPostgrestError("Auth.tsx profiles_private upsert", privateError);
-        toast.error("Could not save your date of birth. Please try again.");
+        toast.error("We couldn't finish saving your profile. Please try again.");
         return;
       }
 
-      let verifyProfile: { name: string | null } | null = null;
-      let verifyPrivate: { date_of_birth: string | null } | null = null;
-      for (let attempt = 0; attempt < 6; attempt++) {
-        if (attempt > 0) {
-          await new Promise((r) => setTimeout(r, 280 * attempt));
-        }
-        const [vp, vpriv] = await Promise.all([
-          supabase.from("profiles").select("name").eq("user_id", currentUser.id).maybeSingle(),
-          supabase.from("profiles_private").select("date_of_birth").eq("user_id", currentUser.id).maybeSingle(),
-        ]);
-        if (vp.error) logPostgrestError("Auth.tsx profiles verify read", vp.error);
-        if (vpriv.error) logPostgrestError("Auth.tsx profiles_private verify read", vpriv.error);
-        verifyProfile = vp.data ?? null;
-        verifyPrivate = vpriv.data ?? null;
-        if (verifyProfile?.name?.trim() && verifyPrivate?.date_of_birth) {
-          break;
-        }
-      }
-
-      if (!verifyProfile?.name?.trim() || !verifyPrivate?.date_of_birth) {
-        console.warn("[Auth] Post-save verify still empty after retries; proceeding because upserts reported success");
+      if (!savedPrivate?.date_of_birth) {
+        toast.error("We couldn't verify your date of birth. Please try again.");
+        return;
       }
 
       try {
@@ -607,15 +598,12 @@ export default function Auth() {
 
       toast.success("Profile complete!");
       triggerConfettiWaterfall();
-      shouldNavigateHome = true;
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Profile save error:", error);
-      toast.error("Something went wrong while saving. Please try again.");
+      toast.error("We couldn't save your profile. Please try again.");
     } finally {
       setIsLoading(false);
-      if (shouldNavigateHome) {
-        navigate("/", { replace: true });
-      }
     }
   };
 

@@ -59,6 +59,7 @@ export function IOSAppLayout() {
   const [openSubscriptionOnMount, setOpenSubscriptionOnMount] = useState(false);
   const [showMandatoryPhoto, setShowMandatoryPhoto] = useState(false);
   const [isCheckingAvatar, setIsCheckingAvatar] = useState(true);
+  const pendingProfileCheckTimeoutRef = useRef<number | null>(null);
 
   const { user, isLoading, didJustSignUp } = useAuth();
   const { selectedCity } = useCity();
@@ -66,6 +67,53 @@ export function IOSAppLayout() {
   const location = useLocation();
   const { joinActivity, getActivityJoinCount, activeJoins, hasUserJoined } = useActivityJoins(selectedCity);
   const { showOnboarding, isChecking: isCheckingOnboarding, completeOnboarding } = useOnboarding(user?.id, didJustSignUp);
+
+  const fetchProfileCompletionStatus = useCallback(async () => {
+    if (!user) return null;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return {
+        avatarMissing: false,
+        needsProfile: false,
+        shouldRetry: false,
+      };
+    }
+
+    const [
+      { data: profile, error: profileError },
+      { data: profilePrivate, error: privateError },
+    ] = await Promise.all([
+      supabase.from("profiles").select("name, avatar_url").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles_private").select("date_of_birth").eq("user_id", user.id).maybeSingle(),
+    ]);
+
+    if (privateError) {
+      logPostgrestError("IOSAppLayout profiles_private select", privateError);
+    }
+    if (profileError) {
+      logPostgrestError("IOSAppLayout profiles select", profileError);
+    }
+
+    const avatarMissing = !hasValidAvatarUrl(profile?.avatar_url);
+    const needsProfile = (profile !== null || profilePrivate !== null)
+      ? !profile?.name || !profilePrivate?.date_of_birth
+      : false;
+
+    return {
+      avatarMissing,
+      needsProfile,
+      shouldRetry: Boolean(profileError || privateError || (!profile && !profilePrivate)),
+    };
+  }, [user]);
+
+  const applyProfileCompletionStatus = useCallback((status: { avatarMissing: boolean; needsProfile: boolean }) => {
+    setShowMandatoryPhoto(status.avatarMissing);
+
+    if (status.needsProfile && !status.avatarMissing) {
+      navigate("/auth");
+    }
+  }, [navigate]);
   
   // Handle payment success from Stripe redirect
   const { isVerifying, wasSuccessful, verifiedActivityId, resetPaymentState } = usePaymentSuccessHandler();
@@ -155,6 +203,10 @@ export function IOSAppLayout() {
   // Check if user needs to complete profile (avatar required; name/dob for auth redirect)
   useEffect(() => {
     if (isLoading || !user) {
+      if (pendingProfileCheckTimeoutRef.current !== null) {
+        window.clearTimeout(pendingProfileCheckTimeoutRef.current);
+        pendingProfileCheckTimeoutRef.current = null;
+      }
       setIsCheckingAvatar(false);
       setShowMandatoryPhoto(false);
       return;
@@ -166,67 +218,43 @@ export function IOSAppLayout() {
 
     const checkProfileCompletion = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        const status = await fetchProfileCompletionStatus();
+        if (cancelled) return;
+        if (!status) {
           setIsCheckingAvatar(false);
           return;
         }
 
-        const [
-          { data: profile, error: profileError },
-          { data: profilePrivate, error: privateError },
-        ] = await Promise.all([
-          supabase.from("profiles").select("name, avatar_url").eq("user_id", user.id).maybeSingle(),
-          supabase.from("profiles_private").select("*").eq("user_id", user.id).maybeSingle(),
-        ]);
-
-        if (cancelled) return;
-
-        if (privateError) {
-          logPostgrestError("IOSAppLayout profiles_private select", privateError);
-        }
-        if (profileError) {
-          logPostgrestError("IOSAppLayout profiles select", profileError);
-        }
-
-        if ((profileError || privateError || (!profile && !profilePrivate)) && retryCount < maxRetries) {
+        if (status.shouldRetry && retryCount < maxRetries) {
           retryCount++;
-          setTimeout(checkProfileCompletion, 500 * retryCount);
+          pendingProfileCheckTimeoutRef.current = window.setTimeout(checkProfileCompletion, 500 * retryCount);
           return;
         }
 
-        const avatarMissing = !hasValidAvatarUrl(profile?.avatar_url);
-        if (avatarMissing) {
-          setShowMandatoryPhoto(true);
-        } else {
-          setShowMandatoryPhoto(false);
+        if (!status.needsProfile) {
+          try {
+            sessionStorage.removeItem("shake_profile_just_saved");
+          } catch {
+            /* ignore */
+          }
         }
 
-        if (profile !== null || profilePrivate !== null) {
-          const needsProfile = !profile?.name?.trim() || !profilePrivate?.date_of_birth;
-          if (!needsProfile) {
-            try {
-              sessionStorage.removeItem("shake_profile_just_saved");
-            } catch {
-              /* ignore */
-            }
+        if (status.needsProfile && !status.avatarMissing) {
+          let justSavedTs = 0;
+          try {
+            justSavedTs = Number(sessionStorage.getItem("shake_profile_just_saved") || 0);
+          } catch {
+            justSavedTs = 0;
           }
-          if (needsProfile && !avatarMissing) {
-            let justSavedTs = 0;
-            try {
-              justSavedTs = Number(sessionStorage.getItem("shake_profile_just_saved") || 0);
-            } catch {
-              justSavedTs = 0;
-            }
-            const inGracePeriod = justSavedTs > 0 && Date.now() - justSavedTs < 20000;
-            if (inGracePeriod && retryCount < maxRetries) {
-              retryCount++;
-              setTimeout(checkProfileCompletion, 450 * Math.min(retryCount, 8));
-              return;
-            }
-            navigate("/auth");
+          const inGracePeriod = justSavedTs > 0 && Date.now() - justSavedTs < 20000;
+          if (inGracePeriod && retryCount < maxRetries) {
+            retryCount++;
+            pendingProfileCheckTimeoutRef.current = window.setTimeout(checkProfileCompletion, 450 * Math.min(retryCount, 8));
+            return;
           }
         }
+
+        applyProfileCompletionStatus(status);
       } catch (error) {
         console.log("Profile check failed:", error);
       } finally {
@@ -234,12 +262,17 @@ export function IOSAppLayout() {
       }
     };
 
-    setTimeout(checkProfileCompletion, 300);
+    setIsCheckingAvatar(true);
+    pendingProfileCheckTimeoutRef.current = window.setTimeout(checkProfileCompletion, 300);
 
     return () => {
       cancelled = true;
+      if (pendingProfileCheckTimeoutRef.current !== null) {
+        window.clearTimeout(pendingProfileCheckTimeoutRef.current);
+        pendingProfileCheckTimeoutRef.current = null;
+      }
     };
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, fetchProfileCompletionStatus, applyProfileCompletionStatus]);
 
   const shakeDebounceRef = useRef(false);
 
@@ -532,7 +565,29 @@ export function IOSAppLayout() {
     return (
       <MandatoryPhotoScreen
         userId={user.id}
-        onComplete={() => setShowMandatoryPhoto(false)}
+        onComplete={async (savedAvatarUrl) => {
+          if (!hasValidAvatarUrl(savedAvatarUrl)) {
+            toast.error("We couldn't confirm your photo. Please try again.");
+            return;
+          }
+
+          setIsCheckingAvatar(true);
+
+          try {
+            const status = await fetchProfileCompletionStatus();
+            if (!status) {
+              return;
+            }
+
+            applyProfileCompletionStatus(status);
+
+            if (status.avatarMissing) {
+              toast.error("We couldn't confirm your photo yet. Please try again.");
+            }
+          } finally {
+            setIsCheckingAvatar(false);
+          }
+        }}
       />
     );
   }
