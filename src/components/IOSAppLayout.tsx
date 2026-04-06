@@ -88,6 +88,8 @@ export function IOSAppLayout() {
       supabase.from("profiles_private").select("date_of_birth").eq("user_id", user.id).maybeSingle(),
     ]);
 
+    let resolvedProfile = profile;
+
     if (privateError) {
       logPostgrestError("IOSAppLayout profiles_private select", privateError);
     }
@@ -95,15 +97,42 @@ export function IOSAppLayout() {
       logPostgrestError("IOSAppLayout profiles select", profileError);
     }
 
-    const avatarMissing = !hasValidAvatarUrl(profile?.avatar_url);
-    const needsProfile = (profile !== null || profilePrivate !== null)
-      ? !profile?.name || !profilePrivate?.date_of_birth
+    if (!profileError && !resolvedProfile) {
+      const fallbackName = String(
+        user.user_metadata?.name ??
+        user.user_metadata?.full_name ??
+        user.email?.split("@")[0] ??
+        ""
+      ).trim() || null;
+
+      const { data: bootstrappedProfile, error: bootstrapError } = await supabase
+        .from("profiles")
+        .upsert(
+          {
+            user_id: user.id,
+            name: fallbackName,
+          },
+          { onConflict: "user_id" }
+        )
+        .select("name, avatar_url")
+        .maybeSingle();
+
+      if (bootstrapError) {
+        logPostgrestError("IOSAppLayout profiles upsert bootstrap", bootstrapError);
+      } else {
+        resolvedProfile = bootstrappedProfile ?? resolvedProfile;
+      }
+    }
+
+    const avatarMissing = !hasValidAvatarUrl(resolvedProfile?.avatar_url);
+    const needsProfile = (resolvedProfile !== null || profilePrivate !== null)
+      ? !resolvedProfile?.name || !profilePrivate?.date_of_birth
       : false;
 
     return {
       avatarMissing,
       needsProfile,
-      shouldRetry: Boolean(profileError || privateError || (!profile && !profilePrivate)),
+      shouldRetry: Boolean(profileError || privateError || (!resolvedProfile && !profilePrivate)),
     };
   }, [user]);
 

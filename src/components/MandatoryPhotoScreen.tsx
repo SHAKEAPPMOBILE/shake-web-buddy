@@ -74,20 +74,37 @@ export function MandatoryPhotoScreen({ userId, onComplete }: MandatoryPhotoScree
         avatarUrl = preset.src;
       }
 
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const fallbackName = existingProfile?.name?.trim()
+        || String(
+          currentUser?.user_metadata?.name
+          ?? currentUser?.user_metadata?.full_name
+          ?? currentUser?.email?.split("@")[0]
+          ?? ""
+        ).trim()
+        || null;
+
       const { data, error } = await supabase
         .from("profiles")
         .upsert(
           {
             user_id: userId,
             avatar_url: avatarUrl,
+            name: fallbackName,
           },
           { onConflict: "user_id" }
         )
-        .select("user_id, avatar_url")
+        .select("user_id, name, avatar_url")
         .single();
 
       if (error) throw error;
-      if (!hasValidAvatarUrl(data?.avatar_url)) {
+      if (!hasValidAvatarUrl(data?.avatar_url) || !data?.name?.trim()) {
         throw new Error("Avatar save could not be verified");
       }
 

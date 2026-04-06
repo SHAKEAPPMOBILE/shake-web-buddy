@@ -227,7 +227,16 @@ export default function Auth() {
     return maxDate.toISOString().split('T')[0];
   };
 
-  const getProfileCompletionState = async (userId: string) => {
+  const getFallbackProfileName = (authUser?: typeof user | null) => {
+    return String(
+      authUser?.user_metadata?.name ??
+      authUser?.user_metadata?.full_name ??
+      authUser?.email?.split("@")[0] ??
+      ""
+    ).trim();
+  };
+
+  const getProfileCompletionState = async (authUser: NonNullable<typeof user>) => {
     let sawReadError = false;
 
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -240,12 +249,12 @@ export default function Auth() {
           supabase
             .from("profiles")
             .select("name, avatar_url")
-            .eq("user_id", userId)
+            .eq("user_id", authUser.id)
             .maybeSingle(),
           supabase
             .from("profiles_private")
             .select("date_of_birth")
-            .eq("user_id", userId)
+            .eq("user_id", authUser.id)
             .maybeSingle(),
         ]);
 
@@ -259,8 +268,32 @@ export default function Auth() {
       }
 
       if (!profileErr && !privateErr) {
-        const hasName = !!profile?.name?.trim();
-        const hasAvatar = hasValidAvatarUrl(profile?.avatar_url);
+        let resolvedProfile = profile;
+
+        if (!resolvedProfile) {
+          const fallbackName = getFallbackProfileName(authUser) || null;
+          const { data: bootstrappedProfile, error: bootstrapError } = await supabase
+            .from("profiles")
+            .upsert(
+              {
+                user_id: authUser.id,
+                name: fallbackName,
+              },
+              { onConflict: "user_id" }
+            )
+            .select("name, avatar_url")
+            .maybeSingle();
+
+          if (bootstrapError) {
+            sawReadError = true;
+            logPostgrestError("Auth.tsx profiles upsert (completion bootstrap)", bootstrapError);
+          } else {
+            resolvedProfile = bootstrappedProfile ?? resolvedProfile;
+          }
+        }
+
+        const hasName = !!resolvedProfile?.name?.trim();
+        const hasAvatar = hasValidAvatarUrl(resolvedProfile?.avatar_url);
         const hasDateOfBirth = !!profilePrivate?.date_of_birth;
 
         return {
@@ -319,18 +352,14 @@ export default function Auth() {
 
         if (cancelled) return;
 
-        const completion = await getProfileCompletionState(user.id);
+        const completion = await getProfileCompletionState(user);
         if (cancelled) return;
 
         if (completion.isIncomplete) {
           setStep("name");
           setName((prev) =>
             prev ||
-            String(
-              (user.user_metadata?.full_name ??
-                user.user_metadata?.name ??
-                "") as string
-            )
+            getFallbackProfileName(user)
           );
             setIsResolvingSessionRoute(false);
           return;
@@ -416,13 +445,10 @@ export default function Auth() {
     const { data: { user: u } } = await supabase.auth.getUser();
     if (!u) return;
 
-    const completion = await getProfileCompletionState(u.id);
+    const completion = await getProfileCompletionState(u);
     if (completion.isIncomplete) {
       setStep("name");
-      setName((prev) =>
-        prev ||
-        String((u.user_metadata?.full_name ?? u.user_metadata?.name ?? "") as string)
-      );
+      setName((prev) => prev || getFallbackProfileName(u));
     } else {
       navigate("/", { replace: true });
     }
@@ -545,7 +571,7 @@ export default function Auth() {
       const resolvedName =
         name.trim() ||
         existingProfile?.name?.trim() ||
-        String(currentUser.user_metadata?.full_name ?? currentUser.user_metadata?.name ?? "").trim() ||
+        getFallbackProfileName(currentUser) ||
         currentUser.email?.split("@")[0]?.trim() ||
         "Shake User";
 
