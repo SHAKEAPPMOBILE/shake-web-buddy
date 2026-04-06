@@ -226,6 +226,56 @@ export default function Auth() {
     return maxDate.toISOString().split('T')[0];
   };
 
+  const getProfileCompletionState = async (userId: string) => {
+    let sawReadError = false;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
+      }
+
+      const [{ data: profile, error: profileErr }, { data: profilePrivate, error: privateErr }] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select("name, avatar_url")
+            .eq("user_id", userId)
+            .maybeSingle(),
+          supabase
+            .from("profiles_private")
+            .select("date_of_birth")
+            .eq("user_id", userId)
+            .maybeSingle(),
+        ]);
+
+      if (profileErr) {
+        sawReadError = true;
+        logPostgrestError("Auth.tsx profiles select (completion check)", profileErr);
+      }
+      if (privateErr) {
+        sawReadError = true;
+        logPostgrestError("Auth.tsx profiles_private select (completion check)", privateErr);
+      }
+
+      if (!profileErr && !privateErr) {
+        const hasName = !!profile?.name?.trim();
+        const hasAvatar = hasValidAvatarUrl(profile?.avatar_url);
+        const hasDateOfBirth = !!profilePrivate?.date_of_birth;
+
+        return {
+          isComplete: hasName && hasAvatar && hasDateOfBirth,
+          isIncomplete: !hasName || !hasAvatar || !hasDateOfBirth,
+        };
+      }
+    }
+
+    // If reads failed repeatedly, avoid forcing onboarding for existing users.
+    return {
+      isComplete: sawReadError,
+      isIncomplete: !sawReadError,
+    };
+  };
+
   useEffect(() => {
     if (searchParams.get("setPassword") === "1" && user) {
       setStep("setPassword");
@@ -256,28 +306,12 @@ export default function Auth() {
           return;
         }
 
-        const [{ data: profile, error: profileErr }, { data: profilePrivate, error: privateErr }] =
-          await Promise.all([
-            supabase
-              .from("profiles")
-              .select("name")
-              .eq("user_id", user.id)
-              .maybeSingle(),
-            supabase
-              .from("profiles_private")
-              .select("*")
-              .eq("user_id", user.id)
-              .maybeSingle(),
-          ]);
-
         if (cancelled) return;
 
-        if (profileErr) logPostgrestError("Auth.tsx profiles select (post sign-in)", profileErr);
-        if (privateErr) logPostgrestError("Auth.tsx profiles_private select (post sign-in)", privateErr);
+        const completion = await getProfileCompletionState(user.id);
+        if (cancelled) return;
 
-        const needsProfile = !profile?.name?.trim() || !profilePrivate?.date_of_birth;
-
-        if (needsProfile) {
+        if (completion.isIncomplete) {
           setStep("name");
           setName((prev) =>
             prev ||
@@ -287,9 +321,10 @@ export default function Auth() {
                 "") as string
             )
           );
-        } else {
-          navigate("/");
+          return;
         }
+
+        navigate("/", { replace: true });
       })().catch(() => {
         // If anything fails, don't block the user
       });
@@ -365,15 +400,9 @@ export default function Auth() {
   const routeAfterPasswordOrProfile = async () => {
     const { data: { user: u } } = await supabase.auth.getUser();
     if (!u) return;
-    const [{ data: profile, error: profileErr }, { data: profilePrivate, error: privateErr }] =
-      await Promise.all([
-        supabase.from("profiles").select("name").eq("user_id", u.id).maybeSingle(),
-        supabase.from("profiles_private").select("*").eq("user_id", u.id).maybeSingle(),
-      ]);
-    if (profileErr) logPostgrestError("Auth.tsx profiles select (post password)", profileErr);
-    if (privateErr) logPostgrestError("Auth.tsx profiles_private select (post password)", privateErr);
-    const needsProfile = !profile?.name?.trim() || !profilePrivate?.date_of_birth;
-    if (needsProfile) {
+
+    const completion = await getProfileCompletionState(u.id);
+    if (completion.isIncomplete) {
       setStep("name");
       setName((prev) =>
         prev ||
