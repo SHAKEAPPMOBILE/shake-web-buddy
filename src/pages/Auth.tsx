@@ -48,6 +48,8 @@ const AUTH_WIZARD_STEPS = new Set([
   "email",
   "confirmation",
   "login",
+  "forgotPassword",
+  "resetPassword",
   "setPassword",
 ]);
 
@@ -122,6 +124,8 @@ export default function Auth() {
     | "email"
     | "confirmation"
     | "setPassword"
+    | "forgotPassword"
+    | "resetPassword"
     | "name"
     | "nationality"
     | "occupation"
@@ -153,8 +157,10 @@ export default function Auth() {
   const [showFaceSetupPrompt, setShowFaceSetupPrompt] = useState(false);
   const [pendingFaceSetupUserId, setPendingFaceSetupUserId] = useState<string | null>(null);
   const [isResolvingSessionRoute, setIsResolvingSessionRoute] = useState(true);
+  const [showEmailLogin, setShowEmailLogin] = useState(false);
+  const [confirmationKind, setConfirmationKind] = useState<"signup" | "reset">("signup");
   
-  const { user, isLoading: isAuthLoading, sendEmailOtp, signInWithPassword, updatePassword } = useAuth();
+  const { user, isLoading: isAuthLoading, sendEmailOtp, sendPasswordResetEmail, signInWithPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -298,7 +304,17 @@ export default function Auth() {
   };
 
   useEffect(() => {
-    if (searchParams.get("setPassword") === "1" && user) {
+    const intent = searchParams.get("intent");
+    const legacySetPassword = searchParams.get("setPassword") === "1";
+
+    if (intent === "reset" && user) {
+      setStep("resetPassword");
+      setIsResolvingSessionRoute(false);
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    if ((intent === "signup" || legacySetPassword) && user) {
       setStep("setPassword");
       setIsResolvingSessionRoute(false);
       setSearchParams({}, { replace: true });
@@ -418,6 +434,7 @@ export default function Auth() {
         } catch {
           /* ignore */
         }
+        setConfirmationKind("signup");
         toast.success("Check your email — open the link, then you'll create a password.");
         setStep("confirmation");
       }
@@ -438,6 +455,33 @@ export default function Auth() {
       setName((prev) => prev || getFallbackProfileName(u));
     } else {
       navigate("/", { replace: true });
+    }
+  };
+
+  const handleSendPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const validation = validateEmail(email);
+    if (!validation.isValid) {
+      toast.error(validation.error);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await sendPasswordResetEmail(email);
+      if (error) {
+        toast.error(toFriendlyAuthMessage(error.message, "email"));
+        return;
+      }
+
+      setConfirmationKind("reset");
+      toast.success("Check your email for a password reset link.");
+      setStep("confirmation");
+    } catch {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -466,6 +510,36 @@ export default function Auth() {
       setPassword("");
       setConfirmPassword("");
       toast.success("Password saved. You're signed in.");
+      await routeAfterPasswordOrProfile();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCompleteResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password || password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await updatePassword(password);
+      if (error) {
+        toast.error(toFriendlyAuthMessage(error.message, "general"));
+        return;
+      }
+
+      setPassword("");
+      setConfirmPassword("");
+      toast.success("Your password has been reset.");
       await routeAfterPasswordOrProfile();
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -825,14 +899,11 @@ export default function Auth() {
       >
         <div className="w-full max-w-md px-6 sm:px-0 space-y-6">
           {/* Back Button */}
-          {step !== "method" && step !== "confirmation" && step !== "setPassword" && (
+          {step !== "method" && step !== "confirmation" && step !== "setPassword" && step !== "resetPassword" && (
             <button
               onClick={() => {
-                if (step === 'email') {
-                  setStep('method');
-                } else {
-                  setStep('method');
-                }
+                setStep('method');
+                setShowEmailLogin(false);
                 setEmail("");
                 setPassword("");
                 setConfirmPassword("");
@@ -856,22 +927,16 @@ export default function Auth() {
               <div className="space-y-3">
                 <Button
                   onClick={() => {
-                    setStep("login");
-                  }}
-                  className="w-full text-white animate-gradient-shift hover:opacity-95"
-                  size="lg"
-                >
-                  Log In
-                </Button>
-
-                <Button
-                  onClick={() => {
                     setStep("email");
                   }}
-                  variant="outline"
-                  className="w-full border-2"
+                  className="w-full text-white hover:opacity-95"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, #ff0080 0%, #ff8c00 20%, #ffd200 40%, #00c853 60%, #00b0ff 80%, #7c4dff 100%)",
+                  }}
                   size="lg"
                 >
+                  <Mail className="w-4 h-4 mr-2 text-white" />
                   Create Account
                 </Button>
 
@@ -912,6 +977,94 @@ export default function Auth() {
                   </svg>
                   Apple
                 </Button>
+
+                {!showEmailLogin ? (
+                  <div className="pt-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmailLogin(true)}
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      Login with email
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSignInWithPassword} className="space-y-3 rounded-2xl border border-border/60 p-4 bg-white/90">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email" className="text-black">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="login-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="pl-10"
+                          required
+                          autoComplete="email"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password" className="text-black">Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="login-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Your password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="pl-10 pr-10"
+                          required
+                          autoComplete="current-password"
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                          onClick={() => setShowPassword((s) => !s)}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full bg-black text-white hover:bg-black/90"
+                      size="lg"
+                      disabled={isLoading}
+                    >
+                      <Mail className="w-4 h-4 mr-2 text-white" />
+                      {isLoading ? "Logging in..." : "Login"}
+                    </Button>
+
+                    <div className="text-center space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStep("forgotPassword");
+                          setShowEmailLogin(false);
+                        }}
+                        className="text-sm text-muted-foreground hover:text-foreground"
+                      >
+                        Forgot password?
+                      </button>
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setShowEmailLogin(false)}
+                          className="text-sm text-primary hover:underline"
+                        >
+                          Hide email login
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
               </div>
             </div>
           )}
@@ -954,71 +1107,10 @@ export default function Auth() {
             </form>
           )}
 
-          {/* Log in: email + password (stored in Supabase Auth) */}
-          {step === "login" && (
-            <form onSubmit={handleSignInWithPassword} className="space-y-4">
-              <div className="space-y-2 text-center">
-                <h2 className="text-xl font-bold text-black">Log In</h2>
-                <p className="text-sm text-muted-foreground">Use the email and password for your SHAKE account.</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-black">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="login-password" className="text-black">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full text-white animate-gradient-shift hover:opacity-95"
-                size="lg"
-                disabled={isLoading}
-              >
-                {isLoading ? "Signing in..." : "Log In"}
-              </Button>
-            </form>
-          )}
-
           {step === "setPassword" && (
             <form onSubmit={handleCompleteSignupPassword} className="space-y-4">
               <div className="space-y-2 text-center">
-                <h2 className="text-xl font-bold text-black">Create your password</h2>
+                <h2 className="text-xl font-bold text-black">Set your password</h2>
                 <p className="text-sm text-muted-foreground">
                   Choose a password for <span className="font-medium">{user?.email ?? email}</span>. You&apos;ll use it
                   next time you log in.
@@ -1083,7 +1175,115 @@ export default function Auth() {
                 size="lg"
                 disabled={isLoading}
               >
-                {isLoading ? "Saving..." : "Continue"}
+                {isLoading ? "Saving..." : "Save Password"}
+              </Button>
+            </form>
+          )}
+
+          {step === "forgotPassword" && (
+            <form onSubmit={handleSendPasswordReset} className="space-y-4">
+              <div className="space-y-2 text-center">
+                <h2 className="text-xl font-bold text-black">Forgot password?</h2>
+                <p className="text-sm text-muted-foreground">
+                  Enter your email and we&apos;ll send you a reset link.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email" className="text-black">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="forgot-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-black text-white hover:bg-black/90"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? "Sending..." : "Send reset link"}
+              </Button>
+            </form>
+          )}
+
+          {step === "resetPassword" && (
+            <form onSubmit={handleCompleteResetPassword} className="space-y-4">
+              <div className="space-y-2 text-center">
+                <h2 className="text-xl font-bold text-black">Set new password</h2>
+                <p className="text-sm text-muted-foreground">
+                  Enter your new password and confirm it.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reset-new-password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="reset-new-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="At least 6 characters"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    minLength={6}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reset-confirm-password">Confirm password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="reset-confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    minLength={6}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    onClick={() => setShowConfirmPassword((s) => !s)}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-shake-green text-background hover:bg-shake-green/90"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? "Saving..." : "Save Password"}
               </Button>
             </form>
           )}
@@ -1093,12 +1293,25 @@ export default function Auth() {
             <div className="space-y-6 text-center">
               <div className="space-y-2 text-center">
                 <h2 className="text-xl font-bold text-black">Check your email</h2>
-                <p className="text-sm text-muted-foreground">
-                  We sent a magic link to <span className="font-medium">{email}</span>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Click the link to verify your email — then you&apos;ll set your password on the next screen.
-                </p>
+                {confirmationKind === "signup" ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      We sent a verification link to <span className="font-medium">{email}</span>
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Click the link to verify your email, then set your password.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      We sent a password reset link to <span className="font-medium">{email}</span>
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Click the link to set your new password.
+                    </p>
+                  </>
+                )}
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
@@ -1110,6 +1323,7 @@ export default function Auth() {
               <Button
                 onClick={() => {
                   setStep('method');
+                  setShowEmailLogin(false);
                   setEmail("");
                   setPassword("");
                   setConfirmPassword("");

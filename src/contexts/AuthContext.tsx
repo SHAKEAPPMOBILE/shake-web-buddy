@@ -19,6 +19,7 @@ interface AuthContextType {
   subscriptionEnd: string | null;
   didJustSignUp: boolean;
   sendEmailOtp: (email: string, purpose?: "signup", attemptNumber?: number) => Promise<OtpResult>;
+  sendPasswordResetEmail: (email: string) => Promise<{ error: Error | null }>;
   verifyEmailOtp: (email: string, token: string, purpose?: string) => Promise<{ error: Error | null; data?: any }>;
   signUpWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -541,6 +542,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   };
 
+  const sendPasswordResetEmail = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
+      redirectTo: `${authCallbackBaseUrl}?intent=reset`,
+    });
+    if (error) {
+      const friendly = toUserFriendlyAuthError(
+        error.message,
+        "Unable to send password reset email. Please check your connection and try again."
+      );
+      return { error: new Error(friendly) };
+    }
+    return { error: null };
+  };
+
   /** Sets password on the current session (e.g. after email magic-link signup). Merges `password_set_at` into user_metadata. */
   const updatePassword = async (password: string) => {
     const { data: { user: u } } = await supabase.auth.getUser();
@@ -579,6 +594,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         subscriptionEnd,
         didJustSignUp,
         sendEmailOtp,
+        sendPasswordResetEmail,
         verifyEmailOtp,
         signUpWithPassword,
         signInWithPassword,

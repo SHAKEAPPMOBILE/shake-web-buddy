@@ -11,7 +11,9 @@ const STORAGE_NEED_PASSWORD = "shake_post_signup_set_password";
 function resolveDestinationAfterAuth(session: { user?: { email?: string | null } } | null): string {
   if (!session?.user) return "/auth";
   const params = new URLSearchParams(window.location.search);
-  const signupIntent = params.get("intent") === "signup";
+  const intent = params.get("intent");
+  const signupIntent = intent === "signup";
+  const resetIntent = intent === "reset";
   let pendingEmailMatch = false;
   try {
     const sent = sessionStorage.getItem(STORAGE_SIGNUP_EMAIL);
@@ -20,6 +22,9 @@ function resolveDestinationAfterAuth(session: { user?: { email?: string | null }
   } catch {
     /* ignore */
   }
+  if (resetIntent) {
+    return "/auth?intent=reset";
+  }
   if (signupIntent || pendingEmailMatch) {
     try {
       sessionStorage.removeItem(STORAGE_SIGNUP_EMAIL);
@@ -27,7 +32,7 @@ function resolveDestinationAfterAuth(session: { user?: { email?: string | null }
     } catch {
       /* ignore */
     }
-    return "/auth?setPassword=1";
+    return "/auth?intent=signup";
   }
   return "/";
 }
