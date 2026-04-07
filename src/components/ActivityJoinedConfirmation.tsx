@@ -105,7 +105,7 @@ export function ActivityJoinedConfirmation({
                       <img
                         src={activityMeta.icon}
                         alt={activityType}
-                        className="block w-full h-full object-cover"
+                        className="block w-full h-full object-cover rounded-full"
                         style={{ objectFit: "cover" }}
                       />
                     ) : (

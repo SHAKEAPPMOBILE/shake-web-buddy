@@ -3,7 +3,7 @@ import { Calendar, Users, Plus, Plane, Share2, Trash2, Music2 } from "lucide-rea
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { CreateActivityDialog } from "../CreateActivityDialog";
+import { useNavigate } from "react-router-dom";
 import { CitySelector } from "@/components/CitySelector";
 import { CityPickerModal } from "@/components/CityPickerModal";
 import { PlanGroupChatView } from "./PlanGroupChatView";
@@ -64,6 +64,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const { selectedLanguage } = useLanguage();
   const { selectedCity, detectedCity, revertToDetectedLocation } = useCity();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { referralCode } = useReferralCode(user?.id);
   const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
   const isMobile = useIsMobile();
@@ -305,7 +306,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     setJoinedPlansCityFilter(selectedCity);
   }, [isCitySheetOpen, selectedCity, cityAtPickerOpen]);
   
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
   const [showChatView, setShowChatView] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
@@ -422,8 +422,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     if (!user) {
       return;
     }
-    // Always open create dialog - it handles premium check internally based on remaining activities
-    setShowCreateDialog(true);
+    navigate("/propose-plan");
   };
 
   const handlePlanClick = async (plan: PlanActivity) => {
@@ -678,7 +677,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   {plan.isCarouselJoin ? (
                     <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 shadow-md flex items-center justify-center overflow-hidden">
                       {getActivityIcon(plan.activity_type) ? (
-                        <img src={getActivityIcon(plan.activity_type)} alt={plan.activity_type} className="w-full h-full object-cover" />
+                        <img src={getActivityIcon(plan.activity_type)} alt={plan.activity_type} className="w-full h-full object-cover rounded-full" />
                       ) : (
                         <span className="text-2xl">{getActivityEmoji(plan.activity_type)}</span>
                       )}
@@ -802,15 +801,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           ))
         )}
       </div>
-
-
-      <CreateActivityDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        city={selectedCity ?? ""}
-      />
-
-
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
         <AlertDialogContent>

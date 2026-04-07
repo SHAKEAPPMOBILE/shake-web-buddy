@@ -11,7 +11,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { LandingCarousel } from "@/components/LandingCarousel";
 import { useCity } from "@/contexts/CityContext";
 import { useTranslation } from "react-i18next";
-import { CreateActivityDialog } from "@/components/CreateActivityDialog";
 import { CitySelector } from "@/components/CitySelector";
 import { CityPickerModal } from "@/components/CityPickerModal";
 import { LocationPinEmoji } from "@/components/LocationPinEmoji";
@@ -34,7 +33,6 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const navigate = useNavigate();
   const { selectedCity, isLoading: isCityLoading, isCityOutOfRange } = useCity();
   const [isCitySelectorOpen, setIsCitySelectorOpen] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showActivityDetails, setShowActivityDetails] = useState(false);
   const [selectedJoinCity, setSelectedJoinCity] = useState<string | null>(null);
   const [showCityChoices, setShowCityChoices] = useState(false);
@@ -140,14 +138,6 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     // So we lock the chosen activity on pointer/touch start and use it here.
     const activityToSelect = tappedActivityRef.current ?? CAROUSEL_ITEMS[currentActivityIndex];
 
-    if (activityToSelect?.isProposePlan) {
-      // Open the create activity dialog for "Propose a plan"
-      onCloseActivities?.();
-      tappedActivityRef.current = null;
-      setShowCreateDialog(true);
-      return;
-    }
-
     if (activityToSelect) {
       setShowActivityDetails(true);
     }
@@ -156,7 +146,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   };
 
   const handleConfirmSelection = async () => {
-    if (!currentActivity || currentActivity.isProposePlan) return;
+    if (!currentActivity) return;
+    if (currentActivity.isProposePlan) {
+      onCloseActivities?.();
+      navigate("/propose-plan");
+      return;
+    }
     if (onConfirmActivity) {
       await onConfirmActivity(
         {
@@ -391,7 +386,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                       <img
                         src={currentActivity.icon}
                         alt={currentActivity.label}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-full"
                       />
                     ) : (
                       <span className="text-5xl flex items-center justify-center w-full h-full animate-scale-in">
@@ -445,7 +440,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                 <div className="w-full p-5 text-center space-y-3 bg-transparent border-0 shadow-none">
                   <div className="w-24 h-24 mx-auto rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
                     {currentActivity?.icon ? (
-                      <img src={currentActivity.icon} alt={currentActivity.label} className="w-16 h-16 object-contain" />
+                      <img src={currentActivity.icon} alt={currentActivity.label} className="w-full h-full object-cover rounded-full" />
                     ) : (
                       <span className="text-5xl">{currentActivity?.emoji}</span>
                     )}
@@ -614,14 +609,6 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           <ThemeToggle />
         </div>
       </div>
-
-      {/* Create Activity Dialog for "Propose a plan" */}
-      <CreateActivityDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        city={selectedCity ?? ""}
-      />
-
       <CityPickerModal open={isCitySelectorOpen} onOpenChange={setIsCitySelectorOpen} title="Choose your city">
         <CitySelector
           variant="picker"

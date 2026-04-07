@@ -110,7 +110,7 @@ export function ActivityConfirmationDialog({
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
                 {getActivityById(activity.id)?.icon ? (
-                  <img src={getActivityById(activity.id)!.icon} alt={activity.label} className="w-12 h-12 object-contain mix-blend-multiply" />
+                  <img src={getActivityById(activity.id)!.icon} alt={activity.label} className="w-full h-full object-cover rounded-full" />
                 ) : (
                   <span className="text-3xl">{activity.emoji}</span>
                 )}
@@ -195,7 +195,7 @@ export function ActivityConfirmationDialog({
                     <img
                       src={getActivityById(activity.id)!.icon}
                       alt={activity.label}
-                      className="w-16 h-16 object-contain"
+                      className="w-full h-full object-cover rounded-full"
                     />
                   ) : (
                     <span className="text-4xl">{activity.emoji}</span>

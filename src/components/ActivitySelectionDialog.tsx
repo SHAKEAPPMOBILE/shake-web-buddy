@@ -179,7 +179,7 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
             >
               <div className="w-28 h-28 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
                 {getActivityById(successActivity.id)?.icon ? (
-                  <img src={getActivityById(successActivity.id)!.icon} alt={successActivity.label} className="w-20 h-20 object-contain mix-blend-multiply" />
+                  <img src={getActivityById(successActivity.id)!.icon} alt={successActivity.label} className="w-full h-full object-cover rounded-full" />
                 ) : (
                   <span className="text-6xl">{successActivity.emoji}</span>
                 )}

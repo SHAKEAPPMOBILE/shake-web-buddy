@@ -480,7 +480,7 @@ export function GroupChatView({
     <div className="fixed inset-0 flex flex-col bg-[#06060a] z-50">
       <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(circle at 8% 0%, rgba(139,92,246,0.65) 0%, transparent 55%), radial-gradient(circle at 92% 18%, rgba(236,72,153,0.6) 0%, transparent 55%), radial-gradient(circle at 50% 100%, rgba(56,189,248,0.5) 0%, transparent 60%)' }} aria-hidden />
       <div className="relative z-10 flex flex-col flex-1 min-h-0">
-      <div className="relative z-30 flex shrink-0 items-center gap-3 border-b border-white/5 bg-[#06060a] px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+      <div className="relative z-30 flex shrink-0 items-center gap-3 border-b border-white/5 bg-transparent px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <button onClick={onBack} className="shrink-0 p-1.5 text-white/80 hover:text-white">
           <ChevronLeft className="w-6 h-6" />
         </button>
@@ -491,7 +491,7 @@ export function GroupChatView({
                 <img
                   src={activityMeta.icon}
                   alt={activityType}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover rounded-full"
                 />
               ) : (
                 <span className="text-sm">{activityMeta?.emoji ?? "📍"}</span>
