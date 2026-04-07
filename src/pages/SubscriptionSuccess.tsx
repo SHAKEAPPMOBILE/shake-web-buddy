@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   triggerConfettiWaterfall,
@@ -173,13 +174,11 @@ export default function SubscriptionSuccess() {
         style={{ backgroundColor: "rgba(6, 8, 16, 0.94)" }}
       >
         <div className="flex items-center gap-3 px-4 py-3">
-          <button
+          <MinimalBackButton
             onClick={handleBack}
-            className="p-2 -ml-2 rounded-full text-[#94a3b8] hover:text-[#e8f0ff] hover:bg-white/5 transition-colors"
+            className="text-[#94a3b8] hover:text-[#e8f0ff]"
             aria-label="Go back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          />
           <h1 className="font-medium text-sm tracking-[0.2em] text-[#64748b] uppercase">
             Subscription Complete
           </h1>

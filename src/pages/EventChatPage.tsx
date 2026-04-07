@@ -7,7 +7,7 @@ import {
   useCallback,
 } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { ChevronLeft, Users, Clock, Bell, BellOff, LogOut, Images, Camera } from "lucide-react";
+import { Users, Clock, Bell, BellOff, LogOut, Images, Camera } from "lucide-react";
 import { useEventChat } from "@/hooks/useEventChat";
 import { supabase } from "@/integrations/supabase/client";
 import type { EventChatLocationState } from "@/lib/eventChatNavigation";
@@ -26,6 +26,7 @@ import { EVENT_CHAT_VIDEO_MAX_SECONDS, uploadEventChatVideoWithProgress } from "
 import { useEventChatReactions } from "@/hooks/useEventChatReactions";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
 import { MessageBubbleReactions } from "@/components/chat/MessageBubbleReactions";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { aggregateReactionsByMessage, sortedReactionEntries } from "@/lib/eventChatReactions";
 import { markEventChatViewedNow } from "@/lib/eventChatLastSeen";
 
@@ -470,17 +471,15 @@ export default function EventChatPage() {
       <div className="relative z-10 flex flex-col flex-1 min-h-0">
         {/* Header */}
         <div className="relative z-30 flex shrink-0 items-center gap-3 border-b border-white/5 px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))]">
-          <button
-            type="button"
+          <MinimalBackButton
             onClick={() => {
               console.log("[EventChatPage] header back");
               navigateBackFromEventChat();
             }}
-            className="shrink-0 p-1.5 text-white/80 hover:text-white"
+            className="shrink-0 text-white/80 hover:text-white"
             aria-label="Back"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
+            iconClassName="w-6 h-6"
+          />
           <div className="flex items-center gap-3 flex-1 min-w-0">
             {eventImageUrl ? (
               <button

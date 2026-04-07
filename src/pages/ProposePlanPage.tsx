@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { startOfDay, format } from "date-fns";
-import { ChevronLeft, Plus, User, Shield, CalendarIcon } from "lucide-react";
+import { Plus, User, Shield, CalendarIcon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,6 +26,7 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
 import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useTranslation } from "react-i18next";
 
 const CURRENCIES = [
@@ -157,14 +158,11 @@ export default function ProposePlanPage() {
   return (
     <div className="min-h-screen bg-background pb-[env(safe-area-inset-bottom,0px)]">
       <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center gap-2">
-        <button
-          type="button"
+        <MinimalBackButton
           onClick={() => navigate(-1)}
-          className="p-2 rounded-full hover:bg-muted transition-colors"
+          className="text-foreground/80 hover:text-foreground"
           aria-label="Back"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+        />
         <h1 className="text-lg font-display font-semibold">{t("createPlan.title")}</h1>
       </div>
 

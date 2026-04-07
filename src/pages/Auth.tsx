@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import logoShake from "@/assets/shake-logo-new.png";
-import { ArrowLeft, User, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff, Mail } from "lucide-react";
+import { User, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff, Mail } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { BirthdayPicker } from "@/components/BirthdayPicker";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
@@ -30,6 +30,7 @@ import { isNativePlatform } from "@/lib/platform-utils";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { hasValidAvatarUrl } from "@/lib/avatar";
 import { FaceCaptureModal } from "@/components/FaceCaptureModal";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
@@ -165,6 +166,26 @@ export default function Auth() {
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const emailLoginFormRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (step !== "method" || !showEmailLogin) return;
+
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (emailLoginFormRef.current?.contains(target)) return;
+      setShowEmailLogin(false);
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, [step, showEmailLogin]);
 
   const fallingStars = useMemo(
     () =>
@@ -900,7 +921,7 @@ export default function Auth() {
         <div className="w-full max-w-md px-6 sm:px-0 space-y-6">
           {/* Back Button */}
           {step !== "method" && step !== "confirmation" && step !== "setPassword" && step !== "resetPassword" && (
-            <button
+            <MinimalBackButton
               onClick={() => {
                 setStep('method');
                 setShowEmailLogin(false);
@@ -909,10 +930,9 @@ export default function Auth() {
                 setConfirmPassword("");
               }}
               aria-label="Back"
-              className="absolute top-4 left-4 p-0 bg-transparent border-0 text-primary hover:text-primary/80 leading-none"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
+              className="absolute top-4 left-4 text-primary/80 hover:text-primary"
+              iconClassName="w-4 h-4"
+            />
           )}
 
           {/* Method Selection */}
@@ -925,26 +945,6 @@ export default function Auth() {
               </div>
 
               <div className="space-y-3">
-                <Button
-                  onClick={() => {
-                    setStep("email");
-                  }}
-                  className="w-full text-white animate-gradient-shift hover:opacity-95"
-                  size="lg"
-                >
-                  <Mail className="w-4 h-4 mr-2 text-white" />
-                  Create Account
-                </Button>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
-                  </div>
-                </div>
-
                 <Button
                   onClick={() => signInWithOAuth('google')}
                   variant="outline"
@@ -974,6 +974,17 @@ export default function Auth() {
                   Apple
                 </Button>
 
+                <Button
+                  onClick={() => {
+                    setStep("email");
+                  }}
+                  className="w-full text-white animate-gradient-shift hover:opacity-95"
+                  size="lg"
+                >
+                  <Mail className="w-4 h-4 mr-2 text-white" />
+                  Create Account
+                </Button>
+
                 {!showEmailLogin ? (
                   <div className="pt-2 text-center">
                     <button
@@ -985,7 +996,7 @@ export default function Auth() {
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSignInWithPassword} className="space-y-3 rounded-2xl border border-border/60 p-4 bg-white/90">
+                  <form ref={emailLoginFormRef} onSubmit={handleSignInWithPassword} className="space-y-3 rounded-2xl border border-border/60 p-4 bg-white/90">
                     <div className="space-y-2">
                       <Label htmlFor="login-email" className="text-black">Email</Label>
                       <div className="relative">
@@ -1049,15 +1060,6 @@ export default function Auth() {
                       >
                         Forgot password?
                       </button>
-                      <div>
-                        <button
-                          type="button"
-                          onClick={() => setShowEmailLogin(false)}
-                          className="text-sm text-primary hover:underline"
-                        >
-                          Hide email login
-                        </button>
-                      </div>
                     </div>
                   </form>
                 )}

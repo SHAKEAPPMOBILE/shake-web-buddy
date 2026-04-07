@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Send, Users, User, Trash2, FileText, Images } from "lucide-react";
+import { Send, Users, User, Trash2, FileText, Images } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 
 interface PlanMessage {
@@ -260,9 +261,12 @@ export function PlanGroupChatView({
     <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50">
       {/* Header */}
       <div className="relative z-30 flex shrink-0 items-center gap-3 bg-[hsl(50,40%,92%)] px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
-        <button onClick={onBack} className="shrink-0 p-1 hover:opacity-70 transition-opacity">
-          <ChevronLeft className="w-6 h-6 text-black" />
-        </button>
+        <MinimalBackButton
+          onClick={onBack}
+          className="shrink-0 text-black/80 hover:text-black"
+          aria-label="Back"
+          iconClassName="w-6 h-6"
+        />
         
         {/* Creator Avatar */}
         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-black/20 shadow-sm shrink-0">

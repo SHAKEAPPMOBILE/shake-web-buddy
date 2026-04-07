@@ -1,5 +1,5 @@
-import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 
 export default function CommunityGuidelines() {
   const navigate = useNavigate();
@@ -8,13 +8,11 @@ export default function CommunityGuidelines() {
     <div className="min-h-screen bg-background">
       <main className="pt-8 pb-16">
         <div className="container mx-auto px-4 max-w-3xl">
-          <button
+          <MinimalBackButton
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back</span>
-          </button>
+            className="text-muted-foreground hover:text-foreground mb-6"
+            aria-label="Back"
+          />
 
           <h1 className="font-display text-4xl font-bold text-foreground mb-8">Community Guidelines</h1>
           

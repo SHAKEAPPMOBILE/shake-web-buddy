@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, DollarSign, ArrowLeft, Mail, Shield, BarChart3, CalendarDays } from "lucide-react";
+import { Loader2, Users, DollarSign, Mail, Shield, BarChart3, CalendarDays } from "lucide-react";
 import { VenuesTab } from "@/components/admin/VenuesTab";
 import { UsersTab } from "@/components/admin/UsersTab";
 import { PayoutsTab } from "@/components/admin/PayoutsTab";
@@ -12,6 +12,7 @@ import { VerificationsTab } from "@/components/admin/VerificationsTab";
 import { AnalyticsTab } from "@/components/admin/AnalyticsTab";
 import { EventsTab } from "@/components/admin/EventsTab";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useDailyTheme } from "@/hooks/useDailyTheme";
 
 export default function Admin() {
@@ -134,14 +135,11 @@ export default function Admin() {
       <div className="min-h-screen bg-gradient-to-br from-background/80 to-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute left-4 top-4"
+            <MinimalBackButton
               onClick={resetRecovery}
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back
-            </Button>
+              className="absolute left-4 top-4 text-muted-foreground hover:text-foreground"
+              aria-label="Back"
+            />
             <CardTitle className="text-2xl">🔑 Password Recovery</CardTitle>
             <CardDescription>
               {recoveredPassword 

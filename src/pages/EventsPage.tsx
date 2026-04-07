@@ -2,7 +2,6 @@ import { useState, useRef, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
-  ChevronLeft,
   Calendar,
   MapPin,
   Users,
@@ -26,6 +25,7 @@ import { buildEventChatNavigateState } from "@/lib/eventChatNavigation";
 import { eventChatMembershipGrantsAccess } from "@/lib/eventChatMembership";
 import { enqueuePendingEventChat } from "@/lib/pendingEventChat";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { EventGroupChatBanner3D } from "@/components/EventGroupChatBanner3D";
 
 // Fallback when no API key or API returns empty
@@ -602,14 +602,11 @@ function EventDetail({
             🎵
           </div>
         )}
-        <button
-          type="button"
-          className="absolute top-4 left-4 z-20 shrink-0 p-1.5 rounded-full bg-black/50 text-white/90 hover:text-white"
+        <MinimalBackButton
+          className="absolute top-4 left-4 z-20 shrink-0 text-white/90 hover:text-white"
           onClick={onClose}
           aria-label="Back"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+        />
         {event.isHot && (
           <div className="absolute top-4 right-4 z-20 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold">
             HOT 🔥
@@ -983,14 +980,11 @@ export default function EventsPage({
       <div className="px-5 pt-5 pb-3 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <button
-              type="button"
+            <MinimalBackButton
               onClick={handleEventsBack}
-              className="shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+              className="shrink-0 text-muted-foreground hover:text-foreground"
               aria-label="Back"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+            />
             <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
               Near You
             </h1>

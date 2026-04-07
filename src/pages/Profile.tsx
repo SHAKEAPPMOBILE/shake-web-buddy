@@ -6,6 +6,7 @@ import { toast } from "@/lib/app-toast";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { Camera, ChevronLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -308,13 +309,12 @@ export default function Profile() {
       {/* Header with back button */}
       <header className="shrink-0 bg-card/95 backdrop-blur-xl border-b border-border pt-[env(safe-area-inset-top,0px)]">
         <div className="flex items-center justify-between px-4 h-14">
-          <button
+          <MinimalBackButton
             onClick={() => navigate("/")}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ChevronLeft className="w-6 h-6" />
-            <span className="text-sm font-medium">{t('common.back')}</span>
-          </button>
+            className="text-muted-foreground hover:text-foreground"
+            aria-label={t('common.back')}
+            iconClassName="w-6 h-6"
+          />
           <button
             onClick={handleSaveProfile}
             disabled={isSaving}

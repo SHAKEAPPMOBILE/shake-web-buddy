@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, Trash2, Calendar, Smile, X, Images } from "lucide-react";
+import { Send, Users, User, Trash2, Calendar, Smile, X, Images } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 
 interface PlanMessage {
@@ -280,12 +281,11 @@ export function PlanGroupChatDialog({
       <div className="relative z-10 shrink-0">
         {/* Top bar: back + participants */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <button
+          <MinimalBackButton
             onClick={() => { onOpenChange(false); onBack(); }}
-            className="p-2 -ml-2 text-white/70 hover:text-white transition-colors rounded-full hover:bg-white/10"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+            className="text-white/70 hover:text-white"
+            aria-label="Back"
+          />
           <button
             onClick={() => setShowParticipantsDialog(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 transition-colors border border-white/10"

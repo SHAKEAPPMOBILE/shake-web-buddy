@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { VenuesTab } from "@/components/admin/VenuesTab";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useDailyTheme } from "@/hooks/useDailyTheme";
 
 /**
@@ -8,17 +8,16 @@ import { useDailyTheme } from "@/hooks/useDailyTheme";
  */
 export default function PublicVenues() {
   const theme = useDailyTheme();
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to app
-          </Link>
+          <MinimalBackButton
+            onClick={() => navigate("/")}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Back"
+          />
           <Link
             to="/admin"
             className="text-sm text-muted-foreground hover:text-foreground"

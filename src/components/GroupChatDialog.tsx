@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, User, BellOff, Bell, LogOut, Globe, Trash2, Plane, Images } from "lucide-react";
+import { Send, Users, User, BellOff, Bell, LogOut, Globe, Trash2, Plane, Images } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useTranslation } from "react-i18next";
 import { VenueSuggestionCarousel } from "./VenueSuggestionCarousel";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { DbVenue } from "@/hooks/useDatabaseVenues";
@@ -584,11 +585,11 @@ export function GroupChatDialog({
             {/* Expanded Chat Header - minimal */}
             <div className="flex items-center justify-between px-4 py-2.5 shrink-0 border-b border-white/5">
               <div className="flex items-center gap-2">
-                <button onClick={() => setIsChatExpanded(false)} className="p-1.5 text-white/80 hover:text-white" title="Back">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
+                <MinimalBackButton
+                  onClick={() => setIsChatExpanded(false)}
+                  className="text-white/80 hover:text-white"
+                  aria-label="Back"
+                />
                 <h3 className="font-medium text-white text-sm">{title}</h3>
                 {isCrossCity && (
                   <span className="text-xs text-primary/80 flex items-center gap-0.5">
