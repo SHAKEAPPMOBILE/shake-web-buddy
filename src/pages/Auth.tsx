@@ -929,11 +929,7 @@ export default function Auth() {
                   onClick={() => {
                     setStep("email");
                   }}
-                  className="w-full text-white hover:opacity-95"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, #ff0080 0%, #ff8c00 20%, #ffd200 40%, #00c853 60%, #00b0ff 80%, #7c4dff 100%)",
-                  }}
+                  className="w-full text-white animate-gradient-shift hover:opacity-95"
                   size="lg"
                 >
                   <Mail className="w-4 h-4 mr-2 text-white" />
