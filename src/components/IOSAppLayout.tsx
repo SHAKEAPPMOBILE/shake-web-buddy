@@ -86,10 +86,19 @@ export function IOSAppLayout() {
       .eq("user_id", user.id)
       .maybeSingle();
 
+    const { data: privateProfile, error: privateError } = await supabase
+      .from("profiles_private")
+      .select("date_of_birth")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     let resolvedProfile = profile;
 
     if (profileError) {
       logPostgrestError("IOSAppLayout profiles select", profileError);
+    }
+    if (privateError) {
+      logPostgrestError("IOSAppLayout profiles_private select", privateError);
     }
 
     if (!profileError && !resolvedProfile) {
@@ -120,14 +129,17 @@ export function IOSAppLayout() {
     }
 
     const avatarMissing = !hasValidAvatarUrl(resolvedProfile?.avatar_url);
-    const needsProfile = resolvedProfile !== null
-      ? !resolvedProfile?.name?.trim() || !hasValidAvatarUrl(resolvedProfile?.avatar_url)
-      : false;
+    const needsProfile =
+      resolvedProfile !== null
+        ? !resolvedProfile?.name?.trim() ||
+          !hasValidAvatarUrl(resolvedProfile?.avatar_url) ||
+          !privateProfile?.date_of_birth
+        : false;
 
     return {
       avatarMissing,
       needsProfile,
-      shouldRetry: Boolean(profileError || !resolvedProfile),
+      shouldRetry: Boolean(profileError || privateError || !resolvedProfile || !privateProfile),
     };
   }, [user]);
 
