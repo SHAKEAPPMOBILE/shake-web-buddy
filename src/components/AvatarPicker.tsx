@@ -51,6 +51,19 @@ export function AvatarPicker({
   onCameraClick,
   customAvatarPreview,
 }: AvatarPickerProps) {
+  const selectedPreset = selectedAvatar
+    ? localAvatarOptions.find((a) => a.id === selectedAvatar)?.src
+    : undefined;
+
+  const topPreviewUrl =
+    selectedAvatar === "custom" && customAvatarPreview
+      ? getDisplayAvatarUrl(customAvatarPreview) ?? customAvatarPreview
+      : selectedPreset
+        ? getDisplayAvatarUrl(selectedPreset) ?? selectedPreset
+        : null;
+
+  const isShowingSelected = Boolean(topPreviewUrl);
+
   return (
     <div className="space-y-4">
       {/* Camera/Upload button */}
@@ -60,16 +73,16 @@ export function AvatarPicker({
           onClick={onUploadClick}
           className={cn(
             "relative w-16 h-16 rounded-full border-2 transition-all duration-200 overflow-hidden hover:scale-110 active:scale-95",
-            customAvatarPreview && selectedAvatar === "custom"
+            isShowingSelected
               ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
               : "border-border hover:border-primary/50"
           )}
           title="Upload a photo"
         >
-          {customAvatarPreview ? (
+          {topPreviewUrl ? (
             <>
-              <img src={getDisplayAvatarUrl(customAvatarPreview) ?? customAvatarPreview} alt="Custom avatar" className="w-full h-full object-cover" />
-              {selectedAvatar === "custom" && (
+              <img src={topPreviewUrl} alt="Selected avatar" className="w-full h-full object-cover" />
+              {isShowingSelected && (
                 <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
                   <Check className="w-5 h-5 text-shake-green" />
                 </div>
