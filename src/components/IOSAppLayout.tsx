@@ -93,6 +93,7 @@ export function IOSAppLayout() {
       .maybeSingle();
 
     let resolvedProfile = profile;
+    let resolvedPrivate = privateProfile;
 
     if (profileError) {
       logPostgrestError("IOSAppLayout profiles select", profileError);
@@ -128,18 +129,42 @@ export function IOSAppLayout() {
       }
     }
 
+    // Bootstrap private profile row if missing (needed for DOB gating).
+    if (!privateError && !resolvedPrivate) {
+      try {
+        const { data: bootstrappedPrivate, error: bootstrapPrivateError } = await supabase
+          .from("profiles_private")
+          .upsert(
+            {
+              user_id: user.id,
+            },
+            { onConflict: "user_id" },
+          )
+          .select("date_of_birth")
+          .maybeSingle();
+
+        if (bootstrapPrivateError) {
+          logPostgrestError("IOSAppLayout profiles_private upsert bootstrap", bootstrapPrivateError);
+        } else {
+          resolvedPrivate = bootstrappedPrivate ?? resolvedPrivate;
+        }
+      } catch (e) {
+        console.warn("[IOSAppLayout] profiles_private bootstrap threw:", e);
+      }
+    }
+
     const avatarMissing = !hasValidAvatarUrl(resolvedProfile?.avatar_url);
     const needsProfile =
       resolvedProfile !== null
         ? !resolvedProfile?.name?.trim() ||
           !hasValidAvatarUrl(resolvedProfile?.avatar_url) ||
-          !privateProfile?.date_of_birth
+          !resolvedPrivate?.date_of_birth
         : false;
 
     return {
       avatarMissing,
       needsProfile,
-      shouldRetry: Boolean(profileError || privateError || !resolvedProfile || !privateProfile),
+      shouldRetry: Boolean(profileError || privateError || !resolvedProfile || !resolvedPrivate),
     };
   }, [user]);
 
