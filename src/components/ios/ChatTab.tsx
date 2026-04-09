@@ -262,31 +262,31 @@ export function ChatTab({
       }
 
       // Event chats the user has joined (merged into same list as activity chats)
-      const {
-        data: eventMembershipsRaw,
-        error: eventMembershipsError,
-      } = await supabase.from("event_chat_members").select("*").eq("user_id", user.id);
+      let eventMemberships: Record<string, unknown>[] = [];
+      try {
+        const {
+          data: eventMembershipsRaw,
+          error: eventMembershipsError,
+          status: eventMembershipsStatus,
+        } = await supabase.from("event_chat_members").select("*").eq("user_id", user.id);
 
-      if (eventMembershipsError) {
-        logPostgrestError("ChatTab event_chat_members select", eventMembershipsError);
-        console.error(
-          "[ChatTab] event_chat_members error body",
-          JSON.stringify({
-            message: eventMembershipsError.message,
-            details: eventMembershipsError.details,
-            hint: eventMembershipsError.hint,
-            code: eventMembershipsError.code,
-          }),
-        );
+        if (eventMembershipsError) {
+          // Keep chat tab rendering even when PostgREST intermittently returns a 400 here.
+          if (eventMembershipsStatus !== 400) {
+            logPostgrestError("ChatTab event_chat_members select", eventMembershipsError);
+          }
+        } else if (Array.isArray(eventMembershipsRaw)) {
+          eventMemberships = eventMembershipsRaw as Record<string, unknown>[];
+        }
+      } catch {
+        // Silently continue; event chats are optional and should never block rendering.
       }
-
-      const eventMemberships = Array.isArray(eventMembershipsRaw) ? eventMembershipsRaw : [];
 
       console.log("[ChatTab] event_chat_members response", {
         fetchNonce,
-        isArray: Array.isArray(eventMembershipsRaw),
+        isArray: Array.isArray(eventMemberships),
         rowCount: eventMemberships.length,
-        error: eventMembershipsError?.message ?? null,
+        error: null,
         rows: eventMemberships,
       });
 

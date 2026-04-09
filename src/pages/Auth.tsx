@@ -352,6 +352,18 @@ export default function Auth() {
 
     let cancelled = false;
     setIsResolvingSessionRoute(true);
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        setIsResolvingSessionRoute(false);
+      }
+    }, 3000);
+
+    const resolveSessionRouteDone = () => {
+      clearTimeout(timeoutId);
+      if (!cancelled) {
+        setIsResolvingSessionRoute(false);
+      }
+    };
 
     setTimeout(() => {
       (async () => {
@@ -364,13 +376,13 @@ export default function Auth() {
         if (needSetPassword) {
           if (!cancelled) {
             setStep("setPassword");
-            setIsResolvingSessionRoute(false);
+            resolveSessionRouteDone();
           }
           return;
         }
 
         if (AUTH_WIZARD_STEPS.has(step)) {
-          setIsResolvingSessionRoute(false);
+          resolveSessionRouteDone();
           return;
         }
 
@@ -385,21 +397,21 @@ export default function Auth() {
             prev ||
             getFallbackProfileName(user)
           );
-            setIsResolvingSessionRoute(false);
+          resolveSessionRouteDone();
           return;
         }
 
+        clearTimeout(timeoutId);
         navigate("/", { replace: true });
       })().catch(() => {
-          if (!cancelled) {
-            setIsResolvingSessionRoute(false);
-          }
+          resolveSessionRouteDone();
         // If anything fails, don't block the user
       });
     }, 0);
 
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, [user, isAuthLoading, navigate, step]);
 

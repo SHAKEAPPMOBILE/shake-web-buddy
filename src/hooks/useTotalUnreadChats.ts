@@ -96,10 +96,31 @@ export function useTotalUnreadChats() {
       }
 
       // Event group chats (Ticketmaster / route id on `event_chat_members.event_id`)
-      const { data: eventMembers } = await supabase
-        .from("event_chat_members")
-        .select("event_id, joined_at, expires_at, paid_at, event_starts_at")
-        .eq("user_id", user.id);
+      let eventMembers: {
+        event_id: string | null;
+        joined_at: string | null;
+        expires_at: string | null;
+        paid_at: string | null;
+        event_starts_at: string | null;
+      }[] = [];
+      try {
+        const {
+          data,
+          error: eventMembersError,
+          status: eventMembersStatus,
+        } = await supabase
+          .from("event_chat_members")
+          .select("event_id, joined_at, expires_at, paid_at, event_starts_at")
+          .eq("user_id", user.id);
+
+        if (!eventMembersError && data) {
+          eventMembers = data;
+        } else if (eventMembersError && eventMembersStatus !== 400) {
+          console.warn("[useTotalUnreadChats] event_chat_members query failed", eventMembersError.message);
+        }
+      } catch {
+        // Silently continue with zero event unreads.
+      }
 
       const activeEventRows = (eventMembers ?? []).filter(
         (m) => m.event_id && !isEventChatMembershipExplicitlyExpired(m),
