@@ -3,15 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-// Support both env var names (Netlify/common docs often use VITE_SUPABASE_ANON_KEY)
-const SUPABASE_PUBLISHABLE_KEY =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Runtime check: if missing on load, venues and other Supabase data will fail (log once)
 if (typeof window !== "undefined") {
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     console.error(
-      "[Supabase] Missing config. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY (or VITE_SUPABASE_ANON_KEY) in Netlify env and redeploy."
+      "[Supabase] Missing config. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in env and redeploy."
     );
   }
 }

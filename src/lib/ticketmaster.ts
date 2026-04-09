@@ -89,8 +89,7 @@ export async function fetchTicketmasterEvents(options?: {
   };
 
   /** Same keys as `createClient` — Edge Functions expect `Authorization: Bearer <jwt>`; use session user JWT or anon key */
-  const anonOrPublishableKey =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY ?? "";
+  const anonOrPublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
 
   try {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -107,7 +106,7 @@ export async function fetchTicketmasterEvents(options?: {
       headers: {
         Authorization: authorization
           ? `${authorization.slice(0, 24)}…(redacted)`
-          : "(missing — set VITE_SUPABASE_ANON_KEY / VITE_SUPABASE_PUBLISHABLE_KEY)",
+          : "(missing — set VITE_SUPABASE_PUBLISHABLE_KEY)",
       },
       authMode: userAccessToken ? "user_session" : anonOrPublishableKey ? "anon_key" : "none",
     });
@@ -201,8 +200,7 @@ export async function fetchTicketmasterEventDetail(eventId: string): Promise<Tic
   const trimmed = eventId.trim();
   if (!trimmed) return null;
 
-  const anonOrPublishableKey =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY ?? "";
+  const anonOrPublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
 
   try {
     const { data: sessionData } = await supabase.auth.getSession();

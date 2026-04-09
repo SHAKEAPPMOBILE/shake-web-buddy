@@ -16,7 +16,7 @@ if (!password) {
 }
 
 const url = process.env.VITE_SUPABASE_URL;
-const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 if (!url || !key) {
   console.error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY in .env");

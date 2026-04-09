@@ -47,8 +47,7 @@ export async function uploadEventChatVideoWithProgress(
   onProgress: (ratio: number) => void
 ): Promise<string> {
   const base = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
-  const anon =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const anon = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!base || !anon) throw new Error("Supabase is not configured");
 
   const objectName = `${Date.now()}.mp4`;
