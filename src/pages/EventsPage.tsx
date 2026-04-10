@@ -456,7 +456,12 @@ function EventDetail({
 
       if (existingMember && eventChatMembershipGrantsAccess(existingMember)) {
         if (user?.id) addGroupChatAccess(user.id, event.id);
-        onJoinedEvent(event);
+        navigate(`/chat/event/${event.id}`, {
+          state: {
+            ...buildEventChatNavigateState(event),
+            eventsReturn: { mode: eventsReturnMode },
+          },
+        });
         return;
       }
 
@@ -561,8 +566,57 @@ function EventDetail({
         }
       }
 
-      addGroupChatAccess(user.id, targetEventId);
-      onJoinedEvent({ ...event, id: targetEventId });
+      const resolveUserIdForWrite = async (): Promise<string | null> => {
+        if (user?.id) return user.id;
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user?.id) return session.user.id;
+
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+        return authUser?.id ?? null;
+      };
+
+      const membershipUserId = await resolveUserIdForWrite();
+      if (!membershipUserId) {
+        toast.error("Please sign in to unlock the group chat.");
+        return;
+      }
+
+      const parsedStart = eventStartsAt ? new Date(eventStartsAt) : null;
+      const hasValidStart = parsedStart && !isNaN(parsedStart.getTime());
+      const membershipExpiresAt = hasValidStart
+        ? new Date(parsedStart.getTime() + 12 * 60 * 60 * 1000)
+        : new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      const { error: membershipUpsertError } = await supabase.from("event_chat_members").upsert(
+        {
+          event_id: targetEventId,
+          user_id: membershipUserId,
+          joined_at: new Date().toISOString(),
+          paid_at: new Date().toISOString(),
+          expires_at: membershipExpiresAt.toISOString(),
+          event_name: event.title ?? event.name,
+          event_starts_at: hasValidStart ? parsedStart.toISOString() : null,
+          amount_cents: 100,
+        },
+        { onConflict: "event_id,user_id" },
+      );
+
+      if (membershipUpsertError) {
+        throw membershipUpsertError;
+      }
+
+      addGroupChatAccess(membershipUserId, targetEventId);
+      navigate(`/chat/event/${targetEventId}`, {
+        state: {
+          ...buildEventChatNavigateState({ ...event, id: targetEventId }),
+          eventsReturn: { mode: eventsReturnMode },
+        },
+      });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes("401") || message.toLowerCase().includes("unauthorized") || message.toLowerCase().includes("authenticated")) {
@@ -837,11 +891,28 @@ export default function EventsPage({
           ? new Date(expiresAtFromStart.getTime() + 12 * 60 * 60 * 1000)
           : new Date(paidAt.getTime() + 24 * 60 * 60 * 1000);
 
-        if (!user?.id) return;
+        let membershipUserId = user?.id ?? null;
+        if (!membershipUserId) {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          membershipUserId = session?.user?.id ?? null;
+        }
+        if (!membershipUserId) {
+          const {
+            data: { user: authUser },
+          } = await supabase.auth.getUser();
+          membershipUserId = authUser?.id ?? null;
+        }
+        if (!membershipUserId) {
+          console.warn("[EventsPage] Skipping membership upsert after payment: no authenticated user id");
+          return;
+        }
+
         const { error: membershipUpsertError } = await supabase.from("event_chat_members").upsert(
           {
             event_id: chatUnlockedId,
-            user_id: user.id,
+            user_id: membershipUserId,
             joined_at: new Date().toISOString(),
             paid_at: paidAt.toISOString(),
             expires_at: membershipExpiresAt.toISOString(),
