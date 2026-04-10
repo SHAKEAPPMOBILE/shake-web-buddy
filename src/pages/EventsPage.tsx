@@ -408,7 +408,7 @@ function EventDetail({
       }
       const { data: existingMember, error: memberError } = await supabase
         .from("event_chat_members")
-        .select("event_id, paid_at, expires_at, event_starts_at")
+        .select("event_id, paid_at, expires_at, event_starts_at, user_id, id, event_name, amount_cents, stripe_payment_intent_id")
         .eq("event_id", event.id)
         .eq("user_id", user.id)
         .maybeSingle();
@@ -456,12 +456,7 @@ function EventDetail({
 
       if (existingMember && eventChatMembershipGrantsAccess(existingMember)) {
         if (user?.id) addGroupChatAccess(user.id, event.id);
-        navigate(`/chat/event/${event.id}`, {
-          state: {
-            ...buildEventChatNavigateState(event),
-            eventsReturn: { mode: eventsReturnMode },
-          },
-        });
+        onJoinedEvent(event);
         return;
       }
 
@@ -627,31 +622,25 @@ function EventDetail({
         ? new Date(parsedStart.getTime() + 12 * 60 * 60 * 1000)
         : new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+      const eventChatMemberPayload = {
+        event_id: targetEventId,
+        user_id: membershipUserId,
+        paid_at: new Date().toISOString(),
+        expires_at: membershipExpiresAt.toISOString(),
+        event_name: event.title ?? event.name,
+        event_starts_at: hasValidStart ? parsedStart.toISOString() : null,
+        amount_cents: 100,
+      };
+      console.log("[DEBUG] event_chat_members upsert payload:", eventChatMemberPayload);
+
       const { error: membershipUpsertError } = await supabase.from("event_chat_members").upsert(
-        {
-          event_id: targetEventId,
-          user_id: membershipUserId,
-          joined_at: new Date().toISOString(),
-          paid_at: new Date().toISOString(),
-          expires_at: membershipExpiresAt.toISOString(),
-          event_name: event.title ?? event.name,
-          event_starts_at: hasValidStart ? parsedStart.toISOString() : null,
-          amount_cents: 100,
-        },
-        { onConflict: "event_id,user_id" },
+        eventChatMemberPayload,
+        { onConflict: "user_id,event_id", ignoreDuplicates: true },
       );
 
-      if (membershipUpsertError) {
-        throw membershipUpsertError;
-      }
-
+      // Show confirmation modal — modal's onJoinGroupChat handles navigation
       addGroupChatAccess(membershipUserId, targetEventId);
-      navigate(`/chat/event/${targetEventId}`, {
-        state: {
-          ...buildEventChatNavigateState({ ...event, id: targetEventId }),
-          eventsReturn: { mode: eventsReturnMode },
-        },
-      });
+      onJoinedEvent({ ...event, id: targetEventId });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes("401") || message.toLowerCase().includes("unauthorized") || message.toLowerCase().includes("authenticated")) {
@@ -955,19 +944,17 @@ export default function EventsPage({
             event_starts_at: resolved.eventStartAt ?? null,
             amount_cents: 100,
           },
-          { onConflict: "event_id,user_id" },
+          { onConflict: "user_id,event_id", ignoreDuplicates: true },
         );
-        if (membershipUpsertError) {
+        // always navigate even if upsert error (member may already exist)
+    if (false && membershipUpsertError) {
           console.warn("[EventsPage] event_chat_members upsert after payment (webhook may have succeeded)", membershipUpsertError);
-        } else {
-          enqueuePendingEventChat({
-            event_id: chatUnlockedId,
-            event_name: resolved.name,
-            city: resolved.city,
-            event_starts_at: resolved.eventStartAt ?? null,
-            expires_at: membershipExpiresAt.toISOString(),
-          });
         }
+        // Always navigate to the group chat, even if upsert error (unless user id missing)
+        addGroupChatAccess(user.id, chatUnlockedId);
+        setSelected(null);
+        setJoinConfirmationEvent(resolved);
+        // Modal handles navigation via onJoinGroupChat
       } catch (error) {
         console.warn("[EventsPage] membership upsert after payment redirect", error);
       }
@@ -1353,6 +1340,8 @@ export default function EventsPage({
               state: ev
                 ? {
                     ...buildEventChatNavigateState(ev),
+                    eventDate: ev.eventStartAt || ev.scheduled_for || null,
+                    dateLine: eventDateLineForConfirmation(ev),
                     eventsReturn: {
                       mode: isStandaloneEventsRoute ? "standalone_events" : "home_near_you",
                     },

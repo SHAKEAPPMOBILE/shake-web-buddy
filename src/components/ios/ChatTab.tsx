@@ -269,7 +269,7 @@ export function ChatTab({
           data: eventMembershipsRaw,
           error: eventMembershipsError,
           status: eventMembershipsStatus,
-        } = await supabase.from("event_chat_members").select("event_id, user_id, joined_at, paid_at, expires_at, event_name, event_venue, event_starts_at, amount_cents").eq("user_id", user.id);
+        } = await supabase.from("event_chat_members").select("event_id, user_id, paid_at, expires_at, event_name, event_starts_at, amount_cents, id, stripe_payment_intent_id").eq("user_id", user.id);
 
         if (eventMembershipsError) {
           // Keep chat tab rendering even when PostgREST intermittently returns a 400 here.
@@ -634,6 +634,10 @@ export function ChatTab({
 
   // Show full-page GroupChatView when a carousel activity is selected
   if (selectedChatActivity && showChatDialog) {
+    // Find the scheduled_for date for the selected activity
+    const selected = activities.find(
+      (a) => a.activity_type === selectedChatActivity.activityType && a.city === selectedChatActivity.city
+    );
     return (
       <GroupChatView
         activityType={selectedChatActivity.activityType}
@@ -641,6 +645,7 @@ export function ChatTab({
         homeCity={selectedCity}
         onBack={handleBackToActivities}
         attendeeCount={getActivityJoinCount(selectedChatActivity.activityType)}
+        eventDate={selected?.scheduled_for || null}
       />
     );
   }

@@ -35,6 +35,7 @@ interface GroupChatViewProps {
   homeCity?: string;
   onBack: () => void;
   attendeeCount?: number;
+  eventDate?: string | null;
 }
 
 interface Message {
@@ -115,6 +116,7 @@ export function GroupChatView({
   homeCity,
   onBack, 
   attendeeCount = 0,
+  eventDate,
 }: GroupChatViewProps) {
   const isCrossCity = homeCity && city !== homeCity;
   const [message, setMessage] = useState("");
@@ -474,7 +476,19 @@ export function GroupChatView({
 
   const title = getActivityLabel(activityType);
   const activityMeta = getActivityById(activityType);
-  const headerSubtitle = assignedVenue?.name || city;
+  const activityTime = activityType === "lunch" ? "12:30 PM" : activityType === "dinner" ? "7:00 PM" : activityType === "drinks" ? "8:00 PM" : activityType === "brunch" ? "11:00 AM" : activityType === "hike" ? "9:00 AM" : null;
+  const headerDateLabel = eventDate
+    ? (() => {
+        const d = new Date(eventDate);
+        const today = new Date();
+        const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+        const isToday = d.toDateString() === today.toDateString();
+        const isTomorrow = d.toDateString() === tomorrow.toDateString();
+        const dayName = isToday ? "Today" : isTomorrow ? "Tomorrow" : d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+        return activityTime ? `${dayName} at ${activityTime}` : dayName;
+      })()
+    : activityTime ? `Today at ${activityTime}` : city;
+  const headerSubtitle = headerDateLabel;
   const showAttendees = attendeeCount > 0;
 
   return (
@@ -509,7 +523,7 @@ export function GroupChatView({
               </span>
             )}
           </h1>
-          <p className="text-xs text-white/70">{headerSubtitle}</p>
+          <p className="text-xs text-white/70">{headerDateLabel}</p>
         </div>
         <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-white/60 hover:text-white hover:bg-white/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
@@ -521,15 +535,13 @@ export function GroupChatView({
         </div>
       </div>
 
-      {hasVenues && currentVenue && (
+      {hasVenues && currentVenue && assignedVenue && (
         <div className="px-4 py-2 border-b border-white/5">
           <div className="flex items-center gap-2">
-            {hasMultipleVenues && (
-              <button onClick={handlePrevVenue} className="p-1 rounded-full text-white/60 hover:text-white hover:bg-white/5">
+            <button onClick={handlePrevVenue} disabled={!hasMultipleVenues} className={`p-1 rounded-full hover:bg-white/5 transition-colors ${hasMultipleVenues ? "text-white/60 hover:text-white" : "text-white/20 cursor-default"}`}>
                 <ChevronLeft className="w-4 h-4" />
               </button>
-            )}
-            <div className="flex-1 flex items-center justify-center gap-1.5">
+            <div className="flex-1 min-w-0 flex items-center justify-center gap-1.5">
               <button
                 onClick={() => {
                   const venueUrl = currentVenue.latitude && currentVenue.longitude
@@ -551,25 +563,23 @@ export function GroupChatView({
                       el.classList.toggle('max-w-none');
                     }
                   }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 text-primary rounded-full text-base font-display font-semibold border border-white/10"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/20 text-green-400 rounded-full text-sm font-semibold border border-green-500/30 min-w-0 max-w-[200px]"
                 >
-                  <span className="venue-name truncate max-w-[260px] transition-all duration-200">{currentVenue.name}</span>
+                  <span className="venue-name truncate whitespace-nowrap">{currentVenue.name}</span>
                 </button>
               ) : (
                 <button
                   onClick={() => handleSuggestVenue(currentVenue)}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 text-white/90 rounded-full text-base font-display font-semibold border border-white/10 hover:bg-white/10"
                 >
-                  <span className="truncate max-w-[260px]">{currentVenue.name}</span>
-                  <span className="text-xs text-white/50">({t('chat.suggest', 'Suggest')})</span>
+                  <span className="venue-name truncate whitespace-nowrap">{currentVenue.name}</span>
+                  <span className="text-xs text-white/50 shrink-0">({t('chat.suggest', 'Suggest')})</span>
                 </button>
               )}
             </div>
-            {hasMultipleVenues && (
-              <button onClick={handleNextVenue} className="p-1 rounded-full text-white/60 hover:text-white hover:bg-white/5">
+            <button onClick={handleNextVenue} disabled={!hasMultipleVenues} className={`p-1 rounded-full hover:bg-white/5 transition-colors ${hasMultipleVenues ? "text-white/60 hover:text-white" : "text-white/20 cursor-default"}`}>
                 <ChevronRight className="w-4 h-4" />
               </button>
-            )}
           </div>
           {hasMultipleVenues && (
             <div className="flex justify-center gap-1 mt-1.5">

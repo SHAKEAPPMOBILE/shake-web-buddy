@@ -111,7 +111,7 @@ export function useTotalUnreadChats() {
           status: eventMembersStatus,
         } = await supabase
           .from("event_chat_members")
-          .select("event_id, joined_at, expires_at, paid_at, event_starts_at")
+          .select("event_id, expires_at, paid_at, event_starts_at, user_id, id, event_name, amount_cents, stripe_payment_intent_id")
           .eq("user_id", user.id);
 
         if (!eventMembersError && data) {

@@ -27,6 +27,7 @@ import NotFound from "./pages/NotFound";
 import Welcome from "./pages/Welcome";
 import Admin from "./pages/Admin";
 import ProposePlanPage from "./pages/ProposePlanPage";
+import EventChatPage from "./pages/EventChatPage";
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,7 @@ const App = () => {
                     <Route path="/subscription-success" element={<SubscriptionSuccess />} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/propose-plan" element={<ProposePlanPage />} />
+                    <Route path="/chat/event/:eventId" element={<EventChatPage />} />
                     <Route path="/*" element={<IOSAppLayout />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>

@@ -130,7 +130,7 @@ export function ActivityJoinedConfirmation({
                 </div>
 
                 {/* Venue info */}
-                <div className="rounded-2xl bg-muted/50 p-4">
+                {!isTBD && <div className="rounded-2xl bg-muted/50 p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>
@@ -171,7 +171,7 @@ export function ActivityJoinedConfirmation({
                       <p className="text-xs text-muted-foreground mt-1">{city}</p>
                     </div>
                   </div>
-                </div>
+                </div>}
               </div>
             )}
           </div>

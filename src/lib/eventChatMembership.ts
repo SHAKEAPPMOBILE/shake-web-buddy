@@ -9,41 +9,19 @@ export function isEventChatMembershipExplicitlyExpired(
   m: { expires_at?: string | null; event_starts_at?: string | null; scheduled_for?: string | null } | null,
 ): boolean {
   const expires_at = m?.expires_at ?? null;
-  const scheduled_for = m?.scheduled_for ?? null;
-  const event_starts_at = m?.event_starts_at ?? null;
-  const eventTimeIso = scheduled_for?.trim() || event_starts_at?.trim() || null;
-
-  if (eventTimeIso) {
-    const start = new Date(eventTimeIso);
-    if (!Number.isNaN(start.getTime())) {
-      const eventExpiry = new Date(start.getTime() + 12 * 60 * 60 * 1000);
-      const result = eventExpiry.getTime() <= Date.now();
-      console.log("[expiry-check]", {
-        scheduled_for,
-        event_starts_at,
-        expires_at,
-        event_expiry: eventExpiry.toISOString(),
-        result,
-        reason: result ? "event_start_plus_12h_in_past" : "event_start_plus_12h_still_valid",
-      });
-      return result;
-    }
-  }
-
+  // Only use expires_at for expiry check. Ignore scheduled_for if null.
   if (!expires_at?.trim()) {
-    console.log("[expiry-check]", { scheduled_for, event_starts_at, expires_at, result: false, reason: "no_valid_scheduled_for_or_event_start_and_no_expires_at" });
+    console.log("[expiry-check]", { expires_at, result: false, reason: "no_expires_at" });
     return false;
   }
-
   const d = new Date(expires_at);
   if (Number.isNaN(d.getTime())) {
-    console.log("[expiry-check]", { scheduled_for, event_starts_at, expires_at, result: false, reason: "invalid_expires_at" });
+    console.log("[expiry-check]", { expires_at, result: false, reason: "invalid_expires_at" });
     return false;
   }
-
-  const result = d.getTime() <= Date.now();
-  console.log("[expiry-check]", { scheduled_for, event_starts_at, expires_at, result, reason: result ? "fallback_expires_at_in_past" : "fallback_expires_at_still_valid" });
-  return result;
+  const isExpired = d.getTime() < Date.now();
+  console.log("[expiry-check]", { expires_at, result: isExpired, reason: isExpired ? "expires_at_in_past" : "expires_at_in_future" });
+  return isExpired;
 }
 
 /**
