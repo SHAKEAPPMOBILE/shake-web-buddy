@@ -394,13 +394,18 @@ function EventDetail({
 
   useEffect(() => {
     let cancelled = false;
-    if (!user) {
+    if (!user?.id) {
       setHasActiveMembership(false);
       setMembershipLoading(false);
       return;
     }
     setMembershipLoading(true);
     (async () => {
+      if (!user?.id) {
+        setHasActiveMembership(false);
+        setMembershipLoading(false);
+        return;
+      }
       const { data: existingMember, error: memberError } = await supabase
         .from("event_chat_members")
         .select("event_id, paid_at, expires_at, event_starts_at")
@@ -424,11 +429,11 @@ function EventDetail({
     return () => {
       cancelled = true;
     };
-  }, [event.id, user, membershipVersion]);
+  }, [event.id, user?.id, membershipVersion]);
 
   const handleEnterChat = async () => {
     if (isEnteringChat) return;
-    if (!user) {
+    if (!user?.id) {
       toast.error("Please sign in to unlock the group chat.");
       return;
     }
@@ -436,6 +441,7 @@ function EventDetail({
       setIsEnteringChat(true);
       // If already a member of this event chat, skip payment and go directly to chat
       console.log("[EventsPage] Before event_chat_members check", { eventId: event.id, userId: user.id });
+      if (!user?.id) return;
       const { data: existingMember, error: memberError } = await supabase
         .from("event_chat_members")
         .select("event_id, paid_at, expires_at, event_starts_at")
@@ -470,9 +476,10 @@ function EventDetail({
 
       if (ACTIVITY_TYPES.includes(activityType)) {
         // Count current members in this event chat
+        if (!user?.id) return;
         const { count: currentCount } = await supabase
           .from("event_chat_members")
-          .select("*", { count: "exact", head: true })
+          .select("event_id", { count: "exact", head: true })
           .eq("event_id", event.id);
 
         if ((currentCount ?? 0) >= MAX_CHAT_SIZE) {
@@ -502,6 +509,7 @@ function EventDetail({
             let memberCountByEvent: Record<string, number> = {};
 
             if (todayEventIds.length > 0) {
+              if (!user?.id) return;
               const { data: memberRows } = await supabase
                 .from("event_chat_members")
                 .select("event_id")
@@ -553,7 +561,7 @@ function EventDetail({
         }
       }
 
-      if (user?.id) addGroupChatAccess(user.id, targetEventId);
+      addGroupChatAccess(user.id, targetEventId);
       onJoinedEvent({ ...event, id: targetEventId });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -767,7 +775,7 @@ export default function EventsPage({
    * Never navigate away before showing ActivityJoinedConfirmation; clear params only after the modal is armed.
    */
   useEffect(() => {
-    if (!chatUnlockedId || !paymentSuccess || !user) return;
+    if (!chatUnlockedId || !paymentSuccess || !user?.id) return;
 
     const dedupeKey = `${user.id}:${chatUnlockedId}`;
     if (paymentReturnHandledRef.current === dedupeKey) return;
@@ -829,6 +837,7 @@ export default function EventsPage({
           ? new Date(expiresAtFromStart.getTime() + 12 * 60 * 60 * 1000)
           : new Date(paidAt.getTime() + 24 * 60 * 60 * 1000);
 
+        if (!user?.id) return;
         const { error: membershipUpsertError } = await supabase.from("event_chat_members").upsert(
           {
             event_id: chatUnlockedId,

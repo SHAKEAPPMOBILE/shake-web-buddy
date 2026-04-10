@@ -557,7 +557,7 @@ export default function EventChatPage() {
               variant="ghost"
               size="icon"
               onClick={async () => {
-                if (!user) return;
+                if (!user?.id) return;
                 await supabase
                   .from("event_chat_members")
                   .delete()

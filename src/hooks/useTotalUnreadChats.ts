@@ -10,7 +10,7 @@ export function useTotalUnreadChats() {
   const [isLoading, setIsLoading] = useState(true);
 
   const checkUnreadMessages = useCallback(async () => {
-    if (!user) {
+    if (!user?.id) {
       setTotalUnread(0);
       setIsLoading(false);
       return;
@@ -104,6 +104,7 @@ export function useTotalUnreadChats() {
         event_starts_at: string | null;
       }[] = [];
       try {
+        if (!user?.id) return;
         const {
           data,
           error: eventMembersError,
@@ -182,7 +183,7 @@ export function useTotalUnreadChats() {
 
   // Subscribe to new messages for real-time updates
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     const channel = supabase
       .channel("total-unread-messages")

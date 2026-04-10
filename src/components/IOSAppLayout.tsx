@@ -71,7 +71,13 @@ export function IOSAppLayout() {
   const fetchProfileCompletionStatus = useCallback(async () => {
     if (!user) return null;
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+    if (sessionError) {
+      console.warn("[IOSAppLayout] getSession failed during profile completion check", sessionError.message);
+    }
     if (!session) {
       return {
         avatarMissing: false,
@@ -86,20 +92,10 @@ export function IOSAppLayout() {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const { data: privateProfile, error: privateError } = await supabase
-      .from("profiles_private")
-      .select("date_of_birth")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
     let resolvedProfile = profile;
-    let resolvedPrivate = privateProfile;
 
     if (profileError) {
       logPostgrestError("IOSAppLayout profiles select", profileError);
-    }
-    if (privateError) {
-      logPostgrestError("IOSAppLayout profiles_private select", privateError);
     }
 
     if (!profileError && !resolvedProfile) {
@@ -129,42 +125,17 @@ export function IOSAppLayout() {
       }
     }
 
-    // Bootstrap private profile row if missing (needed for DOB gating).
-    if (!privateError && !resolvedPrivate) {
-      try {
-        const { data: bootstrappedPrivate, error: bootstrapPrivateError } = await supabase
-          .from("profiles_private")
-          .upsert(
-            {
-              user_id: user.id,
-            },
-            { onConflict: "user_id" },
-          )
-          .select("date_of_birth")
-          .maybeSingle();
-
-        if (bootstrapPrivateError) {
-          logPostgrestError("IOSAppLayout profiles_private upsert bootstrap", bootstrapPrivateError);
-        } else {
-          resolvedPrivate = bootstrappedPrivate ?? resolvedPrivate;
-        }
-      } catch (e) {
-        console.warn("[IOSAppLayout] profiles_private bootstrap threw:", e);
-      }
-    }
-
     const avatarMissing = !hasValidAvatarUrl(resolvedProfile?.avatar_url);
     const needsProfile =
       resolvedProfile !== null
         ? !resolvedProfile?.name?.trim() ||
-          !hasValidAvatarUrl(resolvedProfile?.avatar_url) ||
-          !resolvedPrivate?.date_of_birth
+          !hasValidAvatarUrl(resolvedProfile?.avatar_url)
         : false;
 
     return {
       avatarMissing,
       needsProfile,
-      shouldRetry: Boolean(profileError || privateError || !resolvedProfile || !resolvedPrivate),
+      shouldRetry: Boolean(profileError || !resolvedProfile),
     };
   }, [user]);
 
@@ -334,6 +305,19 @@ export function IOSAppLayout() {
       }
     };
   }, [user, isLoading, fetchProfileCompletionStatus, applyProfileCompletionStatus]);
+
+  // Global fail-safe: never keep main app blocked by the avatar/profile check spinner for > 3s.
+  useEffect(() => {
+    if (!user || !isCheckingAvatar) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setIsCheckingAvatar(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [user, isCheckingAvatar]);
 
   const shakeDebounceRef = useRef(false);
 

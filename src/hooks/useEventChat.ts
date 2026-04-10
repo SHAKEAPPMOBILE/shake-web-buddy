@@ -151,7 +151,7 @@ export function useEventChat({
     async (gen: number) => {
     const stale = () => gen !== loadGenerationRef.current;
 
-    if (!user) {
+    if (!user?.id) {
       if (stale()) return;
       setChatStatus("locked", "loadChat: no user");
       return;
@@ -266,7 +266,7 @@ export function useEventChat({
     try {
       const { count, error: countError } = await supabase
         .from("event_chat_members")
-        .select("*", { count: "exact", head: true })
+        .select("event_id", { count: "exact", head: true })
         .eq("event_id", eventId);
       if (stale()) return;
       if (countError) {
@@ -374,7 +374,7 @@ export function useEventChat({
 
   const sendMessage = useCallback(
     async (content: string, messageType: "text" | "video" | "gif" = "text") => {
-      if (!user) {
+      if (!user?.id) {
         console.warn("[useEventChat] sendMessage skipped: no user");
         return;
       }
@@ -486,7 +486,7 @@ export function useEventChat({
   );
 
   const unlockChat = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
-    if (!user) return { success: false, error: "Not signed in" };
+    if (!user?.id) return { success: false, error: "Not signed in" };
     if (new Date() > computedExpiresAt) {
       logEventChat("unlockChat", "blocked: event window over (computed from eventStartsAt)", {
         eventStartsAt,

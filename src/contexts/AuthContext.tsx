@@ -146,11 +146,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Check if this user was already referred
-      const { data: existingReferral } = await supabase
+      const { data: existingReferral, error: existingReferralError } = await supabase
         .from("referrals")
         .select("id")
         .eq("referred_user_id", newUserId)
         .maybeSingle();
+
+      if (existingReferralError) {
+        logPostgrestError("AuthContext processReferral existing referral select", existingReferralError);
+      }
 
       if (existingReferral) {
         console.log("User already has a referral");
@@ -247,6 +251,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    const bootstrapTimeoutId = window.setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
 
     // Set up auth state listener FIRST
     const {
@@ -294,25 +301,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
-      setIsLoading(false);
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: existingSession }, error: existingSessionError }) => {
+        if (existingSessionError) {
+          console.warn("[AuthContext] getSession during bootstrap failed; continuing unauthenticated", existingSessionError.message);
+        }
 
-      // Restoring a session is not a signup flow.
-      setDidJustSignUp(false);
+        setSession(existingSession ?? null);
+        setUser(existingSession?.user ?? null);
+        setIsLoading(false);
 
-      if (existingSession?.user) {
-        setTimeout(() => {
-          ensureProfilesExist(existingSession.user);
-        }, 0);
-        setTimeout(() => {
-          checkSubscription(existingSession);
-        }, 0);
-      }
-    });
+        // Restoring a session is not a signup flow.
+        setDidJustSignUp(false);
+
+        if (existingSession?.user) {
+          setTimeout(() => {
+            ensureProfilesExist(existingSession.user);
+          }, 0);
+          setTimeout(() => {
+            checkSubscription(existingSession);
+          }, 0);
+        }
+      })
+      .catch((error) => {
+        console.warn("[AuthContext] getSession bootstrap threw; continuing unauthenticated", error);
+        setSession(null);
+        setUser(null);
+        setIsLoading(false);
+        setDidJustSignUp(false);
+      });
 
     return () => {
+      window.clearTimeout(bootstrapTimeoutId);
       subscription.unsubscribe();
     };
   }, []);

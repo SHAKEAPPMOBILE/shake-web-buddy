@@ -103,7 +103,7 @@ export function ChatTab({
   }, [pendingActivity, onPendingActivityHandled]);
 
   const fetchActivities = useCallback(async () => {
-    if (!user) {
+    if (!user?.id) {
       setActivities([]);
       setIsLoading(false);
       return;
@@ -264,11 +264,12 @@ export function ChatTab({
       // Event chats the user has joined (merged into same list as activity chats)
       let eventMemberships: Record<string, unknown>[] = [];
       try {
+        if (!user?.id) return;
         const {
           data: eventMembershipsRaw,
           error: eventMembershipsError,
           status: eventMembershipsStatus,
-        } = await supabase.from("event_chat_members").select("*").eq("user_id", user.id);
+        } = await supabase.from("event_chat_members").select("event_id, user_id, joined_at, paid_at, expires_at, event_name, event_venue, event_starts_at, amount_cents").eq("user_id", user.id);
 
         if (eventMembershipsError) {
           // Keep chat tab rendering even when PostgREST intermittently returns a 400 here.
@@ -337,9 +338,10 @@ export function ChatTab({
                 : new Date().toISOString();
 
           // Count participants for this event chat
+          if (!user?.id) return;
           const { count: participantCount } = await supabase
             .from("event_chat_members")
-            .select("*", { count: "exact", head: true })
+            .select("event_id", { count: "exact", head: true })
             .eq("event_id", eventId);
 
           const { data: chatMeta } = await supabase
@@ -474,7 +476,7 @@ export function ChatTab({
 
   // Realtime while Chat tab is active; cleanup while inactive.
   useEffect(() => {
-    if (!isActiveTab || !user) return;
+    if (!isActiveTab || !user?.id) return;
 
     const channel = supabase
       .channel(`chat-tab-${user.id}`)
@@ -512,7 +514,7 @@ export function ChatTab({
 
   useEffect(() => {
     const onPending = () => {
-      if (isActiveTab && user) void fetchActivities();
+      if (isActiveTab && user?.id) void fetchActivities();
     };
     window.addEventListener(PENDING_EVENT_CHAT_CHANGED, onPending);
     return () => window.removeEventListener(PENDING_EVENT_CHAT_CHANGED, onPending);
