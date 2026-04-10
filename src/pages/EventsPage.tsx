@@ -566,6 +566,41 @@ function EventDetail({
         }
       }
 
+      // --- Ensure event_chats row exists for this event_id before upserting into event_chat_members ---
+      // 1. Check if event_chats row exists for targetEventId
+      const { data: existingChat, error: chatCheckError } = await supabase
+        .from("event_chats")
+        .select("event_id")
+        .eq("event_id", targetEventId)
+        .maybeSingle();
+
+      if (chatCheckError) {
+        toast.error("Failed to check chat room. Please try again.");
+        setIsEnteringChat(false);
+        return;
+      }
+
+      if (!existingChat) {
+        // 2. Insert into event_chats if not exists
+        const chatInsertPayload: any = {
+          event_id: targetEventId,
+          name: event.title ?? event.name ?? "Event Chat",
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        };
+        // Optionally add more fields if available
+        if (event.category) chatInsertPayload.activity_type = event.category.toLowerCase();
+        if (event.city) chatInsertPayload.city = event.city;
+        if (event.venue) chatInsertPayload.venue_name = event.venue;
+        // Insert
+        const { error: chatInsertError } = await supabase.from("event_chats").insert(chatInsertPayload);
+        if (chatInsertError) {
+          toast.error("Failed to create chat room. Please try again.");
+          setIsEnteringChat(false);
+          return;
+        }
+      }
+
+      // 3. Now upsert into event_chat_members as before
       const resolveUserIdForWrite = async (): Promise<string | null> => {
         if (user?.id) return user.id;
 
