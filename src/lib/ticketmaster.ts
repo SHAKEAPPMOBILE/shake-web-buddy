@@ -167,6 +167,34 @@ export async function fetchTicketmasterEvents(options?: {
   }
 }
 
+export async function searchEvents(keyword: string): Promise<EventItem[]> {
+  const anonOrPublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
+
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userAccessToken = sessionData.session?.access_token;
+    const authorization = userAccessToken
+      ? `Bearer ${userAccessToken}`
+      : anonOrPublishableKey
+        ? `Bearer ${anonOrPublishableKey}`
+        : undefined;
+
+    const { data, error } = await supabase.functions.invoke<{
+      events?: EventItem[];
+      error?: string;
+    }>("fetch-events", {
+      body: { keyword: keyword.trim() },
+      ...(authorization ? { headers: { Authorization: authorization } } : {}),
+    });
+
+    if (error || !data || !Array.isArray(data.events)) return [];
+    return data.events;
+  } catch (err) {
+    console.error("[searchEvents] error:", err);
+    return [];
+  }
+}
+
 export async function fetchFestivals(lat: number, lng: number, radius = 200): Promise<EventItem[]> {
   const anonOrPublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
 

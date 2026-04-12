@@ -38,3 +38,4 @@ marketingsite/
 
 # Supabase CLI local cache (version pins); regenerated locally
 supabase/.temp/
+.claude/worktrees/

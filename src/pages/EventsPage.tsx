@@ -7,6 +7,8 @@ import {
   Users,
   ExternalLink,
   MessageCircle,
+  Search,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActivityJoinedConfirmation } from "@/components/ActivityJoinedConfirmation";
@@ -15,6 +17,7 @@ import {
   type EventItem,
   fetchTicketmasterEvents,
   fetchFestivals,
+  searchEvents,
 } from "@/lib/ticketmaster";
 import { SHAKE_CITIES } from "@/data/cities";
 import { useEffect, useMemo } from "react";
@@ -788,11 +791,16 @@ export default function EventsPage({
   const [searchParams, setSearchParams] = useSearchParams();
   const joiningEventChatRef = useRef(false);
   const paymentReturnHandledRef = useRef<string | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [cat, setCat] = useState("Music");
   const [festivalEvents, setFestivalEvents] = useState<EventItem[]>([]);
   const [festivalsLoading, setFestivalsLoading] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<EventItem[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [selected, setSelected] = useState<EventItem | null>(null);
   const [joinConfirmationEvent, setJoinConfirmationEvent] = useState<EventItem | null>(null);
   const [chatMembershipVersion, setChatMembershipVersion] = useState(0);
@@ -1127,7 +1135,51 @@ export default function EventsPage({
               Near You
             </h1>
           </div>
+          <button
+            type="button"
+            aria-label={searchOpen ? "Close search" : "Search events"}
+            onClick={() => {
+              setSearchOpen((v) => !v);
+              setSearchQuery("");
+              setSearchResults([]);
+            }}
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+          >
+            {searchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+          </button>
         </div>
+        {searchOpen && (
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            {searchLoading && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            )}
+            <input
+              autoFocus
+              type="text"
+              value={searchQuery}
+              placeholder="Search concerts & festivals..."
+              className="w-full pl-9 pr-9 py-2.5 rounded-full bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              onChange={(e) => {
+                const q = e.target.value;
+                setSearchQuery(q);
+                if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+                if (q.length < 2) {
+                  setSearchResults([]);
+                  setSearchLoading(false);
+                  return;
+                }
+                setSearchLoading(true);
+                searchTimerRef.current = setTimeout(() => {
+                  searchEvents(q)
+                    .then((res) => setSearchResults(res))
+                    .catch(() => setSearchResults([]))
+                    .finally(() => setSearchLoading(false));
+                }, 400);
+              }}
+            />
+          </div>
+        )}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {CATEGORIES.map((c) => (
             <button
@@ -1161,8 +1213,56 @@ export default function EventsPage({
       </div>
 
       <div className="flex-1 overflow-y-auto">
+        {/* Search results */}
+        {searchOpen && (
+          <div className="pt-4 pb-8">
+            {searchQuery.length < 2 ? (
+              <div className="mx-4 rounded-2xl bg-card/50 border border-border p-6 text-center">
+                <p className="text-sm text-muted-foreground">Type to search concerts &amp; festivals...</p>
+              </div>
+            ) : searchLoading ? (
+              <div className="mx-4 rounded-2xl bg-card/50 border border-border p-4">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-14 rounded-xl bg-muted/60" />
+                  <div className="h-14 rounded-xl bg-muted/60" />
+                  <div className="h-14 rounded-xl bg-muted/60" />
+                </div>
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div className="mx-4 rounded-2xl bg-card/50 border border-border p-6 text-center">
+                <p className="text-sm text-muted-foreground">No results for "{searchQuery}"</p>
+              </div>
+            ) : (
+              <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border">
+                {searchResults.map((e, i) => (
+                  <div key={e.id}>
+                    {i > 0 && <div className="h-px bg-border/70 mx-4" />}
+                    <button
+                      type="button"
+                      onClick={() => setSelected(e)}
+                      className="w-full flex items-center gap-3 py-3.5 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                        {e.imageUrl
+                          ? <img src={e.imageUrl} alt={e.name} className="w-full h-full object-cover object-top" />
+                          : <span className="text-2xl">{e.emoji}</span>
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground text-sm mb-0.5 truncate">{e.name}</p>
+                        <p className="text-muted-foreground text-xs mb-1 truncate">{e.venue} · {e.city}</p>
+                        <p className="text-muted-foreground text-xs">{e.date}</p>
+                      </div>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Happening Soon */}
-        {!eventsLoading && hot.length > 0 && (
+        {!searchOpen && !eventsLoading && hot.length > 0 && (
           <div className="pt-5 pb-2">
             <div className="flex items-center gap-2 px-5 mb-3">
               <span>🔥</span>
@@ -1231,7 +1331,7 @@ export default function EventsPage({
         )}
 
         {/* All Nearby */}
-        <div className="pt-4 pb-8">
+        {!searchOpen && <div className="pt-4 pb-8">
           <div className="flex items-center gap-2 px-5 mb-3">
             <span>📍</span>
             <span className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">
@@ -1323,7 +1423,7 @@ export default function EventsPage({
           <p className="text-center text-muted-foreground/70 text-[11px] mt-5 px-6">
             Powered by Ticketmaster · Purchases on ticketmaster.com
           </p>
-        </div>
+        </div>}
       </div>
 
       {selected && (

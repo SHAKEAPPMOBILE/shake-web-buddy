@@ -416,6 +416,8 @@ async function fetchTicketmasterDiscoveryOnce(
     if (festivalMode) {
       ticketmasterParams.classificationName = "Music";
       ticketmasterParams.keyword = "festival";
+      ticketmasterParams.sort = "relevance,desc";
+      ticketmasterParams.promoterId = "653";
     } else if (includeClassification) {
       ticketmasterParams.classificationName = "Music,Sports,Arts & Theatre,Film,Miscellaneous";
     }
@@ -625,6 +627,63 @@ serve(async (req) => {
       }
     }
 
+    /** Keyword-only global search: no lat/lng, no festivalMode — return TM results by relevance. */
+    if (
+      body &&
+      typeof body.keyword === "string" &&
+      body.keyword.trim().length >= 2 &&
+      !body.latlong &&
+      !body.festivalMode
+    ) {
+      const ticketmasterKey = Deno.env.get("TICKETMASTER_API_KEY");
+      if (!ticketmasterKey) {
+        return new Response(
+          JSON.stringify({ events: [], error: "TICKETMASTER_API_KEY not configured" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+        );
+      }
+      const kw = body.keyword.trim();
+      const searchParams = new URLSearchParams({
+        apikey: ticketmasterKey,
+        keyword: kw,
+        classificationName: "Music",
+        sort: "relevance,desc",
+        size: "10",
+      });
+      const searchUrl = `https://app.ticketmaster.com/discovery/v2/events.json?${searchParams.toString()}`;
+      console.log("[fetch-events] keyword search", {
+        keyword: kw,
+        url: redactTicketmasterApiKeyFromUrl(searchUrl),
+      });
+      try {
+        const res = await fetchWithTimeout(searchUrl, {}, 10_000);
+        const text = await res.text();
+        if (!res.ok) {
+          console.warn("[fetch-events] keyword search error:", res.status, text.slice(0, 400));
+          return new Response(
+            JSON.stringify({ events: [], error: `Ticketmaster ${res.status}` }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+          );
+        }
+        const data = JSON.parse(text) as TicketmasterDiscoveryResponse;
+        const rawEvents = data._embedded?.events ?? [];
+        const events = rawEvents
+          .filter((e) => Boolean(e?.id) && Boolean(e?.name))
+          .map((e) => mapTicketmasterEventToItem(e, null));
+        return new Response(JSON.stringify({ events }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn("[fetch-events] keyword search fetch failed:", msg);
+        return new Response(
+          JSON.stringify({ events: [], error: msg }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+        );
+      }
+    }
+
     let cityFilter: string | null = null;
     let latlong: string | null = null;
     let radiusKm: number | null = null;
@@ -677,8 +736,9 @@ serve(async (req) => {
     let ticketmasterEvents: EventItem[] = [];
     let ticketmasterReason: string | null = null;
 
+    const effectiveRadius = festivalMode ? 500 : (radiusKm ?? 50);
     const tmBaseParams = {
-      radius: String(radiusKm ?? 50),
+      radius: String(effectiveRadius),
       unit: "km",
       size: String(Math.max(sizeLimit, 100)),
     };
@@ -688,7 +748,7 @@ serve(async (req) => {
       ticketmasterReason = "TICKETMASTER_API_KEY not configured";
     } else {
       const canUseGeo = Boolean(latlong);
-      const canUseCity = Boolean(resolvedCityName && countryCode);
+      const canUseCity = !festivalMode && Boolean(resolvedCityName && countryCode);
 
       if (canUseGeo) {
         ticketmasterEvents = await fetchTicketmasterDiscoveryOnce(
@@ -698,7 +758,7 @@ serve(async (req) => {
           displayCity,
           festivalMode,
         );
-        console.log("[fetch-events] Ticketmaster geo attempt", { count: ticketmasterEvents.length });
+        console.log("[fetch-events] Ticketmaster geo attempt", { count: ticketmasterEvents.length, festivalMode });
       }
 
       if (ticketmasterEvents.length === 0 && canUseCity) {
