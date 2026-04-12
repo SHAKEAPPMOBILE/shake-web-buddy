@@ -487,7 +487,24 @@ export function GroupChatView({
         const dayName = isToday ? "Today" : isTomorrow ? "Tomorrow" : d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
         return activityTime ? `${dayName} at ${activityTime}` : dayName;
       })()
-    : activityTime ? `Today at ${activityTime}` : city;
+    : (() => {
+        // No eventDate — compute next occurrence of the activity's default weekday
+        const defaultDay: Record<string, number> = { lunch: 6, dinner: 6, drinks: 5, brunch: 0, hike: 0 };
+        const targetDay = defaultDay[activityType];
+        if (targetDay === undefined || activityTime === null) return city;
+        const now = new Date();
+        const today = new Date();
+        const todayDay = today.getDay();
+        let daysUntil = (targetDay - todayDay + 7) % 7;
+        if (daysUntil === 0) daysUntil = 0; // today
+        const next = new Date(today);
+        next.setDate(today.getDate() + daysUntil);
+        const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+        const isToday = next.toDateString() === now.toDateString();
+        const isTomorrow = next.toDateString() === tomorrow.toDateString();
+        const dayName = isToday ? "Today" : isTomorrow ? "Tomorrow" : next.toLocaleDateString('en-US', { weekday: 'long' });
+        return `${dayName} at ${activityTime}`;
+      })();
   const headerSubtitle = headerDateLabel;
   const showAttendees = attendeeCount > 0;
 

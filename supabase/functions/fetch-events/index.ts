@@ -402,6 +402,7 @@ async function fetchTicketmasterDiscoveryOnce(
     | { kind: "geo"; latlong: string; countryCode?: string | null }
     | { kind: "city"; city: string; countryCode: string },
   displayCity: string,
+  festivalMode?: boolean,
 ): Promise<EventItem[]> {
   const tmBase = "https://app.ticketmaster.com/discovery/v2/events.json";
 
@@ -412,7 +413,10 @@ async function fetchTicketmasterDiscoveryOnce(
       ...baseParams,
       sort: "date,asc",
     };
-    if (includeClassification) {
+    if (festivalMode) {
+      ticketmasterParams.classificationName = "Music";
+      ticketmasterParams.keyword = "festival";
+    } else if (includeClassification) {
       ticketmasterParams.classificationName = "Music,Sports,Arts & Theatre,Film,Miscellaneous";
     }
     if (geoOrCity.kind === "geo") {
@@ -653,6 +657,8 @@ serve(async (req) => {
       radiusKm = null;
     }
 
+    const festivalMode = body && body.festivalMode === true;
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -690,6 +696,7 @@ serve(async (req) => {
           tmBaseParams,
           { kind: "geo", latlong: latlong!, countryCode },
           displayCity,
+          festivalMode,
         );
         console.log("[fetch-events] Ticketmaster geo attempt", { count: ticketmasterEvents.length });
       }
@@ -701,6 +708,7 @@ serve(async (req) => {
           tmBaseParams,
           { kind: "city", city: tmCity, countryCode: countryCode! },
           displayCity,
+          festivalMode,
         );
         console.log("[fetch-events] Ticketmaster city attempt (after empty geo or no geo)", {
           count: ticketmasterEvents.length,

@@ -14,7 +14,9 @@ import { cn } from "@/lib/utils";
 import {
   type EventItem,
   fetchTicketmasterEvents,
+  fetchFestivals,
 } from "@/lib/ticketmaster";
+import { SHAKE_CITIES } from "@/data/cities";
 import { useEffect, useMemo } from "react";
 import { toast } from "@/lib/app-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -135,6 +137,7 @@ const MOCK_EVENTS: EventItem[] = [
 ];
 
 const CATEGORIES = ["All", "Music", "Sports", "Art", "Comedy"];
+const FESTIVAL_TAB = "Festivals 🎪";
 
 /** Ticketmaster segment maps to `EventItem.category` (e.g. "Music", "Sports"). */
 function isMusicEventCategory(category: string | undefined): boolean {
@@ -788,6 +791,8 @@ export default function EventsPage({
   const [events, setEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [cat, setCat] = useState("Music");
+  const [festivalEvents, setFestivalEvents] = useState<EventItem[]>([]);
+  const [festivalsLoading, setFestivalsLoading] = useState(false);
   const [selected, setSelected] = useState<EventItem | null>(null);
   const [joinConfirmationEvent, setJoinConfirmationEvent] = useState<EventItem | null>(null);
   const [chatMembershipVersion, setChatMembershipVersion] = useState(0);
@@ -1041,13 +1046,42 @@ export default function EventsPage({
     standaloneListFetchKey,
   ]);
 
+  useEffect(() => {
+    if (cat !== FESTIVAL_TAB) return;
+    if (isCityLoading || !selectedCity) {
+      setFestivalsLoading(true);
+      return;
+    }
+    const normalize = (s: string) =>
+      s.trim().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+    const cityNorm = normalize(selectedCity);
+    const cityMatch =
+      SHAKE_CITIES.find((c) => normalize(c.name) === cityNorm) ??
+      SHAKE_CITIES.find((c) => {
+        const n = normalize(c.name);
+        return n.includes(cityNorm) || cityNorm.includes(n);
+      });
+    if (!cityMatch) {
+      setFestivalsLoading(false);
+      setFestivalEvents([]);
+      return;
+    }
+    let cancelled = false;
+    setFestivalsLoading(true);
+    fetchFestivals(cityMatch.lat, cityMatch.lng, 200)
+      .then((list) => { if (!cancelled) setFestivalEvents(list); })
+      .catch(() => { if (!cancelled) setFestivalEvents([]); })
+      .finally(() => { if (!cancelled) setFestivalsLoading(false); });
+    return () => { cancelled = true; };
+  }, [cat, selectedCity, isCityLoading]);
+
   /** Default to Music for each city; empty-category fallback still handled below */
   useEffect(() => {
     setCat("Music");
   }, [selectedCity]);
 
   useEffect(() => {
-    if (events.length === 0 || cat === "All") return;
+    if (events.length === 0 || cat === "All" || cat === FESTIVAL_TAB) return;
     const n = events.filter((e) => e.category === cat).length;
     if (n === 0) {
       console.log("[EventsPage] category filter matched 0 events — resetting to All", {
@@ -1060,7 +1094,9 @@ export default function EventsPage({
 
   const hot = useMemo(() => events.filter((e) => e.isHot), [events]);
   const filtered =
-    cat === "All"
+    cat === FESTIVAL_TAB
+      ? festivalEvents
+      : cat === "All"
       ? events
       : events.filter((e) => e.category === cat);
 
@@ -1108,6 +1144,19 @@ export default function EventsPage({
               {c}
             </button>
           ))}
+          <button
+            key={FESTIVAL_TAB}
+            type="button"
+            onClick={() => setCat(FESTIVAL_TAB)}
+            className={cn(
+              "shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+              cat === FESTIVAL_TAB
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground border border-border hover:border-primary/30"
+            )}
+          >
+            {FESTIVAL_TAB}
+          </button>
         </div>
       </div>
 
@@ -1195,7 +1244,7 @@ export default function EventsPage({
                 SHAKE is coming to your city soon 🌍 Stay tuned!
               </p>
             </div>
-          ) : eventsLoading ? (
+          ) : (cat === FESTIVAL_TAB ? festivalsLoading : eventsLoading) ? (
             <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border p-4">
               <div className="animate-pulse space-y-3">
                 <div className="h-14 rounded-xl bg-muted/60" />
