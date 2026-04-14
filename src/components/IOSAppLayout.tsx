@@ -540,11 +540,12 @@ export function IOSAppLayout() {
         return null;
       case "home":
         return (
-          <HomeTab 
-            showActivities={showHomeActivities} 
+          <HomeTab
+            showActivities={showHomeActivities}
             onSelectActivity={handleHomeActivitySelect}
             onConfirmActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
+            onOpenActivities={handleShakeClick}
             isShaking={isHeroShaking}
             onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
@@ -563,11 +564,12 @@ export function IOSAppLayout() {
         // If user is not logged in, show home tab instead
         if (!user) {
           return (
-            <HomeTab 
-              showActivities={showHomeActivities} 
+            <HomeTab
+              showActivities={showHomeActivities}
               onSelectActivity={handleHomeActivitySelect}
               onConfirmActivity={handleHomeActivitySelect}
               onCloseActivities={() => setShowHomeActivities(false)}
+              onOpenActivities={handleShakeClick}
               isShaking={isHeroShaking}
               onOpenEvents={() => openNearYou("home")}
               onUpgradeClick={() => setShowPremiumDialog(true)}
@@ -575,19 +577,20 @@ export function IOSAppLayout() {
           );
         }
         return (
-          <ProfileTab 
-            onSignOut={handleSignOut} 
+          <ProfileTab
+            onSignOut={handleSignOut}
             initialOpenSubscription={openSubscriptionOnMount}
             onSubscriptionOpened={() => setOpenSubscriptionOnMount(false)}
           />
         );
       default:
         return (
-          <HomeTab 
-            showActivities={showHomeActivities} 
+          <HomeTab
+            showActivities={showHomeActivities}
             onSelectActivity={handleHomeActivitySelect}
             onConfirmActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
+            onOpenActivities={handleShakeClick}
             isShaking={isHeroShaking}
             onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}

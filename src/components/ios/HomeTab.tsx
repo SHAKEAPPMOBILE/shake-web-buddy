@@ -20,6 +20,7 @@ interface HomeTabProps {
   onConfirmActivity?: (activity: { id: string; label: string; emoji: string }, cityOverride?: string) => void | Promise<void>;
   showActivities?: boolean;
   onCloseActivities?: () => void;
+  onOpenActivities?: () => void;
   isShaking?: boolean;
   onOpenEvents?: () => void;
   onUpgradeClick?: () => void;
@@ -27,7 +28,7 @@ interface HomeTabProps {
 
 // Separate dialog state for "Propose a plan" flow
 
-export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, isShaking = false, onOpenEvents, onUpgradeClick }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, isShaking = false, onOpenEvents, onUpgradeClick }: HomeTabProps) {
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const navigate = useNavigate();
@@ -561,8 +562,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
         {/* Center Area - Circle with Handshake */}
         <div className="relative mb-8 flex flex-col items-center justify-center">
-          <div 
-            onClick={handleHandshakeClick}
+          <div
+            onClick={onOpenActivities}
             className={cn(
               "w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 border-2 border-primary/50 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
               isShaking && "animate-shake-center"
