@@ -2,6 +2,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -53,16 +54,22 @@ const App = () => {
         if (!url) return;
 
         // Parse the URL for auth tokens (either query params or hash fragment)
+        let code: string | null = null;
+        let tokenHash: string | null = null;
         let accessToken: string | null = null;
         let refreshToken: string | null = null;
 
         try {
           const parsed = new URL(url);
+          code = parsed.searchParams.get('code');
+          tokenHash = parsed.searchParams.get('token_hash');
           accessToken = parsed.searchParams.get('access_token');
           refreshToken = parsed.searchParams.get('refresh_token');
 
-          if ((!accessToken || !refreshToken) && parsed.hash) {
+          if ((!accessToken || !refreshToken || !code || !tokenHash) && parsed.hash) {
             const hashParams = new URLSearchParams(parsed.hash.replace(/^#/, ""));
+            code = code || hashParams.get('code');
+            tokenHash = tokenHash || hashParams.get('token_hash');
             accessToken = accessToken || hashParams.get('access_token');
             refreshToken = refreshToken || hashParams.get('refresh_token');
           }
@@ -70,13 +77,35 @@ const App = () => {
           console.warn('Failed to parse deep link URL', e);
         }
 
-        if (accessToken && refreshToken) {
+        if (code) {
+          console.log('Exchanging deep-link OAuth code for session');
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            console.error('Failed to exchange OAuth code from deep link', error);
+          }
+        } else if (accessToken && refreshToken) {
           console.log('Setting Supabase session from deep link');
           // @ts-ignore - setSession exists on the auth client
-          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          if (error) {
+            console.error('Failed to set Supabase session from deep link tokens', error);
+          }
+        } else if (tokenHash) {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "email",
+          });
+          if (error) {
+            console.error('Failed to verify token_hash from deep link', error);
+          }
         } else {
-          console.log('No session tokens found on deep link');
+          console.log('No recognizable auth payload found on deep link');
         }
+
+        // Return the user to the app shell after auth callback handling.
+        window.history.replaceState({}, "", "/");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+        await Browser.close().catch(() => {});
       } catch (err) {
         console.error('Error handling deep link', err);
       }
