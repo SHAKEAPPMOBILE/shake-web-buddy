@@ -83,6 +83,9 @@ async function signInWithOAuth(provider: 'google' | 'apple') {
         options: {
           redirectTo: 'com.shakeapp.shakeapp://auth/callback',
           skipBrowserRedirect: true,
+          // Request name + email so Apple sends display name on first sign-in.
+          // Without this scope Apple omits the name field entirely.
+          ...(provider === 'apple' ? { scopes: 'name email' } : {}),
         },
       });
       if (error) throw error;

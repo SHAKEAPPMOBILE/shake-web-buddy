@@ -16,6 +16,7 @@ import { IOSAppLayout } from "@/components/IOSAppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useReferralTracking } from "@/hooks/useReferralTracking";
 import { initializeRevenueCat } from "./lib/revenuecat";
+import { toast } from "@/lib/app-toast";
 import Auth from "./pages/Auth";
 import OAuthCallback from "./pages/OAuthCallback";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,6 +83,9 @@ const App = () => {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             console.error('Failed to exchange OAuth code from deep link', error);
+            toast.error('Sign-in failed. Please try again.');
+            await Browser.close().catch(() => {});
+            return;
           }
         } else if (accessToken && refreshToken) {
           console.log('Setting Supabase session from deep link');
@@ -89,6 +93,9 @@ const App = () => {
           const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
           if (error) {
             console.error('Failed to set Supabase session from deep link tokens', error);
+            toast.error('Sign-in failed. Please try again.');
+            await Browser.close().catch(() => {});
+            return;
           }
         } else if (tokenHash) {
           const { error } = await supabase.auth.verifyOtp({
@@ -97,12 +104,17 @@ const App = () => {
           });
           if (error) {
             console.error('Failed to verify token_hash from deep link', error);
+            toast.error('Sign-in failed. Please try again.');
+            await Browser.close().catch(() => {});
+            return;
           }
         } else {
           console.log('No recognizable auth payload found on deep link');
+          await Browser.close().catch(() => {});
+          return;
         }
 
-        // Return the user to the app shell after auth callback handling.
+        // Auth exchange succeeded — return to the app shell.
         window.history.replaceState({}, "", "/");
         window.dispatchEvent(new PopStateEvent("popstate"));
         await Browser.close().catch(() => {});
