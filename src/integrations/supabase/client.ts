@@ -22,9 +22,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-    // Disable auto-detection so the SDK does NOT consume + clear the URL hash
-    // before OAuthCallback can read the magic-link tokens. OAuthCallback handles
-    // all token exchange explicitly.
-    detectSessionInUrl: false,
+    // Keep URL session detection enabled so OAuth callbacks that land directly on
+    // /auth (or provider variants) still hydrate a session reliably.
+    // OAuthCallback remains compatible because it first checks getSession().
+    detectSessionInUrl: true,
   }
 });
