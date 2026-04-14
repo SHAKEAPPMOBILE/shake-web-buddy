@@ -54,20 +54,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logPostgrestError("AuthContext ensureProfilesExist profiles select", publicErr);
       }
 
+      const oauthAvatarUrl =
+        (currentUser.user_metadata?.picture as string | undefined) ||
+        (currentUser.user_metadata?.avatar_url as string | undefined) ||
+        null;
+
       if (!publicProfile) {
+        // No row yet — insert with whatever the provider gave us.
         const { error: insertPublicErr } = await supabase.from("profiles").insert({
           user_id: currentUser.id,
           name:
             (currentUser.user_metadata?.name as string | undefined) ||
             (currentUser.user_metadata?.full_name as string | undefined) ||
             null,
-          avatar_url:
-            (currentUser.user_metadata?.avatar_url as string | undefined) ||
-            (currentUser.user_metadata?.picture as string | undefined) ||
-            null,
+          avatar_url: oauthAvatarUrl,
         });
         if (insertPublicErr) {
           logPostgrestError("AuthContext ensureProfilesExist profiles insert", insertPublicErr);
+        }
+      } else if (oauthAvatarUrl) {
+        // Row exists — backfill avatar_url only when it is currently NULL so we
+        // never overwrite a photo the user has already chosen.
+        const { error: backfillErr } = await supabase
+          .from("profiles")
+          .update({ avatar_url: oauthAvatarUrl })
+          .eq("user_id", currentUser.id)
+          .is("avatar_url", null);
+        if (backfillErr) {
+          logPostgrestError("AuthContext ensureProfilesExist profiles avatar backfill", backfillErr);
         }
       }
 

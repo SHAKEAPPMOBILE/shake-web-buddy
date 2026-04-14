@@ -342,7 +342,7 @@ export function IOSAppLayout() {
   }, [user, triggerHapticFeedback]);
 
   const handleShakeClick = () => {
-    if (!user) {
+    if (!user && !isLoading) {
       navigate("/auth");
       return;
     }
