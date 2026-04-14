@@ -106,6 +106,11 @@ async function signInWithOAuth(provider: 'google' | 'apple') {
         options.queryParams = { prompt: "select_account" };
       }
 
+      // Apple requires explicit scope to receive name + email on first sign-in
+      if (provider === "apple") {
+        options.scopes = "name email";
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options,

@@ -192,6 +192,18 @@ export default function OAuthCallback() {
         }
 
         if (code) {
+          // Guard against double-exchange: back button, React Strict Mode, or effect re-run
+          // can call exchangeCodeForSession on an already-consumed PKCE code, causing a 409.
+          const { data: { session: preExchangeSession } } = await supabase.auth.getSession();
+          if (preExchangeSession) {
+            console.log("[OAuthCallback] Session already exists before code exchange, skipping exchange", {
+              userId: preExchangeSession.user?.id,
+              timestamp: new Date().toISOString(),
+            });
+            if (!cancelled) navigate(resolveDestinationAfterAuth(preExchangeSession), { replace: true });
+            return;
+          }
+
           console.log("[OAuthCallback] Exchanging OAuth code for session", {
             codeLength: code.length,
             timestamp: new Date().toISOString(),
