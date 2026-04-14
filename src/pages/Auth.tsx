@@ -316,11 +316,15 @@ export default function Auth() {
         }
 
         const hasName = !!resolvedProfile?.name?.trim();
-        const hasAvatar = hasValidAvatarUrl(resolvedProfile?.avatar_url);
 
+        // Avatar completeness is enforced separately by MandatoryPhotoScreen
+        // in IOSAppLayout. Auth.tsx only gates on name so that a user who has
+        // an avatar (e.g. from the DB trigger preset) but no name goes through
+        // the name-entry step, while a user with a name but no avatar skips
+        // the auth wizard entirely and lands on MandatoryPhotoScreen instead.
         return {
-          isComplete: hasName && hasAvatar,
-          isIncomplete: !hasName || !hasAvatar,
+          isComplete: hasName,
+          isIncomplete: !hasName,
         };
       }
     }

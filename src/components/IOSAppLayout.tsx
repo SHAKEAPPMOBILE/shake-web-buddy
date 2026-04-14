@@ -125,24 +125,26 @@ export function IOSAppLayout() {
       }
     }
 
+    const nameMissing = resolvedProfile !== null ? !resolvedProfile?.name?.trim() : false;
     const avatarMissing = !hasValidAvatarUrl(resolvedProfile?.avatar_url);
-    const needsProfile =
-      resolvedProfile !== null
-        ? !resolvedProfile?.name?.trim() ||
-          !hasValidAvatarUrl(resolvedProfile?.avatar_url)
-        : false;
+    const needsProfile = nameMissing || avatarMissing;
 
     return {
       avatarMissing,
+      nameMissing,
       needsProfile,
       shouldRetry: Boolean(profileError || !resolvedProfile),
     };
   }, [user]);
 
-  const applyProfileCompletionStatus = useCallback((status: { avatarMissing: boolean; needsProfile: boolean }) => {
+  const applyProfileCompletionStatus = useCallback((status: { avatarMissing: boolean; needsProfile: boolean; nameMissing: boolean }) => {
     setShowMandatoryPhoto(status.avatarMissing);
 
-    if (status.needsProfile && !status.avatarMissing) {
+    // Only redirect to /auth when the user is entirely new (both name AND avatar
+    // are absent). A user who has an avatar — e.g. assigned by the DB trigger
+    // after Apple OAuth — should never be kicked back to registration just
+    // because name is transiently null.
+    if (status.nameMissing && status.avatarMissing) {
       navigate("/auth");
     }
   }, [navigate]);
@@ -271,7 +273,7 @@ export function IOSAppLayout() {
           }
         }
 
-        if (status.needsProfile && !status.avatarMissing) {
+        if (status.nameMissing && status.avatarMissing) {
           let justSavedTs = 0;
           try {
             justSavedTs = Number(sessionStorage.getItem("shake_profile_just_saved") || 0);
