@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/lib/app-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { PremiumDialog } from "./PremiumDialog";
+import { useMonthlyVideoLimit } from "@/hooks/useMonthlyVideoLimit";
 
 export interface VideoUploadModalProps {
   open: boolean;
@@ -46,7 +48,8 @@ export function VideoUploadModal({
   fileMaxSizeMb = 50,
   floatingSendUsesChatPurple = false,
 }: VideoUploadModalProps) {
-  const { isPremium } = useAuth();
+  const { user, isPremium } = useAuth();
+  const { canSendFreeVideo } = useMonthlyVideoLimit(user?.id);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -216,10 +219,10 @@ export function VideoUploadModal({
 
   if (!open) return null;
 
-  if (requirePremium && !isPremium) {
-    toast.error("Uploading a status video is a Super-Human feature. Upgrade to share status videos.");
-    onOpenChange(false);
-    return null;
+  if (requirePremium && !isPremium && !canSendFreeVideo) {
+    return (
+      <PremiumDialog open={true} onOpenChange={(o) => { if (!o) onOpenChange(false); }} />
+    );
   }
 
   const showEmptyPicker = !existingVideoUrl && !previewUrl && !validating;

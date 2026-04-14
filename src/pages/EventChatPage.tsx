@@ -19,7 +19,9 @@ import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VideoUploadModal } from "@/components/VideoUploadModal";
+import { PremiumDialog } from "@/components/PremiumDialog";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
+import { useMonthlyVideoLimit } from "@/hooks/useMonthlyVideoLimit";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { EVENT_CHAT_VIDEO_MAX_SECONDS, uploadEventChatVideoWithProgress } from "@/lib/eventChatVideoUpload";
 import { useEventChatReactions } from "@/hooks/useEventChatReactions";
@@ -58,7 +60,8 @@ export default function EventChatPage() {
       ? prefetch.eventStartsAt
       : null;
 
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isPremium, isLoading: authLoading } = useAuth();
+  const { canSendFreeVideo } = useMonthlyVideoLimit(user?.id);
   const [eventName, setEventName] = useState<string>(() => prefetch?.name?.trim() || "Event chat");
   const [eventStartsAt, setEventStartsAt] = useState<string | null>(
     () => prefetchStart ?? null
@@ -72,6 +75,7 @@ export default function EventChatPage() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [premiumDialogOpen, setPremiumDialogOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
   const lastInteractionRef = useRef<number>(Date.now());
@@ -274,6 +278,8 @@ export default function EventChatPage() {
           }}
         />
       ) : null}
+
+      <PremiumDialog open={premiumDialogOpen} onOpenChange={setPremiumDialogOpen} />
 
       {eventId && user ? (
         <EventChatGiphyPickerModal
@@ -500,7 +506,13 @@ export default function EventChatPage() {
                 variant="ghost"
                 size="icon"
                 className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
-                onClick={() => setVideoModalOpen(true)}
+                onClick={() => {
+                  if (isPremium || canSendFreeVideo) {
+                    setVideoModalOpen(true);
+                  } else {
+                    setPremiumDialogOpen(true);
+                  }
+                }}
                 disabled={isSending || status !== "active" || videoModalOpen || giphyPickerOpen}
                 aria-label="Record or attach video"
                 title="Video (max 60s)"
