@@ -57,5 +57,13 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>SHAKE needs camera access to capture your profile photo and record videos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SHAKE needs access to your photo library to let you choose a profile photo or upload a video.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>SHAKE needs permission to save photos to your library.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SHAKE needs microphone access to record videos.</string>
 </dict>
 </plist>
