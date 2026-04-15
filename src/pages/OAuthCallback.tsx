@@ -69,6 +69,48 @@ function otpTypesToTry(typeParam: string | null): EmailOtpType[] {
   return out;
 }
 
+/**
+ * Poll the profiles table until avatar_url is populated or the timeout expires.
+ *
+ * The DB trigger (handle_new_user) and ensureProfilesExist both write the
+ * profile row asynchronously after the session is established. If we navigate
+ * before the row is ready, IOSAppLayout's completeness check fires against a
+ * partial/missing row, retries up to 6 times, and may still show
+ * MandatoryPhotoScreen or redirect back to /auth unnecessarily.
+ *
+ * Polling here — in the callback page that the user never sees — is the right
+ * place to absorb that latency before handing control to the app shell.
+ */
+async function waitForProfile(
+  userId: string,
+  { intervalMs = 500, timeoutMs = 3000 }: { intervalMs?: number; timeoutMs?: number } = {},
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      // Don't block navigation on a DB error — just proceed.
+      console.warn("[OAuthCallback] waitForProfile: profiles query failed", error.message);
+      return;
+    }
+
+    if (data?.avatar_url) {
+      console.log("[OAuthCallback] waitForProfile: profile ready with avatar_url");
+      return;
+    }
+
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+
+  console.warn("[OAuthCallback] waitForProfile: timed out waiting for avatar_url");
+}
+
 async function verifyEmailLinkWithTokenHash(
   tokenHash: string,
   typeParam: string | null
@@ -208,7 +250,7 @@ export default function OAuthCallback() {
             codeLength: code.length,
             timestamp: new Date().toISOString(),
           });
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
             console.error("[OAuthCallback] Code exchange failed", {
               error: exchangeError.message,
@@ -216,6 +258,14 @@ export default function OAuthCallback() {
               timestamp: new Date().toISOString(),
             });
             throw exchangeError;
+          }
+
+          // Wait for the DB trigger to populate the profile row before we
+          // navigate, so IOSAppLayout's completeness check sees a ready profile.
+          const exchangedUserId = exchangeData?.session?.user?.id;
+          if (exchangedUserId) {
+            if (cancelled) return;
+            await waitForProfile(exchangedUserId);
           }
         } else if (tokenHash) {
           const { ok, error: verifyError } = await verifyEmailLinkWithTokenHash(tokenHash, linkType);
@@ -242,8 +292,6 @@ export default function OAuthCallback() {
             throw setSessionError;
           }
         }
-
-        await new Promise((r) => setTimeout(r, 300));
 
         if (cancelled) return;
 
