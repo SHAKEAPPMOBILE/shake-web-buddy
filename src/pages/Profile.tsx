@@ -308,7 +308,7 @@ export default function Profile() {
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header with back button */}
-      <header className="shrink-0 bg-card/95 backdrop-blur-xl border-b border-border pt-[env(safe-area-inset-top,0px)]">
+      <header className="shrink-0 bg-card/95 backdrop-blur-xl border-b border-border pt-[max(env(safe-area-inset-top,0px),1rem)]">
         <div className="flex items-center justify-between px-4 h-14">
           <MinimalBackButton
             onClick={() => navigate("/")}
