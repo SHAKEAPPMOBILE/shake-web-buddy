@@ -655,6 +655,7 @@ export function IOSAppLayout() {
           "flex-1 overflow-hidden safe-area-top",
           activeTab === "chat" && "bg-white",
           activeTab === "plans" && "bg-white dark:bg-white",
+          activeTab === "profile" && "bg-white dark:bg-white",
           !isInFullPageChat && "pb-20"
         )}
       >

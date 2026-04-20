@@ -355,11 +355,11 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
 
   return (
-    <div className="flex flex-col h-full min-h-0 pt-[env(safe-area-inset-top,0px)] overflow-y-auto pb-[env(safe-area-inset-bottom,0px)]">
+    <div className="flex flex-col h-full min-h-0 pt-[env(safe-area-inset-top,0px)] overflow-y-auto pb-[env(safe-area-inset-bottom,0px)] bg-white dark:bg-white">
       {/* Profile Header - Clickable to view own profile */}
       <button
         onClick={() => setShowProfileDialog(true)}
-        className="flex flex-col items-center px-6 py-8 border-b border-border hover:bg-muted/30 transition-colors"
+        className="flex flex-col items-center px-6 py-8 border-b border-border dark:border-gray-200 hover:bg-muted/30 dark:hover:bg-gray-50 transition-colors"
       >
         {/* Avatar with Status Ring and Progress */}
         <div className="relative">
@@ -427,9 +427,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       </button>
 
       {/* Menu Items */}
-      <div className="flex-1 px-4 py-4 space-y-2">
+      <div className="flex-1 px-4 py-4 space-y-2 bg-white dark:bg-white">
         {/* Edit Profile - Dropdown */}
-        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
           <button
             onClick={() => setShowEditProfileDropdown(!showEditProfileDropdown)}
             className="w-full flex items-center gap-4 px-4 py-3"
@@ -467,7 +467,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         <div className="h-px bg-border my-2" />
 
         {/* My Points - Dropdown */}
-        <div className="w-full bg-card border border-shake-yellow/30 rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-gray-50 border border-shake-yellow/30 dark:border-gray-200 rounded-xl overflow-hidden">
           <button
             onClick={() => setShowPointsDialog(!showPointsDialog)}
             className="w-full flex items-center gap-4 px-4 py-3"
@@ -488,7 +488,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         {isPremium ? (
-          <div className="w-full bg-card border border-shake-green/30 rounded-xl overflow-hidden">
+          <div className="w-full bg-card dark:bg-gray-50 border border-shake-green/30 dark:border-gray-200 rounded-xl overflow-hidden">
             <button
               onClick={() => setShowSubscriptionDropdown(!showSubscriptionDropdown)}
               className="w-full flex items-center gap-4 px-4 py-3"
@@ -539,7 +539,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         )}
 
         {/* Share Referral Link */}
-        <div className="w-full bg-card border border-primary/30 rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-gray-50 border border-primary/30 dark:border-gray-200 rounded-xl overflow-hidden">
           <button
             onClick={() => setShowReferralLink(!showReferralLink)}
             className="w-full flex items-center gap-4 px-4 py-3"
@@ -582,7 +582,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         {/* Creator Payouts - Stripe or PayPal */}
-        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
           <button
             onClick={() => setShowPayoutOptions(!showPayoutOptions)}
             className="w-full flex items-center gap-4 px-4 py-3"
@@ -931,7 +931,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         {/* Language Selector */}
-        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
           <div className="flex items-center gap-4 px-4 py-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
               <Globe className="w-5 h-5 text-white" />
@@ -945,7 +945,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         {/* Appearance / Theme Toggle */}
-        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
           <div className="flex items-center gap-4 px-4 py-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
               <Sun className="w-5 h-5 text-white" />
@@ -959,7 +959,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         {FACE_ID_FEATURE_ENABLED && (
-          <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+          <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
             <div className="flex items-center gap-4 px-4 py-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <ScanFace className="w-5 h-5 text-primary" />
@@ -1052,7 +1052,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         {/* Paranormal Activity - Blocked & Flagged */}
         <button
           onClick={() => setShowParanormal(true)}
-          className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-primary/40 rounded-xl hover:bg-muted/30 transition-colors"
+          className="w-full flex items-center gap-4 px-4 py-3 bg-card dark:bg-gray-50 border border-primary/40 dark:border-gray-200 rounded-xl hover:bg-muted/30 dark:hover:bg-gray-100 transition-colors"
         >
           <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
             <Ghost className="w-5 h-5 text-white" />
@@ -1064,7 +1064,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </button>
 
         {/* Help & Support */}
-        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
           <div className="w-full flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
@@ -1081,7 +1081,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
         <button
           onClick={handleSignOutClick}
-          className="w-full flex items-center gap-4 px-4 py-3 bg-card border border-border rounded-xl"
+          className="w-full flex items-center gap-4 px-4 py-3 bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl"
         >
           <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
             <LogOut className="w-5 h-5 text-destructive" />
