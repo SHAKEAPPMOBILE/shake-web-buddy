@@ -169,8 +169,8 @@ export function getTimeBasedDefaultActivity(): string {
     return todayActivity.id;
   }
   
-  // Fallback for Tuesday (no default) - use lunch
-  return "lunch";
+  // Fallback for days with no default - use drinks
+  return "drinks";
 }
 
 // Get the index of today's default activity (always 0 since list is reordered)

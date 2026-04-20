@@ -53,7 +53,7 @@ export function ActivityJoinedConfirmation({
 
   const label = getTranslatedActivityLabel(t, activityType);
   const activityDay = getTranslatedActivityDay(t, activityType);
-  const activityTime = activityType === 'lunch' ? '12:30 PM' : activityType === 'dinner' ? '7:00 PM' : activityType === 'drinks' ? '8:00 PM' : null;
+  const activityTime = activityType === 'dinner' ? '7:00 PM' : activityType === 'drinks' ? '8:00 PM' : null;
   const activityMeta = getActivityById(activityType);
 
   const handleJoinChat = () => {

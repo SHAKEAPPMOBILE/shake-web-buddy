@@ -1,4 +1,4 @@
-import { Mountain, Wine, Coffee, Utensils, Users } from "lucide-react";
+import { Wine, Coffee, Utensils, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ActivityCategoryProps {
@@ -10,19 +10,17 @@ interface ActivityCategoryProps {
 }
 
 const iconMap = {
-  hike: Mountain,
   drinks: Wine,
   coffee: Coffee,
-  lunch: Utensils,
+  brunch: Utensils,
   dinner: Utensils,
   social: Users,
 };
 
 const colorMap = {
-  hike: "from-shake-green to-shake-teal",
   drinks: "from-shake-purple to-accent",
   coffee: "from-shake-yellow to-primary",
-  lunch: "from-primary to-accent",
+  brunch: "from-shake-yellow to-primary",
   dinner: "from-accent to-shake-purple",
   social: "from-shake-teal to-secondary",
 };
@@ -56,10 +54,9 @@ export function ActivityCategory({ icon, label, color, count, onClick }: Activit
 
 export function ActivityCategoryGrid() {
   const categories = [
-    { id: "hike", icon: <Mountain className="w-8 h-8 text-primary-foreground" />, label: "Hike", color: colorMap.hike, count: 5 },
     { id: "drinks", icon: <Wine className="w-8 h-8 text-primary-foreground" />, label: "Drinks", color: colorMap.drinks, count: 12 },
     { id: "coffee", icon: <Coffee className="w-8 h-8 text-primary-foreground" />, label: "Coffee", color: colorMap.coffee, count: 8 },
-    { id: "lunch", icon: <Utensils className="w-8 h-8 text-primary-foreground" />, label: "Lunch", color: colorMap.lunch, count: 6 },
+    { id: "brunch", icon: <Utensils className="w-8 h-8 text-primary-foreground" />, label: "Brunch", color: colorMap.brunch, count: 6 },
     { id: "dinner", icon: <Utensils className="w-8 h-8 text-primary-foreground" />, label: "Dinner", color: colorMap.dinner, count: 9 },
     { id: "social", icon: <Users className="w-8 h-8 text-primary-foreground" />, label: "Social", color: colorMap.social, count: 15 },
   ];

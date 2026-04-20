@@ -84,12 +84,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     isProposePlan?: boolean;
   };
 
-  // FIXED ORDER - This order NEVER changes: Lunch → Drinks → Dinner → Hike → Brunch → Propose a plan
+  // FIXED ORDER - This order NEVER changes: Drinks → Dinner → Brunch → Propose a plan
   const CAROUSEL_ITEMS: CarouselItem[] = useMemo(() => {
     const activities = getActivitiesWithDates();
-    
+
     // Map in strict fixed order
-    const fixedOrder = ['lunch', 'drinks', 'dinner', 'hike', 'brunch'];
+    const fixedOrder = ['drinks', 'dinner', 'brunch'];
     const orderedItems: CarouselItem[] = fixedOrder.map(id => {
       const activity = activities.find(a => a.id === id)!;
       return {
@@ -188,13 +188,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const currentDayName = currentActivity?.nextDate
     ? getTranslatedDayName(t, currentActivity.nextDate.getDay())
     : "";
-  const currentTime = currentActivity?.id === "lunch"
-    ? "12:30 PM"
-    : currentActivity?.id === "dinner"
-      ? "7:00 PM"
-      : currentActivity?.id === "drinks"
-        ? "8:00 PM"
-        : null;
+  const currentTime = currentActivity?.id === "dinner"
+    ? "7:00 PM"
+    : currentActivity?.id === "drinks"
+      ? "8:00 PM"
+      : null;
   const joinCity = selectedJoinCity || selectedCity || "";
   const groupedCities = useMemo(
     () =>

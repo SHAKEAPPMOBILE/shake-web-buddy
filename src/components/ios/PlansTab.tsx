@@ -394,11 +394,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   // Map activity type to translation key
   const activityKeyMap: Record<string, string> = {
-    lunch: "lunch",
     dinner: "dinner",
     drinks: "drinks",
     brunch: "brunch",
-    hike: "hike",
     surf: "surf",
     run: "run",
     "co-working": "coWorking",

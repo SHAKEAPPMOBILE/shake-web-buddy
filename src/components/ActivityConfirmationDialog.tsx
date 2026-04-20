@@ -50,7 +50,7 @@ export function ActivityConfirmationDialog({
   if (!activity) return null;
 
   const activityDay = getTranslatedActivityDay(t, activity.id);
-  const activityTime = activity.id === 'lunch' ? '12:30 PM' : activity.id === 'dinner' ? '7:00 PM' : activity.id === 'drinks' ? '8:00 PM' : null;
+  const activityTime = activity.id === 'dinner' ? '7:00 PM' : activity.id === 'drinks' ? '8:00 PM' : null;
   const displayCity = selectedCity || currentCity;
 
   const handleChangeCity = () => {

@@ -28,11 +28,10 @@ export function ActivityCard({
   price,
 }: ActivityCardProps) {
   const categoryColors: Record<string, string> = {
-    hike: "bg-shake-green",
     drinks: "bg-shake-purple",
     coffee: "bg-shake-yellow",
-    lunch: "bg-primary",
     dinner: "bg-primary",
+    brunch: "bg-shake-yellow",
     social: "bg-shake-teal",
   };
 
