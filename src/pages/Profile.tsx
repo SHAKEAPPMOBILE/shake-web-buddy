@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { Switch } from "@/components/ui/switch";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { ChangePhoneDialog } from "@/components/ChangePhoneDialog";
 import { PointsDisplay } from "@/components/PointsDisplay";
@@ -624,6 +625,15 @@ export default function Profile() {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Appearance Section */}
+          <div className="px-4 pb-2">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Appearance</h2>
+            <div className="bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between">
+              <span className="text-sm font-medium">Dark Mode</span>
+              <ThemeToggle />
             </div>
           </div>
 
