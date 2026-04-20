@@ -566,7 +566,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             <button
               type="button"
               onClick={() => onOpenEvents?.()}
-              className="flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-muted text-foreground"
+              className="flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-muted dark:bg-gray-100 text-foreground dark:text-gray-800"
             >
               <Music2 className="w-4 h-4" />
             </button>
@@ -576,7 +576,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               className={`flex items-center gap-1 max-w-[min(50vw,200px)] px-2.5 py-1.5 rounded-full text-sm font-medium transition-all ${
                 browsingDifferentFromDetected
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground"
+                  : "bg-muted dark:bg-gray-100 text-foreground dark:text-gray-800"
               }`}
               style={
                 browsingDifferentFromDetected
@@ -591,7 +591,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               <button
                 type="button"
                 onClick={clearJoinedPlansCityFilter}
-                className="flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-muted text-foreground"
+                className="flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-muted dark:bg-gray-100 text-foreground dark:text-gray-800"
               >
                 {t("plans.clearCityFilter", "All cities")}
               </button>
@@ -637,7 +637,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           </div>
         ) : activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-muted dark:bg-gray-100 flex items-center justify-center mb-4">
               <span
                 className="inline-flex items-center justify-center w-8 h-8 text-muted-foreground text-2xl leading-none"
                 aria-hidden
