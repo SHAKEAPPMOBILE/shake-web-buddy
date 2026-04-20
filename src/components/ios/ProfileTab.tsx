@@ -355,7 +355,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
 
   return (
-    <div className="flex flex-col h-full min-h-0 pt-[env(safe-area-inset-top,0px)] overflow-y-auto pb-[env(safe-area-inset-bottom,0px)] bg-white dark:bg-white">
+    <div className="flex flex-col h-full min-h-0 pt-[env(safe-area-inset-top,0px)] overflow-y-auto pb-[env(safe-area-inset-bottom,0px)] bg-white dark:bg-white text-gray-900 dark:text-gray-900">
       {/* Profile Header - Clickable to view own profile */}
       <button
         onClick={() => setShowProfileDialog(true)}
@@ -376,7 +376,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 className="w-full h-full object-cover"
               />
               <AvatarFallback className="bg-muted">
-                <User className="w-12 h-12 text-muted-foreground" />
+                <User className="w-12 h-12 text-muted-foreground dark:text-gray-500" />
               </AvatarFallback>
             </Avatar>
           </div>
@@ -404,13 +404,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             e.stopPropagation();
             setShowStatusRecorder(true);
           }}
-          className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="mt-2 text-xs text-muted-foreground dark:text-gray-500 hover:text-foreground transition-colors"
         >
           {hasActiveStatus ? t('profile.viewStatus', 'View Status') : t('profile.addStatus', 'Add Status')}
         </button>
 
-        <h2 className="mt-2 text-xl font-display font-bold">{userName || "User"}</h2>
-        <p className="text-sm text-muted-foreground">{user.email}</p>
+        <h2 className="mt-2 text-xl font-display font-bold text-gray-900 dark:text-gray-900">{userName || "User"}</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-600">{user.email}</p>
         {isPremium && (
           <div
             onClick={(e) => {
@@ -429,7 +429,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       {/* Menu Items */}
       <div className="flex-1 px-4 py-4 space-y-2 bg-white dark:bg-white">
         {/* Edit Profile - Dropdown */}
-        <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
           <button
             onClick={() => setShowEditProfileDropdown(!showEditProfileDropdown)}
             className="w-full flex items-center gap-4 px-4 py-3"
@@ -439,13 +439,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.editProfile')}</span>
-              <p className="text-xs text-muted-foreground">{t('profile.updateYourInfo', 'Update your info')}</p>
+              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.updateYourInfo', 'Update your info')}</p>
             </div>
           </button>
           {showEditProfileDropdown && (
             <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
               <div className="space-y-3 pt-3">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground dark:text-gray-500">
                   {t('profile.updateDescription', 'Update your name, avatar, nationality, occupation, and social links.')}
                 </p>
                 <button
@@ -467,7 +467,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         <div className="h-px bg-border my-2" />
 
         {/* My Points - Dropdown */}
-        <div className="w-full bg-card dark:bg-gray-50 border border-shake-yellow/30 dark:border-gray-200 rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-white border border-shake-yellow/30 dark:border-gray-200 rounded-xl overflow-hidden">
           <button
             onClick={() => setShowPointsDialog(!showPointsDialog)}
             className="w-full flex items-center gap-4 px-4 py-3"
@@ -477,7 +477,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.myPoints')}</span>
-              <p className="text-xs text-muted-foreground">{points.toLocaleString()} {t('profile.points')} earned</p>
+              <p className="text-xs text-muted-foreground dark:text-gray-500">{points.toLocaleString()} {t('profile.points')} earned</p>
             </div>
           </button>
           {showPointsDialog && (
@@ -488,7 +488,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         {isPremium ? (
-          <div className="w-full bg-card dark:bg-gray-50 border border-shake-green/30 dark:border-gray-200 rounded-xl overflow-hidden">
+          <div className="w-full bg-card dark:bg-white border border-shake-green/30 dark:border-gray-200 rounded-xl overflow-hidden">
             <button
               onClick={() => setShowSubscriptionDropdown(!showSubscriptionDropdown)}
               className="w-full flex items-center gap-4 px-4 py-3"
@@ -498,7 +498,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.manageSubscription')}</span>
-              <p className="text-xs text-muted-foreground">{t('profile.superHuman')} active</p>
+              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.superHuman')} active</p>
             </div>
             </button>
             {showSubscriptionDropdown && (
@@ -539,7 +539,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         )}
 
         {/* Share Referral Link */}
-        <div className="w-full bg-card dark:bg-gray-50 border border-primary/30 dark:border-gray-200 rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-white border border-primary/30 dark:border-gray-200 rounded-xl overflow-hidden">
           <button
             onClick={() => setShowReferralLink(!showReferralLink)}
             className="w-full flex items-center gap-4 px-4 py-3"
@@ -549,13 +549,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.shareReferral')}</span>
-              <p className="text-xs text-muted-foreground">{t('profile.earnPoints', 'Earn +5 points per signup')}</p>
+              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.earnPoints', 'Earn +5 points per signup')}</p>
             </div>
           </button>
           {showReferralLink && referralCode && (
             <div className="px-4 pb-3 pt-0 animate-fade-in">
               <div className="flex items-center gap-2 bg-muted/50 rounded-2xl px-3 py-2">
-                <span className="flex-1 text-sm text-muted-foreground truncate">
+                <span className="flex-1 text-sm text-muted-foreground dark:text-gray-500 truncate">
                   {getReferralLink(referralCode)}
                 </span>
                 <button
@@ -566,7 +566,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   {copiedLink ? (
                     <Check className="w-4 h-4 text-shake-green" />
                   ) : (
-                    <Copy className="w-4 h-4 text-muted-foreground" />
+                    <Copy className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
                   )}
                 </button>
                 <button
@@ -582,7 +582,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         {/* Creator Payouts - Stripe or PayPal */}
-        <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
           <button
             onClick={() => setShowPayoutOptions(!showPayoutOptions)}
             className="w-full flex items-center gap-4 px-4 py-3"
@@ -594,7 +594,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </div>
             <div className="flex-1 text-left">
               <span className="font-medium">{t('profile.creatorPayouts', 'Creator Payouts')}</span>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground dark:text-gray-500">
                 {(stripeConnected && stripeStatus === "complete") || paypalConnected
                   ? t('profile.payoutsConnected', 'Ready to receive payments')
                   : stripeConnected && stripeStatus === "pending"
@@ -619,11 +619,11 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       <DollarSign className="w-4 h-4 text-shake-green" />
                       <span className="text-sm font-medium">{t('profile.yourEarnings', 'Your Earnings')}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">85% {t('profile.afterFee', 'after platform fee')}</span>
+                    <span className="text-xs text-muted-foreground dark:text-gray-500">85% {t('profile.afterFee', 'after platform fee')}</span>
                   </div>
                   {earningsLoading ? (
                     <div className="flex items-center justify-center py-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground dark:text-gray-500" />
                     </div>
                   ) : activities.length > 0 ? (
                     <div className="space-y-2">
@@ -632,13 +632,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                           {currency === "USD" ? "$" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : currency === "BRL" ? "R$" : "$"}
                           {totalNet.toFixed(2)}
                         </span>
-                        <span className="text-xs text-muted-foreground">{currency}</span>
+                        <span className="text-xs text-muted-foreground dark:text-gray-500">{currency}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground dark:text-gray-500">
                         {t('profile.fromPaidActivities', 'From {{count}} paid activities', { count: activities.length })}
                       </p>
                       {activities.some(a => a.participants > 0) && (
-                        <div className="text-xs text-muted-foreground border-t border-border pt-2 mt-2">
+                        <div className="text-xs text-muted-foreground dark:text-gray-500 border-t border-border pt-2 mt-2">
                           {activities.filter(a => a.participants > 0).map(a => (
                             <div key={a.activityId} className="flex justify-between py-0.5">
                               <span>{a.activityType} ({a.participants} {t('profile.participants', 'participants')})</span>
@@ -649,7 +649,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       )}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground dark:text-gray-500">
                       {t('profile.noEarningsYet', 'Create paid activities to start earning!')}
                     </p>
                   )}
@@ -696,7 +696,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       </span>
                     </div>
                     {verificationLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground dark:text-gray-500" />
                     ) : isVerified ? (
                       <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">
                         {t('profile.verified', 'Verified')}
@@ -710,12 +710,12 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                         {t('profile.rejected', 'Rejected')}
                       </span>
                     ) : (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground dark:text-gray-500">
                         {t('profile.notVerified', 'Not verified')}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1 ml-8">
+                  <p className="text-xs text-muted-foreground dark:text-gray-500 mt-1 ml-8">
                     {isVerified 
                       ? t('profile.idVerifiedDesc', 'You can create paid activities')
                       : isPending 
@@ -761,7 +761,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   {stripeConnected && stripeStatus === "complete" ? (
                     <>
                       {stripeEmail && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground dark:text-gray-500">
                           <Mail className="w-3 h-3" />
                           <span className="truncate">{stripeEmail}</span>
                         </div>
@@ -777,11 +777,11 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   ) : stripeConnected && stripeStatus === "verification_pending" ? (
                     <>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground dark:text-gray-500">
                         {t('profile.stripeVerificationPending', 'Stripe is reviewing your account. This usually takes 1-3 business days.')}
                       </p>
                       {stripeEmail && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground dark:text-gray-500">
                           <Mail className="w-3 h-3" />
                           <span className="truncate">{stripeEmail}</span>
                         </div>
@@ -799,7 +799,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   ) : stripeConnected && stripeStatus === "pending" ? (
                     <>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground dark:text-gray-500">
                         {t('profile.stripePendingDesc', 'Complete your Stripe onboarding to receive payments.')}
                       </p>
                       <div className="flex gap-2">
@@ -817,7 +817,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                         <button
                           onClick={checkStripeStatus}
                           disabled={stripeLoading}
-                          className="py-2 px-3 text-xs text-muted-foreground border border-border rounded-2xl hover:bg-muted/50 transition-colors disabled:opacity-50"
+                          className="py-2 px-3 text-xs text-muted-foreground dark:text-gray-500 border border-border rounded-2xl hover:bg-muted/50 transition-colors disabled:opacity-50"
                         >
                           <RefreshCw className="w-3 h-3" />
                         </button>
@@ -835,7 +835,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   ) : (
                     <>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground dark:text-gray-500">
                         {t('profile.stripeDesc', 'Credit/debit card payments with identity verification.')}
                       </p>
                       <button
@@ -880,7 +880,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   
                   {paypalConnected ? (
                     <>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground dark:text-gray-500">
                         <Mail className="w-3 h-3" />
                         <span className="truncate">{paypalEmail}</span>
                       </div>
@@ -903,7 +903,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   ) : (
                     <>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground dark:text-gray-500">
                         {t('profile.paypalDesc', 'Simple email-based payouts with no verification needed.')}
                       </p>
                       <button
@@ -921,7 +921,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   )}
                 </div>
 
-                <p className="text-xs text-center text-muted-foreground">
+                <p className="text-xs text-center text-muted-foreground dark:text-gray-500">
                   {t('profile.payoutNote', 'You\'ll receive 90% of each payment. Connect at least one method.')}
                 </p>
               </div>
@@ -931,42 +931,42 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         {/* Language Selector */}
-        <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
           <div className="flex items-center gap-4 px-4 py-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
               <Globe className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
               <span className="font-medium">{t('profile.language', 'Language')}</span>
-              <p className="text-xs text-muted-foreground">{t('profile.selectLanguage', 'Select your preferred language')}</p>
+              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.selectLanguage', 'Select your preferred language')}</p>
             </div>
             <LanguageSelector showLabel={false} />
           </div>
         </div>
 
         {/* Appearance / Theme Toggle */}
-        <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
           <div className="flex items-center gap-4 px-4 py-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
               <Sun className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
               <span className="font-medium">Appearance</span>
-              <p className="text-xs text-muted-foreground">Toggle dark / light mode</p>
+              <p className="text-xs text-muted-foreground dark:text-gray-500">Toggle dark / light mode</p>
             </div>
             <ThemeToggle />
           </div>
         </div>
 
         {FACE_ID_FEATURE_ENABLED && (
-          <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
+          <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
             <div className="flex items-center gap-4 px-4 py-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <ScanFace className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1">
                 <span className="font-medium">Face ID Login</span>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground dark:text-gray-500">
                   {faceAuthEnabled ? "Use your face to sign in" : "Set up face login"}
                 </p>
               </div>
@@ -1002,13 +1002,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <DialogTitle>👻 Paranormal Activity</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">Blocked users won&apos;t appear in your feed or chats.</p>
+              <p className="text-sm text-muted-foreground dark:text-gray-500">Blocked users won&apos;t appear in your feed or chats.</p>
               {isLoadingParanormal ? (
                 <div className="flex items-center justify-center py-6">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground dark:text-gray-500" />
                 </div>
               ) : blockedUsers.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
+                <div className="py-6 text-center text-sm text-muted-foreground dark:text-gray-500">
                   No blocked users 👻
                 </div>
               ) : (
@@ -1019,7 +1019,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                         <Avatar className="w-8 h-8">
                           <AvatarImage src={getDisplayAvatarUrl(u.avatar_url ?? undefined)} alt={u.name} />
                           <AvatarFallback>
-                            <User className="w-4 h-4 text-muted-foreground" />
+                            <User className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
                           </AvatarFallback>
                         </Avatar>
                         <span className="text-sm font-medium">{u.name}</span>
@@ -1052,19 +1052,19 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         {/* Paranormal Activity - Blocked & Flagged */}
         <button
           onClick={() => setShowParanormal(true)}
-          className="w-full flex items-center gap-4 px-4 py-3 bg-card dark:bg-gray-50 border border-primary/40 dark:border-gray-200 rounded-xl hover:bg-muted/30 dark:hover:bg-gray-100 transition-colors"
+          className="w-full flex items-center gap-4 px-4 py-3 bg-card dark:bg-white border border-primary/40 dark:border-gray-200 rounded-xl hover:bg-muted/30 dark:hover:bg-gray-100 transition-colors"
         >
           <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
             <Ghost className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 text-left">
             <span className="font-medium">Paranormal Activity</span>
-            <p className="text-xs text-muted-foreground">Blocked &amp; flagged users</p>
+            <p className="text-xs text-muted-foreground dark:text-gray-500">Blocked &amp; flagged users</p>
           </div>
         </button>
 
         {/* Help & Support */}
-        <div className="w-full bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl overflow-hidden">
+        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
           <div className="w-full flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
@@ -1072,7 +1072,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               </div>
               <div className="flex-1 text-left">
                 <span className="font-medium">Support</span>
-                <p className="text-xs text-muted-foreground">Need help? Contact our team.</p>
+                <p className="text-xs text-muted-foreground dark:text-gray-500">Need help? Contact our team.</p>
               </div>
             </div>
             <ContactSupport />
@@ -1081,7 +1081,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
         <button
           onClick={handleSignOutClick}
-          className="w-full flex items-center gap-4 px-4 py-3 bg-card dark:bg-gray-50 border border-border dark:border-gray-200 rounded-xl"
+          className="w-full flex items-center gap-4 px-4 py-3 bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl"
         >
           <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
             <LogOut className="w-5 h-5 text-destructive" />
@@ -1092,12 +1092,12 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
       {/* Footer Links */}
       <div className="px-4 pb-6 space-y-2">
-        <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground dark:text-gray-500">
           <Link to="/community-guidelines" className="hover:text-foreground">{t('common.communityGuidelines', 'Community Guidelines')}</Link>
           <Link to="/privacy-policy" className="hover:text-foreground">{t('common.privacyPolicy', 'Privacy Policy')}</Link>
           <Link to="/terms-of-service" className="hover:text-foreground">{t('common.termsOfService', 'Terms of Service')}</Link>
         </div>
-        <p className="text-center text-xs text-muted-foreground/70">
+        <p className="text-center text-xs text-muted-foreground dark:text-gray-500/70">
           © {new Date().getFullYear()} SHAKEapp Inc.
         </p>
       </div>
