@@ -556,11 +556,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white dark:bg-white">
       {/* Header */}
-      <div className="flex flex-col px-4 py-3 border-b border-neutral-200 bg-white gap-2 shrink-0">
+      <div className="flex flex-col px-4 py-3 border-b border-neutral-200 bg-white dark:bg-white dark:border-neutral-200 gap-2 shrink-0">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-display font-bold">{t('plans.myPlans')}</h2>
+          <h2 className="text-lg font-display font-bold text-gray-900 dark:text-gray-900">{t('plans.myPlans')}</h2>
           <div className="flex items-center gap-2">
             {/* Events + city (same picker as Home — CityContext) */}
             <button
@@ -630,7 +630,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       </CityPickerModal>
 
       {/* Plans List */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-white min-h-0">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-white dark:bg-white min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
@@ -667,7 +667,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               canDelete={plan.user_id === user?.id && !plan.isCarouselJoin}
               onDelete={() => setPlanToDelete(plan)}
               onClick={() => handlePlanClick(plan)}
-              className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+              className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 dark:bg-gray-50 dark:border-gray-200 dark:hover:bg-gray-100 cursor-pointer transition-colors"
               style={{}}
             >
               <div className="flex items-start gap-3">

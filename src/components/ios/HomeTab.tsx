@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Music2 } from "lucide-react";
 import { getActivitiesWithDates, getStartingIndexByProximity } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
@@ -521,6 +521,16 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       )}>
         {/* Welcome Message */}
         <div className="mb-8">
+          <div className="flex items-center justify-center mb-6">
+            <button
+              type="button"
+              onClick={onOpenEvents}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-foreground hover:border-primary/40 transition-colors"
+            >
+              <Music2 className="w-4 h-4 text-primary" />
+              {t('home.eventsNearYou', 'Events near you')}
+            </button>
+          </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">
             <span className="transition-opacity duration-500 block">
               {showTapInstruction ? (
