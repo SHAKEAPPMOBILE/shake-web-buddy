@@ -163,12 +163,6 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
               </span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="inline-flex items-center justify-center w-4 h-4 mt-0.5 text-shake-green shrink-0">📍</span>
-              <span>
-                <strong className="text-foreground">{t('points.checkInVenues', 'Check in at venues')}</strong> — {t('points.checkInPoints', 'Earn +5 points when you check in at the venues of your activities')}
-              </span>
-            </div>
-            <div className="flex items-start gap-2">
               <TrendingUp className="w-4 h-4 mt-0.5 text-primary shrink-0" />
               <span>
                 <strong className="text-foreground">{t('points.createActivities', 'Create popular activities')}</strong> — {t('points.createActivitiesPoints', 'Earn +5 points for every 5 attendees on activities you create (10 attendees = +10 points, etc.)')}
