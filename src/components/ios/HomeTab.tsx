@@ -7,7 +7,6 @@ import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import shakeLogo from "@/assets/shake-logo-new.png";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { LandingCarousel } from "@/components/LandingCarousel";
 import { useCity } from "@/contexts/CityContext";
 import { useTranslation } from "react-i18next";
@@ -337,16 +336,17 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     <>
       {/* Carousel Overlay - Fixed fullscreen, no scroll, perfectly centered */}
       {showActivities && (
-        <div 
+        <div
           className="fixed inset-x-0 top-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-40 flex items-center justify-center bg-background/95 backdrop-blur-md"
           onClick={handleBackdropClick}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{ touchAction: 'pan-y' }}
         >
-          <div 
+          <div
             className="flex flex-col items-center justify-center w-full px-6"
             onClick={(e) => e.stopPropagation()}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
           >
             <div className="relative w-full max-w-sm">
               <div className={cn("transition-opacity duration-200", showActivityDetails ? "opacity-0 pointer-events-none" : "opacity-100")}>
@@ -372,12 +372,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     <ChevronLeft className="w-6 h-6 text-foreground" />
                   </button>
 
-                  <div 
+                  <div
                     className="w-32 h-32 mx-6 rounded-full bg-white overflow-hidden flex items-center justify-center border-2 border-primary/50 shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
-                    onTouchStart={(e) => {
-                      e.stopPropagation();
-                      tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
-                    }}
                     onPointerDown={() => {
                       tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
                     }}
@@ -605,10 +601,6 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           </div>
         )}
 
-        {/* Theme toggle */}
-        <div className="flex justify-center mt-4 mb-6">
-          <ThemeToggle />
-        </div>
       </div>
       <CityPickerModal open={isCitySelectorOpen} onOpenChange={setIsCitySelectorOpen} title="Choose your city">
         <CitySelector

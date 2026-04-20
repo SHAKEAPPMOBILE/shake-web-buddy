@@ -2,8 +2,8 @@ import { TFunction } from "i18next";
 import { ACTIVITY_TYPES } from "@/data/activityTypes";
 
 const ACTIVITY_KEY_MAP: Record<string, string> = {
-  lunch: "lunch", dinner: "dinner", drinks: "drinks", brunch: "brunch",
-  hike: "hike", surf: "surf", run: "run", "co-working": "coWorking",
+  dinner: "dinner", drinks: "drinks", brunch: "brunch",
+  surf: "surf", run: "run", "co-working": "coWorking",
   basketball: "basketball", "tennis-padel": "tennisPadel",
   football: "football", shopping: "shopping", arts: "arts",
 };

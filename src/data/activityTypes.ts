@@ -1,6 +1,5 @@
 // Activity types configuration
 import bgBarManCook from "@/assets/bar-man-and-cook.png";
-import bgHiker from "@/assets/hiker-illustration.png";
 
 export interface ActivityType {
   id: string;
@@ -57,8 +56,8 @@ export interface ActivityWithDate extends ActivityType {
   dayNameShort: string;
 }
 
-// Fixed order for carousel: Lunch, Drinks, Dinner, Hike, Brunch
-const FIXED_CAROUSEL_ORDER = ['lunch', 'drinks', 'dinner', 'hike', 'brunch'];
+// Fixed order for carousel: Drinks, Dinner, Brunch
+const FIXED_CAROUSEL_ORDER = ['drinks', 'dinner', 'brunch'];
 
 // Get activities in FIXED order with their next occurrence dates
 export function getActivitiesWithDates(): ActivityWithDate[] {
@@ -100,51 +99,33 @@ export function getStartingIndexByProximity(): number {
   return closestIndex;
 }
 
-// Carousel activities with specific days (lunch, dinner, drinks, brunch)
+// Carousel activities with specific days (drinks, dinner, brunch)
 export const ACTIVITY_TYPES: ActivityType[] = [
-  { 
-    id: "lunch", 
-    label: "Lunch", 
-    emoji: "🍽️",
-    icon: "/icons/activities/lunch-icon.jpg",
-    color: "bg-shake-coral/20 hover:bg-shake-coral/30",
-    bgImage: bgBarManCook,
-    defaultDay: 4 // Thursday
-  },
-  { 
-    id: "dinner", 
-    label: "Dinner", 
+  {
+    id: "dinner",
+    label: "Dinner",
     emoji: "🍝",
     icon: "/icons/activities/dinner-icon.jpg",
     color: "bg-shake-purple/20 hover:bg-shake-purple/30",
     bgImage: bgBarManCook,
     defaultDay: 6 // Saturday
   },
-  { 
-    id: "drinks", 
-    label: "Drinks", 
+  {
+    id: "drinks",
+    label: "Drinks",
     emoji: "🍹",
     icon: "/icons/activities/drinks-icon.jpg",
     color: "bg-shake-teal/20 hover:bg-shake-teal/30",
     bgImage: bgBarManCook,
     defaultDay: 5 // Friday
   },
-  { 
-    id: "brunch", 
-    label: "Brunch", 
+  {
+    id: "brunch",
+    label: "Brunch",
     emoji: "🥐",
     icon: "/icons/activities/brunch-icon.jpg",
     color: "bg-shake-yellow/20 hover:bg-shake-yellow/30",
     bgImage: bgBarManCook,
-    defaultDay: 0 // Sunday
-  },
-  { 
-    id: "hike", 
-    label: "Hike", 
-    emoji: "⛰️",
-    icon: "",
-    color: "bg-shake-green/20 hover:bg-shake-green/30",
-    bgImage: bgHiker,
     defaultDay: 0 // Sunday
   },
 ];

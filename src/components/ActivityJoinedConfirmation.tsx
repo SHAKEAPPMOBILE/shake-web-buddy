@@ -113,12 +113,12 @@ export function ActivityJoinedConfirmation({
                     )}
                   </div>
 
-                  <h2 className="text-lg font-display font-bold text-foreground mb-1">
+                  <h2 className="text-lg font-display font-bold text-gray-900 mb-1">
                     {t('joinConfirmation.youreInFor', "You're in for {{activity}}!", { activity: label })}
                   </h2>
 
                   {activityDay && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-gray-900">
                       {t('joinConfirmation.thisDay', 'This {{day}}', { day: activityDay })}
                     </p>
                   )}
@@ -130,7 +130,7 @@ export function ActivityJoinedConfirmation({
                 </div>
 
                 {/* Venue info */}
-                {!isTBD && <div className="rounded-2xl bg-muted/50 p-4">
+                {!isTBD && <div className="rounded-2xl bg-green-100 border border-green-300 p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>

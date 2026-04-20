@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
 import { LanguageSelector } from "../LanguageSelector";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTranslation } from "react-i18next";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { usePayPalConnect } from "@/hooks/usePayPalConnect";
@@ -940,6 +941,20 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <p className="text-xs text-muted-foreground">{t('profile.selectLanguage', 'Select your preferred language')}</p>
             </div>
             <LanguageSelector showLabel={false} />
+          </div>
+        </div>
+
+        {/* Appearance / Theme Toggle */}
+        <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center gap-4 px-4 py-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
+              <Sun className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <span className="font-medium">Appearance</span>
+              <p className="text-xs text-muted-foreground">Toggle dark / light mode</p>
+            </div>
+            <ThemeToggle />
           </div>
         </div>
 

@@ -9,8 +9,6 @@ interface ActivityMatch {
 
 // Core activity types that are actively used
 const ACTIVITY_KEYWORDS: Record<string, string[]> = {
-  hike: ['hike', 'hiking', 'trail', 'mountain', 'trekking', 'walk', 'nature'],
-  lunch: ['lunch', 'breakfast', 'morning food'],
   brunch: ['brunch'],
   dinner: ['dinner', 'supper', 'evening meal', 'restaurant'],
   drinks: ['drinks', 'drink', 'bar', 'pub', 'cocktail', 'beer', 'wine', 'happy hour'],
@@ -18,8 +16,6 @@ const ACTIVITY_KEYWORDS: Record<string, string[]> = {
 
 // Core activity types configuration
 const ACTIVITY_CONFIG: Record<string, { emoji: string; color: string }> = {
-  hike: { emoji: '⛰️', color: 'bg-shake-green/20' },
-  lunch: { emoji: '🍽️', color: 'bg-shake-coral/20' },
   brunch: { emoji: '🥐', color: 'bg-shake-yellow/20' },
   dinner: { emoji: '🍝', color: 'bg-shake-purple/20' },
   drinks: { emoji: '🍹', color: 'bg-shake-teal/20' },
