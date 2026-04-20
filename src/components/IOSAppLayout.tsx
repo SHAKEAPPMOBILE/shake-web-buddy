@@ -654,6 +654,7 @@ export function IOSAppLayout() {
         className={cn(
           "flex-1 overflow-hidden safe-area-top",
           activeTab === "chat" && "bg-white",
+          activeTab === "plans" && "bg-white dark:bg-white",
           !isInFullPageChat && "pb-20"
         )}
       >
