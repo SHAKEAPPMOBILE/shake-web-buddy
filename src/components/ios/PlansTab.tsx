@@ -558,9 +558,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="flex flex-col px-4 py-3 border-b border-border gap-2">
+      <div className="flex flex-col px-4 py-3 border-b border-neutral-200 bg-white gap-2 shrink-0">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-display font-bold">{t('plans.myPlans')}</h2>
           <div className="flex items-center gap-2">
@@ -632,7 +632,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       </CityPickerModal>
 
       {/* Plans List */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-white min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
