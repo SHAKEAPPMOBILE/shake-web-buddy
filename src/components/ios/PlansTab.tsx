@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Calendar, Users, Plus, Plane, Share2, Trash2, Music2 } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Share2, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -568,7 +568,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               onClick={() => onOpenEvents?.()}
               className="flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-muted dark:bg-gray-100 text-foreground dark:text-gray-800"
             >
-              <Music2 className="w-4 h-4" />
+              <span>⚡️</span>
             </button>
             <button
               type="button"
