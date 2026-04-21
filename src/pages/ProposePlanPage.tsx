@@ -172,9 +172,7 @@ export default function ProposePlanPage() {
             <span className="text-shake-yellow">{t("createPlan.unlimitedPlans")}</span>
           ) : canCreate ? (
             <>{t("createPlan.freePlansLeft", { count: remainingActivities })}</>
-          ) : (
-            <span className="text-destructive">{t("createPlan.usedFreePlan")}</span>
-          )}
+          ) : null}
         </p>
 
         {!user ? (
