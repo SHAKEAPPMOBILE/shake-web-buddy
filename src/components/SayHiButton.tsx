@@ -57,7 +57,7 @@ export function SayHiButton({
         onMatch?.();
       } else {
         toast({
-          title: "Hi sent! 👋",
+          title: "Invite sent! 🎉",
           description: `${targetUserName || "They"} will be notified.`,
         });
       }
@@ -91,7 +91,7 @@ export function SayHiButton({
         className={`border-shake-yellow/50 text-shake-yellow ${className}`}
       >
         <Check className="w-4 h-4 mr-1.5" />
-        Hi Sent
+        Invited
       </Button>
     );
   }
@@ -111,7 +111,7 @@ export function SayHiButton({
         ) : (
           <Hand className="w-4 h-4 mr-1.5" />
         )}
-        Say Hi Back!
+        Accept Invite
       </Button>
     );
   }
@@ -130,7 +130,7 @@ export function SayHiButton({
       ) : (
         <Hand className="w-4 h-4 mr-1.5" />
       )}
-      Say Hi
+      Invite
     </Button>
   );
 }
