@@ -27,7 +27,7 @@ interface PremiumDialogProps {
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
-  const [productPrice, setProductPrice] = useState("$1.99");
+  const [productPrice, setProductPrice] = useState("$0.99");
   const { user, isPremium, isManualOverride } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
