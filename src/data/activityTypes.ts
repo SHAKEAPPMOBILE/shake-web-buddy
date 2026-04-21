@@ -42,7 +42,9 @@ export const getNextOccurrenceDate = (activityId: string): Date => {
   if (daysUntil < 0) {
     daysUntil += 7; // Next week
   }
-  // If it's the same day, it's today (daysUntil = 0)
+  if (daysUntil === 0) {
+    daysUntil = 7; // Always return next week's occurrence, not today
+  }
   
   const nextDate = new Date(today);
   nextDate.setDate(today.getDate() + daysUntil);
