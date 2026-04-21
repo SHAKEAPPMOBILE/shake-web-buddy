@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Check, User, MessageSquare, Sparkles, Settings, Video } from "lucide-react";
-import shakeCoinTransparent from "@/assets/shake-coin-transparent.png";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +27,7 @@ interface PremiumDialogProps {
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
-  const [productPrice, setProductPrice] = useState("$2.99");
+  const [productPrice, setProductPrice] = useState("$1.99");
   const { user, isPremium, isManualOverride } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -320,11 +319,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         )}
         <DialogHeader className="pb-2">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img 
-              src={shakeCoinTransparent} 
-              alt="SHAKE Coin" 
-              className="w-14 h-14 object-contain"
-            />
             <SuperHumanIcon size={40} />
           </div>
           <DialogTitle className="text-center text-xl font-display">
