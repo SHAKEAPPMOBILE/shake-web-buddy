@@ -566,9 +566,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             <button
               type="button"
               onClick={() => onOpenEvents?.()}
-              className="flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-muted dark:bg-gray-100 text-foreground dark:text-gray-800"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-primary text-primary-foreground"
             >
               <span>⚡️</span>
+              <span>Events</span>
             </button>
             <button
               type="button"
