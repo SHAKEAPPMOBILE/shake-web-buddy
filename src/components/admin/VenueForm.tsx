@@ -26,6 +26,7 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
   const [latitude, setLatitude] = useState(venue?.latitude?.toString() || "");
   const [longitude, setLongitude] = useState(venue?.longitude?.toString() || "");
   const [sortOrder, setSortOrder] = useState(venue?.sort_order?.toString() || "0");
+  const [instagramUrl, setInstagramUrl] = useState(venue?.instagram_url || "");
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeSuccess, setGeocodeSuccess] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -121,6 +122,7 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
       latitude: latitude ? parseFloat(latitude) : null,
       longitude: longitude ? parseFloat(longitude) : null,
       sort_order: parseInt(sortOrder) || 0,
+      instagram_url: instagramUrl.trim() || null,
     };
 
     try {
@@ -261,6 +263,16 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
                 placeholder="0"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="instagramUrl">Instagram URL</Label>
+            <Input
+              id="instagramUrl"
+              value={instagramUrl}
+              onChange={(e) => setInstagramUrl(e.target.value)}
+              placeholder="https://instagram.com/venuename"
+            />
           </div>
 
           <div className="flex gap-2 pt-2">

@@ -538,6 +538,16 @@ function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete }: 
               📍 {venue.latitude.toFixed(4)}, {venue.longitude.toFixed(4)}
             </p>
           )}
+          {venue.instagram_url && (
+            <a
+              href={venue.instagram_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-pink-500 hover:underline mt-0.5 block truncate"
+            >
+              📷 {venue.instagram_url.replace('https://', '')}
+            </a>
+          )}
           {isCurrent && (
             <p className="text-xs text-primary mt-1">Currently active this {rotationType.toLowerCase()}</p>
           )}

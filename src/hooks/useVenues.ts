@@ -11,6 +11,7 @@ export interface DbVenue {
   longitude: number | null;
   sort_order: number;
   is_active: boolean;
+  instagram_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -24,6 +25,7 @@ export interface VenueInsert {
   longitude?: number | null;
   sort_order?: number;
   is_active?: boolean;
+  instagram_url?: string | null;
 }
 
 export function useVenues() {
