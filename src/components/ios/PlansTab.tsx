@@ -574,16 +574,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             <button
               type="button"
               onClick={openCityPicker}
-              className={`flex items-center gap-1 max-w-[min(50vw,200px)] px-2.5 py-1.5 rounded-full text-sm font-medium transition-all ${
-                browsingDifferentFromDetected
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted dark:bg-gray-100 text-foreground dark:text-gray-800"
-              }`}
-              style={
-                browsingDifferentFromDetected
-                  ? plansSettlingGradientStyle
-                  : undefined
-              }
+              className="flex items-center gap-1 max-w-[min(50vw,200px)] px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-primary text-primary-foreground"
             >
               <Plane className="w-4 h-4 shrink-0" />
               <span className="truncate">{joinedPlansCityFilter || t("plans.allCities", "All cities")}</span>
