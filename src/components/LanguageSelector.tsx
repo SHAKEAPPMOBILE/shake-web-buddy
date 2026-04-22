@@ -106,18 +106,18 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "flex items-center gap-2 px-3 py-2 rounded-full",
-          "bg-card/50 hover:bg-card/80 border border-border/50",
+          "bg-gray-900 border border-gray-900",
           "transition-all duration-200",
           isOpen && "ring-2 ring-primary/30"
         )}
       >
         <span className="text-xl">{selectedLanguage.flag}</span>
         {showLabel && (
-          <span className="text-sm font-medium text-foreground">
+          <span className="text-sm font-medium text-white">
             {selectedLanguage.nativeName}
           </span>
         )}
-        <Globe className="h-4 w-4 text-muted-foreground" />
+        <Globe className="h-4 w-4 text-white" />
       </button>
 
       {/* Carousel Dropdown */}

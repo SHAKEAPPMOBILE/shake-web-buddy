@@ -972,7 +972,7 @@ export default function Auth() {
                 <Button
                   onClick={() => signInWithOAuth('google')}
                   variant="outline"
-                  className="w-full border-2"
+                  className="w-full border-2 text-gray-900 hover:text-white"
                   size="lg"
                 >
                   <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none">
@@ -989,7 +989,7 @@ export default function Auth() {
                 <Button
                   onClick={() => signInWithOAuth('apple')}
                   variant="outline"
-                  className="w-full border-2"
+                  className="w-full border-2 text-gray-900 hover:text-white"
                   size="lg"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" className="mr-2">
@@ -1014,7 +1014,7 @@ export default function Auth() {
                     <button
                       type="button"
                       onClick={() => setShowEmailLogin(true)}
-                      className="text-sm text-muted-foreground hover:text-foreground"
+                      className="text-sm text-gray-900 hover:text-gray-500"
                     >
                       Login with email
                     </button>
