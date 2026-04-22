@@ -509,7 +509,7 @@ export function GroupChatView({
   const showAttendees = attendeeCount > 0;
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#06060a] z-50">
+    <div className="fixed inset-0 flex flex-col bg-white z-50">
       <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(circle at 8% 0%, rgba(139,92,246,0.65) 0%, transparent 55%), radial-gradient(circle at 92% 18%, rgba(236,72,153,0.6) 0%, transparent 55%), radial-gradient(circle at 50% 100%, rgba(56,189,248,0.5) 0%, transparent 60%)' }} aria-hidden />
       <div className="relative z-10 flex flex-col flex-1 min-h-0">
       <div className="relative z-30 flex shrink-0 items-center border-b border-white/5 bg-transparent px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))]">
@@ -614,37 +614,37 @@ export function GroupChatView({
       )}
 
       {showAttendees ? (
-        <div className="w-full px-4 py-2.5 border-b border-white/5">
+        <div className="w-full px-4 py-2.5 border-b border-gray-100 bg-white">
           <button onClick={() => setShowParticipantsList(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="flex -space-x-2 overflow-hidden">
               {participants.slice(0, 6).map((participant) => (
-                <Avatar key={participant.user_id} className="w-8 h-8 rounded-full border border-white/10 bg-white/5 shrink-0">
+                <Avatar key={participant.user_id} className="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 shrink-0">
                   <AvatarImage src={getDisplayAvatarUrl(participant.avatar_url)} alt={participant.name || "User"} className="object-cover" />
-                  <AvatarFallback className="bg-white/5 flex items-center justify-center">
-                    <User className="w-4 h-4 text-white/40" />
+                  <AvatarFallback className="bg-gray-100 flex items-center justify-center">
+                    <User className="w-4 h-4 text-gray-400" />
                   </AvatarFallback>
                 </Avatar>
               ))}
               {participants.length > 6 && (
-                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-xs font-medium text-white/50 shrink-0">
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 text-xs font-medium text-gray-500 shrink-0">
                   +{participants.length - 6}
                 </div>
               )}
             </div>
-            <p className="text-sm text-white/50">
+            <p className="text-sm text-gray-500">
               {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined
             </p>
           </button>
         </div>
       ) : (
-        <div className="w-full px-4 py-2.5 border-b border-white/5">
-          <p className="text-sm text-white/40">You're the first one here today!</p>
+        <div className="w-full px-4 py-2.5 border-b border-gray-100 bg-white">
+          <p className="text-sm text-gray-400">You're the first one here today!</p>
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-14 space-y-3">
+      <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-14 space-y-3 bg-white">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-white/60">
+          <div className="flex flex-col items-center justify-center h-full text-gray-400">
             <p className="text-center text-sm">
               Start the conversation!<br />
               <span className="text-xs">Messages from today will appear here.</span>
@@ -662,10 +662,10 @@ export function GroupChatView({
               (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
             return (
               <div key={msg.id} className={`group flex gap-3 items-end ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                <Avatar className="w-8 h-8 shrink-0 rounded-full border border-white/10 bg-white/5">
+                <Avatar className="w-8 h-8 shrink-0 rounded-full border border-gray-200 bg-gray-100">
                   <AvatarImage src={getDisplayAvatarUrl(avatarUrl)} alt={displayName} className="object-cover" />
-                  <AvatarFallback className="bg-white/5 flex items-center justify-center">
-                    <User className="w-4 h-4 text-white/40" />
+                  <AvatarFallback className="bg-gray-100 flex items-center justify-center">
+                    <User className="w-4 h-4 text-gray-400" />
                   </AvatarFallback>
                 </Avatar>
                 <div
@@ -688,7 +688,7 @@ export function GroupChatView({
                       <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                         <button
                           type="button"
-                          className={`font-semibold text-sm text-white ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
+                          className={`font-semibold text-sm ${isOwnMessage ? 'text-white' : 'text-gray-900'} ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
                           onClick={() => {
                             if (!isOwnMessage) {
                               setSelectedUserProfile({
@@ -702,7 +702,7 @@ export function GroupChatView({
                         >
                           {displayName}
                         </button>
-                        <span className="text-xs text-white/35">{format(new Date(msg.created_at), 'h:mm a')}</span>
+                        <span className={`text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-400'}`}>{format(new Date(msg.created_at), 'h:mm a')}</span>
                       </div>
                     }
                   >
@@ -718,7 +718,7 @@ export function GroupChatView({
                       ) : (
                         <div
                           className={`text-sm px-3 py-2 rounded-xl inline-block ${
-                            isOwnMessage ? 'bg-[#7c5cfc] text-white' : 'bg-white/10 text-white border border-white/10'
+                            isOwnMessage ? 'bg-[#7c5cfc] text-white' : 'bg-gray-100 text-gray-900'
                           }`}
                         >
                           <span>{msg.message}</span>
@@ -728,7 +728,7 @@ export function GroupChatView({
                         <button
                           type="button"
                           onClick={() => handleDeleteMessage(msg.id)}
-                          className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-white/40 hover:text-red-400 transition-all"
+                          className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-gray-300 hover:text-red-400 transition-all"
                           title="Delete message"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -745,13 +745,13 @@ export function GroupChatView({
       </div>
 
       {user && !message.trim() && (
-        <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
+        <div className="px-4 pb-2 overflow-x-auto scrollbar-hide bg-white">
           <div className="flex gap-1.5 w-max">
             {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
               <button
                 key={index}
                 onClick={() => setMessage(suggestion)}
-                className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-white/80 hover:bg-white/15 border border-white/30 whitespace-nowrap shrink-0"
+                className="text-xs px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 whitespace-nowrap shrink-0"
               >
                 {suggestion}
               </button>
@@ -760,13 +760,13 @@ export function GroupChatView({
         </div>
       )}
 
-      <div className="p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/5">
+      <div className="p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-gray-200 bg-white">
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+            className="shrink-0 h-9 w-9 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
             onClick={() => setGiphyPickerOpen(true)}
             disabled={isSending || giphyPickerOpen}
             aria-label="GIFs"
@@ -779,7 +779,7 @@ export function GroupChatView({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
+            className="flex-1 bg-gray-50 border-gray-200 focus-visible:ring-primary/50 text-gray-900 placeholder:text-gray-400 min-h-9"
             disabled={isSending || (!isPremium && !canSendText) || giphyPickerOpen}
           />
           <Button
