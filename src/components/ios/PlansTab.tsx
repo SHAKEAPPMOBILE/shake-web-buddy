@@ -99,27 +99,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       
     const userOwnCarouselJoins = myCarouselJoinsData || [];
 
-    // --- 2. Public discovery: all active activities in the selected city ---
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let cityActivities: any[] = [];
-    if (selectedCity) {
-      const { data: cityData, error: cityError } = await supabase
-        .from("user_activities")
-        .select("*")
-        .eq("city", selectedCity)
-        .eq("is_active", true)
-        .gte("scheduled_for", startOfToday.toISOString())
-        .order("scheduled_for", { ascending: true });
-
-      if (cityError) {
-        console.error("Error fetching city activities:", cityError);
-        setIsLoading(false);
-        return;
-      }
-      cityActivities = cityData || [];
-    }
-
-    // --- 3. User's real plan joins (activity_id is not null) ---
+    // --- 2. User's real plan joins (activity_id is not null) ---
     const { data: joins } = await supabase
       .from("activity_joins")
       .select("activity_id")
@@ -178,9 +158,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
 
     // Combine and deduplicate
-    const allActivitiesMap = new Map<string, typeof cityActivities[0]>();
-    
-    (cityActivities || []).forEach(a => allActivitiesMap.set(a.id, a));
+    const allActivitiesMap = new Map<string, typeof joinedActivities[0]>();
+
     joinedActivities.forEach(a => allActivitiesMap.set(a.id, a));
     
     const allActivities = Array.from(allActivitiesMap.values());
