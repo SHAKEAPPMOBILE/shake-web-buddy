@@ -515,7 +515,7 @@ export function GroupChatView({
       <div className="relative z-30 flex shrink-0 items-center border-b border-white/5 bg-transparent px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <MinimalBackButton
           onClick={onBack}
-          className="shrink-0 text-white/80 hover:text-white border-transparent"
+          className="shrink-0 text-white/80 hover:text-white bg-white/10 border-white/30"
           aria-label="Back"
           iconClassName="w-6 h-6"
         />
