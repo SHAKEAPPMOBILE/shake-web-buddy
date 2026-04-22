@@ -515,12 +515,12 @@ export function GroupChatView({
       <div className="relative z-30 flex shrink-0 items-center border-b border-white/5 bg-transparent px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <MinimalBackButton
           onClick={onBack}
-          className="shrink-0 text-white/80 hover:text-white bg-white/10 border-white/30"
+          className="shrink-0 text-gray-900 hover:text-gray-700 bg-white/10 border-white/30"
           aria-label="Back"
           iconClassName="w-6 h-6"
         />
         <div className="absolute inset-x-0 flex flex-col items-center pointer-events-none">
-          <h1 className="text-base font-medium text-white flex items-center gap-2">
+          <h1 className="text-base font-medium text-gray-900 flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
               {activityMeta?.icon ? (
                 <img
@@ -534,19 +534,19 @@ export function GroupChatView({
             </div>
             <span className="truncate">{title}</span>
             {isCrossCity && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-xs text-primary/80 rounded-full shrink-0 bg-white/5">
+              <span className="flex items-center gap-1 px-2 py-0.5 text-xs text-gray-900 rounded-full shrink-0 bg-white/5">
                 <Plane className="w-3 h-3" />
                 {city}
               </span>
             )}
           </h1>
-          <p className="text-xs text-white/70">{headerDateLabel}</p>
+          <p className="text-xs text-gray-900">{headerDateLabel}</p>
         </div>
         <div className="ml-auto flex items-center gap-0.5">
-          <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-white/60 hover:text-white hover:bg-white/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
+          <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
             {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleLeaveActivity} className="shrink-0 text-white/50 hover:text-red-400 hover:bg-white/5 h-8 w-8" title="Leave">
+          <Button variant="ghost" size="icon" onClick={handleLeaveActivity} className="shrink-0 text-gray-900 hover:text-red-500 hover:bg-black/5 h-8 w-8" title="Leave">
             <LogOut className="w-4 h-4" />
           </Button>
         </div>
@@ -580,7 +580,7 @@ export function GroupChatView({
                       el.classList.toggle('max-w-none');
                     }
                   }}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/20 text-green-400 rounded-full text-sm font-semibold border border-green-500/30 min-w-0 max-w-[200px]"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-white text-green-600 rounded-full text-sm font-semibold border border-green-500/30 min-w-0 max-w-[200px]"
                 >
                   <span className="venue-name truncate whitespace-nowrap">{currentVenue.name}</span>
                 </button>
