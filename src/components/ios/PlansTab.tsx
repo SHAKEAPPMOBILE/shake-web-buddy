@@ -541,15 +541,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-display font-bold text-gray-900 dark:text-gray-900">{t('plans.myPlans')}</h2>
           <div className="flex items-center gap-2">
-            {/* Events + city (same picker as Home — CityContext) */}
-            <button
-              type="button"
-              onClick={() => onOpenEvents?.()}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-primary text-primary-foreground"
-            >
-              <span>⚡️</span>
-              <span>Events</span>
-            </button>
+            {/* City picker then Events */}
             <button
               type="button"
               onClick={openCityPicker}
@@ -557,6 +549,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             >
               <Plane className="w-4 h-4 shrink-0" />
               <span className="truncate">{joinedPlansCityFilter || t("plans.allCities", "All cities")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenEvents?.()}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-primary text-primary-foreground"
+            >
+              <span>⚡️</span>
+              <span>Events</span>
             </button>
             {joinedPlansCityFilter && (
               <button
