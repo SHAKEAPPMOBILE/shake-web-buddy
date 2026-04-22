@@ -512,14 +512,14 @@ export function GroupChatView({
     <div className="fixed inset-0 flex flex-col bg-[#06060a] z-50">
       <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(circle at 8% 0%, rgba(139,92,246,0.65) 0%, transparent 55%), radial-gradient(circle at 92% 18%, rgba(236,72,153,0.6) 0%, transparent 55%), radial-gradient(circle at 50% 100%, rgba(56,189,248,0.5) 0%, transparent 60%)' }} aria-hidden />
       <div className="relative z-10 flex flex-col flex-1 min-h-0">
-      <div className="relative z-30 flex shrink-0 items-center gap-3 border-b border-white/5 bg-transparent px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+      <div className="relative z-30 flex shrink-0 items-center border-b border-white/5 bg-transparent px-4 py-2.5 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <MinimalBackButton
           onClick={onBack}
-          className="shrink-0 text-white/80 hover:text-white"
+          className="shrink-0 text-white/80 hover:text-white border-transparent"
           aria-label="Back"
           iconClassName="w-6 h-6"
         />
-        <div className="flex-1 min-w-0">
+        <div className="absolute inset-x-0 flex flex-col items-center pointer-events-none">
           <h1 className="text-base font-medium text-white flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
               {activityMeta?.icon ? (
@@ -542,7 +542,7 @@ export function GroupChatView({
           </h1>
           <p className="text-xs text-white/70">{headerDateLabel}</p>
         </div>
-        <div className="flex items-center gap-0.5">
+        <div className="ml-auto flex items-center gap-0.5">
           <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-white/60 hover:text-white hover:bg-white/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
             {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
           </Button>
