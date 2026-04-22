@@ -521,16 +521,32 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       )}>
         {/* Welcome Message */}
         <div className="mb-8">
-          <div className="flex items-center justify-center mb-6">
-            <button
-              type="button"
-              onClick={onOpenEvents}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-foreground hover:border-primary/40 transition-colors"
-            >
-              <span>⚡️</span>
-              {t('home.eventsNearYou', 'Events near you')}
-            </button>
-          </div>
+          {/* City pill under the shakers row */}
+          {isCityLoading ? (
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex items-center gap-2 animate-pulse">
+                <LocationPinEmoji className="text-xl" />
+                <div className="h-4 w-[140px] rounded-xl bg-muted/60" />
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center mb-6">
+              <button
+                type="button"
+                onClick={() => setIsCitySelectorOpen(true)}
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors max-w-[min(100%,280px)]"
+              >
+                <LocationPinEmoji className="text-xl" />
+                <span className="truncate">
+                  {selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..."
+                    ? selectedCity
+                    : isCityOutOfRange
+                      ? "Coming to your city soon"
+                      : "Select your city"}
+                </span>
+              </button>
+            </div>
+          )}
           <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">
             <span className="transition-opacity duration-500 block">
               {showTapInstruction ? (
@@ -565,32 +581,16 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           <GlobalParticipantsSection />
         </div>
 
-        {/* City pill under the shakers row */}
-        {isCityLoading ? (
-          <div className="flex justify-center">
-            <div className="inline-flex items-center gap-2 animate-pulse">
-              <LocationPinEmoji className="text-xl" />
-              <div className="h-4 w-[140px] rounded-xl bg-muted/60" />
-            </div>
-          </div>
-        ) : (
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={() => setIsCitySelectorOpen(true)}
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors max-w-[min(100%,280px)]"
-            >
-              <LocationPinEmoji className="text-xl" />
-              <span className="truncate">
-                {selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..."
-                  ? selectedCity
-                  : isCityOutOfRange
-                    ? "Coming to your city soon"
-                    : "Select your city"}
-              </span>
-            </button>
-          </div>
-        )}
+        <div className="flex items-center justify-center">
+          <button
+            type="button"
+            onClick={onOpenEvents}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm text-foreground hover:border-primary/40 transition-colors"
+          >
+            <span>⚡️</span>
+            {t('home.eventsNearYou', 'Events near you')}
+          </button>
+        </div>
 
       </div>
       <CityPickerModal open={isCitySelectorOpen} onOpenChange={setIsCitySelectorOpen} title="Choose your city">
