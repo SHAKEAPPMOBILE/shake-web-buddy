@@ -18,6 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
 import { LanguageSelector } from "../LanguageSelector";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "react-i18next";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { usePayPalConnect } from "@/hooks/usePayPalConnect";
@@ -989,16 +990,17 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <span className="font-medium">Motion & Shake</span>
               <p className="text-xs text-muted-foreground dark:text-gray-500">Allow shake to discover activities</p>
             </div>
-            {motionPermission === "granted" ? (
-              <span className="text-sm font-medium text-shake-green">Enabled ✓</span>
-            ) : (
-              <button
-                onClick={handleRequestMotionPermission}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                Enable
-              </button>
-            )}
+            <Switch
+              checked={motionPermission === "granted"}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  handleRequestMotionPermission();
+                } else {
+                  localStorage.setItem("shake_motion_permission", "denied");
+                  setMotionPermission("prompt");
+                }
+              }}
+            />
           </div>
         </div>
 
