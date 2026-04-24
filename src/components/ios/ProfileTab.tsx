@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,6 +98,27 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [showFaceCapture, setShowFaceCapture] = useState(false);
   const [isUpdatingFaceAuth, setIsUpdatingFaceAuth] = useState(false);
   const [showRemoveFaceConfirm, setShowRemoveFaceConfirm] = useState(false);
+  const [motionPermission, setMotionPermission] = useState<"granted" | "prompt">(
+    () => (localStorage.getItem("shake_motion_permission") === "granted" ? "granted" : "prompt")
+  );
+
+  const handleRequestMotionPermission = useCallback(async () => {
+    if (typeof (DeviceMotionEvent as any).requestPermission === "function") {
+      try {
+        const result = await (DeviceMotionEvent as any).requestPermission();
+        if (result === "granted") {
+          localStorage.setItem("shake_motion_permission", "granted");
+          setMotionPermission("granted");
+        }
+      } catch (err) {
+        console.log("Motion permission request failed:", err);
+      }
+    } else {
+      // Non-iOS: motion always available, mark as granted
+      localStorage.setItem("shake_motion_permission", "granted");
+      setMotionPermission("granted");
+    }
+  }, []);
 
   const handleOpenManagePlan = () => {
     setShowSubscriptionDropdown(false);
@@ -955,6 +976,29 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <p className="text-xs text-muted-foreground dark:text-gray-500">Toggle dark / light mode</p>
             </div>
             <ThemeToggle />
+          </div>
+        </div>
+
+        {/* Motion & Shake */}
+        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
+          <div className="flex items-center gap-4 px-4 py-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
+              <Smartphone className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <span className="font-medium">Motion & Shake</span>
+              <p className="text-xs text-muted-foreground dark:text-gray-500">Allow shake to discover activities</p>
+            </div>
+            {motionPermission === "granted" ? (
+              <span className="text-sm font-medium text-shake-green">Enabled ✓</span>
+            ) : (
+              <button
+                onClick={handleRequestMotionPermission}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Enable
+              </button>
+            )}
           </div>
         </div>
 
