@@ -1122,8 +1122,8 @@ export default function EventsPage({
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-background overflow-hidden relative">
-      {/* Header */}
-      <div className="px-5 pt-5 pb-3 border-b border-border flex-shrink-0">
+      {/* Header — sticky so it never shifts when search opens/closes */}
+      <div className="sticky top-0 z-10 bg-background px-5 pt-5 pb-3 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <MinimalBackButton
@@ -1149,7 +1149,7 @@ export default function EventsPage({
           </button>
         </div>
         {searchOpen && (
-          <div className="relative mb-3">
+          <div className="relative mb-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             {searchLoading && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -1180,36 +1180,38 @@ export default function EventsPage({
             />
           </div>
         )}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {CATEGORIES.map((c) => (
+        {!searchOpen && (
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCat(c)}
+                className={cn(
+                  "shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+                  cat === c
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground border border-border hover:border-primary/30"
+                )}
+              >
+                {c}
+              </button>
+            ))}
             <button
-              key={c}
+              key={FESTIVAL_TAB}
               type="button"
-              onClick={() => setCat(c)}
+              onClick={() => setCat(FESTIVAL_TAB)}
               className={cn(
                 "shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
-                cat === c
+                cat === FESTIVAL_TAB
                   ? "bg-primary text-primary-foreground"
                   : "bg-card text-muted-foreground border border-border hover:border-primary/30"
               )}
             >
-              {c}
+              {FESTIVAL_TAB}
             </button>
-          ))}
-          <button
-            key={FESTIVAL_TAB}
-            type="button"
-            onClick={() => setCat(FESTIVAL_TAB)}
-            className={cn(
-              "shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
-              cat === FESTIVAL_TAB
-                ? "bg-primary text-primary-foreground"
-                : "bg-card text-muted-foreground border border-border hover:border-primary/30"
-            )}
-          >
-            {FESTIVAL_TAB}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto">
