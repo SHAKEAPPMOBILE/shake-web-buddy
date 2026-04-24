@@ -695,7 +695,7 @@ function EventDetail({
           </div>
         )}
         <MinimalBackButton
-          className="absolute top-4 left-4 z-50 shrink-0 text-white/90 hover:text-white bg-black/30 rounded-full"
+          className="absolute top-12 left-4 z-50 shrink-0 text-white/90 hover:text-white bg-black/30 rounded-full"
           onClick={onClose}
           aria-label="Back"
         />

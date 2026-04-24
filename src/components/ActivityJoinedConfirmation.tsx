@@ -79,13 +79,13 @@ export function ActivityJoinedConfirmation({
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-4 animate-bounce-subtle">
                     <span className="text-4xl">{eventConfirmation.emoji ?? "🎉"}</span>
                   </div>
-                  <h2 className="text-lg font-display font-bold text-foreground mb-2">
+                  <h2 className="text-lg font-display font-bold text-gray-900 mb-2">
                     {t("joinConfirmation.youreGoing", "You're going!")}
                   </h2>
-                  <p className="text-base font-semibold text-foreground leading-snug mb-1">{eventConfirmation.name}</p>
-                  <p className="text-sm text-muted-foreground">{eventConfirmation.dateLine}</p>
+                  <p className="text-base font-semibold text-gray-900 leading-snug mb-1">{eventConfirmation.name}</p>
+                  <p className="text-sm text-gray-900">{eventConfirmation.dateLine}</p>
                 </div>
-                <div className="rounded-2xl bg-muted/50 p-4">
+                <div className="rounded-2xl bg-green-100 border border-green-300 p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>
