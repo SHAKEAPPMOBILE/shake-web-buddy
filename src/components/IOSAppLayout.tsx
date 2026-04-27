@@ -21,6 +21,7 @@ import { usePrivateMessageNotifications } from "@/hooks/usePrivateMessageNotific
 import { useProximityCheckIn } from "@/hooks/useProximityCheckIn";
 import { usePaymentSuccessHandler } from "@/hooks/usePaymentSuccessHandler";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useCapacitorPushNotifications } from "@/hooks/useCapacitorPushNotifications";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/lib/app-toast";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -231,6 +232,9 @@ export function IOSAppLayout() {
     }
   }, [isNearVenue, venueName, showProximityPopup]);
   
+  // Initialize APNs/FCM push notifications (iOS native)
+  useCapacitorPushNotifications();
+
   // Initialize push notifications for private messages
   usePrivateMessageNotifications();
 
