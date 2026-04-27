@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { Home, MapPin, MessageSquare, User, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, MapPin, MessageSquare, User, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTotalUnreadChats } from "@/hooks/useTotalUnreadChats";
 import { useTranslation } from "react-i18next";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
+import { useNavigate } from "react-router-dom";
 
 interface IOSTabBarProps {
   activeTab: string;
@@ -17,7 +17,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const { user } = useAuth();
   const { totalUnread } = useTotalUnreadChats();
   const { style: settlingGradientStyle } = useSettlingGradient("bottom-nav-shake");
-  const [isShaking, setIsShaking] = useState(false);
+  const navigate = useNavigate();
 
   // Apply settling gradient only when user is logged in, otherwise use solid blue
   const shakeButtonStyle = user ? settlingGradientStyle : { background: "rgb(59, 130, 246)" }; // bg-blue-500
@@ -30,21 +30,15 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
     { id: "profile", icon: User, label: t('profile.title') },
   ];
 
-  const handleShakeAnimation = () => {
-    setIsShaking(true);
-    setTimeout(() => {
-      setIsShaking(false);
-    }, 3000);
-  };
-
   const handleTabClick = (tabId: string) => {
     // Block navigation if user is not logged in
     if (!user) {
       return;
     }
-    
+
     if (tabId === "shake") {
-      handleShakeAnimation();
+      navigate("/propose-plan");
+      return;
     }
     onTabChange(tabId);
   };
@@ -66,36 +60,12 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                 aria-disabled={!user}
                 className="relative -mt-6 flex flex-col items-center"
               >
-                <div className="flex items-center gap-1">
-                  {/* Left arrow - only visible during shake (fixed green, not themed) */}
-                  {isShaking && (
-                    <ChevronLeft 
-                      className="w-5 h-5 text-emerald-400 animate-bounce-left"
-                    />
-                  )}
-                  
-                  {/* Center circle - 2s rainbow gradient then settles to random color (when logged in) */}
-                  <div className={cn(
-                    "w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all",
-                    isActive && "scale-110",
-                    isShaking && "animate-shake-center"
-                  )} style={shakeButtonStyle}>
-                    <Plus className="w-8 h-8 text-white" />
-                  </div>
-                  
-                  {/* Right arrow - only visible during shake (fixed green, not themed) */}
-                  {isShaking && (
-                    <ChevronRight 
-                      className="w-5 h-5 text-emerald-400 animate-bounce-right"
-                    />
-                  )}
+                <div className={cn(
+                  "w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all",
+                  isActive && "scale-110"
+                )} style={shakeButtonStyle}>
+                  <Plus className="w-8 h-8 text-white" />
                 </div>
-                <span className={cn(
-                  "text-[10px] mt-1 font-medium",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )}>
-                  {tab.label}
-                </span>
               </button>
             );
           }
