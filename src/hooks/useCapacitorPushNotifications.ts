@@ -21,17 +21,23 @@ export function useCapacitorPushNotifications() {
 
     const setup = async () => {
       const result = await PushNotifications.requestPermissions();
-      if (result.receive !== "granted") return;
+      if (result.receive !== "granted") {
+        console.log("[Push] Permission denied:", result.receive);
+        return;
+      }
 
       await PushNotifications.register();
+      console.log("[Push] Registration called");
 
       registrationHandle = await PushNotifications.addListener("registration", async (token) => {
+        console.log("[Push] Token received:", token.value);
         const { error } = await supabase
           .from("profiles")
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .update({ push_token: token.value } as any)
           .eq("user_id", user.id);
 
+        console.log("[Push] Token save result:", error ? error : "success");
         if (error) {
           console.error("[PushNotifications] Failed to save push token:", error);
         }
