@@ -125,10 +125,7 @@ export function SayHiButton({
       disabled={isSending}
       className={`border-shake-yellow/50 text-shake-yellow hover:bg-shake-yellow/10 ${className}`}
     >
-      {isSending ? (
-        <LoadingSpinner size="sm" className="mr-1.5" />
-      ) : (
-      )}
+      {isSending && <LoadingSpinner size="sm" className="mr-1.5" />}
       Invite
     </Button>
   );
