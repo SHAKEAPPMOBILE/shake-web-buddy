@@ -157,16 +157,16 @@ export function UserProfileDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
-          className="sm:max-w-sm bg-card/95 backdrop-blur-xl border-border/50"
+          className="sm:max-w-sm bg-white border border-purple-200/60"
           {...(isMobile ? swipeHandlers : {})}
         >
           {isMobile && (
             <div className="flex justify-center py-2 shrink-0">
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              <div className="w-10 h-1 rounded-full bg-gray-300" />
             </div>
           )}
           <DialogHeader>
-            <DialogTitle className="text-center text-xl font-display">{t("userProfile.title")}</DialogTitle>
+            <DialogTitle className="text-center text-xl font-display text-gray-900">{t("userProfile.title")}</DialogTitle>
           </DialogHeader>
 
           {/* Avatar and Name */}
@@ -176,7 +176,7 @@ export function UserProfileDialog({
               <button
                 onClick={handleAvatarClick}
                 className={cn(
-                  "w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden shadow-lg transition-transform hover:scale-105 cursor-pointer",
+                  "w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shadow-lg transition-transform hover:scale-105 cursor-pointer",
                   hasActiveStatus
                     ? "ring-4 ring-shake-green ring-offset-2 ring-offset-background"
                     : "border-4 border-border"
@@ -220,13 +220,13 @@ export function UserProfileDialog({
             {isOwnProfile && (
               <button
                 onClick={() => setShowStatusRecorder(true)}
-                className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="mt-2 text-xs text-gray-500 hover:text-gray-900 transition-colors"
               >
                 {hasActiveStatus ? t("profile.viewStatus") : t("profile.addStatus")}
               </button>
             )}
 
-            <h3 className={cn("text-xl font-semibold text-foreground", isOwnProfile ? "mt-2" : "mt-4")}>
+            <h3 className={cn("text-xl font-semibold text-gray-900", isOwnProfile ? "mt-2" : "mt-4")}>
               {userName || "Shaker"}{userAge ? `, ${userAge}` : ''}
             </h3>
             
@@ -234,15 +234,15 @@ export function UserProfileDialog({
             {(socialLinks.nationality || socialLinks.occupation) && (
               <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
                 {socialLinks.nationality && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-sm">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-sm">
                     <span>🌍</span>
-                    <span className="text-foreground">{socialLinks.nationality}</span>
+                    <span className="text-gray-900">{socialLinks.nationality}</span>
                   </span>
                 )}
                 {socialLinks.occupation && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-sm">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-sm">
                     <span>💼</span>
-                    <span className="text-foreground">{socialLinks.occupation}</span>
+                    <span className="text-gray-900">{socialLinks.occupation}</span>
                   </span>
                 )}
               </div>
@@ -250,7 +250,7 @@ export function UserProfileDialog({
             
             {/* Location from most recent activity */}
             {activityHistory.length > 0 && (
-              <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
                 <span className="inline-flex items-center justify-center w-3.5 h-3.5">📍</span>
                 <span>{activityHistory[0].city}</span>
               </div>
@@ -303,8 +303,8 @@ export function UserProfileDialog({
           </div>
 
           {/* Activity History */}
-          <div className="border-t border-border/50 pt-4">
-            <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+          <div className="border-t border-gray-200 pt-4">
+            <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               {t("userProfile.recentActivity")}
             </h4>
@@ -314,7 +314,7 @@ export function UserProfileDialog({
                 <LoadingSpinner size="md" />
               </div>
             ) : activityHistory.length === 0 ? (
-              <p className="text-sm text-muted-foreground/70 text-center py-4">
+              <p className="text-sm text-gray-400 text-center py-4">
                 {t("userProfile.noRecentActivity")}
               </p>
             ) : (
@@ -322,21 +322,21 @@ export function UserProfileDialog({
                 {activityHistory.map((activity) => (
                   <div 
                     key={activity.id}
-                    className="flex items-center gap-3 p-2 rounded-2xl bg-muted/50"
+                    className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 border border-purple-200/60"
                   >
                     <span className="text-lg">
                       {getActivityEmoji(activity.activity_type)}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground capitalize">
+                      <p className="text-sm font-medium text-gray-900 capitalize">
                         {t(`activities.${activity.activity_type}`, activity.activity_type)}
                       </p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <p className="text-xs text-gray-500 flex items-center gap-1">
                         <span className="inline-flex items-center justify-center w-3 h-3">📍</span>
                         {activity.city}
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0">
+                    <span className="text-xs text-gray-500 shrink-0">
                       {format(new Date(activity.joined_at), "MMM d")}
                     </span>
                   </div>
@@ -347,7 +347,7 @@ export function UserProfileDialog({
 
           {/* Block & Report - only show for other users */}
           {!isOwnProfile && (
-            <div className="border-t border-border/50 pt-4 space-y-2">
+            <div className="border-t border-gray-200 pt-4 space-y-2">
               <Button
                 variant="ghost"
                 size="sm"
