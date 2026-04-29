@@ -157,11 +157,33 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         : (joinedData || []);
     }
 
-    // Combine and deduplicate
+    // --- 5. Public plans in the filtered city by other users ---
+    // Only runs when a city filter is explicitly set — keeps "All cities" mode clean.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let cityPublicPlans: any[] = [];
+    if (joinedPlansCityFilter) {
+      const { data: cityPlansData } = await supabase
+        .from("user_activities")
+        .select("*")
+        .eq("city", joinedPlansCityFilter)
+        .eq("is_active", true)
+        .gte("scheduled_for", startOfToday.toISOString())
+        .neq("user_id", user.id);
+
+      cityPublicPlans = cityPlansData || [];
+    }
+
+    // Combine and deduplicate — joined plans take priority over public discovery plans
     const allActivitiesMap = new Map<string, typeof joinedActivities[0]>();
 
     joinedActivities.forEach(a => allActivitiesMap.set(a.id, a));
-    
+    // Only insert public plans not already present (user's joined plans win)
+    cityPublicPlans.forEach(a => {
+      if (!allActivitiesMap.has(a.id)) {
+        allActivitiesMap.set(a.id, a);
+      }
+    });
+
     const allActivities = Array.from(allActivitiesMap.values());
 
     // Fetch creator profiles and participant counts
@@ -506,6 +528,25 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
   };
 
+  const handleJoinPlan = async (plan: PlanActivity, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("activity_joins")
+        .insert({ activity_id: plan.id, user_id: user.id });
+
+      if (error) throw error;
+
+      toast.success("Joined!");
+      fetchPlans();
+    } catch (error) {
+      console.error("Error joining plan:", error);
+      toast.error("Failed to join plan");
+    }
+  };
+
   // Show full-page PlanGroupChatView when a plan is selected
   if (selectedPlan && showChatView) {
     return (
@@ -667,10 +708,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     <h3 className="font-semibold text-gray-900">
                       {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || t('plans.untitledPlan', 'Untitled Plan'))}
                     </h3>
-                    {plan.isJoined && (
+                    {plan.isJoined ? (
                       <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">
-                        {t('common.joined')}
+                        {t('common.joined')} ✓
                       </span>
+                    ) : !plan.isCarouselJoin && !plan.price_amount && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleJoinPlan(plan, e)}
+                        className="text-xs bg-primary text-primary-foreground px-2.5 py-0.5 rounded-full font-medium hover:opacity-90 transition-all"
+                      >
+                        {t('common.join', 'Join')}
+                      </button>
                     )}
                     {/* Price badge for paid activities */}
                     {plan.price_amount && !plan.isCarouselJoin && (
