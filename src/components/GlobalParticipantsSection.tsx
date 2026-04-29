@@ -278,9 +278,9 @@ export function GlobalParticipantsSection() {
 
       {/* Participants List Dialog */}
       <Dialog open={showListDialog} onOpenChange={setShowListDialog}>
-        <DialogContent className="sm:max-w-md bg-white border border-gray-200">
+        <DialogContent className="sm:max-w-md bg-white border border-purple-200/60">
           <DialogHeader>
-            <DialogTitle className="font-display">Shakers nearby</DialogTitle>
+            <DialogTitle className="font-display text-gray-900">Shakers nearby</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -300,7 +300,7 @@ export function GlobalParticipantsSection() {
                   return (
                     <div
                       key={participant.user_id}
-                      className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-gray-200 transition-colors hover:bg-gray-50"
+                      className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-purple-200/60 transition-colors hover:bg-gray-50 hover:border-purple-300"
                     >
                       <button
                         onClick={() => handleParticipantClick(participant)}
@@ -350,7 +350,7 @@ export function GlobalParticipantsSection() {
                         className="relative"
                       >
                         <div
-                          className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-200 blur-sm pointer-events-none select-none"
+                          className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-purple-200/60 blur-sm pointer-events-none select-none"
                         >
                           <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
                             {participant.avatar_url ? (
@@ -396,7 +396,7 @@ export function GlobalParticipantsSection() {
                       return (
                         <div
                           key={participant.user_id}
-                          className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-gray-200 transition-colors hover:bg-gray-50"
+                          className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-purple-200/60 transition-colors hover:bg-gray-50 hover:border-purple-300"
                         >
                           <button
                             onClick={() => handleParticipantClick(participant)}
