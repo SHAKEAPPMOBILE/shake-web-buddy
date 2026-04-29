@@ -278,7 +278,7 @@ export function GlobalParticipantsSection() {
 
       {/* Participants List Dialog */}
       <Dialog open={showListDialog} onOpenChange={setShowListDialog}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+        <DialogContent className="sm:max-w-md bg-white border border-gray-200">
           <DialogHeader>
             <DialogTitle className="font-display">Shakers nearby</DialogTitle>
           </DialogHeader>
@@ -300,11 +300,11 @@ export function GlobalParticipantsSection() {
                   return (
                     <div
                       key={participant.user_id}
-                      className="flex items-center gap-3 p-3 rounded-2xl transition-colors hover:bg-muted/50"
+                      className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-gray-200 transition-colors hover:bg-gray-50"
                     >
                       <button
                         onClick={() => handleParticipantClick(participant)}
-                        className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border hover:border-primary transition-colors"
+                        className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors"
                       >
                         {participant.avatar_url ? (
                           <img
@@ -323,12 +323,12 @@ export function GlobalParticipantsSection() {
                         onClick={() => handleParticipantClick(participant)}
                         className="flex-1 text-left"
                       >
-                        <p className="font-medium text-sm">
+                        <p className="font-medium text-sm text-gray-900">
                           {isCurrentUser ? "You" : participant.name || "Shaker"}
                         </p>
                       </button>
                       {isCurrentUser ? (
-                        <span className="text-xs text-muted-foreground">(You)</span>
+                        <span className="text-xs text-gray-500">(You)</span>
                       ) : (
                         <SayHiButton
                           targetUserId={participant.user_id}
@@ -350,9 +350,9 @@ export function GlobalParticipantsSection() {
                         className="relative"
                       >
                         <div
-                          className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 blur-sm pointer-events-none select-none"
+                          className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-200 blur-sm pointer-events-none select-none"
                         >
-                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
                             {participant.avatar_url ? (
                               <img
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
@@ -367,7 +367,7 @@ export function GlobalParticipantsSection() {
                             <User className={`w-5 h-5 text-muted-foreground ${participant.avatar_url ? 'hidden' : ''}`} />
                           </div>
                           <div className="flex-1 text-left">
-                            <p className="font-medium text-sm">
+                            <p className="font-medium text-sm text-gray-900">
                               {participant.name || "Shaker"}
                             </p>
                           </div>
@@ -396,11 +396,11 @@ export function GlobalParticipantsSection() {
                       return (
                         <div
                           key={participant.user_id}
-                          className="flex items-center gap-3 p-3 rounded-2xl transition-colors hover:bg-muted/50"
+                          className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-gray-200 transition-colors hover:bg-gray-50"
                         >
                           <button
                             onClick={() => handleParticipantClick(participant)}
-                            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border hover:border-primary transition-colors"
+                            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors"
                           >
                             {participant.avatar_url ? (
                               <img
