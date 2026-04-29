@@ -565,19 +565,23 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     e.stopPropagation();
     if (!user) return;
 
-    try {
-      const { error } = await supabase
-        .from("activity_joins")
-        .insert({ activity_id: plan.id, user_id: user.id });
+    const { error } = await supabase
+      .from("activity_joins")
+      .insert({
+        user_id: user.id,
+        activity_id: plan.id,
+        activity_type: plan.activity_type,
+        city: plan.city,
+      });
 
-      if (error) throw error;
-
-      toast.success("Joined!");
-      fetchPlans();
-    } catch (error) {
+    if (error) {
       console.error("Error joining plan:", error);
       toast.error("Failed to join plan");
+      return;
     }
+
+    toast.success("Joined!");
+    fetchPlans();
   };
 
   const handleCityPlanClick = async (plan: PlanActivity) => {
@@ -589,14 +593,20 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
-    // Free plan → join silently then open chat immediately
-    try {
-      await supabase
-        .from("activity_joins")
-        .insert({ activity_id: plan.id, user_id: user.id });
-    } catch (error) {
+    // Free plan → join first; only open chat if join succeeded
+    const { error } = await supabase
+      .from("activity_joins")
+      .insert({
+        user_id: user.id,
+        activity_id: plan.id,
+        activity_type: plan.activity_type,
+        city: plan.city,
+      });
+
+    if (error) {
       console.error("Error joining plan:", error);
-      // Proceed to open chat even if insert fails (e.g. duplicate — already joined)
+      toast.error("Failed to join plan");
+      return;
     }
 
     setSelectedPlan({ ...plan, isJoined: true });
