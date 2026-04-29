@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { PartyPopper, Heart, MessageCircle, Check } from "lucide-react";
+import { Heart, MessageCircle, Check } from "lucide-react";
 import { useGreetings } from "@/hooks/useGreetings";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -128,7 +128,6 @@ export function SayHiButton({
       {isSending ? (
         <LoadingSpinner size="sm" className="mr-1.5" />
       ) : (
-        <PartyPopper className="w-4 h-4 mr-1.5" />
       )}
       Invite
     </Button>
