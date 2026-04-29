@@ -771,28 +771,29 @@ export function ChatTab({
 
               <div className="flex items-start gap-3.5">
                 <div className="relative shrink-0">
-                  <div
-                    className={
-                      activity.is_event
-                        ? "w-12 h-12 rounded-full bg-[#a0c1f9] flex items-center justify-center shadow-sm"
-                        : "w-12 h-12 rounded-full bg-white border border-neutral-200 shadow-md flex items-center justify-center text-2xl"
-                    }
-                  >
-                    {activity.is_event ? (
-                      <Ticket className="w-6 h-6 text-white drop-shadow-sm" strokeWidth={2.25} />
-                    ) : (
-                      <span className="text-2xl leading-none" aria-hidden>
-                        {getActivityEmoji(activity.activity_type)}
-                      </span>
-                    )}
-                  </div>
-                  {activity.is_plan && activity.creator_avatar && (
-                    <Avatar className="absolute -bottom-1 -right-1 w-6 h-6 border-2 border-gray-50">
-                      <AvatarImage src={activity.creator_avatar} alt={activity.creator_name} />
-                      <AvatarFallback className="bg-gray-200 text-gray-700 text-xs font-semibold">
+                  {activity.is_plan && activity.creator_avatar ? (
+                    <Avatar className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
+                      <AvatarImage src={activity.creator_avatar} alt={activity.creator_name} className="object-cover" />
+                      <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
                         {activity.creator_name?.charAt(0)?.toUpperCase() || "?"}
                       </AvatarFallback>
                     </Avatar>
+                  ) : (
+                    <div
+                      className={
+                        activity.is_event
+                          ? "w-12 h-12 rounded-full bg-[#a0c1f9] flex items-center justify-center shadow-sm"
+                          : "w-12 h-12 rounded-full bg-white border border-neutral-200 shadow-md flex items-center justify-center text-2xl"
+                      }
+                    >
+                      {activity.is_event ? (
+                        <Ticket className="w-6 h-6 text-white drop-shadow-sm" strokeWidth={2.25} />
+                      ) : (
+                        <span className="text-2xl leading-none" aria-hidden>
+                          {getActivityEmoji(activity.activity_type)}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
 
