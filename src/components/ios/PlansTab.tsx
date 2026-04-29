@@ -88,6 +88,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     setIsLoading(true);
 
+    // Use the context city if available; fall back to the detected city so city plans
+    // load on first render before the user explicitly picks a city.
+    const effectiveCity = selectedCity || detectedCity?.name || null;
+
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     const nowIso = new Date().toISOString();
@@ -112,11 +116,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     // --- 4. City-wide carousel joins for participant-count enrichment (only if city is set) ---
     let allCarouselJoins: { activity_type: string; city: string; user_id: string }[] = [];
-    if (selectedCity) {
+    if (effectiveCity) {
       const { data: cityCarouselData } = await supabase
         .from("activity_joins")
         .select("activity_type, city, user_id")
-        .eq("city", selectedCity)
+        .eq("city", effectiveCity)
         .is("activity_id", null)
         
       allCarouselJoins = cityCarouselData || [];
@@ -159,14 +163,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         : (joinedData || []);
     }
 
-    // --- 5. Public plans in selectedCity by other users (discoverable, not yet joined) ---
+    // --- 5. Public plans in effectiveCity by other users (discoverable, not yet joined) ---
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let cityPublicPlans: any[] = [];
-    if (selectedCity) {
+    if (effectiveCity) {
       const { data: cityPlansData } = await supabase
         .from("user_activities")
         .select("*")
-        .eq("city", selectedCity)
+        .eq("city", effectiveCity)
         .eq("is_active", true)
         .gte("scheduled_for", startOfToday.toISOString())
         .neq("user_id", user.id);
@@ -303,7 +307,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     setActivities(allPlans);
     setCityPlans(cityPlansWithDetails);
     setIsLoading(false);
-  }, [selectedCity, user, joinedPlansCityFilter]);
+  }, [selectedCity, detectedCity, user, joinedPlansCityFilter]);
 
   // Initial fetch and realtime subscription
   useEffect(() => {
