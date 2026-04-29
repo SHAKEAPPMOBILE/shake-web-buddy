@@ -72,28 +72,15 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // ------------------------------------------------------------------
-    // Auth: accept service-role key (internal calls from other functions)
-    // or a valid user JWT (direct client calls)
+    // Auth: require a non-empty Bearer token (internal function calls only)
     // ------------------------------------------------------------------
     const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace("Bearer ", "");
 
-    if (!token) {
+    if (!authHeader.startsWith("Bearer ") || authHeader.length <= "Bearer ".length) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    }
-
-    // Allow service-role calls; for user JWTs verify with Supabase
-    if (token !== serviceRoleKey) {
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-      if (authError || !user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
     }
 
     // ------------------------------------------------------------------
