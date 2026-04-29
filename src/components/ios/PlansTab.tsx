@@ -892,7 +892,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     canDelete={false}
                     onDelete={() => {}}
                     onClick={() => handleCityPlanClick(plan)}
-                    className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 dark:bg-white dark:border-gray-200 dark:hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 dark:bg-gray-50 dark:border-gray-200 dark:hover:bg-gray-100 cursor-pointer transition-colors"
                     style={{}}
                   >
                     <div className="flex items-start gap-3">
