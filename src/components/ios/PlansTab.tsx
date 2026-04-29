@@ -69,6 +69,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
   const isMobile = useIsMobile();
   const [activities, setActivities] = useState<PlanActivity[]>([]);
+  const [cityPlans, setCityPlans] = useState<PlanActivity[]>([]);
   const [isCitySheetOpen, setIsCitySheetOpen] = useState(false);
   const [joinedPlansCityFilter, setJoinedPlansCityFilter] = useState<string | null>(null);
   const [cityAtPickerOpen, setCityAtPickerOpen] = useState<string | null>(null);
@@ -80,6 +81,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // (we still show the user's own joined plans and carousel joins from any city)
     if (!user) {
       setActivities([]);
+      setCityPlans([]);
       setIsLoading(false);
       return;
     }
@@ -157,33 +159,25 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         : (joinedData || []);
     }
 
-    // --- 5. Public plans in the filtered city by other users ---
-    // Only runs when a city filter is explicitly set — keeps "All cities" mode clean.
+    // --- 5. Public plans in selectedCity by other users (discoverable, not yet joined) ---
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let cityPublicPlans: any[] = [];
-    if (joinedPlansCityFilter) {
+    if (selectedCity) {
       const { data: cityPlansData } = await supabase
         .from("user_activities")
         .select("*")
-        .eq("city", joinedPlansCityFilter)
+        .eq("city", selectedCity)
         .eq("is_active", true)
         .gte("scheduled_for", startOfToday.toISOString())
         .neq("user_id", user.id);
 
-      cityPublicPlans = cityPlansData || [];
+      // Exclude plans the user already joined — those appear in the main joined list
+      cityPublicPlans = (cityPlansData || []).filter((a: { id: string }) => !joinedActivityIds.includes(a.id));
     }
 
-    // Combine and deduplicate — joined plans take priority over public discovery plans
+    // Joined plans only in the main activities map
     const allActivitiesMap = new Map<string, typeof joinedActivities[0]>();
-
     joinedActivities.forEach(a => allActivitiesMap.set(a.id, a));
-    // Only insert public plans not already present (user's joined plans win)
-    cityPublicPlans.forEach(a => {
-      if (!allActivitiesMap.has(a.id)) {
-        allActivitiesMap.set(a.id, a);
-      }
-    });
-
     const allActivities = Array.from(allActivitiesMap.values());
 
     // Fetch creator profiles and participant counts
@@ -209,6 +203,40 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         };
       })
     );
+
+    // Enrich city discovery plans with profiles and participant counts
+    const cityPlansWithDetails: PlanActivity[] = await Promise.all(
+      cityPublicPlans.map(async (activity) => {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name, avatar_url")
+          .eq("user_id", activity.user_id)
+          .maybeSingle();
+
+        const { count } = await supabase
+          .from("activity_joins")
+          .select("*", { count: "exact", head: true })
+          .eq("activity_id", activity.id);
+
+        return {
+          ...activity,
+          creator_name: profile?.name || "Anonymous",
+          creator_avatar: profile?.avatar_url,
+          participant_count: count || 0,
+          isJoined: false,
+        };
+      })
+    );
+
+    cityPlansWithDetails.sort((a, b) => {
+      const dateA = new Date(a.scheduled_for);
+      const dateB = new Date(b.scheduled_for);
+      if (isToday(dateA) && !isToday(dateB)) return -1;
+      if (!isToday(dateA) && isToday(dateB)) return 1;
+      if (isTomorrow(dateA) && !isTomorrow(dateB)) return -1;
+      if (!isTomorrow(dateA) && isTomorrow(dateB)) return 1;
+      return dateA.getTime() - dateB.getTime();
+    });
 
     // Create virtual plans — only for carousel activities the current user has actually joined
     const userJoinedCarouselEntries = Array.from(carouselMap.values()).filter(
@@ -273,6 +301,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     });
 
     setActivities(allPlans);
+    setCityPlans(cityPlansWithDetails);
     setIsLoading(false);
   }, [selectedCity, user, joinedPlansCityFilter]);
 
@@ -547,6 +576,29 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
   };
 
+  const handleCityPlanClick = async (plan: PlanActivity) => {
+    if (!user) return;
+
+    // Paid plan → show payment/detail dialog
+    if (plan.price_amount) {
+      setPaidActivityDetail(plan);
+      return;
+    }
+
+    // Free plan → join silently then open chat immediately
+    try {
+      await supabase
+        .from("activity_joins")
+        .insert({ activity_id: plan.id, user_id: user.id });
+    } catch (error) {
+      console.error("Error joining plan:", error);
+      // Proceed to open chat even if insert fails (e.g. duplicate — already joined)
+    }
+
+    setSelectedPlan({ ...plan, isJoined: true });
+    setShowChatView(true);
+  };
+
   // Show full-page PlanGroupChatView when a plan is selected
   if (selectedPlan && showChatView) {
     return (
@@ -647,7 +699,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
           </div>
-        ) : activities.length === 0 ? (
+        ) : activities.length === 0 && cityPlans.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
             <div className="w-16 h-16 rounded-full bg-muted dark:bg-gray-100 flex items-center justify-center mb-4">
               <span
@@ -673,151 +725,253 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             )}
           </div>
         ) : (
-          activities.map((plan) => (
-            <SwipeableCard
-              key={plan.id}
-              canDelete={plan.user_id === user?.id && !plan.isCarouselJoin}
-              onDelete={() => setPlanToDelete(plan)}
-              onClick={() => handlePlanClick(plan)}
-              className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 dark:bg-gray-50 dark:border-gray-200 dark:hover:bg-gray-100 cursor-pointer transition-colors"
-              style={{}}
-            >
-              <div className="flex items-start gap-3">
-                {/* Profile Picture or Activity Emoji */}
-                <div className="relative">
-                  {plan.isCarouselJoin ? (
-                    <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 shadow-md flex items-center justify-center overflow-hidden">
-                      {getActivityIcon(plan.activity_type) ? (
-                        <img src={getActivityIcon(plan.activity_type)} alt={plan.activity_type} className="w-full h-full object-cover rounded-full" />
-                      ) : (
-                        <span className="text-2xl">{getActivityEmoji(plan.activity_type)}</span>
+          <>
+            {/* Joined / own plans */}
+            {activities.map((plan) => (
+              <SwipeableCard
+                key={plan.id}
+                canDelete={plan.user_id === user?.id && !plan.isCarouselJoin}
+                onDelete={() => setPlanToDelete(plan)}
+                onClick={() => handlePlanClick(plan)}
+                className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 dark:bg-gray-50 dark:border-gray-200 dark:hover:bg-gray-100 cursor-pointer transition-colors"
+                style={{}}
+              >
+                <div className="flex items-start gap-3">
+                  {/* Profile Picture or Activity Emoji */}
+                  <div className="relative">
+                    {plan.isCarouselJoin ? (
+                      <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 shadow-md flex items-center justify-center overflow-hidden">
+                        {getActivityIcon(plan.activity_type) ? (
+                          <img src={getActivityIcon(plan.activity_type)} alt={plan.activity_type} className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                          <span className="text-2xl">{getActivityEmoji(plan.activity_type)}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <Avatar className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
+                        <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
+                        <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
+                          {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-gray-900">
+                        {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || t('plans.untitledPlan', 'Untitled Plan'))}
+                      </h3>
+                      {plan.isJoined && (
+                        <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">
+                          {t('common.joined')} ✓
+                        </span>
+                      )}
+                      {/* Price badge for paid activities */}
+                      {plan.price_amount && !plan.isCarouselJoin && (
+                        <span className="text-xs bg-green-50 text-green-700 border border-green-200 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                          {plan.price_amount}
+                        </span>
                       )}
                     </div>
-                  ) : (
-                    <Avatar className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
-                      <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
-                      <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
-                        {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-gray-900">
-                      {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || t('plans.untitledPlan', 'Untitled Plan'))}
-                    </h3>
-                    {plan.isJoined ? (
-                      <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">
-                        {t('common.joined')} ✓
-                      </span>
-                    ) : !plan.isCarouselJoin && !plan.price_amount && (
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="inline-flex items-center justify-center w-3 h-3 text-gray-600">📍</span>
+                      <span className="text-xs text-gray-600">{plan.city}</span>
+                      {!plan.isCarouselJoin && (
+                        <span className="text-xs text-gray-500">
+                          • {t('common.by')}{' '}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedUserProfile({
+                                userId: plan.user_id,
+                                userName: plan.creator_name || null,
+                                avatarUrl: plan.creator_avatar || null,
+                              });
+                            }}
+                            className="underline hover:text-gray-700 transition-colors"
+                          >
+                            {plan.creator_name || "Anonymous"}
+                          </button>
+                        </span>
+                      )}
+                    </div>
+
+                    {plan.isCarouselJoin && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Calendar className="w-3.5 h-3.5 text-gray-600" />
+                        <span className="text-sm text-gray-600">
+                          {formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
+                        </span>
+                        {isToday(new Date(plan.scheduled_for)) && (
+                          <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full animate-pulse">
+                            {t('common.today')}
+                          </span>
+                        )}
+                        {isTomorrow(new Date(plan.scheduled_for)) && (
+                          <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">
+                            {t('common.tomorrow')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2">
+                    {/* Delete button - desktop only, for owner's plans */}
+                    {!isMobile && plan.user_id === user?.id && !plan.isCarouselJoin && (
                       <button
                         type="button"
-                        onClick={(e) => handleJoinPlan(plan, e)}
-                        className="text-xs bg-primary text-primary-foreground px-2.5 py-0.5 rounded-full font-medium hover:opacity-90 transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPlanToDelete(plan);
+                        }}
+                        className="p-2.5 bg-destructive/80 hover:bg-destructive text-white rounded-full transition-all shadow-sm"
+                        title="Delete plan"
+                        aria-label="Delete plan"
                       >
-                        {t('common.join', 'Join')}
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     )}
-                    {/* Price badge for paid activities */}
-                    {plan.price_amount && !plan.isCarouselJoin && (
-                      <span className="text-xs bg-green-50 text-green-700 border border-green-200 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        {plan.price_amount}
-                      </span>
+                    {/* Report button (only for non-owners) */}
+                    {user && plan.user_id !== user.id && (
+                      <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
                     )}
-                  </div>
-
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="inline-flex items-center justify-center w-3 h-3 text-gray-600">📍</span>
-                    <span className="text-xs text-gray-600">{plan.city}</span>
-                    {!plan.isCarouselJoin && (
-                      <span className="text-xs text-gray-500">
-                        • {t('common.by')}{' '}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedUserProfile({
-                              userId: plan.user_id,
-                              userName: plan.creator_name || null,
-                              avatarUrl: plan.creator_avatar || null,
-                            });
-                          }}
-                          className="underline hover:text-gray-700 transition-colors"
-                        >
-                          {plan.creator_name || "Anonymous"}
-                        </button>
-                      </span>
-                    )}
-                  </div>
-
-                  {plan.isCarouselJoin && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <Calendar className="w-3.5 h-3.5 text-gray-600" />
-                      <span className="text-sm text-gray-600">
-                        {formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
-                      </span>
-                      {isToday(new Date(plan.scheduled_for)) && (
-                        <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full animate-pulse">
-                          {t('common.today')}
-                        </span>
-                      )}
-                      {isTomorrow(new Date(plan.scheduled_for)) && (
-                        <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">
-                          {t('common.tomorrow')}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                </div>
-
-                {/* Action buttons */}
-                <div className="flex items-center gap-2">
-                  {/* Delete button - desktop only, for owner's plans */}
-                  {!isMobile && plan.user_id === user?.id && !plan.isCarouselJoin && (
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setPlanToDelete(plan);
+                        handleSharePlan(plan, e);
                       }}
-                      className="p-2.5 bg-destructive/80 hover:bg-destructive text-white rounded-full transition-all shadow-sm"
-                      title="Delete plan"
-                      aria-label="Delete plan"
+                      className="p-2.5 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-full transition-all shadow-sm"
+                      title="Share with friends"
+                      aria-label="Share plan"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Share2 className="w-5 h-5" />
                     </button>
-                  )}
-                  {/* Report button (only for non-owners) */}
-                  {user && plan.user_id !== user.id && (
-                    <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
-                  )}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSharePlan(plan, e);
-                    }}
-                    className="p-2.5 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-full transition-all shadow-sm"
-                    title="Share with friends"
-                    aria-label="Share plan"
-                  >
-                    <Share2 className="w-5 h-5" />
-                  </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Show participant count if someone joined */}
-              {plan.participant_count > 0 && (
-                <div className="flex items-center gap-1.5 mt-2">
-                  <span className="text-sm text-gray-600">+{plan.participant_count} {t('common.joined').toLowerCase()}</span>
-                </div>
-              )}
-            </SwipeableCard>
-          ))
+                {/* Show participant count if someone joined */}
+                {plan.participant_count > 0 && (
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <span className="text-sm text-gray-600">+{plan.participant_count} {t('common.joined').toLowerCase()}</span>
+                  </div>
+                )}
+              </SwipeableCard>
+            ))}
+
+            {/* City discovery plans — other users' plans in selectedCity */}
+            {cityPlans.length > 0 && (
+              <>
+                {activities.length > 0 && (
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-2 pb-0.5">
+                    {t("plans.moreInCity", "More in {{city}}", { city: selectedCity })}
+                  </div>
+                )}
+                {cityPlans.map((plan) => (
+                  <SwipeableCard
+                    key={plan.id}
+                    canDelete={false}
+                    onDelete={() => {}}
+                    onClick={() => handleCityPlanClick(plan)}
+                    className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 dark:bg-white dark:border-gray-200 dark:hover:bg-gray-50 cursor-pointer transition-colors"
+                    style={{}}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
+                        <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
+                        <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
+                          {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-gray-900">
+                            {plan.note || t('plans.untitledPlan', 'Untitled Plan')}
+                          </h3>
+                          {plan.price_amount ? (
+                            <span className="text-xs bg-green-50 text-green-700 border border-green-200 font-semibold px-2 py-0.5 rounded-full">
+                              {plan.price_amount}
+                            </span>
+                          ) : (
+                            <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                              {t('common.join', 'Join')}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="inline-flex items-center justify-center w-3 h-3 text-gray-600">📍</span>
+                          <span className="text-xs text-gray-600">{plan.city}</span>
+                          <span className="text-xs text-gray-500">
+                            • {t('common.by')}{' '}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedUserProfile({
+                                  userId: plan.user_id,
+                                  userName: plan.creator_name || null,
+                                  avatarUrl: plan.creator_avatar || null,
+                                });
+                              }}
+                              className="underline hover:text-gray-700 transition-colors"
+                            >
+                              {plan.creator_name || "Anonymous"}
+                            </button>
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-1">
+                          <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                          <span className="text-xs text-gray-500">
+                            {formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
+                          </span>
+                          {isToday(new Date(plan.scheduled_for)) && (
+                            <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full animate-pulse">
+                              {t('common.today')}
+                            </span>
+                          )}
+                          {isTomorrow(new Date(plan.scheduled_for)) && (
+                            <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">
+                              {t('common.tomorrow')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSharePlan(plan, e);
+                          }}
+                          className="p-2.5 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-full transition-all shadow-sm"
+                          title="Share with friends"
+                          aria-label="Share plan"
+                        >
+                          <Share2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {plan.participant_count > 0 && (
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <span className="text-sm text-gray-600">+{plan.participant_count} {t('common.joined').toLowerCase()}</span>
+                      </div>
+                    )}
+                  </SwipeableCard>
+                ))}
+              </>
+            )}
+          </>
         )}
       </div>
       {/* Delete Confirmation Dialog */}
