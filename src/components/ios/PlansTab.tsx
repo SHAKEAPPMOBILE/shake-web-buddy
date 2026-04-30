@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import confetti from 'canvas-confetti';
 import { Calendar, Users, Plus, Plane, Share2, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
@@ -608,6 +609,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       toast.error("Failed to join plan");
       return;
     }
+
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+    });
 
     setSelectedPlan({ ...plan, isJoined: true });
     setShowChatView(true);
