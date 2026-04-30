@@ -59,7 +59,7 @@ export interface ActivityWithDate extends ActivityType {
 }
 
 // Fixed order for carousel: Drinks, Dinner, Brunch
-export const FIXED_CAROUSEL_ORDER = ['drinks', 'dinner', 'brunch'] as const;
+const FIXED_CAROUSEL_ORDER = ['drinks', 'dinner', 'brunch'];
 
 // Get activities in FIXED order with their next occurrence dates
 export function getActivitiesWithDates(): ActivityWithDate[] {
