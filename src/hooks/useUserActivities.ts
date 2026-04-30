@@ -361,12 +361,20 @@ export function useUserActivities(city: string) {
       return { success: false, requiresPremium: true };
     }
 
-    const { error } = await supabase.from("activity_joins").upsert({
+    // Delete any stale/expired row for this user+activity_type+city before inserting fresh
+    await supabase
+      .from("activity_joins")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("activity_type", activity.activity_type)
+      .eq("city", activity.city);
+
+    const { error } = await supabase.from("activity_joins").insert({
       user_id: user.id,
       activity_id: activityId,
       activity_type: activity.activity_type,
       city: activity.city,
-    }, { onConflict: 'user_id,activity_type,city' });
+    });
 
     if (error) {
       console.error("Error joining activity:", error);
