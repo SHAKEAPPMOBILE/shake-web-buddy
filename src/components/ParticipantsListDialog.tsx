@@ -117,8 +117,8 @@ export function ParticipantsListDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent 
-          className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50"
+        <DialogContent
+          className="sm:max-w-md bg-white border border-purple-200/60"
           {...(isMobile ? swipeHandlers : {})}
         >
           {isMobile && (
@@ -127,7 +127,7 @@ export function ParticipantsListDialog({
             </div>
           )}
           <DialogHeader>
-            <DialogTitle className="font-display">Participants</DialogTitle>
+            <DialogTitle className="font-display text-gray-900">Participants</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -149,13 +149,13 @@ export function ParticipantsListDialog({
                       key={participant.user_id}
                       onClick={() => handleParticipantClick(participant)}
                       disabled={isCurrentUser}
-                      className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors ${
-                        isCurrentUser 
-                          ? 'bg-muted/50 cursor-default' 
-                          : 'hover:bg-muted/50 cursor-pointer'
+                      className={`w-full flex items-center gap-3 p-3 rounded-2xl bg-white border border-purple-200/60 transition-colors ${
+                        isCurrentUser
+                          ? 'cursor-default'
+                          : 'hover:bg-gray-50 hover:border-purple-300 cursor-pointer'
                       }`}
                     >
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
                         {participant.avatar_url ? (
                           <img
                             src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
@@ -167,12 +167,12 @@ export function ParticipantsListDialog({
                         )}
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="font-medium text-sm">
+                        <p className="font-medium text-sm text-gray-900">
                           {isCurrentUser ? "You" : participant.name || "Shaker"}
                         </p>
                       </div>
                       {isCurrentUser && (
-                        <span className="text-xs text-muted-foreground">(You)</span>
+                        <span className="text-xs text-gray-500">(You)</span>
                       )}
                     </button>
                   );
@@ -187,9 +187,9 @@ export function ParticipantsListDialog({
                         className="relative"
                       >
                         <div
-                          className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 blur-sm pointer-events-none select-none"
+                          className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-purple-200/60 blur-sm pointer-events-none select-none"
                         >
-                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
                             {participant.avatar_url ? (
                               <img
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
@@ -201,7 +201,7 @@ export function ParticipantsListDialog({
                             )}
                           </div>
                           <div className="flex-1 text-left">
-                            <p className="font-medium text-sm">
+                            <p className="font-medium text-sm text-gray-900">
                               {participant.name || "Shaker"}
                             </p>
                           </div>
@@ -232,13 +232,13 @@ export function ParticipantsListDialog({
                           key={participant.user_id}
                           onClick={() => handleParticipantClick(participant)}
                           disabled={isCurrentUser}
-                          className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors ${
-                            isCurrentUser 
-                              ? 'bg-muted/50 cursor-default' 
-                              : 'hover:bg-muted/50 cursor-pointer'
+                          className={`w-full flex items-center gap-3 p-3 rounded-2xl bg-white border border-purple-200/60 transition-colors ${
+                            isCurrentUser
+                              ? 'cursor-default'
+                              : 'hover:bg-gray-50 hover:border-purple-300 cursor-pointer'
                           }`}
                         >
-                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
                             {participant.avatar_url ? (
                               <img
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
@@ -250,7 +250,7 @@ export function ParticipantsListDialog({
                             )}
                           </div>
                           <div className="flex-1 text-left">
-                            <p className="font-medium text-sm">
+                            <p className="font-medium text-sm text-gray-900">
                               {isCurrentUser ? "You" : participant.name || "Shaker"}
                             </p>
                           </div>
