@@ -361,13 +361,18 @@ export function useUserActivities(city: string) {
       return { success: false, requiresPremium: true };
     }
 
-    // Delete any stale/expired row for this user+activity_type+city before inserting fresh
-    await supabase
+    // Delete any existing row for this exact user+activity before inserting fresh
+    const { error: deleteError } = await supabase
       .from("activity_joins")
       .delete()
       .eq("user_id", user.id)
+      .eq("activity_id", activityId)
       .eq("activity_type", activity.activity_type)
       .eq("city", activity.city);
+
+    if (deleteError) {
+      console.error("Error deleting existing activity join:", deleteError);
+    }
 
     const { error } = await supabase.from("activity_joins").insert({
       user_id: user.id,
