@@ -20,8 +20,8 @@ export interface UserActivity {
 }
 
 // Dynamic limits - set by database function based on signup date
-const DEFAULT_FIRST_MONTH_LIMIT = 3; // First 30 days after signup
-const DEFAULT_REGULAR_LIMIT = 2; // After first month
+const DEFAULT_FIRST_MONTH_LIMIT = 10; // First 30 days after signup
+const DEFAULT_REGULAR_LIMIT = 10; // After first month
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
 export function useUserActivities(city: string) {
@@ -102,25 +102,21 @@ export function useUserActivities(city: string) {
     setMyActivities(data || []);
   }, [user]);
 
-  // Check how many activities user has created this month that count toward the limit
+  // Check how many activities user has created in the last 90 days that count toward the limit
   // Activities only count if they've been online for 6+ hours before being deleted
   const fetchMonthlyCount = useCallback(async () => {
     if (!user) return;
 
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    ninetyDaysAgo.setHours(0, 0, 0, 0);
 
-    const endOfMonth = new Date(startOfMonth);
-    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-
-    // Get all activities created this month (both active and deleted/inactive)
+    // Get all activities created in the last 90 days (both active and deleted/inactive)
     const { data, error } = await supabase
       .from("user_activities")
       .select("id, created_at, is_active")
       .eq("user_id", user.id)
-      .gte("created_at", startOfMonth.toISOString())
-      .lt("created_at", endOfMonth.toISOString());
+      .gte("created_at", ninetyDaysAgo.toISOString());
 
     if (error) {
       console.error("Error fetching monthly count:", error);

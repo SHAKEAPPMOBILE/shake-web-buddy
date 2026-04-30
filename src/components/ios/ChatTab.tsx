@@ -772,12 +772,9 @@ export function ChatTab({
               <div className="flex items-start gap-3.5">
                 <div className="relative shrink-0">
                   {activity.is_plan && activity.creator_avatar ? (
-                    <Avatar className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
-                      <AvatarImage src={activity.creator_avatar} alt={activity.creator_name} className="object-cover" />
-                      <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
-                        {activity.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-neutral-200 shadow-md">
+                      <img src={activity.creator_avatar} className="w-full h-full object-cover" />
+                    </div>
                   ) : (
                     <div
                       className={
