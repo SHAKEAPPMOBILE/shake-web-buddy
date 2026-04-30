@@ -378,14 +378,18 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     onClick={handleActivitySelect}
                   >
                     {currentActivity?.icon ? (
-                      <img
-                        key={currentActivityIndex}
-                        src={currentActivity.icon}
-                        alt={currentActivity.label}
-                        className="w-full h-full object-cover rounded-full"
-                      />
+                      <div className="relative w-full h-full">
+                        <span className="absolute inset-0 flex items-center justify-center text-5xl select-none">
+                          {currentActivity?.emoji}
+                        </span>
+                        <img
+                          src={currentActivity.icon}
+                          alt={currentActivity.label}
+                          className="absolute inset-0 w-full h-full object-cover rounded-full"
+                        />
+                      </div>
                     ) : (
-                      <span className="text-5xl flex items-center justify-center w-full h-full animate-scale-in">
+                      <span className="text-5xl flex items-center justify-center w-full h-full">
                         {currentActivity?.emoji}
                       </span>
                     )}
