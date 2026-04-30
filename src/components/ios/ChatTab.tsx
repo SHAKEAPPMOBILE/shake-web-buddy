@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { MessageSquare, Users, Plane, Ticket } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { MessageSquare, Users, Ticket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useNavigate } from "react-router-dom";
@@ -14,12 +14,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { useTranslation } from "react-i18next";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { buildEventChatNavigateState } from "@/lib/eventChatNavigation";
 import { isEventChatMembershipExplicitlyExpired } from "@/lib/eventChatMembership";
 import {
@@ -77,9 +71,6 @@ export function ChatTab({
   const { selectedCity } = useCity();
   const navigate = useNavigate();
   const [activities, setActivities] = useState<ChatActivity[]>([]);
-  const [cityFilter, setCityFilter] = useState<string>(() => {
-    return localStorage.getItem("chat-city-filter") || "all";
-  });
   const [isLoading, setIsLoading] = useState(true);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showPlanChatDialog, setShowPlanChatDialog] = useState(false);
@@ -520,22 +511,8 @@ export function ChatTab({
     return () => window.removeEventListener(PENDING_EVENT_CHAT_CHANGED, onPending);
   }, [isActiveTab, user, fetchActivities]);
 
-  // Persist city filter to localStorage
-  useEffect(() => {
-    localStorage.setItem("chat-city-filter", cityFilter);
-  }, [cityFilter]);
-
-  // Get unique cities from all activities for the filter
-  const availableCities = useMemo(() => {
-    const cities = [...new Set(activities.map(a => a.city))];
-    return cities.sort();
-  }, [activities]);
-
-  // Filter activities based on selected city (event chats always show — city is venue/name fragment, not user city)
-  const filteredActivities = useMemo(() => {
-    if (cityFilter === "all") return activities;
-    return activities.filter((a) => a.is_event || a.city === cityFilter);
-  }, [activities, cityFilter]);
+  // All activities from all cities are shown
+  const filteredActivities = activities;
 
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
@@ -664,42 +641,6 @@ export function ChatTab({
       <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 bg-white shrink-0">
         <h2 className="text-lg font-display font-bold text-neutral-900">{t('chat.title')}</h2>
         <div className="flex items-center gap-2">
-          {/* City Filter */}
-          {availableCities.length > 1 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium text-white border-0 shadow-sm max-w-[min(50vw,200px)]"
-                  style={{
-                    background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
-                    backgroundSize: "400% 400%",
-                    animation: "gradientShift 4s ease infinite",
-                  }}
-                >
-                  <Plane className="w-4 h-4 shrink-0 text-white" aria-hidden />
-                  {cityFilter !== "all" && <span className="truncate">{cityFilter}</span>}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-card border-border z-50">
-                <DropdownMenuItem 
-                  onClick={() => setCityFilter("all")}
-                  className={cityFilter === "all" ? "bg-primary/10" : ""}
-                >
-                  {t('common.allCities')}
-                </DropdownMenuItem>
-                {availableCities.map((city) => (
-                  <DropdownMenuItem 
-                    key={city} 
-                    onClick={() => setCityFilter(city)}
-                    className={cityFilter === city ? "bg-primary/10" : ""}
-                  >
-                    {city}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </div>
       </div>
 
@@ -717,24 +658,10 @@ export function ChatTab({
             >
               <MessageSquare className="w-8 h-8 text-white" />
             </div>
-            {activities.length === 0 ? (
-              <>
-                <p className="text-neutral-600 mb-1">{t('common.noActiveChats')}</p>
-                <p className="text-sm text-neutral-500">
-                  {t('common.joinActivityToChat')}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-neutral-600">{t('common.noChatsInCity', { city: cityFilter })}</p>
-                <button
-                  onClick={() => setCityFilter("all")}
-                  className="mt-3 text-sm text-[#a0c1f9] hover:text-[#b8d0fb] hover:underline"
-                >
-                  {t('common.showAllCities')}
-                </button>
-              </>
-            )}
+            <p className="text-neutral-600 mb-1">{t('common.noActiveChats')}</p>
+            <p className="text-sm text-neutral-500">
+              {t('common.joinActivityToChat')}
+            </p>
           </div>
         ) : (
           <>
