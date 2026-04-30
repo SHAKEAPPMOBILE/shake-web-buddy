@@ -223,12 +223,12 @@ export function useUserActivities(city: string) {
     }
 
     // Also add creator to activity_joins so they appear in Plans list
-    await supabase.from("activity_joins").insert({
+    await supabase.from("activity_joins").upsert({
       user_id: user.id,
       activity_id: newActivity.id,
       activity_type: activityType,
       city: targetCity,
-    });
+    }, { onConflict: 'user_id,activity_type,city' });
 
     // Send daily city SMS for first plan of the day (fire and forget)
     const userName = user.user_metadata?.name || user.email?.split('@')[0] || "Someone";
@@ -361,12 +361,12 @@ export function useUserActivities(city: string) {
       return { success: false, requiresPremium: true };
     }
 
-    const { error } = await supabase.from("activity_joins").insert({
+    const { error } = await supabase.from("activity_joins").upsert({
       user_id: user.id,
       activity_id: activityId,
       activity_type: activity.activity_type,
       city: activity.city,
-    });
+    }, { onConflict: 'user_id,activity_type,city' });
 
     if (error) {
       console.error("Error joining activity:", error);
