@@ -139,6 +139,7 @@ export default function ProposePlanPage() {
       formattedPrice
     );
 
+    console.log('[ProposePlan] createActivity result:', success);
     if (success) {
       triggerConfettiWaterfall();
       navigate(-1);

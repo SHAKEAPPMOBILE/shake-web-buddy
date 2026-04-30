@@ -201,6 +201,7 @@ export function useUserActivities(city: string) {
       return false;
     }
 
+    console.log('[useUserActivities] inserting activity', { activityType, targetCity, scheduledFor: scheduledFor.toISOString(), note, priceAmount });
     const { data: newActivity, error } = await supabase.from("user_activities").insert({
       user_id: user.id,
       activity_type: activityType,
@@ -209,6 +210,7 @@ export function useUserActivities(city: string) {
       note: note?.trim() || null,
       price_amount: priceAmount || null,
     }).select().maybeSingle();
+    console.log('[useUserActivities] insert result', { newActivity, error });
 
     if (error || !newActivity) {
       console.error("Error creating activity:", error);
