@@ -241,32 +241,61 @@ export default function ProposePlanPage() {
             </div>
 
             {/* Date picker pills */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">When?</label>
-              <div className="flex gap-2 flex-wrap">
-                {Array.from({ length: 7 }, (_, i) => {
-                  const d = new Date(today);
-                  d.setDate(today.getDate() + i);
-                  const isSelected = format(d, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
-                  const label = i === 0 ? "Today" : i === 1 ? "Tomorrow" : format(d, "EEE d");
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setSelectedDate(d)}
-                      className={cn(
-                        "px-3 py-1.5 rounded-full text-sm font-medium border transition-all",
-                        isSelected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-foreground border-border hover:border-primary/50"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            {(() => {
+              const todayDow = today.getDay(); // 0=Sun, 1=Mon ... 5=Fri, 6=Sat
+              const tomorrow = new Date(today);
+              tomorrow.setDate(today.getDate() + 1);
+              const tomorrowStr = format(tomorrow, "yyyy-MM-dd");
+
+              // Returns the date of the upcoming `dow` weekday, or null if today IS that day.
+              // Also returns null if it lands on tomorrow (already covered by the Tomorrow pill).
+              const getWeekendDate = (dow: number): Date | null => {
+                const daysUntil = (dow - todayDow + 7) % 7;
+                if (daysUntil === 0) return null; // today is that day
+                const d = new Date(today);
+                d.setDate(today.getDate() + daysUntil);
+                if (format(d, "yyyy-MM-dd") === tomorrowStr) return null; // same as Tomorrow pill
+                return d;
+              };
+
+              const friDate = getWeekendDate(5);
+              const satDate = getWeekendDate(6);
+              const sunDate = getWeekendDate(0);
+
+              const pills: { label: string; date: Date }[] = [
+                { label: "Today", date: today },
+                { label: "Tomorrow", date: tomorrow },
+                ...(friDate ? [{ label: "This Friday", date: friDate }] : []),
+                ...(satDate ? [{ label: "This Saturday", date: satDate }] : []),
+                ...(sunDate ? [{ label: "This Sunday", date: sunDate }] : []),
+              ];
+
+              return (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">When?</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {pills.map(({ label, date }) => {
+                      const isSelected = format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => setSelectedDate(date)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-full text-sm font-medium border transition-all",
+                            isSelected
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-foreground border-border hover:border-primary/50"
+                          )}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">{t("createPlan.setPrice")}</label>
