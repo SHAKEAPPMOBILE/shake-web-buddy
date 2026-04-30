@@ -61,6 +61,7 @@ export default function ProposePlanPage() {
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showIDVerification, setShowIDVerification] = useState(false);
   const [profanityError, setProfanityError] = useState<string | null>(null);
+  const [dayLimitError, setDayLimitError] = useState(false);
 
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
@@ -138,14 +139,17 @@ export default function ProposePlanPage() {
       formattedPrice
     );
 
-    if (success) {
-      triggerConfettiWaterfall();
-      navigate(-1);
+    if (!success) {
+      setDayLimitError(true);
+      return;
     }
+    triggerConfettiWaterfall();
+    navigate(-1);
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
+    setDayLimitError(false);
     if (text.length <= MAX_CHARACTERS) {
       setPlanText(text);
       const result = checkProfanity(text);
@@ -208,17 +212,25 @@ export default function ProposePlanPage() {
           <div className="space-y-6 py-1">
             <div className="space-y-3">
               <div className="relative">
-                <Textarea
-                  value={planText}
-                  onChange={handleTextChange}
-                  placeholder={t("createPlan.placeholder")}
-                  maxLength={MAX_CHARACTERS}
-                  className="min-h-[100px] resize-none pr-16 text-base"
-                  autoFocus
-                />
-                <span className="absolute right-3 bottom-3 text-xs text-muted-foreground">
-                  {planText.length}/{MAX_CHARACTERS}
-                </span>
+                {dayLimitError ? (
+                  <div className="min-h-[100px] flex items-center justify-center rounded-md border border-red-300 bg-red-50 px-4 py-3">
+                    <p className="text-red-600 font-medium text-center">You can only create one activity a day! 🚫</p>
+                  </div>
+                ) : (
+                  <>
+                    <Textarea
+                      value={planText}
+                      onChange={handleTextChange}
+                      placeholder={t("createPlan.placeholder")}
+                      maxLength={MAX_CHARACTERS}
+                      className="min-h-[100px] resize-none pr-16 text-base"
+                      autoFocus
+                    />
+                    <span className="absolute right-3 bottom-3 text-xs text-muted-foreground">
+                      {planText.length}/{MAX_CHARACTERS}
+                    </span>
+                  </>
+                )}
               </div>
 
               {profanityError && (
