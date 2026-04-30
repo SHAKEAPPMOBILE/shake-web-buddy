@@ -135,7 +135,7 @@ export function PlanParticipantsDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="sm:max-w-md bg-white border border-purple-200/60"
+          className="sm:max-w-md bg-white"
           {...(isMobile ? swipeHandlers : {})}
         >
           {isMobile && (
@@ -166,10 +166,10 @@ export function PlanParticipantsDialog({
                       key={participant.user_id}
                       onClick={() => handleParticipantClick(participant)}
                       disabled={isCurrentUser}
-                      className={`w-full flex items-center gap-3 p-3 rounded-2xl bg-white border border-purple-200/60 transition-colors ${
+                      className={`w-full flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl transition-colors ${
                         isCurrentUser
                           ? 'cursor-default'
-                          : 'hover:bg-gray-50 hover:border-purple-300 cursor-pointer'
+                          : 'hover:bg-gray-100 hover:border-gray-200 cursor-pointer'
                       }`}
                     >
                       <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200 relative">
@@ -212,7 +212,7 @@ export function PlanParticipantsDialog({
                         className="relative"
                       >
                         <div
-                          className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-purple-200/60 blur-sm pointer-events-none select-none"
+                          className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl blur-sm pointer-events-none select-none"
                         >
                           <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
                             {participant.avatar_url ? (
