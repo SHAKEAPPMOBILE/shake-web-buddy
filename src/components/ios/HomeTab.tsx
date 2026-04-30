@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEve
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getActivitiesWithDates, getStartingIndexByProximity } from "@/data/activityTypes";
+import { getActivitiesWithDates, getStartingIndexByProximity, FIXED_CAROUSEL_ORDER, ACTIVITY_TYPES } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -65,11 +65,13 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   }, [meetPhrases.length]);
 
   useEffect(() => {
-    const activities = getActivitiesWithDates();
-    activities.forEach((activity) => {
-      if (!activity.icon) return;
-      const img = new Image();
-      img.src = activity.icon;
+    // Preload all activity images
+    FIXED_CAROUSEL_ORDER.forEach((activityType) => {
+      const activity = ACTIVITY_TYPES.find((a) => a.id === activityType);
+      if (activity?.icon) {
+        const img = new Image();
+        img.src = activity.icon;
+      }
     });
   }, []);
 
@@ -382,6 +384,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                         src={currentActivity.icon}
                         alt={currentActivity.label}
                         className="w-full h-full object-cover rounded-full"
+                        loading="eager"
+                        fetchPriority="high"
                       />
                     ) : (
                       <span className="text-5xl flex items-center justify-center w-full h-full animate-scale-in">
