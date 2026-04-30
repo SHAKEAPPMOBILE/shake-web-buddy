@@ -8,7 +8,7 @@ import { PlanGroupChatView } from "./PlanGroupChatView";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
+import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate, getActivityIcon } from "@/data/activityTypes";
 import { formatDateWithTranslation } from "@/lib/date-utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -786,9 +786,11 @@ export function ChatTab({
                       {activity.is_event ? (
                         <Ticket className="w-6 h-6 text-white drop-shadow-sm" strokeWidth={2.25} />
                       ) : (
-                        <span className="text-2xl leading-none" aria-hidden>
-                          {getActivityEmoji(activity.activity_type)}
-                        </span>
+                        <img
+                          src={getActivityIcon(activity.activity_type)}
+                          alt={activity.activity_type}
+                          className="w-8 h-8 object-contain"
+                        />
                       )}
                     </div>
                   )}
