@@ -197,6 +197,7 @@ export function useUserActivities(city: string) {
       .maybeSingle();
 
     if (existingActivity) {
+      toast.error("You already have a plan for today. Delete it first to create a new one.");
       setIsLoading(false);
       return false;
     }
