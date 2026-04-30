@@ -186,12 +186,15 @@ export function useUserActivities(city: string) {
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(scheduledFor);
     endOfDay.setHours(23, 59, 59, 999);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
 
     const { data: existingActivity } = await supabase
       .from("user_activities")
       .select("id")
       .eq("user_id", user.id)
       .eq("is_active", true)
+      .gte("scheduled_for", startOfToday.toISOString())
       .gte("scheduled_for", startOfDay.toISOString())
       .lte("scheduled_for", endOfDay.toISOString())
       .maybeSingle();
