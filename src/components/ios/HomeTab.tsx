@@ -65,11 +65,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   }, [meetPhrases.length]);
 
   useEffect(() => {
-    const activities = getActivitiesWithDates();
-    activities.forEach((activity) => {
-      if (!activity.icon) return;
+    ['/icons/activities/drinks-icon.jpg', '/icons/activities/dinner-icon.jpg', '/icons/activities/brunch-icon.jpg'].forEach(src => {
       const img = new Image();
-      img.src = activity.icon;
+      img.src = src;
     });
   }, []);
 
@@ -378,21 +376,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     onClick={handleActivitySelect}
                   >
                     {currentActivity?.icon ? (
-                      <div className="relative w-full h-full">
-                        {/* SHAKE logo placeholder — shows while image loads */}
-                        <div className="absolute inset-0 flex items-center justify-center bg-white rounded-full">
-                          <img
-                            src="/shake-logo.png"
-                            className="w-8 h-8 object-contain opacity-30"
-                            alt=""
-                          />
-                        </div>
-                        <img
-                          src={currentActivity.icon}
-                          alt={currentActivity.label}
-                          className="absolute inset-0 w-full h-full object-cover rounded-full"
-                        />
-                      </div>
+                      <img
+                        src={currentActivity.icon}
+                        alt={currentActivity.label}
+                        className="w-full h-full object-cover rounded-full"
+                      />
                     ) : (
                       <span className="text-5xl flex items-center justify-center w-full h-full">
                         {currentActivity?.emoji}
