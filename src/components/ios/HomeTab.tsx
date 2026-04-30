@@ -376,10 +376,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     onClick={handleActivitySelect}
                   >
                     {currentActivity?.icon ? (
-                      <img
-                        src={currentActivity.icon}
-                        alt={currentActivity.label}
-                        className="w-full h-full object-cover rounded-full"
+                      <div
+                        className="w-full h-full rounded-full bg-cover bg-center bg-no-repeat"
+                        style={{ backgroundImage: `url(${currentActivity.icon})` }}
                       />
                     ) : (
                       <span className="text-5xl flex items-center justify-center w-full h-full">
