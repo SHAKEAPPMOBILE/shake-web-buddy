@@ -369,6 +369,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const paidActivity = activities.find(a => a.id === pendingPaidActivityId);
       if (paidActivity) {
         // Open the chat directly (user has paid and is now joined)
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+        });
         setSelectedPlan(paidActivity);
         setShowChatView(true);
         onPendingPaidActivityHandled?.();
@@ -402,6 +408,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               isJoined: true, // User just paid, so they're joined
             };
             
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+            });
             setSelectedPlan(activityWithDetails);
             setShowChatView(true);
           }
@@ -581,6 +593,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+    });
     toast.success("Joined!");
     fetchPlans();
   };
