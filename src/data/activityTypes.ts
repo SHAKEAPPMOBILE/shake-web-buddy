@@ -59,7 +59,7 @@ export interface ActivityWithDate extends ActivityType {
 }
 
 // Fixed order for carousel: Drinks, Dinner, Brunch
-const FIXED_CAROUSEL_ORDER = ['drinks', 'dinner', 'brunch'];
+export const FIXED_CAROUSEL_ORDER = ['drinks', 'dinner', 'brunch'] as const;
 
 // Get activities in FIXED order with their next occurrence dates
 export function getActivitiesWithDates(): ActivityWithDate[] {
@@ -139,9 +139,6 @@ export const PLAN_ONLY_ACTIVITY_TYPES: ActivityType[] = [];
 
 // All activities combined (for lookups and helpers)
 export const ALL_ACTIVITY_TYPES: ActivityType[] = [...ACTIVITY_TYPES, ...PLAN_ONLY_ACTIVITY_TYPES];
-
-// Fixed carousel display order (matches HomeTab carousel)
-export const FIXED_CAROUSEL_ORDER = ['drinks', 'dinner', 'brunch'] as const;
 
 // Helper functions
 export const getActivityById = (id: string): ActivityType | undefined => {
