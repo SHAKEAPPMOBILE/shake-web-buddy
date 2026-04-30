@@ -1,13 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { startOfDay, format } from "date-fns";
-import { Plus, User, Shield, CalendarIcon } from "lucide-react";
+import { startOfDay, format, isToday, isTomorrow } from "date-fns";
+import { Plus, User, Shield } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,8 +50,7 @@ export default function ProposePlanPage() {
   const [planText, setPlanText] = useState("");
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()));
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
@@ -102,7 +98,7 @@ export default function ProposePlanPage() {
   }, [planText]);
 
   const isPaidActivity = priceAmount.trim().length > 0;
-  const isValid = planText.trim().length > 0 && !hasProfanity && (!isPaidActivity || selectedDate);
+  const isValid = planText.trim().length > 0 && !hasProfanity;
   const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
   const needsPayoutSetup = isPaidActivity && !hasPayoutMethod;
 
@@ -129,14 +125,17 @@ export default function ProposePlanPage() {
       ? `${selectedCurrency?.symbol || "$"}${priceAmount.trim()} ${priceCurrency}`
       : undefined;
 
-    const activityDate = isPaidActivity && selectedDate ? selectedDate : today;
+    const activityDate = selectedDate;
+    const endOfSelectedDay = new Date(selectedDate);
+    endOfSelectedDay.setHours(23, 59, 59, 999);
 
     const success = await createActivity(
       detectedActivity.type,
       activityDate,
       planText.trim(),
       undefined,
-      formattedPrice
+      formattedPrice,
+      endOfSelectedDay
     );
 
     if (!success) {
@@ -241,6 +240,34 @@ export default function ProposePlanPage() {
               )}
             </div>
 
+            {/* Date picker pills */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">When?</label>
+              <div className="flex gap-2 flex-wrap">
+                {Array.from({ length: 7 }, (_, i) => {
+                  const d = new Date(today);
+                  d.setDate(today.getDate() + i);
+                  const isSelected = format(d, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
+                  const label = i === 0 ? "Today" : i === 1 ? "Tomorrow" : format(d, "EEE d");
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSelectedDate(d)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-sm font-medium border transition-all",
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background text-foreground border-border hover:border-primary/50"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">{t("createPlan.setPrice")}</label>
               <div className="flex gap-2">
@@ -321,36 +348,6 @@ export default function ProposePlanPage() {
                 </p>
               )}
 
-              {priceAmount.trim() && (
-                <div className="space-y-2 pt-2 border-t border-border/50">
-                  <label className="text-sm font-medium text-foreground">{t("createPlan.selectEventDate")}</label>
-                  <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn("w-full justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? format(selectedDate, "PPP") : <span>{t("createPlan.pickADate")}</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={(date) => {
-                          setSelectedDate(date);
-                          setDatePopoverOpen(false);
-                        }}
-                        disabled={(date) => date < today}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <p className="text-xs text-muted-foreground">{t("createPlan.dateVisibleNote")}</p>
-                </div>
-              )}
             </div>
 
             {planText.trim() && (
@@ -371,7 +368,7 @@ export default function ProposePlanPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{city} • {isPaidActivity && selectedDate ? format(selectedDate, "MMM d") : t("common.today")}</span>
+                      <span>{city} • {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")}</span>
                       {priceAmount.trim() && (
                         <span className="text-green-600 font-medium">
                           {selectedCurrencySymbol}{priceAmount}

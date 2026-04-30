@@ -165,7 +165,8 @@ export function useUserActivities(city: string) {
     scheduledFor: Date,
     note?: string,
     cityOverride?: string,
-    priceAmount?: string
+    priceAmount?: string,
+    expiresAt?: Date
   ): Promise<boolean> => {
     const targetCity = cityOverride || city;
     if (!user) {
@@ -228,6 +229,7 @@ export function useUserActivities(city: string) {
       activity_id: newActivity.id,
       activity_type: activityType,
       city: targetCity,
+      ...(expiresAt ? { expires_at: expiresAt.toISOString() } : {}),
     }, { onConflict: 'user_id,activity_type,city' });
 
     // Send daily city SMS for first plan of the day (fire and forget)
