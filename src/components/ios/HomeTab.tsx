@@ -379,6 +379,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   >
                     {currentActivity?.icon ? (
                       <img
+                        key={currentActivityIndex}
                         src={currentActivity.icon}
                         alt={currentActivity.label}
                         className="w-full h-full object-cover rounded-full"
