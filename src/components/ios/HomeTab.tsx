@@ -76,7 +76,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     });
   }, []);
 
-  useEffect(() => { setImageLoaded(false); }, [currentActivity?.id]);
+  useEffect(() => { setImageLoaded(false); }, [currentActivityIndex]);
 
   // Extended type for carousel items including "propose plan"
   type CarouselItem = {
