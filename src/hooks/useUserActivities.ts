@@ -366,7 +366,6 @@ export function useUserActivities(city: string) {
       .from("activity_joins")
       .delete()
       .eq("user_id", user.id)
-      .eq("activity_id", activityId)
       .eq("activity_type", activity.activity_type)
       .eq("city", activity.city);
 
