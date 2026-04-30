@@ -111,7 +111,6 @@ export default function ProposePlanPage() {
   };
 
   const handleCreate = async () => {
-    console.log('[ProposePlan] handleCreate called', { isValid, detectedActivity, planText });
     if (!isValid || !detectedActivity) return;
 
     if (isPaidActivity && !isVerified && !isVerificationPending) {
@@ -139,7 +138,6 @@ export default function ProposePlanPage() {
       formattedPrice
     );
 
-    console.log('[ProposePlan] createActivity result:', success);
     if (success) {
       triggerConfettiWaterfall();
       navigate(-1);
