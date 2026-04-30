@@ -48,6 +48,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [showTapInstruction, setShowTapInstruction] = useState(false);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(() => getStartingIndexByProximity());
+  const [imageLoaded, setImageLoaded] = useState(false);
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -74,6 +75,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       }
     });
   }, []);
+
+  useEffect(() => { setImageLoaded(false); }, [currentActivity?.id]);
 
   // Extended type for carousel items including "propose plan"
   type CarouselItem = {
@@ -380,13 +383,22 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     onClick={handleActivitySelect}
                   >
                     {currentActivity?.icon ? (
-                      <img
-                        src={currentActivity.icon}
-                        alt={currentActivity.label}
-                        className="w-full h-full object-cover rounded-full"
-                        loading="eager"
-                        fetchPriority="high"
-                      />
+                      <div className="relative w-full h-full">
+                        {/* Emoji always visible as instant placeholder */}
+                        <span className="absolute inset-0 flex items-center justify-center text-5xl">
+                          {currentActivity?.emoji}
+                        </span>
+                        {/* Image overlaid, shown instantly when loaded */}
+                        <img
+                          src={currentActivity.icon}
+                          alt={currentActivity.label}
+                          className={`w-full h-full object-cover rounded-full ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                          style={{ transition: 'none' }}
+                          loading="eager"
+                          fetchPriority="high"
+                          onLoad={() => setImageLoaded(true)}
+                        />
+                      </div>
                     ) : (
                       <span className="text-5xl flex items-center justify-center w-full h-full">
                         {currentActivity?.emoji}
