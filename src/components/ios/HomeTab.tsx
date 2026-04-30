@@ -351,7 +351,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             <div className="relative w-full max-w-sm">
               <div className={cn("transition-opacity duration-200", showActivityDetails ? "opacity-0 pointer-events-none" : "opacity-100")}>
                 {/* Date display - Above the circle (or "Propose a plan" text) */}
-                <div className="mb-8 animate-fade-in text-center">
+                <div className="mb-8 text-center">
                   {currentActivity?.isProposePlan ? (
                     <div className="text-5xl md:text-6xl font-handwritten text-foreground">
                       {t('home.proposePlan', 'Propose a plan')}
@@ -388,7 +388,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                         fetchPriority="high"
                       />
                     ) : (
-                      <span className="text-5xl flex items-center justify-center w-full h-full animate-scale-in">
+                      <span className="text-5xl flex items-center justify-center w-full h-full">
                         {currentActivity?.emoji}
                       </span>
                     )}
@@ -402,7 +402,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   </button>
                 </div>
 
-                <div className="mt-8 animate-fade-in text-center">
+                <div className="mt-8 text-center">
                   <div className="text-xl font-semibold text-foreground">
                     {currentActivity?.isProposePlan 
                       ? t('home.anytimeAnywhere', 'Anytime, Anywhere.')
