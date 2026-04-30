@@ -213,8 +213,8 @@ export default function ProposePlanPage() {
             <div className="space-y-3">
               <div className="relative">
                 {dayLimitError ? (
-                  <div className="min-h-[100px] flex items-center justify-center rounded-md border border-red-300 bg-red-50 px-4 py-3">
-                    <p className="text-red-600 font-medium text-center">You can only create one activity a day! 🚫</p>
+                  <div className="min-h-[100px] rounded-md border border-input bg-background px-3 py-2">
+                    <p className="text-red-400 text-base text-left">Slow down tiger, one plan a day keeps the chaos away! 🐯</p>
                   </div>
                 ) : (
                   <>
