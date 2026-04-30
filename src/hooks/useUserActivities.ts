@@ -182,12 +182,11 @@ export function useUserActivities(city: string) {
     setIsLoading(true);
 
     // Check for ANY existing activity on the same day (one activity per day limit)
-    const startOfDay = new Date(scheduledFor);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(scheduledFor);
-    endOfDay.setHours(23, 59, 59, 999);
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    // Use local date components to avoid UTC timezone issues (e.g. UTC-6 users)
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const startOfDay = new Date(scheduledFor.getFullYear(), scheduledFor.getMonth(), scheduledFor.getDate(), 0, 0, 0);
+    const endOfDay = new Date(scheduledFor.getFullYear(), scheduledFor.getMonth(), scheduledFor.getDate(), 23, 59, 59);
 
     const { data: existingActivity } = await supabase
       .from("user_activities")
