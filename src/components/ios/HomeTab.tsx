@@ -379,9 +379,14 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   >
                     {currentActivity?.icon ? (
                       <div className="relative w-full h-full">
-                        <span className="absolute inset-0 flex items-center justify-center text-5xl select-none">
-                          {currentActivity?.emoji}
-                        </span>
+                        {/* SHAKE logo placeholder — shows while image loads */}
+                        <div className="absolute inset-0 flex items-center justify-center bg-white rounded-full">
+                          <img
+                            src="/shake-logo.png"
+                            className="w-8 h-8 object-contain opacity-30"
+                            alt=""
+                          />
+                        </div>
                         <img
                           src={currentActivity.icon}
                           alt={currentActivity.label}
