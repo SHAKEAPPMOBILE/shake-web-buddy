@@ -775,9 +775,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   {/* Profile Picture or Activity Emoji */}
                   <div className="relative">
                     {plan.isCarouselJoin ? (
-                      <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 shadow-md flex items-center justify-center overflow-hidden">
+                      <div className="w-12 h-12 rounded-full overflow-hidden">
                         {getActivityIcon(plan.activity_type) ? (
-                          <img src={getActivityIcon(plan.activity_type)} alt={plan.activity_type} className="w-7 h-7 object-contain" />
+                          <img src={getActivityIcon(plan.activity_type)} alt={plan.activity_type} className="w-full h-full object-cover" />
                         ) : (
                           <span className="text-2xl">{getActivityEmoji(plan.activity_type)}</span>
                         )}
