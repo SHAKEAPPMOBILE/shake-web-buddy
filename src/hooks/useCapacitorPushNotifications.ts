@@ -35,7 +35,7 @@ export function useCapacitorPushNotifications() {
           .from("profiles")
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .update({ push_token: token.value } as any)
-          .eq("user_id", user.id);
+          .eq("id", user.id);
 
         console.log("[Push] Token save result:", error ? error : "success");
         if (error) {
