@@ -91,7 +91,7 @@ export function ActivityJoinedConfirmation({
                       <span className="inline-flex items-center justify-center w-5 h-5 text-primary">📍</span>
                     </div>
                     <div className="flex-1 min-w-0 overflow-hidden">
-                      <p className="text-sm font-medium text-foreground break-words">{eventConfirmation.venue}</p>
+                      <p className="text-sm font-medium text-purple-600 break-words">{eventConfirmation.venue}</p>
                       <p className="text-xs text-muted-foreground mt-1">{eventConfirmation.city}</p>
                     </div>
                   </div>
