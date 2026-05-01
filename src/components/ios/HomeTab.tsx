@@ -15,6 +15,7 @@ import { CitySelector } from "@/components/CitySelector";
 import { CityPickerModal } from "@/components/CityPickerModal";
 import { LocationPinEmoji } from "@/components/LocationPinEmoji";
 import { REGIONS, SHAKE_CITIES } from "@/data/cities";
+import { useVenueContext } from "@/contexts/VenueContext";
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
   onConfirmActivity?: (activity: { id: string; label: string; emoji: string }, cityOverride?: string) => void | Promise<void>;
@@ -37,6 +38,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const [showActivityDetails, setShowActivityDetails] = useState(false);
   const [selectedJoinCity, setSelectedJoinCity] = useState<string | null>(null);
   const [showCityChoices, setShowCityChoices] = useState(false);
+  const { getVenueForActivity, isLoading: venuesLoading } = useVenueContext();
   // Rotating text for "Meet new..." phrases
   const meetPhrases = useMemo(() => [
     t('home.meetPeople', 'Meet new people.'),
@@ -193,6 +195,13 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       ? "8:00 PM"
       : null;
   const joinCity = selectedJoinCity || selectedCity || "";
+  const VENUE_ACTIVITY_IDS = ['dinner', 'drinks', 'brunch', 'lunch'];
+  const currentActivityNeedsVenue = VENUE_ACTIVITY_IDS.includes(currentActivity?.id || '');
+  const hasNoVenue =
+    currentActivityNeedsVenue &&
+    !venuesLoading &&
+    !!joinCity &&
+    !getVenueForActivity(joinCity, currentActivity?.id || '');
   const groupedCities = useMemo(
     () =>
       REGIONS.reduce((acc, region) => {
@@ -447,36 +456,66 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   </p>
 
                   <div className="space-y-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      onClick={handleConfirmSelection}
-                      className="w-full rounded-full px-4 py-2.5 text-white font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] transition-colors"
-                    >
-                      Yes!
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowActivityDetails(false);
-                        setShowCityChoices(false);
-                      }}
-                      className="w-full rounded-full px-4 py-2.5 font-medium border border-border bg-background hover:bg-muted/60 transition-colors"
-                    >
-                      Hum!
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!isPremium) {
-                          onUpgradeClick?.();
-                          return;
-                        }
-                        setShowCityChoices((prev) => !prev);
-                      }}
-                      className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-                    >
-                      {t('activityDialog.joinDifferentCity', 'Join in a different city')}
-                    </button>
+                    {hasNoVenue ? (
+                      <>
+                        <p className="text-sm text-muted-foreground pb-1">
+                          No venues in your city yet — but you can still propose a plan!
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onCloseActivities?.();
+                            navigate("/propose-plan");
+                          }}
+                          className="w-full rounded-full px-4 py-2.5 text-white font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] transition-colors"
+                        >
+                          Propose a Plan
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowActivityDetails(false);
+                            setShowCityChoices(false);
+                          }}
+                          className="w-full rounded-full px-4 py-2.5 font-medium border border-border bg-background hover:bg-muted/60 transition-colors"
+                        >
+                          Hum!
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleConfirmSelection}
+                          className="w-full rounded-full px-4 py-2.5 text-white font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] transition-colors"
+                        >
+                          Yes!
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowActivityDetails(false);
+                            setShowCityChoices(false);
+                          }}
+                          className="w-full rounded-full px-4 py-2.5 font-medium border border-border bg-background hover:bg-muted/60 transition-colors"
+                        >
+                          Hum!
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isPremium) {
+                              onUpgradeClick?.();
+                              return;
+                            }
+                            setShowCityChoices((prev) => !prev);
+                          }}
+                          className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                        >
+                          {t('activityDialog.joinDifferentCity', 'Join in a different city')}
+                        </button>
+                      </>
+                    )}
                   </div>
 
                   {showCityChoices && (
