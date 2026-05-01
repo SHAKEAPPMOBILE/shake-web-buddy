@@ -707,7 +707,7 @@ export function ChatTab({
                       className={
                         activity.is_event
                           ? "w-12 h-12 rounded-full bg-[#a0c1f9] flex items-center justify-center shadow-sm"
-                          : "w-12 h-12 rounded-full bg-white border border-neutral-200 shadow-md flex items-center justify-center text-2xl"
+                          : "w-12 h-12 rounded-full bg-white border border-neutral-200 shadow-md flex items-center justify-center overflow-hidden"
                       }
                     >
                       {activity.is_event ? (
@@ -716,7 +716,7 @@ export function ChatTab({
                         <img
                           src={getActivityIcon(activity.activity_type)}
                           alt={activity.activity_type}
-                          className="w-10 h-10 object-contain"
+                          className="w-7 h-7 object-contain"
                         />
                       )}
                     </div>
