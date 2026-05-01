@@ -607,8 +607,41 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       setPaidActivityDetail(plan);
       return;
     }
-    // Free plan → show preview before joining
-    setPlanPreview(plan);
+    // User-created plans (have a note/title) → show preview before joining
+    // Standard carousel activity types (no note) → join directly
+    if (plan.note) {
+      setPlanPreview(plan);
+    } else {
+      handleDirectCityJoin(plan);
+    }
+  };
+
+  const handleDirectCityJoin = async (plan: PlanActivity) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("activity_joins")
+      .insert({
+        user_id: user.id,
+        activity_id: plan.id,
+        activity_type: plan.activity_type,
+        city: plan.city,
+      });
+
+    if (error) {
+      console.error("Error joining plan:", error);
+      toast.error("Failed to join plan");
+      return;
+    }
+
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+    });
+
+    setSelectedPlan({ ...plan, isJoined: true });
+    setShowChatView(true);
   };
 
   const handleConfirmJoinPreview = async () => {
