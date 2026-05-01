@@ -839,24 +839,22 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       )}
                     </div>
 
-                    {plan.isCarouselJoin && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <Calendar className="w-3.5 h-3.5 text-gray-600" />
-                        <span className="text-sm text-gray-600">
-                          {formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
+                    <div className="flex items-center gap-2 mt-1">
+                      <Calendar className="w-3.5 h-3.5 text-gray-600" />
+                      {isToday(new Date(plan.scheduled_for)) ? (
+                        <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full animate-pulse">
+                          {t('common.today')}
                         </span>
-                        {isToday(new Date(plan.scheduled_for)) && (
-                          <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full animate-pulse">
-                            {t('common.today')}
-                          </span>
-                        )}
-                        {isTomorrow(new Date(plan.scheduled_for)) && (
-                          <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">
-                            {t('common.tomorrow')}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                      ) : isTomorrow(new Date(plan.scheduled_for)) ? (
+                        <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">
+                          {t('common.tomorrow')}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-600">
+                          {format(new Date(plan.scheduled_for), "EEE, d MMM")}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Action buttons */}
