@@ -716,7 +716,7 @@ export function ChatTab({
                         <img
                           src={getActivityIcon(activity.activity_type)}
                           alt={activity.activity_type}
-                          className="w-8 h-8 object-contain"
+                          className="w-10 h-10 object-contain"
                         />
                       )}
                     </div>
