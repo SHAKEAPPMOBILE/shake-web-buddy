@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredReferralCode, clearStoredReferralCode } from "@/hooks/useReferralTracking";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
+import { isNativePlatform } from "@/lib/platform-utils";
 
 export type OtpResult = {
   success: boolean;
@@ -392,9 +393,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return raw || fallback;
   };
 
-  const authCallbackBaseUrl = import.meta.env.DEV
-    ? "http://localhost:8080/auth/callback"
-    : "https://app.shakeapp.today/auth/callback";
+  const authCallbackBaseUrl = isNativePlatform()
+    ? "com.shakeapp.shakeapp://auth/callback"
+    : import.meta.env.DEV
+      ? "http://localhost:8080/auth/callback"
+      : "https://app.shakeapp.today/auth/callback";
 
   // Signup magic link uses `?intent=signup` so OAuthCallback can route to set-password.
   // Add the full URL with query to Supabase Auth → Redirect URLs if your project requires exact matches.
