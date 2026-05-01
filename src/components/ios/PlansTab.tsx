@@ -600,6 +600,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     fetchPlans();
   };
 
+  // Carousel activity types join directly; user-created plan types (general, etc.) show preview first
+  const CAROUSEL_ACTIVITY_TYPES = new Set(['dinner', 'drinks', 'brunch']);
+
   const handleCityPlanClick = (plan: PlanActivity) => {
     if (!user) return;
     // Paid plan → show payment/detail dialog
@@ -607,12 +610,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       setPaidActivityDetail(plan);
       return;
     }
-    // User-created plans (have a note/title) → show preview before joining
-    // Standard carousel activity types (no note) → join directly
-    if (plan.note) {
-      setPlanPreview(plan);
-    } else {
+    // Standard carousel types (dinner, drinks, brunch) → join directly without preview
+    // User-created plans (general or any non-carousel type) → show preview modal first
+    if (CAROUSEL_ACTIVITY_TYPES.has(plan.activity_type)) {
       handleDirectCityJoin(plan);
+    } else {
+      setPlanPreview(plan);
     }
   };
 
