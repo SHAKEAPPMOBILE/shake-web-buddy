@@ -30,6 +30,7 @@ import { IDVerificationDialog } from "../IDVerificationDialog";
 import { ContactSupport } from "../ContactSupport";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
+import { Capacitor } from "@capacitor/core";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +64,7 @@ const FACE_ID_FEATURE_ENABLED = false;
 export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionOpened }: ProfileTabProps) {
   const { t } = useTranslation();
   const { user, isPremium, isManualOverride, signOut } = useAuth();
+  const isNative = Capacitor.isNativePlatform();
   const { style: profileIconGradientStyle } = useSettlingGradient("profile");
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -1004,22 +1006,24 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           </div>
         </div>
 
-        {/* Notifications */}
-        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
-          <button
-            className="w-full flex items-center gap-4 px-4 py-3 text-left"
-            onClick={() => window.open('app-settings:root=NOTIFICATIONS&path=com.shakeapp.shakeapp', '_system')}
-          >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
-              <Bell className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <span className="font-medium">Notifications</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">Manage push notification settings</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground dark:text-gray-400" />
-          </button>
-        </div>
+        {/* Notifications — native only */}
+        {isNative && (
+          <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
+            <button
+              className="w-full flex items-center gap-4 px-4 py-3 text-left"
+              onClick={() => window.open('app-settings:root=NOTIFICATIONS&path=com.shakeapp.shakeapp', '_system')}
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
+                <Bell className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <span className="font-medium">Notifications</span>
+                <p className="text-xs text-muted-foreground dark:text-gray-500">Manage push notification settings</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground dark:text-gray-400" />
+            </button>
+          </div>
+        )}
 
         {FACE_ID_FEATURE_ENABLED && (
           <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
