@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
+import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -354,7 +355,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     </div>
                   ) : (
                     <div className="text-5xl md:text-6xl font-handwritten text-foreground">
-                      {currentActivity?.dayNumber}, {currentDayName}
+                      {currentActivity?.dayNumber}{currentActivity?.nextDate ? ` ${format(currentActivity.nextDate, 'MMM')}` : ''}, {currentDayName}
                     </div>
                   )}
                 </div>

@@ -19,7 +19,7 @@ export function ShakingClockAnimation({ open, onOpenChange, onComplete }: Shakin
         setTimeout(() => {
           onComplete();
         }, 500);
-      }, 2000);
+      }, 200);
       return () => clearTimeout(timer);
     }
   }, [open, onComplete]);

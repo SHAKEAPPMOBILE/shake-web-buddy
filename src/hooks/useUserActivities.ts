@@ -348,6 +348,20 @@ export function useUserActivities(city: string) {
       return { success: false };
     }
 
+    // Block join if user already has any join for the same activity_type in a different city
+    const { data: crossCityJoin } = await supabase
+      .from("activity_joins")
+      .select("id, city")
+      .eq("user_id", user.id)
+      .eq("activity_type", activity.activity_type)
+      .neq("city", activity.city)
+      .maybeSingle();
+
+    if (crossCityJoin) {
+      toast.error(`You're already joined ${activity.activity_type} in ${(crossCityJoin as { id: string; city: string }).city}. Leave that first to join here.`);
+      return { success: false };
+    }
+
     // Check if activity has a price - require payment first
     // Don't allow join for paid activities - redirect to payment instead
     if (activity.price_amount && activity.user_id !== user.id) {
