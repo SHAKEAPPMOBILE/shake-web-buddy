@@ -134,11 +134,12 @@ serve(async (req) => {
     // ------------------------------------------------------------------
     const apnsKeyId = Deno.env.get("APNS_KEY_ID");
     const apnsTeamId = Deno.env.get("APNS_TEAM_ID");
-    const apnsPrivateKey = Deno.env.get("APNS_PRIVATE_KEY"); // full PEM, newlines as \n
+    const privateKeyBase64 = Deno.env.get("APNS_PRIVATE_KEY") ?? "";
+    const privateKey = atob(privateKeyBase64);
     const apnsBundleId = Deno.env.get("APNS_BUNDLE_ID");
     const apnsSandbox = Deno.env.get("APNS_SANDBOX") === "true";
 
-    if (!apnsKeyId || !apnsTeamId || !apnsPrivateKey || !apnsBundleId) {
+    if (!apnsKeyId || !apnsTeamId || !privateKey || !apnsBundleId) {
       console.error("[send-push-notification] APNs env vars not configured");
       return new Response(
         JSON.stringify({ error: "APNs not configured" }),
@@ -149,7 +150,7 @@ serve(async (req) => {
     // ------------------------------------------------------------------
     // Build APNs JWT and send notification
     // ------------------------------------------------------------------
-    const jwt = await generateAPNsJWT(apnsTeamId, apnsKeyId, apnsPrivateKey);
+    const jwt = await generateAPNsJWT(apnsTeamId, apnsKeyId, privateKey);
 
     const apnsHost = apnsSandbox
       ? "https://api.sandbox.push.apple.com"
