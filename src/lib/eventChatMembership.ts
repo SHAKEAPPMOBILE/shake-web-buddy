@@ -10,18 +10,10 @@ export function isEventChatMembershipExplicitlyExpired(
 ): boolean {
   const expires_at = m?.expires_at ?? null;
   // Only use expires_at for expiry check. Ignore scheduled_for if null.
-  if (!expires_at?.trim()) {
-    console.log("[expiry-check]", { expires_at, result: false, reason: "no_expires_at" });
-    return false;
-  }
+  if (!expires_at?.trim()) return false;
   const d = new Date(expires_at);
-  if (Number.isNaN(d.getTime())) {
-    console.log("[expiry-check]", { expires_at, result: false, reason: "invalid_expires_at" });
-    return false;
-  }
-  const isExpired = d.getTime() < Date.now();
-  console.log("[expiry-check]", { expires_at, result: isExpired, reason: isExpired ? "expires_at_in_past" : "expires_at_in_future" });
-  return isExpired;
+  if (Number.isNaN(d.getTime())) return false;
+  return d.getTime() < Date.now();
 }
 
 /**
