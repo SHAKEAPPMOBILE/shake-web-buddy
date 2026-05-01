@@ -248,7 +248,7 @@ export default function ProposePlanPage() {
               // Returns the date of the upcoming `dow` weekday, or null if today IS that day.
               const getWeekendDate = (dow: number): Date | null => {
                 const daysUntil = (dow - todayDow + 7) % 7;
-                if (daysUntil === 0) return null; // today is that day — skip
+                if (daysUntil <= 1) return null; // today or tomorrow — skip
                 const d = new Date(today);
                 d.setDate(today.getDate() + daysUntil);
                 return d;
