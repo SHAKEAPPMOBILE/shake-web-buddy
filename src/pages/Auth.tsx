@@ -1314,32 +1314,7 @@ export default function Auth() {
           {step === 'confirmation' && (
             <div className="space-y-6 text-center">
               <div className="space-y-2 text-center">
-                <h2 className="text-xl font-bold text-black">Check your email</h2>
-                {confirmationKind === "signup" ? (
-                  <>
-                    <p className="text-sm text-muted-foreground">
-                      We sent a verification link to <span className="font-medium">{email}</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Click the link to verify your email, then set your password.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm text-muted-foreground">
-                      We sent a password reset link to <span className="font-medium">{email}</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Click the link to set your new password.
-                    </p>
-                  </>
-                )}
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                <p className="text-sm text-blue-900">
-                  💡 If you don't see the email, check your spam folder or try another email address.
-                </p>
+                <h2 className="text-xl font-bold text-black">Check your email/spam please! 🙏</h2>
               </div>
 
               <Button
@@ -1351,7 +1326,7 @@ export default function Auth() {
                   setConfirmPassword("");
                 }}
                 variant="outline"
-                className="w-full border-2"
+                className="w-full border-2 text-gray-900"
                 size="lg"
               >
                 Back to Log In
