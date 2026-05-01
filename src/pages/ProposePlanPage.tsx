@@ -245,16 +245,12 @@ export default function ProposePlanPage() {
               const todayDow = today.getDay(); // 0=Sun, 1=Mon ... 5=Fri, 6=Sat
               const tomorrow = new Date(today);
               tomorrow.setDate(today.getDate() + 1);
-              const tomorrowStr = format(tomorrow, "yyyy-MM-dd");
-
               // Returns the date of the upcoming `dow` weekday, or null if today IS that day.
-              // Also returns null if it lands on tomorrow (already covered by the Tomorrow pill).
               const getWeekendDate = (dow: number): Date | null => {
                 const daysUntil = (dow - todayDow + 7) % 7;
-                if (daysUntil === 0) return null; // today is that day
+                if (daysUntil === 0) return null; // today is that day — skip
                 const d = new Date(today);
                 d.setDate(today.getDate() + daysUntil);
-                if (format(d, "yyyy-MM-dd") === tomorrowStr) return null; // same as Tomorrow pill
                 return d;
               };
 
