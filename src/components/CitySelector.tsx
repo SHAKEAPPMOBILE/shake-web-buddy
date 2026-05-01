@@ -88,7 +88,7 @@ export function CityPickerBody({ onClose, className, autoFocusSearch, embedded }
     selectedCity.toLowerCase() !== detectedCity.name.toLowerCase();
 
   const rowClass =
-    "w-full rounded-xl px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80 active:bg-muted/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+    "w-full rounded-xl border border-gray-100 px-3 py-2.5 text-left text-sm text-gray-900 transition-colors hover:bg-gray-50 active:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
   return (
     <div
@@ -115,11 +115,11 @@ export function CityPickerBody({ onClose, className, autoFocusSearch, embedded }
         <button
           type="button"
           onClick={handleBackToLocation}
-          className="shrink-0 rounded-xl px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+          className="shrink-0 rounded-xl border border-gray-100 px-3 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
         >
           ✕ Back to my location
           {detectedCity ? (
-            <span className="ml-1 text-xs text-muted-foreground/80">({detectedCity.name})</span>
+            <span className="ml-1 text-xs text-gray-400">({detectedCity.name})</span>
           ) : null}
         </button>
       )}
@@ -133,7 +133,7 @@ export function CityPickerBody({ onClose, className, autoFocusSearch, embedded }
         <div className="space-y-1 pb-1">
           {detectedCity && (
             <>
-              <div className="px-1 pb-1 pt-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="px-1 pb-1 pt-0.5 text-xs font-medium uppercase tracking-wide text-gray-500">
                 Your Location
               </div>
               <button
@@ -141,24 +141,24 @@ export function CityPickerBody({ onClose, className, autoFocusSearch, embedded }
                 onClick={() => handleSelect(detectedCity.name)}
                 className={cn(rowClass, "flex cursor-pointer items-center gap-2")}
               >
-                <span className="font-medium text-foreground">
+                <span className="font-medium text-gray-900">
                   {detectedCity.name}, {detectedCity.country}
                 </span>
-                <span className="ml-auto shrink-0 text-xs text-muted-foreground">Nearby</span>
+                <span className="ml-auto shrink-0 text-xs text-gray-500">Nearby</span>
               </button>
-              <div className="my-2 h-px bg-border/80" />
+              <div className="my-2 h-px bg-gray-100" />
             </>
           )}
 
           {Object.entries(filteredGrouped).map(([region, cities]) => (
             <div key={region} className="pt-1">
-              <div className="px-2 py-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">{region}</div>
+              <div className="px-2 py-1.5 text-xs font-medium uppercase tracking-wide text-gray-500">{region}</div>
               {cities.map((city) => (
                 <button
                   key={`${city.name}-${city.country}`}
                   type="button"
                   onClick={() => handleSelect(city.name)}
-                  className={cn(rowClass, "cursor-pointer text-foreground")}
+                  className={cn(rowClass, "cursor-pointer")}
                 >
                   {city.name}, {city.country}
                 </button>
