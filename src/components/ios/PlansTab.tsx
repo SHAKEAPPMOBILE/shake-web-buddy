@@ -93,9 +93,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // load on first render before the user explicitly picks a city.
     const effectiveCity = selectedCity || detectedCity?.name || null;
 
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const nowIso = new Date().toISOString();
 
     // --- 1. User's OWN carousel joins from ALL cities (always, regardless of selectedCity) ---
     const { data: myCarouselJoinsData } = await supabase
@@ -154,8 +151,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .from("user_activities")
         .select("*")
         .in("id", joinedActivityIds)
-        .eq("is_active", true)
-        .gte("scheduled_for", startOfToday.toISOString());
+        .eq("is_active", true);
 
       // If user explicitly selected a filter city in Plans header, apply it.
       // Otherwise (default), include joined plans from all cities.
@@ -173,7 +169,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .select("*")
         .eq("city", effectiveCity)
         .eq("is_active", true)
-        .gte("scheduled_for", startOfToday.toISOString())
         .neq("user_id", user.id);
 
       // Exclude plans the user already joined — those appear in the main joined list
