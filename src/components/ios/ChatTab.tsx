@@ -106,276 +106,232 @@ export function ChatTab({
     setIsLoading(true);
 
     try {
-      // Get user's active carousel joins (activity_id is null)
-      const { data: carouselJoins, error: carouselError } = await supabase
-        .from("activity_joins")
-        .select("activity_type, city, joined_at, expires_at")
-        .eq("user_id", user.id)
-        .is("activity_id", null);
-
-      if (carouselError) throw carouselError;
-      console.log("[DEBUG] carouselJoins raw", carouselJoins?.length, carouselJoins);
-
-      // Get user's plan joins (activity_id is not null)
-      const { data: planJoins, error: planJoinsError } = await supabase
-        .from("activity_joins")
-        .select("activity_id")
-        .eq("user_id", user.id)
-        .not("activity_id", "is", null);
-
-      if (planJoinsError) throw planJoinsError;
-      console.log("[DEBUG] planJoins raw", planJoins?.length, planJoins);
-
-      // Get user's own plans
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
+      const todayIso = startOfToday.toISOString();
 
-      const { data: userPlans, error: userPlansError } = await supabase
-        .from("user_activities")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .gte("scheduled_for", startOfToday.toISOString());
+      // ── Step 1: Fetch all top-level data in parallel ──────────────────────
+      const [
+        { data: carouselJoins, error: carouselError },
+        { data: planJoins, error: planJoinsError },
+        { data: userPlans, error: userPlansError },
+        eventMembershipsResult,
+      ] = await Promise.all([
+        supabase
+          .from("activity_joins")
+          .select("activity_type, city, joined_at, expires_at")
+          .eq("user_id", user.id)
+          .is("activity_id", null),
+        supabase
+          .from("activity_joins")
+          .select("activity_id")
+          .eq("user_id", user.id)
+          .not("activity_id", "is", null),
+        supabase
+          .from("user_activities")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .gte("scheduled_for", todayIso),
+        supabase
+          .from("event_chat_members")
+          .select("event_id, user_id, paid_at, expires_at, event_name, event_starts_at, amount_cents, id, stripe_payment_intent_id")
+          .eq("user_id", user.id),
+      ]);
 
+      if (carouselError) throw carouselError;
+      if (planJoinsError) throw planJoinsError;
       if (userPlansError) throw userPlansError;
 
-      // Get joined plans
+      console.log("[DEBUG] carouselJoins raw", carouselJoins?.length, carouselJoins);
+      console.log("[DEBUG] planJoins raw", planJoins?.length, planJoins);
+
+      // ── Step 2: Fetch joined plans (depends on planJoins) ─────────────────
       const joinedPlanIds = (planJoins || []).map(j => j.activity_id).filter(Boolean) as string[];
       let joinedPlans: any[] = [];
-      
       if (joinedPlanIds.length > 0) {
         const { data: joinedPlansData } = await supabase
           .from("user_activities")
           .select("*")
           .in("id", joinedPlanIds)
           .eq("is_active", true)
-          .gte("scheduled_for", startOfToday.toISOString());
-        
+          .gte("scheduled_for", todayIso);
         joinedPlans = joinedPlansData || [];
       }
 
-      // Build activities list
-      const chatActivities: ChatActivity[] = [];
-
-      // Add carousel joins
-      for (const join of carouselJoins || []) {
-        const { count } = await supabase
-          .from("activity_joins")
-          .select("*", { count: "exact", head: true })
-          .eq("activity_type", join.activity_type)
-          .eq("city", join.city)
-          .is("activity_id", null)
-          ;
-
-        // Get unread count for activity messages
-        const { data: readStatus } = await supabase
-          .from("activity_read_status")
-          .select("last_read_at")
-          .eq("user_id", user.id)
-          .eq("activity_type", join.activity_type)
-          .eq("city", join.city)
-          .maybeSingle();
-
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const lastReadAt = readStatus?.last_read_at || todayStart.toISOString();
-
-        const { count: unreadCount } = await supabase
-          .from("activity_messages")
-          .select("*", { count: "exact", head: true })
-          .eq("activity_type", join.activity_type)
-          .eq("city", join.city)
-          .gt("created_at", lastReadAt)
-          .neq("user_id", user.id);
-
-        // Calculate the actual next occurrence date for this activity
-        const nextOccurrence = getNextOccurrenceDate(join.activity_type);
-
-        chatActivities.push({
-          id: `carousel-${join.activity_type}-${join.city}`,
-          activity_type: join.activity_type,
-          city: join.city,
-          scheduled_for: nextOccurrence.toISOString(),
-          participant_count: count || 1,
-          unread_count: unreadCount || 0,
-          is_plan: false,
-          note: getActivityDay(join.activity_type) ? `This ${getActivityDay(join.activity_type)}` : null,
-        });
-      }
-
-      // Add user's own plans and joined plans
+      // ── Step 3: Process carousel joins, plans, and events in parallel ─────
       const allPlans = [...(userPlans || []), ...joinedPlans];
-      const uniquePlans = new Map();
+      const uniquePlans = new Map<string, any>();
       allPlans.forEach(p => uniquePlans.set(p.id, p));
 
-      for (const plan of uniquePlans.values()) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("name, avatar_url")
-          .eq("user_id", plan.user_id)
-          .maybeSingle();
-
-        const { count } = await supabase
-          .from("activity_joins")
-          .select("*", { count: "exact", head: true })
-          .eq("activity_id", plan.id);
-
-        // Get unread count for plan messages
-        const { data: planReadStatus } = await supabase
-          .from("activity_read_status")
-          .select("last_read_at")
-          .eq("user_id", user.id)
-          .eq("activity_type", plan.id)
-          .maybeSingle();
-
-        const lastPlanRead = planReadStatus?.last_read_at || plan.created_at;
-
-        const { count: unreadPlanCount } = await supabase
-          .from("plan_messages")
-          .select("*", { count: "exact", head: true })
-          .eq("activity_id", plan.id)
-          .gt("created_at", lastPlanRead)
-          .neq("user_id", user.id);
-
-        chatActivities.push({
-          id: plan.id,
-          activity_type: plan.activity_type,
-          city: plan.city,
-          scheduled_for: plan.scheduled_for,
-          participant_count: (count || 0),
-          unread_count: unreadPlanCount || 0,
-          is_plan: true,
-          plan_id: plan.id,
-          creator_name: profile?.name || "Anonymous",
-          creator_avatar: profile?.avatar_url,
-          note: plan.note,
-        });
-      }
-
-      // Event chats the user has joined (merged into same list as activity chats)
+      // Parse event memberships from step 1
       let eventMemberships: Record<string, unknown>[] = [];
       try {
-        if (!user?.id) return;
-        const {
-          data: eventMembershipsRaw,
-          error: eventMembershipsError,
-          status: eventMembershipsStatus,
-        } = await supabase.from("event_chat_members").select("event_id, user_id, paid_at, expires_at, event_name, event_starts_at, amount_cents, id, stripe_payment_intent_id").eq("user_id", user.id);
-
+        const { data: eventMembershipsRaw, error: eventMembershipsError, status: eventMembershipsStatus } = eventMembershipsResult;
         if (eventMembershipsError) {
-          // Keep chat tab rendering even when PostgREST intermittently returns a 400 here.
-          if (eventMembershipsStatus !== 400) {
-            logPostgrestError("ChatTab event_chat_members select", eventMembershipsError);
-          }
+          if (eventMembershipsStatus !== 400) logPostgrestError("ChatTab event_chat_members select", eventMembershipsError);
         } else if (Array.isArray(eventMembershipsRaw)) {
           eventMemberships = eventMembershipsRaw as Record<string, unknown>[];
         }
-      } catch {
-        // Silently continue; event chats are optional and should never block rendering.
-      }
+      } catch { /* optional — never block rendering */ }
 
       console.log("[ChatTab] event_chat_members response", {
         fetchNonce,
-        isArray: Array.isArray(eventMemberships),
         rowCount: eventMemberships.length,
-        error: null,
-        rows: eventMemberships,
       });
 
-      if (eventMemberships.length > 0) {
-        for (const membership of eventMemberships as Record<string, unknown>[]) {
-          if (isEventChatMembershipExplicitlyExpired(membership as { expires_at?: string | null; event_starts_at?: string | null })) {
-            console.log("[ChatTab] skip event row (explicit expires_at in past)", {
-              event_id: membership.event_id,
-            });
-            continue;
-          }
+      // Process all three groups in parallel
+      const [carouselResults, planResults, eventResults] = await Promise.all([
+        // ── Carousel joins ──────────────────────────────────────────────────
+        Promise.all(
+          (carouselJoins || []).map(async (join) => {
+            const [{ count }, { data: readStatus }] = await Promise.all([
+              supabase
+                .from("activity_joins")
+                .select("*", { count: "exact", head: true })
+                .eq("activity_type", join.activity_type)
+                .eq("city", join.city)
+                .is("activity_id", null),
+              supabase
+                .from("activity_read_status")
+                .select("last_read_at")
+                .eq("user_id", user.id)
+                .eq("activity_type", join.activity_type)
+                .eq("city", join.city)
+                .maybeSingle(),
+            ]);
+            const lastReadAt = readStatus?.last_read_at || todayIso;
+            const { count: unreadCount } = await supabase
+              .from("activity_messages")
+              .select("*", { count: "exact", head: true })
+              .eq("activity_type", join.activity_type)
+              .eq("city", join.city)
+              .gt("created_at", lastReadAt)
+              .neq("user_id", user.id);
 
-          const eventId = membership.event_id as string | undefined;
-          if (!eventId) {
-            console.warn("[ChatTab] skip event membership row missing event_id", membership);
-            continue;
-          }
+            const nextOccurrence = getNextOccurrenceDate(join.activity_type);
+            return {
+              id: `carousel-${join.activity_type}-${join.city}`,
+              activity_type: join.activity_type,
+              city: join.city,
+              scheduled_for: nextOccurrence.toISOString(),
+              participant_count: count || 1,
+              unread_count: unreadCount || 0,
+              is_plan: false,
+              note: getActivityDay(join.activity_type) ? `This ${getActivityDay(join.activity_type)}` : null,
+            } as ChatActivity;
+          })
+        ),
 
-          const expiresAt =
-            typeof membership.event_starts_at === "string" && membership.event_starts_at.trim()
-              ? (() => {
-                  const s = new Date(membership.event_starts_at as string);
-                  return Number.isNaN(s.getTime()) ? null : new Date(s.getTime() + 12 * 60 * 60 * 1000);
-                })()
-              : typeof membership.expires_at === "string" && membership.expires_at.trim()
-                ? (() => {
-                    const d = new Date(membership.expires_at as string);
-                    return Number.isNaN(d.getTime()) ? null : d;
-                  })()
-                : null;
+        // ── Plans ───────────────────────────────────────────────────────────
+        Promise.all(
+          Array.from(uniquePlans.values()).map(async (plan) => {
+            const [{ data: profile }, { count }, { data: planReadStatus }] = await Promise.all([
+              supabase.from("profiles").select("name, avatar_url").eq("user_id", plan.user_id).maybeSingle(),
+              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", plan.id),
+              supabase.from("activity_read_status").select("last_read_at").eq("user_id", user.id).eq("activity_type", plan.id).maybeSingle(),
+            ]);
+            const lastPlanRead = planReadStatus?.last_read_at || plan.created_at;
+            const { count: unreadPlanCount } = await supabase
+              .from("plan_messages")
+              .select("*", { count: "exact", head: true })
+              .eq("activity_id", plan.id)
+              .gt("created_at", lastPlanRead)
+              .neq("user_id", user.id);
 
-          const parsedName =
-            typeof membership.event_name === "string" && membership.event_name.trim()
-              ? membership.event_name.trim()
-              : "Event Chat";
-          const fallbackVenue = parsedName.includes(" · ") ? parsedName.split(" · ")[1] : "Event";
-          const parsedVenue = fallbackVenue;
+            return {
+              id: plan.id,
+              activity_type: plan.activity_type,
+              city: plan.city,
+              scheduled_for: plan.scheduled_for,
+              participant_count: count || 0,
+              unread_count: unreadPlanCount || 0,
+              is_plan: true,
+              plan_id: plan.id,
+              creator_name: profile?.name || "Anonymous",
+              creator_avatar: profile?.avatar_url,
+              note: plan.note,
+            } as ChatActivity;
+          })
+        ),
 
-          const startFromDb = membership.event_starts_at
-            ? new Date(membership.event_starts_at as string)
-            : null;
-          const hasValidStart = startFromDb && !Number.isNaN(startFromDb.getTime());
-          const scheduledFor =
-            hasValidStart
-              ? startFromDb!.toISOString()
-              : expiresAt
-                ? expiresAt.toISOString()
-                : new Date().toISOString();
+        // ── Event memberships ───────────────────────────────────────────────
+        Promise.all(
+          (eventMemberships as Record<string, unknown>[])
+            .filter((membership) => {
+              if (isEventChatMembershipExplicitlyExpired(membership as { expires_at?: string | null; event_starts_at?: string | null })) {
+                console.log("[ChatTab] skip event row (explicit expires_at in past)", { event_id: membership.event_id });
+                return false;
+              }
+              if (!membership.event_id) {
+                console.warn("[ChatTab] skip event membership row missing event_id", membership);
+                return false;
+              }
+              return true;
+            })
+            .map(async (membership) => {
+              const eventId = membership.event_id as string;
 
-          // Count participants for this event chat
-          if (!user?.id) return;
-          const { count: participantCount } = await supabase
-            .from("event_chat_members")
-            .select("event_id", { count: "exact", head: true })
-            .eq("event_id", eventId);
+              const expiresAt =
+                typeof membership.event_starts_at === "string" && membership.event_starts_at.trim()
+                  ? (() => { const s = new Date(membership.event_starts_at as string); return Number.isNaN(s.getTime()) ? null : new Date(s.getTime() + 12 * 60 * 60 * 1000); })()
+                  : typeof membership.expires_at === "string" && membership.expires_at.trim()
+                    ? (() => { const d = new Date(membership.expires_at as string); return Number.isNaN(d.getTime()) ? null : d; })()
+                    : null;
 
-          const { data: chatMeta } = await supabase
-            .from("event_chats")
-            .select("id")
-            .eq("event_id", eventId)
-            .maybeSingle();
+              const parsedName =
+                typeof membership.event_name === "string" && membership.event_name.trim()
+                  ? membership.event_name.trim()
+                  : "Event Chat";
+              const parsedVenue = parsedName.includes(" · ") ? parsedName.split(" · ")[1] : "Event";
 
-          const { data: lastMsg } = chatMeta?.id
-            ? await supabase
-                .from("event_chat_messages")
-                .select("content, created_at")
-                .eq("event_chat_id", chatMeta.id)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .maybeSingle()
-            : { data: null };
+              const startFromDb = membership.event_starts_at ? new Date(membership.event_starts_at as string) : null;
+              const hasValidStart = startFromDb && !Number.isNaN(startFromDb.getTime());
+              const scheduledFor = hasValidStart
+                ? startFromDb!.toISOString()
+                : expiresAt ? expiresAt.toISOString() : new Date().toISOString();
 
-          chatActivities.push({
-            id: `event-${eventId}`,
-            activity_type: "event",
-            city: parsedVenue,
-            scheduled_for: scheduledFor,
-            participant_count: participantCount || 1,
-            is_plan: false,
-            is_event: true,
-            event_id: eventId,
-            event_name: parsedName,
-            event_venue: parsedVenue,
-            expires_at: expiresAt ? expiresAt.toISOString() : undefined,
-          });
+              // participantCount and chatMeta in parallel
+              const [{ count: participantCount }, { data: chatMeta }] = await Promise.all([
+                supabase.from("event_chat_members").select("event_id", { count: "exact", head: true }).eq("event_id", eventId),
+                supabase.from("event_chats").select("id").eq("event_id", eventId).maybeSingle(),
+              ]);
 
-          console.log("[ChatTab] merged event chat entry", {
-            fetchNonce,
-            event_id: eventId,
-            event_name: parsedName,
-            scheduled_for: scheduledFor,
-            participant_count: participantCount ?? 1,
-            last_message_preview: lastMsg?.content?.slice(0, 80) ?? null,
-            last_message_at: lastMsg?.created_at ?? null,
-          });
-        }
-      }
+              const { data: lastMsg } = chatMeta?.id
+                ? await supabase
+                    .from("event_chat_messages")
+                    .select("content, created_at")
+                    .eq("event_chat_id", chatMeta.id)
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .maybeSingle()
+                : { data: null };
+
+              console.log("[ChatTab] merged event chat entry", {
+                fetchNonce, event_id: eventId, event_name: parsedName, scheduled_for: scheduledFor,
+                participant_count: participantCount ?? 1,
+                last_message_preview: lastMsg?.content?.slice(0, 80) ?? null,
+                last_message_at: lastMsg?.created_at ?? null,
+              });
+
+              return {
+                id: `event-${eventId}`,
+                activity_type: "event",
+                city: parsedVenue,
+                scheduled_for: scheduledFor,
+                participant_count: participantCount || 1,
+                is_plan: false,
+                is_event: true,
+                event_id: eventId,
+                event_name: parsedName,
+                event_venue: parsedVenue,
+                expires_at: expiresAt ? expiresAt.toISOString() : undefined,
+              } as ChatActivity;
+            })
+        ),
+      ]);
+
+      const chatActivities: ChatActivity[] = [...carouselResults, ...planResults, ...eventResults];
 
       const serverEventIds = new Set(
         chatActivities.filter((a) => a.is_event && a.event_id).map((a) => a.event_id as string),

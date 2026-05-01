@@ -349,6 +349,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [paidActivityDetail, setPaidActivityDetail] = useState<PlanActivity | null>(null);
   // Store the activity to restore when closing user profile opened from ActivityDetailDialog
   const [activityDetailToRestore, setActivityDetailToRestore] = useState<PlanActivity | null>(null);
+  // Plan preview before joining (city discovery plans)
+  const [planPreview, setPlanPreview] = useState<PlanActivity | null>(null);
   
 
   // Notify parent when entering/leaving chat view
@@ -598,16 +600,22 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     fetchPlans();
   };
 
-  const handleCityPlanClick = async (plan: PlanActivity) => {
+  const handleCityPlanClick = (plan: PlanActivity) => {
     if (!user) return;
-
     // Paid plan → show payment/detail dialog
     if (plan.price_amount) {
       setPaidActivityDetail(plan);
       return;
     }
+    // Free plan → show preview before joining
+    setPlanPreview(plan);
+  };
 
-    // Free plan → join first; only open chat if join succeeded
+  const handleConfirmJoinPreview = async () => {
+    if (!planPreview || !user) return;
+    const plan = planPreview;
+    setPlanPreview(null);
+
     const { error } = await supabase
       .from("activity_joins")
       .insert({
@@ -1043,6 +1051,84 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           userName={selectedUserProfile.userName}
           avatarUrl={selectedUserProfile.avatarUrl}
         />
+      )}
+
+      {/* Plan Preview Modal — shown before joining a city discovery plan */}
+      {planPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-auto">
+          <div
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={() => setPlanPreview(null)}
+          />
+          <div className="relative z-10 w-full max-w-md rounded-3xl bg-white shadow-2xl pointer-events-auto overflow-hidden">
+            <div className="px-6 pt-6 pb-4 space-y-4">
+              {/* Activity icon + title */}
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full overflow-hidden mx-auto mb-3 border border-gray-200 shadow-sm">
+                  {getActivityIcon(planPreview.activity_type) ? (
+                    <img src={getActivityIcon(planPreview.activity_type)} alt={planPreview.activity_type} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-3xl">
+                      {getActivityEmoji(planPreview.activity_type)}
+                    </div>
+                  )}
+                </div>
+                <h2 className="text-lg font-display font-bold text-gray-900">
+                  {planPreview.note || t('plans.untitledPlan', 'Untitled Plan')}
+                </h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {getActivityLabel(planPreview.activity_type)} · {planPreview.city}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {isToday(new Date(planPreview.scheduled_for))
+                    ? t('common.today')
+                    : isTomorrow(new Date(planPreview.scheduled_for))
+                    ? t('common.tomorrow')
+                    : format(new Date(planPreview.scheduled_for), "EEE, d MMM")}
+                </p>
+              </div>
+
+              {/* Creator */}
+              <div className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
+                <Avatar className="w-10 h-10 border border-gray-200">
+                  <AvatarImage src={planPreview.creator_avatar || undefined} />
+                  <AvatarFallback className="bg-gray-100 text-gray-700 text-sm font-semibold">
+                    {planPreview.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900">{planPreview.creator_name || "Anonymous"}</p>
+                  <p className="text-xs text-gray-500">{t('common.organiser', 'Organiser')}</p>
+                </div>
+                {(planPreview.participant_count ?? 0) > 0 && (
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Users className="w-4 h-4" />
+                    <span>{planPreview.participant_count}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 pb-6 space-y-2">
+              <button
+                type="button"
+                onClick={handleConfirmJoinPreview}
+                className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
+                style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+              >
+                Yes, I'm in! 🎉
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlanPreview(null)}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+              >
+                Hum!
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Paid Activity Detail Dialog */}
