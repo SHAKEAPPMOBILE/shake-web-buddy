@@ -540,7 +540,7 @@ export function GroupChatView({
               </span>
             )}
           </h1>
-          <p className="text-xs text-gray-900">{headerDateLabel}</p>
+          <p className="text-xs font-semibold text-gray-900">{headerDateLabel}</p>
         </div>
         <div className="ml-auto flex items-center gap-0.5">
           <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
