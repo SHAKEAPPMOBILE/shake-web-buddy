@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useReportContent, ReportableContentType } from "@/hooks/useReportContent";
-import { useNavigate } from "react-router-dom";
 
 interface ReportContentButtonProps {
   contentId: string;
@@ -24,25 +23,17 @@ const REPORT_REASONS = [
 export const ReportContentButton = ({ contentId, contentType, iconOnly = false }: ReportContentButtonProps) => {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
-  const [submitted, setSubmitted] = useState(false);
   const { reportContent, isReporting } = useReportContent();
-  const navigate = useNavigate();
 
   const handleSubmit = async () => {
-    setSubmitted(true);
     await reportContent(contentId, contentType, reason);
     setOpen(false);
     setReason("");
-    setSubmitted(false);
   };
 
   const handleOpenChange = (next: boolean) => {
-    if (!next && !submitted) {
-      // Cancelled or dismissed — navigate to Plans tab to prevent the
-      // underlying card click from opening the activity chat
-      navigate("/");
-    }
     setOpen(next);
+    if (!next) setReason("");
   };
 
   return (
