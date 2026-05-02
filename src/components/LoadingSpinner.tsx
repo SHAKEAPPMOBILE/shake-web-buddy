@@ -8,7 +8,7 @@ type LoadingSpinnerProps = {
 const sizeClasses = {
   sm: "text-base",
   md: "text-xl",
-  lg: "text-3xl",
+  lg: "text-7xl",
 };
 
 export function LoadingSpinner({ className, size = "md" }: LoadingSpinnerProps) {
