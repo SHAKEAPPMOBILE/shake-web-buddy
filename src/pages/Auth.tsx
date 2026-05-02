@@ -1107,8 +1107,7 @@ export default function Auth() {
               <div className="space-y-2 text-center">
                 <h2 className="text-xl font-bold text-black">Create Account</h2>
                 <p className="text-sm text-muted-foreground">
-                  We&apos;ll email you a link to verify this address. After you open it, you&apos;ll choose a password
-                  for next time.
+                  Verify your email — we&apos;ll send a link to verify this address. After you open it, you&apos;ll choose a password for next time.
                 </p>
               </div>
 
@@ -1119,7 +1118,7 @@ export default function Auth() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
