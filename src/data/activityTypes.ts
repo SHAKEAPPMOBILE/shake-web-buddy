@@ -37,14 +37,12 @@ export const getNextOccurrenceDate = (activityId: string): Date => {
   const targetDay = activity.defaultDay;
   const currentDay = today.getDay();
   
-  // Calculate days until target day
+  // Calculate days until target day (0 = today, positive = upcoming)
   let daysUntil = targetDay - currentDay;
   if (daysUntil < 0) {
-    daysUntil += 7; // Next week
+    daysUntil += 7; // Wrap to next week
   }
-  if (daysUntil === 0) {
-    daysUntil = 7; // Always return next week's occurrence, not today
-  }
+  // daysUntil === 0 means today IS the activity day — keep it as 0 (today)
   
   const nextDate = new Date(today);
   nextDate.setDate(today.getDate() + daysUntil);

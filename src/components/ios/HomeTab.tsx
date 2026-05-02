@@ -458,9 +458,6 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   <div className="space-y-2 pt-1" onClick={(e) => e.stopPropagation()}>
                     {hasNoVenue ? (
                       <>
-                        <p className="text-sm text-muted-foreground pb-1">
-                          {t('home.noVenuesInCity', 'No venues in your city yet — but you can still propose a plan!')}
-                        </p>
                         <button
                           type="button"
                           onClick={() => {
