@@ -728,7 +728,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-primary text-primary-foreground"
             >
               <span>⚡️</span>
-              <span>Events</span>
+              <span>{t('plans.events', 'Events')}</span>
             </button>
             {joinedPlansCityFilter && (
               <button
@@ -1055,15 +1055,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this plan?</AlertDialogTitle>
+            <AlertDialogTitle>{t('plans.deletePlanTitle', 'Delete this plan?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete your {planToDelete && getActivityLabel(planToDelete.activity_type)} plan and all its messages. This action cannot be undone.
+              {t('plans.deletePlanDesc', 'This will permanently delete your {{activity}} plan and all its messages. This action cannot be undone.', { activity: planToDelete ? getActivityLabel(planToDelete.activity_type) : '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeletePlan} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete Plan
+              {t('plans.deletePlanBtn', 'Delete Plan')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1153,14 +1153,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
                 style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
               >
-                Yes, I'm in! 🎉
+                {t('plans.yesImIn', "Yes, I'm in! 🎉")}
               </button>
               <button
                 type="button"
                 onClick={() => setPlanPreview(null)}
                 className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
               >
-                Hum!
+                {t('plans.humBtn', 'Hum!')}
               </button>
             </div>
           </div>

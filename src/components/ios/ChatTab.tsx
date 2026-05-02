@@ -282,8 +282,8 @@ export function ChatTab({
               const parsedName =
                 typeof membership.event_name === "string" && membership.event_name.trim()
                   ? membership.event_name.trim()
-                  : "Event Chat";
-              const parsedVenue = parsedName.includes(" · ") ? parsedName.split(" · ")[1] : "Event";
+                  : t('chat.eventChat', 'Event Chat');
+              const parsedVenue = parsedName.includes(" · ") ? parsedName.split(" · ")[1] : t('chat.eventFallback', 'Event');
 
               const startFromDb = membership.event_starts_at ? new Date(membership.event_starts_at as string) : null;
               const hasValidStart = startFromDb && !Number.isNaN(startFromDb.getTime());
@@ -350,8 +350,8 @@ export function ChatTab({
           : hasExp
             ? exp!.toISOString()
             : new Date().toISOString();
-        const cityLabel = (p.city && p.city.trim()) || "Event";
-        const displayName = (p.event_name && p.event_name.trim()) || "Event Chat";
+        const cityLabel = (p.city && p.city.trim()) || t('chat.eventFallback', 'Event');
+        const displayName = (p.event_name && p.event_name.trim()) || t('chat.eventChat', 'Event Chat');
 
         chatActivities.push({
           id: `event-${p.event_id}`,
@@ -695,12 +695,12 @@ export function ChatTab({
                     )}
                     {activity.is_event && (
                       <span className="text-[10px] font-medium uppercase tracking-wide text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded-xl border border-gray-300">
-                        EVENT
+                        {t('chat.eventBadge', 'EVENT')}
                       </span>
                     )}
                     {activity.is_event && (
                       <span className="text-[10px] font-medium text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded-xl border border-gray-300">
-                        12h access
+                        {t('chat.twelveHourAccess', '12h access')}
                       </span>
                     )}
                   </div>

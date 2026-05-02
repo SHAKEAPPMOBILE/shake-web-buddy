@@ -459,7 +459,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     {hasNoVenue ? (
                       <>
                         <p className="text-sm text-muted-foreground pb-1">
-                          No venues in your city yet — but you can still propose a plan!
+                          {t('home.noVenuesInCity', 'No venues in your city yet — but you can still propose a plan!')}
                         </p>
                         <button
                           type="button"
@@ -469,7 +469,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                           }}
                           className="w-full rounded-full px-4 py-2.5 text-white font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] transition-colors"
                         >
-                          Propose a Plan
+                          {t('home.proposePlanBtn', 'Propose a Plan')}
                         </button>
                         <button
                           type="button"
@@ -479,7 +479,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                           }}
                           className="w-full rounded-full px-4 py-2.5 font-medium border border-border bg-background hover:bg-muted/60 transition-colors"
                         >
-                          Hum!
+                          {t('home.humBtn', 'Hum!')}
                         </button>
                       </>
                     ) : (
@@ -489,7 +489,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                           onClick={handleConfirmSelection}
                           className="w-full rounded-full px-4 py-2.5 text-white font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] transition-colors"
                         >
-                          Yes!
+                          {t('home.yesBtn', 'Yes!')}
                         </button>
                         <button
                           type="button"
@@ -499,7 +499,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                           }}
                           className="w-full rounded-full px-4 py-2.5 font-medium border border-border bg-background hover:bg-muted/60 transition-colors"
                         >
-                          Hum!
+                          {t('home.humBtn', 'Hum!')}
                         </button>
                         <button
                           type="button"
@@ -578,8 +578,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   {selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..."
                     ? selectedCity
                     : isCityOutOfRange
-                      ? "Coming to your city soon"
-                      : "Select your city"}
+                      ? t('home.comingToYourCity', 'Coming to your city soon')
+                      : t('home.selectYourCity', 'Select your city')}
                 </span>
               </button>
             </div>

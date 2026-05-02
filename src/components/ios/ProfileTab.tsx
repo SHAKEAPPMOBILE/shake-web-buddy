@@ -158,8 +158,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     } catch (error) {
       console.error("Error updating preferred method:", error);
       toast({
-        title: "Error",
-        description: "Failed to update payout method",
+        title: t('profile.errorTitle', 'Error'),
+        description: t('profile.failedPayoutMethod', 'Failed to update payout method'),
         variant: "destructive",
       });
     }
@@ -172,13 +172,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setCopiedLink(true);
       toast({
         title: t('profile.linkCopied'),
-        description: "Share it with friends to earn points",
+        description: t('profile.shareText', 'Share it with friends to earn points'),
       });
       setTimeout(() => setCopiedLink(false), 2000);
     } catch {
       toast({
-        title: "Failed to copy",
-        description: "Please try again",
+        title: t('profile.failedToCopy', 'Failed to copy'),
+        description: t('profile.tryAgain', 'Please try again.'),
         variant: "destructive",
       });
     }
@@ -189,8 +189,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Join SHAKE!",
-          text: "Join me on SHAKE to find fun activities and meet new people!",
+          title: t('profile.shareTitle', 'Join SHAKE!'),
+          text: t('profile.shareText', 'Join me on SHAKE to find fun activities and meet new people!'),
           url: link,
         });
       } catch (err) {
@@ -208,8 +208,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     if (!user) return;
     if (!descriptor) {
       toast({
-        title: "Face setup failed",
-        description: "Please try again.",
+        title: t('profile.faceSetupFailedTitle', 'Face setup failed'),
+        description: t('profile.tryAgain', 'Please try again.'),
         variant: "destructive",
       });
       setShowFaceCapture(false);
@@ -227,14 +227,14 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
       setFaceAuthEnabled(true);
       toast({
-        title: "Face ID enabled",
-        description: "You can now sign in with Face ID.",
+        title: t('profile.faceIdEnabledTitle', 'Face ID enabled'),
+        description: t('profile.faceIdEnabledDesc', 'You can now sign in with Face ID.'),
       });
     } catch (error) {
       console.error("Error enabling Face ID:", error);
       toast({
-        title: "Failed to enable Face ID",
-        description: "Please try again.",
+        title: t('profile.faceIdEnableFailedTitle', 'Failed to enable Face ID'),
+        description: t('profile.tryAgain', 'Please try again.'),
         variant: "destructive",
       });
     } finally {
@@ -260,14 +260,14 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setFaceAuthEnabled(false);
       setShowRemoveFaceConfirm(false);
       toast({
-        title: "Face ID removed",
-        description: "Face login has been disabled.",
+        title: t('profile.faceIdRemovedTitle', 'Face ID removed'),
+        description: t('profile.faceIdRemovedDesc', 'Face login has been disabled.'),
       });
     } catch (error) {
       console.error("Error removing Face ID:", error);
       toast({
-        title: "Failed to remove Face ID",
-        description: "Please try again.",
+        title: t('profile.faceIdRemoveFailedTitle', 'Failed to remove Face ID'),
+        description: t('profile.tryAgain', 'Please try again.'),
         variant: "destructive",
       });
     } finally {
@@ -433,7 +433,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           {hasActiveStatus ? t('profile.viewStatus', 'View Status') : t('profile.addStatus', 'Add Status')}
         </button>
 
-        <h2 className="mt-2 text-xl font-display font-bold text-gray-900 dark:text-gray-900">{userName || "User"}</h2>
+        <h2 className="mt-2 text-xl font-display font-bold text-gray-900 dark:text-gray-900">{userName || t('profile.userFallback', 'User')}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-600">{user.email}</p>
         {isPremium && (
           <div
@@ -975,8 +975,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <Sun className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <span className="font-medium">Appearance</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">Toggle dark / light mode</p>
+              <span className="font-medium">{t('profile.appearance', 'Appearance')}</span>
+              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.toggleTheme', 'Toggle dark / light mode')}</p>
             </div>
             <ThemeToggle />
           </div>
@@ -989,8 +989,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <Smartphone className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <span className="font-medium">Motion & Shake</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">Allow shake to discover activities</p>
+              <span className="font-medium">{t('profile.motionShake', 'Motion & Shake')}</span>
+              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.motionDesc', 'Allow shake to discover activities')}</p>
             </div>
             <Switch
               checked={motionPermission === "granted"}
@@ -1017,8 +1017,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <Bell className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
-                <span className="font-medium">Notifications</span>
-                <p className="text-xs text-muted-foreground dark:text-gray-500">Manage push notification settings</p>
+                <span className="font-medium">{t('profile.notifications', 'Notifications')}</span>
+                <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.notificationsDesc', 'Manage push notification settings')}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground dark:text-gray-400" />
             </button>
@@ -1032,9 +1032,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <ScanFace className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1">
-                <span className="font-medium">Face ID Login</span>
+                <span className="font-medium">{t('profile.faceIdLogin', 'Face ID Login')}</span>
                 <p className="text-xs text-muted-foreground dark:text-gray-500">
-                  {faceAuthEnabled ? "Use your face to sign in" : "Set up face login"}
+                  {faceAuthEnabled ? t('profile.useFaceToSignIn', 'Use your face to sign in') : t('profile.setUpFaceLogin', 'Set up face login')}
                 </p>
               </div>
 
@@ -1044,17 +1044,17 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   disabled={isUpdatingFaceAuth}
                   className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
                 >
-                  {isUpdatingFaceAuth ? "Setting up..." : "Set up"}
+                  {isUpdatingFaceAuth ? t('profile.settingUp', 'Setting up...') : t('profile.setUp', 'Set up')}
                 </button>
               ) : (
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-shake-green">Enabled ✓</span>
+                  <span className="text-sm font-medium text-shake-green">{t('profile.faceIdEnabledCheck', 'Enabled ✓')}</span>
                   <button
                     onClick={() => setShowRemoveFaceConfirm(true)}
                     disabled={isUpdatingFaceAuth}
                     className="text-xs font-medium text-destructive hover:underline disabled:opacity-50"
                   >
-                    Remove
+                    {t('profile.faceIdRemoveBtn', 'Remove')}
                   </button>
                 </div>
               )}
@@ -1069,14 +1069,14 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <DialogTitle>👻 Paranormal Activity</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground dark:text-gray-500">Blocked users won&apos;t appear in your feed or chats.</p>
+              <p className="text-sm text-muted-foreground dark:text-gray-500">{t('profile.paranormalDialogDesc', "Blocked users won't appear in your feed or chats.")}</p>
               {isLoadingParanormal ? (
                 <div className="flex items-center justify-center py-6">
                   <Loader2 className="w-5 h-5 animate-spin text-muted-foreground dark:text-gray-500" />
                 </div>
               ) : blockedUsers.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground dark:text-gray-500">
-                  No blocked users 👻
+                  {t('profile.noBlockedUsers', 'No blocked users 👻')}
                 </div>
               ) : (
                 <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -1106,7 +1106,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                         }}
                         className="text-xs font-medium text-primary hover:underline"
                       >
-                        Unblock
+                        {t('profile.unblock', 'Unblock')}
                       </button>
                     </div>
                   ))}
@@ -1125,8 +1125,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             <Ghost className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 text-left">
-            <span className="font-medium">Paranormal Activity</span>
-            <p className="text-xs text-muted-foreground dark:text-gray-500">Blocked &amp; flagged users</p>
+            <span className="font-medium">{t('profile.paranormalActivityTitle', 'Paranormal Activity')}</span>
+            <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.paranormalSubtitle', 'Blocked & flagged users')}</p>
           </div>
         </button>
 
@@ -1138,8 +1138,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <Mail className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 text-left">
-                <span className="font-medium">Support</span>
-                <p className="text-xs text-muted-foreground dark:text-gray-500">Need help? Contact our team.</p>
+                <span className="font-medium">{t('profile.support', 'Support')}</span>
+                <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.supportDesc', 'Need help? Contact our team.')}</p>
               </div>
             </div>
             <ContactSupport />
@@ -1192,7 +1192,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           <AlertDialogFooter>
             <AlertDialogCancel>{t('profile.staySocial', 'Stay Social')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmSignOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Sign Out
+              {t('profile.signOutBtn', 'Sign Out')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1264,18 +1264,18 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         <AlertDialog open={showRemoveFaceConfirm} onOpenChange={setShowRemoveFaceConfirm}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Remove Face ID?</AlertDialogTitle>
+              <AlertDialogTitle>{t('profile.removeFaceIdTitle', 'Remove Face ID?')}</AlertDialogTitle>
               <AlertDialogDescription>
-                You&apos;ll need to use another login method until you set Face ID up again.
+                {t('profile.removeFaceIdDesc', "You'll need to use another login method until you set Face ID up again.")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isUpdatingFaceAuth}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel disabled={isUpdatingFaceAuth}>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleRemoveFaceId}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                {isUpdatingFaceAuth ? "Removing..." : "Remove"}
+                {isUpdatingFaceAuth ? t('profile.removeFaceIdRemoving', 'Removing...') : t('profile.faceIdRemoveBtn', 'Remove')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
