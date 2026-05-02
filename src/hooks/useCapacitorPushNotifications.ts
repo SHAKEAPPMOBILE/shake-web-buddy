@@ -26,22 +26,46 @@ export function useCapacitorPushNotifications() {
         return;
       }
 
-      await PushNotifications.register();
-      console.log("[Push] Registration called");
+      let tokenReceived = false;
 
       registrationHandle = await PushNotifications.addListener("registration", async (token) => {
+        tokenReceived = true;
         console.log("[Push] Token received:", token.value);
+
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !sessionData?.session) {
+          console.error("[Push] No active session when saving token — aborting save. Session error:", sessionError);
+          return;
+        }
+
         const { error } = await supabase
           .from("profiles")
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .update({ push_token: token.value } as any)
-          .eq("id", user.id);
+          .eq("user_id", user.id);
 
-        console.log("[Push] Token save result:", error ? error : "success");
         if (error) {
-          console.error("[PushNotifications] Failed to save push token:", error);
+          console.error("[Push] Failed to save push token. Full error:", JSON.stringify(error));
+        } else {
+          console.log("[Push] Token saved successfully for user:", user.id);
         }
       });
+
+      await PushNotifications.register();
+      console.log("[Push] Registration called");
+
+      // Retry once after 10 seconds if no token event fired
+      setTimeout(async () => {
+        if (!tokenReceived) {
+          console.warn("[Push] No registration event after 10s — retrying register()");
+          try {
+            await PushNotifications.register();
+            console.log("[Push] Retry register() called");
+          } catch (err) {
+            console.error("[Push] Retry register() failed:", err);
+          }
+        }
+      }, 10_000);
 
       receivedHandle = await PushNotifications.addListener("pushNotificationReceived", (notification) => {
         toast.info(notification.title ?? "New notification", {
