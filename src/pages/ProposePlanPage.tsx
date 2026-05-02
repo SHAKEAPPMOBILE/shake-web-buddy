@@ -222,7 +222,7 @@ export default function ProposePlanPage() {
                       onChange={handleTextChange}
                       placeholder={t("createPlan.placeholder")}
                       maxLength={MAX_CHARACTERS}
-                      className="min-h-[100px] resize-none pr-16 text-base"
+                      className="min-h-[100px] resize-none pr-16 text-base border-blue-300 focus-visible:ring-blue-400 focus-visible:border-blue-400"
                       autoFocus
                     />
                     <span className="absolute right-3 bottom-3 text-xs text-muted-foreground">
