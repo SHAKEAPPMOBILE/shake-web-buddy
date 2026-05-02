@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { User, Crown } from "lucide-react";
+import { User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -189,8 +189,7 @@ export function PlanParticipantsDialog({
                             {isCurrentUser ? "You" : participant.name || "Shaker"}
                           </p>
                           {participant.isOwner && (
-                            <span className="flex items-center gap-1 text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
-                              <Crown className="w-3 h-3" />
+                            <span className="text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
                               Host
                             </span>
                           )}
@@ -280,8 +279,7 @@ export function PlanParticipantsDialog({
                                 {isCurrentUser ? "You" : participant.name || "Shaker"}
                               </p>
                               {participant.isOwner && (
-                                <span className="flex items-center gap-1 text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
-                                  <Crown className="w-3 h-3" />
+                                <span className="text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
                                   Host
                                 </span>
                               )}
