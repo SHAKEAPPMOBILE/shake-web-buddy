@@ -379,7 +379,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   </button>
 
                   <div
-                    className="w-32 h-32 mx-6 rounded-full bg-white overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
+                    className="w-32 h-32 mx-6 rounded-full bg-card overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
                     onPointerDown={() => {
                       tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
                     }}
@@ -602,7 +602,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           <div
             onClick={onOpenActivities}
             className={cn(
-              "w-32 h-32 rounded-full bg-gradient-to-br from-blue-100 via-cyan-50 to-blue-200 border-2 border-blue-400 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
+              "w-32 h-32 rounded-full bg-card border-2 border-blue-400 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
               isShaking && "animate-shake-center"
             )}
           >
