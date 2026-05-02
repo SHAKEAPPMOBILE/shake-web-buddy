@@ -1002,16 +1002,18 @@ export default function Auth() {
                   </>
                 )}
 
-                <Button
-                  onClick={() => {
-                    setStep("email");
-                  }}
-                  className="w-full text-white animate-gradient-shift hover:opacity-95"
-                  size="lg"
-                >
-                  <Mail className="w-4 h-4 mr-2 text-white" />
-                  Create Account
-                </Button>
+                {!showEmailLogin && (
+                  <Button
+                    onClick={() => {
+                      setStep("email");
+                    }}
+                    className="w-full text-white animate-gradient-shift hover:opacity-95"
+                    size="lg"
+                  >
+                    <Mail className="w-4 h-4 mr-2 text-white" />
+                    Create Account
+                  </Button>
+                )}
 
                 {!showEmailLogin ? (
                   <div className="pt-2 text-center">
