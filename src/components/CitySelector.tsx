@@ -106,7 +106,7 @@ export function CityPickerBody({ onClose, className, autoFocusSearch, embedded }
           placeholder="Search cities..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-11 border-border/80 bg-muted/40 pl-10 pr-3 shadow-sm focus-visible:bg-background"
+          className="h-11 border-blue-300 bg-blue-50 pl-10 pr-3 text-gray-900 shadow-sm focus-visible:bg-blue-50 focus-visible:ring-blue-400"
           autoComplete="off"
         />
       </div>
