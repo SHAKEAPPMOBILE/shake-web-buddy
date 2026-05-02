@@ -614,7 +614,7 @@ export function GroupChatView({
       )}
 
       {showAttendees ? (
-        <div className="w-full px-4 py-2.5 border-b border-gray-100 bg-white">
+        <div className="w-full px-4 py-2.5 border-b border-white bg-white">
           <button onClick={() => setShowParticipantsList(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="flex -space-x-2 overflow-hidden">
               {participants.slice(0, 6).map((participant) => (
@@ -637,7 +637,7 @@ export function GroupChatView({
           </button>
         </div>
       ) : (
-        <div className="w-full px-4 py-2.5 border-b border-gray-100 bg-white">
+        <div className="w-full px-4 py-2.5 border-b border-white bg-white">
           <p className="text-sm text-gray-400">You're the first one here today!</p>
         </div>
       )}
