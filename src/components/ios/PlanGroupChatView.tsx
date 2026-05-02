@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Users, User, Trash2, FileText, Images } from "lucide-react";
+import { Send, User, Trash2, FileText, Images } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -64,6 +64,7 @@ export function PlanGroupChatView({
   const [messages, setMessages] = useState<PlanMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [showParticipantsDialog, setShowParticipantsDialog] = useState(false);
+  const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
     userId: string;
     userName: string | null;
@@ -172,6 +173,50 @@ export function PlanGroupChatView({
       supabase.removeChannel(channel);
     };
   }, [activity.id, user?.id]);
+
+  // Fetch plan participants (owner + joined users)
+  useEffect(() => {
+    if (!activity.id) return;
+
+    const fetchParticipants = async () => {
+      // Owner profile
+      const { data: ownerProfile } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .eq("user_id", activity.user_id)
+        .maybeSingle();
+
+      // Joined users
+      const { data: joins } = await supabase
+        .from("activity_joins")
+        .select("user_id")
+        .eq("activity_id", activity.id);
+
+      const joinedIds = (joins || []).map((j) => j.user_id).filter((id) => id !== activity.user_id);
+      let joinedProfiles: { user_id: string; name: string | null; avatar_url: string | null }[] = [];
+
+      if (joinedIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("user_id, name, avatar_url")
+          .in("user_id", joinedIds);
+        joinedProfiles = (profilesData || []).map((p) => ({
+          user_id: p.user_id,
+          name: p.name ?? null,
+          avatar_url: p.avatar_url ?? null,
+        }));
+      }
+
+      const all: { user_id: string; name: string | null; avatar_url: string | null }[] = [];
+      if (ownerProfile) {
+        all.push({ user_id: ownerProfile.user_id, name: ownerProfile.name ?? null, avatar_url: ownerProfile.avatar_url ?? null });
+      }
+      all.push(...joinedProfiles);
+      setParticipants(all);
+    };
+
+    fetchParticipants();
+  }, [activity.id, activity.user_id]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -303,15 +348,35 @@ export function PlanGroupChatView({
             </button>
           </p>
         </div>
-        <button
-          onClick={() => setShowParticipantsDialog(true)}
-          className="flex items-center gap-1 px-2 py-1 text-xs bg-muted rounded-full hover:bg-muted/80 transition-colors"
-        >
-          <Users className="w-3 h-3" />
-          <span>{attendeeCount}</span>
-        </button>
       </div>
 
+      {/* Participants bar — mirrors GroupChatView style */}
+      <div className="w-full px-4 py-2.5 border-b border-black/10 bg-[hsl(50,40%,92%)]">
+        {participants.length > 0 ? (
+          <button onClick={() => setShowParticipantsDialog(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <div className="flex -space-x-2 overflow-hidden">
+              {participants.slice(0, 6).map((p) => (
+                <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-black/10 bg-muted shrink-0">
+                  <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
+                  <AvatarFallback className="bg-muted flex items-center justify-center">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+              {participants.length > 6 && (
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border border-black/10 text-xs font-medium text-muted-foreground shrink-0">
+                  +{participants.length - 6}
+                </div>
+              )}
+            </div>
+            <p className="text-sm text-black/60">
+              {attendeeCount || participants.length} {(attendeeCount || participants.length) === 1 ? 'person' : 'people'} joined
+            </p>
+          </button>
+        ) : (
+          <p className="text-sm text-black/40">You're the first one here!</p>
+        )}
+      </div>
 
       {/* Messages */}
       <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-14 space-y-4">
