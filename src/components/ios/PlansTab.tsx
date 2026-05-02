@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import confetti from 'canvas-confetti';
+import barManAndCook from "@/assets/bar-man-and-cook.png";
 import { Calendar, Users, Plus, Plane, Share2, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
@@ -1101,7 +1102,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               {/* Activity icon + title */}
               <div className="text-center">
                 <div className="w-16 h-16 rounded-full overflow-hidden mx-auto mb-3 border border-gray-200 shadow-sm">
-                  {getActivityIcon(planPreview.activity_type) ? (
+                  {planPreview.activity_type === "general" ? (
+                    <img src={barManAndCook} alt="Plan" className="w-full h-full object-contain" />
+                  ) : getActivityIcon(planPreview.activity_type) ? (
                     <img src={getActivityIcon(planPreview.activity_type)} alt={planPreview.activity_type} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-gray-100 flex items-center justify-center text-3xl">
@@ -1113,7 +1116,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   {planPreview.note || t('plans.untitledPlan', 'Untitled Plan')}
                 </h2>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {getActivityLabel(planPreview.activity_type)} · {planPreview.city}
+                  {planPreview.activity_type !== "general" && `${getActivityLabel(planPreview.activity_type)} · `}{planPreview.city}
                 </p>
                 <p className="text-sm text-gray-500">
                   {isToday(new Date(planPreview.scheduled_for))
