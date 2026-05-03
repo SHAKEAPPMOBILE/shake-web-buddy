@@ -41,22 +41,33 @@ export const purchasePremium = async () => {
   if (!isNativePlatform()) {
     throw new Error("Not available on web — use Stripe checkout");
   }
-  
-  try {
-    const offerings = await Purchases.getOfferings();
-    const product = offerings.current?.availablePackages.find(
-      pkg => pkg.product.identifier === 'SuperHuman'
-    );
-    
-    if (product) {
-      const result = await Purchases.purchasePackage({ aPackage: product });
-      return result.customerInfo;
-    }
-    throw new Error('Product not found');
-  } catch (error) {
-    console.error('Purchase error:', error);
-    throw error;
+
+  console.log('[RevenueCat] purchasePremium: fetching offerings...');
+  const offerings = await Purchases.getOfferings();
+  console.log('[RevenueCat] offerings.current:', offerings.current?.identifier);
+  const packages = offerings.current?.availablePackages ?? [];
+  console.log('[RevenueCat] available packages:', packages.map(p => ({
+    identifier: p.identifier,
+    productId: p.product?.identifier,
+    price: p.product?.priceString,
+  })));
+
+  // Broad search: match by product identifier, package identifier, or substring
+  const pkg =
+    packages.find(p => p.product?.identifier === 'SuperHuman') ??
+    packages.find(p => p.product?.identifier?.toLowerCase().includes('superhuman')) ??
+    packages.find(p => p.identifier === 'monthly') ??
+    packages.find(p => p.identifier === '$rc_monthly') ??
+    packages[0];
+
+  if (!pkg) {
+    throw new Error('No purchasable package found in RevenueCat offerings');
   }
+
+  console.log('[RevenueCat] purchasing package:', pkg.identifier, pkg.product?.identifier);
+  const result = await Purchases.purchasePackage({ aPackage: pkg });
+  console.log('[RevenueCat] purchase complete, entitlements:', Object.keys(result.customerInfo?.entitlements?.active ?? {}));
+  return result.customerInfo;
 };
 
 export const purchaseDonation = async (

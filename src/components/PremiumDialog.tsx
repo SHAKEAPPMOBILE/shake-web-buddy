@@ -87,11 +87,22 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       return;
     }
 
+    const platform = shouldUseStripeSubscriptionCheckout() ? "web/stripe" : "native/revenuecat";
+    console.log('[Subscribe] handleSubscribe start — platform:', platform, 'userId:', user.id);
+
     setIsLoading(true);
+
+    // Safety net: reset loading after 15s no matter what, so UI never stays stuck
+    const loadingResetTimer = setTimeout(() => {
+      console.warn('[Subscribe] Safety timeout fired — resetting loading state after 15s');
+      setIsLoading(false);
+      toast.error("Purchase timed out. Please try again.");
+    }, 15000);
+
     try {
       // Web / non-native: Stripe Checkout. Native iOS/Android: RevenueCat IAP.
       if (shouldUseStripeSubscriptionCheckout()) {
-        console.log("Web path: calling create-checkout");
+        console.log('[Subscribe] Web path: calling create-checkout edge function...');
         const { data, error } = await supabase.functions.invoke("create-checkout", {
           body: {
             userId: user.id,
@@ -99,6 +110,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           },
         });
 
+        console.log('[Subscribe] create-checkout response:', { data, error });
         if (error) throw error;
         if (data?.error) throw new Error(String(data.error));
 
@@ -107,12 +119,15 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           throw new Error("Failed to create checkout session");
         }
 
+        console.log('[Subscribe] Redirecting to Stripe checkout:', checkoutUrl);
         window.location.href = checkoutUrl;
         return;
       }
 
       // Native purchase via RevenueCat; webhook updates `premium_override` server-side.
+      console.log('[Subscribe] Native path: calling purchasePremium via RevenueCat...');
       const customerInfo = await purchasePremium();
+      console.log('[Subscribe] purchasePremium returned, entitlements:', Object.keys(customerInfo?.entitlements?.active ?? {}));
 
       if (hasPremiumEntitlement(customerInfo)) {
         toast.success("Welcome to Super-Human! 🎉");
@@ -126,7 +141,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         window.location.reload();
       }
     } catch (error: any) {
-      console.error("Premium purchase error:", {
+      console.error('[Subscribe] Purchase error:', {
         message: error?.message,
         code: error?.code,
         name: error?.name,
@@ -163,6 +178,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         }
       }
     } finally {
+      clearTimeout(loadingResetTimer);
       setIsLoading(false);
     }
   };
@@ -189,11 +205,17 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       toast.info("Restore purchases is for the mobile app. Web subscriptions use Stripe.");
       return;
     }
+    console.log('[Subscribe] handleRestore: restoring purchases...');
     setIsLoading(true);
+    const restoreResetTimer = setTimeout(() => {
+      console.warn('[Subscribe] Restore safety timeout fired after 15s');
+      setIsLoading(false);
+      toast.error("Restore timed out. Please try again.");
+    }, 15000);
     try {
       await CapacitorPurchases.restorePurchases();
-
       const customerInfo = await CapacitorPurchases.getCustomerInfo();
+      console.log('[Subscribe] restore customerInfo entitlements:', Object.keys((customerInfo as any)?.entitlements?.active ?? {}));
       if (hasPremiumEntitlement(customerInfo)) {
         toast.success("Purchases restored successfully!");
         window.location.reload();
@@ -201,9 +223,10 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         toast.info("No active subscription found to restore");
       }
     } catch (error) {
-      console.error("Restore error:", error);
+      console.error('[Subscribe] Restore error:', error);
       toast.error("Failed to restore purchases");
     } finally {
+      clearTimeout(restoreResetTimer);
       setIsLoading(false);
     }
   };
