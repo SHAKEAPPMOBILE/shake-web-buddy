@@ -1191,7 +1191,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('profile.staySocial', 'Stay Social')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSignOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleConfirmSignOut} className="text-red-500 font-normal">
               {t('profile.signOutBtn', 'Sign Out')}
             </AlertDialogAction>
           </AlertDialogFooter>
