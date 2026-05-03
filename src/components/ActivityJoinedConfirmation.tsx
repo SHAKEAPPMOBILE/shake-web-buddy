@@ -69,7 +69,12 @@ export function ActivityJoinedConfirmation({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-auto">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm pointer-events-auto"
+        className="absolute inset-0 pointer-events-auto"
+        style={{
+          background: "rgba(0, 0, 0, 0.3)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
         onClick={() => onOpenChange(false)}
       />
 
@@ -77,7 +82,7 @@ export function ActivityJoinedConfirmation({
       <div
         className="relative z-10 w-full max-w-sm overflow-hidden pointer-events-auto"
         style={{
-          background: "rgba(255, 255, 255, 0.75)",
+          background: "rgba(255, 255, 255, 0.55)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           border: "1px solid rgba(255, 255, 255, 0.4)",

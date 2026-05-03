@@ -164,7 +164,12 @@ export function ActivityConfirmationDialog({
         <div className="fixed inset-0 z-50 flex flex-col pointer-events-auto">
           {/* Semi-transparent overlay - clickable to close */}
           <div
-            className="flex-1 bg-black/20 backdrop-blur-sm pointer-events-auto"
+            className="flex-1 pointer-events-auto"
+            style={{
+              background: "rgba(0, 0, 0, 0.3)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            }}
             onClick={() => onOpenChange(false)}
           />
 
@@ -173,7 +178,7 @@ export function ActivityConfirmationDialog({
             ref={contentRef}
             className="overflow-hidden flex flex-col max-h-[65vh] pointer-events-auto safe-area-bottom"
             style={{
-              background: "rgba(255, 255, 255, 0.75)",
+              background: "rgba(255, 255, 255, 0.55)",
               backdropFilter: "blur(20px)",
               WebkitBackdropFilter: "blur(20px)",
               border: "1px solid rgba(255, 255, 255, 0.4)",
