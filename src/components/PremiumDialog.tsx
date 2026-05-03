@@ -15,7 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { SuperHumanIcon } from "./SuperHumanIcon";
 import { Purchases } from '@revenuecat/purchases-capacitor';
-import { purchasePremium } from "@/lib/revenuecat";
+import { purchasePremium, identifyRevenueCatUser } from "@/lib/revenuecat";
 import { shouldUseStripeSubscriptionCheckout } from "@/lib/platform-utils";
 const CapacitorPurchases = Purchases;
 
@@ -125,6 +125,8 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       }
 
       // Native purchase via RevenueCat; webhook updates `premium_override` server-side.
+      console.log('[Subscribe] Native path: identifying user in RevenueCat before purchase...');
+      await identifyRevenueCatUser(user.id);
       console.log('[Subscribe] Native path: calling purchasePremium via RevenueCat...');
       const customerInfo = await purchasePremium();
       console.log('[Subscribe] purchasePremium returned, entitlements:', Object.keys(customerInfo?.entitlements?.active ?? {}));
@@ -169,10 +171,12 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       } else {
         if (lower.includes("stripe") && (lower.includes("not set") || lower.includes("missing"))) {
           toast.error("Payments are not configured yet. Please try again later.");
-        } else if (lower.includes("verify-purchase") || lower.includes("not found")) {
-          toast.error("Subscription verification isn't set up yet. Please try again later.");
+        } else if (lower.includes("no purchasable package")) {
+          toast.error("No subscription package found. Please try again later.");
         } else if (lower.includes("product not found")) {
           toast.error("Subscription product not found. Please contact support.");
+        } else if (lower.includes("verify-purchase")) {
+          toast.error("Subscription verification isn't set up yet. Please try again later.");
         } else {
           toast.error(msg ? `Purchase failed: ${msg}` : "Purchase failed. Please try again.");
         }

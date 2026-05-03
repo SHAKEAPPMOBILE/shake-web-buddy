@@ -9,9 +9,14 @@ export const isNativePlatform = () => {
   return platform === "ios" || platform === "android";
 };
 
+let _revenueCatReady = false;
+
 export const initializeRevenueCat = async () => {
+  const platform = Capacitor.getPlatform();
+  console.log('[RevenueCat] initializeRevenueCat called — platform:', platform, 'isNative:', Capacitor.isNativePlatform());
+
   if (!isNativePlatform()) {
-    console.log('Not a native platform, skipping RevenueCat initialization');
+    console.log('[RevenueCat] Not a native platform — skipping initialization');
     return;
   }
 
@@ -19,11 +24,30 @@ export const initializeRevenueCat = async () => {
     await Purchases.configure({
       apiKey: 'appl_RUTGAWevlfwjFrJjnUlJWYtiXlD',
     });
-    console.log('✅ RevenueCat initialized');
+    _revenueCatReady = true;
+    console.log('✅ RevenueCat configured successfully (anonymous session — call identifyUser() after sign-in)');
   } catch (error) {
     console.error('❌ RevenueCat initialization error:', error);
   }
 };
+
+/**
+ * Link RevenueCat session to the app's signed-in user.
+ * Must be called after sign-in so purchases are attributed to the correct account.
+ */
+export const identifyRevenueCatUser = async (appUserId: string) => {
+  if (!isNativePlatform()) return;
+  try {
+    console.log('[RevenueCat] logIn — appUserId:', appUserId);
+    const { customerInfo, created } = await Purchases.logIn({ appUserID: appUserId });
+    console.log('[RevenueCat] logIn result — created new:', created,
+      'entitlements:', Object.keys(customerInfo?.entitlements?.active ?? {}));
+  } catch (error) {
+    console.error('[RevenueCat] logIn error:', error);
+  }
+};
+
+export const isRevenueCatReady = () => _revenueCatReady;
 
 export const checkPremiumAccess = async (): Promise<boolean> => {
   if (!isNativePlatform()) return false;
