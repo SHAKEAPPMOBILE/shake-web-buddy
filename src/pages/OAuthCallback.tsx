@@ -172,10 +172,22 @@ export default function OAuthCallback() {
         if (error) {
           const message =
             errorDescription?.replace(/\+/g, " ") || "Sign-in was cancelled or failed.";
-          console.error("[OAuthCallback] Auth error detected", {
+          // Log every detail so we can diagnose exactly what Google returned
+          const allQueryParams: Record<string, string> = {};
+          params.forEach((v, k) => { allQueryParams[k] = v; });
+          const allHashParams: Record<string, string> = {};
+          hashParams.forEach((v, k) => { allHashParams[k] = v; });
+          console.error("[OAuthCallback] Auth error detected — FULL DETAILS", {
             error,
+            errorCode: error,
             errorDescription: message,
+            rawErrorDescription: errorDescription,
             source: params.get("error") ? "query" : "hash",
+            fullUrl: window.location.href,
+            origin: window.location.origin,
+            pathname: window.location.pathname,
+            allQueryParams,
+            allHashParams,
             timestamp: new Date().toISOString(),
           });
           toast.error(message);
@@ -320,11 +332,16 @@ export default function OAuthCallback() {
         navigate(session ? resolveDestinationAfterAuth(session) : "/auth", { replace: true });
       } catch (e: unknown) {
         const callbackDuration = performance.now() - callbackStartTime;
-        const err = e as { message?: string; code?: string; status?: number };
-        console.error("[OAuthCallback] Callback error", {
+        const err = e as { message?: string; code?: string; status?: number; name?: string };
+        console.error("[OAuthCallback] Callback error — FULL DETAILS", {
           message: err?.message,
           code: err?.code,
           status: err?.status,
+          name: err?.name,
+          rawError: e,
+          fullUrl: window.location.href,
+          search: window.location.search,
+          hash: window.location.hash,
           durationMs: Math.round(callbackDuration),
           timestamp: new Date().toISOString(),
         });
