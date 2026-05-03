@@ -69,13 +69,25 @@ export function ActivitySelectionDialog({ open, onOpenChange, onSelectActivity, 
   const orderedActivities = getActivitiesWithDates();
 
   // Handle activity selection - shows confirmation dialog
+  // CREATE PATH only — this dialog is for creating new plans, not joining existing ones.
+  // Joining existing activities goes through HomeTab → handleHomeActivitySelect → actuallyJoinActivity
+  // and never reaches this function.
   const handleActivityClick = useCallback((activityId: string) => {
-    // For signed-in users, enforce free-plan limits unless premium
+    // CREATE PATH — enforce free-plan limits before creating a new plan
+    console.log('[PlanLimit] ActivitySelectionDialog — CREATE path', {
+      activityId,
+      remainingActivities,
+      isPremium,
+      limitWillBlock: !!(user && !isPremium && remainingActivities <= 0),
+    });
+
     if (user && !isPremium && remainingActivities <= 0) {
+      console.log('[PlanLimit] Plan limit reached — showing premium dialog instead of create confirmation');
       setShowPremiumDialog(true);
       return;
     }
 
+    console.log('[PlanLimit] Plan limit OK — showing create confirmation dialog');
     // Always show confirmation first (even if not signed in)
     const activity = orderedActivities.find(a => a.id === activityId);
     if (activity) {

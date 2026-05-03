@@ -36,9 +36,18 @@ export function useActivityJoins(city: string) {
 
   // Join an activity - returns { success: boolean, isNewJoin: boolean }
   // Optional cityOverride allows joining in a different city (for premium users)
+  // NOTE: Joining an existing activity has NO plan limit check — it is always free.
+  // Plan limits only apply when CREATING a new plan (propose-plan flow).
   const joinActivity = async (activityType: string, cityOverride?: string): Promise<{ success: boolean; isNewJoin: boolean }> => {
     const targetCity = cityOverride || city;
-    
+
+    // JOIN PATH — no plan count check. Joining is always free and unlimited.
+    console.log('[Join] useActivityJoins.joinActivity — JOIN path, no plan limit', {
+      activityType,
+      targetCity,
+      userId: user?.id,
+    });
+
     if (!user) {
       toast.error("Please sign in to join an activity");
       return { success: false, isNewJoin: false };

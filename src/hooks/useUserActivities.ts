@@ -174,8 +174,18 @@ export function useUserActivities(city: string) {
       return false;
     }
 
+    // CREATE PATH — plan limit check. Only applies when creating a new plan.
+    console.log('[PlanLimit] createActivity — plan limit check', {
+      activitiesThisMonth,
+      maxActivitiesLimit,
+      isPremium,
+      remaining: maxActivitiesLimit - activitiesThisMonth,
+      willBlock: !isPremium && activitiesThisMonth >= maxActivitiesLimit,
+    });
+
     // Premium users have unlimited activities
     if (!isPremium && activitiesThisMonth >= maxActivitiesLimit) {
+      console.log('[PlanLimit] Plan limit reached — blocking plan creation');
       toast.error(`You can only create ${maxActivitiesLimit} activities per month`);
       return false;
     }

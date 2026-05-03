@@ -371,6 +371,15 @@ export function IOSAppLayout() {
   };
 
   const actuallyJoinActivity = useCallback(async (activity: string, cityOverride?: string) => {
+    // JOIN PATH — plan limit does NOT apply here.
+    // Joining an existing activity is always free and unlimited.
+    // Only creating a new plan (propose-plan flow) is gated by the plan limit.
+    console.log('[Join] actuallyJoinActivity — JOIN path, plan limit bypassed', {
+      activity,
+      cityOverride,
+      targetCity: cityOverride || selectedCity,
+    });
+
     // Close any open dialogs first
     setShowActivityDialog(false);
 
@@ -414,6 +423,12 @@ export function IOSAppLayout() {
   }, [selectedActivity, activityCity, selectedCity]);
 
   const handleHomeActivitySelect = async (activity: { id: string; label: string; emoji: string }, cityOverride?: string) => {
+    // JOIN PATH from home carousel — plan limit is never checked here.
+    console.log('[Join] handleHomeActivitySelect — carousel JOIN path, skipping plan limit', {
+      activityId: activity.id,
+      cityOverride,
+    });
+
     if (!user) {
       toast.error("Please sign in to join an activity");
       navigate("/auth");
