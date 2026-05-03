@@ -264,11 +264,41 @@ export default function OAuthCallback() {
           });
           const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
+            const errMsg = String(exchangeError?.message ?? "").toLowerCase();
+            // Known Supabase GoTrue bug: when a user has a stale server-side session
+            // whose provider token column is NULL, the Go SQL scanner throws
+            // "Scan error on column _token: converting NULL to string is unsupported".
+            // Fix: sign out to delete the corrupted auth.sessions row, then let the
+            // user retry — the next OAuth attempt will create a fresh session.
+            const isNullTokenBug =
+              errMsg.includes("_token") ||
+              errMsg.includes("scan error") ||
+              errMsg.includes("converting null") ||
+              errMsg.includes("converting null to string");
+
             console.error("[OAuthCallback] Code exchange failed", {
               error: exchangeError.message,
               code: (exchangeError as { code?: string })?.code,
+              isNullTokenBug,
+              fullUrl: window.location.href,
+              search: window.location.search,
+              hash: window.location.hash,
+              rawError: exchangeError,
               timestamp: new Date().toISOString(),
             });
+
+            if (isNullTokenBug) {
+              console.warn(
+                "[OAuthCallback] NULL _token Supabase bug — signing out to clear stale server session before retry"
+              );
+              try { await supabase.auth.signOut(); } catch { /* best-effort clear */ }
+              if (!cancelled) {
+                toast.error("Session issue detected. Please sign in again.");
+                navigate("/auth", { replace: true });
+              }
+              return;
+            }
+
             throw exchangeError;
           }
 

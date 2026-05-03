@@ -76,6 +76,12 @@ function toFriendlyAuthMessage(raw: string, context: "login" | "signup" | "email
 // OAuth: on web (including mobile browser) use redirect flow; on native app use Capacitor Browser
 async function signInWithOAuth(provider: 'google' | 'apple') {
   try {
+    // Pre-emptively sign out to clear any stale server-side session that may have
+    // a NULL provider token — which causes Supabase GoTrue to throw
+    // "Scan error on column _token: converting NULL to string is unsupported"
+    // during the subsequent OAuth code exchange. Best-effort; never blocks sign-in.
+    try { await supabase.auth.signOut({ scope: 'local' }); } catch { /* ignore */ }
+
     if (isNativePlatform()) {
       // Native app: open OAuth in Capacitor Browser, return via deep link
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -86,6 +92,8 @@ async function signInWithOAuth(provider: 'google' | 'apple') {
           // Request name + email so Apple sends display name on first sign-in.
           // Without this scope Apple omits the name field entirely.
           ...(provider === 'apple' ? { scopes: 'name email' } : {}),
+          // Force account picker so user can switch Google accounts.
+          ...(provider === 'google' ? { queryParams: { prompt: 'select_account' } } : {}),
         },
       });
       if (error) throw error;
@@ -954,7 +962,7 @@ export default function Auth() {
                 setConfirmPassword("");
               }}
               aria-label="Back"
-              className="absolute top-4 left-4 text-primary/80 hover:text-primary"
+              className="absolute top-[60px] left-4 text-primary/80 hover:text-primary"
               iconClassName="w-4 h-4"
             />
           )}
@@ -1105,10 +1113,7 @@ export default function Auth() {
           {step === "email" && (
             <form onSubmit={handleSendMagicLink} className="space-y-4">
               <div className="space-y-2 text-center">
-                <h2 className="text-xl font-bold text-black">Create Account</h2>
-                <p className="text-sm text-muted-foreground">
-                  Verify your email — we&apos;ll send a link to verify this address. After you open it, you&apos;ll choose a password for next time.
-                </p>
+                <h2 className="text-xl font-bold text-black">Verify your email</h2>
               </div>
 
               <div className="space-y-2">
