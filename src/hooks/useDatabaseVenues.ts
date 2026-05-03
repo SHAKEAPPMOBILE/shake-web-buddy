@@ -25,6 +25,34 @@ export function normalizeCity(city: string): string {
     .replace(/\p{Diacritic}/gu, "");
 }
 
+// Strip common geographic suffixes so "Austin, TX" and "Austin" match
+const CITY_SUFFIX_RE = /,\s*(tx|ny|ca|fl|il|wa|co|ma|ga|or|az|nv|nc|oh|mi|pa|va|tn|mo|mn|wi|ia|ok|ks|ar|ms|al|sc|ky|in|la|md|de|ut|id|mt|wy|nd|sd|ne|nm|wv|ri|ct|nh|me|vt|ak|hi|dc|city|nyc)\s*$/i;
+
+export function stripCitySuffix(city: string): string {
+  return city.replace(CITY_SUFFIX_RE, "").trim();
+}
+
+// Fuzzy city matching: exact → suffix-stripped exact → partial containment
+export function citiesMatch(a: string, b: string): boolean {
+  const aNorm = normalizeCity(a);
+  const bNorm = normalizeCity(b);
+
+  // 1. Exact normalized match
+  if (aNorm === bNorm) return true;
+
+  // 2. Match after stripping geographic suffixes
+  const aStripped = normalizeCity(stripCitySuffix(a));
+  const bStripped = normalizeCity(stripCitySuffix(b));
+  if (aStripped && bStripped && aStripped === bStripped) return true;
+
+  // 3. Partial containment (one is a substring of the other, at least 3 chars)
+  if (aStripped.length >= 3 && bStripped.length >= 3) {
+    if (aStripped.includes(bStripped) || bStripped.includes(aStripped)) return true;
+  }
+
+  return false;
+}
+
 // Map activity types to venue types
 export function getVenueTypeForActivity(activityType: string): 'lunch_dinner' | 'brunch' | 'drinks' | null {
   const normalizedActivityType = (activityType || '').trim().toLowerCase();
@@ -111,27 +139,36 @@ export function useVenuesForActivity(city: string, activityType: string) {
 
       console.log('[VenueDebug] venueType mapped:', { activityType, venueType, normalizedCity });
 
-      console.log('[VenueDebug] direct Supabase query:', {
-        table: 'venues',
-        filters: {
-          city: normalizedCity,
-          venue_type: venueType,
-          is_active: true,
-        },
+      console.log('[VenueDebug] direct Supabase query (all active for type, then fuzzy-filter by city):', {
+        lookupCity: normalizedCity,
+        venue_type: venueType,
       });
 
+      // Fetch all active venues for this venue_type (no city filter server-side)
+      // then apply fuzzy city matching client-side to handle "Austin" vs "Austin, TX" etc.
       const { data, error } = await supabase
         .from('venues')
         .select('*')
-        .eq('city', normalizedCity)
         .eq('venue_type', venueType)
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
-      const rows = (data ?? []) as DbVenue[];
+      const allRows = (data ?? []) as DbVenue[];
+
+      // Fuzzy city filter
+      const rows = allRows.filter(v => {
+        const match = citiesMatch(v.city, normalizedCity);
+        if (!match) {
+          console.log('[VenueCity] useVenuesForActivity mismatch — lookup:', JSON.stringify(normalizedCity), '| stored:', JSON.stringify(v.city));
+        }
+        return match;
+      });
+
       console.log('[VenueDebug] useVenuesForActivity response:', {
-        rowCount: rows.length,
+        totalFetched: allRows.length,
+        afterCityFilter: rows.length,
+        lookupCity: normalizedCity,
         firstRow: rows[0] ?? null,
         error: null,
       });
@@ -180,12 +217,21 @@ export function getCurrentVenueForActivity(
   const cityNorm = normalizeCity(city);
   if (!cityNorm) return null;
 
-  // Filter venues by city (case-insensitive, accent-insensitive) and type
-  const matchingVenues = venues.filter(
-    v => normalizeCity(v.city) === cityNorm && v.venue_type === venueType
-  );
-  
-  if (matchingVenues.length === 0) return null;
+  // Filter venues by city (fuzzy: exact → suffix-stripped → partial) and type
+  const matchingVenues = venues.filter(v => {
+    if (v.venue_type !== venueType) return false;
+    const match = citiesMatch(v.city, city);
+    if (!match) {
+      // Log mismatches so we can see what's stored vs what's being looked up
+      console.log('[VenueCity] mismatch — lookup:', JSON.stringify(city), '| stored:', JSON.stringify(v.city), '| normalized lookup:', cityNorm, '| normalized stored:', normalizeCity(v.city));
+    }
+    return match;
+  });
+
+  if (matchingVenues.length === 0) {
+    console.log('[VenueCity] no venues found for', JSON.stringify(city), 'type:', venueType, '— checked', venues.filter(v => v.venue_type === venueType).length, 'venues of this type');
+    return null;
+  }
   
   // For drinks, rotate daily; for others, rotate weekly
   if (activityType === 'drinks') {
