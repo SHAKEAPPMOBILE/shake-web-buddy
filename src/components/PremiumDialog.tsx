@@ -240,7 +240,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
-          className="sm:max-w-md bg-card border-border"
+          className="sm:max-w-md"
           {...(isMobile ? swipeHandlers : {})}
         >
           {isMobile && (
@@ -293,7 +293,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
-          className="sm:max-w-md bg-card border-border"
+          className="sm:max-w-md"
           {...(isMobile ? swipeHandlers : {})}
         >
           {isMobile && (
@@ -336,7 +336,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-md bg-card border-border max-h-[90vh] overflow-y-auto"
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
         {...(isMobile ? swipeHandlers : {})}
       >
         {isMobile && (

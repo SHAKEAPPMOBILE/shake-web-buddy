@@ -73,8 +73,18 @@ export function ActivityJoinedConfirmation({
         onClick={() => onOpenChange(false)}
       />
 
-      {/* Modal card — white, rounded, Apple-style. Content inside changes; card stays. */}
-      <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white shadow-2xl overflow-hidden pointer-events-auto">
+      {/* Modal card — frosted glass, rounded. Content inside changes; card stays. */}
+      <div
+        className="relative z-10 w-full max-w-sm overflow-hidden pointer-events-auto"
+        style={{
+          background: "rgba(255, 255, 255, 0.75)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: "1px solid rgba(255, 255, 255, 0.4)",
+          borderRadius: "24px",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+        }}
+      >
 
         {/* ── Ticketmaster / event path (unchanged) ── */}
         {eventConfirmation ? (

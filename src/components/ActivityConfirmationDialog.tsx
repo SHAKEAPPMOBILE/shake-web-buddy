@@ -171,8 +171,14 @@ export function ActivityConfirmationDialog({
           {/* Bottom sheet content - positioned above nav bar */}
           <div
             ref={contentRef}
-            className="bg-card rounded-t-3xl overflow-hidden flex flex-col max-h-[65vh] pointer-events-auto safe-area-bottom"
+            className="overflow-hidden flex flex-col max-h-[65vh] pointer-events-auto safe-area-bottom"
             style={{
+              background: "rgba(255, 255, 255, 0.75)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(255, 255, 255, 0.4)",
+              borderRadius: "24px 24px 0 0",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
               transform: `translateY(${dragOffset}px)`,
               transition: dragStart === null ? 'transform 0.2s ease-out' : 'none',
             }}
@@ -182,7 +188,7 @@ export function ActivityConfirmationDialog({
             onMouseLeave={handleMouseUp}
           >
             {/* Draggable handle bar */}
-            <div className="flex flex-col items-center py-3 px-6 pb-2 bg-card border-b border-border/30 flex-shrink-0">
+            <div className="flex flex-col items-center py-3 px-6 pb-2 border-b border-black/5 flex-shrink-0">
               <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full cursor-grab active:cursor-grabbing" />
             </div>
 
