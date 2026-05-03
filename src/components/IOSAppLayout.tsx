@@ -600,9 +600,7 @@ export function IOSAppLayout() {
   if (user && isCheckingAvatar) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-100 via-cyan-50 to-blue-200 border-2 border-blue-400 flex items-center justify-center shadow-lg">
-          <LoadingSpinner size="lg" />
-        </div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
