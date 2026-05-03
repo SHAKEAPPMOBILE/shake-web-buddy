@@ -424,17 +424,27 @@ export function IOSAppLayout() {
 
   const handleHomeActivitySelect = async (activity: { id: string; label: string; emoji: string }, cityOverride?: string) => {
     // JOIN PATH from home carousel — plan limit is never checked here.
-    console.log('[Join] handleHomeActivitySelect — carousel JOIN path, skipping plan limit', {
-      activityId: activity.id,
+    // This is called from HomeTab.handleConfirmSelection via the onConfirmActivity prop.
+    console.log('[Join] handleHomeActivitySelect — ENTRY', {
+      activity,          // full activity object
       cityOverride,
+      selectedCity,
+      hasUser: !!user,
+      userId: user?.id,
+      timestamp: new Date().toISOString(),
     });
 
     if (!user) {
+      console.log('[Join] handleHomeActivitySelect → branch: no user → redirecting to /auth');
       toast.error("Please sign in to join an activity");
       navigate("/auth");
       return;
     }
 
+    console.log('[Join] handleHomeActivitySelect → branch: user present → calling actuallyJoinActivity', {
+      activityId: activity.id,
+      cityOverride,
+    });
     setShowHomeActivities(false);
     await actuallyJoinActivity(activity.id, cityOverride);
   };

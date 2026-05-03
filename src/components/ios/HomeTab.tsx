@@ -147,13 +147,33 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   };
 
   const handleConfirmSelection = async () => {
-    if (!currentActivity) return;
+    console.log('[Carousel] handleConfirmSelection fired', {
+      currentActivityIndex,
+      activityId: currentActivity?.id,
+      isProposePlan: currentActivity?.isProposePlan,
+      hasNoVenue,
+      venuesLoading,
+      joinCity,
+      selectedJoinCity,
+      hasOnConfirmActivity: !!onConfirmActivity,
+      hasOnSelectActivity: !!onSelectActivity,
+    });
+
+    if (!currentActivity) {
+      console.warn('[Carousel] handleConfirmSelection — currentActivity is null, aborting');
+      return;
+    }
     if (currentActivity.isProposePlan) {
+      console.log('[Carousel] → isProposePlan item selected — navigating to /propose-plan');
       onCloseActivities?.();
       navigate("/propose-plan");
       return;
     }
     if (onConfirmActivity) {
+      console.log('[Carousel] → JOIN path via onConfirmActivity', {
+        activityId: currentActivity.id,
+        city: selectedJoinCity || selectedCity,
+      });
       await onConfirmActivity(
         {
           id: currentActivity.id,
@@ -165,6 +185,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       return;
     }
 
+    console.log('[Carousel] → JOIN path via onSelectActivity (fallback)', { activityId: currentActivity.id });
     onSelectActivity?.({
       id: currentActivity.id,
       label: currentActivity.label,
@@ -456,31 +477,17 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   </p>
 
                   <div className="space-y-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                    {hasNoVenue ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onCloseActivities?.();
-                            navigate("/propose-plan");
-                          }}
-                          className="w-full rounded-full px-4 py-2.5 text-white font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] transition-colors"
-                        >
-                          {t('home.proposePlanBtn', 'Propose a Plan')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowActivityDetails(false);
-                            setShowCityChoices(false);
-                          }}
-                          className="w-full rounded-full px-4 py-2.5 font-medium border border-border bg-background hover:bg-muted/60 transition-colors"
-                        >
-                          {t('home.humBtn', 'Hum!')}
-                        </button>
-                      </>
-                    ) : (
-                      <>
+                    {/* BUG FIX: hasNoVenue must NEVER replace "Yes!" with "Propose a Plan".
+                        Joining an activity does not require a venue — the venue is just
+                        displayed as extra info. Routing to /propose-plan here was causing
+                        the carousel join to intermittently navigate to the create-plan flow
+                        whenever the venue data hadn't loaded or the city had no venue entry. */}
+                    {hasNoVenue && (
+                      // Log when hasNoVenue is true so we can track it in the console
+                      // (expression evaluates to null, renders nothing)
+                      (() => { console.log('[Carousel] hasNoVenue=true for', currentActivity?.id, 'in', joinCity, '— still allowing join (venue not required to join)'); return null; })()
+                    )}
+                    <>
                         <button
                           type="button"
                           onClick={handleConfirmSelection}
@@ -512,7 +519,6 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                           {t('activityDialog.joinDifferentCity', 'Join in a different city')}
                         </button>
                       </>
-                    )}
                   </div>
 
                   {showCityChoices && (
