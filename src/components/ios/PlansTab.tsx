@@ -110,8 +110,19 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       .select("activity_id")
       .eq("user_id", user.id)
       .not("activity_id", "is", null)
-      
+
     const joinedActivityIds = (joins || []).map(j => j.activity_id).filter(Boolean) as string[];
+
+    // --- 3. User's own created plans (fallback: ensure creator always sees their plans
+    //        even if the activity_joins upsert was missed) ---
+    const { data: myCreatedData } = await supabase
+      .from("user_activities")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_active", true);
+    const myCreatedIds = (myCreatedData || []).map(a => a.id as string);
+    // Merge joins + own creations (deduplicated) so creator always sees their plans
+    const allJoinedIds = [...new Set([...joinedActivityIds, ...myCreatedIds])];
 
     // --- 4. City-wide carousel joins for participant-count enrichment (only if city is set) ---
     let allCarouselJoins: { activity_type: string; city: string; user_id: string }[] = [];
@@ -147,11 +158,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // Get joined activities — from any city (all cities mode) or filtered to explicit city
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let joinedActivities: any[] = [];
-    if (joinedActivityIds.length > 0) {
+    if (allJoinedIds.length > 0) {
       const { data: joinedData } = await supabase
         .from("user_activities")
         .select("*")
-        .in("id", joinedActivityIds)
+        .in("id", allJoinedIds)
         .eq("is_active", true);
 
       // If user explicitly selected a filter city in Plans header, apply it.
@@ -172,8 +183,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .eq("is_active", true)
         .neq("user_id", user.id);
 
-      // Exclude plans the user already joined — those appear in the main joined list
-      cityPublicPlans = (cityPlansData || []).filter((a: { id: string }) => !joinedActivityIds.includes(a.id));
+      // Exclude plans the user already joined (or created) — those appear in the main joined list
+      cityPublicPlans = (cityPlansData || []).filter((a: { id: string }) => !allJoinedIds.includes(a.id));
     }
 
     // Joined plans only in the main activities map
@@ -200,7 +211,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           creator_name: profile?.name || "Anonymous",
           creator_avatar: profile?.avatar_url,
           participant_count: count || 0,
-          isJoined: joinedActivityIds.includes(activity.id),
+          isJoined: allJoinedIds.includes(activity.id),
         };
       })
     );
@@ -774,7 +785,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       </CityPickerModal>
 
       {/* Plans List */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-white dark:bg-white min-h-0">
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 space-y-3 bg-white dark:bg-white min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />

@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTotalUnreadChats } from "@/hooks/useTotalUnreadChats";
 import { useTranslation } from "react-i18next";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
-import { useNavigate } from "react-router-dom";
 
 interface IOSTabBarProps {
   activeTab: string;
@@ -17,7 +16,6 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const { user } = useAuth();
   const { totalUnread } = useTotalUnreadChats();
   const { style: settlingGradientStyle } = useSettlingGradient("bottom-nav-shake");
-  const navigate = useNavigate();
 
   // Apply settling gradient only when user is logged in, otherwise use solid blue
   const shakeButtonStyle = user ? settlingGradientStyle : { background: "rgb(59, 130, 246)" }; // bg-blue-500
@@ -37,7 +35,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
     }
 
     if (tabId === "shake") {
-      navigate("/propose-plan");
+      onTabChange(tabId);
       return;
     }
     onTabChange(tabId);

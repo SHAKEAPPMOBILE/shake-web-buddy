@@ -42,7 +42,7 @@ export function ActivityJoinedConfirmation({
       setShowVenue(false);
       return;
     }
-    const timer = setTimeout(() => setShowVenue(true), 1500);
+    const timer = setTimeout(() => setShowVenue(true), 2500);
     return () => clearTimeout(timer);
   }, [open]);
 

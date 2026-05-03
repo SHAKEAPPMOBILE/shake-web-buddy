@@ -6,7 +6,6 @@ import { ChatTab } from "./ios/ChatTab";
 import { ProfileTab } from "./ios/ProfileTab";
 import { ActivitySelectionDialog } from "./ActivitySelectionDialog";
 import { ActivityJoinedConfirmation } from "./ActivityJoinedConfirmation";
-import { ShakingClockAnimation } from "./ShakingClockAnimation";
 import { getShakeActivity } from "@/lib/getShakeActivity";
 import { OnboardingScreens } from "./OnboardingScreens";
 import { MandatoryPhotoScreen } from "./MandatoryPhotoScreen";
@@ -25,6 +24,7 @@ import { useCapacitorPushNotifications } from "@/hooks/useCapacitorPushNotificat
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/lib/app-toast";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { playDingDingSound } from "@/lib/notification-sound";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
@@ -35,7 +35,6 @@ import EventsPage from "@/pages/EventsPage";
 export function IOSAppLayout() {
   const [activeTab, setActiveTab] = useState("home");
   const [showActivityDialog, setShowActivityDialog] = useState(false);
-  const [showClockAnimation, setShowClockAnimation] = useState(false);
   const [showJoinedConfirmation, setShowJoinedConfirmation] = useState(false);
   
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
@@ -384,12 +383,11 @@ export function IOSAppLayout() {
     if (result.success) {
       if (result.isNewJoin) {
         triggerConfettiWaterfall();
-        setShowClockAnimation(true);
-      } else {
-        // Already joined - show confirmation modal again so user sees venue + time
-        setShowJoinedConfirmation(true);
-        setShowHomeActivities(false);
+        playDingDingSound();
       }
+      // Show the single confirmation modal (celebration phase → venue phase internally)
+      setShowJoinedConfirmation(true);
+      setShowHomeActivities(false);
     }
   }, [joinActivity, selectedCity]);
 
@@ -406,13 +404,6 @@ export function IOSAppLayout() {
 
   const handlePlanCreated = useCallback(() => {
     // Plan created - just close the dialog, no map
-  }, []);
-
-  const handleClockAnimationComplete = useCallback(() => {
-    setShowClockAnimation(false);
-    // Show the joined confirmation with venue info and attendee preview
-    setShowJoinedConfirmation(true);
-    setShowHomeActivities(false);
   }, []);
 
   const handleJoinGroupChatFromConfirmation = useCallback(() => {
@@ -706,12 +697,6 @@ export function IOSAppLayout() {
         onSelectActivity={handleSelectActivity}
         onPlanCreated={handlePlanCreated}
         city={selectedCity}
-      />
-
-      <ShakingClockAnimation
-        open={showClockAnimation}
-        onOpenChange={setShowClockAnimation}
-        onComplete={handleClockAnimationComplete}
       />
 
       <ActivityJoinedConfirmation
