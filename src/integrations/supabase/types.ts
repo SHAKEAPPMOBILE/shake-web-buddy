@@ -596,6 +596,7 @@ export type Database = {
           name: string | null
           nationality: string | null
           occupation: string | null
+          push_token: string | null
           referral_code: string | null
           twitter_url: string | null
           updated_at: string
@@ -610,6 +611,7 @@ export type Database = {
           name?: string | null
           nationality?: string | null
           occupation?: string | null
+          push_token?: string | null
           referral_code?: string | null
           twitter_url?: string | null
           updated_at?: string
@@ -624,6 +626,7 @@ export type Database = {
           name?: string | null
           nationality?: string | null
           occupation?: string | null
+          push_token?: string | null
           referral_code?: string | null
           twitter_url?: string | null
           updated_at?: string

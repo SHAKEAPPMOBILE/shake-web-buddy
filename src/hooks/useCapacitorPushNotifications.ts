@@ -41,8 +41,7 @@ export function useCapacitorPushNotifications() {
 
         const { error } = await supabase
           .from("profiles")
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .update({ push_token: token.value } as any)
+          .update({ push_token: token.value })
           .eq("user_id", user.id);
 
         if (error) {
