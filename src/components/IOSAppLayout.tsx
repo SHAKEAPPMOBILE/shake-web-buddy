@@ -350,12 +350,7 @@ export function IOSAppLayout() {
       return;
     }
 
-    // Switch to home tab and show activities
-    setShowEvents(false);
-    setActiveTab("home");
-    setShowHomeActivities(true);
-    // Keep URL in sync with the home/activities flow.
-    navigate("/", { replace: true });
+    navigate("/propose-plan");
   };
 
   const handleTabChange = (tab: string) => {
