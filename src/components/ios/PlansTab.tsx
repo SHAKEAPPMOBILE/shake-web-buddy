@@ -1110,17 +1110,19 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           />
           <div className="relative z-10 w-full max-w-md rounded-3xl bg-white shadow-2xl pointer-events-auto overflow-hidden">
             <div className="px-6 pt-6 pb-4 space-y-4">
-              {/* Activity icon + title */}
+              {/* Organizer avatar (replaces activity icon) */}
               <div className="text-center">
-                <div className="w-16 h-16 rounded-full overflow-hidden mx-auto mb-3 border border-gray-200 shadow-sm">
-                  {planPreview.activity_type === "general" ? (
-                    <img src={barManAndCook} alt="Plan" className="w-full h-full object-contain" />
-                  ) : getActivityIcon(planPreview.activity_type) ? (
-                    <img src={getActivityIcon(planPreview.activity_type)} alt={planPreview.activity_type} className="w-full h-full object-cover" />
+                <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3 border-2 border-white shadow-md flex items-center justify-center bg-purple-100 flex-shrink-0">
+                  {planPreview.creator_avatar ? (
+                    <img
+                      src={planPreview.creator_avatar}
+                      alt={planPreview.creator_name || "Organiser"}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-3xl">
-                      {getActivityEmoji(planPreview.activity_type)}
-                    </div>
+                    <span className="text-2xl font-bold text-purple-700">
+                      {planPreview.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                    </span>
                   )}
                 </div>
                 <h2 className="text-lg font-display font-bold text-gray-900">
@@ -1140,12 +1142,19 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
               {/* Creator */}
               <div className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
-                <Avatar className="w-10 h-10 border border-gray-200">
-                  <AvatarImage src={planPreview.creator_avatar || undefined} />
-                  <AvatarFallback className="bg-gray-100 text-gray-700 text-sm font-semibold">
-                    {planPreview.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 flex-shrink-0 flex items-center justify-center bg-gray-100">
+                  {planPreview.creator_avatar ? (
+                    <img
+                      src={planPreview.creator_avatar}
+                      alt={planPreview.creator_name || "Organiser"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold text-gray-700">
+                      {planPreview.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                    </span>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900">{planPreview.creator_name || "Anonymous"}</p>
                   <p className="text-xs text-gray-500">{t('common.organiser', 'Organiser')}</p>
