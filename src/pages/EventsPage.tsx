@@ -1362,10 +1362,19 @@ export default function EventsPage({
               </p>
             </div>
           ) : (
-          <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border">
-            {filtered.map((e, i) => (
-              <div key={e.id}>
-                {i > 0 && <div className="h-px bg-border/70 mx-4" />}
+          <div className="mx-4 flex flex-col gap-2">
+            {filtered.map((e) => (
+              <div
+                key={e.id}
+                style={{
+                  background: "rgba(255,255,255,0.07)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 16,
+                  overflow: "hidden",
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setSelected(e)}
