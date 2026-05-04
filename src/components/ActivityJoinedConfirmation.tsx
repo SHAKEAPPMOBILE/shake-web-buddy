@@ -14,6 +14,8 @@ interface ActivityJoinedConfirmationProps {
   activityType: string;
   city: string;
   onJoinGroupChat: () => void;
+  /** Called when the user taps "Oraaait!" — should close modal and navigate to Plans tab */
+  onGoToPlans?: () => void;
   /** Ticketmaster event group chat (e.g. after payment) — same modal layout, event-driven copy */
   eventConfirmation?: {
     name: string;
@@ -30,6 +32,7 @@ export function ActivityJoinedConfirmation({
   activityType,
   city,
   onJoinGroupChat,
+  onGoToPlans,
   eventConfirmation,
 }: ActivityJoinedConfirmationProps) {
   const { t } = useTranslation();
@@ -141,17 +144,27 @@ export function ActivityJoinedConfirmation({
             <div className="px-6 pb-6 space-y-3">
               <Button
                 onClick={handleJoinChat}
-                className="w-full h-12 rounded-full font-semibold text-base gap-2"
+                className="group w-full h-12 rounded-full font-semibold text-base gap-2 overflow-hidden"
                 style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
               >
-                <MessageSquare className="w-5 h-5" />
-                {t("joinConfirmation.joinGroupChat", "Join Group Chat")}
+                <MessageSquare className="w-5 h-5 shrink-0" />
+                <span className="max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:max-w-xs group-focus-within:max-w-xs">
+                  {t("joinConfirmation.joinGroupChat", "Join Group Chat")}
+                </span>
               </Button>
               <button
-                onClick={() => onOpenChange(false)}
-                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+                onClick={() => {
+                  onOpenChange(false);
+                  onGoToPlans?.();
+                }}
+                className="w-full h-12 rounded-full font-semibold text-base flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95"
+                style={{
+                  background: "rgba(255,255,255,0.55)",
+                  border: "1px solid rgba(0,0,0,0.12)",
+                  color: "#1a1a1a",
+                }}
               >
-                {t("joinConfirmation.maybeLater", "Maybe later")}
+                Oraaait! 🤙
               </button>
             </div>
           </>
@@ -268,20 +281,33 @@ export function ActivityJoinedConfirmation({
               )}
 
               {/* Actions — only visible in phase 2 */}
-              <div className="mt-auto space-y-2">
+              <div className="mt-auto space-y-3">
+                {/* Join Group Chat — icon always visible, text revealed on hover/focus */}
                 <Button
                   onClick={handleJoinChat}
-                  className="w-full h-12 rounded-full font-semibold text-base gap-2"
+                  className="group w-full h-12 rounded-full font-semibold text-base gap-2 overflow-hidden"
                   style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
                 >
-                  <MessageSquare className="w-5 h-5" />
-                  {t("joinConfirmation.joinGroupChat", "Join Group Chat")}
+                  <MessageSquare className="w-5 h-5 shrink-0" />
+                  <span className="max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:max-w-xs group-focus-within:max-w-xs">
+                    {t("joinConfirmation.joinGroupChat", "Join Group Chat")}
+                  </span>
                 </Button>
+
+                {/* Oraaait! — closes modal and goes to Plans tab */}
                 <button
-                  onClick={() => onOpenChange(false)}
-                  className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onGoToPlans?.();
+                  }}
+                  className="w-full h-12 rounded-full font-semibold text-base flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95"
+                  style={{
+                    background: "rgba(255,255,255,0.55)",
+                    border: "1px solid rgba(0,0,0,0.12)",
+                    color: "#1a1a1a",
+                  }}
                 >
-                  {t("joinConfirmation.maybeLater", "Maybe later")}
+                  Oraaait! 🤙
                 </button>
               </div>
             </div>

@@ -727,6 +727,7 @@ export function IOSAppLayout() {
         activityType={selectedActivity}
         city={activityCity || selectedCity}
         onJoinGroupChat={handleJoinGroupChatFromConfirmation}
+        onGoToPlans={() => setActiveTab("plans")}
       />
 
 
