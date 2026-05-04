@@ -5,7 +5,8 @@ import { useActivityVenue } from "@/contexts/VenueContext";
 import { getActivityById } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/activity-translations";
 import { useTranslation } from "react-i18next";
-import { triggerConfettiBurstOnce } from "@/lib/confetti";
+import { triggerConfettiBurstOnce, triggerConfettiWaterfall } from "@/lib/confetti";
+import { playDingDingSound } from "@/lib/notification-sound";
 
 interface ActivityJoinedConfirmationProps {
   open: boolean;
@@ -37,21 +38,25 @@ export function ActivityJoinedConfirmation({
   // false = phase 1 (celebration), true = phase 2 (venue + actions)
   const [showVenue, setShowVenue] = useState(false);
 
-  // Reset phase and start the 2.5s timer each time the modal opens
+  // Reset phase, fire confetti+sound, and start the 2.5s timer each time the modal opens
   useEffect(() => {
     if (!open) {
       setShowVenue(false);
       return;
     }
+
+    if (eventConfirmation) {
+      // Ticketmaster event path: burst confetti only
+      triggerConfettiBurstOnce();
+    } else {
+      // Regular join path: full waterfall + ding at phase 1 start
+      triggerConfettiWaterfall();
+      playDingDingSound();
+    }
+
     const timer = setTimeout(() => setShowVenue(true), 2500);
     return () => clearTimeout(timer);
-  }, [open]);
-
-  // Confetti for Ticketmaster event confirmations
-  useEffect(() => {
-    if (!open || !eventConfirmation) return;
-    triggerConfettiBurstOnce();
-  }, [open, eventConfirmation?.name, eventConfirmation?.dateLine]);
+  }, [open, !!eventConfirmation]);
 
   const label = getTranslatedActivityLabel(t, activityType);
   const activityDay = getTranslatedActivityDay(t, activityType);

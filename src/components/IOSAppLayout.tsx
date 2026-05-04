@@ -23,8 +23,6 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { useCapacitorPushNotifications } from "@/hooks/useCapacitorPushNotifications";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/lib/app-toast";
-import { triggerConfettiWaterfall } from "@/lib/confetti";
-import { playDingDingSound } from "@/lib/notification-sound";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
@@ -390,10 +388,7 @@ export function IOSAppLayout() {
 
     const result = await joinActivity(activity, cityOverride);
     if (result.success) {
-      if (result.isNewJoin) {
-        triggerConfettiWaterfall();
-        playDingDingSound();
-      }
+      // Confetti + ding are now fired inside ActivityJoinedConfirmation (phase 1)
       // Show the single confirmation modal (celebration phase → venue phase internally)
       setShowJoinedConfirmation(true);
       setShowHomeActivities(false);
