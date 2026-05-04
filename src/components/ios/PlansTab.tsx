@@ -363,6 +363,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [activityDetailToRestore, setActivityDetailToRestore] = useState<PlanActivity | null>(null);
   // Plan preview before joining (city discovery plans)
   const [planPreview, setPlanPreview] = useState<PlanActivity | null>(null);
+  const [planPreviewAttendees, setPlanPreviewAttendees] = useState<{ avatar_url: string | null; name: string | null }[]>([]);
   
 
   // Notify parent when entering/leaving chat view
@@ -370,6 +371,37 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const isInChat = showChatView || showCarouselChatView;
     onChatViewChange?.(isInChat);
   }, [showChatView, showCarouselChatView, onChatViewChange]);
+
+  // Fetch attendee profiles when plan preview opens
+  useEffect(() => {
+    if (!planPreview) {
+      setPlanPreviewAttendees([]);
+      return;
+    }
+    const fetchAttendees = async () => {
+      const { data: joins } = await supabase
+        .from("activity_joins")
+        .select("user_id")
+        .eq("activity_id", planPreview.id)
+        .limit(4);
+      if (!joins?.length) {
+        setPlanPreviewAttendees([]);
+        return;
+      }
+      const profiles = await Promise.all(
+        joins.map(async (join) => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("name, avatar_url")
+            .eq("user_id", join.user_id)
+            .maybeSingle();
+          return { name: profile?.name ?? null, avatar_url: profile?.avatar_url ?? null };
+        })
+      );
+      setPlanPreviewAttendees(profiles);
+    };
+    fetchAttendees();
+  }, [planPreview?.id]);
 
   // Handle pending paid activity (after payment success redirect)
   useEffect(() => {
@@ -1139,6 +1171,34 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     : format(new Date(planPreview.scheduled_for), "EEE, d MMM")}
                 </p>
               </div>
+
+              {/* Attendees */}
+              {(planPreview.participant_count ?? 0) > 0 && (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="flex">
+                    {planPreviewAttendees.slice(0, 4).map((attendee, i) => (
+                      <div
+                        key={i}
+                        className="w-8 h-8 rounded-full border-2 border-white overflow-hidden flex items-center justify-center bg-purple-100 flex-shrink-0"
+                        style={{ marginLeft: i === 0 ? 0 : -10, zIndex: planPreviewAttendees.length - i }}
+                      >
+                        {attendee.avatar_url ? (
+                          <img src={attendee.avatar_url} alt={attendee.name || ""} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-semibold text-purple-700">
+                            {attendee.name?.charAt(0)?.toUpperCase() || "?"}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-500 font-medium">
+                    {(planPreview.participant_count ?? 0) > 4
+                      ? `+${planPreview.participant_count} going`
+                      : `${planPreview.participant_count} going`}
+                  </span>
+                </div>
+              )}
 
             </div>
 
