@@ -56,6 +56,7 @@ export function UserProfileDialog({
   const [activityHistory, setActivityHistory] = useState<ActivityJoin[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({ instagram_url: null, linkedin_url: null, twitter_url: null, nationality: null, occupation: null });
   const [userAge, setUserAge] = useState<number | null>(null);
+  const [lastKnownCity, setLastKnownCity] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
@@ -79,6 +80,8 @@ export function UserProfileDialog({
   useEffect(() => {
     if (!open || !userId) return;
 
+    setLastKnownCity(null);
+
     const fetchUserData = async () => {
       setIsLoading(true);
       try {
@@ -94,6 +97,21 @@ export function UserProfileDialog({
           console.error("Error fetching activity history:", activityError);
         } else {
           setActivityHistory(activityData || []);
+        }
+
+        // Resolve last known city: try activity_joins first, fall back to user_activities
+        const cityFromJoins = (activityData || []).find(a => a.city)?.city ?? null;
+        if (cityFromJoins) {
+          setLastKnownCity(cityFromJoins);
+        } else {
+          const { data: lastActivity } = await supabase
+            .from("user_activities")
+            .select("city")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          setLastKnownCity(lastActivity?.city ?? null);
         }
 
         // Fetch social links from profile
@@ -248,11 +266,11 @@ export function UserProfileDialog({
               </div>
             )}
             
-            {/* Location from most recent activity */}
-            {activityHistory.length > 0 && (
+            {/* Last known city */}
+            {lastKnownCity && (
               <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
                 <span className="inline-flex items-center justify-center w-3.5 h-3.5">📍</span>
-                <span>{activityHistory[0].city}</span>
+                <span>{lastKnownCity}</span>
               </div>
             )}
 
