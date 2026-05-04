@@ -1405,18 +1405,6 @@ export default function EventsPage({
                       )}
                     </div>
                   </div>
-                  <div className="shrink-0 text-right">
-                    {e.distance ? (
-                      <p className="text-muted-foreground text-xs mb-1">
-                        {e.distance}
-                      </p>
-                    ) : null}
-                    {e.isHot && (
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/30 text-primary">
-                        HOT
-                      </span>
-                    )}
-                  </div>
                 </button>
               </div>
             ))}
