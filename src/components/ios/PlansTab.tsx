@@ -115,11 +115,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     // --- 3. User's own created plans (fallback: ensure creator always sees their plans
     //        even if the activity_joins upsert was missed) ---
+    // Show joined/created plans for 24 hours after the activity time so they don't
+    // vanish immediately when the scheduled time passes.
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const { data: myCreatedData } = await supabase
       .from("user_activities")
       .select("id")
       .eq("user_id", user.id)
-      .eq("is_active", true);
+      .gte("scheduled_for", twentyFourHoursAgo.toISOString());
     const myCreatedIds = (myCreatedData || []).map(a => a.id as string);
     // Merge joins + own creations (deduplicated) so creator always sees their plans
     const allJoinedIds = [...new Set([...joinedActivityIds, ...myCreatedIds])];
@@ -155,7 +158,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // Then city-wide joins for participant-count enrichment
     allCarouselJoins.forEach(addToCarouselMap);
 
-    // Get joined activities — from any city (all cities mode) or filtered to explicit city
+    // Get joined activities — from any city (all cities mode) or filtered to explicit city.
+    // Use a 24-hour lookback window (instead of is_active=true) so activities the user
+    // joined remain visible for 24 hours after their scheduled time, even if the activity
+    // becomes inactive server-side.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let joinedActivities: any[] = [];
     if (allJoinedIds.length > 0) {
@@ -163,7 +169,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .from("user_activities")
         .select("*")
         .in("id", allJoinedIds)
-        .eq("is_active", true);
+        .gte("scheduled_for", twentyFourHoursAgo.toISOString());
 
       // If user explicitly selected a filter city in Plans header, apply it.
       // Otherwise (default), include joined plans from all cities.
@@ -634,6 +640,19 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
+    // Optimistically update local state immediately so the plan appears joined
+    // without waiting for fetchPlans() to complete.
+    setActivities(prev => {
+      const existing = prev.find(a => a.id === plan.id);
+      if (existing) {
+        return prev.map(a => a.id === plan.id
+          ? { ...a, isJoined: true, participant_count: (a.participant_count || 0) + 1 }
+          : a);
+      }
+      return [{ ...plan, isJoined: true, participant_count: (plan.participant_count || 0) + 1 }, ...prev];
+    });
+    setCityPlans(prev => prev.filter(p => p.id !== plan.id));
+
     confetti({
       particleCount: 100,
       spread: 70,
@@ -680,6 +699,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
+    // Optimistically move the plan into the user's joined list immediately
+    // so it appears there as soon as they back out of chat.
+    const joinedPlan = { ...plan, isJoined: true };
+    setActivities(prev => prev.find(a => a.id === plan.id) ? prev : [joinedPlan, ...prev]);
+    setCityPlans(prev => prev.filter(p => p.id !== plan.id));
+
     confetti({
       particleCount: 100,
       spread: 70,
@@ -687,7 +712,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
     });
 
-    setSelectedPlan({ ...plan, isJoined: true });
+    setSelectedPlan(joinedPlan);
     setShowChatView(true);
   };
 
@@ -711,6 +736,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
+    // Optimistically move the plan into the user's joined list immediately
+    // so it appears there as soon as they back out of chat.
+    const joinedPlan = { ...plan, isJoined: true };
+    setActivities(prev => prev.find(a => a.id === plan.id) ? prev : [joinedPlan, ...prev]);
+    setCityPlans(prev => prev.filter(p => p.id !== plan.id));
+
     confetti({
       particleCount: 100,
       spread: 70,
@@ -718,7 +749,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
     });
 
-    setSelectedPlan({ ...plan, isJoined: true });
+    setSelectedPlan(joinedPlan);
     setShowChatView(true);
   };
 
