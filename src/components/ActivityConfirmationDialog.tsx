@@ -192,6 +192,21 @@ export function ActivityConfirmationDialog({
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
           >
+            {/* Glass shine reflex */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "40%",
+                background: "linear-gradient(to bottom, rgba(255,255,255,0.25), rgba(255,255,255,0))",
+                borderRadius: "24px 24px 0 0",
+                pointerEvents: "none",
+                zIndex: 1,
+              }}
+            />
+
             {/* Draggable handle bar */}
             <div className="flex flex-col items-center py-3 px-6 pb-2 border-b border-black/5 flex-shrink-0">
               <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full cursor-grab active:cursor-grabbing" />

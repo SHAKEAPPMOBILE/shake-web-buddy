@@ -57,6 +57,20 @@ const DialogContent = React.forwardRef<
       }}
       {...props}
     >
+      {/* Glass shine reflex */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "40%",
+          background: "linear-gradient(to bottom, rgba(255,255,255,0.25), rgba(255,255,255,0))",
+          borderRadius: "24px 24px 0 0",
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
+      />
       {children}
     </DialogPrimitive.Content>
   </DialogPortal>

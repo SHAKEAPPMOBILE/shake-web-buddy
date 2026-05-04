@@ -95,6 +95,20 @@ export function ActivityJoinedConfirmation({
           boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
         }}
       >
+        {/* Glass shine reflex */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "40%",
+            background: "linear-gradient(to bottom, rgba(255,255,255,0.25), rgba(255,255,255,0))",
+            borderRadius: "24px 24px 0 0",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        />
 
         {/* ── Ticketmaster / event path (unchanged) ── */}
         {eventConfirmation ? (
