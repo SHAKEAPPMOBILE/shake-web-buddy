@@ -20,6 +20,7 @@ export function useCapacitorPushNotifications() {
     let actionHandle: { remove: () => Promise<void> } | null = null;
 
     const setup = async () => {
+      console.log("[Push] Setup starting — requesting permissions");
       const result = await PushNotifications.requestPermissions();
       if (result.receive !== "granted") {
         console.log("[Push] Permission denied:", result.receive);
@@ -68,6 +69,7 @@ export function useCapacitorPushNotifications() {
       }, 10_000);
 
       receivedHandle = await PushNotifications.addListener("pushNotificationReceived", (notification) => {
+        console.log("[Push] Notification received (foreground):", JSON.stringify(notification));
         toast.info(notification.title ?? "New notification", {
           description: notification.body ?? undefined,
         });

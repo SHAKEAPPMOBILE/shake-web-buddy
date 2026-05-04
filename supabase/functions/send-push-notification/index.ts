@@ -139,6 +139,15 @@ serve(async (req) => {
     const apnsBundleId = Deno.env.get("APNS_BUNDLE_ID");
     const apnsSandbox = Deno.env.get("APNS_SANDBOX") === "true";
 
+    console.log("[send-push-notification] APNs env vars present:", {
+      APNS_KEY_ID: !!apnsKeyId,
+      APNS_TEAM_ID: !!apnsTeamId,
+      APNS_PRIVATE_KEY: !!privateKeyBase64,
+      APNS_BUNDLE_ID: !!apnsBundleId,
+      APNS_SANDBOX: apnsSandbox,
+    });
+    console.log("[send-push-notification] Sending to device token:", pushToken);
+
     if (!apnsKeyId || !apnsTeamId || !privateKey || !apnsBundleId) {
       console.error("[send-push-notification] APNs env vars not configured");
       return new Response(
@@ -177,11 +186,13 @@ serve(async (req) => {
       body: JSON.stringify(apnsPayload),
     });
 
+    const apnsResText = await apnsRes.text();
+    console.log("[send-push-notification] APNs response:", apnsRes.status, apnsResText || "(empty body — success)");
+
     if (!apnsRes.ok) {
-      const errText = await apnsRes.text();
-      console.error("[send-push-notification] APNs error:", apnsRes.status, errText);
+      console.error("[send-push-notification] APNs error:", apnsRes.status, apnsResText);
       return new Response(
-        JSON.stringify({ error: "APNs delivery failed", detail: errText }),
+        JSON.stringify({ error: "APNs delivery failed", detail: apnsResText }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
