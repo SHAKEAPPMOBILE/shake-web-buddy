@@ -475,9 +475,22 @@ export function PlanGroupChatView({
                         />
                       ) : (
                         <div
-                          className={`text-sm p-2 rounded-2xl inline-block ${
-                            isOwnMessage ? "bg-black text-white" : "bg-blue-500 text-white"
-                          }`}
+                          className="text-sm px-3 py-2 inline-block"
+                          style={isOwnMessage ? {
+                            background: "rgba(139, 92, 246, 0.55)",
+                            backdropFilter: "blur(12px)",
+                            WebkitBackdropFilter: "blur(12px)",
+                            border: "1px solid rgba(255,255,255,0.3)",
+                            borderRadius: "18px 18px 4px 18px",
+                            color: "white",
+                          } : {
+                            background: "rgba(255,255,255,0.45)",
+                            backdropFilter: "blur(12px)",
+                            WebkitBackdropFilter: "blur(12px)",
+                            border: "1px solid rgba(255,255,255,0.4)",
+                            borderRadius: "18px 18px 18px 4px",
+                            color: "#111",
+                          }}
                         >
                           <span>{msg.message}</span>
                         </div>

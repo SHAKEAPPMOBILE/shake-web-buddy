@@ -694,11 +694,24 @@ export function GroupChatDialog({
                               }
                             />
                           ) : (
-                            <div className={`text-sm mt-0.5 px-3 py-2 rounded-xl inline-block ${
-                              isOwnMessage 
-                                ? 'bg-[#7c5cfc] text-white'
-                                : 'bg-white/10 text-white border border-white/10'
-                            }`}>
+                            <div
+                              className="text-sm mt-0.5 px-3 py-2 inline-block"
+                              style={isOwnMessage ? {
+                                background: "rgba(139, 92, 246, 0.55)",
+                                backdropFilter: "blur(12px)",
+                                WebkitBackdropFilter: "blur(12px)",
+                                border: "1px solid rgba(255,255,255,0.3)",
+                                borderRadius: "18px 18px 4px 18px",
+                                color: "white",
+                              } : {
+                                background: "rgba(255,255,255,0.45)",
+                                backdropFilter: "blur(12px)",
+                                WebkitBackdropFilter: "blur(12px)",
+                                border: "1px solid rgba(255,255,255,0.4)",
+                                borderRadius: "18px 18px 18px 4px",
+                                color: "#111",
+                              }}
+                            >
                               <span>{msg.message}</span>
                             </div>
                           )}
@@ -727,7 +740,15 @@ export function GroupChatDialog({
                     <button
                       key={index}
                       onClick={() => setMessage(suggestion)}
-                      className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-primary hover:bg-white/10 border border-white/10 whitespace-nowrap shrink-0"
+                      className="text-xs px-2.5 py-1 whitespace-nowrap shrink-0"
+                      style={{
+                        background: "rgba(255,255,255,0.5)",
+                        backdropFilter: "blur(12px)",
+                        WebkitBackdropFilter: "blur(12px)",
+                        border: "1px solid rgba(255,255,255,0.4)",
+                        borderRadius: "20px",
+                        color: "#333",
+                      }}
                     >
                       {suggestion}
                     </button>

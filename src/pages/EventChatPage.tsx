@@ -467,7 +467,24 @@ export default function EventChatPage() {
                       ) : isGif ? (
                         <InlineChatGif src={m.content} variant="dark" onLoad={() => scrollMessagesToBottom("smooth")} />
                       ) : (
-                        <div className={`text-sm px-3 py-2 rounded-xl inline-block text-left ${isOwn ? "bg-[#7c5cfc] text-white" : "bg-white/10 text-white border border-white/10"}`}>
+                        <div
+                          className="text-sm px-3 py-2 inline-block text-left"
+                          style={isOwn ? {
+                            background: "rgba(139, 92, 246, 0.55)",
+                            backdropFilter: "blur(12px)",
+                            WebkitBackdropFilter: "blur(12px)",
+                            border: "1px solid rgba(255,255,255,0.3)",
+                            borderRadius: "18px 18px 4px 18px",
+                            color: "white",
+                          } : {
+                            background: "rgba(255,255,255,0.45)",
+                            backdropFilter: "blur(12px)",
+                            WebkitBackdropFilter: "blur(12px)",
+                            border: "1px solid rgba(255,255,255,0.4)",
+                            borderRadius: "18px 18px 18px 4px",
+                            color: "#111",
+                          }}
+                        >
                           <span>{m.content}</span>
                         </div>
                       )}
