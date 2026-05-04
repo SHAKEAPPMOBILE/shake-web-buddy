@@ -305,7 +305,7 @@ export function PlanGroupChatView({
   return (
     <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50">
       {/* Header */}
-      <div className="relative z-30 flex shrink-0 items-center gap-3 bg-[hsl(50,40%,92%)] px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+      <div className="relative z-30 flex shrink-0 items-center gap-3 bg-[hsl(50,40%,92%)] px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top))]">
         <MinimalBackButton
           onClick={onBack}
           className="shrink-0 text-black/80 hover:text-black"
@@ -328,7 +328,7 @@ export function PlanGroupChatView({
         </div>
         
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-display text-black truncate">
+          <h1 className="text-xl font-bold font-display text-black truncate">
             {activity.note || t('plans.untitledPlan', 'Untitled Plan')}
           </h1>
           <p className="text-sm text-black/60 truncate">
