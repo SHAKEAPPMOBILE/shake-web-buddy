@@ -764,15 +764,7 @@ export function GroupChatView({
               <button
                 key={index}
                 onClick={() => setMessage(suggestion)}
-                className="text-xs px-2.5 py-1 whitespace-nowrap shrink-0"
-                style={{
-                  background: "rgba(255,255,255,0.5)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255,255,255,0.4)",
-                  borderRadius: "20px",
-                  color: "#333",
-                }}
+                className="text-xs px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 whitespace-nowrap shrink-0"
               >
                 {suggestion}
               </button>

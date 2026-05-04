@@ -523,15 +523,7 @@ export function PlanGroupChatView({
               <button
                 key={suggestion}
                 onClick={() => setMessage(suggestion)}
-                className="text-xs px-3 py-1.5 whitespace-nowrap shrink-0"
-                style={{
-                  background: "rgba(255,255,255,0.5)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255,255,255,0.4)",
-                  borderRadius: "20px",
-                  color: "#333",
-                }}
+                className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20 whitespace-nowrap shrink-0"
               >
                 {suggestion}
               </button>
