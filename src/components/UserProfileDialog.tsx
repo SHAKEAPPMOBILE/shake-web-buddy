@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
 import { getActivityEmoji } from "@/data/activityTypes";
+import { getNationalityFlag } from "@/data/countryCodes";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
@@ -253,7 +254,7 @@ export function UserProfileDialog({
               <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
                 {socialLinks.nationality && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-sm">
-                    <span>🌍</span>
+                    <span>{getNationalityFlag(socialLinks.nationality)}</span>
                     <span className="text-gray-900">{socialLinks.nationality}</span>
                   </span>
                 )}

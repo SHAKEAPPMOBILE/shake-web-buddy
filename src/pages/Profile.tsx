@@ -19,6 +19,7 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { Switch } from "@/components/ui/switch";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NationalitySelector } from "@/components/NationalitySelector";
+import { getNationalityFlag } from "@/data/countryCodes";
 import { PointsDisplay } from "@/components/PointsDisplay";
 import { useTranslation } from "react-i18next";
 import {
@@ -422,7 +423,7 @@ export default function Profile() {
             {/* Nationality */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
-                <span className="text-lg">🌍</span>
+                <span className="text-lg">{nationality ? getNationalityFlag(nationality) : "🌍"}</span>
                 {t('profile.nationality')}
               </Label>
               <NationalitySelector

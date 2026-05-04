@@ -161,3 +161,35 @@ export const countryCodes: CountryCode[] = [
   { code: "ZW", name: "Zimbabwe", dialCode: "+263", flag: "🇿🇼" },
   { code: "MU", name: "Mauritius", dialCode: "+230", flag: "🇲🇺" },
 ];
+
+/**
+ * Returns the emoji flag for a nationality string.
+ * Accepts a full country name ("Colombia") or ISO 3166-1 alpha-2 code ("CO").
+ * Falls back to Unicode regional indicator conversion for unknown 2-letter codes,
+ * and finally to 🌍 if nothing matches.
+ */
+export function getNationalityFlag(nationality: string): string {
+  if (!nationality) return "🌍";
+  const trimmed = nationality.trim();
+  const upper = trimmed.toUpperCase();
+
+  // Try exact code match (e.g. "CO", "US")
+  const byCode = countryCodes.find((c) => c.code === upper);
+  if (byCode) return byCode.flag;
+
+  // Try full name match (case-insensitive)
+  const byName = countryCodes.find(
+    (c) => c.name.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (byName) return byName.flag;
+
+  // Fallback: Unicode regional indicator symbols for any 2-letter code
+  if (/^[A-Za-z]{2}$/.test(trimmed)) {
+    return String.fromCodePoint(
+      0x1f1e6 + (upper.charCodeAt(0) - 65),
+      0x1f1e6 + (upper.charCodeAt(1) - 65)
+    );
+  }
+
+  return "🌍";
+}
