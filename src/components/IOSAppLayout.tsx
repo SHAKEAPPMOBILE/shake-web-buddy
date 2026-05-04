@@ -344,6 +344,7 @@ export function IOSAppLayout() {
     }, 600);
   }, [user, triggerHapticFeedback]);
 
+  // + tab bar button → propose-plan page
   const handleShakeClick = () => {
     if (!user && !isLoading) {
       navigate("/auth");
@@ -351,6 +352,14 @@ export function IOSAppLayout() {
     }
 
     navigate("/propose-plan");
+  };
+
+  // Shakehand circle on home screen → open activity carousel
+  const handleOpenActivities = () => {
+    setShowEvents(false);
+    setActiveTab("home");
+    setShowHomeActivities(true);
+    navigate("/", { replace: true });
   };
 
   const handleTabChange = (tab: string) => {
@@ -557,7 +566,7 @@ export function IOSAppLayout() {
             onSelectActivity={handleHomeActivitySelect}
             onConfirmActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
-            onOpenActivities={handleShakeClick}
+            onOpenActivities={handleOpenActivities}
             isShaking={isHeroShaking}
             onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
@@ -581,7 +590,7 @@ export function IOSAppLayout() {
               onSelectActivity={handleHomeActivitySelect}
               onConfirmActivity={handleHomeActivitySelect}
               onCloseActivities={() => setShowHomeActivities(false)}
-              onOpenActivities={handleShakeClick}
+              onOpenActivities={handleOpenActivities}
               isShaking={isHeroShaking}
               onOpenEvents={() => openNearYou("home")}
               onUpgradeClick={() => setShowPremiumDialog(true)}
@@ -602,7 +611,7 @@ export function IOSAppLayout() {
             onSelectActivity={handleHomeActivitySelect}
             onConfirmActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
-            onOpenActivities={handleShakeClick}
+            onOpenActivities={handleOpenActivities}
             isShaking={isHeroShaking}
             onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
