@@ -19,7 +19,6 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { Switch } from "@/components/ui/switch";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NationalitySelector } from "@/components/NationalitySelector";
-import { ChangePhoneDialog } from "@/components/ChangePhoneDialog";
 import { PointsDisplay } from "@/components/PointsDisplay";
 import { useTranslation } from "react-i18next";
 import {
@@ -47,7 +46,6 @@ export default function Profile() {
   const [instagramUrl, setInstagramUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [billingEmail, setBillingEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
@@ -58,7 +56,6 @@ export default function Profile() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
-  const [showChangePhone, setShowChangePhone] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -101,7 +98,7 @@ export default function Profile() {
         setTwitterUrl(publicProfile.twitter_url || "");
       }
 
-      // Fetch private profile for phone number, email and push notifications
+      // Fetch private profile for billing email and push notifications
       const { data: privateProfile, error: privateError } = await supabase
         .from("profiles_private")
         .select("*")
@@ -111,7 +108,6 @@ export default function Profile() {
       if (privateError) {
         logPostgrestError("Profile.tsx profiles_private select", privateError);
       } else if (privateProfile) {
-        setPhoneNumber(privateProfile.phone_number || "");
         setBillingEmail(privateProfile.billing_email || "");
         setPushNotificationsEnabled(privateProfile.push_notifications_enabled ?? true);
       }
@@ -401,32 +397,6 @@ export default function Profile() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t('profile.name')}
               />
-            </div>
-
-            {/* Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">{t('profile.phone')}</Label>
-              <div className="space-y-2">
-                <Input
-                  id="phone"
-                  value={phoneNumber}
-                  readOnly
-                  disabled
-                  className="bg-muted"
-                  placeholder="No phone number added"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => setShowChangePhone(true)}
-                >
-                  {phoneNumber ? "Change phone number" : "Add phone number"}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  For safety, phone numbers can only be changed via SMS verification.
-                </p>
-              </div>
             </div>
 
             {/* Email */}
@@ -729,15 +699,6 @@ export default function Profile() {
         </DialogContent>
       </Dialog>
 
-      <ChangePhoneDialog
-        open={showChangePhone}
-        onOpenChange={setShowChangePhone}
-        currentPhone={phoneNumber || null}
-        onPhoneUpdated={(newPhone) => {
-          setPhoneNumber(newPhone);
-          toast.success("Phone number updated");
-        }}
-      />
     </div>
   );
 }
