@@ -1140,32 +1140,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 </p>
               </div>
 
-              {/* Creator */}
-              <div className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 flex-shrink-0 flex items-center justify-center bg-gray-100">
-                  {planPreview.creator_avatar ? (
-                    <img
-                      src={planPreview.creator_avatar}
-                      alt={planPreview.creator_name || "Organiser"}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-sm font-semibold text-gray-700">
-                      {planPreview.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{planPreview.creator_name || "Anonymous"}</p>
-                  <p className="text-xs text-gray-500">{t('common.organiser', 'Organiser')}</p>
-                </div>
-                {(planPreview.participant_count ?? 0) > 0 && (
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <Users className="w-4 h-4" />
-                    <span>{planPreview.participant_count}</span>
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Actions */}
