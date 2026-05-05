@@ -117,7 +117,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     //        even if the activity_joins upsert was missed) ---
     // Show joined/created plans for 24 hours after the activity time so they don't
     // vanish immediately when the scheduled time passes.
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const { data: myCreatedData } = await supabase
       .from("user_activities")
       .select("id")
