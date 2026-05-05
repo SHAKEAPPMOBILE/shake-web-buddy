@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Trash2, FileText, Images } from "lucide-react";
+import { Send, User, Trash2, FileText, Images, MoreVertical, LogOut } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -323,6 +323,39 @@ export function PlanGroupChatView({
     }
   };
 
+  const isCreator = user?.id === activity.user_id;
+  const [showMenu, setShowMenu] = useState(false);
+
+  const handleLeavePlan = async () => {
+    setShowMenu(false);
+    const { error } = await supabase
+      .from("activity_joins")
+      .delete()
+      .eq("user_id", user!.id)
+      .eq("activity_id", activity.id);
+    if (error) {
+      toast.error("Failed to leave plan");
+    } else {
+      toast.success("Left the plan");
+      onBack();
+    }
+  };
+
+  const handleDeletePlan = async () => {
+    setShowMenu(false);
+    const { error } = await supabase
+      .from("user_activities")
+      .delete()
+      .eq("id", activity.id)
+      .eq("user_id", user!.id);
+    if (error) {
+      toast.error("Failed to delete plan");
+    } else {
+      toast.success("Plan deleted");
+      onBack();
+    }
+  };
+
   const creatorProfile = profiles[activity.user_id];
 
   return (
@@ -370,6 +403,39 @@ export function PlanGroupChatView({
               {creatorProfile?.name || "Shaker"}
             </button>
           </p>
+        </div>
+
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setShowMenu((v) => !v)}
+            className="p-2 rounded-full hover:bg-black/10 transition-colors"
+          >
+            <MoreVertical className="w-5 h-5 text-black/70" />
+          </button>
+          {showMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+              <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
+                {isCreator ? (
+                  <button
+                    onClick={handleDeletePlan}
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete plan
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleLeavePlan}
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Leave plan
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
