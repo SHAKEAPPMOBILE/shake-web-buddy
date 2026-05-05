@@ -7,6 +7,7 @@ import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/acti
 import { useTranslation } from "react-i18next";
 import { triggerConfettiBurstOnce, triggerConfettiWaterfall } from "@/lib/confetti";
 import { playDingDingSound } from "@/lib/notification-sound";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ActivityJoinedConfirmationProps {
   open: boolean;
@@ -40,6 +41,27 @@ export function ActivityJoinedConfirmation({
 
   // false = phase 1 (celebration), true = phase 2 (venue + actions)
   const [showVenue, setShowVenue] = useState(false);
+  const [attendees, setAttendees] = useState<{ avatar_url: string | null; name: string }[]>([]);
+
+  useEffect(() => {
+    if (!open || !activityType || !city) return;
+    const fetchAttendees = async () => {
+      const { data: joins } = await supabase
+        .from("activity_joins")
+        .select("user_id")
+        .eq("activity_type", activityType)
+        .eq("city", city)
+        .limit(5);
+      if (!joins || joins.length === 0) return;
+      const userIds = joins.map((j: { user_id: string }) => j.user_id);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("avatar_url, name")
+        .in("user_id", userIds);
+      if (profiles) setAttendees(profiles);
+    };
+    fetchAttendees();
+  }, [open, activityType, city]);
 
   // Reset phase, fire confetti+sound, and start the 2.5s timer each time the modal opens
   useEffect(() => {
@@ -277,6 +299,20 @@ export function ActivityJoinedConfirmation({
                       <p className="text-xs text-muted-foreground mt-1">{city}</p>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Attendees preview */}
+              {attendees.length > 0 && (
+                <div className="flex items-center gap-2 mb-3 justify-center">
+                  <div className="flex -space-x-2">
+                    {attendees.slice(0, 4).map((a, i) => (
+                      <div key={i} className="w-8 h-8 rounded-full border-2 border-white overflow-hidden bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600" style={{ zIndex: 4 - i }}>
+                        {a.avatar_url ? <img src={a.avatar_url} alt={a.name} className="w-full h-full object-cover" /> : (a.name?.[0] ?? "?")}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-xs text-gray-500">{attendees.length > 4 ? `+${attendees.length - 4} going` : `${attendees.length} going`}</span>
                 </div>
               )}
 
