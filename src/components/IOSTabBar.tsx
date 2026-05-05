@@ -88,11 +88,9 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                 )} />
                 {hasNotification && (
                   <span
-                    className="absolute -top-0.5 -right-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-card"
-                    aria-label={`${totalUnread} unread messages`}
-                  >
-                    {totalUnread > 99 ? "99+" : totalUnread}
-                  </span>
+                    className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-600 shadow-sm ring-2 ring-card"
+                    aria-label="Unread messages"
+                  />
                 )}
               </div>
               <span className={cn(

@@ -666,11 +666,9 @@ export function ChatTab({
               }}
               className="w-full text-left rounded-xl p-4 transition-colors cursor-pointer relative border border-gray-200 bg-gray-50 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.99]"
             >
-              {/* Unread badge */}
+              {/* Unread dot */}
               {(activity.unread_count ?? 0) > 0 && (
-                <div className="absolute top-3 right-3 min-w-5 h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-[1]">
-                  {activity.unread_count}
-                </div>
+                <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full z-[1]" />
               )}
 
               <div className="flex items-start gap-3.5">
