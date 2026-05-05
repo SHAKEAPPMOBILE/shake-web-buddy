@@ -484,10 +484,8 @@ export function PlanGroupChatView({
                             borderRadius: "18px 18px 4px 18px",
                             color: "white",
                           } : {
-                            background: "rgba(255,255,255,0.45)",
-                            backdropFilter: "blur(12px)",
-                            WebkitBackdropFilter: "blur(12px)",
-                            border: "1px solid rgba(255,255,255,0.4)",
+                            background: "rgba(0,0,0,0.06)",
+                            border: "1px solid rgba(0,0,0,0.08)",
                             borderRadius: "18px 18px 18px 4px",
                             color: "#111",
                           }}
