@@ -281,8 +281,9 @@ export function ActivityJoinedConfirmation({
               )}
 
               {/* Actions — only visible in phase 2 */}
-              <div className="mt-auto space-y-3">
-                {/* Join Group Chat — icon always visible, text revealed on hover/focus */}
+              <div className="mt-4 space-y-3">
+                {/* Join Group Chat — only show when no venue */}
+                {isTBD && (
                 <Button
                   onClick={handleJoinChat}
                   className="group w-full h-12 rounded-full font-semibold text-base gap-2 overflow-hidden"
@@ -293,6 +294,7 @@ export function ActivityJoinedConfirmation({
                     {t("joinConfirmation.joinGroupChat", "Join Group Chat")}
                   </span>
                 </Button>
+                )}
 
                 {/* Oraaait! — closes modal and goes to Plans tab */}
                 <button
