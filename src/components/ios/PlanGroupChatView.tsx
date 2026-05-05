@@ -140,7 +140,7 @@ export function PlanGroupChatView({
           .upsert({
             user_id: user.id,
             activity_type: activity.id,
-            city: activity.city,
+            city: "plan",
             last_read_at: new Date().toISOString(),
           }, { onConflict: "user_id,activity_type,city" });
       }
@@ -173,7 +173,7 @@ export function PlanGroupChatView({
               .upsert({
                 user_id: user.id,
                 activity_type: activity.id,
-                city: activity.city,
+                city: "plan",
                 last_read_at: new Date().toISOString(),
               }, { onConflict: "user_id,activity_type,city" });
           }
