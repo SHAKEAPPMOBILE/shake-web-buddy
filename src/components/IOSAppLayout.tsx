@@ -21,6 +21,7 @@ import { useProximityCheckIn } from "@/hooks/useProximityCheckIn";
 import { usePaymentSuccessHandler } from "@/hooks/usePaymentSuccessHandler";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useCapacitorPushNotifications } from "@/hooks/useCapacitorPushNotifications";
+import { useTotalUnreadChats } from "@/hooks/useTotalUnreadChats";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/lib/app-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +46,7 @@ export function IOSAppLayout() {
   
   // State for navigating to chat tab with a specific activity
   const [pendingChatActivity, setPendingChatActivity] = useState<{ activityType: string; city: string } | null>(null);
+  const [pendingPlanActivityId, setPendingPlanActivityId] = useState<string | null>(null);
   
   // Track the city used for the current activity/chat (for cross-city joins)
   const [activityCity, setActivityCity] = useState<string>("");
@@ -167,6 +169,7 @@ export function IOSAppLayout() {
       openSubscription?: boolean;
       openEvents?: boolean;
       activeTab?: string;
+      activityId?: string;
     } | null;
     if (!state) return;
 
@@ -182,6 +185,11 @@ export function IOSAppLayout() {
     }
     if (state.activeTab === "home") {
       setActiveTab("home");
+      shouldClear = true;
+    }
+    if (state.activeTab === "chat") {
+      setActiveTab("chat");
+      if (state.activityId) setPendingPlanActivityId(state.activityId);
       shouldClear = true;
     }
     if (state.openEvents) {
@@ -362,6 +370,8 @@ export function IOSAppLayout() {
     navigate("/", { replace: true });
   };
 
+  const { refresh: refreshUnreadCount, markAllAsRead } = useTotalUnreadChats();
+
   const handleTabChange = (tab: string) => {
     if (tab === "shake") {
       handleShakeClick();
@@ -370,6 +380,9 @@ export function IOSAppLayout() {
     setShowEvents(false);
     setShowHomeActivities(false);
     setActiveTab(tab);
+    if (tab === "chat") {
+      setTimeout(() => markAllAsRead(), 500);
+    }
   };
 
   const actuallyJoinActivity = useCallback(async (activity: string, cityOverride?: string) => {
@@ -695,6 +708,8 @@ export function IOSAppLayout() {
                   onChatViewChange={handleChatViewChange}
                   pendingActivity={pendingChatActivity}
                   onPendingActivityHandled={() => setPendingChatActivity(null)}
+                  pendingPlanActivityId={pendingPlanActivityId}
+                  onPendingPlanActivityHandled={() => setPendingPlanActivityId(null)}
                   isActiveTab={activeTab === "chat"}
                 />
               </div>

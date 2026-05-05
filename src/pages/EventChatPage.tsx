@@ -94,6 +94,13 @@ export default function EventChatPage() {
   useEffect(() => {
     if (!eventId || !user) return;
     markEventChatViewedNow(eventId);
+    // Also save to Supabase so iOS native app can read it
+    supabase.from("activity_read_status").upsert({
+      user_id: user.id,
+      activity_type: eventId,
+      city: "event",
+      last_read_at: new Date().toISOString(),
+    }, { onConflict: "user_id,activity_type,city" });
   }, [eventId, user?.id]);
 
   useEffect(() => {

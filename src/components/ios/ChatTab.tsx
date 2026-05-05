@@ -54,6 +54,8 @@ interface ChatTabProps {
   onChatViewChange?: (isInChat: boolean) => void;
   pendingActivity?: { activityType: string; city: string } | null;
   onPendingActivityHandled?: () => void;
+  pendingPlanActivityId?: string | null;
+  onPendingPlanActivityHandled?: () => void;
   /** False while another bottom tab is selected; refetch when user returns so new memberships appear. */
   isActiveTab?: boolean;
 }
@@ -62,6 +64,8 @@ export function ChatTab({
   onChatViewChange,
   pendingActivity,
   onPendingActivityHandled,
+  pendingPlanActivityId,
+  onPendingPlanActivityHandled,
   isActiveTab = true,
 }: ChatTabProps = {}) {
   const { t, i18n } = useTranslation();
@@ -83,6 +87,23 @@ export function ChatTab({
     const isInChat = showChatDialog || showPlanChatDialog;
     onChatViewChange?.(isInChat);
   }, [showChatDialog, showPlanChatDialog, onChatViewChange]);
+
+  // Handle deep-link from push notification tap
+  useEffect(() => {
+    if (!pendingPlanActivityId) return;
+    supabase
+      .from("user_activities")
+      .select("*")
+      .eq("id", pendingPlanActivityId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setSelectedPlanActivity(data);
+          setShowPlanChatDialog(true);
+        }
+        onPendingPlanActivityHandled?.();
+      });
+  }, [pendingPlanActivityId, onPendingPlanActivityHandled]);
 
   // Handle pending activity from carousel join (open chat immediately)
   useEffect(() => {

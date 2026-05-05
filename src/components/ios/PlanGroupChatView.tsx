@@ -132,6 +132,18 @@ export function PlanGroupChatView({
       }
 
       setMessages(data || []);
+
+      // Mark as read when opening the chat
+      if (user?.id) {
+        await supabase
+          .from("activity_read_status")
+          .upsert({
+            user_id: user.id,
+            activity_type: activity.id,
+            city: activity.city,
+            last_read_at: new Date().toISOString(),
+          }, { onConflict: "user_id,activity_type,city" });
+      }
     };
 
     fetchMessages();
@@ -153,6 +165,17 @@ export function PlanGroupChatView({
           // Play notification sound for messages from others
           if (newMessage.user_id !== user?.id) {
             playNotificationSound();
+          }
+          // Mark as read since we're viewing the chat
+          if (user?.id) {
+            supabase
+              .from("activity_read_status")
+              .upsert({
+                user_id: user.id,
+                activity_type: activity.id,
+                city: activity.city,
+                last_read_at: new Date().toISOString(),
+              }, { onConflict: "user_id,activity_type,city" });
           }
         }
       )

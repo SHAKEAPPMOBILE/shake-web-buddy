@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isEventChatMembershipExplicitlyExpired } from "@/lib/eventChatMembership";
-import { EVENT_CHAT_VIEWED_EVENT, readEventChatLastSeenMap } from "@/lib/eventChatLastSeen";
+import { EVENT_CHAT_VIEWED_EVENT, readEventChatLastSeenMap, markEventChatViewedNow } from "@/lib/eventChatLastSeen";
 
 export function useTotalUnreadChats() {
   const { user } = useAuth();
@@ -111,7 +111,7 @@ export function useTotalUnreadChats() {
           status: eventMembersStatus,
         } = await supabase
           .from("event_chat_members")
-          .select("event_id, expires_at, paid_at, event_starts_at, user_id, id, event_name, amount_cents, stripe_payment_intent_id")
+          .select("event_id, expires_at, paid_at, event_starts_at, user_id, id, event_name, amount_cents, stripe_payment_intent_id, joined_at")
           .eq("user_id", user.id);
 
         if (!eventMembersError && data) {
@@ -138,7 +138,19 @@ export function useTotalUnreadChats() {
         const eventIds = dedupedEventMembers.map((m) => m.event_id as string);
         const { data: chatRows } = await supabase.from("event_chats").select("id, event_id").in("event_id", eventIds);
 
-        const lastSeenMap = readEventChatLastSeenMap();
+        // Fetch last-seen from Supabase for all event chats (works on iOS unlike localStorage)
+        const eventChatIds = dedupedEventMembers.map((m) => m.event_id as string);
+        const { data: eventReadStatuses } = await supabase
+          .from("activity_read_status")
+          .select("activity_type, last_read_at")
+          .eq("user_id", user.id)
+          .eq("city", "event")
+          .in("activity_type", eventChatIds);
+
+        const eventReadMap: Record<string, string> = {};
+        for (const rs of eventReadStatuses || []) {
+          eventReadMap[rs.activity_type] = rs.last_read_at;
+        }
 
         const eventUnread = await Promise.all(
           dedupedEventMembers.map(async (m) => {
@@ -146,9 +158,8 @@ export function useTotalUnreadChats() {
             const chat = chatRows?.find((c) => c.event_id === event_id);
             if (!chat?.id) return 0;
 
-            const stored = lastSeenMap[event_id]?.trim();
-            const joined = typeof m.joined_at === "string" ? m.joined_at.trim() : "";
-            const lastSeen = stored || joined || new Date(0).toISOString();
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            const lastSeen = eventReadMap[event_id] || sevenDaysAgo;
 
             const { count, error } = await supabase
               .from("event_chat_messages")
@@ -235,5 +246,76 @@ export function useTotalUnreadChats() {
     };
   }, [user, checkUnreadMessages]);
 
-  return { totalUnread, isLoading, refresh: checkUnreadMessages };
+  const markAllAsRead = useCallback(async () => {
+    if (!user?.id) return;
+    const now = new Date().toISOString();
+
+    // Mark all event chats as read in Supabase (works on iOS)
+    const { data: eventMembersEarly } = await supabase
+      .from('event_chat_members')
+      .select('event_id, expires_at, paid_at, event_starts_at, user_id, id, event_name, amount_cents, stripe_payment_intent_id')
+      .eq('user_id', user.id);
+
+    const validEventMembersEarly = (eventMembersEarly || []).filter(
+      (m: { event_id: string | null }) => m.event_id && !isEventChatMembershipExplicitlyExpired(m)
+    );
+
+    for (const m of validEventMembersEarly) {
+      markEventChatViewedNow(m.event_id as string);
+      await supabase.from("activity_read_status").upsert({
+        user_id: user.id,
+        activity_type: m.event_id as string,
+        city: "event",
+        last_read_at: now,
+      }, { onConflict: "user_id,activity_type,city" });
+    }
+
+    // Mark all carousel chats as read
+    const { data: carouselJoins } = await supabase
+      .from("activity_joins")
+      .select("activity_type, city")
+      .eq("user_id", user.id)
+      .is("activity_id", null)
+      .gt("expires_at", new Date().toISOString());
+
+    for (const join of carouselJoins || []) {
+      await supabase.from("activity_read_status").upsert({
+        user_id: user.id,
+        activity_type: join.activity_type,
+        city: join.city,
+        last_read_at: now,
+      }, { onConflict: "user_id,activity_type,city" });
+    }
+
+    // Mark all plan chats as read
+    const { data: planJoins } = await supabase
+      .from("activity_joins")
+      .select("activity_id")
+      .eq("user_id", user.id)
+      .not("activity_id", "is", null);
+
+    const { data: userPlans } = await supabase
+      .from("user_activities")
+      .select("id, city")
+      .eq("user_id", user.id);
+
+    const allPlanIds = new Set([
+      ...(planJoins || []).map(j => j.activity_id),
+      ...(userPlans || []).map(p => p.id),
+    ]);
+
+    for (const planId of allPlanIds) {
+      if (!planId) continue;
+      await supabase.from("activity_read_status").upsert({
+        user_id: user.id,
+        activity_type: planId,
+        city: "plan",
+        last_read_at: now,
+      }, { onConflict: "user_id,activity_type,city" });
+    }
+
+    setTotalUnread(0);
+  }, [user]);
+
+  return { totalUnread, isLoading, refresh: checkUnreadMessages, markAllAsRead };
 }
