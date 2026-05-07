@@ -336,7 +336,7 @@ export default function EventChatPage() {
                   <img
                     src={eventImageUrl}
                     alt=""
-                    style={{ width: "40px", height: "40px", objectFit: "cover", display: "block" }}
+                    style={{ width: "40px", height: "52px", objectFit: "contain", display: "block", background: "white" }}
                   />
                   <span style={{ fontSize: "6px", color: "#555", marginTop: "2px", maxWidth: "40px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {eventDate || "—"}
@@ -411,7 +411,7 @@ export default function EventChatPage() {
           </div>
 
           {/* Chat body */}
-          <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto space-y-3 px-4 pt-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+          <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto space-y-3 px-4 pt-4 pb-4">
             {status === "loading" && (
               <div className="flex items-center justify-center py-8">
                 <LoadingSpinner size="lg" />
@@ -507,7 +507,7 @@ export default function EventChatPage() {
               </p>
             )}
 
-            <div ref={messagesEndRef} className="h-px w-full shrink-0 scroll-mb-[calc(5.5rem+env(safe-area-inset-bottom))]" aria-hidden />
+            <div ref={messagesEndRef} className="h-px w-full shrink-0" aria-hidden />
           </div>
 
           {/* Input bar */}

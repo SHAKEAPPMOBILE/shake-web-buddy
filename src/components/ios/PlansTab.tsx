@@ -930,7 +930,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     </div>
 
                     <div className="flex items-center gap-1 mt-0.5">
-                      <span className="inline-flex items-center justify-center w-3 h-3 text-gray-600">📍</span>
                       <span className="text-xs text-gray-600">{plan.city}</span>
                       {!plan.isCarouselJoin && (
                         <span className="text-xs text-gray-500">
@@ -1058,7 +1057,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         </div>
 
                         <div className="flex items-center gap-1 mt-0.5">
-                          <span className="inline-flex items-center justify-center w-3 h-3 text-gray-600">📍</span>
                           <span className="text-xs text-gray-600">{plan.city}</span>
                           <span className="text-xs text-gray-500">
                             • {t('common.by')}{' '}

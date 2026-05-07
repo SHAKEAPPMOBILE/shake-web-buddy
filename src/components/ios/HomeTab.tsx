@@ -556,21 +556,21 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
       {/* Main content - hidden when carousel is active */}
       <div className={cn(
-        "flex flex-col h-full px-6 text-center pt-[calc(env(safe-area-inset-top,0px)+4rem)] overflow-hidden pb-24 relative",
+        "flex flex-col h-full px-6 text-center pt-[calc(env(safe-area-inset-top,0px)+2rem)] overflow-hidden pb-24 relative",
         showActivities && "overflow-hidden"
       )}>
         {/* Welcome Message */}
         <div className="mb-8">
           {/* City pill under the shakers row */}
           {isCityLoading ? (
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-3">
               <div className="inline-flex items-center gap-2 animate-pulse">
                 <LocationPinEmoji className="text-xl" />
                 <div className="h-4 w-[140px] rounded-xl bg-muted/60" />
               </div>
             </div>
           ) : (
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-3">
               <button
                 type="button"
                 onClick={() => setIsCitySelectorOpen(true)}
@@ -604,7 +604,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
         </div>
 
         {/* Center Area - Circle with Handshake */}
-        <div className="relative mb-8 flex flex-col items-center justify-center">
+        <div className="relative my-8 flex flex-col items-center justify-center">
           <div
             onClick={onOpenActivities}
             className={cn(
