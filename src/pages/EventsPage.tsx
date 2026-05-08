@@ -1122,44 +1122,209 @@ export default function EventsPage({
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-background overflow-hidden relative">
-      {/* Header — sticky so it never shifts when search opens/closes */}
+      {/* Header */}
       <div className="sticky top-0 z-10 bg-background px-5 pt-5 pb-3 border-b border-border flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <MinimalBackButton
-              onClick={handleEventsBack}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
-              aria-label="Back"
-            />
-            <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
-              Near You
-            </h1>
-          </div>
+        <div className="flex items-center gap-3 mb-3">
+          <MinimalBackButton
+            onClick={handleEventsBack}
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label="Back"
+          />
+          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
+            Near You
+          </h1>
+        </div>
+        {/* Category filter pills — always visible */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCat(c)}
+              className={cn(
+                "shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+                cat === c
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card text-muted-foreground border border-border hover:border-primary/30"
+              )}
+            >
+              {c}
+            </button>
+          ))}
+          <button
+            key={FESTIVAL_TAB}
+            type="button"
+            onClick={() => setCat(FESTIVAL_TAB)}
+            className={cn(
+              "shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+              cat === FESTIVAL_TAB
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground border border-border hover:border-primary/30"
+            )}
+          >
+            {FESTIVAL_TAB}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 px-4 pt-4 pb-8 flex flex-col gap-3 overflow-y-auto">
+        {/* Fixed-height scrollable events container — shows ~4 rows, search results replace list when active */}
+        <div
+          style={{ height: 280, overflowY: "auto", scrollbarWidth: "thin" }}
+          className="rounded-2xl border border-border bg-card/50 overflow-hidden"
+        >
+          {/* Search mode */}
+          {searchOpen && searchQuery.length < 2 && (
+            <div className="h-full flex items-center justify-center p-6">
+              <p className="text-sm text-muted-foreground text-center">Type to search concerts &amp; festivals...</p>
+            </div>
+          )}
+          {searchOpen && searchQuery.length >= 2 && searchLoading && (
+            <div className="p-4 space-y-3">
+              <div className="animate-pulse space-y-3">
+                <div className="h-14 rounded-xl bg-muted/60" />
+                <div className="h-14 rounded-xl bg-muted/60" />
+                <div className="h-14 rounded-xl bg-muted/60" />
+              </div>
+            </div>
+          )}
+          {searchOpen && searchQuery.length >= 2 && !searchLoading && searchResults.length === 0 && (
+            <div className="h-full flex items-center justify-center p-6">
+              <p className="text-sm text-muted-foreground text-center">No results for &ldquo;{searchQuery}&rdquo;</p>
+            </div>
+          )}
+          {searchOpen && searchQuery.length >= 2 && !searchLoading && searchResults.length > 0 && (
+            <div className="flex flex-col">
+              {searchResults.map((e, i) => (
+                <div key={e.id}>
+                  {i > 0 && <div className="h-px bg-border/70 mx-4" />}
+                  <button
+                    type="button"
+                    onClick={() => setSelected(e)}
+                    className="w-full flex items-center gap-3 py-3 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="overflow-hidden shrink-0 flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, background: "#1e0a2e", flexShrink: 0 }}>
+                      {e.imageUrl ? (
+                        <img
+                          src={e.imageUrl}
+                          alt={e.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          onError={(ev) => {
+                            const img = ev.currentTarget;
+                            const parent = img.parentElement!;
+                            img.remove();
+                            parent.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🎵</div>';
+                          }}
+                        />
+                      ) : (
+                        <span className="text-2xl">{e.emoji}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground text-sm mb-0.5 truncate">{e.name}</p>
+                      <p className="text-muted-foreground text-xs mb-0.5 truncate">{e.venue} · {e.city}</p>
+                      <p className="text-muted-foreground text-xs">{e.date}</p>
+                    </div>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Normal events list */}
+          {!searchOpen && isCityOutOfRange && !isManuallySelected && (
+            <div className="h-full flex items-center justify-center p-6">
+              <p className="text-sm text-muted-foreground text-center">SHAKE is coming to your city soon 🌍 Stay tuned!</p>
+            </div>
+          )}
+          {!searchOpen && !(isCityOutOfRange && !isManuallySelected) && (cat === FESTIVAL_TAB ? festivalsLoading : eventsLoading) && (
+            <div className="p-4 space-y-3 animate-pulse">
+              <div className="h-14 rounded-xl bg-muted/60" />
+              <div className="h-14 rounded-xl bg-muted/60" />
+              <div className="h-14 rounded-xl bg-muted/60" />
+              <div className="h-14 rounded-xl bg-muted/60" />
+            </div>
+          )}
+          {!searchOpen && !(isCityOutOfRange && !isManuallySelected) && !(cat === FESTIVAL_TAB ? festivalsLoading : eventsLoading) && filtered.length === 0 && (
+            <div className="h-full flex items-center justify-center p-6">
+              <p className="text-sm text-muted-foreground text-center">No events in {selectedCity ?? "this city"} yet — check back soon 🔥</p>
+            </div>
+          )}
+          {!searchOpen && !(isCityOutOfRange && !isManuallySelected) && !(cat === FESTIVAL_TAB ? festivalsLoading : eventsLoading) && filtered.length > 0 && (
+            <div className="flex flex-col">
+              {filtered.map((e, i) => (
+                <div key={e.id}>
+                  {i > 0 && <div className="h-px bg-border/70 mx-4" />}
+                  <button
+                    type="button"
+                    onClick={() => setSelected(e)}
+                    className="w-full flex items-center gap-3 py-3 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="overflow-hidden shrink-0 flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, background: "#1e0a2e", flexShrink: 0 }}>
+                      {e.imageUrl ? (
+                        <img
+                          src={e.imageUrl}
+                          alt={e.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          onError={(ev) => {
+                            const img = ev.currentTarget;
+                            const parent = img.parentElement!;
+                            img.remove();
+                            parent.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🎵</div>';
+                          }}
+                        />
+                      ) : (
+                        <span className="text-2xl">🎵</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground text-sm mb-0.5 truncate">{e.name}</p>
+                      <p className="text-muted-foreground text-xs mb-0.5 truncate">{e.venue} · {e.date}</p>
+                      <div className="flex gap-3 items-center flex-wrap">
+                        {(e.priceMin != null && e.priceMax != null && e.priceMin > 0 && e.priceMax > 0) && (
+                          <span className="text-primary text-xs font-medium">${e.priceMin}–${e.priceMax}</span>
+                        )}
+                        {e.ticketsSold ? (
+                          <div className="flex items-center gap-1">
+                            <Users className="w-2.5 h-2.5 text-muted-foreground" />
+                            <span className="text-muted-foreground text-[11px]">{e.ticketsSold.toLocaleString()} sold</span>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Search bar — collapsed pill by default, expands to input when active */}
+        {!searchOpen ? (
           <button
             type="button"
-            aria-label={searchOpen ? "Close search" : "Search events"}
             onClick={() => {
-              setSearchOpen((v) => !v);
+              setSearchOpen(true);
               setSearchQuery("");
               setSearchResults([]);
             }}
-            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+            className="w-full flex items-center gap-2 px-4 py-3 rounded-full bg-muted/60 border border-border text-muted-foreground text-sm hover:bg-muted/80 transition-colors"
           >
-            {searchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+            <Search className="w-4 h-4 shrink-0" />
+            <span>Search events...</span>
           </button>
-        </div>
-        {searchOpen && (
-          <div className="relative mb-1">
+        ) : (
+          <div className="relative flex items-center">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             {searchLoading && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              <div className="absolute right-9 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
             )}
             <input
               autoFocus
               type="text"
               value={searchQuery}
               placeholder="Search concerts & festivals..."
-              className="w-full pl-9 pr-9 py-2.5 rounded-full bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-9 pr-9 py-3 rounded-full bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               onChange={(e) => {
                 const q = e.target.value;
                 setSearchQuery(q);
@@ -1178,273 +1343,20 @@ export default function EventsPage({
                 }, 400);
               }}
             />
-          </div>
-        )}
-        {!searchOpen && (
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCat(c)}
-                className={cn(
-                  "shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
-                  cat === c
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card text-muted-foreground border border-border hover:border-primary/30"
-                )}
-              >
-                {c}
-              </button>
-            ))}
             <button
-              key={FESTIVAL_TAB}
               type="button"
-              onClick={() => setCat(FESTIVAL_TAB)}
-              className={cn(
-                "shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
-                cat === FESTIVAL_TAB
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground border border-border hover:border-primary/30"
-              )}
+              onClick={() => { setSearchOpen(false); setSearchQuery(""); setSearchResults([]); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Clear search"
             >
-              {FESTIVAL_TAB}
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}
-      </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {/* Search results */}
-        {searchOpen && (
-          <div className="pt-4 pb-8">
-            {searchQuery.length < 2 ? (
-              <div className="mx-4 rounded-2xl bg-card/50 border border-border p-6 text-center">
-                <p className="text-sm text-muted-foreground">Type to search concerts &amp; festivals...</p>
-              </div>
-            ) : searchLoading ? (
-              <div className="mx-4 rounded-2xl bg-card/50 border border-border p-4">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-14 rounded-xl bg-muted/60" />
-                  <div className="h-14 rounded-xl bg-muted/60" />
-                  <div className="h-14 rounded-xl bg-muted/60" />
-                </div>
-              </div>
-            ) : searchResults.length === 0 ? (
-              <div className="mx-4 rounded-2xl bg-card/50 border border-border p-6 text-center">
-                <p className="text-sm text-muted-foreground">No results for "{searchQuery}"</p>
-              </div>
-            ) : (
-              <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border">
-                {searchResults.map((e, i) => (
-                  <div key={e.id}>
-                    {i > 0 && <div className="h-px bg-border/70 mx-4" />}
-                    <button
-                      type="button"
-                      onClick={() => setSelected(e)}
-                      className="w-full flex items-center gap-3 py-3.5 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "#1e0a2e", borderRadius: 8, flexShrink: 0 }}>
-                        {e.imageUrl ? (
-                          <img
-                            src={e.imageUrl}
-                            alt={e.name}
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            onError={(ev) => {
-                              const img = ev.currentTarget;
-                              const parent = img.parentElement!;
-                              img.remove();
-                              parent.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🎵</div>';
-                            }}
-                          />
-                        ) : (
-                          <span className="text-2xl">{e.emoji}</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-foreground text-sm mb-0.5 truncate">{e.name}</p>
-                        <p className="text-muted-foreground text-xs mb-1 truncate">{e.venue} · {e.city}</p>
-                        <p className="text-muted-foreground text-xs">{e.date}</p>
-                      </div>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Happening Soon */}
-        {!searchOpen && !eventsLoading && hot.length > 0 && (
-          <div className="pt-5 pb-2">
-            <div className="flex items-center gap-2 px-5 mb-3">
-              <span>🔥</span>
-              <span className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">
-                Happening Soon
-              </span>
-            </div>
-            <div className="flex gap-3 px-5 overflow-x-auto pb-2 scrollbar-hide">
-              {hot.map((e) => (
-                <button
-                  key={e.id}
-                  type="button"
-                  onClick={() => setSelected(e)}
-                  className="shrink-0 w-[200px] rounded-2xl overflow-hidden bg-card border border-border text-left hover:border-primary/30 transition-colors"
-                >
-                  <div
-                    className="h-28 relative overflow-hidden rounded-t-2xl"
-                    style={
-                      !e.imageUrl
-                        ? { background: `linear-gradient(135deg, hsl(${hue(e.id)}, 55%, 22%), hsl(${(hue(e.id) + 120) % 360}, 45%, 13%))` }
-                        : undefined
-                    }
-                  >
-                    {e.imageUrl && (
-                      <img
-                        src={e.imageUrl}
-                        className="w-full h-full object-cover absolute inset-0"
-                        alt={e.name}
-                        onError={(ev) => {
-                          const target = ev.target as HTMLImageElement;
-                          target.style.display = "none";
-                        }}
-                      />
-                    )}
-                    <div className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold">
-                      HOT
-                    </div>
-                    <div className="absolute bottom-2 left-2.5 text-2xl">
-                      {e.emoji}
-                    </div>
-                  </div>
-                  <div className="p-3">
-                    <p className="font-semibold text-foreground text-sm leading-snug mb-1">
-                      {e.name}
-                    </p>
-                    <p className="text-muted-foreground text-xs mb-1.5">
-                      {e.date}
-                    </p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {e.ticketsSold ? (
-                        <span className="text-xs text-muted-foreground">
-                          {e.ticketsSold.toLocaleString()} sold
-                        </span>
-                      ) : null}
-                      {"presaleCount" in e && e.presaleCount ? (
-                        <span className="text-xs text-muted-foreground">
-                          {e.presaleCount.toLocaleString()} presale
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* All Nearby */}
-        {!searchOpen && <div className="pt-4 pb-8">
-          <div className="flex items-center gap-2 px-5 mb-3">
-            <span>📍</span>
-            <span className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">
-              All Nearby
-            </span>
-          </div>
-          {isCityOutOfRange && !isManuallySelected ? (
-            <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border p-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                SHAKE is coming to your city soon 🌍 Stay tuned!
-              </p>
-            </div>
-          ) : (cat === FESTIVAL_TAB ? festivalsLoading : eventsLoading) ? (
-            <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border p-4">
-              <div className="animate-pulse space-y-3">
-                <div className="h-14 rounded-xl bg-muted/60" />
-                <div className="h-14 rounded-xl bg-muted/60" />
-                <div className="h-14 rounded-xl bg-muted/60" />
-                <div className="h-14 rounded-xl bg-muted/60" />
-              </div>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="mx-4 rounded-2xl overflow-hidden bg-card/50 border border-border p-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                No events in {selectedCity ?? "this city"} yet — check back soon 🔥
-              </p>
-            </div>
-          ) : (
-          <div className="mx-4 flex flex-col gap-2">
-            {filtered.map((e) => (
-              <div
-                key={e.id}
-                style={{
-                  background: "rgba(255,255,255,0.07)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 16,
-                  overflow: "hidden",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setSelected(e)}
-                  className="w-full flex items-center gap-3 py-3.5 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
-                >
-                  <div className="overflow-hidden shrink-0 flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, background: "#1e0a2e", flexShrink: 0 }}>
-                    {e.imageUrl ? (
-                      <img
-                        src={e.imageUrl}
-                        alt={e.name}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        onError={(ev) => {
-                          const img = ev.currentTarget;
-                          const parent = img.parentElement!;
-                          img.remove();
-                          parent.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🎵</div>';
-                        }}
-                      />
-                    ) : (
-                      <span className="text-2xl">🎵</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground text-sm mb-0.5 truncate">
-                      {e.name}
-                    </p>
-                    <p className="text-muted-foreground text-xs mb-1 truncate">
-                      {e.venue} · {e.date}
-                    </p>
-                    <div className="flex gap-3 items-center flex-wrap">
-                      {(e.priceMin != null && e.priceMax != null && e.priceMin > 0 && e.priceMax > 0) ? (
-                        <span className="text-primary text-xs font-medium">
-                          ${e.priceMin}–${e.priceMax}
-                        </span>
-                      ) : null}
-                      {e.ticketsSold ? (
-                        <div className="flex items-center gap-1">
-                          <Users className="w-2.5 h-2.5 text-muted-foreground" />
-                          <span className="text-muted-foreground text-[11px]">
-                            {e.ticketsSold.toLocaleString()} sold
-                          </span>
-                        </div>
-                      ) : null}
-                      {"presaleCount" in e && (
-                        <span className="text-muted-foreground text-[11px]">
-                          {e.presaleCount.toLocaleString()} presale
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              </div>
-            ))}
-          </div>
-          )}
-          <p className="text-center text-muted-foreground/70 text-[11px] mt-5 px-6">
-            Powered by Ticketmaster · Purchases on ticketmaster.com
-          </p>
-        </div>}
+        <p className="text-center text-muted-foreground/70 text-[11px] px-6">
+          Powered by Ticketmaster · Purchases on ticketmaster.com
+        </p>
       </div>
 
       {selected && (
