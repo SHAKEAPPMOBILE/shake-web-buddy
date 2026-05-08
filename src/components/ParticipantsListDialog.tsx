@@ -161,6 +161,10 @@ export function ParticipantsListDialog({
                             src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
                             alt={participant.name || "User"}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement!.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1rem;background:#e8e0f0;color:#7c3aed;font-weight:600">' + (participant.name?.charAt(0)?.toUpperCase() || '?') + '</div>';
+                            }}
                           />
                         ) : (
                           <User className="w-5 h-5 text-muted-foreground" />
@@ -195,6 +199,10 @@ export function ParticipantsListDialog({
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
                                 alt={participant.name || "User"}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.parentElement!.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1rem;background:#e8e0f0;color:#7c3aed;font-weight:600">' + (participant.name?.charAt(0)?.toUpperCase() || '?') + '</div>';
+                                }}
                               />
                             ) : (
                               <User className="w-5 h-5 text-muted-foreground" />
@@ -244,6 +252,10 @@ export function ParticipantsListDialog({
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
                                 alt={participant.name || "User"}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.parentElement!.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1rem;background:#e8e0f0;color:#7c3aed;font-weight:600">' + (participant.name?.charAt(0)?.toUpperCase() || '?') + '</div>';
+                                }}
                               />
                             ) : (
                               <User className="w-5 h-5 text-muted-foreground" />
