@@ -554,7 +554,7 @@ export function GroupChatView({
             {activityMeta?.icon ? (
               <img src={activityMeta.icon} alt={activityType} className="w-full h-full object-cover rounded-full" />
             ) : (
-              <span className="text-xl">{activityMeta?.emoji ?? "📍"}</span>
+              <span className="text-4xl">{activityMeta?.emoji ?? "📍"}</span>
             )}
           </div>
 

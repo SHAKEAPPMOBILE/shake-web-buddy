@@ -434,7 +434,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </button>
 
         <h2 className="mt-2 text-xl font-display font-bold text-gray-900 dark:text-gray-900">{userName || t('profile.userFallback', 'User')}</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-600">{user.email}</p>
         {isPremium && (
           <div
             onClick={(e) => {
