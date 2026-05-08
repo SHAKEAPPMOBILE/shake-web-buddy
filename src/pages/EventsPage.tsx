@@ -1182,7 +1182,7 @@ export default function EventsPage({
         </div>
       </div>
 
-      <div className="flex-1 px-4 pt-4 pb-8 flex flex-col gap-3 overflow-y-auto">
+      <div className="flex-1 px-4 pt-4 pb-8 flex flex-col gap-5 overflow-y-auto">
         {/* Fixed-height scrollable events container — shows ~4 rows, search results replace list when active */}
         <div
           style={{ height: 280, overflowY: "auto", scrollbarWidth: "thin" }}
