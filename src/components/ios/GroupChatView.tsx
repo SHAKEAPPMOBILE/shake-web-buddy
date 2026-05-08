@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, Send, Users, User, BellOff, Bell, LogOut, Trash2, Plane, Images } from "lucide-react";
+import { Send, User, BellOff, Bell, LogOut, Trash2, Plane, Images } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -189,7 +189,6 @@ export function GroupChatView({
   }, [filteredVenues, venueType, assignedVenue]);
   
   const currentVenue = cityVenues[currentVenueIndex];
-  const hasMultipleVenues = cityVenues.length > 1;
   const hasVenues = cityVenues.length > 0;
   const isCurrentVenueAssigned = assignedVenue ? currentVenue?.id === assignedVenue.id : false;
 
@@ -458,14 +457,6 @@ export function GroupChatView({
     [user, isSending, isPremium, canSendText, activityType, city]
   );
   
-  const handlePrevVenue = () => {
-    setCurrentVenueIndex((prev) => (prev === 0 ? cityVenues.length - 1 : prev - 1));
-  };
-  
-  const handleNextVenue = () => {
-    setCurrentVenueIndex((prev) => (prev === cityVenues.length - 1 ? 0 : prev + 1));
-  };
-  
   const handleSuggestVenue = async (venue: DbVenue) => {
     if (!user) return;
     
@@ -582,85 +573,34 @@ export function GroupChatView({
           {headerDateOnly && <p className="text-sm text-gray-500 leading-tight">{headerDateOnly}</p>}
           {activityTime && <p className="text-sm text-gray-500 leading-tight">{activityTime}</p>}
 
-          {/* Venue row — arrows + pill on the same line */}
+          {/* Venue pill */}
           {hasVenues && currentVenue && assignedVenue && (
-            <div className="w-full flex items-center justify-center gap-3 mt-2 px-2">
+            <div className="flex items-center justify-center gap-1.5 mt-2 min-w-0">
               <button
-                onClick={handlePrevVenue}
-                disabled={!hasMultipleVenues}
-                className={`flex items-center justify-center w-9 h-9 rounded-full shadow-sm border transition-all shrink-0 ${
-                  hasMultipleVenues
-                    ? "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 active:scale-95"
-                    : "bg-white/40 border-gray-200/40 text-gray-400 cursor-default"
-                }`}
-                aria-label="Previous venue"
+                onClick={() => {
+                  const venueUrl = currentVenue.latitude && currentVenue.longitude
+                    ? `https://www.google.com/maps/search/?api=1&query=${currentVenue.latitude},${currentVenue.longitude}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentVenue.name}, ${currentVenue.address}`)}`;
+                  window.location.href = venueUrl;
+                }}
+                className="text-base hover:scale-110 transition-transform shrink-0"
+                title="Open in Google Maps"
               >
-                <ChevronLeft className="w-5 h-5" />
+                📍
               </button>
-
-              <div className="flex items-center gap-1.5 min-w-0">
+              {isCurrentVenueAssigned ? (
+                <span className="inline-flex items-center px-3 py-1.5 bg-white text-green-600 rounded-full text-sm font-semibold border border-green-500/30 max-w-[200px] truncate">
+                  {currentVenue.name}
+                </span>
+              ) : (
                 <button
-                  onClick={() => {
-                    const venueUrl = currentVenue.latitude && currentVenue.longitude
-                      ? `https://www.google.com/maps/search/?api=1&query=${currentVenue.latitude},${currentVenue.longitude}`
-                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentVenue.name}, ${currentVenue.address}`)}`;
-                    window.location.href = venueUrl;
-                  }}
-                  className="text-base hover:scale-110 transition-transform shrink-0"
-                  title="Open in Google Maps"
+                  onClick={() => handleSuggestVenue(currentVenue)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-gray-900 rounded-full text-sm font-semibold border border-white/20 hover:bg-white/20 max-w-[200px]"
                 >
-                  📍
+                  <span className="truncate">{currentVenue.name}</span>
+                  <span className="text-xs text-gray-500 shrink-0">({t('chat.suggest', 'Suggest')})</span>
                 </button>
-                {isCurrentVenueAssigned ? (
-                  <button
-                    onClick={(e) => {
-                      const el = e.currentTarget.querySelector('.venue-name') as HTMLElement;
-                      if (el) {
-                        el.classList.toggle('max-w-[140px]');
-                        el.classList.toggle('max-w-none');
-                      }
-                    }}
-                    className="inline-flex items-center px-3 py-1.5 bg-white text-green-600 rounded-full text-sm font-semibold border border-green-500/30 min-w-0 max-w-[140px]"
-                  >
-                    <span className="venue-name truncate whitespace-nowrap">{currentVenue.name}</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleSuggestVenue(currentVenue)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-gray-900 rounded-full text-sm font-semibold border border-white/20 hover:bg-white/20 min-w-0 max-w-[140px]"
-                  >
-                    <span className="venue-name truncate whitespace-nowrap">{currentVenue.name}</span>
-                    <span className="text-xs text-gray-500 shrink-0">({t('chat.suggest', 'Suggest')})</span>
-                  </button>
-                )}
-              </div>
-
-              <button
-                onClick={handleNextVenue}
-                disabled={!hasMultipleVenues}
-                className={`flex items-center justify-center w-9 h-9 rounded-full shadow-sm border transition-all shrink-0 ${
-                  hasMultipleVenues
-                    ? "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 active:scale-95"
-                    : "bg-white/40 border-gray-200/40 text-gray-400 cursor-default"
-                }`}
-                aria-label="Next venue"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-
-          {/* Dot indicators */}
-          {hasMultipleVenues && (
-            <div className="flex justify-center gap-1 mt-1">
-              {cityVenues.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    idx === currentVenueIndex ? 'bg-primary' : 'bg-white/30'
-                  }`}
-                />
-              ))}
+              )}
             </div>
           )}
 
