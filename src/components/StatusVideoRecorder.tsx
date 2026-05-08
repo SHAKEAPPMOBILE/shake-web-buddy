@@ -22,7 +22,6 @@ export function StatusVideoRecorder({
       onOpenChange={onOpenChange}
       title="Status Video"
       maxDurationSeconds={10}
-      requirePremium
       existingVideoUrl={existingVideoUrl}
       onDeleteExisting={() => deleteStatusVideo(userId)}
       onUploadFile={async (file, onProgress) => {

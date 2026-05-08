@@ -137,10 +137,40 @@ export async function uploadStatusVideo(
 }
 
 export async function deleteStatusVideo(userId: string): Promise<boolean> {
+  // Fetch existing records to get storage paths before deleting
+  const { data: existingVideos } = await supabase
+    .from("status_videos")
+    .select("video_url")
+    .eq("user_id", userId);
+
+  // Delete the DB records
   const { error } = await supabase
     .from("status_videos")
     .delete()
     .eq("user_id", userId);
 
-  return !error;
+  if (error) return false;
+
+  // Delete files from storage so the URLs no longer resolve
+  if (existingVideos && existingVideos.length > 0) {
+    const filePaths = existingVideos
+      .map((v) => {
+        const bucketPrefix = "/status-videos/";
+        const idx = v.video_url.indexOf(bucketPrefix);
+        return idx !== -1 ? v.video_url.slice(idx + bucketPrefix.length) : null;
+      })
+      .filter(Boolean) as string[];
+
+    if (filePaths.length > 0) {
+      await supabase.storage.from("status-videos").remove(filePaths);
+    }
+  }
+
+  // Clear avatar_url so the deleted video URL no longer persists on the profile
+  await supabase
+    .from("profiles")
+    .update({ avatar_url: null })
+    .eq("user_id", userId);
+
+  return true;
 }

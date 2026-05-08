@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/lib/app-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "./PremiumDialog";
-import { useMonthlyVideoLimit } from "@/hooks/useMonthlyVideoLimit";
+import { checkMonthlyVideoLimit } from "@/lib/videoLimit";
 
 export interface VideoUploadModalProps {
   open: boolean;
@@ -49,7 +49,8 @@ export function VideoUploadModal({
   floatingSendUsesChatPurple = false,
 }: VideoUploadModalProps) {
   const { user, isPremium } = useAuth();
-  const { canSendFreeVideo } = useMonthlyVideoLimit(user?.id);
+  // null = check in flight, false = under limit, true = limit reached
+  const [limitReached, setLimitReached] = useState<boolean | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -58,6 +59,27 @@ export function VideoUploadModal({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadInFlightRef = useRef(false);
+
+  // Check the monthly free-tier video limit each time the modal opens.
+  // Premium users are exempt. When existingVideoUrl is set the user is
+  // managing (deleting) an existing video, not uploading a new one.
+  useEffect(() => {
+    if (!open) {
+      setLimitReached(null);
+      return;
+    }
+    if (isPremium || existingVideoUrl) {
+      setLimitReached(false);
+      return;
+    }
+    if (!user?.id) {
+      setLimitReached(false);
+      return;
+    }
+    checkMonthlyVideoLimit(user.id).then(({ limitReached: reached }) => {
+      setLimitReached(reached);
+    });
+  }, [open, isPremium, user?.id, existingVideoUrl]);
 
   const resetSelection = useCallback(() => {
     setSelectedFile(null);
@@ -219,7 +241,10 @@ export function VideoUploadModal({
 
   if (!open) return null;
 
-  if (requirePremium && !isPremium && !canSendFreeVideo) {
+  // While the async limit check is in flight, render nothing to avoid flashing.
+  if (limitReached === null) return null;
+
+  if (limitReached) {
     return (
       <PremiumDialog open={true} onOpenChange={(o) => { if (!o) onOpenChange(false); }} />
     );

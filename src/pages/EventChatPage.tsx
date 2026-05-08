@@ -21,7 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VideoUploadModal } from "@/components/VideoUploadModal";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
-import { useMonthlyVideoLimit } from "@/hooks/useMonthlyVideoLimit";
+import { checkMonthlyVideoLimit } from "@/lib/videoLimit";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { EVENT_CHAT_VIDEO_MAX_SECONDS, uploadEventChatVideoWithProgress } from "@/lib/eventChatVideoUpload";
 import { useEventChatReactions } from "@/hooks/useEventChatReactions";
@@ -61,7 +61,6 @@ export default function EventChatPage() {
       : null;
 
   const { user, isPremium, isLoading: authLoading } = useAuth();
-  const { canSendFreeVideo } = useMonthlyVideoLimit(user?.id);
   const [eventName, setEventName] = useState<string>(() => prefetch?.name?.trim() || "Event chat");
   const [eventStartsAt, setEventStartsAt] = useState<string | null>(
     () => prefetchStart ?? null
@@ -531,11 +530,17 @@ export default function EventChatPage() {
                 size="icon"
                 className="shrink-0 h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
                 onClick={() => {
-                  if (isPremium || canSendFreeVideo) {
+                  if (isPremium) {
                     setVideoModalOpen(true);
-                  } else {
-                    setPremiumDialogOpen(true);
+                    return;
                   }
+                  checkMonthlyVideoLimit(user!.id).then(({ limitReached }) => {
+                    if (limitReached) {
+                      setPremiumDialogOpen(true);
+                    } else {
+                      setVideoModalOpen(true);
+                    }
+                  });
                 }}
                 disabled={isSending || status !== "active" || videoModalOpen || giphyPickerOpen}
                 aria-label="Record or attach video"
