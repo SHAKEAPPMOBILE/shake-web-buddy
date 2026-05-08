@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { Capacitor } from "@capacitor/core";
+import { App } from "@capacitor/app";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,11 +93,36 @@ export function useCapacitorPushNotifications() {
       console.error("[PushNotifications] Setup error:", err);
     });
 
+    // Clear badge count whenever the app comes to the foreground
+    const clearBadge = async () => {
+      try {
+        await PushNotifications.removeAllDeliveredNotifications();
+        // Set badge to 0 via the Capacitor Badge plugin if available
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const BadgePlugin = (window as any)?.Capacitor?.Plugins?.Badge;
+        if (BadgePlugin?.set) {
+          await BadgePlugin.set({ count: 0 });
+        }
+      } catch (_) {
+        // Badge API may not be available on all builds — ignore silently
+      }
+    };
+
+    // Clear on initial mount (app just opened)
+    clearBadge();
+
+    // Clear each time the app returns to foreground
+    let appStateHandle: { remove: () => Promise<void> } | null = null;
+    App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) clearBadge();
+    }).then((h) => { appStateHandle = h; });
+
     return () => {
       initialized.current = false;
       registrationHandle?.remove();
       receivedHandle?.remove();
       actionHandle?.remove();
+      appStateHandle?.remove();
     };
   }, [user, navigate]);
 }

@@ -358,54 +358,55 @@ export function PlanGroupChatView({
 
   const creatorProfile = profiles[activity.user_id];
 
+  // Parse scheduled_for into separate day / date / time lines
+  const { planDay, planDate, planTime } = (() => {
+    const d = activity.scheduled_for ? new Date(activity.scheduled_for) : null;
+    if (!d || isNaN(d.getTime())) return { planDay: null, planDate: null, planTime: null };
+    const today = new Date();
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    const isToday = d.toDateString() === today.toDateString();
+    const isTomorrow = d.toDateString() === tomorrow.toDateString();
+    const day = isToday ? "Today" : isTomorrow ? "Tomorrow" : d.toLocaleDateString('en-US', { weekday: 'long' });
+    const date = (isToday || isTomorrow) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return { planDay: day, planDate: date, planTime: time };
+  })();
+  const planEmoji = getActivityEmoji(activity.activity_type);
+
   return (
     <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50">
       {/* Header */}
-      <div className="relative z-30 flex shrink-0 items-center gap-3 bg-[hsl(50,40%,92%)] px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top))]">
+      <div className="relative z-30 flex shrink-0 items-center bg-[hsl(50,40%,92%)] px-4 py-5 pt-[calc(1.25rem+env(safe-area-inset-top))]">
         <MinimalBackButton
           onClick={onBack}
           className="shrink-0 text-black/80 hover:text-black"
           aria-label="Back"
           iconClassName="w-6 h-6"
         />
-        
-        {/* Creator Avatar */}
-        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-black/20 shadow-sm shrink-0">
-          {creatorProfile?.avatar_url ? (
-            <Avatar className="w-full h-full rounded-full">
-              <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
-              <AvatarFallback className="bg-white flex items-center justify-center">
-                <span className="text-lg">{getActivityEmoji(activity.activity_type)}</span>
-              </AvatarFallback>
-            </Avatar>
-          ) : (
-            <span className="text-lg">{getActivityEmoji(activity.activity_type)}</span>
-          )}
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold font-display text-black truncate">
+
+        {/* Centered content */}
+        <div className="absolute inset-x-0 flex flex-col items-center pointer-events-none px-16">
+          <div className="w-10 h-10 rounded-full bg-white/70 border border-black/10 overflow-hidden flex items-center justify-center mb-1 shadow-sm">
+            {creatorProfile?.avatar_url ? (
+              <Avatar className="w-full h-full rounded-full">
+                <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
+                <AvatarFallback className="bg-white flex items-center justify-center">
+                  <span className="text-xl">{planEmoji}</span>
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <span className="text-xl">{planEmoji}</span>
+            )}
+          </div>
+          <h1 className="text-base font-bold text-black text-center leading-tight">
             {activity.note || t('plans.untitledPlan', 'Untitled Plan')}
           </h1>
-          <p className="text-sm text-black/60 truncate">
-            {t('chat.createdBy', 'Created by')}{' '}
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedUserProfile({
-                  userId: activity.user_id,
-                  userName: creatorProfile?.name || null,
-                  avatarUrl: creatorProfile?.avatar_url || null,
-                });
-              }}
-              className="underline hover:text-black/80 transition-colors font-medium"
-            >
-              {creatorProfile?.name || "Shaker"}
-            </button>
-          </p>
+          {planDay && <p className="text-sm font-semibold text-black/80 mt-0.5">{planDay}</p>}
+          {planDate && <p className="text-xs text-black/60">{planDate}</p>}
+          {planTime && <p className="text-xs text-black/60">{planTime}</p>}
         </div>
 
-        <div className="relative shrink-0">
+        <div className="relative ml-auto shrink-0">
           <button
             onClick={() => setShowMenu((v) => !v)}
             className="p-2 rounded-full hover:bg-black/10 transition-colors"

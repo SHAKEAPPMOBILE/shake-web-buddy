@@ -212,10 +212,11 @@ export default function EventChatPage() {
 
 
   const dateLine = (location.state as any)?.dateLine ?? null;
-  const headerSubtitle = useMemo(() => {
-    if (status === "expired") return "This chat ended 12h after the event 🎤";
-    if (dateLine) return dateLine;
-    if (status === "error") return "Something went wrong. Try again.";
+  // Split header date into day / date / time for separate lines
+  const { headerDay: evtHeaderDay, headerDateOnly: evtHeaderDate, headerTime: evtHeaderTime } = useMemo(() => {
+    if (status === "expired") return { headerDay: "This chat ended 12h after the event 🎤", headerDateOnly: null, headerTime: null };
+    if (dateLine) return { headerDay: dateLine as string, headerDateOnly: null, headerTime: null };
+    if (status === "error") return { headerDay: "Something went wrong. Try again.", headerDateOnly: null, headerTime: null };
     if (eventStartsAt) {
       const d = new Date(eventStartsAt);
       if (!Number.isNaN(d.getTime())) {
@@ -223,17 +224,18 @@ export default function EventChatPage() {
         const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
         const isToday = d.toDateString() === today.toDateString();
         const isTomorrow = d.toDateString() === tomorrow.toDateString();
-        const dayName = isToday ? "Today" : isTomorrow ? "Tomorrow" : d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-        const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-        return `${dayName} at ${timeStr}`;
+        const day = isToday ? "Today" : isTomorrow ? "Tomorrow" : d.toLocaleDateString('en-US', { weekday: 'long' });
+        const date = (isToday || isTomorrow) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        return { headerDay: day, headerDateOnly: date, headerTime: time };
       }
     }
     if (minutesLeft !== null && (status === "active" || status === "loading")) {
-      return `Chat closes in ${minutesLeft}m`;
+      return { headerDay: `Chat closes in ${minutesLeft}m`, headerDateOnly: null, headerTime: null };
     }
-    if (status === "loading") return "Loading messages…";
-    return "Messages from this event will appear here.";
-  }, [minutesLeft, status, eventStartsAt]);
+    if (status === "loading") return { headerDay: "Loading messages…", headerDateOnly: null, headerTime: null };
+    return { headerDay: "Messages from this event will appear here.", headerDateOnly: null, headerTime: null };
+  }, [minutesLeft, status, eventStartsAt, dateLine]);
 
   if (!eventId) return null;
 
@@ -309,7 +311,7 @@ export default function EventChatPage() {
         />
         <div className="relative z-10 flex flex-col flex-1 min-h-0">
           {/* Header */}
-          <div className="relative z-30 flex shrink-0 items-center gap-3 border-b border-white/5 px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top))]">
+          <div className="relative z-30 flex shrink-0 items-center gap-3 border-b border-white/5 px-4 py-5 pt-[calc(1.25rem+env(safe-area-inset-top))]">
             <MinimalBackButton
               onClick={navigateBackFromEventChat}
               className="shrink-0 text-white/80 hover:text-white"
@@ -367,10 +369,11 @@ export default function EventChatPage() {
               )}
               <div className="flex-1 min-w-0">
                 <h1 className="text-xl font-bold text-white truncate">{eventName}</h1>
-                <p className="text-sm text-white/50 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{headerSubtitle}</span>
-                </p>
+                <div className="mt-0.5">
+                  <p className="text-sm font-semibold text-white/80 leading-tight">{evtHeaderDay}</p>
+                  {evtHeaderDate && <p className="text-xs text-white/60 leading-tight">{evtHeaderDate}</p>}
+                  {evtHeaderTime && <p className="text-xs text-white/60 leading-tight">{evtHeaderTime}</p>}
+                </div>
               </div>
             </div>
             {memberCount !== null && (

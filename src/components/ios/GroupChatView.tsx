@@ -477,70 +477,69 @@ export function GroupChatView({
   const title = getActivityLabel(activityType);
   const activityMeta = getActivityById(activityType);
   const activityTime = activityType === "lunch" ? "12:30 PM" : activityType === "dinner" ? "7:00 PM" : activityType === "drinks" ? "8:00 PM" : activityType === "brunch" ? "11:00 AM" : activityType === "hike" ? "9:00 AM" : null;
-  const headerDateLabel = eventDate
-    ? (() => {
-        const d = new Date(eventDate);
-        const today = new Date();
-        const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-        const isToday = d.toDateString() === today.toDateString();
-        const isTomorrow = d.toDateString() === tomorrow.toDateString();
-        const dayName = isToday ? "Today" : isTomorrow ? "Tomorrow" : d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-        return activityTime ? `${dayName} at ${activityTime}` : dayName;
-      })()
-    : (() => {
-        // No eventDate — compute next occurrence of the activity's default weekday
-        const defaultDay: Record<string, number> = { lunch: 6, dinner: 6, drinks: 5, brunch: 0, hike: 0 };
-        const targetDay = defaultDay[activityType];
-        if (targetDay === undefined || activityTime === null) return city;
-        const now = new Date();
-        const today = new Date();
-        const todayDay = today.getDay();
-        let daysUntil = (targetDay - todayDay + 7) % 7;
-        if (daysUntil === 0) daysUntil = 0; // today
-        const next = new Date(today);
-        next.setDate(today.getDate() + daysUntil);
-        const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-        const isToday = next.toDateString() === now.toDateString();
-        const isTomorrow = next.toDateString() === tomorrow.toDateString();
-        const dayName = isToday ? "Today" : isTomorrow ? "Tomorrow" : next.toLocaleDateString('en-US', { weekday: 'long' });
-        return `${dayName} at ${activityTime}`;
-      })();
-  const headerSubtitle = headerDateLabel;
+  // Compute split header date parts (day / date / time on separate lines)
+  const { headerDay, headerDateOnly } = (() => {
+    if (eventDate) {
+      const d = new Date(eventDate);
+      const today = new Date();
+      const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+      const isToday = d.toDateString() === today.toDateString();
+      const isTomorrow = d.toDateString() === tomorrow.toDateString();
+      if (isToday) return { headerDay: "Today", headerDateOnly: null };
+      if (isTomorrow) return { headerDay: "Tomorrow", headerDateOnly: null };
+      return {
+        headerDay: d.toLocaleDateString('en-US', { weekday: 'long' }),
+        headerDateOnly: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      };
+    }
+    const defaultDay: Record<string, number> = { lunch: 6, dinner: 6, drinks: 5, brunch: 0, hike: 0 };
+    const targetDay = defaultDay[activityType];
+    if (targetDay === undefined) return { headerDay: city, headerDateOnly: null };
+    const today = new Date();
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    const todayDay = today.getDay();
+    const daysUntil = (targetDay - todayDay + 7) % 7;
+    const next = new Date(today);
+    next.setDate(today.getDate() + daysUntil);
+    const isToday2 = next.toDateString() === today.toDateString();
+    const isTomorrow2 = next.toDateString() === tomorrow.toDateString();
+    return {
+      headerDay: isToday2 ? "Today" : isTomorrow2 ? "Tomorrow" : next.toLocaleDateString('en-US', { weekday: 'long' }),
+      headerDateOnly: null,
+    };
+  })();
   const showAttendees = attendeeCount > 0;
 
   return (
     <div className="fixed inset-0 flex flex-col bg-white z-50">
       <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(circle at 8% 0%, rgba(139,92,246,0.65) 0%, transparent 55%), radial-gradient(circle at 92% 18%, rgba(236,72,153,0.6) 0%, transparent 55%), radial-gradient(circle at 50% 100%, rgba(56,189,248,0.5) 0%, transparent 60%)' }} aria-hidden />
       <div className="relative z-10 flex flex-col flex-1 min-h-0">
-      <div className="relative z-30 flex shrink-0 items-center border-b border-white/5 bg-transparent px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top))]">
+      <div className="relative z-30 flex shrink-0 items-center border-b border-white/5 bg-transparent px-4 py-5 pt-[calc(1.25rem+env(safe-area-inset-top))]">
         <MinimalBackButton
           onClick={onBack}
           className="shrink-0 text-gray-900 hover:text-gray-700 bg-white/10 border-white/30"
           aria-label="Back"
           iconClassName="w-6 h-6"
         />
-        <div className="absolute inset-x-0 flex flex-col items-center pointer-events-none">
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
-              {activityMeta?.icon ? (
-                <img
-                  src={activityMeta.icon}
-                  alt={activityType}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <span className="text-sm">{activityMeta?.emoji ?? "📍"}</span>
-              )}
-            </div>
-            <span className="truncate">{title}</span>
+        <div className="absolute inset-x-0 flex flex-col items-center pointer-events-none px-16">
+          <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mb-1">
+            {activityMeta?.icon ? (
+              <img src={activityMeta.icon} alt={activityType} className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <span className="text-xl">{activityMeta?.emoji ?? "📍"}</span>
+            )}
+          </div>
+          <h1 className="text-base font-bold text-gray-900 text-center leading-tight">
+            {title}
             {isCrossCity && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-xs text-gray-900 rounded-full shrink-0 bg-white/5">
-                <Plane className="w-3 h-3" />
-                {city}
+              <span className="ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs text-gray-900 rounded-full bg-white/10">
+                <Plane className="w-3 h-3" />{city}
               </span>
             )}
           </h1>
-          <p className="text-sm font-semibold text-gray-900">{headerDateLabel}</p>
+          <p className="text-sm font-semibold text-gray-900 mt-0.5">{headerDay}</p>
+          {headerDateOnly && <p className="text-xs text-gray-700">{headerDateOnly}</p>}
+          {activityTime && <p className="text-xs text-gray-700">{activityTime}</p>}
         </div>
         <div className="ml-auto flex items-center gap-0.5">
           <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
