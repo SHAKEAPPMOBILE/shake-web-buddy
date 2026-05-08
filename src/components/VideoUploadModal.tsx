@@ -266,7 +266,7 @@ export function VideoUploadModal({
       />
 
       <div
-        className="relative z-10 w-full max-w-md rounded-2xl bg-black border border-white/10 shadow-2xl flex flex-col max-h-[min(90dvh,820px)] overflow-hidden"
+        className="relative z-10 w-full max-w-md rounded-2xl bg-black border border-white/10 shadow-2xl flex flex-col max-h-[min(75dvh,560px)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <input
@@ -293,11 +293,11 @@ export function VideoUploadModal({
         </div>
 
         <div className="p-4 flex flex-col flex-1 min-h-0">
-          <div className="relative w-full max-w-md mx-auto aspect-[9/16] bg-black rounded-2xl overflow-hidden flex items-center justify-center shrink-0">
+          <div className="relative w-full max-w-md mx-auto aspect-video bg-black rounded-2xl overflow-hidden flex items-center justify-center shrink-0">
             {existingVideoUrl ? (
               <video
                 src={existingVideoUrl}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 controls
                 autoPlay
                 loop
