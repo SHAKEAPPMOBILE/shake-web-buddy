@@ -550,7 +550,7 @@ export function GroupChatView({
           style={{ marginTop: 'calc(2.25rem + env(safe-area-inset-top))' }}
         >
           {/* Activity image / emoji */}
-          <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mb-1">
+          <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mb-1">
             {activityMeta?.icon ? (
               <img src={activityMeta.icon} alt={activityType} className="w-full h-full object-cover rounded-full" />
             ) : (
