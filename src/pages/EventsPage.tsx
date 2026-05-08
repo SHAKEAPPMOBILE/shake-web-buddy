@@ -1244,11 +1244,22 @@ export default function EventsPage({
                       onClick={() => setSelected(e)}
                       className="w-full flex items-center gap-3 py-3.5 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
                     >
-                      <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 flex items-center justify-center">
-                        {e.imageUrl
-                          ? <img src={e.imageUrl} alt={e.name} className="w-full h-full object-cover object-top" />
-                          : <span className="text-2xl">{e.emoji}</span>
-                        }
+                      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "#1e0a2e", borderRadius: 8, flexShrink: 0 }}>
+                        {e.imageUrl ? (
+                          <img
+                            src={e.imageUrl}
+                            alt={e.name}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            onError={(ev) => {
+                              const img = ev.currentTarget;
+                              const parent = img.parentElement!;
+                              img.remove();
+                              parent.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🎵</div>';
+                            }}
+                          />
+                        ) : (
+                          <span className="text-2xl">{e.emoji}</span>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground text-sm mb-0.5 truncate">{e.name}</p>
@@ -1380,11 +1391,22 @@ export default function EventsPage({
                   onClick={() => setSelected(e)}
                   className="w-full flex items-center gap-3 py-3.5 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
                 >
-                  <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden shrink-0 flex items-center justify-center">
-                    {e.imageUrl
-                      ? <img src={e.imageUrl} alt={e.name} className="w-full h-full object-cover object-top" />
-                      : <span className="text-2xl">🎵</span>
-                    }
+                  <div className="overflow-hidden shrink-0 flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, background: "#1e0a2e", flexShrink: 0 }}>
+                    {e.imageUrl ? (
+                      <img
+                        src={e.imageUrl}
+                        alt={e.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(ev) => {
+                          const img = ev.currentTarget;
+                          const parent = img.parentElement!;
+                          img.remove();
+                          parent.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🎵</div>';
+                        }}
+                      />
+                    ) : (
+                      <span className="text-2xl">🎵</span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground text-sm mb-0.5 truncate">
