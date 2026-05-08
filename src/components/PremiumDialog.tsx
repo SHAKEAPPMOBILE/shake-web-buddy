@@ -250,7 +250,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           )}
           <DialogHeader className="pb-2">
             <div className="flex items-center justify-center mb-2">
-              <img src={superhumanImg} alt="Super-Human" className="w-32 object-contain" style={{ mixBlendMode: "multiply" }} />
+              <img src={superhumanImg} alt="Super-Human" className="w-32 object-contain" />
             </div>
             <DialogTitle className="text-center text-xl font-display">
               You're a Super-Human! 🎉
@@ -303,7 +303,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           )}
           <DialogHeader className="pb-2">
             <div className="flex items-center justify-center mb-2">
-              <img src={superhumanImg} alt="Super-Human" className="w-32 object-contain" style={{ mixBlendMode: "multiply" }} />
+              <img src={superhumanImg} alt="Super-Human" className="w-32 object-contain" />
             </div>
             <DialogTitle className="text-center text-xl font-display">
               You're a Super-Human! 🎉
@@ -346,7 +346,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         )}
         <DialogHeader className="pb-2">
           <div className="flex items-center justify-center mb-2">
-            <img src={superhumanImg} alt="Super-Human" className="w-32 object-contain" style={{ mixBlendMode: "multiply" }} />
+            <img src={superhumanImg} alt="Super-Human" className="w-32 object-contain" />
           </div>
           <DialogTitle className="text-center text-xl font-display">
             Become a Super-Human
