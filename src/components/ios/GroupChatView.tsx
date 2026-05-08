@@ -554,9 +554,15 @@ export function GroupChatView({
       {hasVenues && currentVenue && assignedVenue && (
         <div className="px-4 py-2 border-b border-white/5">
           <div className="flex items-center gap-2">
-            <button onClick={handlePrevVenue} disabled={!hasMultipleVenues} className={`p-1 rounded-full hover:bg-white/5 transition-colors ${hasMultipleVenues ? "text-white/60 hover:text-white" : "text-white/20 cursor-default"}`}>
-                <ChevronLeft className="w-4 h-4" />
+            {hasMultipleVenues && (
+              <button
+                onClick={handlePrevVenue}
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-white shadow-sm border border-gray-200 text-gray-700 hover:bg-gray-50 active:scale-95 transition-all shrink-0"
+                aria-label="Previous venue"
+              >
+                <ChevronLeft className="w-5 h-5" />
               </button>
+            )}
             <div className="flex-1 min-w-0 flex items-center justify-center gap-1.5">
               <button
                 onClick={() => {
@@ -593,9 +599,15 @@ export function GroupChatView({
                 </button>
               )}
             </div>
-            <button onClick={handleNextVenue} disabled={!hasMultipleVenues} className={`p-1 rounded-full hover:bg-white/5 transition-colors ${hasMultipleVenues ? "text-white/60 hover:text-white" : "text-white/20 cursor-default"}`}>
-                <ChevronRight className="w-4 h-4" />
+            {hasMultipleVenues && (
+              <button
+                onClick={handleNextVenue}
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-white shadow-sm border border-gray-200 text-gray-700 hover:bg-gray-50 active:scale-95 transition-all shrink-0"
+                aria-label="Next venue"
+              >
+                <ChevronRight className="w-5 h-5" />
               </button>
+            )}
           </div>
           {hasMultipleVenues && (
             <div className="flex justify-center gap-1 mt-1.5">
