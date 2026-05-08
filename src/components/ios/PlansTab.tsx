@@ -621,17 +621,95 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
   };
 
+  const MAX_CHAT_CAPACITY = 7;
+
+  // Find a group with open capacity, or create a new one if all full.
+  const findOrCreateOpenGroup = async (plan: PlanActivity): Promise<PlanActivity> => {
+    if (!user) return plan;
+
+    const { count } = await supabase
+      .from("activity_joins")
+      .select("*", { count: "exact", head: true })
+      .eq("activity_id", plan.id);
+
+    if ((count ?? 0) < MAX_CHAT_CAPACITY) return plan;
+
+    // This group is full — look for a sibling with the same type + city + scheduled_for
+    const { data: siblings } = await supabase
+      .from("user_activities")
+      .select("*")
+      .eq("activity_type", plan.activity_type)
+      .eq("city", plan.city)
+      .eq("scheduled_for", plan.scheduled_for)
+      .eq("is_active", true)
+      .neq("id", plan.id);
+
+    for (const sibling of (siblings ?? [])) {
+      const { count: sibCount } = await supabase
+        .from("activity_joins")
+        .select("*", { count: "exact", head: true })
+        .eq("activity_id", sibling.id);
+
+      if ((sibCount ?? 0) < MAX_CHAT_CAPACITY) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name, avatar_url")
+          .eq("user_id", sibling.user_id)
+          .maybeSingle();
+        toast.info("This group is full · joining another group");
+        return {
+          ...sibling,
+          creator_name: profile?.name ?? "Anonymous",
+          creator_avatar: profile?.avatar_url ?? undefined,
+          participant_count: sibCount ?? 0,
+          isJoined: false,
+        };
+      }
+    }
+
+    // No sibling with space — create a fresh group
+    const { data: newActivity, error: createError } = await supabase
+      .from("user_activities")
+      .insert({
+        user_id: user.id,
+        activity_type: plan.activity_type,
+        city: plan.city,
+        scheduled_for: plan.scheduled_for,
+        is_active: true,
+        note: plan.note ?? null,
+      })
+      .select()
+      .single();
+
+    if (createError || !newActivity) {
+      console.error("[Capacity] Failed to create new group:", createError);
+      toast.error("Group is full — couldn't start a new one");
+      return plan;
+    }
+
+    toast.info("This group is full · a new group has been created for you!");
+    return {
+      ...newActivity,
+      creator_name: "New Group",
+      creator_avatar: undefined,
+      participant_count: 0,
+      isJoined: false,
+    };
+  };
+
   const handleJoinPlan = async (plan: PlanActivity, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) return;
+
+    const targetPlan = await findOrCreateOpenGroup(plan);
 
     const { error } = await supabase
       .from("activity_joins")
       .insert({
         user_id: user.id,
-        activity_id: plan.id,
-        activity_type: plan.activity_type,
-        city: plan.city,
+        activity_id: targetPlan.id,
+        activity_type: targetPlan.activity_type,
+        city: targetPlan.city,
       });
 
     if (error) {
@@ -640,18 +718,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
-    // Optimistically update local state immediately so the plan appears joined
-    // without waiting for fetchPlans() to complete.
     setActivities(prev => {
-      const existing = prev.find(a => a.id === plan.id);
+      const existing = prev.find(a => a.id === targetPlan.id);
       if (existing) {
-        return prev.map(a => a.id === plan.id
+        return prev.map(a => a.id === targetPlan.id
           ? { ...a, isJoined: true, participant_count: (a.participant_count || 0) + 1 }
           : a);
       }
-      return [{ ...plan, isJoined: true, participant_count: (plan.participant_count || 0) + 1 }, ...prev];
+      return [{ ...targetPlan, isJoined: true, participant_count: (targetPlan.participant_count || 0) + 1 }, ...prev];
     });
-    setCityPlans(prev => prev.filter(p => p.id !== plan.id));
+    setCityPlans(prev => prev.filter(p => p.id !== targetPlan.id));
 
     confetti({
       particleCount: 100,
@@ -684,13 +760,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   const handleDirectCityJoin = async (plan: PlanActivity) => {
     if (!user) return;
+
+    const targetPlan = await findOrCreateOpenGroup(plan);
+
     const { error } = await supabase
       .from("activity_joins")
       .insert({
         user_id: user.id,
-        activity_id: plan.id,
-        activity_type: plan.activity_type,
-        city: plan.city,
+        activity_id: targetPlan.id,
+        activity_type: targetPlan.activity_type,
+        city: targetPlan.city,
       });
 
     if (error) {
@@ -699,11 +778,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
-    // Optimistically move the plan into the user's joined list immediately
-    // so it appears there as soon as they back out of chat.
-    const joinedPlan = { ...plan, isJoined: true };
-    setActivities(prev => prev.find(a => a.id === plan.id) ? prev : [joinedPlan, ...prev]);
-    setCityPlans(prev => prev.filter(p => p.id !== plan.id));
+    const joinedPlan = { ...targetPlan, isJoined: true };
+    setActivities(prev => prev.find(a => a.id === targetPlan.id) ? prev : [joinedPlan, ...prev]);
+    setCityPlans(prev => prev.filter(p => p.id !== targetPlan.id));
 
     confetti({
       particleCount: 100,
@@ -721,13 +798,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const plan = planPreview;
     setPlanPreview(null);
 
+    const targetPlan = await findOrCreateOpenGroup(plan);
+
     const { error } = await supabase
       .from("activity_joins")
       .insert({
         user_id: user.id,
-        activity_id: plan.id,
-        activity_type: plan.activity_type,
-        city: plan.city,
+        activity_id: targetPlan.id,
+        activity_type: targetPlan.activity_type,
+        city: targetPlan.city,
       });
 
     if (error) {
@@ -736,11 +815,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
-    // Optimistically move the plan into the user's joined list immediately
-    // so it appears there as soon as they back out of chat.
-    const joinedPlan = { ...plan, isJoined: true };
-    setActivities(prev => prev.find(a => a.id === plan.id) ? prev : [joinedPlan, ...prev]);
-    setCityPlans(prev => prev.filter(p => p.id !== plan.id));
+    const joinedPlan = { ...targetPlan, isJoined: true };
+    setActivities(prev => prev.find(a => a.id === targetPlan.id) ? prev : [joinedPlan, ...prev]);
+    setCityPlans(prev => prev.filter(p => p.id !== targetPlan.id));
 
     confetti({
       particleCount: 100,

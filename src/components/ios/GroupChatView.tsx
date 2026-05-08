@@ -133,6 +133,8 @@ export function GroupChatView({
   } | null>(null);
   const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
   const [currentVenueIndex, setCurrentVenueIndex] = useState(0);
+  const weekVenueInitialized = useRef(false);
+  const MAX_CHAT_CAPACITY = 7;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user, isPremium } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
@@ -200,6 +202,15 @@ export function GroupChatView({
       cityVenuesCount: cityVenues.length,
     });
   }, [assignedVenue, activityType, city, venueType, cityVenues.length]);
+
+  // Set initial venue index using weekly rotation formula (once, when venues first load)
+  useEffect(() => {
+    if (cityVenues.length > 0 && !weekVenueInitialized.current) {
+      weekVenueInitialized.current = true;
+      const weekVenueIndex = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % cityVenues.length;
+      setCurrentVenueIndex(weekVenueIndex);
+    }
+  }, [cityVenues.length]);
   
   // Fetch participants
   useEffect(() => {
@@ -652,6 +663,19 @@ export function GroupChatView({
               ))}
             </div>
           )}
+
+          {/* Capacity indicator */}
+          {(() => {
+            const memberCount = participants.length;
+            const isFull = memberCount >= MAX_CHAT_CAPACITY;
+            return (
+              <p className={`text-xs mt-1 leading-tight ${isFull ? 'text-red-400' : 'text-gray-400'}`}>
+                {isFull
+                  ? `Group full · ${memberCount}/${MAX_CHAT_CAPACITY}`
+                  : `${memberCount}/${MAX_CHAT_CAPACITY} joined`}
+              </p>
+            );
+          })()}
         </div>
       </div>
 
