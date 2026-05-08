@@ -1126,7 +1126,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       </div>
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-2 border-shake-yellow">
           <AlertDialogHeader>
             <AlertDialogTitle>{t('plans.deletePlanTitle', 'Delete this plan?')}</AlertDialogTitle>
             <AlertDialogDescription>
