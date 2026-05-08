@@ -801,6 +801,21 @@ export default function EventsPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<EventItem[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Close search when user clicks outside the search bar
+  useEffect(() => {
+    if (!searchOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+        setSearchQuery("");
+        setSearchResults([]);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [searchOpen]);
   const [selected, setSelected] = useState<EventItem | null>(null);
   const [joinConfirmationEvent, setJoinConfirmationEvent] = useState<EventItem | null>(null);
   const [chatMembershipVersion, setChatMembershipVersion] = useState(0);
@@ -1121,16 +1136,16 @@ export default function EventsPage({
   }, [events, cat]);
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-background overflow-hidden relative">
+    <div className="w-full min-h-screen flex flex-col bg-white overflow-hidden relative">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background px-5 pt-5 pb-3 border-b border-border flex-shrink-0">
+      <div className="sticky top-0 z-10 bg-white px-5 pt-5 pb-3 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-3 mb-3">
           <MinimalBackButton
             onClick={handleEventsBack}
-            className="shrink-0 text-muted-foreground hover:text-foreground"
+            className="shrink-0 text-gray-500 hover:text-gray-900"
             aria-label="Back"
           />
-          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
             Near You
           </h1>
         </div>
@@ -1145,7 +1160,7 @@ export default function EventsPage({
                 "shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
                 cat === c
                   ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground border border-border hover:border-primary/30"
+                  : "bg-gray-100 text-gray-600 border border-gray-200 hover:border-primary/30"
               )}
             >
               {c}
@@ -1171,12 +1186,12 @@ export default function EventsPage({
         {/* Fixed-height scrollable events container — shows ~4 rows, search results replace list when active */}
         <div
           style={{ height: 280, overflowY: "auto", scrollbarWidth: "thin" }}
-          className="rounded-2xl border border-border bg-card/50 overflow-hidden"
+          className="rounded-2xl border border-gray-200 bg-white overflow-hidden"
         >
           {/* Search mode */}
           {searchOpen && searchQuery.length < 2 && (
             <div className="h-full flex items-center justify-center p-6">
-              <p className="text-sm text-muted-foreground text-center">Type to search concerts &amp; festivals...</p>
+              <p className="text-sm text-gray-400 text-center">Type to search concerts &amp; festivals...</p>
             </div>
           )}
           {searchOpen && searchQuery.length >= 2 && searchLoading && (
@@ -1190,20 +1205,20 @@ export default function EventsPage({
           )}
           {searchOpen && searchQuery.length >= 2 && !searchLoading && searchResults.length === 0 && (
             <div className="h-full flex items-center justify-center p-6">
-              <p className="text-sm text-muted-foreground text-center">No results for &ldquo;{searchQuery}&rdquo;</p>
+              <p className="text-sm text-gray-400 text-center">No results for &ldquo;{searchQuery}&rdquo;</p>
             </div>
           )}
           {searchOpen && searchQuery.length >= 2 && !searchLoading && searchResults.length > 0 && (
             <div className="flex flex-col">
               {searchResults.map((e, i) => (
                 <div key={e.id}>
-                  {i > 0 && <div className="h-px bg-border/70 mx-4" />}
+                  {i > 0 && <div className="h-px bg-gray-100 mx-4" />}
                   <button
                     type="button"
                     onClick={() => setSelected(e)}
-                    className="w-full flex items-center gap-3 py-3 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
+                    className="w-full flex items-center gap-3 py-3 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-gray-50 transition-colors"
                   >
-                    <div className="overflow-hidden shrink-0 flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, background: "#1e0a2e", flexShrink: 0 }}>
+                    <div className="overflow-hidden shrink-0 flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, background: "#f3f4f6", flexShrink: 0 }}>
                       {e.imageUrl ? (
                         <img
                           src={e.imageUrl}
@@ -1221,9 +1236,9 @@ export default function EventsPage({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground text-sm mb-0.5 truncate">{e.name}</p>
-                      <p className="text-muted-foreground text-xs mb-0.5 truncate">{e.venue} · {e.city}</p>
-                      <p className="text-muted-foreground text-xs">{e.date}</p>
+                      <p className="font-semibold text-gray-900 text-sm mb-0.5 truncate">{e.name}</p>
+                      <p className="text-gray-500 text-xs mb-0.5 truncate">{e.venue} · {e.city}</p>
+                      <p className="text-gray-500 text-xs">{e.date}</p>
                     </div>
                   </button>
                 </div>
@@ -1234,7 +1249,7 @@ export default function EventsPage({
           {/* Normal events list */}
           {!searchOpen && isCityOutOfRange && !isManuallySelected && (
             <div className="h-full flex items-center justify-center p-6">
-              <p className="text-sm text-muted-foreground text-center">SHAKE is coming to your city soon 🌍 Stay tuned!</p>
+              <p className="text-sm text-gray-400 text-center">SHAKE is coming to your city soon 🌍 Stay tuned!</p>
             </div>
           )}
           {!searchOpen && !(isCityOutOfRange && !isManuallySelected) && (cat === FESTIVAL_TAB ? festivalsLoading : eventsLoading) && (
@@ -1247,20 +1262,20 @@ export default function EventsPage({
           )}
           {!searchOpen && !(isCityOutOfRange && !isManuallySelected) && !(cat === FESTIVAL_TAB ? festivalsLoading : eventsLoading) && filtered.length === 0 && (
             <div className="h-full flex items-center justify-center p-6">
-              <p className="text-sm text-muted-foreground text-center">No events in {selectedCity ?? "this city"} yet — check back soon 🔥</p>
+              <p className="text-sm text-gray-400 text-center">No events in {selectedCity ?? "this city"} yet — check back soon 🔥</p>
             </div>
           )}
           {!searchOpen && !(isCityOutOfRange && !isManuallySelected) && !(cat === FESTIVAL_TAB ? festivalsLoading : eventsLoading) && filtered.length > 0 && (
             <div className="flex flex-col">
               {filtered.map((e, i) => (
                 <div key={e.id}>
-                  {i > 0 && <div className="h-px bg-border/70 mx-4" />}
+                  {i > 0 && <div className="h-px bg-gray-100 mx-4" />}
                   <button
                     type="button"
                     onClick={() => setSelected(e)}
-                    className="w-full flex items-center gap-3 py-3 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-muted/30 transition-colors"
+                    className="w-full flex items-center gap-3 py-3 px-4 bg-transparent border-0 cursor-pointer text-left hover:bg-gray-50 transition-colors"
                   >
-                    <div className="overflow-hidden shrink-0 flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, background: "#1e0a2e", flexShrink: 0 }}>
+                    <div className="overflow-hidden shrink-0 flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, background: "#f3f4f6", flexShrink: 0 }}>
                       {e.imageUrl ? (
                         <img
                           src={e.imageUrl}
@@ -1278,16 +1293,16 @@ export default function EventsPage({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground text-sm mb-0.5 truncate">{e.name}</p>
-                      <p className="text-muted-foreground text-xs mb-0.5 truncate">{e.venue} · {e.date}</p>
+                      <p className="font-semibold text-gray-900 text-sm mb-0.5 truncate">{e.name}</p>
+                      <p className="text-gray-500 text-xs mb-0.5 truncate">{e.venue} · {e.date}</p>
                       <div className="flex gap-3 items-center flex-wrap">
                         {(e.priceMin != null && e.priceMax != null && e.priceMin > 0 && e.priceMax > 0) && (
                           <span className="text-primary text-xs font-medium">${e.priceMin}–${e.priceMax}</span>
                         )}
                         {e.ticketsSold ? (
                           <div className="flex items-center gap-1">
-                            <Users className="w-2.5 h-2.5 text-muted-foreground" />
-                            <span className="text-muted-foreground text-[11px]">{e.ticketsSold.toLocaleString()} sold</span>
+                            <Users className="w-2.5 h-2.5 text-gray-400" />
+                            <span className="text-gray-400 text-[11px]">{e.ticketsSold.toLocaleString()} sold</span>
                           </div>
                         ) : null}
                       </div>
@@ -1308,14 +1323,14 @@ export default function EventsPage({
               setSearchQuery("");
               setSearchResults([]);
             }}
-            className="w-full flex items-center gap-2 px-4 py-3 rounded-full bg-muted/60 border border-border text-muted-foreground text-sm hover:bg-muted/80 transition-colors"
+            className="w-full flex items-center gap-2 px-4 py-3 rounded-full bg-gray-100 border border-gray-200 text-gray-500 text-sm hover:bg-gray-200 transition-colors"
           >
             <Search className="w-4 h-4 shrink-0" />
             <span>Search events...</span>
           </button>
         ) : (
-          <div className="relative flex items-center">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <div ref={searchRef} className="relative flex items-center">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             {searchLoading && (
               <div className="absolute right-9 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
             )}
@@ -1324,7 +1339,7 @@ export default function EventsPage({
               type="text"
               value={searchQuery}
               placeholder="Search concerts & festivals..."
-              className="w-full pl-9 pr-9 py-3 rounded-full bg-muted/60 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-9 pr-9 py-3 rounded-full bg-gray-100 border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
               onChange={(e) => {
                 const q = e.target.value;
                 setSearchQuery(q);
@@ -1354,7 +1369,7 @@ export default function EventsPage({
           </div>
         )}
 
-        <p className="text-center text-muted-foreground/70 text-[11px] px-6">
+        <p className="text-center text-gray-400 text-[11px] px-6">
           Powered by Ticketmaster · Purchases on ticketmaster.com
         </p>
       </div>
