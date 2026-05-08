@@ -1136,7 +1136,7 @@ export default function EventsPage({
   }, [events, cat]);
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-white overflow-hidden relative">
+    <div className="w-full h-full flex flex-col bg-white overflow-hidden relative">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white px-5 pt-5 pb-3 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-3 mb-3">
@@ -1185,8 +1185,8 @@ export default function EventsPage({
       <div className="flex-1 px-4 pt-4 pb-8 flex flex-col gap-5 overflow-y-auto">
         {/* Fixed-height scrollable events container — shows ~4 rows, search results replace list when active */}
         <div
-          style={{ height: 280, overflowY: "auto", scrollbarWidth: "thin" }}
-          className="rounded-2xl border border-gray-200 bg-white overflow-hidden"
+          style={{ overflowY: "auto", scrollbarWidth: "thin" }}
+          className="h-[280px] rounded-2xl border border-gray-200 bg-white overflow-hidden"
         >
           {/* Search mode */}
           {searchOpen && searchQuery.length < 2 && (

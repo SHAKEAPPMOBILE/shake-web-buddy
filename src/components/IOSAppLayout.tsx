@@ -691,7 +691,7 @@ export function IOSAppLayout() {
           !isInFullPageChat && "pb-20"
         )}
       >
-        <div className="h-full">
+        <div className="h-full overflow-hidden">
           {showEvents ? (
             <EventsPage
               eventsEntrySource={eventsEntrySource}
