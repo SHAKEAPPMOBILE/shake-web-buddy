@@ -57,7 +57,7 @@ interface PlanGroupChatViewProps {
 
 // Curtain snap positions — three states
 type SnapState = 'collapsed' | 'partial' | 'full';
-const SNAP_HEIGHTS: Record<SnapState, number> = { collapsed: 88, partial: 380, full: 480 };
+const SNAP_HEIGHTS: Record<SnapState, number> = { collapsed: 88, partial: 320, full: 460 };
 const SNAP_THRESHOLD = 60;
 
 // Frosted glass pill style shared by avatar + occupation pills
@@ -443,35 +443,15 @@ export function PlanGroupChatView({
             pointerEvents: snapState === 'collapsed' ? 'none' : 'auto',
           }}
         >
-          {/* Header row: back button | centered info | menu */}
-          <div className="flex shrink-0 items-center px-4 py-5">
+          {/* Back + menu — absolutely pinned so they don't participate in flow */}
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-4 z-10">
             <MinimalBackButton
               onClick={onBack}
               className="shrink-0 text-white/80 hover:text-white"
               aria-label="Back"
               iconClassName="w-6 h-6"
             />
-
-            {/* Centered: creator avatar / emoji, plan title, date/time */}
-            <div className="absolute inset-x-0 flex flex-col items-center pointer-events-none px-16">
-              <div className="w-16 h-16 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center mb-1 shadow-sm">
-                {creatorProfile?.avatar_url ? (
-                  <Avatar className="w-full h-full rounded-full">
-                    <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
-                    <AvatarFallback className="bg-white/20 flex items-center justify-center">
-                      <span className="text-4xl">{planEmoji}</span>
-                    </AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <span className="text-4xl">{planEmoji}</span>
-                )}
-              </div>
-              <h1 className="text-base font-bold text-white text-center leading-tight">{planTitle}</h1>
-              {planDateLabel && <p className="text-sm font-semibold text-white/90 mt-0.5">{planDateLabel}</p>}
-            </div>
-
-            {/* Menu button */}
-            <div className="relative ml-auto shrink-0">
+            <div className="relative">
               <button
                 onClick={() => setShowMenu((v) => !v)}
                 className="p-2 rounded-full hover:bg-white/20 transition-colors"
@@ -497,50 +477,73 @@ export function PlanGroupChatView({
             </div>
           </div>
 
-          {/* ── AVATAR PILL — visible in PARTIAL and FULL ─────────────────── */}
-          <div className="flex justify-center px-4 pt-3 pb-4">
-            {participants.length === 0 ? (
-              <div style={{ ...pillStyle, padding: '10px 20px' }}>
-                <p className="text-xs text-white/70">You're the first one here!</p>
+          {/* Content column — normal flow, top to bottom, no overlap */}
+          <div className="flex flex-col items-center px-4 pb-4" style={{ paddingTop: 64 }}>
+            {/* 1. Creator avatar / emoji */}
+            <div className="w-16 h-16 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center shadow-sm">
+              {creatorProfile?.avatar_url ? (
+                <Avatar className="w-full h-full rounded-full">
+                  <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
+                  <AvatarFallback className="bg-white/20 flex items-center justify-center">
+                    <span className="text-4xl">{planEmoji}</span>
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <span className="text-4xl">{planEmoji}</span>
+              )}
+            </div>
+
+            {/* 2. Plan title */}
+            <h1 className="text-base font-bold text-white text-center leading-tight mt-2">{planTitle}</h1>
+
+            {/* 3. Date label */}
+            {planDateLabel && <p className="text-sm font-semibold text-white/90 mt-1">{planDateLabel}</p>}
+
+            {/* 4. Avatar pill */}
+            <div className="flex justify-center w-full mt-4">
+              {participants.length === 0 ? (
+                <div style={{ ...pillStyle, padding: '10px 20px' }}>
+                  <p className="text-xs text-white/70">You're the first one here!</p>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowParticipantsDialog(true)}
+                  className="flex items-center gap-2"
+                  style={{ ...pillStyle, padding: '10px 20px' }}
+                >
+                  {participants.map((p) => (
+                    <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-white/30 bg-white/20 shrink-0">
+                      <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
+                      <AvatarFallback className="bg-white/20 flex items-center justify-center">
+                        <User className="w-3.5 h-3.5 text-white/70" />
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                </button>
+              )}
+            </div>
+
+            {/* 5. Occupation pill — clipped by overflow:hidden in PARTIAL, visible in FULL */}
+            {participants.some(p => p.occupation || p.nationality) && (
+              <div className="flex justify-center w-full mt-3">
+                <div
+                  className="flex flex-col gap-1"
+                  style={{ ...pillStyle, padding: '10px 20px' }}
+                >
+                  {participants
+                    .filter(p => p.occupation || p.nationality)
+                    .map((p) => (
+                      <p key={p.user_id} className="text-xs text-white/90 leading-snug text-center whitespace-nowrap">
+                        {p.name || 'Shaker'}
+                        {p.nationality ? ` ${getNationalityFlag(p.nationality)}` : ''}
+                        {p.occupation ? ` · ${p.occupation}` : ''}
+                      </p>
+                    ))
+                  }
+                </div>
               </div>
-            ) : (
-              <button
-                onClick={() => setShowParticipantsDialog(true)}
-                className="flex items-center gap-2"
-                style={{ ...pillStyle, padding: '10px 20px' }}
-              >
-                {participants.map((p) => (
-                  <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-white/30 bg-white/20 shrink-0">
-                    <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
-                    <AvatarFallback className="bg-white/20 flex items-center justify-center">
-                      <User className="w-3.5 h-3.5 text-white/70" />
-                    </AvatarFallback>
-                  </Avatar>
-                ))}
-              </button>
             )}
           </div>
-
-          {/* ── OCCUPATION PILL — only reachable in FULL (clipped in PARTIAL) ── */}
-          {participants.some(p => p.occupation || p.nationality) && (
-            <div className="flex justify-center px-4 pb-3">
-              <div
-                className="flex flex-col gap-1"
-                style={{ ...pillStyle, padding: '10px 20px' }}
-              >
-                {participants
-                  .filter(p => p.occupation || p.nationality)
-                  .map((p) => (
-                    <p key={p.user_id} className="text-xs text-white/90 leading-snug text-center whitespace-nowrap">
-                      {p.name || 'Shaker'}
-                      {p.nationality ? ` ${getNationalityFlag(p.nationality)}` : ''}
-                      {p.occupation ? ` · ${p.occupation}` : ''}
-                    </p>
-                  ))
-                }
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Collapsed thin bar — shown when header is collapsed */}
