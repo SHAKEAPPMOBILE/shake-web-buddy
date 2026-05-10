@@ -604,6 +604,9 @@ export function GroupChatView({
     ? Math.max(SNAP_HEIGHTS.collapsed, Math.min(SNAP_HEIGHTS.full, baseHeight + dragDelta))
     : baseHeight;
 
+  // Exclude current user from the avatar/occupation pills
+  const otherParticipants = participants.filter(p => p.user_id !== user?.id);
+
   return (
     <div className="fixed inset-0 flex flex-col bg-white z-50">
       <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(circle at 8% 0%, rgba(139,92,246,0.65) 0%, transparent 55%), radial-gradient(circle at 92% 18%, rgba(236,72,153,0.6) 0%, transparent 55%), radial-gradient(circle at 50% 100%, rgba(56,189,248,0.5) 0%, transparent 60%)' }} aria-hidden />
@@ -730,7 +733,7 @@ export function GroupChatView({
 
             {/* ── AVATAR PILL — visible in PARTIAL and FULL ─────────────────── */}
             <div className="flex justify-center px-4 pt-3 pb-4">
-              {participants.length === 0 ? (
+              {otherParticipants.length === 0 ? (
                 <div
                   style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '10px 20px' }}
                 >
@@ -742,7 +745,7 @@ export function GroupChatView({
                   className="flex items-center gap-2"
                   style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '10px 20px' }}
                 >
-                  {participants.map((p) => (
+                  {otherParticipants.map((p) => (
                     <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 shrink-0">
                       <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
                       <AvatarFallback className="bg-gray-100 flex items-center justify-center">
@@ -755,13 +758,13 @@ export function GroupChatView({
             </div>
 
             {/* ── OCCUPATION PILL — only reachable in FULL (clipped in PARTIAL) ── */}
-            {participants.some(p => p.occupation || p.nationality) && (
+            {otherParticipants.some(p => p.occupation || p.nationality) && (
               <div className="flex justify-center px-4 pb-3">
                 <div
                   className="flex flex-col gap-1"
                   style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '10px 20px' }}
                 >
-                  {participants
+                  {otherParticipants
                     .filter(p => p.occupation || p.nationality)
                     .map((p) => (
                       <p key={p.user_id} className="text-xs text-white/90 leading-snug text-center whitespace-nowrap">

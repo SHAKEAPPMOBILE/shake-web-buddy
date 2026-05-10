@@ -423,6 +423,9 @@ export function PlanGroupChatView({
     ? Math.max(SNAP_HEIGHTS.collapsed, Math.min(SNAP_HEIGHTS.full, baseHeight + dragDelta))
     : baseHeight;
 
+  // Exclude the plan creator from the avatar/occupation pills
+  const otherParticipants = participants.filter(p => p.user_id !== activity.user_id);
+
   return (
     <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50 pt-[env(safe-area-inset-top)]">
 
@@ -501,7 +504,7 @@ export function PlanGroupChatView({
 
             {/* 4. Avatar pill */}
             <div className="flex justify-center w-full mt-4">
-              {participants.length === 0 ? (
+              {otherParticipants.length === 0 ? (
                 <div style={{ ...pillStyle, padding: '10px 20px' }}>
                   <p className="text-xs text-white/70">You're the first one here!</p>
                 </div>
@@ -511,7 +514,7 @@ export function PlanGroupChatView({
                   className="flex items-center gap-2"
                   style={{ ...pillStyle, padding: '10px 20px' }}
                 >
-                  {participants.map((p) => (
+                  {otherParticipants.map((p) => (
                     <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-white/30 bg-white/20 shrink-0">
                       <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
                       <AvatarFallback className="bg-white/20 flex items-center justify-center">
@@ -524,13 +527,13 @@ export function PlanGroupChatView({
             </div>
 
             {/* 5. Occupation pill — clipped by overflow:hidden in PARTIAL, visible in FULL */}
-            {participants.some(p => p.occupation || p.nationality) && (
+            {otherParticipants.some(p => p.occupation || p.nationality) && (
               <div className="flex justify-center w-full mt-3">
                 <div
                   className="flex flex-col gap-1"
                   style={{ ...pillStyle, padding: '10px 20px' }}
                 >
-                  {participants
+                  {otherParticipants
                     .filter(p => p.occupation || p.nationality)
                     .map((p) => (
                       <p key={p.user_id} className="text-xs text-white/90 leading-snug text-center whitespace-nowrap">
