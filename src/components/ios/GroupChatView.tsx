@@ -113,7 +113,7 @@ const chatSuggestions: Record<string, string[]> = {
 
 // Curtain snap positions — three states
 type SnapState = 'collapsed' | 'partial' | 'full';
-const SNAP_HEIGHTS: Record<SnapState, number> = { collapsed: 88, partial: 340, full: 480 };
+const SNAP_HEIGHTS: Record<SnapState, number> = { collapsed: 88, partial: 360, full: 480 };
 const SNAP_THRESHOLD = 60;
 
 export function GroupChatView({
@@ -729,7 +729,7 @@ export function GroupChatView({
             </div>
 
             {/* ── AVATAR PILL — visible in PARTIAL and FULL ─────────────────── */}
-            <div className="flex justify-center px-4 pt-4 pb-2">
+            <div className="flex justify-center px-4 pt-3 pb-4">
               {participants.length === 0 ? (
                 <div
                   style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '10px 20px' }}
