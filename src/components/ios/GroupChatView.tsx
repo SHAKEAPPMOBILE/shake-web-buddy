@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
+import { getNationalityFlag } from "@/data/countryCodes";
 
 interface GroupChatViewProps {
   activityType: string;
@@ -111,7 +112,7 @@ const chatSuggestions: Record<string, string[]> = {
 };
 
 // Curtain snap positions
-const EXPANDED_HEIGHT = 300;
+const EXPANDED_HEIGHT = 420;
 const COLLAPSED_HEIGHT = 88;
 const SNAP_THRESHOLD = 80;
 
@@ -136,7 +137,7 @@ export function GroupChatView({
     userName: string | null;
     avatarUrl: string | null;
   } | null>(null);
-  const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
+  const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null; nationality: string | null; occupation: string | null }[]>([]);
   const [currentVenueIndex, setCurrentVenueIndex] = useState(0);
   const weekVenueInitialized = useRef(false);
   const MAX_CHAT_CAPACITY = 7;
@@ -244,7 +245,7 @@ export function GroupChatView({
 
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("user_id, name, avatar_url")
+        .select("user_id, name, avatar_url, nationality, occupation")
         .in("user_id", uniqueUserIds);
 
       const participantsList = uniqueUserIds.map((userId) => {
@@ -253,6 +254,8 @@ export function GroupChatView({
           user_id: userId,
           name: profile?.name || null,
           avatar_url: profile?.avatar_url || null,
+          nationality: profile?.nationality || null,
+          occupation: profile?.occupation || null,
         };
       });
 
@@ -723,34 +726,40 @@ export function GroupChatView({
               </div>
             </div>
 
-            {showAttendees ? (
-              <div className="w-full px-4 py-2.5 border-b border-white bg-white">
-                <button onClick={() => setShowParticipantsList(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                  <div className="flex -space-x-2 overflow-hidden">
-                    {participants.slice(0, 6).map((participant) => (
-                      <Avatar key={participant.user_id} className="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 shrink-0">
-                        <AvatarImage src={getDisplayAvatarUrl(participant.avatar_url)} alt={participant.name || "User"} className="object-cover" />
+            {/* Participant cards — horizontal scroll with avatar, name, flag, occupation */}
+            <div className="w-full px-4 pt-2 pb-3 bg-white/80">
+              {participants.length === 0 ? (
+                <p className="text-xs text-gray-400">You're the first one here today!</p>
+              ) : (
+                <div
+                  className="flex gap-3 overflow-x-auto scrollbar-hide"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
+                  {participants.map((p) => (
+                    <button
+                      key={p.user_id}
+                      onClick={() => setShowParticipantsList(true)}
+                      className="flex flex-col items-center gap-1 shrink-0 w-14 hover:opacity-80 transition-opacity"
+                    >
+                      <Avatar className="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 shrink-0">
+                        <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
                         <AvatarFallback className="bg-gray-100 flex items-center justify-center">
-                          <User className="w-4 h-4 text-gray-400" />
+                          <User className="w-3.5 h-3.5 text-gray-400" />
                         </AvatarFallback>
                       </Avatar>
-                    ))}
-                    {participants.length > 6 && (
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 text-xs font-medium text-gray-500 shrink-0">
-                        +{participants.length - 6}
+                      <div className="text-center w-full min-w-0">
+                        <p className="text-[11px] font-medium text-gray-900 truncate leading-tight">
+                          {p.name || "Shaker"}{p.nationality ? ` ${getNationalityFlag(p.nationality)}` : ''}
+                        </p>
+                        {p.occupation && (
+                          <p className="text-[10px] text-gray-400 truncate leading-tight">{p.occupation}</p>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined
-                  </p>
-                </button>
-              </div>
-            ) : (
-              <div className="w-full px-4 py-2.5 border-b border-white bg-white">
-                <p className="text-sm text-gray-400">You're the first one here today!</p>
-              </div>
-            )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Collapsed thin bar — shown when header is collapsed */}
@@ -776,6 +785,7 @@ export function GroupChatView({
                 <span className="text-base">{activityMeta?.emoji ?? "📍"}</span>
               )}
               {title}
+              <span className="text-xs font-normal text-gray-500">{participants.length}/{MAX_CHAT_CAPACITY}</span>
             </span>
             <div className="flex items-center gap-0.5">
               <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
