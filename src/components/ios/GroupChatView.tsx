@@ -732,16 +732,15 @@ export function GroupChatView({
             <div className="flex justify-center px-4 pt-4 pb-2">
               {participants.length === 0 ? (
                 <div
-                  className="bg-white/90 px-5 py-2.5"
-                  style={{ borderRadius: 999 }}
+                  style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '10px 20px' }}
                 >
-                  <p className="text-xs text-gray-400">You're the first one here!</p>
+                  <p className="text-xs text-white/70">You're the first one here!</p>
                 </div>
               ) : (
                 <button
                   onClick={() => setShowParticipantsList(true)}
-                  className="flex items-center gap-2 bg-white/90 px-5 py-2.5 hover:bg-white transition-colors"
-                  style={{ borderRadius: 999 }}
+                  className="flex items-center gap-2"
+                  style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '10px 20px' }}
                 >
                   {participants.map((p) => (
                     <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 shrink-0">
@@ -759,13 +758,13 @@ export function GroupChatView({
             {participants.some(p => p.occupation || p.nationality) && (
               <div className="flex justify-center px-4 pb-3">
                 <div
-                  className="bg-white/90 px-5 py-3 flex flex-col gap-1"
-                  style={{ borderRadius: 999 }}
+                  className="flex flex-col gap-1"
+                  style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '10px 20px' }}
                 >
                   {participants
                     .filter(p => p.occupation || p.nationality)
                     .map((p) => (
-                      <p key={p.user_id} className="text-xs text-gray-700 leading-snug text-center whitespace-nowrap">
+                      <p key={p.user_id} className="text-xs text-white/90 leading-snug text-center whitespace-nowrap">
                         {p.name || 'Shaker'}
                         {p.nationality ? ` ${getNationalityFlag(p.nationality)}` : ''}
                         {p.occupation ? ` · ${p.occupation}` : ''}
