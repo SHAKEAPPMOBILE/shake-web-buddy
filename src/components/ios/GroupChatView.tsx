@@ -110,11 +110,16 @@ const chatSuggestions: Record<string, string[]> = {
   ],
 };
 
-export function GroupChatView({ 
-  activityType, 
+// Curtain snap positions
+const EXPANDED_HEIGHT = 300;
+const COLLAPSED_HEIGHT = 88;
+const SNAP_THRESHOLD = 80;
+
+export function GroupChatView({
+  activityType,
   city,
   homeCity,
-  onBack, 
+  onBack,
   attendeeCount = 0,
   eventDate,
 }: GroupChatViewProps) {
@@ -136,12 +141,21 @@ export function GroupChatView({
   const weekVenueInitialized = useRef(false);
   const MAX_CHAT_CAPACITY = 7;
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Curtain drag state
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragDelta, setDragDelta] = useState(0);
+  const isDraggingHeader = useRef(false);
+  const dragStartY = useRef(0);
+  const dragDeltaRef = useRef(0);
+
   const { user, isPremium } = useAuth();
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
   const { leaveActivity } = useActivityJoins(city);
   const { venue: assignedVenue, location, mapsUrl } = useActivityVenue(city, activityType);
   const { t } = useTranslation();
-  
+
   const { canSendText, addCharacters } = useTextMessageLimit();
 
   const messageIds = useMemo(() => messages.map((msg) => msg.id), [messages]);
@@ -166,20 +180,20 @@ export function GroupChatView({
     if (user?.id) ids.add(user.id);
     return [...ids];
   }, [messages, user?.id]);
-  
+
   const { profiles } = useUserProfiles(userIds);
-  
+
   // Get own profile for venue suggestions
   const ownProfile = user ? profiles[user.id] : null;
-  
+
   // Get the assigned venue (from weekly rotation) and all venues for this city/activity
   const venueType = getVenueTypeForActivity(activityType);
   const { data: filteredVenues = [] } = useVenuesForActivity(city, activityType);
-  
+
   const cityVenues = useMemo(() => {
     if (!venueType) return [];
     const allVenues = filteredVenues;
-    
+
     // Ensure assigned venue is first in the list
     if (assignedVenue) {
       const withoutAssigned = allVenues.filter(v => v.id !== assignedVenue.id);
@@ -187,7 +201,7 @@ export function GroupChatView({
     }
     return allVenues;
   }, [filteredVenues, venueType, assignedVenue]);
-  
+
   const currentVenue = cityVenues[currentVenueIndex];
   const hasVenues = cityVenues.length > 0;
   const isCurrentVenueAssigned = assignedVenue ? currentVenue?.id === assignedVenue.id : false;
@@ -210,7 +224,7 @@ export function GroupChatView({
       setCurrentVenueIndex(weekVenueIndex);
     }
   }, [cityVenues.length]);
-  
+
   // Fetch participants
   useEffect(() => {
     const fetchParticipants = async () => {
@@ -349,16 +363,83 @@ export function GroupChatView({
     };
 
     updateReadStatus();
-    
+
     // Update when leaving
     return () => {
       updateReadStatus();
     };
   }, [user, activityType, city]);
 
+  // ── Curtain drag handlers ──────────────────────────────────────────────────
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    isDraggingHeader.current = true;
+    setIsDragging(true);
+    dragStartY.current = e.touches[0].clientY;
+    dragDeltaRef.current = 0;
+    setDragDelta(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingHeader.current) return;
+    const delta = e.touches[0].clientY - dragStartY.current;
+    dragDeltaRef.current = delta;
+    setDragDelta(delta);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDraggingHeader.current) return;
+    isDraggingHeader.current = false;
+    setIsDragging(false);
+    const delta = dragDeltaRef.current;
+    setIsCollapsed(prev => {
+      if (!prev && delta < -SNAP_THRESHOLD) return true;
+      if (prev && delta > SNAP_THRESHOLD) return false;
+      return prev;
+    });
+    setDragDelta(0);
+    dragDeltaRef.current = 0;
+  };
+
+  const handleHeaderMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingHeader.current = true;
+    setIsDragging(true);
+    dragStartY.current = e.clientY;
+    dragDeltaRef.current = 0;
+    setDragDelta(0);
+
+    const onMouseMove = (me: MouseEvent) => {
+      if (!isDraggingHeader.current) return;
+      const delta = me.clientY - dragStartY.current;
+      dragDeltaRef.current = delta;
+      setDragDelta(delta);
+    };
+
+    const onMouseUp = () => {
+      isDraggingHeader.current = false;
+      setIsDragging(false);
+      const delta = dragDeltaRef.current;
+      setIsCollapsed(prev => {
+        if (!prev && delta < -SNAP_THRESHOLD) return true;
+        if (prev && delta > SNAP_THRESHOLD) return false;
+        return prev;
+      });
+      setDragDelta(0);
+      dragDeltaRef.current = 0;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  // ── Message handlers ───────────────────────────────────────────────────────
+
   const handleSendMessage = useCallback(async () => {
     if (!user || isSending) return;
-    
+
     // Check if there's something to send
     if (!message.trim()) return;
 
@@ -367,17 +448,17 @@ export function GroupChatView({
       setShowPremiumDialog(true);
       return;
     }
-    
+
     setIsSending(true);
-    
+
     try {
       const messageText = message.trim();
-      
+
       // Track character usage for free users
       if (!isPremium) {
         addCharacters(messageText.length);
       }
-      
+
       const { error } = await supabase.from("activity_messages").insert({
         user_id: user.id,
         activity_type: activityType,
@@ -386,7 +467,7 @@ export function GroupChatView({
       });
 
       if (error) throw error;
-      
+
       setMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -456,19 +537,19 @@ export function GroupChatView({
     },
     [user, isSending, isPremium, canSendText, activityType, city]
   );
-  
+
   const handleSuggestVenue = async (venue: DbVenue) => {
     if (!user) return;
-    
+
     const suggestionMessage = `${ownProfile?.name || "Someone"} suggested: ${venue.name}, ${venue.address}`;
-    
+
     const { error } = await supabase.from("activity_messages").insert({
       user_id: user.id,
       activity_type: activityType,
       city: city,
       message: suggestionMessage,
     });
-    
+
     if (error) {
       toast.error("Failed to suggest venue");
     } else {
@@ -512,335 +593,407 @@ export function GroupChatView({
   })();
   const showAttendees = attendeeCount > 0;
 
+  // Curtain live height: clamp between snap positions during drag
+  const baseHeight = isCollapsed ? COLLAPSED_HEIGHT : EXPANDED_HEIGHT;
+  const liveHeaderHeight = isDragging
+    ? Math.max(COLLAPSED_HEIGHT, Math.min(EXPANDED_HEIGHT, baseHeight + dragDelta))
+    : baseHeight;
+
   return (
     <div className="fixed inset-0 flex flex-col bg-white z-50">
       <div className="absolute inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(circle at 8% 0%, rgba(139,92,246,0.65) 0%, transparent 55%), radial-gradient(circle at 92% 18%, rgba(236,72,153,0.6) 0%, transparent 55%), radial-gradient(circle at 50% 100%, rgba(56,189,248,0.5) 0%, transparent 60%)' }} aria-hidden />
       <div className="relative z-10 flex flex-col flex-1 min-h-0">
-      {/* Header — centered flow layout; action buttons float as an overlay in the top corners */}
-      <div
-        className="relative z-30 shrink-0 border-b border-white/5 bg-transparent px-4 pb-5"
-        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
-      >
-        {/* Back + action buttons overlay */}
+
+        {/* ── COLLAPSIBLE HEADER CURTAIN ────────────────────────────────── */}
         <div
-          className="absolute inset-x-0 flex items-center justify-between px-4 pointer-events-none"
-          style={{ top: 'calc(0.75rem + env(safe-area-inset-top))' }}
+          className="relative z-30 shrink-0 overflow-hidden"
+          style={{
+            height: liveHeaderHeight,
+            transition: isDragging ? 'none' : 'height 0.3s ease',
+          }}
         >
-          <div className="pointer-events-auto">
+          {/* Full expanded content — fades out when collapsed */}
+          <div
+            style={{
+              opacity: isCollapsed ? 0 : 1,
+              transition: 'opacity 0.2s ease',
+              pointerEvents: isCollapsed ? 'none' : 'auto',
+            }}
+          >
+            {/* Header — centered flow layout; action buttons float as an overlay in the top corners */}
+            <div
+              className="relative z-30 shrink-0 border-b border-white/5 bg-transparent px-4 pb-5"
+              style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
+            >
+              {/* Back + action buttons overlay */}
+              <div
+                className="absolute inset-x-0 flex items-center justify-between px-4 pointer-events-none"
+                style={{ top: 'calc(0.75rem + env(safe-area-inset-top))' }}
+              >
+                <div className="pointer-events-auto">
+                  <MinimalBackButton
+                    onClick={onBack}
+                    className="shrink-0 text-gray-900 hover:text-gray-700 bg-white/10 border-white/30"
+                    aria-label="Back"
+                    iconClassName="w-6 h-6"
+                  />
+                </div>
+                <div className="flex items-center gap-0.5 pointer-events-auto">
+                  <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
+                    {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={handleLeaveActivity} className="shrink-0 text-gray-900 hover:text-red-500 hover:bg-black/5 h-8 w-8" title="Leave">
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Centered stacked content — drives the header height */}
+              <div
+                className="flex flex-col items-center gap-0.5"
+                style={{ marginTop: 'calc(2.25rem + env(safe-area-inset-top))' }}
+              >
+                {/* Activity image / emoji */}
+                <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mb-1">
+                  {activityMeta?.icon ? (
+                    <img src={activityMeta.icon} alt={activityType} className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                    <span className="text-4xl">{activityMeta?.emoji ?? "📍"}</span>
+                  )}
+                </div>
+
+                {/* Activity name */}
+                <h1 className="text-lg font-bold text-gray-900 text-center leading-tight">
+                  {title}
+                  {isCrossCity && (
+                    <span className="ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs text-gray-900 rounded-full bg-white/10">
+                      <Plane className="w-3 h-3" />{city}
+                    </span>
+                  )}
+                </h1>
+
+                {/* Day / date / time */}
+                <p className="text-sm text-gray-700 leading-tight">{headerDay}</p>
+                {headerDateOnly && <p className="text-sm text-gray-500 leading-tight">{headerDateOnly}</p>}
+                {activityTime && <p className="text-sm text-gray-500 leading-tight">{activityTime}</p>}
+
+                {/* Venue pill */}
+                {hasVenues && currentVenue && assignedVenue && (
+                  <div className="flex items-center justify-center gap-1.5 mt-2 min-w-0">
+                    <button
+                      onClick={() => {
+                        const venueUrl = currentVenue.latitude && currentVenue.longitude
+                          ? `https://www.google.com/maps/search/?api=1&query=${currentVenue.latitude},${currentVenue.longitude}`
+                          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentVenue.name}, ${currentVenue.address}`)}`;
+                        window.location.href = venueUrl;
+                      }}
+                      className="text-base hover:scale-110 transition-transform shrink-0"
+                      title="Open in Google Maps"
+                    >
+                      📍
+                    </button>
+                    {isCurrentVenueAssigned ? (
+                      <span className="inline-flex items-center px-3 py-1.5 bg-white text-green-600 rounded-full text-sm font-semibold border border-green-500/30 max-w-[200px] truncate">
+                        {currentVenue.name}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleSuggestVenue(currentVenue)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-gray-900 rounded-full text-sm font-semibold border border-white/20 hover:bg-white/20 max-w-[200px]"
+                      >
+                        <span className="truncate">{currentVenue.name}</span>
+                        <span className="text-xs text-gray-500 shrink-0">({t('chat.suggest', 'Suggest')})</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Capacity indicator */}
+                {(() => {
+                  const memberCount = participants.length;
+                  const isFull = memberCount >= MAX_CHAT_CAPACITY;
+                  return (
+                    <p className={`text-xs mt-1 leading-tight ${isFull ? 'text-red-400' : 'text-gray-400'}`}>
+                      {isFull
+                        ? `Group full · ${memberCount}/${MAX_CHAT_CAPACITY}`
+                        : `${memberCount}/${MAX_CHAT_CAPACITY} joined`}
+                    </p>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {showAttendees ? (
+              <div className="w-full px-4 py-2.5 border-b border-white bg-white">
+                <button onClick={() => setShowParticipantsList(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                  <div className="flex -space-x-2 overflow-hidden">
+                    {participants.slice(0, 6).map((participant) => (
+                      <Avatar key={participant.user_id} className="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 shrink-0">
+                        <AvatarImage src={getDisplayAvatarUrl(participant.avatar_url)} alt={participant.name || "User"} className="object-cover" />
+                        <AvatarFallback className="bg-gray-100 flex items-center justify-center">
+                          <User className="w-4 h-4 text-gray-400" />
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {participants.length > 6 && (
+                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 text-xs font-medium text-gray-500 shrink-0">
+                        +{participants.length - 6}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined
+                  </p>
+                </button>
+              </div>
+            ) : (
+              <div className="w-full px-4 py-2.5 border-b border-white bg-white">
+                <p className="text-sm text-gray-400">You're the first one here today!</p>
+              </div>
+            )}
+          </div>
+
+          {/* Collapsed thin bar — shown when header is collapsed */}
+          <div
+            className="absolute inset-0 flex items-end justify-between px-4 pb-3"
+            style={{
+              paddingTop: 'env(safe-area-inset-top)',
+              opacity: isCollapsed ? 1 : 0,
+              transition: 'opacity 0.2s ease',
+              pointerEvents: isCollapsed ? 'auto' : 'none',
+            }}
+          >
             <MinimalBackButton
               onClick={onBack}
               className="shrink-0 text-gray-900 hover:text-gray-700 bg-white/10 border-white/30"
               aria-label="Back"
-              iconClassName="w-6 h-6"
+              iconClassName="w-5 h-5"
             />
-          </div>
-          <div className="flex items-center gap-0.5 pointer-events-auto">
-            <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
-              {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleLeaveActivity} className="shrink-0 text-gray-900 hover:text-red-500 hover:bg-black/5 h-8 w-8" title="Leave">
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Centered stacked content — drives the header height */}
-        <div
-          className="flex flex-col items-center gap-0.5"
-          style={{ marginTop: 'calc(2.25rem + env(safe-area-inset-top))' }}
-        >
-          {/* Activity image / emoji */}
-          <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center mb-1">
-            {activityMeta?.icon ? (
-              <img src={activityMeta.icon} alt={activityType} className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <span className="text-4xl">{activityMeta?.emoji ?? "📍"}</span>
-            )}
-          </div>
-
-          {/* Activity name */}
-          <h1 className="text-lg font-bold text-gray-900 text-center leading-tight">
-            {title}
-            {isCrossCity && (
-              <span className="ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs text-gray-900 rounded-full bg-white/10">
-                <Plane className="w-3 h-3" />{city}
-              </span>
-            )}
-          </h1>
-
-          {/* Day / date / time */}
-          <p className="text-sm text-gray-700 leading-tight">{headerDay}</p>
-          {headerDateOnly && <p className="text-sm text-gray-500 leading-tight">{headerDateOnly}</p>}
-          {activityTime && <p className="text-sm text-gray-500 leading-tight">{activityTime}</p>}
-
-          {/* Venue pill */}
-          {hasVenues && currentVenue && assignedVenue && (
-            <div className="flex items-center justify-center gap-1.5 mt-2 min-w-0">
-              <button
-                onClick={() => {
-                  const venueUrl = currentVenue.latitude && currentVenue.longitude
-                    ? `https://www.google.com/maps/search/?api=1&query=${currentVenue.latitude},${currentVenue.longitude}`
-                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentVenue.name}, ${currentVenue.address}`)}`;
-                  window.location.href = venueUrl;
-                }}
-                className="text-base hover:scale-110 transition-transform shrink-0"
-                title="Open in Google Maps"
-              >
-                📍
-              </button>
-              {isCurrentVenueAssigned ? (
-                <span className="inline-flex items-center px-3 py-1.5 bg-white text-green-600 rounded-full text-sm font-semibold border border-green-500/30 max-w-[200px] truncate">
-                  {currentVenue.name}
-                </span>
+            <span className="flex items-center gap-1.5 text-sm font-bold text-gray-900">
+              {activityMeta?.icon ? (
+                <img src={activityMeta.icon} alt={activityType} className="w-5 h-5 rounded-full object-cover" />
               ) : (
-                <button
-                  onClick={() => handleSuggestVenue(currentVenue)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-gray-900 rounded-full text-sm font-semibold border border-white/20 hover:bg-white/20 max-w-[200px]"
-                >
-                  <span className="truncate">{currentVenue.name}</span>
-                  <span className="text-xs text-gray-500 shrink-0">({t('chat.suggest', 'Suggest')})</span>
-                </button>
+                <span className="text-base">{activityMeta?.emoji ?? "📍"}</span>
               )}
+              {title}
+            </span>
+            <div className="flex items-center gap-0.5">
+              <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
+                {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleLeaveActivity} className="shrink-0 text-gray-900 hover:text-red-500 hover:bg-black/5 h-8 w-8" title="Leave">
+                <LogOut className="w-4 h-4" />
+              </Button>
             </div>
-          )}
+          </div>
+        </div>
 
-          {/* Capacity indicator */}
-          {(() => {
-            const memberCount = participants.length;
-            const isFull = memberCount >= MAX_CHAT_CAPACITY;
-            return (
-              <p className={`text-xs mt-1 leading-tight ${isFull ? 'text-red-400' : 'text-gray-400'}`}>
-                {isFull
-                  ? `Group full · ${memberCount}/${MAX_CHAT_CAPACITY}`
-                  : `${memberCount}/${MAX_CHAT_CAPACITY} joined`}
+        {/* ── DRAG HANDLE PILL ─────────────────────────────────────────────── */}
+        <div
+          className="shrink-0 flex items-center justify-center bg-white border-t border-gray-100 select-none"
+          style={{ height: 28, cursor: isDragging ? 'grabbing' : 'grab' }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleHeaderMouseDown}
+        >
+          <div className="w-10 h-1 rounded-full bg-gray-300" />
+        </div>
+
+        {/* ── CHAT MESSAGES ─────────────────────────────────────────────────── */}
+        <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-2 space-y-3 bg-white">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+              <p className="text-center text-sm">
+                Start the conversation!<br />
+                <span className="text-xs">Messages from today will appear here.</span>
               </p>
-            );
-          })()}
-        </div>
-      </div>
-
-      {showAttendees ? (
-        <div className="w-full px-4 py-2.5 border-b border-white bg-white">
-          <button onClick={() => setShowParticipantsList(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="flex -space-x-2 overflow-hidden">
-              {participants.slice(0, 6).map((participant) => (
-                <Avatar key={participant.user_id} className="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 shrink-0">
-                  <AvatarImage src={getDisplayAvatarUrl(participant.avatar_url)} alt={participant.name || "User"} className="object-cover" />
-                  <AvatarFallback className="bg-gray-100 flex items-center justify-center">
-                    <User className="w-4 h-4 text-gray-400" />
-                  </AvatarFallback>
-                </Avatar>
-              ))}
-              {participants.length > 6 && (
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 text-xs font-medium text-gray-500 shrink-0">
-                  +{participants.length - 6}
-                </div>
-              )}
             </div>
-            <p className="text-sm text-gray-500">
-              {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} joined
-            </p>
-          </button>
-        </div>
-      ) : (
-        <div className="w-full px-4 py-2.5 border-b border-white bg-white">
-          <p className="text-sm text-gray-400">You're the first one here today!</p>
-        </div>
-      )}
-
-      <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-14 space-y-3 bg-white">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <p className="text-center text-sm">
-              Start the conversation!<br />
-              <span className="text-xs">Messages from today will appear here.</span>
-            </p>
-          </div>
-        ) : (
-          messages.map((msg) => {
-            const isOwnMessage = msg.user_id === user?.id;
-            const profile = profiles[msg.user_id];
-            const displayName = isOwnMessage ? 'You' : profile?.name || 'Shaker';
-            const avatarUrl = isOwnMessage ? (ownProfile?.avatar_url ?? profile?.avatar_url) : profile?.avatar_url;
-            const msgReactions = reactionsByMessage[msg.id];
-            const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
-            const isGif =
-              (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
-            return (
-              <div key={msg.id} className={`group flex gap-3 items-end ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                <Avatar className="w-8 h-8 shrink-0 rounded-full border border-gray-200 bg-gray-100">
-                  <AvatarImage src={getDisplayAvatarUrl(avatarUrl)} alt={displayName} className="object-cover" />
-                  <AvatarFallback className="bg-gray-100 flex items-center justify-center">
-                    <User className="w-4 h-4 text-gray-400" />
-                  </AvatarFallback>
-                </Avatar>
-                <div
-                  className={`min-w-0 max-w-[70%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
-                >
-                  <MessageBubbleReactions
-                    variant="dark"
-                    isOwn={isOwnMessage}
-                    messageId={msg.id}
-                    enabled={reactionsEnabled}
-                    reactionBarMessageId={reactionBarMessageId}
-                    mobileReactionBarRef={mobileReactionBarRef}
-                    reactionChips={reactionChips}
-                    onToggleReaction={toggleReaction}
-                    onPointerDown={onMessagePointerDown(msg.id)}
-                    onPointerUp={onMessagePointerEnd}
-                    onPointerCancel={onMessagePointerEnd}
-                    onPointerLeave={onMessagePointerEnd}
-                    header={
-                      <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                        <button
-                          type="button"
-                          className={`font-semibold text-sm ${isOwnMessage ? 'text-white' : 'text-gray-900'} ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
-                          onClick={() => {
-                            if (!isOwnMessage) {
-                              setSelectedUserProfile({
-                                userId: msg.user_id,
-                                userName: profile?.name || null,
-                                avatarUrl: profile?.avatar_url || null,
-                              });
-                            }
-                          }}
-                          disabled={isOwnMessage}
-                        >
-                          {displayName}
-                        </button>
-                        <span className={`text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-400'}`}>{format(new Date(msg.created_at), 'h:mm a')}</span>
-                      </div>
-                    }
+          ) : (
+            messages.map((msg) => {
+              const isOwnMessage = msg.user_id === user?.id;
+              const profile = profiles[msg.user_id];
+              const displayName = isOwnMessage ? 'You' : profile?.name || 'Shaker';
+              const avatarUrl = isOwnMessage ? (ownProfile?.avatar_url ?? profile?.avatar_url) : profile?.avatar_url;
+              const msgReactions = reactionsByMessage[msg.id];
+              const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
+              const isGif =
+                (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+              return (
+                <div key={msg.id} className={`group flex gap-3 items-end ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                  <Avatar className="w-8 h-8 shrink-0 rounded-full border border-gray-200 bg-gray-100">
+                    <AvatarImage src={getDisplayAvatarUrl(avatarUrl)} alt={displayName} className="object-cover" />
+                    <AvatarFallback className="bg-gray-100 flex items-center justify-center">
+                      <User className="w-4 h-4 text-gray-400" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div
+                    className={`min-w-0 max-w-[70%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
                   >
-                    <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                      {isGif ? (
-                        <InlineChatGif
-                          src={msg.message}
-                          variant="dark"
-                          onLoad={() =>
-                            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-                          }
-                        />
-                      ) : (
-                        <div
-                          className="text-sm px-3 py-2 inline-block"
-                          style={isOwnMessage ? {
-                            background: "rgba(139, 92, 246, 0.55)",
-                            backdropFilter: "blur(12px)",
-                            WebkitBackdropFilter: "blur(12px)",
-                            border: "1px solid rgba(255,255,255,0.3)",
-                            borderRadius: "18px 18px 4px 18px",
-                            color: "white",
-                          } : {
-                            background: "rgba(0,0,0,0.06)",
-                            border: "1px solid rgba(0,0,0,0.08)",
-                            borderRadius: "18px 18px 18px 4px",
-                            color: "#111",
-                          }}
-                        >
-                          <span>{msg.message}</span>
+                    <MessageBubbleReactions
+                      variant="dark"
+                      isOwn={isOwnMessage}
+                      messageId={msg.id}
+                      enabled={reactionsEnabled}
+                      reactionBarMessageId={reactionBarMessageId}
+                      mobileReactionBarRef={mobileReactionBarRef}
+                      reactionChips={reactionChips}
+                      onToggleReaction={toggleReaction}
+                      onPointerDown={onMessagePointerDown(msg.id)}
+                      onPointerUp={onMessagePointerEnd}
+                      onPointerCancel={onMessagePointerEnd}
+                      onPointerLeave={onMessagePointerEnd}
+                      header={
+                        <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                          <button
+                            type="button"
+                            className={`font-semibold text-sm ${isOwnMessage ? 'text-white' : 'text-gray-900'} ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
+                            onClick={() => {
+                              if (!isOwnMessage) {
+                                setSelectedUserProfile({
+                                  userId: msg.user_id,
+                                  userName: profile?.name || null,
+                                  avatarUrl: profile?.avatar_url || null,
+                                });
+                              }
+                            }}
+                            disabled={isOwnMessage}
+                          >
+                            {displayName}
+                          </button>
+                          <span className={`text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-400'}`}>{format(new Date(msg.created_at), 'h:mm a')}</span>
                         </div>
-                      )}
-                      {isOwnMessage && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMessage(msg.id)}
-                          className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-gray-300 hover:text-red-400 transition-all"
-                          title="Delete message"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  </MessageBubbleReactions>
+                      }
+                    >
+                      <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                        {isGif ? (
+                          <InlineChatGif
+                            src={msg.message}
+                            variant="dark"
+                            onLoad={() =>
+                              messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+                            }
+                          />
+                        ) : (
+                          <div
+                            className="text-sm px-3 py-2 inline-block"
+                            style={isOwnMessage ? {
+                              background: "rgba(139, 92, 246, 0.55)",
+                              backdropFilter: "blur(12px)",
+                              WebkitBackdropFilter: "blur(12px)",
+                              border: "1px solid rgba(255,255,255,0.3)",
+                              borderRadius: "18px 18px 4px 18px",
+                              color: "white",
+                            } : {
+                              background: "rgba(0,0,0,0.06)",
+                              border: "1px solid rgba(0,0,0,0.08)",
+                              borderRadius: "18px 18px 18px 4px",
+                              color: "#111",
+                            }}
+                          >
+                            <span>{msg.message}</span>
+                          </div>
+                        )}
+                        {isOwnMessage && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-gray-300 hover:text-red-400 transition-all"
+                            title="Delete message"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    </MessageBubbleReactions>
+                  </div>
                 </div>
-              </div>
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </div>
 
-      {user && !message.trim() && (
-        <div className="px-4 pb-2 overflow-x-auto scrollbar-hide bg-white">
-          <div className="flex gap-1.5 w-max">
-            {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => setMessage(suggestion)}
-                className="text-xs px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 whitespace-nowrap shrink-0"
-              >
-                {suggestion}
-              </button>
-            ))}
+        {user && !message.trim() && (
+          <div className="px-4 pb-2 overflow-x-auto scrollbar-hide bg-white">
+            <div className="flex gap-1.5 w-max">
+              {(chatSuggestions[activityType] || defaultSuggestions).map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => setMessage(suggestion)}
+                  className="text-xs px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 whitespace-nowrap shrink-0"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-gray-200 bg-white">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-9 w-9 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              onClick={() => setGiphyPickerOpen(true)}
+              disabled={isSending || giphyPickerOpen}
+              aria-label="GIFs"
+              title="GIFs"
+            >
+              <Images className="w-5 h-5" />
+            </Button>
+            <Input
+              placeholder={canSendText ? "Type a message..." : "Character limit reached"}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="flex-1 bg-gray-50 border-gray-200 focus-visible:ring-primary/50 text-gray-900 placeholder:text-gray-400 min-h-9"
+              disabled={isSending || (!isPremium && !canSendText) || giphyPickerOpen}
+            />
+            <Button
+              size="icon"
+              onClick={handleSendMessage}
+              disabled={isSending || !message.trim() || giphyPickerOpen}
+              className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
+            >
+              {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
+            </Button>
           </div>
         </div>
-      )}
 
-      <div className="p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-gray-200 bg-white">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="shrink-0 h-9 w-9 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            onClick={() => setGiphyPickerOpen(true)}
-            disabled={isSending || giphyPickerOpen}
-            aria-label="GIFs"
-            title="GIFs"
-          >
-            <Images className="w-5 h-5" />
-          </Button>
-          <Input
-            placeholder={canSendText ? "Type a message..." : "Character limit reached"}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="flex-1 bg-gray-50 border-gray-200 focus-visible:ring-primary/50 text-gray-900 placeholder:text-gray-400 min-h-9"
-            disabled={isSending || (!isPremium && !canSendText) || giphyPickerOpen}
+        {user ? (
+          <EventChatGiphyPickerModal
+            open={giphyPickerOpen}
+            onOpenChange={setGiphyPickerOpen}
+            onGifSelect={handleGifSelect}
           />
-          <Button
-            size="icon"
-            onClick={handleSendMessage}
-            disabled={isSending || !message.trim() || giphyPickerOpen}
-            className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
-          >
-            {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
-          </Button>
-        </div>
-      </div>
+        ) : null}
 
-      {user ? (
-        <EventChatGiphyPickerModal
-          open={giphyPickerOpen}
-          onOpenChange={setGiphyPickerOpen}
-          onGifSelect={handleGifSelect}
+        {/* Premium Dialog */}
+        <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+        {/* User Profile Dialog */}
+        <UserProfileDialog
+          open={!!selectedUserProfile}
+          onOpenChange={(open) => !open && setSelectedUserProfile(null)}
+          userId={selectedUserProfile?.userId || ""}
+          userName={selectedUserProfile?.userName || null}
+          avatarUrl={selectedUserProfile?.avatarUrl || null}
         />
-      ) : null}
 
-      {/* Premium Dialog */}
-      <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
-
-      {/* User Profile Dialog */}
-      <UserProfileDialog 
-        open={!!selectedUserProfile} 
-        onOpenChange={(open) => !open && setSelectedUserProfile(null)}
-        userId={selectedUserProfile?.userId || ""}
-        userName={selectedUserProfile?.userName || null}
-        avatarUrl={selectedUserProfile?.avatarUrl || null}
-      />
-
-      {/* Participants List Dialog */}
-      <ParticipantsListDialog
-        open={showParticipantsList}
-        onOpenChange={setShowParticipantsList}
-        activityType={activityType}
-        city={city}
-        onViewProfile={(userId, userName, avatarUrl) => {
-          setShowParticipantsList(false);
-          setSelectedUserProfile({ userId, userName, avatarUrl });
-        }}
-      />
+        {/* Participants List Dialog */}
+        <ParticipantsListDialog
+          open={showParticipantsList}
+          onOpenChange={setShowParticipantsList}
+          activityType={activityType}
+          city={city}
+          onViewProfile={(userId, userName, avatarUrl) => {
+            setShowParticipantsList(false);
+            setSelectedUserProfile({ userId, userName, avatarUrl });
+          }}
+        />
       </div>
     </div>
   );
