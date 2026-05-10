@@ -111,10 +111,10 @@ const chatSuggestions: Record<string, string[]> = {
   ],
 };
 
-// Curtain snap positions
-const EXPANDED_HEIGHT = 420;
-const COLLAPSED_HEIGHT = 88;
-const SNAP_THRESHOLD = 80;
+// Curtain snap positions — three states
+type SnapState = 'collapsed' | 'partial' | 'full';
+const SNAP_HEIGHTS: Record<SnapState, number> = { collapsed: 88, partial: 280, full: 420 };
+const SNAP_THRESHOLD = 60;
 
 export function GroupChatView({
   activityType,
@@ -144,7 +144,7 @@ export function GroupChatView({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Curtain drag state
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [snapState, setSnapState] = useState<SnapState>('partial');
   const [isDragging, setIsDragging] = useState(false);
   const [dragDelta, setDragDelta] = useState(0);
   const isDraggingHeader = useRef(false);
@@ -375,6 +375,18 @@ export function GroupChatView({
 
   // ── Curtain drag handlers ──────────────────────────────────────────────────
 
+  const resolveSnap = (prev: SnapState, delta: number): SnapState => {
+    if (delta < -SNAP_THRESHOLD) {
+      if (prev === 'full') return 'partial';
+      if (prev === 'partial') return 'collapsed';
+    }
+    if (delta > SNAP_THRESHOLD) {
+      if (prev === 'collapsed') return 'partial';
+      if (prev === 'partial') return 'full';
+    }
+    return prev;
+  };
+
   const handleTouchStart = (e: React.TouchEvent) => {
     isDraggingHeader.current = true;
     setIsDragging(true);
@@ -395,11 +407,7 @@ export function GroupChatView({
     isDraggingHeader.current = false;
     setIsDragging(false);
     const delta = dragDeltaRef.current;
-    setIsCollapsed(prev => {
-      if (!prev && delta < -SNAP_THRESHOLD) return true;
-      if (prev && delta > SNAP_THRESHOLD) return false;
-      return prev;
-    });
+    setSnapState(prev => resolveSnap(prev, delta));
     setDragDelta(0);
     dragDeltaRef.current = 0;
   };
@@ -423,11 +431,7 @@ export function GroupChatView({
       isDraggingHeader.current = false;
       setIsDragging(false);
       const delta = dragDeltaRef.current;
-      setIsCollapsed(prev => {
-        if (!prev && delta < -SNAP_THRESHOLD) return true;
-        if (prev && delta > SNAP_THRESHOLD) return false;
-        return prev;
-      });
+      setSnapState(prev => resolveSnap(prev, delta));
       setDragDelta(0);
       dragDeltaRef.current = 0;
       window.removeEventListener('mousemove', onMouseMove);
@@ -594,12 +598,10 @@ export function GroupChatView({
       headerDateOnly: null,
     };
   })();
-  const showAttendees = attendeeCount > 0;
-
   // Curtain live height: clamp between snap positions during drag
-  const baseHeight = isCollapsed ? COLLAPSED_HEIGHT : EXPANDED_HEIGHT;
+  const baseHeight = SNAP_HEIGHTS[snapState];
   const liveHeaderHeight = isDragging
-    ? Math.max(COLLAPSED_HEIGHT, Math.min(EXPANDED_HEIGHT, baseHeight + dragDelta))
+    ? Math.max(SNAP_HEIGHTS.collapsed, Math.min(SNAP_HEIGHTS.full, baseHeight + dragDelta))
     : baseHeight;
 
   return (
@@ -618,9 +620,9 @@ export function GroupChatView({
           {/* Full expanded content — fades out when collapsed */}
           <div
             style={{
-              opacity: isCollapsed ? 0 : 1,
+              opacity: snapState === 'collapsed' ? 0 : 1,
               transition: 'opacity 0.2s ease',
-              pointerEvents: isCollapsed ? 'none' : 'auto',
+              pointerEvents: snapState === 'collapsed' ? 'none' : 'auto',
             }}
           >
             {/* Header — centered flow layout; action buttons float as an overlay in the top corners */}
@@ -726,40 +728,53 @@ export function GroupChatView({
               </div>
             </div>
 
-            {/* Participant cards — horizontal scroll with avatar, name, flag, occupation */}
-            <div className="w-full px-4 pt-2 pb-3 bg-white/80">
+            {/* ── AVATAR PILL — visible in PARTIAL and FULL ─────────────────── */}
+            <div className="flex justify-center px-4 pt-2 pb-2">
               {participants.length === 0 ? (
-                <p className="text-xs text-gray-400">You're the first one here today!</p>
-              ) : (
                 <div
-                  className="flex gap-3 overflow-x-auto scrollbar-hide"
-                  style={{ WebkitOverflowScrolling: 'touch' }}
+                  className="bg-white/90 px-5 py-2.5"
+                  style={{ borderRadius: 999 }}
+                >
+                  <p className="text-xs text-gray-400">You're the first one here!</p>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowParticipantsList(true)}
+                  className="flex items-center gap-2 bg-white/90 px-5 py-2.5 hover:bg-white transition-colors"
+                  style={{ borderRadius: 999 }}
                 >
                   {participants.map((p) => (
-                    <button
-                      key={p.user_id}
-                      onClick={() => setShowParticipantsList(true)}
-                      className="flex flex-col items-center gap-1 shrink-0 w-14 hover:opacity-80 transition-opacity"
-                    >
-                      <Avatar className="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 shrink-0">
-                        <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
-                        <AvatarFallback className="bg-gray-100 flex items-center justify-center">
-                          <User className="w-3.5 h-3.5 text-gray-400" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="text-center w-full min-w-0">
-                        <p className="text-[11px] font-medium text-gray-900 truncate leading-tight">
-                          {p.name || "Shaker"}{p.nationality ? ` ${getNationalityFlag(p.nationality)}` : ''}
-                        </p>
-                        {p.occupation && (
-                          <p className="text-[10px] text-gray-400 truncate leading-tight">{p.occupation}</p>
-                        )}
-                      </div>
-                    </button>
+                    <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 shrink-0">
+                      <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
+                      <AvatarFallback className="bg-gray-100 flex items-center justify-center">
+                        <User className="w-3.5 h-3.5 text-gray-400" />
+                      </AvatarFallback>
+                    </Avatar>
                   ))}
-                </div>
+                </button>
               )}
             </div>
+
+            {/* ── OCCUPATION PILL — only reachable in FULL (clipped in PARTIAL) ── */}
+            {participants.some(p => p.occupation || p.nationality) && (
+              <div className="flex justify-center px-4 pb-3">
+                <div
+                  className="bg-white/90 px-5 py-3 flex flex-col gap-1"
+                  style={{ borderRadius: 999 }}
+                >
+                  {participants
+                    .filter(p => p.occupation || p.nationality)
+                    .map((p) => (
+                      <p key={p.user_id} className="text-xs text-gray-700 leading-snug text-center whitespace-nowrap">
+                        {p.name || 'Shaker'}
+                        {p.nationality ? ` ${getNationalityFlag(p.nationality)}` : ''}
+                        {p.occupation ? ` · ${p.occupation}` : ''}
+                      </p>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Collapsed thin bar — shown when header is collapsed */}
@@ -767,9 +782,9 @@ export function GroupChatView({
             className="absolute inset-0 flex items-end justify-between px-4 pb-3"
             style={{
               paddingTop: 'env(safe-area-inset-top)',
-              opacity: isCollapsed ? 1 : 0,
+              opacity: snapState === 'collapsed' ? 1 : 0,
               transition: 'opacity 0.2s ease',
-              pointerEvents: isCollapsed ? 'auto' : 'none',
+              pointerEvents: snapState === 'collapsed' ? 'auto' : 'none',
             }}
           >
             <MinimalBackButton
