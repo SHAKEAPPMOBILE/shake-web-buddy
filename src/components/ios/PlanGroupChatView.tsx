@@ -54,6 +54,11 @@ interface PlanGroupChatViewProps {
   attendeeCount?: number;
 }
 
+// Curtain snap positions
+const EXPANDED_HEIGHT = 300;
+const COLLAPSED_HEIGHT = 88;
+const SNAP_THRESHOLD = 80;
+
 export function PlanGroupChatView({
   activity,
   onBack,
@@ -72,6 +77,15 @@ export function PlanGroupChatView({
   } | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+
+  // Curtain drag state
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragDelta, setDragDelta] = useState(0);
+  const isDraggingHeader = useRef(false);
+  const dragStartY = useRef(0);
+  const dragDeltaRef = useRef(0);
 
   const { canSendText, addCharacters } = useTextMessageLimit();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -246,6 +260,73 @@ export function PlanGroupChatView({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // ── Curtain drag handlers ──────────────────────────────────────────────────
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    isDraggingHeader.current = true;
+    setIsDragging(true);
+    dragStartY.current = e.touches[0].clientY;
+    dragDeltaRef.current = 0;
+    setDragDelta(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingHeader.current) return;
+    const delta = e.touches[0].clientY - dragStartY.current;
+    dragDeltaRef.current = delta;
+    setDragDelta(delta);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDraggingHeader.current) return;
+    isDraggingHeader.current = false;
+    setIsDragging(false);
+    const delta = dragDeltaRef.current;
+    setIsCollapsed(prev => {
+      if (!prev && delta < -SNAP_THRESHOLD) return true;
+      if (prev && delta > SNAP_THRESHOLD) return false;
+      return prev;
+    });
+    setDragDelta(0);
+    dragDeltaRef.current = 0;
+  };
+
+  const handleHeaderMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingHeader.current = true;
+    setIsDragging(true);
+    dragStartY.current = e.clientY;
+    dragDeltaRef.current = 0;
+    setDragDelta(0);
+
+    const onMouseMove = (me: MouseEvent) => {
+      if (!isDraggingHeader.current) return;
+      const delta = me.clientY - dragStartY.current;
+      dragDeltaRef.current = delta;
+      setDragDelta(delta);
+    };
+
+    const onMouseUp = () => {
+      isDraggingHeader.current = false;
+      setIsDragging(false);
+      const delta = dragDeltaRef.current;
+      setIsCollapsed(prev => {
+        if (!prev && delta < -SNAP_THRESHOLD) return true;
+        if (prev && delta > SNAP_THRESHOLD) return false;
+        return prev;
+      });
+      setDragDelta(0);
+      dragDeltaRef.current = 0;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  // ── Plan action handlers ───────────────────────────────────────────────────
+
   const handleSendMessage = async () => {
     if (!message.trim() || !user || isSending) return;
 
@@ -324,7 +405,6 @@ export function PlanGroupChatView({
   };
 
   const isCreator = user?.id === activity.user_id;
-  const [showMenu, setShowMenu] = useState(false);
 
   const handleLeavePlan = async () => {
     setShowMenu(false);
@@ -372,104 +452,175 @@ export function PlanGroupChatView({
     return { planDay: day, planDate: date, planTime: time };
   })();
   const planEmoji = getActivityEmoji(activity.activity_type);
+  const planTitle = activity.note || t('plans.untitledPlan', 'Untitled Plan');
+
+  // Curtain live height: clamp between snap positions during drag
+  const baseHeight = isCollapsed ? COLLAPSED_HEIGHT : EXPANDED_HEIGHT;
+  const liveHeaderHeight = isDragging
+    ? Math.max(COLLAPSED_HEIGHT, Math.min(EXPANDED_HEIGHT, baseHeight + dragDelta))
+    : baseHeight;
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50">
-      {/* Header */}
-      <div className="relative z-30 flex shrink-0 items-center bg-[hsl(50,40%,92%)] px-4 py-5 pt-[calc(1.25rem+env(safe-area-inset-top))]">
-        <MinimalBackButton
-          onClick={onBack}
-          className="shrink-0 text-black/80 hover:text-black"
-          aria-label="Back"
-          iconClassName="w-6 h-6"
-        />
+    <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50 pt-[env(safe-area-inset-top)]">
 
-        {/* Centered content */}
-        <div className="absolute inset-x-0 flex flex-col items-center pointer-events-none px-16">
-          <div className="w-10 h-10 rounded-full bg-white/70 border border-black/10 overflow-hidden flex items-center justify-center mb-1 shadow-sm">
-            {creatorProfile?.avatar_url ? (
-              <Avatar className="w-full h-full rounded-full">
-                <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
-                <AvatarFallback className="bg-white flex items-center justify-center">
-                  <span className="text-xl">{planEmoji}</span>
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <span className="text-xl">{planEmoji}</span>
-            )}
-          </div>
-          <h1 className="text-base font-bold text-black text-center leading-tight">
-            {activity.note || t('plans.untitledPlan', 'Untitled Plan')}
-          </h1>
-          {planDay && <p className="text-sm font-semibold text-black/80 mt-0.5">{planDay}</p>}
-          {planDate && <p className="text-xs text-black/60">{planDate}</p>}
-          {planTime && <p className="text-xs text-black/60">{planTime}</p>}
-        </div>
+      {/* ── COLLAPSIBLE HEADER CURTAIN ────────────────────────────────────── */}
+      <div
+        className="relative z-30 shrink-0 overflow-hidden"
+        style={{
+          height: liveHeaderHeight,
+          transition: isDragging ? 'none' : 'height 0.3s ease',
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)",
+        }}
+      >
+        {/* Full expanded content — fades out when collapsed */}
+        <div
+          style={{
+            opacity: isCollapsed ? 0 : 1,
+            transition: 'opacity 0.2s ease',
+            pointerEvents: isCollapsed ? 'none' : 'auto',
+          }}
+        >
+          {/* Header row */}
+          <div className="flex shrink-0 items-center px-4 py-5">
+            <MinimalBackButton
+              onClick={onBack}
+              className="shrink-0 text-white/80 hover:text-white"
+              aria-label="Back"
+              iconClassName="w-6 h-6"
+            />
 
-        <div className="relative ml-auto shrink-0">
-          <button
-            onClick={() => setShowMenu((v) => !v)}
-            className="p-2 rounded-full hover:bg-black/10 transition-colors"
-          >
-            <MoreVertical className="w-5 h-5 text-black/70" />
-          </button>
-          {showMenu && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
-                {isCreator ? (
-                  <button
-                    onClick={handleDeletePlan}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete plan
-                  </button>
+            {/* Centered content */}
+            <div className="absolute inset-x-0 flex flex-col items-center pointer-events-none px-16">
+              <div className="w-20 h-20 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center mb-1 shadow-sm">
+                {creatorProfile?.avatar_url ? (
+                  <Avatar className="w-full h-full rounded-full">
+                    <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
+                    <AvatarFallback className="bg-white/20 flex items-center justify-center">
+                      <span className="text-5xl">{planEmoji}</span>
+                    </AvatarFallback>
+                  </Avatar>
                 ) : (
-                  <button
-                    onClick={handleLeavePlan}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Leave plan
-                  </button>
+                  <span className="text-5xl">{planEmoji}</span>
                 )}
               </div>
-            </>
-          )}
+              <h1 className="text-base font-bold text-white text-center leading-tight">
+                {planTitle}
+              </h1>
+              {planDay && <p className="text-sm font-semibold text-white/90 mt-0.5">{planDay}</p>}
+              {planDate && <p className="text-xs text-white/70">{planDate}</p>}
+              {planTime && <p className="text-xs text-white/70">{planTime}</p>}
+            </div>
+
+            <div className="relative ml-auto shrink-0">
+              <button
+                onClick={() => setShowMenu((v) => !v)}
+                className="p-2 rounded-full hover:bg-white/20 transition-colors"
+              >
+                <MoreVertical className="w-5 h-5 text-white/80" />
+              </button>
+              {showMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
+                    {isCreator ? (
+                      <button
+                        onClick={handleDeletePlan}
+                        className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete plan
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleLeavePlan}
+                        className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Leave plan
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Participants bar */}
+          <div className="w-full px-4 py-2.5 border-t border-white/20">
+            {participants.length > 0 ? (
+              <button onClick={() => setShowParticipantsDialog(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <div className="flex -space-x-2 overflow-hidden">
+                  {participants.slice(0, 6).map((p) => (
+                    <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-white/20 bg-white/20 shrink-0">
+                      <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
+                      <AvatarFallback className="bg-white/20 flex items-center justify-center">
+                        <User className="w-4 h-4 text-white/70" />
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {participants.length > 6 && (
+                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center border border-white/20 text-xs font-medium text-white shrink-0">
+                      +{participants.length - 6}
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-white/70">
+                  {attendeeCount || participants.length} {(attendeeCount || participants.length) === 1 ? 'person' : 'people'} joined
+                </p>
+              </button>
+            ) : (
+              <p className="text-sm text-white/50">You're the first one here!</p>
+            )}
+          </div>
+        </div>
+
+        {/* Collapsed thin bar — shown when header is collapsed */}
+        <div
+          className="absolute inset-0 flex items-center justify-between px-4"
+          style={{
+            opacity: isCollapsed ? 1 : 0,
+            transition: 'opacity 0.2s ease',
+            pointerEvents: isCollapsed ? 'auto' : 'none',
+          }}
+        >
+          <MinimalBackButton
+            onClick={onBack}
+            className="shrink-0 text-white/80 hover:text-white"
+            aria-label="Back"
+            iconClassName="w-5 h-5"
+          />
+          <span className="flex items-center gap-1.5 text-sm font-bold text-white">
+            <span className="text-base">{planEmoji}</span>
+            {planTitle}
+          </span>
+          <button
+            onClick={isCreator ? handleDeletePlan : handleLeavePlan}
+            className="p-2 rounded-full hover:bg-white/20 transition-colors"
+            title={isCreator ? "Delete plan" : "Leave plan"}
+          >
+            {isCreator ? (
+              <Trash2 className="w-4 h-4 text-white/80" />
+            ) : (
+              <LogOut className="w-4 h-4 text-white/80" />
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Participants bar — mirrors GroupChatView style */}
-      <div className="w-full px-4 py-2.5 border-b border-black/10 bg-[hsl(50,40%,92%)]">
-        {participants.length > 0 ? (
-          <button onClick={() => setShowParticipantsDialog(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="flex -space-x-2 overflow-hidden">
-              {participants.slice(0, 6).map((p) => (
-                <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-black/10 bg-muted shrink-0">
-                  <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
-                  <AvatarFallback className="bg-muted flex items-center justify-center">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                  </AvatarFallback>
-                </Avatar>
-              ))}
-              {participants.length > 6 && (
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border border-black/10 text-xs font-medium text-muted-foreground shrink-0">
-                  +{participants.length - 6}
-                </div>
-              )}
-            </div>
-            <p className="text-sm text-black/60">
-              {attendeeCount || participants.length} {(attendeeCount || participants.length) === 1 ? 'person' : 'people'} joined
-            </p>
-          </button>
-        ) : (
-          <p className="text-sm text-black/40">You're the first one here!</p>
-        )}
+      {/* ── DRAG HANDLE PILL ─────────────────────────────────────────────────── */}
+      <div
+        className="flex items-center justify-center bg-[hsl(50,40%,92%)] shrink-0 select-none"
+        style={{ height: 28, cursor: isDragging ? 'grabbing' : 'grab' }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleHeaderMouseDown}
+      >
+        <div className="h-1 w-10 rounded-full bg-gray-400/50" />
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-14 space-y-4">
+      {/* ── CHAT MESSAGES ─────────────────────────────────────────────────────── */}
+      <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-2 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50">
             <p className="text-center text-sm">
@@ -678,7 +829,7 @@ export function PlanGroupChatView({
           setSelectedUserProfile({ userId, userName, avatarUrl });
         }}
       />
-      
+
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     </div>
   );
