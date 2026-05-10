@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Trash2, FileText, Images, MoreVertical, LogOut } from "lucide-react";
+import { Send, User, Trash2, Images, MoreVertical, LogOut } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -19,13 +19,14 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { LoadingSpinner } from "../LoadingSpinner";
-import { getActivityLabel, getActivityEmoji } from "@/data/activityTypes";
+import { getActivityEmoji } from "@/data/activityTypes";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
+import { getNationalityFlag } from "@/data/countryCodes";
 
 interface PlanMessage {
   id: string;
@@ -54,10 +55,19 @@ interface PlanGroupChatViewProps {
   attendeeCount?: number;
 }
 
-// Curtain snap positions
-const EXPANDED_HEIGHT = 300;
-const COLLAPSED_HEIGHT = 88;
-const SNAP_THRESHOLD = 80;
+// Curtain snap positions — three states
+type SnapState = 'collapsed' | 'partial' | 'full';
+const SNAP_HEIGHTS: Record<SnapState, number> = { collapsed: 88, partial: 380, full: 480 };
+const SNAP_THRESHOLD = 60;
+
+// Frosted glass pill style shared by avatar + occupation pills
+const pillStyle: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.15)',
+  border: '1px solid rgba(255,255,255,0.3)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
+  borderRadius: 999,
+};
 
 export function PlanGroupChatView({
   activity,
@@ -69,7 +79,13 @@ export function PlanGroupChatView({
   const [messages, setMessages] = useState<PlanMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [showParticipantsDialog, setShowParticipantsDialog] = useState(false);
-  const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
+  const [participants, setParticipants] = useState<{
+    user_id: string;
+    name: string | null;
+    avatar_url: string | null;
+    nationality: string | null;
+    occupation: string | null;
+  }[]>([]);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
     userId: string;
     userName: string | null;
@@ -80,7 +96,7 @@ export function PlanGroupChatView({
   const [showMenu, setShowMenu] = useState(false);
 
   // Curtain drag state
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [snapState, setSnapState] = useState<SnapState>('partial');
   const [isDragging, setIsDragging] = useState(false);
   const [dragDelta, setDragDelta] = useState(0);
   const isDraggingHeader = useRef(false);
@@ -120,10 +136,7 @@ export function PlanGroupChatView({
   // Get unique user IDs from messages
   const userIds = useMemo(() => {
     const ids = [...new Set(messages.map((msg) => msg.user_id))];
-    // Also include activity creator
-    if (!ids.includes(activity.user_id)) {
-      ids.push(activity.user_id);
-    }
+    if (!ids.includes(activity.user_id)) ids.push(activity.user_id);
     return ids;
   }, [messages, activity.user_id]);
 
@@ -140,113 +153,89 @@ export function PlanGroupChatView({
         .eq("activity_id", activity.id)
         .order("created_at", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching plan messages:", error);
-        return;
-      }
-
+      if (error) { console.error("Error fetching plan messages:", error); return; }
       setMessages(data || []);
 
-      // Mark as read when opening the chat
       if (user?.id) {
-        await supabase
-          .from("activity_read_status")
-          .upsert({
-            user_id: user.id,
-            activity_type: activity.id,
-            city: "plan",
-            last_read_at: new Date().toISOString(),
-          }, { onConflict: "user_id,activity_type,city" });
+        await supabase.from("activity_read_status").upsert({
+          user_id: user.id,
+          activity_type: activity.id,
+          city: "plan",
+          last_read_at: new Date().toISOString(),
+        }, { onConflict: "user_id,activity_type,city" });
       }
     };
 
     fetchMessages();
 
-    // Subscribe to new messages
     const channel = supabase
       .channel(`plan-messages-${activity.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "plan_messages",
-          filter: `activity_id=eq.${activity.id}`,
-        },
-        (payload) => {
-          const newMessage = payload.new as PlanMessage;
-          setMessages((prev) => [...prev, newMessage]);
-          // Play notification sound for messages from others
-          if (newMessage.user_id !== user?.id) {
-            playNotificationSound();
-          }
-          // Mark as read since we're viewing the chat
-          if (user?.id) {
-            supabase
-              .from("activity_read_status")
-              .upsert({
-                user_id: user.id,
-                activity_type: activity.id,
-                city: "plan",
-                last_read_at: new Date().toISOString(),
-              }, { onConflict: "user_id,activity_type,city" });
-          }
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "plan_messages",
+        filter: `activity_id=eq.${activity.id}`,
+      }, (payload) => {
+        const newMessage = payload.new as PlanMessage;
+        setMessages((prev) => [...prev, newMessage]);
+        if (newMessage.user_id !== user?.id) playNotificationSound();
+        if (user?.id) {
+          supabase.from("activity_read_status").upsert({
+            user_id: user.id, activity_type: activity.id, city: "plan",
+            last_read_at: new Date().toISOString(),
+          }, { onConflict: "user_id,activity_type,city" });
         }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "DELETE",
-          schema: "public",
-          table: "plan_messages",
-        },
-        (payload) => {
-          setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
-        }
-      )
+      })
+      .on("postgres_changes", {
+        event: "DELETE", schema: "public", table: "plan_messages",
+      }, (payload) => {
+        setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [activity.id, user?.id]);
 
-  // Fetch plan participants (owner + joined users)
+  // Fetch participants with nationality + occupation
   useEffect(() => {
     if (!activity.id) return;
 
     const fetchParticipants = async () => {
-      // Owner profile
       const { data: ownerProfile } = await supabase
         .from("profiles")
-        .select("user_id, name, avatar_url")
+        .select("user_id, name, avatar_url, nationality, occupation")
         .eq("user_id", activity.user_id)
         .maybeSingle();
 
-      // Joined users
       const { data: joins } = await supabase
         .from("activity_joins")
         .select("user_id")
         .eq("activity_id", activity.id);
 
       const joinedIds = (joins || []).map((j) => j.user_id).filter((id) => id !== activity.user_id);
-      let joinedProfiles: { user_id: string; name: string | null; avatar_url: string | null }[] = [];
+      let joinedProfiles: typeof participants = [];
 
       if (joinedIds.length > 0) {
         const { data: profilesData } = await supabase
           .from("profiles")
-          .select("user_id, name, avatar_url")
+          .select("user_id, name, avatar_url, nationality, occupation")
           .in("user_id", joinedIds);
         joinedProfiles = (profilesData || []).map((p) => ({
           user_id: p.user_id,
           name: p.name ?? null,
           avatar_url: p.avatar_url ?? null,
+          nationality: p.nationality ?? null,
+          occupation: p.occupation ?? null,
         }));
       }
 
-      const all: { user_id: string; name: string | null; avatar_url: string | null }[] = [];
+      const all: typeof participants = [];
       if (ownerProfile) {
-        all.push({ user_id: ownerProfile.user_id, name: ownerProfile.name ?? null, avatar_url: ownerProfile.avatar_url ?? null });
+        all.push({
+          user_id: ownerProfile.user_id,
+          name: ownerProfile.name ?? null,
+          avatar_url: ownerProfile.avatar_url ?? null,
+          nationality: ownerProfile.nationality ?? null,
+          occupation: ownerProfile.occupation ?? null,
+        });
       }
       all.push(...joinedProfiles);
       setParticipants(all);
@@ -261,6 +250,18 @@ export function PlanGroupChatView({
   }, [messages]);
 
   // ── Curtain drag handlers ──────────────────────────────────────────────────
+
+  const resolveSnap = (prev: SnapState, delta: number): SnapState => {
+    if (delta < -SNAP_THRESHOLD) {
+      if (prev === 'full') return 'partial';
+      if (prev === 'partial') return 'collapsed';
+    }
+    if (delta > SNAP_THRESHOLD) {
+      if (prev === 'collapsed') return 'partial';
+      if (prev === 'partial') return 'full';
+    }
+    return prev;
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     isDraggingHeader.current = true;
@@ -282,11 +283,7 @@ export function PlanGroupChatView({
     isDraggingHeader.current = false;
     setIsDragging(false);
     const delta = dragDeltaRef.current;
-    setIsCollapsed(prev => {
-      if (!prev && delta < -SNAP_THRESHOLD) return true;
-      if (prev && delta > SNAP_THRESHOLD) return false;
-      return prev;
-    });
+    setSnapState(prev => resolveSnap(prev, delta));
     setDragDelta(0);
     dragDeltaRef.current = 0;
   };
@@ -310,11 +307,7 @@ export function PlanGroupChatView({
       isDraggingHeader.current = false;
       setIsDragging(false);
       const delta = dragDeltaRef.current;
-      setIsCollapsed(prev => {
-        if (!prev && delta < -SNAP_THRESHOLD) return true;
-        if (prev && delta > SNAP_THRESHOLD) return false;
-        return prev;
-      });
+      setSnapState(prev => resolveSnap(prev, delta));
       setDragDelta(0);
       dragDeltaRef.current = 0;
       window.removeEventListener('mousemove', onMouseMove);
@@ -330,7 +323,6 @@ export function PlanGroupChatView({
   const handleSendMessage = async () => {
     if (!message.trim() || !user || isSending) return;
 
-    // Check text character limit for free users
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
       toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
@@ -338,16 +330,13 @@ export function PlanGroupChatView({
     }
 
     setIsSending(true);
-
     try {
       const { error } = await supabase.from("plan_messages").insert({
         activity_id: activity.id,
         user_id: user.id,
         message: message.trim(),
       });
-
       if (error) throw error;
-
       addCharacters(message.trim().length);
       setMessage("");
     } catch (error) {
@@ -360,17 +349,11 @@ export function PlanGroupChatView({
 
   const handleDeleteMessage = async (messageId: string) => {
     const { error } = await supabase.from("plan_messages").delete().eq("id", messageId);
-
-    if (error) {
-      toast.error("Failed to delete message");
-    }
+    if (error) toast.error("Failed to delete message");
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
   };
 
   const handleGifSelect = async (url: string) => {
@@ -380,19 +363,14 @@ export function PlanGroupChatView({
 
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
-      toast.error(
-        "You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!"
-      );
+      toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
       throw new Error("Character limit reached");
     }
 
     setIsSending(true);
     try {
       const { error } = await supabase.from("plan_messages").insert({
-        activity_id: activity.id,
-        user_id: user.id,
-        message: trimmed,
-        message_type: "gif",
+        activity_id: activity.id, user_id: user.id, message: trimmed, message_type: "gif",
       });
       if (error) throw error;
     } catch (error) {
@@ -408,37 +386,22 @@ export function PlanGroupChatView({
 
   const handleLeavePlan = async () => {
     setShowMenu(false);
-    const { error } = await supabase
-      .from("activity_joins")
-      .delete()
-      .eq("user_id", user!.id)
-      .eq("activity_id", activity.id);
-    if (error) {
-      toast.error("Failed to leave plan");
-    } else {
-      toast.success("Left the plan");
-      onBack();
-    }
+    const { error } = await supabase.from("activity_joins").delete()
+      .eq("user_id", user!.id).eq("activity_id", activity.id);
+    if (error) { toast.error("Failed to leave plan"); }
+    else { toast.success("Left the plan"); onBack(); }
   };
 
   const handleDeletePlan = async () => {
     setShowMenu(false);
-    const { error } = await supabase
-      .from("user_activities")
-      .delete()
-      .eq("id", activity.id)
-      .eq("user_id", user!.id);
-    if (error) {
-      toast.error("Failed to delete plan");
-    } else {
-      toast.success("Plan deleted");
-      onBack();
-    }
+    const { error } = await supabase.from("user_activities").delete()
+      .eq("id", activity.id).eq("user_id", user!.id);
+    if (error) { toast.error("Failed to delete plan"); }
+    else { toast.success("Plan deleted"); onBack(); }
   };
 
   const creatorProfile = profiles[activity.user_id];
 
-  // Parse scheduled_for into separate day / date / time lines
   const { planDay, planDate, planTime } = (() => {
     const d = activity.scheduled_for ? new Date(activity.scheduled_for) : null;
     if (!d || isNaN(d.getTime())) return { planDay: null, planDate: null, planTime: null };
@@ -451,13 +414,14 @@ export function PlanGroupChatView({
     const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
     return { planDay: day, planDate: date, planTime: time };
   })();
+
   const planEmoji = getActivityEmoji(activity.activity_type);
   const planTitle = activity.note || t('plans.untitledPlan', 'Untitled Plan');
 
-  // Curtain live height: clamp between snap positions during drag
-  const baseHeight = isCollapsed ? COLLAPSED_HEIGHT : EXPANDED_HEIGHT;
+  // Curtain live height
+  const baseHeight = SNAP_HEIGHTS[snapState];
   const liveHeaderHeight = isDragging
-    ? Math.max(COLLAPSED_HEIGHT, Math.min(EXPANDED_HEIGHT, baseHeight + dragDelta))
+    ? Math.max(SNAP_HEIGHTS.collapsed, Math.min(SNAP_HEIGHTS.full, baseHeight + dragDelta))
     : baseHeight;
 
   return (
@@ -475,12 +439,12 @@ export function PlanGroupChatView({
         {/* Full expanded content — fades out when collapsed */}
         <div
           style={{
-            opacity: isCollapsed ? 0 : 1,
+            opacity: snapState === 'collapsed' ? 0 : 1,
             transition: 'opacity 0.2s ease',
-            pointerEvents: isCollapsed ? 'none' : 'auto',
+            pointerEvents: snapState === 'collapsed' ? 'none' : 'auto',
           }}
         >
-          {/* Header row */}
+          {/* Header row: back button | centered info | menu */}
           <div className="flex shrink-0 items-center px-4 py-5">
             <MinimalBackButton
               onClick={onBack}
@@ -489,28 +453,27 @@ export function PlanGroupChatView({
               iconClassName="w-6 h-6"
             />
 
-            {/* Centered content */}
+            {/* Centered: creator avatar / emoji, plan title, date/time */}
             <div className="absolute inset-x-0 flex flex-col items-center pointer-events-none px-16">
-              <div className="w-20 h-20 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center mb-1 shadow-sm">
+              <div className="w-16 h-16 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center mb-1 shadow-sm">
                 {creatorProfile?.avatar_url ? (
                   <Avatar className="w-full h-full rounded-full">
                     <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
                     <AvatarFallback className="bg-white/20 flex items-center justify-center">
-                      <span className="text-5xl">{planEmoji}</span>
+                      <span className="text-4xl">{planEmoji}</span>
                     </AvatarFallback>
                   </Avatar>
                 ) : (
-                  <span className="text-5xl">{planEmoji}</span>
+                  <span className="text-4xl">{planEmoji}</span>
                 )}
               </div>
-              <h1 className="text-base font-bold text-white text-center leading-tight">
-                {planTitle}
-              </h1>
+              <h1 className="text-base font-bold text-white text-center leading-tight">{planTitle}</h1>
               {planDay && <p className="text-sm font-semibold text-white/90 mt-0.5">{planDay}</p>}
               {planDate && <p className="text-xs text-white/70">{planDate}</p>}
               {planTime && <p className="text-xs text-white/70">{planTime}</p>}
             </div>
 
+            {/* Menu button */}
             <div className="relative ml-auto shrink-0">
               <button
                 onClick={() => setShowMenu((v) => !v)}
@@ -523,20 +486,12 @@ export function PlanGroupChatView({
                   <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
                   <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
                     {isCreator ? (
-                      <button
-                        onClick={handleDeletePlan}
-                        className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete plan
+                      <button onClick={handleDeletePlan} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                        <Trash2 className="w-4 h-4" /> Delete plan
                       </button>
                     ) : (
-                      <button
-                        onClick={handleLeavePlan}
-                        className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Leave plan
+                      <button onClick={handleLeavePlan} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                        <LogOut className="w-4 h-4" /> Leave plan
                       </button>
                     )}
                   </div>
@@ -545,42 +500,59 @@ export function PlanGroupChatView({
             </div>
           </div>
 
-          {/* Participants bar */}
-          <div className="w-full px-4 py-2.5 border-t border-white/20">
-            {participants.length > 0 ? (
-              <button onClick={() => setShowParticipantsDialog(true)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                <div className="flex -space-x-2 overflow-hidden">
-                  {participants.slice(0, 6).map((p) => (
-                    <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-white/20 bg-white/20 shrink-0">
-                      <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
-                      <AvatarFallback className="bg-white/20 flex items-center justify-center">
-                        <User className="w-4 h-4 text-white/70" />
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {participants.length > 6 && (
-                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center border border-white/20 text-xs font-medium text-white shrink-0">
-                      +{participants.length - 6}
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm text-white/70">
-                  {attendeeCount || participants.length} {(attendeeCount || participants.length) === 1 ? 'person' : 'people'} joined
-                </p>
-              </button>
+          {/* ── AVATAR PILL — visible in PARTIAL and FULL ─────────────────── */}
+          <div className="flex justify-center px-4 pt-3 pb-4">
+            {participants.length === 0 ? (
+              <div style={{ ...pillStyle, padding: '10px 20px' }}>
+                <p className="text-xs text-white/70">You're the first one here!</p>
+              </div>
             ) : (
-              <p className="text-sm text-white/50">You're the first one here!</p>
+              <button
+                onClick={() => setShowParticipantsDialog(true)}
+                className="flex items-center gap-2"
+                style={{ ...pillStyle, padding: '10px 20px' }}
+              >
+                {participants.map((p) => (
+                  <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-white/30 bg-white/20 shrink-0">
+                    <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
+                    <AvatarFallback className="bg-white/20 flex items-center justify-center">
+                      <User className="w-3.5 h-3.5 text-white/70" />
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+              </button>
             )}
           </div>
+
+          {/* ── OCCUPATION PILL — only reachable in FULL (clipped in PARTIAL) ── */}
+          {participants.some(p => p.occupation || p.nationality) && (
+            <div className="flex justify-center px-4 pb-3">
+              <div
+                className="flex flex-col gap-1"
+                style={{ ...pillStyle, padding: '10px 20px' }}
+              >
+                {participants
+                  .filter(p => p.occupation || p.nationality)
+                  .map((p) => (
+                    <p key={p.user_id} className="text-xs text-white/90 leading-snug text-center whitespace-nowrap">
+                      {p.name || 'Shaker'}
+                      {p.nationality ? ` ${getNationalityFlag(p.nationality)}` : ''}
+                      {p.occupation ? ` · ${p.occupation}` : ''}
+                    </p>
+                  ))
+                }
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Collapsed thin bar — shown when header is collapsed */}
         <div
           className="absolute inset-0 flex items-center justify-between px-4"
           style={{
-            opacity: isCollapsed ? 1 : 0,
+            opacity: snapState === 'collapsed' ? 1 : 0,
             transition: 'opacity 0.2s ease',
-            pointerEvents: isCollapsed ? 'auto' : 'none',
+            pointerEvents: snapState === 'collapsed' ? 'auto' : 'none',
           }}
         >
           <MinimalBackButton
@@ -594,15 +566,10 @@ export function PlanGroupChatView({
             {planTitle}
           </span>
           <button
-            onClick={isCreator ? handleDeletePlan : handleLeavePlan}
+            onClick={() => setShowMenu((v) => !v)}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
-            title={isCreator ? "Delete plan" : "Leave plan"}
           >
-            {isCreator ? (
-              <Trash2 className="w-4 h-4 text-white/80" />
-            ) : (
-              <LogOut className="w-4 h-4 text-white/80" />
-            )}
+            <MoreVertical className="w-5 h-5 text-white/80" />
           </button>
         </div>
       </div>
@@ -636,23 +603,15 @@ export function PlanGroupChatView({
             const avatarUrl = profile?.avatar_url;
             const msgReactions = reactionsByMessage[msg.id];
             const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
-            const isGif =
-              (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+            const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
 
             return (
-              <div
-                key={msg.id}
-                className={`group flex items-end gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}
-              >
+              <div key={msg.id} className={`group flex items-end gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}>
                 <button
                   type="button"
                   onClick={() => {
                     if (!isOwnMessage) {
-                      setSelectedUserProfile({
-                        userId: msg.user_id,
-                        userName: profile?.name || null,
-                        avatarUrl: profile?.avatar_url || null,
-                      });
+                      setSelectedUserProfile({ userId: msg.user_id, userName: profile?.name || null, avatarUrl: profile?.avatar_url || null });
                     }
                   }}
                   className="w-8 h-8 shrink-0 rounded-full overflow-hidden border border-border"
@@ -665,9 +624,7 @@ export function PlanGroupChatView({
                     </AvatarFallback>
                   </Avatar>
                 </button>
-                <div
-                  className={`min-w-0 max-w-[70%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
-                >
+                <div className={`min-w-0 max-w-[70%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}>
                   <MessageBubbleReactions
                     variant="light"
                     isOwn={isOwnMessage}
@@ -688,11 +645,7 @@ export function PlanGroupChatView({
                           className={`font-semibold text-sm text-black ${!isOwnMessage ? "hover:underline cursor-pointer" : ""}`}
                           onClick={() => {
                             if (!isOwnMessage) {
-                              setSelectedUserProfile({
-                                userId: msg.user_id,
-                                userName: profile?.name || null,
-                                avatarUrl: profile?.avatar_url || null,
-                              });
+                              setSelectedUserProfile({ userId: msg.user_id, userName: profile?.name || null, avatarUrl: profile?.avatar_url || null });
                             }
                           }}
                           disabled={isOwnMessage}
@@ -710,9 +663,7 @@ export function PlanGroupChatView({
                         <InlineChatGif
                           src={msg.message}
                           variant="light"
-                          onLoad={() =>
-                            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-                          }
+                          onLoad={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
                         />
                       ) : (
                         <div
@@ -808,7 +759,6 @@ export function PlanGroupChatView({
         />
       ) : null}
 
-      {/* User Profile Dialog */}
       {selectedUserProfile && (
         <UserProfileDialog
           open={!!selectedUserProfile}
@@ -819,7 +769,6 @@ export function PlanGroupChatView({
         />
       )}
 
-      {/* Participants List Dialog */}
       <PlanParticipantsDialog
         open={showParticipantsDialog}
         onOpenChange={setShowParticipantsDialog}
