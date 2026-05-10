@@ -402,17 +402,16 @@ export function PlanGroupChatView({
 
   const creatorProfile = profiles[activity.user_id];
 
-  const { planDay, planDate, planTime } = (() => {
+  const planDateLabel = (() => {
     const d = activity.scheduled_for ? new Date(activity.scheduled_for) : null;
-    if (!d || isNaN(d.getTime())) return { planDay: null, planDate: null, planTime: null };
+    if (!d || isNaN(d.getTime())) return null;
     const today = new Date();
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
     const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-    const isToday = d.toDateString() === today.toDateString();
-    const isTomorrow = d.toDateString() === tomorrow.toDateString();
-    const day = isToday ? "Today" : isTomorrow ? "Tomorrow" : d.toLocaleDateString('en-US', { weekday: 'long' });
-    const date = (isToday || isTomorrow) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    return { planDay: day, planDate: date, planTime: time };
+    if (d.toDateString() === today.toDateString()) return "Today";
+    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+    if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   })();
 
   const planEmoji = getActivityEmoji(activity.activity_type);
@@ -468,9 +467,7 @@ export function PlanGroupChatView({
                 )}
               </div>
               <h1 className="text-base font-bold text-white text-center leading-tight">{planTitle}</h1>
-              {planDay && <p className="text-sm font-semibold text-white/90 mt-0.5">{planDay}</p>}
-              {planDate && <p className="text-xs text-white/70">{planDate}</p>}
-              {planTime && <p className="text-xs text-white/70">{planTime}</p>}
+              {planDateLabel && <p className="text-sm font-semibold text-white/90 mt-0.5">{planDateLabel}</p>}
             </div>
 
             {/* Menu button */}
