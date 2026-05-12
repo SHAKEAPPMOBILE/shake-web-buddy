@@ -331,6 +331,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
   const [showChatView, setShowChatView] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
+  const [planToLeave, setPlanToLeave] = useState<PlanActivity | null>(null);
+  const [duplicateActivityBlock, setDuplicateActivityBlock] = useState<{
+    activityType: string;
+    oldCity: string;
+    newCity: string;
+  } | null>(null);
   const [selectedCarouselActivity, setSelectedCarouselActivity] = useState<PlanActivity | null>(null);
   const [showCarouselChatView, setShowCarouselChatView] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{
@@ -560,6 +566,31 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
   };
 
+  const handleLeavePlan = async () => {
+    if (!planToLeave || !user) return;
+    try {
+      const { error } = await supabase
+        .from("activity_joins")
+        .delete()
+        .eq("activity_id", planToLeave.id)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setActivities(prev => prev.filter(a => a.id !== planToLeave.id));
+      setPlanToLeave(null);
+      toast.success("Left activity");
+    } catch (err) {
+      console.error("Error leaving plan:", err);
+      toast.error("Failed to leave");
+    }
+  };
+
+  // Returns an existing joined activity of the same type in a different city, or null.
+  const getConflictingActivity = (activityType: string, targetCity: string): PlanActivity | null => {
+    return activities.find(
+      a => a.activity_type === activityType && a.city.toLowerCase() !== targetCity.toLowerCase()
+    ) ?? null;
+  };
+
   const handleSharePlan = async (plan: PlanActivity, e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -679,6 +710,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     const targetPlan = await findOrCreateOpenGroup(plan);
 
+    const conflict = getConflictingActivity(targetPlan.activity_type, targetPlan.city);
+    if (conflict) {
+      setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: conflict.city, newCity: targetPlan.city });
+      return;
+    }
+
     const { error } = await supabase
       .from("activity_joins")
       .insert({
@@ -739,6 +776,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     const targetPlan = await findOrCreateOpenGroup(plan);
 
+    const conflict = getConflictingActivity(targetPlan.activity_type, targetPlan.city);
+    if (conflict) {
+      setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: conflict.city, newCity: targetPlan.city });
+      return;
+    }
+
     const { error } = await supabase
       .from("activity_joins")
       .insert({
@@ -775,6 +818,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     setPlanPreview(null);
 
     const targetPlan = await findOrCreateOpenGroup(plan);
+
+    const conflict = getConflictingActivity(targetPlan.activity_type, targetPlan.city);
+    if (conflict) {
+      setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: conflict.city, newCity: targetPlan.city });
+      return;
+    }
 
     const { error } = await supabase
       .from("activity_joins")
@@ -939,6 +988,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 key={plan.id}
                 canDelete={plan.user_id === user?.id && !plan.isCarouselJoin}
                 onDelete={() => setPlanToDelete(plan)}
+                canLeave={plan.user_id !== user?.id && !!plan.isJoined && !plan.isCarouselJoin}
+                onLeave={() => setPlanToLeave(plan)}
                 onClick={() => handlePlanClick(plan)}
                 className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 dark:bg-gray-50 dark:border-gray-200 dark:hover:bg-gray-100 cursor-pointer transition-colors"
                 style={{}}
@@ -1198,6 +1249,68 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Leave Confirmation Dialog */}
+      <AlertDialog open={!!planToLeave} onOpenChange={(open) => !open && setPlanToLeave(null)}>
+        <AlertDialogContent className="border-2 border-destructive/40">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave {planToLeave ? getActivityLabel(planToLeave.activity_type) : ""}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll be removed from this activity and the group chat.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLeavePlan} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Duplicate-activity block modal */}
+      {duplicateActivityBlock && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 pointer-events-auto">
+          <div
+            className="absolute inset-0 pointer-events-auto"
+            style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            onClick={() => setDuplicateActivityBlock(null)}
+          />
+          <div
+            className="relative z-10 w-full max-w-sm pointer-events-auto px-6 py-7 flex flex-col gap-4"
+            style={{
+              background: "rgba(255,255,255,0.55)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.4)",
+              borderRadius: "24px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            }}
+          >
+            <div className="text-center space-y-2">
+              <p className="text-xl font-bold text-gray-900">Hold on Tiger! 🐯</p>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                You're already joined for{" "}
+                <span className="font-semibold">{getActivityLabel(duplicateActivityBlock.activityType)}</span>{" "}
+                in <span className="font-semibold">{duplicateActivityBlock.oldCity}</span>. Leave that one first before joining in{" "}
+                <span className="font-semibold">{duplicateActivityBlock.newCity}</span>.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDuplicateActivityBlock(null)}
+              className="w-full h-11 rounded-full font-semibold text-base transition-all hover:opacity-90 active:scale-95"
+              style={{
+                background: "rgba(255,255,255,0.7)",
+                border: "1px solid rgba(0,0,0,0.12)",
+                color: "#1a1a1a",
+              }}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* User Profile Dialog */}
       {selectedUserProfile && (

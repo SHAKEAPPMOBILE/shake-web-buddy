@@ -1,10 +1,13 @@
 import { useState, useRef, useCallback, TouchEvent, ReactNode } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, LogOut } from "lucide-react";
 
 interface SwipeableCardProps {
   children: ReactNode;
   onDelete?: () => void;
   canDelete?: boolean;
+  /** When true, swiping left reveals a red "Leave" button instead of Delete */
+  canLeave?: boolean;
+  onLeave?: () => void;
   className?: string;
   style?: React.CSSProperties;
   onClick?: () => void;
@@ -14,6 +17,8 @@ export function SwipeableCard({
   children,
   onDelete,
   canDelete = false,
+  canLeave = false,
+  onLeave,
   className = "",
   style,
   onClick,
@@ -26,17 +31,18 @@ export function SwipeableCard({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const REVEAL_THRESHOLD = 70;
-  const DELETE_BUTTON_WIDTH = 80;
+  const ACTION_BUTTON_WIDTH = 80;
+  const canSwipe = canDelete || canLeave;
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    if (!canDelete) return;
+    if (!canSwipe) return;
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     isSwipingHorizontal.current = null;
-  }, [canDelete]);
+  }, [canSwipe]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!canDelete || touchStartX.current === null || touchStartY.current === null) return;
+    if (!canSwipe || touchStartX.current === null || touchStartY.current === null) return;
 
     const deltaX = e.touches[0].clientX - touchStartX.current;
     const deltaY = e.touches[0].clientY - touchStartY.current;
@@ -57,21 +63,21 @@ export function SwipeableCard({
     // Only allow left swipe (negative deltaX)
     if (isRevealed) {
       // If already revealed, allow swiping back right
-      const newTranslate = Math.min(0, Math.max(-DELETE_BUTTON_WIDTH, -DELETE_BUTTON_WIDTH + deltaX));
+      const newTranslate = Math.min(0, Math.max(-ACTION_BUTTON_WIDTH, -ACTION_BUTTON_WIDTH + deltaX));
       setTranslateX(newTranslate);
     } else {
       // Not revealed yet - only allow left swipe
-      const newTranslate = Math.min(0, Math.max(-DELETE_BUTTON_WIDTH - 20, deltaX));
+      const newTranslate = Math.min(0, Math.max(-ACTION_BUTTON_WIDTH - 20, deltaX));
       setTranslateX(newTranslate);
     }
-  }, [canDelete, isRevealed]);
+  }, [canSwipe, isRevealed]);
 
   const handleTouchEnd = useCallback(() => {
-    if (!canDelete) return;
+    if (!canSwipe) return;
 
     // Determine final state based on position
     if (Math.abs(translateX) > REVEAL_THRESHOLD) {
-      setTranslateX(-DELETE_BUTTON_WIDTH);
+      setTranslateX(-ACTION_BUTTON_WIDTH);
       setIsRevealed(true);
     } else {
       setTranslateX(0);
@@ -81,7 +87,7 @@ export function SwipeableCard({
     touchStartX.current = null;
     touchStartY.current = null;
     isSwipingHorizontal.current = null;
-  }, [canDelete, translateX]);
+  }, [canSwipe, translateX]);
 
   const handleCardClick = useCallback(() => {
     if (isRevealed) {
@@ -93,30 +99,43 @@ export function SwipeableCard({
     }
   }, [isRevealed, onClick]);
 
-  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+  const handleActionClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onDelete?.();
-  }, [onDelete]);
+    if (canLeave) {
+      onLeave?.();
+    } else {
+      onDelete?.();
+    }
+  }, [canLeave, onLeave, onDelete]);
 
   return (
     <div ref={containerRef} className="relative overflow-hidden rounded-2xl">
-      {/* Delete button behind */}
-      {canDelete && (
-        <div 
+      {/* Action button behind (Delete or Leave) */}
+      {canSwipe && (
+        <div
           className="absolute inset-y-0 right-0 flex items-center justify-center bg-destructive transition-opacity"
-          style={{ 
-            width: DELETE_BUTTON_WIDTH,
-            opacity: Math.min(1, Math.abs(translateX) / REVEAL_THRESHOLD)
+          style={{
+            width: ACTION_BUTTON_WIDTH,
+            opacity: Math.min(1, Math.abs(translateX) / REVEAL_THRESHOLD),
           }}
         >
           <button
             type="button"
-            onClick={handleDeleteClick}
+            onClick={handleActionClick}
             className="flex flex-col items-center justify-center gap-1 text-white p-3"
-            aria-label="Delete plan"
+            aria-label={canLeave ? "Leave activity" : "Delete plan"}
           >
-            <Trash2 className="w-6 h-6" />
-            <span className="text-xs font-medium">Delete</span>
+            {canLeave ? (
+              <>
+                <LogOut className="w-6 h-6" />
+                <span className="text-xs font-medium">Leave</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="w-6 h-6" />
+                <span className="text-xs font-medium">Delete</span>
+              </>
+            )}
           </button>
         </div>
       )}

@@ -54,6 +54,11 @@ export function IOSAppLayout() {
   
   // State for pending paid activity to open after verification
   const [pendingPaidActivityId, setPendingPaidActivityId] = useState<string | null>(null);
+  const [duplicateActivityBlock, setDuplicateActivityBlock] = useState<{
+    activityType: string;
+    oldCity: string;
+    newCity: string;
+  } | null>(null);
   
   // State for opening subscription dropdown from navigation state
   const [openSubscriptionOnMount, setOpenSubscriptionOnMount] = useState(false);
@@ -397,6 +402,23 @@ export function IOSAppLayout() {
 
     // Close any open dialogs first
     setShowActivityDialog(false);
+
+    // Block joining same activity_type in multiple cities
+    if (user?.id) {
+      const targetCity = cityOverride || selectedCity || "";
+      const { data: existingJoins } = await supabase
+        .from("activity_joins")
+        .select("city")
+        .eq("user_id", user.id)
+        .eq("activity_type", activity);
+      const conflict = (existingJoins ?? []).find(
+        (j: { city: string }) => j.city && j.city.toLowerCase() !== targetCity.toLowerCase()
+      );
+      if (conflict) {
+        setDuplicateActivityBlock({ activityType: activity, oldCity: conflict.city, newCity: targetCity });
+        return;
+      }
+    }
 
     // Set the selected activity and city
     setSelectedActivity(activity);
@@ -750,6 +772,50 @@ export function IOSAppLayout() {
         open={showPremiumDialog}
         onOpenChange={setShowPremiumDialog}
       />
+
+      {/* Duplicate-activity block modal */}
+      {duplicateActivityBlock && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 pointer-events-auto">
+          <div
+            className="absolute inset-0 pointer-events-auto"
+            style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            onClick={() => setDuplicateActivityBlock(null)}
+          />
+          <div
+            className="relative z-10 w-full max-w-sm pointer-events-auto px-6 py-7 flex flex-col gap-4"
+            style={{
+              background: "rgba(255,255,255,0.55)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.4)",
+              borderRadius: "24px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            }}
+          >
+            <div className="text-center space-y-2">
+              <p className="text-xl font-bold text-gray-900">Hold on Tiger! 🐯</p>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                You're already joined for{" "}
+                <span className="font-semibold">{duplicateActivityBlock.activityType}</span>{" "}
+                in <span className="font-semibold">{duplicateActivityBlock.oldCity}</span>. Leave that one first before joining in{" "}
+                <span className="font-semibold">{duplicateActivityBlock.newCity}</span>.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDuplicateActivityBlock(null)}
+              className="w-full h-11 rounded-full font-semibold text-base transition-all hover:opacity-90 active:scale-95"
+              style={{
+                background: "rgba(255,255,255,0.7)",
+                border: "1px solid rgba(0,0,0,0.12)",
+                color: "#1a1a1a",
+              }}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Proximity Check-in Popup */}
       {venueName && proximityActivityType && distance !== null && (
