@@ -820,6 +820,8 @@ export default function EventsPage({
   const [joinConfirmationEvent, setJoinConfirmationEvent] = useState<EventItem | null>(null);
   const [chatMembershipVersion, setChatMembershipVersion] = useState(0);
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const { user } = useAuth();
   const { selectedCity, isLoading: isCityLoading, isCityOutOfRange, isManuallySelected } = useCity();
 
@@ -1136,7 +1138,7 @@ export default function EventsPage({
   }, [events, cat]);
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white" style={{ background: 'white', backgroundColor: 'white' }}>
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white px-5 pt-5 pb-3 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-3 mb-3">
@@ -1182,11 +1184,12 @@ export default function EventsPage({
         </div>
       </div>
 
-      <div className="flex-1 px-4 pt-4 pb-8 flex flex-col gap-5 overflow-y-auto">
+      <div className="flex-1 relative overflow-hidden">
+      <div className="absolute inset-0 px-4 pt-4 pb-8 flex flex-col gap-5 overflow-y-auto">
         {/* Fixed-height scrollable events container — shows ~4 rows, search results replace list when active */}
         <div
-          style={{ overflowY: "auto", scrollbarWidth: "thin" }}
-          className="h-[280px] rounded-2xl border border-gray-200 bg-white overflow-hidden"
+          style={{ overflowY: "auto", scrollbarWidth: "thin", height: 280, minHeight: 280, flexShrink: 0 }}
+          className="rounded-2xl border border-gray-200 bg-white overflow-hidden"
         >
           {/* Search mode */}
           {searchOpen && searchQuery.length < 2 && (
@@ -1321,9 +1324,11 @@ export default function EventsPage({
             <div className="absolute right-9 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           )}
           <input
+            ref={inputRef}
             type="text"
             value={searchQuery}
-            readOnly={!searchOpen}
+            readOnly={false}
+            autoFocus={searchOpen}
             placeholder={searchOpen ? "Search concerts & festivals..." : "Search events..."}
             className={cn(
               "w-full pl-9 py-3 rounded-full bg-gray-100 border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none transition-all",
@@ -1334,6 +1339,7 @@ export default function EventsPage({
                 setSearchOpen(true);
                 setSearchQuery("");
                 setSearchResults([]);
+                setTimeout(() => inputRef.current?.focus(), 50);
               }
             }}
             onChange={(e) => {
@@ -1370,6 +1376,7 @@ export default function EventsPage({
         <p className="text-center text-gray-400 text-[11px] px-6">
           Powered by Ticketmaster · Purchases on ticketmaster.com
         </p>
+      </div>
       </div>
 
       {selected && (
