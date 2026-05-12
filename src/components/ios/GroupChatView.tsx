@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, BellOff, Bell, LogOut, Trash2, Plane, Images } from "lucide-react";
+import { Send, BellOff, Bell, LogOut, Trash2, Plane, Images } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -24,7 +24,6 @@ import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityById, getActivityLabel } from "@/data/activityTypes";
 import { getVenueTypeForActivity, useVenuesForActivity } from "@/hooks/useDatabaseVenues";
 import { useTranslation } from "react-i18next";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
@@ -110,6 +109,79 @@ const chatSuggestions: Record<string, string[]> = {
     "See you there! 👋",
   ],
 };
+
+// Helper: detect video avatar URLs (status videos stored as mp4/mov/webm or via /videos/ path)
+function isVideoUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return (
+    lower.endsWith('.mp4') ||
+    lower.endsWith('.mov') ||
+    lower.endsWith('.webm') ||
+    lower.includes('/videos/') ||
+    lower.includes('video')
+  );
+}
+
+// Avatar that renders a <video> for video status URLs and an <img> with initial fallback otherwise
+function ParticipantAvatar({
+  avatarUrl,
+  name,
+  className = "w-8 h-8",
+}: {
+  avatarUrl: string | null | undefined;
+  name: string | null | undefined;
+  className?: string;
+}) {
+  const displayUrl = getDisplayAvatarUrl(avatarUrl);
+  const initial = (name || 'S')[0].toUpperCase();
+  const containerClass = `${className} rounded-full border border-gray-200 shrink-0 overflow-hidden flex items-center justify-center bg-gray-100`;
+
+  if (displayUrl && isVideoUrl(avatarUrl)) {
+    return (
+      <div className={containerClass}>
+        <video
+          src={displayUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover rounded-full"
+        />
+      </div>
+    );
+  }
+
+  if (displayUrl) {
+    return (
+      <div className={containerClass}>
+        <img
+          src={displayUrl}
+          alt={name || 'User'}
+          className="w-full h-full object-cover rounded-full"
+          onError={(e) => {
+            const img = e.currentTarget;
+            img.style.display = 'none';
+            const parent = img.parentElement;
+            if (parent) {
+              parent.style.background = '#7c5cfc';
+              parent.style.color = 'white';
+              parent.style.fontSize = '13px';
+              parent.style.fontWeight = '600';
+              parent.textContent = initial;
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={containerClass} style={{ background: '#7c5cfc', color: 'white', fontSize: '13px', fontWeight: '600' }}>
+      {initial}
+    </div>
+  );
+}
 
 // Curtain snap positions — three states
 type SnapState = 'collapsed' | 'partial' | 'full';
@@ -743,12 +815,12 @@ export function GroupChatView({
                   style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '10px 20px' }}
                 >
                   {participants.map((p) => (
-                    <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 shrink-0">
-                      <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
-                      <AvatarFallback className="bg-gray-100 flex items-center justify-center">
-                        <User className="w-3.5 h-3.5 text-gray-400" />
-                      </AvatarFallback>
-                    </Avatar>
+                    <ParticipantAvatar
+                      key={p.user_id}
+                      avatarUrl={p.avatar_url}
+                      name={p.name}
+                      className="w-8 h-8"
+                    />
                   ))}
                 </button>
               )}
@@ -845,12 +917,11 @@ export function GroupChatView({
                 (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
               return (
                 <div key={msg.id} className={`group flex gap-3 items-end ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                  <Avatar className="w-8 h-8 shrink-0 rounded-full border border-gray-200 bg-gray-100">
-                    <AvatarImage src={getDisplayAvatarUrl(avatarUrl)} alt={displayName} className="object-cover" />
-                    <AvatarFallback className="bg-gray-100 flex items-center justify-center">
-                      <User className="w-4 h-4 text-gray-400" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <ParticipantAvatar
+                    avatarUrl={avatarUrl}
+                    name={displayName}
+                    className="w-8 h-8"
+                  />
                   <div
                     className={`min-w-0 max-w-[70%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
                   >
