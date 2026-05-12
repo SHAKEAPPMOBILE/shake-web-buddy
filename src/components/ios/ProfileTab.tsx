@@ -394,16 +394,27 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               ? "ring-4 ring-shake-green ring-offset-2 ring-offset-white"
               : "border-2 border-gray-200"
           )}>
-            <Avatar className="w-full h-full rounded-2xl">
-              <AvatarImage
-                src={getDisplayAvatarUrl(avatarUrl ?? undefined)}
-                alt=""
+            {hasActiveStatus && statusVideo ? (
+              <video
+                src={statusVideo.video_url}
+                autoPlay
+                muted
+                loop
+                playsInline
                 className="w-full h-full object-cover"
               />
-              <AvatarFallback className="bg-gray-100">
-                <User className="w-12 h-12 text-gray-400" />
-              </AvatarFallback>
-            </Avatar>
+            ) : (
+              <Avatar className="w-full h-full rounded-2xl">
+                <AvatarImage
+                  src={getDisplayAvatarUrl(avatarUrl ?? undefined)}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+                <AvatarFallback className="bg-gray-100">
+                  <User className="w-12 h-12 text-gray-400" />
+                </AvatarFallback>
+              </Avatar>
+            )}
           </div>
           <button
             onClick={(e) => { e.stopPropagation(); setShowStatusRecorder(true); }}

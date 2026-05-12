@@ -112,16 +112,6 @@ export async function uploadStatusVideo(
     return null;
   }
 
-  // Set this video as the user's avatar so it appears on their profile
-  const { error: avatarError } = await supabase
-    .from("profiles")
-    .update({ avatar_url: urlData.publicUrl })
-    .eq("user_id", userId);
-
-  if (avatarError) {
-    console.error("Failed to update avatar to status video:", avatarError);
-  }
-
   return urlData.publicUrl;
 }
 
@@ -189,31 +179,6 @@ export async function deleteStatusVideo(userId: string): Promise<boolean> {
       } else {
         console.log("[deleteStatusVideo] Storage files removed");
       }
-    }
-  }
-
-  // 4. Clear avatar_url ONLY if it currently points to one of the deleted status video URLs.
-  //    This avoids wiping a real profile photo the user uploaded separately.
-  const statusVideoUrls = new Set((existingVideos || []).map((v) => v.video_url));
-  if (statusVideoUrls.size > 0) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("avatar_url")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (profile?.avatar_url && statusVideoUrls.has(profile.avatar_url)) {
-      const { error: avatarError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: null })
-        .eq("user_id", userId);
-      if (avatarError) {
-        console.warn("[deleteStatusVideo] Avatar clear error (non-fatal):", avatarError);
-      } else {
-        console.log("[deleteStatusVideo] Avatar URL cleared (was pointing to status video)");
-      }
-    } else {
-      console.log("[deleteStatusVideo] Avatar URL is a real profile photo — leaving unchanged");
     }
   }
 

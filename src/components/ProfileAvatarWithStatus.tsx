@@ -70,7 +70,16 @@ export function ProfileAvatarWithStatus({
           className
         )}
       >
-        {avatarUrl ? (
+        {hasActiveStatus && statusVideo ? (
+          <video
+            src={statusVideo.video_url}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover rounded-full"
+          />
+        ) : avatarUrl ? (
           <img
             src={avatarUrl}
             alt={userName || "User"}
