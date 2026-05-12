@@ -580,21 +580,30 @@ export function GroupChatView({
 
       setMessage("");
 
-      // Fire-and-forget push to all other participants
+      // Fire-and-forget push to non-muted participants
       const senderName = ownProfile?.name || "Someone";
-      void Promise.all(
-        participants
-          .filter((p) => p.user_id !== user.id)
-          .map((p) =>
-            supabase.functions.invoke("send-push-notification", {
-              body: {
-                to_user_id: p.user_id,
-                title: `${senderName} in ${title}`,
-                body: messageText.slice(0, 100),
-              },
-            })
-          )
-      );
+      void (async () => {
+        const { data: mutedRows } = await supabase
+          .from("activity_read_status")
+          .select("user_id")
+          .eq("activity_type", activityType)
+          .eq("city", city)
+          .eq("muted", true);
+        const mutedIds = new Set(mutedRows?.map((r) => r.user_id) ?? []);
+        await Promise.all(
+          participants
+            .filter((p) => p.user_id !== user.id && !mutedIds.has(p.user_id))
+            .map((p) =>
+              supabase.functions.invoke("send-push-notification", {
+                body: {
+                  to_user_id: p.user_id,
+                  title: `${senderName} in ${title}`,
+                  body: messageText.slice(0, 100),
+                },
+              })
+            )
+        );
+      })();
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
@@ -799,36 +808,38 @@ export function GroupChatView({
                 {headerDateOnly && <p className="text-sm text-gray-500 leading-tight">{headerDateOnly}</p>}
                 {activityTime && <p className="text-sm text-gray-500 leading-tight">{activityTime}</p>}
 
-                {/* Venue pill */}
-                {hasVenues && currentVenue && assignedVenue && (
-                  <div className="flex items-center justify-center gap-1.5 mt-2 min-w-0">
-                    <button
-                      onClick={() => {
-                        const venueUrl = currentVenue.latitude && currentVenue.longitude
-                          ? `https://www.google.com/maps/search/?api=1&query=${currentVenue.latitude},${currentVenue.longitude}`
-                          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentVenue.name}, ${currentVenue.address}`)}`;
-                        window.location.href = venueUrl;
-                      }}
-                      className="text-base hover:scale-110 transition-transform shrink-0"
-                      title="Open in Google Maps"
-                    >
-                      📍
-                    </button>
-                    {isCurrentVenueAssigned ? (
-                      <span className="inline-flex items-center px-3 py-1.5 bg-white text-green-600 rounded-full text-sm font-semibold border border-green-500/30 max-w-[200px] truncate">
-                        {currentVenue.name}
-                      </span>
-                    ) : (
+                {/* Venue pill — show whenever assignedVenue is available */}
+                {assignedVenue && (() => {
+                  const displayVenue = currentVenue ?? assignedVenue;
+                  const isAssigned = !currentVenue || currentVenue.id === assignedVenue.id;
+                  const venueUrl = displayVenue.latitude && displayVenue.longitude
+                    ? `https://www.google.com/maps/search/?api=1&query=${displayVenue.latitude},${displayVenue.longitude}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${displayVenue.name}, ${displayVenue.address}`)}`;
+                  return (
+                    <div className="flex items-center justify-center gap-1.5 mt-2 min-w-0">
                       <button
-                        onClick={() => handleSuggestVenue(currentVenue)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-gray-900 rounded-full text-sm font-semibold border border-white/20 hover:bg-white/20 max-w-[200px]"
+                        onClick={() => { window.location.href = venueUrl; }}
+                        className="text-base hover:scale-110 transition-transform shrink-0"
+                        title="Open in Google Maps"
                       >
-                        <span className="truncate">{currentVenue.name}</span>
-                        <span className="text-xs text-gray-500 shrink-0">({t('chat.suggest', 'Suggest')})</span>
+                        📍
                       </button>
-                    )}
-                  </div>
-                )}
+                      {isAssigned ? (
+                        <span className="inline-flex items-center px-3 py-1.5 bg-white text-green-600 rounded-full text-sm font-semibold border border-green-500/30 max-w-[200px] truncate">
+                          {displayVenue.name}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleSuggestVenue(displayVenue)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-gray-900 rounded-full text-sm font-semibold border border-white/20 hover:bg-white/20 max-w-[200px]"
+                        >
+                          <span className="truncate">{displayVenue.name}</span>
+                          <span className="text-xs text-gray-500 shrink-0">({t('chat.suggest', 'Suggest')})</span>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Capacity indicator */}
                 {(() => {
