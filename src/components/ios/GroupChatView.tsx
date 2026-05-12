@@ -230,6 +230,10 @@ export function GroupChatView({
   const { venue: assignedVenue, location, mapsUrl } = useActivityVenue(city, activityType);
   const { t } = useTranslation();
 
+  // Declared early so hooks below can reference them in dep arrays without TDZ
+  const title = getActivityLabel(activityType);
+  const activityMeta = getActivityById(activityType);
+
   const { canSendText, addCharacters } = useTextMessageLimit();
 
   const messageIds = useMemo(() => messages.map((msg) => msg.id), [messages]);
@@ -679,8 +683,6 @@ export function GroupChatView({
     }
   };
 
-  const title = getActivityLabel(activityType);
-  const activityMeta = getActivityById(activityType);
   const activityTime = activityType === "lunch" ? "12:30 PM" : activityType === "dinner" ? "7:00 PM" : activityType === "drinks" ? "8:00 PM" : activityType === "brunch" ? "11:00 AM" : activityType === "hike" ? "9:00 AM" : null;
   // Compute split header date parts (day / date / time on separate lines)
   const { headerDay, headerDateOnly } = (() => {
