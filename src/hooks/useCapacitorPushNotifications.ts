@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
@@ -10,11 +10,8 @@ import { toast } from "@/lib/app-toast";
 export function useCapacitorPushNotifications() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const initialized = useRef(false);
-
   useEffect(() => {
-    if (!user || !Capacitor.isNativePlatform() || initialized.current) return;
-    initialized.current = true;
+    if (!user || !Capacitor.isNativePlatform()) return;
 
     let registrationHandle: { remove: () => Promise<void> } | null = null;
     let receivedHandle: { remove: () => Promise<void> } | null = null;
@@ -40,10 +37,11 @@ export function useCapacitorPushNotifications() {
           return;
         }
 
-        const { error } = await supabase
+        const { data: upsertData, error } = await supabase
           .from("profiles")
-          .update({ push_token: token.value })
-          .eq("user_id", user.id);
+          .upsert({ user_id: user.id, push_token: token.value }, { onConflict: "user_id" });
+
+        console.log("[Push] Token upsert response — data:", JSON.stringify(upsertData), "error:", JSON.stringify(error));
 
         if (error) {
           console.error("[Push] Failed to save push token. Full error:", JSON.stringify(error));
@@ -118,7 +116,6 @@ export function useCapacitorPushNotifications() {
     }).then((h) => { appStateHandle = h; });
 
     return () => {
-      initialized.current = false;
       registrationHandle?.remove();
       receivedHandle?.remove();
       actionHandle?.remove();
