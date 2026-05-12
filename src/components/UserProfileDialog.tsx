@@ -201,9 +201,18 @@ export function UserProfileDialog({
                     : "border-4 border-border"
                 )}
               >
-                {avatarUrl ? (
-                  <img 
-                    src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl} 
+                {hasActiveStatus && statusVideo ? (
+                  <video
+                    src={statusVideo.video_url}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : avatarUrl ? (
+                  <img
+                    src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
                     alt={userName || "User"}
                     className="w-full h-full object-cover"
                   />
