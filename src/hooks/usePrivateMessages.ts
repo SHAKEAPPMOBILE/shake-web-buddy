@@ -60,6 +60,19 @@ export function usePrivateMessages(otherUserId: string | null) {
 
     if (!error) {
       await fetchMessages();
+
+      // Fire-and-forget push to recipient
+      void (async () => {
+        const { data: senderProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
+        const senderName = senderProfile?.name || "Someone";
+        await supabase.functions.invoke("send-push-notification", {
+          body: {
+            to_user_id: otherUserId,
+            title: `${senderName} sent you a message 💬`,
+            body: trimmed.slice(0, 80),
+          },
+        });
+      })();
     }
 
     return { error };

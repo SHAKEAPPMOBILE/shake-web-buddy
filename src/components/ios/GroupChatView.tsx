@@ -548,13 +548,29 @@ export function GroupChatView({
       if (error) throw error;
 
       setMessage("");
+
+      // Fire-and-forget push to all other participants
+      const senderName = ownProfile?.name || "Someone";
+      void Promise.all(
+        participants
+          .filter((p) => p.user_id !== user.id)
+          .map((p) =>
+            supabase.functions.invoke("send-push-notification", {
+              body: {
+                to_user_id: p.user_id,
+                title: `${senderName} in ${title}`,
+                body: messageText.slice(0, 100),
+              },
+            })
+          )
+      );
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
     } finally {
       setIsSending(false);
     }
-  }, [user, isSending, message, isPremium, canSendText, activityType, city, addCharacters]);
+  }, [user, isSending, message, isPremium, canSendText, activityType, city, addCharacters, participants, ownProfile, title]);
 
   const handleDeleteMessage = async (messageId: string) => {
     const { error } = await supabase

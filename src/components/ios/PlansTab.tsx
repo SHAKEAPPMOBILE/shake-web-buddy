@@ -731,6 +731,21 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
+    // Notify creator (fire-and-forget)
+    if (targetPlan.user_id && targetPlan.user_id !== user.id) {
+      void (async () => {
+        const { data: joinerProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
+        const joinerName = joinerProfile?.name || "Someone";
+        await supabase.functions.invoke("send-push-notification", {
+          body: {
+            to_user_id: targetPlan.user_id,
+            title: "New shaker joined! 🎉",
+            body: `${joinerName} just joined ${getActivityLabel(targetPlan.activity_type)} in ${targetPlan.city}`,
+          },
+        });
+      })();
+    }
+
     setActivities(prev => {
       const existing = prev.find(a => a.id === targetPlan.id);
       if (existing) {
@@ -797,6 +812,21 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
+    // Notify creator (fire-and-forget)
+    if (targetPlan.user_id && targetPlan.user_id !== user.id) {
+      void (async () => {
+        const { data: joinerProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
+        const joinerName = joinerProfile?.name || "Someone";
+        await supabase.functions.invoke("send-push-notification", {
+          body: {
+            to_user_id: targetPlan.user_id,
+            title: "New shaker joined! 🎉",
+            body: `${joinerName} just joined ${getActivityLabel(targetPlan.activity_type)} in ${targetPlan.city}`,
+          },
+        });
+      })();
+    }
+
     const joinedPlan = { ...targetPlan, isJoined: true };
     setActivities(prev => prev.find(a => a.id === targetPlan.id) ? prev : [joinedPlan, ...prev]);
     setCityPlans(prev => prev.filter(p => p.id !== targetPlan.id));
@@ -838,6 +868,21 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       console.error("Error joining plan:", error);
       toast.error("Failed to join plan");
       return;
+    }
+
+    // Notify creator (fire-and-forget)
+    if (targetPlan.user_id && targetPlan.user_id !== user.id) {
+      void (async () => {
+        const { data: joinerProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
+        const joinerName = joinerProfile?.name || "Someone";
+        await supabase.functions.invoke("send-push-notification", {
+          body: {
+            to_user_id: targetPlan.user_id,
+            title: "New shaker joined! 🎉",
+            body: `${joinerName} just joined ${getActivityLabel(targetPlan.activity_type)} in ${targetPlan.city}`,
+          },
+        });
+      })();
     }
 
     const joinedPlan = { ...targetPlan, isJoined: true };
