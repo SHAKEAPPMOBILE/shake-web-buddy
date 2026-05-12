@@ -1136,7 +1136,7 @@ export default function EventsPage({
   }, [events, cat]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-white overflow-hidden relative">
+    <div className="flex flex-col h-full bg-white">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white px-5 pt-5 pb-3 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-3 mb-3">
@@ -1314,50 +1314,48 @@ export default function EventsPage({
           )}
         </div>
 
-        {/* Search bar — collapsed pill by default, expands to input when active */}
-        {!searchOpen ? (
-          <button
-            type="button"
-            onClick={() => {
-              setSearchOpen(true);
-              setSearchQuery("");
-              setSearchResults([]);
-            }}
-            className="w-full flex items-center gap-2 px-4 py-3 rounded-full bg-gray-100 border border-gray-200 text-gray-500 text-sm hover:bg-gray-200 transition-colors"
-          >
-            <Search className="w-4 h-4 shrink-0" />
-            <span>Search events...</span>
-          </button>
-        ) : (
-          <div ref={searchRef} className="relative flex items-center">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            {searchLoading && (
-              <div className="absolute right-9 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        {/* Search bar — always the same DOM element; click activates, X or click-outside closes */}
+        <div ref={searchRef} className="relative flex items-center">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          {searchOpen && searchLoading && (
+            <div className="absolute right-9 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          )}
+          <input
+            type="text"
+            value={searchQuery}
+            readOnly={!searchOpen}
+            placeholder={searchOpen ? "Search concerts & festivals..." : "Search events..."}
+            className={cn(
+              "w-full pl-9 py-3 rounded-full bg-gray-100 border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none transition-all",
+              searchOpen ? "pr-9 focus:ring-2 focus:ring-primary/30 cursor-text" : "pr-4 cursor-pointer"
             )}
-            <input
-              autoFocus
-              type="text"
-              value={searchQuery}
-              placeholder="Search concerts & festivals..."
-              className="w-full pl-9 pr-9 py-3 rounded-full bg-gray-100 border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              onChange={(e) => {
-                const q = e.target.value;
-                setSearchQuery(q);
-                if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-                if (q.length < 2) {
-                  setSearchResults([]);
-                  setSearchLoading(false);
-                  return;
-                }
-                setSearchLoading(true);
-                searchTimerRef.current = setTimeout(() => {
-                  searchEvents(q)
-                    .then((res) => setSearchResults(res))
-                    .catch(() => setSearchResults([]))
-                    .finally(() => setSearchLoading(false));
-                }, 400);
-              }}
-            />
+            onClick={() => {
+              if (!searchOpen) {
+                setSearchOpen(true);
+                setSearchQuery("");
+                setSearchResults([]);
+              }
+            }}
+            onChange={(e) => {
+              if (!searchOpen) return;
+              const q = e.target.value;
+              setSearchQuery(q);
+              if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+              if (q.length < 2) {
+                setSearchResults([]);
+                setSearchLoading(false);
+                return;
+              }
+              setSearchLoading(true);
+              searchTimerRef.current = setTimeout(() => {
+                searchEvents(q)
+                  .then((res) => setSearchResults(res))
+                  .catch(() => setSearchResults([]))
+                  .finally(() => setSearchLoading(false));
+              }, 400);
+            }}
+          />
+          {searchOpen && (
             <button
               type="button"
               onClick={() => { setSearchOpen(false); setSearchQuery(""); setSearchResults([]); }}
@@ -1366,8 +1364,8 @@ export default function EventsPage({
             >
               <X className="w-4 h-4" />
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
         <p className="text-center text-gray-400 text-[11px] px-6">
           Powered by Ticketmaster · Purchases on ticketmaster.com
