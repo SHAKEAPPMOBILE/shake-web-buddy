@@ -5,6 +5,7 @@ import { useGreetings } from "@/hooks/useGreetings";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SayHiButtonProps {
   targetUserId: string;
@@ -57,9 +58,34 @@ export function SayHiButton({
         onMatch?.();
       } else {
         toast({
-          title: "Invite sent! 🎉",
+          title: "Shake sent! 🤝",
           description: `${targetUserName || "They"} will be notified.`,
         });
+        // Fire-and-forget push notification
+        void (async () => {
+          const [profileResult, activityResult] = await Promise.all([
+            supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle(),
+            supabase
+              .from("user_activities")
+              .select("city")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+          ]);
+          const senderName = profileResult.data?.name || "Someone";
+          const city = activityResult.data?.city;
+          const bodyText = city
+            ? `${senderName} wants to shake with you in ${city}!`
+            : `${senderName} wants to shake with you!`;
+          await supabase.functions.invoke("send-push-notification", {
+            body: {
+              to_user_id: targetUserId,
+              title: "Someone wants to Shake! 🤝",
+              body: bodyText,
+            },
+          });
+        })();
       }
     } finally {
       setIsSending(false);
@@ -91,7 +117,7 @@ export function SayHiButton({
         className={`border-shake-yellow/50 text-shake-yellow ${className}`}
       >
         <Check className="w-4 h-4 mr-1.5" />
-        Invited
+        Shaken ✓
       </Button>
     );
   }
@@ -126,7 +152,7 @@ export function SayHiButton({
       className={`border-shake-yellow/50 text-shake-yellow hover:bg-shake-yellow/10 ${className}`}
     >
       {isSending && <LoadingSpinner size="sm" className="mr-1.5" />}
-      Invite
+      Shake
     </Button>
   );
 }
