@@ -318,20 +318,6 @@ export function ActivityJoinedConfirmation({
 
               {/* Actions — only visible in phase 2 */}
               <div className="mt-4 space-y-3">
-                {/* Join Group Chat — only show when no venue */}
-                {isTBD && (
-                <Button
-                  onClick={handleJoinChat}
-                  className="group w-full h-12 rounded-full font-semibold text-base gap-2 overflow-hidden"
-                  style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
-                >
-                  <MessageSquare className="w-5 h-5 shrink-0" />
-                  <span className="max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:max-w-xs group-focus-within:max-w-xs">
-                    {t("joinConfirmation.joinGroupChat", "Join Group Chat")}
-                  </span>
-                </Button>
-                )}
-
                 {/* Oraaait! — closes modal and goes to Plans tab */}
                 <button
                   onClick={() => {
