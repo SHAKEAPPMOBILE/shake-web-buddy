@@ -42,7 +42,8 @@ interface PlanActivity {
   user_id: string;
   activity_type: string;
   city: string;
-  scheduled_for: string;
+  scheduled_for: string | null;
+  created_at?: string;
   is_active: boolean;
   note?: string | null;
   price_amount?: string | null;
@@ -113,17 +114,34 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     const joinedActivityIds = (joins || []).map(j => j.activity_id).filter(Boolean) as string[];
 
+    // --- Expiry helpers ---
+    // Rule 1: activities with a scheduled_for date expire at midnight of that day.
+    // Rule 2: activities with no scheduled_for date (null) expire 5 days after created_at.
+    const nowMs = Date.now();
+    const nowDate = new Date(nowMs);
+    const todayMidnightUTC = new Date(Date.UTC(
+      nowDate.getUTCFullYear(), nowDate.getUTCMonth(), nowDate.getUTCDate()
+    ));
+    const fiveDaysAgo = new Date(nowMs - 5 * 24 * 60 * 60 * 1000);
+
+    const isActivityVisible = (a: { scheduled_for: string | null; created_at: string }) => {
+      if (a.scheduled_for !== null) {
+        // Has a specific date: show while that date >= today midnight
+        return new Date(a.scheduled_for) >= todayMidnightUTC;
+      }
+      // No specific date: show for 5 days from creation
+      return new Date(a.created_at) >= fiveDaysAgo;
+    };
+
     // --- 3. User's own created plans (fallback: ensure creator always sees their plans
     //        even if the activity_joins upsert was missed) ---
-    // Show joined/created plans for 24 hours after the activity time so they don't
-    // vanish immediately when the scheduled time passes.
-    const twentyFourHoursAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const { data: myCreatedData } = await supabase
       .from("user_activities")
-      .select("id")
-      .eq("user_id", user.id)
-      .gte("scheduled_for", twentyFourHoursAgo.toISOString());
-    const myCreatedIds = (myCreatedData || []).map(a => a.id as string);
+      .select("id, scheduled_for, created_at")
+      .eq("user_id", user.id);
+    const myCreatedIds = (myCreatedData || [])
+      .filter(a => isActivityVisible(a as { scheduled_for: string | null; created_at: string }))
+      .map(a => a.id as string);
     // Merge joins + own creations (deduplicated) so creator always sees their plans
     const allJoinedIds = [...new Set([...joinedActivityIds, ...myCreatedIds])];
 
@@ -159,23 +177,25 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     allCarouselJoins.forEach(addToCarouselMap);
 
     // Get joined activities — from any city (all cities mode) or filtered to explicit city.
-    // Use a 24-hour lookback window (instead of is_active=true) so activities the user
-    // joined remain visible for 24 hours after their scheduled time, even if the activity
-    // becomes inactive server-side.
+    // Fetch full rows (including created_at) so we can apply the dual expiry rule in JS.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let joinedActivities: any[] = [];
     if (allJoinedIds.length > 0) {
       const { data: joinedData } = await supabase
         .from("user_activities")
         .select("*")
-        .in("id", allJoinedIds)
-        .gte("scheduled_for", twentyFourHoursAgo.toISOString());
+        .in("id", allJoinedIds);
+
+      // Apply smart expiry: date-based activities expire at midnight; open activities expire after 5 days.
+      const visible = (joinedData || []).filter((a: { scheduled_for: string | null; created_at: string }) =>
+        isActivityVisible(a)
+      );
 
       // If user explicitly selected a filter city in Plans header, apply it.
       // Otherwise (default), include joined plans from all cities.
       joinedActivities = joinedPlansCityFilter
-        ? (joinedData || []).filter((a: { city: string }) => a.city === joinedPlansCityFilter)
-        : (joinedData || []);
+        ? visible.filter((a: { city: string }) => a.city === joinedPlansCityFilter)
+        : visible;
     }
 
     // --- 5. Public plans in effectiveCity by other users (discoverable, not yet joined) ---
@@ -189,8 +209,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .eq("is_active", true)
         .neq("user_id", user.id);
 
-      // Exclude plans the user already joined (or created) — those appear in the main joined list
-      cityPublicPlans = (cityPlansData || []).filter((a: { id: string }) => !allJoinedIds.includes(a.id));
+      // Exclude plans the user already joined (or created), and apply smart expiry filter.
+      cityPublicPlans = (cityPlansData || [])
+        .filter((a: { id: string }) => !allJoinedIds.includes(a.id))
+        .filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a));
     }
 
     // Joined plans only in the main activities map
@@ -247,8 +269,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     );
 
     cityPlansWithDetails.sort((a, b) => {
-      const dateA = new Date(a.scheduled_for);
-      const dateB = new Date(b.scheduled_for);
+      const dateA = a.scheduled_for ? new Date(a.scheduled_for) : new Date(a.created_at || 0);
+      const dateB = b.scheduled_for ? new Date(b.scheduled_for) : new Date(b.created_at || 0);
       if (isToday(dateA) && !isToday(dateB)) return -1;
       if (!isToday(dateA) && isToday(dateB)) return 1;
       if (isTomorrow(dateA) && !isTomorrow(dateB)) return -1;
@@ -299,8 +321,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     // Sort with Today first, Tomorrow second, then chronologically
     allPlans.sort((a, b) => {
-      const dateA = new Date(a.scheduled_for);
-      const dateB = new Date(b.scheduled_for);
+      const dateA = a.scheduled_for ? new Date(a.scheduled_for) : new Date(a.created_at || 0);
+      const dateB = b.scheduled_for ? new Date(b.scheduled_for) : new Date(b.created_at || 0);
       const isTodayA = isToday(dateA);
       const isTodayB = isToday(dateB);
       const isTomorrowA = isTomorrow(dateA);
@@ -591,7 +613,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     
     const activityLabel = getActivityLabel(plan.activity_type);
     const activityEmoji = getActivityEmoji(plan.activity_type);
-    const dateStr = formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code);
+    const dateStr = plan.scheduled_for
+      ? formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)
+      : formatDateWithTranslation(new Date(), "EEE, d MMM", selectedLanguage.code);
     
     const shareUrl = getReferralLink(referralCode);
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
@@ -1031,7 +1055,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
                     <div className="flex items-center gap-2 mt-1">
                       <Calendar className="w-3.5 h-3.5 text-gray-600" />
-                      {isToday(new Date(plan.scheduled_for)) ? (
+                      {!plan.scheduled_for ? (
+                        <span className="text-xs text-gray-500">{t('common.today')}</span>
+                      ) : isToday(new Date(plan.scheduled_for)) ? (
                         <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full animate-pulse">
                           {t('common.today')}
                         </span>
@@ -1157,14 +1183,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         <div className="flex items-center gap-2 mt-1">
                           <Calendar className="w-3.5 h-3.5 text-gray-500" />
                           <span className="text-xs text-gray-500">
-                            {formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)}
+                            {plan.scheduled_for
+                              ? formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)
+                              : t('common.today')}
                           </span>
-                          {isToday(new Date(plan.scheduled_for)) && (
+                          {plan.scheduled_for && isToday(new Date(plan.scheduled_for)) && (
                             <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full animate-pulse">
                               {t('common.today')}
                             </span>
                           )}
-                          {isTomorrow(new Date(plan.scheduled_for)) && (
+                          {plan.scheduled_for && isTomorrow(new Date(plan.scheduled_for)) && (
                             <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">
                               {t('common.tomorrow')}
                             </span>
@@ -1270,7 +1298,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   {planPreview.activity_type !== "general" && `${getActivityLabel(planPreview.activity_type)} · `}{planPreview.city}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {isToday(new Date(planPreview.scheduled_for))
+                  {!planPreview.scheduled_for
+                    ? t('common.today')
+                    : isToday(new Date(planPreview.scheduled_for))
                     ? t('common.today')
                     : isTomorrow(new Date(planPreview.scheduled_for))
                     ? t('common.tomorrow')
