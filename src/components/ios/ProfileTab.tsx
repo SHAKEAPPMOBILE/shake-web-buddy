@@ -962,6 +962,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     setMotionPermission("prompt");
                   }
                 }}
+                className="data-[state=unchecked]:bg-gray-200"
               />
             </div>
             {/* Notifications — native only */}

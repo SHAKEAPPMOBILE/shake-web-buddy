@@ -12,12 +12,15 @@ export function ThemeToggle({ label = "Theme", className }: ThemeToggleProps) {
   const isDark = theme === "dark";
 
   return (
-    <div className={className}>
-      <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-muted/60 border border-border shadow-sm">
-        <Sun className={"w-5 h-5 text-muted-foreground"} />
-        <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Toggle theme" />
-        <Moon className={"w-5 h-5 text-muted-foreground"} />
-      </div>
+    <div className={`flex items-center gap-2 ${className ?? ""}`}>
+      <Sun className="w-4 h-4 text-gray-400" />
+      <Switch
+        checked={isDark}
+        onCheckedChange={toggleTheme}
+        aria-label="Toggle theme"
+        className="data-[state=unchecked]:bg-gray-200"
+      />
+      <Moon className="w-4 h-4 text-gray-400" />
     </div>
   );
 }
