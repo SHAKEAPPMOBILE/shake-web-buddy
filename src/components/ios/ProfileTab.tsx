@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,6 @@ import { PremiumDialog } from "../PremiumDialog";
 import { ManagePlanDialog } from "../ManagePlanDialog";
 import { SuperHumanIcon } from "../SuperHumanIcon";
 import { UserProfileDialog } from "../UserProfileDialog";
-import { Link } from "react-router-dom";
 import { useStatusVideo } from "@/hooks/useStatusVideo";
 import { StatusVideoRecorder } from "../StatusVideoRecorder";
 import { cn } from "@/lib/utils";
@@ -71,11 +70,11 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [userName, setUserName] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
   const [showPointsDialog, setShowPointsDialog] = useState(false);
   const [showSubscriptionDropdown, setShowSubscriptionDropdown] = useState(false);
-  const [showEditProfileDropdown, setShowEditProfileDropdown] = useState(false);
   const { statusVideo, hasActiveStatus } = useStatusVideo(user?.id);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
   const { points } = useUserPoints(user?.id);
@@ -117,7 +116,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         console.log("Motion permission request failed:", err);
       }
     } else {
-      // Non-iOS: motion always available, mark as granted
       localStorage.setItem("shake_motion_permission", "granted");
       setMotionPermission("granted");
     }
@@ -140,18 +138,16 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
   const handleSetPreferredMethod = async (method: "stripe" | "paypal") => {
     if (!user) return;
-    
     try {
       const { error } = await supabase
         .from("profiles_private")
         .update({ preferred_payout_method: method })
         .eq("user_id", user.id);
-      
       if (error) throw error;
       setPreferredMethod(method);
       toast({
         title: t('profile.payoutMethodUpdated', 'Payout method updated'),
-        description: method === "stripe" 
+        description: method === "stripe"
           ? t('profile.stripeIsNowActive', 'Stripe is now your active payout method')
           : t('profile.paypalIsNowActive', 'PayPal is now your active payout method'),
       });
@@ -194,7 +190,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           url: link,
         });
       } catch (err) {
-        // User cancelled or share failed, fallback to copy
         if ((err as Error).name !== "AbortError") {
           handleCopyReferralLink();
         }
@@ -215,7 +210,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setShowFaceCapture(false);
       return;
     }
-
     setIsUpdatingFaceAuth(true);
     try {
       await storeFaceDescriptor(user.id, descriptor);
@@ -224,7 +218,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         .update({ face_auth_enabled: true })
         .eq("user_id", user.id);
       if (error) throw error;
-
       setFaceAuthEnabled(true);
       toast({
         title: t('profile.faceIdEnabledTitle', 'Face ID enabled'),
@@ -249,14 +242,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({
-          face_descriptor: null,
-          face_auth_enabled: false,
-        })
+        .update({ face_descriptor: null, face_auth_enabled: false })
         .eq("user_id", user.id);
-
       if (error) throw error;
-
       setFaceAuthEnabled(false);
       setShowRemoveFaceConfirm(false);
       toast({
@@ -273,6 +261,24 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     } finally {
       setIsUpdatingFaceAuth(false);
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    try {
+      await supabase.rpc('delete_account');
+    } catch (err) {
+      console.error('Delete account error:', err);
+      toast({
+        title: t('profile.errorTitle', 'Error'),
+        description: 'Failed to delete account. Please contact support.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setShowDeleteConfirm(false);
+    await signOut();
+    onSignOut?.();
   };
 
   const fetchProfile = useCallback(async () => {
@@ -345,14 +351,12 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     }
   }, [showParanormal, fetchBlockedUsers]);
 
-  // Refetch profile when user returns to app/tab (e.g. after editing profile) so avatar updates
   useEffect(() => {
     const onFocus = () => fetchProfile();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [fetchProfile]);
 
-  // Open subscription dropdown when triggered from navigation state (e.g., after donation)
   useEffect(() => {
     if (initialOpenSubscription && isPremium) {
       setShowSubscriptionDropdown(true);
@@ -360,9 +364,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     }
   }, [initialOpenSubscription, isPremium, onSubscriptionOpened]);
 
-  // When not logged in, trigger onSignOut to go to home
   if (!user) {
-    return null; // Parent will handle showing home tab
+    return null;
   }
 
   const handleSignOutClick = () => {
@@ -377,21 +380,20 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     onSignOut?.();
   };
 
-
   return (
-    <div className="light flex flex-col h-full min-h-0 pt-[env(safe-area-inset-top,0px)] overflow-y-auto pb-[env(safe-area-inset-bottom,0px)] bg-white text-gray-900">
-      {/* Profile Header - Clickable to view own profile */}
+    <div className="flex flex-col h-full min-h-0 pt-[env(safe-area-inset-top,0px)] overflow-y-auto pb-[env(safe-area-inset-bottom,0px)] bg-[#F2F2F7] text-gray-900">
+
+      {/* Profile Header */}
       <button
         onClick={() => setShowProfileDialog(true)}
-        className="flex flex-col items-center px-6 py-8 border-b border-border dark:border-gray-200 hover:bg-muted/30 dark:hover:bg-gray-50 transition-colors"
+        className="flex flex-col items-center px-6 py-8 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors"
       >
-        {/* Avatar with Status Ring and Progress */}
         <div className="relative">
           <div className={cn(
-            "w-24 h-24 rounded-full bg-muted overflow-hidden flex items-center justify-center",
+            "w-24 h-24 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center",
             hasActiveStatus
-              ? "ring-4 ring-shake-green ring-offset-2 ring-offset-background"
-              : "border-2 border-border"
+              ? "ring-4 ring-shake-green ring-offset-2 ring-offset-white"
+              : "border-2 border-gray-200"
           )}>
             <Avatar className="w-full h-full rounded-2xl">
               <AvatarImage
@@ -399,242 +401,178 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 alt=""
                 className="w-full h-full object-cover"
               />
-              <AvatarFallback className="bg-muted">
-                <User className="w-12 h-12 text-muted-foreground dark:text-gray-500" />
+              <AvatarFallback className="bg-gray-100">
+                <User className="w-12 h-12 text-gray-400" />
               </AvatarFallback>
             </Avatar>
           </div>
-
-          {/* Status Camera Button */}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowStatusRecorder(true);
-            }}
+            onClick={(e) => { e.stopPropagation(); setShowStatusRecorder(true); }}
             className={cn(
-              "absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-background transition-colors",
-              hasActiveStatus
-                ? "bg-shake-green hover:bg-shake-green/90"
-                : "bg-primary hover:bg-primary/90"
+              "absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white transition-colors",
+              hasActiveStatus ? "bg-shake-green hover:bg-shake-green/90" : "bg-primary hover:bg-primary/90"
             )}
           >
             <Video className="w-4 h-4 text-white" />
           </button>
         </div>
 
-        {/* Status label */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowStatusRecorder(true);
-          }}
-          className="mt-2 text-xs text-muted-foreground dark:text-gray-500 hover:text-foreground transition-colors"
+          onClick={(e) => { e.stopPropagation(); setShowStatusRecorder(true); }}
+          className="mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
         >
           {hasActiveStatus ? t('profile.viewStatus', 'View Status') : t('profile.addStatus', 'Add Status')}
         </button>
 
-        <h2 className="mt-2 text-xl font-display font-bold text-gray-900 dark:text-gray-900">{userName || t('profile.userFallback', 'User')}</h2>
+        <h2 className="mt-2 text-xl font-display font-bold text-gray-900">{userName || t('profile.userFallback', 'User')}</h2>
         {isPremium && (
           <div
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowPremiumDialog(true);
-            }}
+            onClick={(e) => { e.stopPropagation(); setShowPremiumDialog(true); }}
             className="flex items-center gap-1.5 mt-2 px-3 py-1 bg-shake-yellow/10 rounded-full cursor-pointer hover:bg-shake-yellow/20 transition-colors"
           >
             <SuperHumanIcon size={14} />
             <span className="text-sm font-medium text-shake-yellow">{t('profile.superHuman')}</span>
           </div>
         )}
-        
       </button>
 
-      {/* Menu Items */}
-      <div className="flex-1 px-4 py-4 space-y-2 bg-white dark:bg-white">
-        {/* Edit Profile - Dropdown */}
-        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
-          <button
-            onClick={() => setShowEditProfileDropdown(!showEditProfileDropdown)}
-            className="w-full flex items-center gap-4 px-4 py-3"
-          >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
-              <Settings className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="font-medium">{t('profile.editProfile')}</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.updateYourInfo', 'Update your info')}</p>
-            </div>
-          </button>
-          {showEditProfileDropdown && (
-            <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
-              <div className="space-y-3 pt-3">
-                <p className="text-xs text-muted-foreground dark:text-gray-500">
-                  {t('profile.updateDescription', 'Update your name, avatar, nationality, occupation, and social links.')}
-                </p>
-                <button
-                  onClick={() => {
-                    setShowEditProfileDropdown(false);
-                    navigate("/profile");
-                  }}
-                  className="w-full py-2 text-sm font-medium text-primary border border-primary/30 rounded-2xl hover:bg-primary/10 transition-colors"
-                >
-                  {t('profile.editProfile')}
-                </button>
-                
-              </div>
-            </div>
-          )}
-        </div>
+      {/* Sections */}
+      <div className="flex-1 px-4 py-6 space-y-6">
 
-        {/* Separator Line */}
-        <div className="h-px bg-border my-2" />
-
-        {/* My Points - Dropdown */}
-        <div className="w-full bg-card dark:bg-white border border-shake-yellow/30 dark:border-gray-200 rounded-xl overflow-hidden">
-          <button
-            onClick={() => setShowPointsDialog(!showPointsDialog)}
-            className="w-full flex items-center gap-4 px-4 py-3"
-          >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
-              <img src={shakeCoin} alt="Points" className="w-6 h-6" />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="font-medium">{t('profile.myPoints')}</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">{points.toLocaleString()} {t('profile.points')} earned</p>
-            </div>
-          </button>
-          {showPointsDialog && (
-            <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
-              <PointsDashboard userId={user?.id} />
-            </div>
-          )}
-        </div>
-
-        {isPremium ? (
-          <div className="w-full bg-card dark:bg-white border border-shake-green/30 dark:border-gray-200 rounded-xl overflow-hidden">
+        {/* ── ACCOUNT ── */}
+        <div>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Account</p>
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+            {/* Edit Profile */}
             <button
-              onClick={() => setShowSubscriptionDropdown(!showSubscriptionDropdown)}
-              className="w-full flex items-center gap-4 px-4 py-3"
+              onClick={() => navigate("/profile")}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-10 h-10 rounded-full bg-shake-green/10 flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-shake-green" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <Settings className="w-5 h-5 text-white" />
               </div>
-            <div className="flex-1 text-left">
-              <span className="font-medium">{t('profile.manageSubscription')}</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.superHuman')} active</p>
-            </div>
+              <span className="flex-1 text-sm font-medium text-gray-900">{t('profile.editProfile')}</span>
+              <ChevronRight className="w-4 h-4 text-gray-300" />
             </button>
-            {showSubscriptionDropdown && (
-              <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
-                <div className="space-y-3 pt-3">
-                  <div className="flex items-center gap-2">
-                    <SuperHumanIcon size={16} />
-                    <span className="text-sm font-medium text-shake-yellow">{t('profile.superHumanActive', 'Super-Human Active')}</span>
-                  </div>
-                  <button
-                    onClick={handleOpenManagePlan}
-                    className="w-full mt-2 py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-2xl hover:bg-shake-green/10 transition-colors"
-                  >
-                    {t('profile.managePlan', 'Manage Plan')}
-                  </button>
-
-                </div>
+            {/* Language */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <Globe className="w-5 h-5 text-white" />
               </div>
-            )}
+              <span className="flex-1 text-sm font-medium text-gray-900">{t('profile.language', 'Language')}</span>
+              <LanguageSelector showLabel={false} />
+            </div>
+            {/* Appearance */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <Sun className="w-5 h-5 text-white" />
+              </div>
+              <span className="flex-1 text-sm font-medium text-gray-900">{t('profile.appearance', 'Appearance')}</span>
+              <ThemeToggle />
+            </div>
           </div>
-        ) : (
-          <button
-            onClick={() => setShowPremiumDialog(true)}
-            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl"
-            style={profileIconGradientStyle}
-          >
-            <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
-              <SuperHumanIcon size={24} />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="font-medium text-white">{t('profile.upgradeToPremium', 'Upgrade to Premium')}</span>
-              <p className="text-xs text-white/70">{t('profile.unlimitedMessages', 'Unlimited messages & more')}</p>
-            </div>
-            <span className="text-xs font-medium text-white bg-white/20 px-2 py-1 rounded-full">
-              {t('profile.subscribeNow', 'Subscribe now')}
-            </span>
-          </button>
-        )}
-
-        {/* Share Referral Link */}
-        <div className="w-full bg-card dark:bg-white border border-primary/30 dark:border-gray-200 rounded-xl overflow-hidden">
-          <button
-            onClick={() => setShowReferralLink(!showReferralLink)}
-            className="w-full flex items-center gap-4 px-4 py-3"
-          >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
-              <Share2 className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="font-medium">{t('profile.shareReferral')}</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.earnPoints', 'Earn +5 points per signup')}</p>
-            </div>
-          </button>
-          {showReferralLink && referralCode && (
-            <div className="px-4 pb-3 pt-0 animate-fade-in">
-              <div className="flex items-center gap-2 bg-muted/50 rounded-2xl px-3 py-2">
-                <span className="flex-1 text-sm text-muted-foreground dark:text-gray-500 truncate">
-                  {getReferralLink(referralCode)}
-                </span>
-                <button
-                  onClick={handleCopyReferralLink}
-                  className="p-1.5 hover:bg-muted rounded-xl transition-colors"
-                  title="Copy link"
-                >
-                  {copiedLink ? (
-                    <Check className="w-4 h-4 text-shake-green" />
-                  ) : (
-                    <Copy className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
-                  )}
-                </button>
-                <button
-                  onClick={handleShareReferralLink}
-                  className="p-1.5 hover:bg-muted rounded-xl transition-colors"
-                  title="Share link"
-                >
-                  <Share2 className="w-4 h-4 text-primary" />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Creator Payouts - Stripe or PayPal */}
-        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
-          <button
-            onClick={() => setShowPayoutOptions(!showPayoutOptions)}
-            className="w-full flex items-center gap-4 px-4 py-3"
-          >
-            <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center"
-            )} style={profileIconGradientStyle}>
-              <Wallet className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="font-medium">{t('profile.creatorPayouts', 'Creator Payouts')}</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">
-                {(stripeConnected && stripeStatus === "complete") || paypalConnected
-                  ? t('profile.payoutsConnected', 'Ready to receive payments')
-                  : stripeConnected && stripeStatus === "pending"
-                  ? t('profile.stripePending', 'Verification pending')
-                  : t('profile.payoutsNotConnected', 'Set up to receive payments')}
-              </p>
-            </div>
-            {((stripeConnected && stripeStatus === "complete") || paypalConnected) && (
-              <div className="w-2 h-2 rounded-full bg-shake-green" />
+        {/* ── PLAN & REWARDS ── */}
+        <div>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Plan & Rewards</p>
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+            {/* Subscription */}
+            {isPremium ? (
+              <>
+                <button
+                  onClick={() => setShowSubscriptionDropdown(!showSubscriptionDropdown)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-shake-green/10 flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-shake-green" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-gray-900">{t('profile.manageSubscription')}</span>
+                    <p className="text-xs text-gray-400">{t('profile.superHuman')} active</p>
+                  </div>
+                  <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showSubscriptionDropdown && "rotate-90")} />
+                </button>
+                {showSubscriptionDropdown && (
+                  <div className="px-4 py-4 bg-gray-50 animate-fade-in space-y-3">
+                    <div className="flex items-center gap-2">
+                      <SuperHumanIcon size={16} />
+                      <span className="text-sm font-medium text-shake-yellow">{t('profile.superHumanActive', 'Super-Human Active')}</span>
+                    </div>
+                    <button
+                      onClick={handleOpenManagePlan}
+                      className="w-full py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-2xl hover:bg-shake-green/10 transition-colors"
+                    >
+                      {t('profile.managePlan', 'Manage Plan')}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={() => setShowPremiumDialog(true)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                style={profileIconGradientStyle}
+              >
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                  <SuperHumanIcon size={20} />
+                </div>
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-white">{t('profile.upgradeToPremium', 'Upgrade to Premium')}</span>
+                  <p className="text-xs text-white/70">{t('profile.unlimitedMessages', 'Unlimited messages & more')}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-white/50" />
+              </button>
             )}
-            {stripeConnected && stripeStatus === "pending" && !paypalConnected && (
-              <div className="w-2 h-2 rounded-full bg-amber-500" />
+
+            {/* My Points */}
+            <button
+              onClick={() => setShowPointsDialog(!showPointsDialog)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <img src={shakeCoin} alt="Points" className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm font-medium text-gray-900">{t('profile.myPoints')}</span>
+                <p className="text-xs text-gray-400">{points.toLocaleString()} {t('profile.points')} earned</p>
+              </div>
+              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showPointsDialog && "rotate-90")} />
+            </button>
+            {showPointsDialog && (
+              <div className="px-4 py-4 bg-gray-50 animate-fade-in">
+                <PointsDashboard userId={user?.id} />
+              </div>
             )}
-          </button>
-          {showPayoutOptions && (
-            <div className="px-4 pb-4 pt-0 animate-fade-in border-t border-border/50">
-              <div className="space-y-4 pt-3">
+
+            {/* Creator Payouts */}
+            <button
+              onClick={() => setShowPayoutOptions(!showPayoutOptions)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <Wallet className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm font-medium text-gray-900">{t('profile.creatorPayouts', 'Creator Payouts')}</span>
+                <p className="text-xs text-gray-400">
+                  {(stripeConnected && stripeStatus === "complete") || paypalConnected
+                    ? t('profile.payoutsConnected', 'Ready to receive payments')
+                    : stripeConnected && stripeStatus === "pending"
+                    ? t('profile.stripePending', 'Verification pending')
+                    : t('profile.payoutsNotConnected', 'Set up to receive payments')}
+                </p>
+              </div>
+              {((stripeConnected && stripeStatus === "complete") || paypalConnected) && (
+                <div className="w-2 h-2 rounded-full bg-shake-green mr-1" />
+              )}
+              {stripeConnected && stripeStatus === "pending" && !paypalConnected && (
+                <div className="w-2 h-2 rounded-full bg-amber-500 mr-1" />
+              )}
+              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showPayoutOptions && "rotate-90")} />
+            </button>
+            {showPayoutOptions && (
+              <div className="px-4 pb-4 pt-3 bg-gray-50 animate-fade-in space-y-4">
                 {/* Earnings Summary */}
                 <div className="border rounded-2xl p-3 bg-gradient-to-r from-shake-yellow/10 to-shake-green/10">
                   <div className="flex items-center justify-between mb-2">
@@ -642,11 +580,11 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       <DollarSign className="w-4 h-4 text-shake-green" />
                       <span className="text-sm font-medium">{t('profile.yourEarnings', 'Your Earnings')}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground dark:text-gray-500">85% {t('profile.afterFee', 'after platform fee')}</span>
+                    <span className="text-xs text-gray-400">85% {t('profile.afterFee', 'after platform fee')}</span>
                   </div>
                   {earningsLoading ? (
                     <div className="flex items-center justify-center py-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground dark:text-gray-500" />
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                     </div>
                   ) : activities.length > 0 ? (
                     <div className="space-y-2">
@@ -655,13 +593,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                           {currency === "USD" ? "$" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : currency === "BRL" ? "R$" : "$"}
                           {totalNet.toFixed(2)}
                         </span>
-                        <span className="text-xs text-muted-foreground dark:text-gray-500">{currency}</span>
+                        <span className="text-xs text-gray-400">{currency}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground dark:text-gray-500">
+                      <p className="text-xs text-gray-400">
                         {t('profile.fromPaidActivities', 'From {{count}} paid activities', { count: activities.length })}
                       </p>
                       {activities.some(a => a.participants > 0) && (
-                        <div className="text-xs text-muted-foreground dark:text-gray-500 border-t border-border pt-2 mt-2">
+                        <div className="text-xs text-gray-400 border-t border-gray-200 pt-2 mt-2">
                           {activities.filter(a => a.participants > 0).map(a => (
                             <div key={a.activityId} className="flex justify-between py-0.5">
                               <span>{a.activityType} ({a.participants} {t('profile.participants', 'participants')})</span>
@@ -672,20 +610,18 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       )}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground dark:text-gray-500">
-                      {t('profile.noEarningsYet', 'Create paid activities to start earning!')}
-                    </p>
+                    <p className="text-xs text-gray-400">{t('profile.noEarningsYet', 'Create paid activities to start earning!')}</p>
                   )}
                 </div>
 
-                {/* ID Verification Status */}
+                {/* ID Verification */}
                 <button
                   onClick={() => setShowIDVerificationDialog(true)}
                   className={cn(
                     "w-full border rounded-2xl p-3 text-left transition-colors hover:bg-muted/30",
-                    isVerified 
-                      ? "border-shake-green/30 bg-shake-green/5" 
-                      : isPending 
+                    isVerified
+                      ? "border-shake-green/30 bg-shake-green/5"
+                      : isPending
                         ? "border-amber-500/30 bg-amber-500/5"
                         : isRejected
                           ? "border-destructive/30 bg-destructive/5"
@@ -696,52 +632,31 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     <div className="flex items-center gap-2">
                       <div className={cn(
                         "w-6 h-6 rounded-xl flex items-center justify-center",
-                        isVerified 
-                          ? "bg-shake-green/20" 
-                          : isPending 
-                            ? "bg-amber-500/20" 
-                            : isRejected
-                              ? "bg-destructive/20"
-                              : "bg-primary/10"
+                        isVerified ? "bg-shake-green/20" : isPending ? "bg-amber-500/20" : isRejected ? "bg-destructive/20" : "bg-primary/10"
                       )}>
-                        {isVerified ? (
-                          <CheckCircle className="w-4 h-4 text-shake-green" />
-                        ) : isPending ? (
-                          <Clock className="w-4 h-4 text-amber-500" />
-                        ) : isRejected ? (
-                          <XCircle className="w-4 h-4 text-destructive" />
-                        ) : (
-                          <Shield className="w-4 h-4 text-primary" />
-                        )}
+                        {isVerified ? <CheckCircle className="w-4 h-4 text-shake-green" />
+                          : isPending ? <Clock className="w-4 h-4 text-amber-500" />
+                          : isRejected ? <XCircle className="w-4 h-4 text-destructive" />
+                          : <Shield className="w-4 h-4 text-primary" />}
                       </div>
-                      <span className="text-sm font-medium">
-                        {t('profile.idVerification', 'ID Verification')}
-                      </span>
+                      <span className="text-sm font-medium">{t('profile.idVerification', 'ID Verification')}</span>
                     </div>
                     {verificationLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground dark:text-gray-500" />
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                     ) : isVerified ? (
-                      <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">
-                        {t('profile.verified', 'Verified')}
-                      </span>
+                      <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">{t('profile.verified', 'Verified')}</span>
                     ) : isPending ? (
-                      <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                        {t('profile.pending', 'Pending')}
-                      </span>
+                      <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">{t('profile.pending', 'Pending')}</span>
                     ) : isRejected ? (
-                      <span className="text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
-                        {t('profile.rejected', 'Rejected')}
-                      </span>
+                      <span className="text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">{t('profile.rejected', 'Rejected')}</span>
                     ) : (
-                      <span className="text-xs text-muted-foreground dark:text-gray-500">
-                        {t('profile.notVerified', 'Not verified')}
-                      </span>
+                      <span className="text-xs text-gray-400">{t('profile.notVerified', 'Not verified')}</span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground dark:text-gray-500 mt-1 ml-8">
-                    {isVerified 
+                  <p className="text-xs text-gray-400 mt-1 ml-8">
+                    {isVerified
                       ? t('profile.idVerifiedDesc', 'You can create paid activities')
-                      : isPending 
+                      : isPending
                         ? t('profile.idPendingDesc', 'Under review - usually within 1 hour')
                         : isRejected
                           ? t('profile.idRejectedDesc', 'Please resubmit your ID')
@@ -749,17 +664,15 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   </p>
                 </button>
 
-                {/* Connected Status Summary */}
+                {/* Connected status banner */}
                 {((stripeConnected && stripeStatus === "complete") || paypalConnected) && (
                   <div className="flex items-center gap-2 p-2 bg-shake-green/10 rounded-2xl">
                     <Check className="w-4 h-4 text-shake-green" />
-                    <span className="text-sm text-shake-green font-medium">
-                      {t('profile.payoutsReady', 'Ready to receive payouts')}
-                    </span>
+                    <span className="text-sm text-shake-green font-medium">{t('profile.payoutsReady', 'Ready to receive payouts')}</span>
                   </div>
                 )}
 
-                {/* Stripe Section */}
+                {/* Stripe */}
                 <div className={`border rounded-2xl p-3 space-y-2 ${preferredMethod === "stripe" ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -780,11 +693,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       </span>
                     )}
                   </div>
-                  
                   {stripeConnected && stripeStatus === "complete" ? (
                     <>
                       {stripeEmail && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground dark:text-gray-500">
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
                           <Mail className="w-3 h-3" />
                           <span className="truncate">{stripeEmail}</span>
                         </div>
@@ -800,11 +712,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   ) : stripeConnected && stripeStatus === "verification_pending" ? (
                     <>
-                      <p className="text-xs text-muted-foreground dark:text-gray-500">
-                        {t('profile.stripeVerificationPending', 'Stripe is reviewing your account. This usually takes 1-3 business days.')}
-                      </p>
+                      <p className="text-xs text-gray-400">{t('profile.stripeVerificationPending', 'Stripe is reviewing your account. This usually takes 1-3 business days.')}</p>
                       {stripeEmail && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground dark:text-gray-500">
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
                           <Mail className="w-3 h-3" />
                           <span className="truncate">{stripeEmail}</span>
                         </div>
@@ -822,15 +732,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   ) : stripeConnected && stripeStatus === "pending" ? (
                     <>
-                      <p className="text-xs text-muted-foreground dark:text-gray-500">
-                        {t('profile.stripePendingDesc', 'Complete your Stripe onboarding to receive payments.')}
-                      </p>
+                      <p className="text-xs text-gray-400">{t('profile.stripePendingDesc', 'Complete your Stripe onboarding to receive payments.')}</p>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => {
-                            startOnboarding();
-                            setShowPayoutOptions(false);
-                          }}
+                          onClick={() => { startOnboarding(); setShowPayoutOptions(false); }}
                           disabled={stripeLoading}
                           className="flex-1 py-2 text-xs font-medium text-amber-600 border border-amber-500/30 rounded-2xl hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                         >
@@ -840,15 +745,12 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                         <button
                           onClick={checkStripeStatus}
                           disabled={stripeLoading}
-                          className="py-2 px-3 text-xs text-muted-foreground dark:text-gray-500 border border-border rounded-2xl hover:bg-muted/50 transition-colors disabled:opacity-50"
+                          className="py-2 px-3 text-xs text-gray-400 border border-border rounded-2xl hover:bg-muted/50 transition-colors disabled:opacity-50"
                         >
                           <RefreshCw className="w-3 h-3" />
                         </button>
                         <button
-                          onClick={() => {
-                            setShowPayoutOptions(false);
-                            setShowResetCountrySelector(true);
-                          }}
+                          onClick={() => { setShowPayoutOptions(false); setShowResetCountrySelector(true); }}
                           disabled={stripeLoading}
                           className="py-2 px-3 text-xs text-destructive border border-destructive/30 rounded-2xl hover:bg-destructive/10 transition-colors disabled:opacity-50"
                         >
@@ -858,33 +760,23 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   ) : (
                     <>
-                      <p className="text-xs text-muted-foreground dark:text-gray-500">
-                        {t('profile.stripeDesc', 'Credit/debit card payments with identity verification.')}
-                      </p>
+                      <p className="text-xs text-gray-400">{t('profile.stripeDesc', 'Credit/debit card payments with identity verification.')}</p>
                       <button
-                        onClick={() => {
-                          startOnboarding();
-                        }}
+                        onClick={() => { startOnboarding(); }}
                         disabled={stripeLoading}
                         className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-2xl hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
                         {stripeLoading ? (
-                          <>
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                            {t('profile.connecting', 'Connecting to Stripe...')}
-                          </>
+                          <><Loader2 className="w-3 h-3 animate-spin" />{t('profile.connecting', 'Connecting to Stripe...')}</>
                         ) : (
-                          <>
-                            <ExternalLink className="w-3 h-3" />
-                            {t('profile.connectStripe', 'Connect Stripe')}
-                          </>
+                          <><ExternalLink className="w-3 h-3" />{t('profile.connectStripe', 'Connect Stripe')}</>
                         )}
                       </button>
                     </>
                   )}
                 </div>
 
-                {/* PayPal Section */}
+                {/* PayPal */}
                 <div className={`border rounded-2xl p-3 space-y-2 ${preferredMethod === "paypal" ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -900,10 +792,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">Connected</span>
                     )}
                   </div>
-                  
                   {paypalConnected ? (
                     <>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground dark:text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
                         <Mail className="w-3 h-3" />
                         <span className="truncate">{paypalEmail}</span>
                       </div>
@@ -926,14 +817,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   ) : (
                     <>
-                      <p className="text-xs text-muted-foreground dark:text-gray-500">
-                        {t('profile.paypalDesc', 'Simple email-based payouts with no verification needed.')}
-                      </p>
+                      <p className="text-xs text-gray-400">{t('profile.paypalDesc', 'Simple email-based payouts with no verification needed.')}</p>
                       <button
-                        onClick={() => {
-                          setShowPayoutOptions(false);
-                          setShowPayPalDialog(true);
-                        }}
+                        onClick={() => { setShowPayoutOptions(false); setShowPayPalDialog(true); }}
                         disabled={paypalLoading}
                         className="w-full py-2 text-xs font-medium text-[#0070BA] border border-[#0070BA]/30 rounded-2xl hover:bg-[#0070BA]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
@@ -944,229 +830,292 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   )}
                 </div>
 
-                <p className="text-xs text-center text-muted-foreground dark:text-gray-500">
-                  {t('profile.payoutNote', 'You\'ll receive 90% of each payment. Connect at least one method.')}
+                <p className="text-xs text-center text-gray-400">
+                  {t('profile.payoutNote', "You'll receive 90% of each payment. Connect at least one method.")}
                 </p>
               </div>
-            </div>
-
-          )}
-        </div>
-
-        {/* Language Selector */}
-        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
-          <div className="flex items-center gap-4 px-4 py-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
-              <Globe className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <span className="font-medium">{t('profile.language', 'Language')}</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.selectLanguage', 'Select your preferred language')}</p>
-            </div>
-            <LanguageSelector showLabel={false} />
+            )}
           </div>
         </div>
 
-        {/* Appearance / Theme Toggle */}
-        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
-          <div className="flex items-center gap-4 px-4 py-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
-              <Sun className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <span className="font-medium">{t('profile.appearance', 'Appearance')}</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.toggleTheme', 'Toggle dark / light mode')}</p>
-            </div>
-            <ThemeToggle />
-          </div>
-        </div>
-
-        {/* Motion & Shake */}
-        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
-          <div className="flex items-center gap-4 px-4 py-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
-              <Smartphone className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <span className="font-medium">{t('profile.motionShake', 'Motion & Shake')}</span>
-              <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.motionDesc', 'Allow shake to discover activities')}</p>
-            </div>
-            <Switch
-              checked={motionPermission === "granted"}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  handleRequestMotionPermission();
-                } else {
-                  localStorage.setItem("shake_motion_permission", "denied");
-                  setMotionPermission("prompt");
-                }
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Notifications — native only */}
-        {isNative && (
-          <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
+        {/* ── SOCIAL ── */}
+        <div>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Social</p>
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+            {/* Follow on Instagram */}
             <button
-              className="w-full flex items-center gap-4 px-4 py-3 text-left"
-              onClick={() => window.open('app-settings:root=NOTIFICATIONS&path=com.shakeapp.shakeapp', '_system')}
+              onClick={() => window.open('https://instagram.com/shakeapp.today', '_blank')}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
-                <Bell className="w-5 h-5 text-white" />
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center">
+                <Instagram className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
-                <span className="font-medium">{t('profile.notifications', 'Notifications')}</span>
-                <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.notificationsDesc', 'Manage push notification settings')}</p>
+                <span className="text-sm font-medium text-gray-900">Follow us on Instagram</span>
+                <p className="text-xs text-gray-400">@shakeapp.today</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground dark:text-gray-400" />
+              <ExternalLink className="w-4 h-4 text-gray-300" />
             </button>
-          </div>
-        )}
-
-        {FACE_ID_FEATURE_ENABLED && (
-          <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-4 px-4 py-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <ScanFace className="w-5 h-5 text-primary" />
+            {/* Share Shake */}
+            <button
+              onClick={() => setShowReferralLink(!showReferralLink)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <Share2 className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
-                <span className="font-medium">{t('profile.faceIdLogin', 'Face ID Login')}</span>
-                <p className="text-xs text-muted-foreground dark:text-gray-500">
-                  {faceAuthEnabled ? t('profile.useFaceToSignIn', 'Use your face to sign in') : t('profile.setUpFaceLogin', 'Set up face login')}
-                </p>
+                <span className="text-sm font-medium text-gray-900">Share Shake</span>
+                <p className="text-xs text-gray-400">{t('profile.earnPoints', 'Earn +5 points per signup')}</p>
               </div>
-
-              {!faceAuthEnabled ? (
+              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showReferralLink && "rotate-90")} />
+            </button>
+            {showReferralLink && (
+              <div className="px-4 py-3 bg-gray-50 animate-fade-in space-y-3">
+                {/* General app share */}
                 <button
-                  onClick={() => setShowFaceCapture(true)}
-                  disabled={isUpdatingFaceAuth}
-                  className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'SHAKE',
+                        text: t('profile.shareText', 'Join me on SHAKE to find fun activities and meet new people!'),
+                        url: 'https://shakeapp.today',
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText('https://shakeapp.today').then(() => {
+                        toast({ title: t('profile.linkCopied', 'Link copied!') });
+                      });
+                    }
+                  }}
+                  className="w-full py-2 text-sm font-medium text-primary border border-primary/30 rounded-2xl hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
                 >
-                  {isUpdatingFaceAuth ? t('profile.settingUp', 'Setting up...') : t('profile.setUp', 'Set up')}
+                  <Share2 className="w-4 h-4" />
+                  Share App
                 </button>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-shake-green">{t('profile.faceIdEnabledCheck', 'Enabled ✓')}</span>
-                  <button
-                    onClick={() => setShowRemoveFaceConfirm(true)}
-                    disabled={isUpdatingFaceAuth}
-                    className="text-xs font-medium text-destructive hover:underline disabled:opacity-50"
-                  >
-                    {t('profile.faceIdRemoveBtn', 'Remove')}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Paranormal Activity Dialog */}
-        <Dialog open={showParanormal} onOpenChange={setShowParanormal}>
-          <DialogContent className="max-w-md [&>button:last-child]:hidden">
-            <DialogHeader>
-              <DialogTitle>👻 Paranormal Activity</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground dark:text-gray-500">{t('profile.paranormalDialogDesc', "Blocked users won't appear in your feed or chats.")}</p>
-              {isLoadingParanormal ? (
-                <div className="flex items-center justify-center py-6">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground dark:text-gray-500" />
-                </div>
-              ) : blockedUsers.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground dark:text-gray-500">
-                  {t('profile.noBlockedUsers', 'No blocked users 👻')}
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {blockedUsers.map((u) => (
-                    <div key={u.user_id} className="flex items-center justify-between gap-3 py-1">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={getDisplayAvatarUrl(u.avatar_url ?? undefined)} alt={u.name} />
-                          <AvatarFallback>
-                            <User className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-medium">{u.name}</span>
-                      </div>
+                {/* Referral link */}
+                {referralCode && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1.5">{t('profile.shareReferral', 'Your referral link')}</p>
+                    <div className="flex items-center gap-2 bg-white border border-gray-100 rounded-2xl px-3 py-2">
+                      <span className="flex-1 text-xs text-gray-500 truncate">{getReferralLink(referralCode)}</span>
                       <button
-                        onClick={async () => {
-                          try {
-                            await supabase
-                              .from("user_blocks")
-                              .delete()
-                              .eq("blocker_id", user.id)
-                              .eq("blocked_id", u.user_id);
-                            setBlockedUsers((prev) => prev.filter((p) => p.user_id !== u.user_id));
-                          } catch (error) {
-                            console.error("Error unblocking user:", error);
-                          }
-                        }}
-                        className="text-xs font-medium text-primary hover:underline"
+                        onClick={handleCopyReferralLink}
+                        className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors"
+                        title="Copy link"
                       >
-                        {t('profile.unblock', 'Unblock')}
+                        {copiedLink ? <Check className="w-4 h-4 text-shake-green" /> : <Copy className="w-4 h-4 text-gray-400" />}
+                      </button>
+                      <button
+                        onClick={handleShareReferralLink}
+                        className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors"
+                        title="Share link"
+                      >
+                        <Share2 className="w-4 h-4 text-primary" />
                       </button>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── SETTINGS ── */}
+        <div>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Settings</p>
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+            {/* Motion & Shake */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <Smartphone className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm font-medium text-gray-900">{t('profile.motionShake', 'Motion & Shake')}</span>
+                <p className="text-xs text-gray-400">{t('profile.motionDesc', 'Allow shake to discover activities')}</p>
+              </div>
+              <Switch
+                checked={motionPermission === "granted"}
+                onCheckedChange={(checked) => {
+                  if (checked) handleRequestMotionPermission();
+                  else {
+                    localStorage.setItem("shake_motion_permission", "denied");
+                    setMotionPermission("prompt");
+                  }
+                }}
+              />
             </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Paranormal Activity - Blocked & Flagged */}
-        <button
-          onClick={() => setShowParanormal(true)}
-          className="w-full flex items-center gap-4 px-4 py-3 bg-card dark:bg-white border border-primary/40 dark:border-gray-200 rounded-xl hover:bg-muted/30 dark:hover:bg-gray-100 transition-colors"
-        >
-          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
-            <Ghost className="w-5 h-5 text-white" />
+            {/* Notifications — native only */}
+            {isNative && (
+              <button
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                onClick={() => window.open('app-settings:root=NOTIFICATIONS&path=com.shakeapp.shakeapp', '_system')}
+              >
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                  <Bell className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-gray-900">{t('profile.notifications', 'Notifications')}</span>
+                  <p className="text-xs text-gray-400">{t('profile.notificationsDesc', 'Manage push notification settings')}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300" />
+              </button>
+            )}
+            {/* Paranormal Activity */}
+            <button
+              onClick={() => setShowParanormal(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <Ghost className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm font-medium text-gray-900">{t('profile.paranormalActivityTitle', 'Paranormal Activity')}</span>
+                <p className="text-xs text-gray-400">{t('profile.paranormalSubtitle', 'Blocked & flagged users')}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-300" />
+            </button>
           </div>
-          <div className="flex-1 text-left">
-            <span className="font-medium">{t('profile.paranormalActivityTitle', 'Paranormal Activity')}</span>
-            <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.paranormalSubtitle', 'Blocked & flagged users')}</p>
-          </div>
-        </button>
+        </div>
 
-        {/* Help & Support */}
-        <div className="w-full bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl overflow-hidden">
-          <div className="w-full flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={profileIconGradientStyle}>
+        {/* ── SUPPORT ── */}
+        <div>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Support</p>
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+            {/* Contact Us */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
                 <Mail className="w-5 h-5 text-white" />
               </div>
-              <div className="flex-1 text-left">
-                <span className="font-medium">{t('profile.support', 'Support')}</span>
-                <p className="text-xs text-muted-foreground dark:text-gray-500">{t('profile.supportDesc', 'Need help? Contact our team.')}</p>
+              <div className="flex-1">
+                <span className="text-sm font-medium text-gray-900">{t('profile.support', 'Contact Us')}</span>
+                <p className="text-xs text-gray-400">{t('profile.supportDesc', 'Need help? Contact our team.')}</p>
               </div>
+              <ContactSupport />
             </div>
-            <ContactSupport />
+            {/* Community Guidelines */}
+            <button
+              onClick={() => navigate('/community-guidelines')}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <span className="flex-1 text-sm font-medium text-gray-900">{t('common.communityGuidelines', 'Community Guidelines')}</span>
+              <ChevronRight className="w-4 h-4 text-gray-300" />
+            </button>
+            {/* Privacy Policy */}
+            <button
+              onClick={() => navigate('/privacy-policy')}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl bg-gray-500 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-white" />
+              </div>
+              <span className="flex-1 text-sm font-medium text-gray-900">{t('common.privacyPolicy', 'Privacy Policy')}</span>
+              <ChevronRight className="w-4 h-4 text-gray-300" />
+            </button>
+            {/* Terms of Service */}
+            <button
+              onClick={() => navigate('/terms-of-service')}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl bg-gray-400 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <span className="flex-1 text-sm font-medium text-gray-900">{t('common.termsOfService', 'Terms of Service')}</span>
+              <ChevronRight className="w-4 h-4 text-gray-300" />
+            </button>
           </div>
         </div>
 
-        <button
-          onClick={handleSignOutClick}
-          className="w-full flex items-center gap-4 px-4 py-3 bg-card dark:bg-white border border-border dark:border-gray-200 rounded-xl"
-        >
-          <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
-            <LogOut className="w-5 h-5 text-destructive" />
+        {/* ── ACCOUNT ACTIONS ── */}
+        <div>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Account Actions</p>
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+            {/* Sign Out */}
+            <button
+              onClick={handleSignOutClick}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
+                <LogOut className="w-5 h-5 text-red-500" />
+              </div>
+              <span className="flex-1 text-sm font-medium text-red-500">{t('common.signOut')}</span>
+            </button>
+            {/* Delete Account */}
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </div>
+              <span className="flex-1 text-sm font-medium text-red-500">Delete Account</span>
+            </button>
           </div>
-          <span className="font-medium text-destructive">{t('common.signOut')}</span>
-        </button>
-      </div>
-
-      {/* Footer Links */}
-      <div className="px-4 pb-6 space-y-2">
-        <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground dark:text-gray-500">
-          <Link to="/community-guidelines" className="hover:text-foreground">{t('common.communityGuidelines', 'Community Guidelines')}</Link>
-          <Link to="/privacy-policy" className="hover:text-foreground">{t('common.privacyPolicy', 'Privacy Policy')}</Link>
-          <Link to="/terms-of-service" className="hover:text-foreground">{t('common.termsOfService', 'Terms of Service')}</Link>
         </div>
-        <p className="text-center text-xs text-muted-foreground dark:text-gray-500/70">
+
+        {/* Copyright */}
+        <p className="text-center text-xs text-gray-400 pb-2">
           © {new Date().getFullYear()} SHAKEapp Inc.
         </p>
       </div>
+
+      {/* ── DIALOGS ── */}
+
+      {/* Paranormal Activity */}
+      <Dialog open={showParanormal} onOpenChange={setShowParanormal}>
+        <DialogContent className="max-w-md [&>button:last-child]:hidden">
+          <DialogHeader>
+            <DialogTitle>👻 Paranormal Activity</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">{t('profile.paranormalDialogDesc', "Blocked users won't appear in your feed or chats.")}</p>
+            {isLoadingParanormal ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : blockedUsers.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                {t('profile.noBlockedUsers', 'No blocked users 👻')}
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {blockedUsers.map((u) => (
+                  <div key={u.user_id} className="flex items-center justify-between gap-3 py-1">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={getDisplayAvatarUrl(u.avatar_url ?? undefined)} alt={u.name} />
+                        <AvatarFallback>
+                          <User className="w-4 h-4 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium">{u.name}</span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await supabase
+                            .from("user_blocks")
+                            .delete()
+                            .eq("blocker_id", user.id)
+                            .eq("blocked_id", u.user_id);
+                          setBlockedUsers((prev) => prev.filter((p) => p.user_id !== u.user_id));
+                        } catch (error) {
+                          console.error("Error unblocking user:", error);
+                        }
+                      }}
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      {t('profile.unblock', 'Unblock')}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
 
@@ -1180,6 +1129,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         />
       )}
 
+      {/* Sign Out Confirmation */}
       <AlertDialog open={showSignOutConfirm} onOpenChange={setShowSignOutConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1197,6 +1147,26 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Delete Account Confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete your account and all your data. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Status Video Recorder */}
       {user && (
@@ -1209,7 +1179,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         />
       )}
 
-      {/* Country Selector for New Stripe Connect */}
+      {/* Stripe Country Selector (new) */}
       <StripeCountrySelectorDialog
         open={showCountrySelector}
         onOpenChange={setShowCountrySelector}
@@ -1218,7 +1188,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         isReset={false}
       />
 
-      {/* Country Selector for Reset/Recreate Stripe Connect */}
+      {/* Stripe Country Selector (reset) */}
       <StripeCountrySelectorDialog
         open={showResetCountrySelector}
         onOpenChange={setShowResetCountrySelector}
@@ -1227,7 +1197,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         isReset={true}
       />
 
-      {/* PayPal Connect Dialog */}
+      {/* PayPal Connect */}
       <PayPalConnectDialog
         open={showPayPalDialog}
         onOpenChange={setShowPayPalDialog}
@@ -1241,16 +1211,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           <AlertDialogHeader>
             <AlertDialogTitle>{t('profile.disconnectPayPalTitle', 'Disconnect PayPal?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('profile.disconnectPayPalDesc', 'You won\'t be able to receive PayPal payouts until you reconnect your account.')}
+              {t('profile.disconnectPayPalDesc', "You won't be able to receive PayPal payouts until you reconnect your account.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => {
-                disconnectPayPal();
-                setShowPayPalDisconnectConfirm(false);
-              }} 
+            <AlertDialogAction
+              onClick={() => { disconnectPayPal(); setShowPayPalDisconnectConfirm(false); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {t('profile.disconnect', 'Disconnect')}
@@ -1259,6 +1226,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Face ID (hidden feature flag) */}
       {FACE_ID_FEATURE_ENABLED && (
         <AlertDialog open={showRemoveFaceConfirm} onOpenChange={setShowRemoveFaceConfirm}>
           <AlertDialogContent>
@@ -1281,13 +1249,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </AlertDialog>
       )}
 
-      {/* ID Verification Dialog */}
+      {/* ID Verification */}
       <IDVerificationDialog
         open={showIDVerificationDialog}
         onOpenChange={setShowIDVerificationDialog}
       />
 
-      {/* Manage Plan Dialog */}
+      {/* Manage Plan */}
       <ManagePlanDialog
         open={showManagePlanDialog}
         onOpenChange={setShowManagePlanDialog}
@@ -1301,7 +1269,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           onCancel={() => setShowFaceCapture(false)}
         />
       )}
-
     </div>
   );
 }
