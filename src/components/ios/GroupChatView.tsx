@@ -214,6 +214,7 @@ export function GroupChatView({
   const weekVenueInitialized = useRef(false);
   const MAX_CHAT_CAPACITY = 7;
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevParticipantsRef = useRef<typeof participants>([]);
 
   // Curtain drag state
   const [snapState, setSnapState] = useState<SnapState>('partial');
@@ -336,6 +337,32 @@ export function GroupChatView({
 
     fetchParticipants();
   }, [activityType, city]);
+
+  // Notify existing participants when a new person joins
+  useEffect(() => {
+    const prev = prevParticipantsRef.current;
+    if (participants.length > prev.length && prev.length > 0) {
+      const prevIds = new Set(prev.map((p) => p.user_id));
+      const newParticipant = participants.find((p) => !prevIds.has(p.user_id));
+      if (newParticipant) {
+        const newName = newParticipant.name || "Someone";
+        void Promise.all(
+          prev
+            .filter((p) => p.user_id !== newParticipant.user_id)
+            .map((p) =>
+              supabase.functions.invoke("send-push-notification", {
+                body: {
+                  to_user_id: p.user_id,
+                  title: `${newName} joined ${title}! 👋`,
+                  body: "Say hi in the chat",
+                },
+              })
+            )
+        );
+      }
+    }
+    prevParticipantsRef.current = participants;
+  }, [participants, title]);
 
   // Update time every minute
   useEffect(() => {
