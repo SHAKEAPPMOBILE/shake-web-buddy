@@ -15,6 +15,7 @@ import { useUserPoints } from "@/hooks/useUserPoints";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
+import supermanImg from "@/assets/superhuman-superman.png";
 import { LanguageSelector } from "../LanguageSelector";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Switch } from "@/components/ui/switch";
@@ -516,9 +517,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 className="w-full flex items-center gap-3 px-4 py-3 text-left"
                 style={profileIconGradientStyle}
               >
-                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                  <SuperHumanIcon size={20} />
-                </div>
+                <img src={supermanImg} alt="Premium" className="w-10 object-contain" />
                 <div className="flex-1">
                   <span className="text-sm font-medium text-white">{t('profile.upgradeToPremium', 'Upgrade to Premium')}</span>
                   <p className="text-xs text-white/70">{t('profile.unlimitedMessages', 'Unlimited messages & more')}</p>
