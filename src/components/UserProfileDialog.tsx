@@ -352,17 +352,11 @@ export function UserProfileDialog({
                     key={activity.id}
                     className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 border border-purple-200/60"
                   >
-                    <span className="text-xl">
-                      {getActivityEmoji(activity.activity_type)}
-                    </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 capitalize">
                         {t(`activities.${activity.activity_type}`, activity.activity_type)}
                       </p>
-                      <p className="text-xs text-gray-500 flex items-center gap-1">
-                        <span className="inline-flex items-center justify-center w-3 h-3">📍</span>
-                        {activity.city}
-                      </p>
+                      <p className="text-xs text-gray-500">{activity.city}</p>
                     </div>
                   </div>
                 ))}
