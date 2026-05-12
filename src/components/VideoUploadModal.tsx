@@ -225,7 +225,9 @@ export function VideoUploadModal({
 
   const handleDelete = async () => {
     if (!onDeleteExisting) return;
+    console.log("[VideoUploadModal] handleDelete: invoking onDeleteExisting");
     const success = await onDeleteExisting();
+    console.log("[VideoUploadModal] handleDelete: result =", success);
     if (success) {
       toast.success(deleteSuccessToast);
       onSuccess?.();
