@@ -77,7 +77,7 @@ export function IDVerificationDialog({
             <CheckCircle className="w-8 h-8 text-green-500" />
           </div>
           <h3 className="text-lg font-semibold text-green-500">{t("idVerification.verified")}</h3>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-sm text-gray-500 mt-2">
             {t("idVerification.verifiedMessage")}
           </p>
           <Button onClick={() => onOpenChange(false)} className="mt-4">
@@ -94,10 +94,10 @@ export function IDVerificationDialog({
             <Clock className="w-8 h-8 text-yellow-500" />
           </div>
           <h3 className="text-lg font-semibold text-yellow-500">{t("idVerification.underReview")}</h3>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-sm text-gray-500 mt-2">
             {t("idVerification.underReviewMessage")}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-gray-400 mt-1">
             {t("idVerification.submitted")}: {new Date(verification!.submitted_at).toLocaleString()}
           </p>
           <Button variant="outline" onClick={() => onOpenChange(false)} className="mt-4">
@@ -114,7 +114,7 @@ export function IDVerificationDialog({
             <XCircle className="w-8 h-8 text-destructive" />
           </div>
           <h3 className="text-lg font-semibold text-destructive">{t("idVerification.rejected")}</h3>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-sm text-gray-500 mt-2">
             {verification?.rejection_reason || t("idVerification.rejectedMessage")}
           </p>
           <Button 
@@ -130,9 +130,9 @@ export function IDVerificationDialog({
     // Default: Upload form
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-3 p-3 rounded-2xl bg-muted/50">
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-100">
           <Shield className="w-5 h-5 text-primary shrink-0" />
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-gray-600">
             {t("idVerification.securityNote")}
           </p>
         </div>
@@ -148,15 +148,15 @@ export function IDVerificationDialog({
               className="max-h-48 rounded-2xl object-contain mb-4"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Upload className="w-8 h-8 text-muted-foreground" />
+            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+              <Upload className="w-8 h-8 text-gray-400" />
             </div>
           )}
           
           <p className="font-medium">
             {selectedFile ? selectedFile.name : t("idVerification.clickToUpload")}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             {t("idVerification.acceptedDocuments")}
           </p>
           <p className="text-xs text-muted-foreground">
@@ -165,7 +165,7 @@ export function IDVerificationDialog({
         </div>
 
 
-        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+        <div className="flex items-start gap-2 text-xs text-gray-500">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <p>
             {t("idVerification.privacyNote")}
@@ -192,13 +192,13 @@ export function IDVerificationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white text-gray-900">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
+          <DialogTitle className="flex items-center gap-2 text-gray-900">
+            <Shield className="w-5 h-5 text-gray-900" />
             {t("idVerification.title")}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-500">
             {t("idVerification.description")}
           </DialogDescription>
         </DialogHeader>

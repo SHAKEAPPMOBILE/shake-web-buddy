@@ -472,14 +472,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <span className="flex-1 text-sm font-medium text-gray-900">{t('profile.language', 'Language')}</span>
               <LanguageSelector showLabel={false} />
             </div>
-            {/* Appearance */}
-            <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
-                <Sun className="w-5 h-5 text-white" />
-              </div>
-              <span className="flex-1 text-sm font-medium text-gray-900">{t('profile.appearance', 'Appearance')}</span>
-              <ThemeToggle />
-            </div>
           </div>
         </div>
 
@@ -772,7 +764,17 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     <>
                       <p className="text-xs text-gray-400">{t('profile.stripeDesc', 'Credit/debit card payments with identity verification.')}</p>
                       <button
-                        onClick={() => { startOnboarding(); }}
+                        onClick={() => {
+                          console.log('[Stripe] Connect button clicked', { stripeLoading, stripeConnected, stripeStatus, stripeError });
+                          const result = startOnboarding();
+                          if (result && typeof (result as any).then === 'function') {
+                            (result as Promise<unknown>)
+                              .then(r => console.log('[Stripe] startOnboarding resolved:', r))
+                              .catch(e => console.error('[Stripe] startOnboarding rejected:', e));
+                          } else {
+                            console.log('[Stripe] startOnboarding returned (sync):', result);
+                          }
+                        }}
                         disabled={stripeLoading}
                         className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-2xl hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
@@ -854,7 +856,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* Follow on Instagram */}
             <button
-              onClick={() => window.open('https://instagram.com/shakeapp.today', '_blank')}
+              onClick={() => window.open('https://www.instagram.com/shakeapp.inc/', '_blank')}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center">
@@ -862,7 +864,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               </div>
               <div className="flex-1">
                 <span className="text-sm font-medium text-gray-900">Follow us on Instagram</span>
-                <p className="text-xs text-gray-400">@shakeapp.today</p>
+                <p className="text-xs text-gray-400">@shakeapp.inc</p>
               </div>
               <ExternalLink className="w-4 h-4 text-gray-300" />
             </button>
@@ -934,6 +936,14 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         <div>
           <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Settings</p>
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+            {/* Appearance */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <Sun className="w-5 h-5 text-white" />
+              </div>
+              <span className="flex-1 text-sm font-medium text-gray-900">{t('profile.appearance', 'Appearance')}</span>
+              <ThemeToggle />
+            </div>
             {/* Motion & Shake */}
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
