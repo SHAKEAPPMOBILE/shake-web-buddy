@@ -352,7 +352,7 @@ export function UserProfileDialog({
                     key={activity.id}
                     className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 border border-purple-200/60"
                   >
-                    <span className="text-lg">
+                    <span className="text-xl">
                       {getActivityEmoji(activity.activity_type)}
                     </span>
                     <div className="flex-1 min-w-0">
@@ -364,9 +364,6 @@ export function UserProfileDialog({
                         {activity.city}
                       </p>
                     </div>
-                    <span className="text-xs text-gray-500 shrink-0">
-                      {format(new Date(activity.joined_at), "MMM d")}
-                    </span>
                   </div>
                 ))}
               </div>
