@@ -43,12 +43,12 @@ export function usePrivateMessages(otherUserId: string | null) {
   }, [user, otherUserId]);
 
   // Send a message
-  const sendMessage = async (message: string, messageType: "text" | "gif" = "text") => {
+  const sendMessage = async (message: string, messageType: "text" | "gif" | "image" | "video" = "text") => {
     if (!user || !otherUserId) return { error: new Error("Not authenticated") };
 
     const trimmed = message.trim();
-    if (messageType === "gif" && !/^https?:\/\//i.test(trimmed)) {
-      return { error: new Error("Invalid GIF URL") };
+    if ((messageType === "gif" || messageType === "image" || messageType === "video") && !/^https?:\/\//i.test(trimmed)) {
+      return { error: new Error("Invalid media URL") };
     }
 
     const { error } = await supabase.from("private_messages").insert({

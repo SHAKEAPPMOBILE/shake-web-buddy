@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { MessageSquare, Users, Ticket } from "lucide-react";
+import { MessageSquare, Users, Ticket, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,8 @@ import {
 } from "@/lib/pendingEventChat";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
+import { PrivateChatDialog } from "@/components/PrivateChatDialog";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 function safeActivityDate(iso: string | undefined): Date {
   if (!iso) return new Date();
@@ -48,6 +50,12 @@ interface ChatActivity {
   event_name?: string;
   expires_at?: string;
   event_venue?: string;
+  // Private (DM) chats
+  is_private?: boolean;
+  other_user_id?: string;
+  other_user_name?: string | null;
+  other_user_avatar?: string | null;
+  last_message_preview?: string | null;
 }
 
 interface ChatTabProps {
@@ -80,6 +88,11 @@ export function ChatTab({
   const [showPlanChatDialog, setShowPlanChatDialog] = useState(false);
   const [selectedChatActivity, setSelectedChatActivity] = useState<{ activityType: string; city: string } | null>(null);
   const [selectedPlanActivity, setSelectedPlanActivity] = useState<any>(null);
+  const [selectedPrivateChat, setSelectedPrivateChat] = useState<{
+    userId: string;
+    name: string | null;
+    avatar: string | null;
+  } | null>(null);
   const { getActivityJoinCount } = useActivityJoins(selectedCity);
 
   // Notify parent when entering/leaving chat view
@@ -137,6 +150,8 @@ export function ChatTab({
         { data: planJoins, error: planJoinsError },
         { data: userPlans, error: userPlansError },
         eventMembershipsResult,
+        { data: sentGreetings },
+        { data: receivedGreetings },
       ] = await Promise.all([
         supabase
           .from("activity_joins")
@@ -158,6 +173,8 @@ export function ChatTab({
           .from("event_chat_members")
           .select("event_id, user_id, paid_at, expires_at, event_name, event_starts_at, amount_cents, id, stripe_payment_intent_id")
           .eq("user_id", user.id),
+        supabase.from("greetings").select("to_user_id").eq("from_user_id", user.id),
+        supabase.from("greetings").select("from_user_id, created_at").eq("to_user_id", user.id),
       ]);
 
       if (carouselError) throw carouselError;
@@ -201,8 +218,13 @@ export function ChatTab({
         rowCount: eventMemberships.length,
       });
 
-      // Process all three groups in parallel
-      const [carouselResults, planResults, eventResults] = await Promise.all([
+      // ── Compute matches from greetings ─────────────────────────────────────
+      const sentToIds = new Set((sentGreetings || []).map(g => g.to_user_id));
+      const receivedFromIds = new Set((receivedGreetings || []).map(g => g.from_user_id));
+      const matchedUserIds = [...sentToIds].filter(id => receivedFromIds.has(id));
+
+      // Process all groups in parallel (carousel, plans, events, private chats)
+      const [carouselResults, planResults, eventResults, privateResults] = await Promise.all([
         // ── Carousel joins ──────────────────────────────────────────────────
         Promise.all(
           (carouselJoins || []).map(async (join) => {
@@ -350,9 +372,50 @@ export function ChatTab({
               } as ChatActivity;
             })
         ),
+
+        // ── Private (DM) chats ────────────────────────────────────────────────
+        Promise.all(
+          matchedUserIds.map(async (otherUserId) => {
+            const [{ data: profile }, { data: lastMsg }, { count: unreadCount }] = await Promise.all([
+              supabase.from("profiles").select("name, avatar_url").eq("user_id", otherUserId).maybeSingle(),
+              supabase
+                .from("private_messages")
+                .select("created_at, message, message_type")
+                .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+              supabase
+                .from("private_messages")
+                .select("*", { count: "exact", head: true })
+                .eq("sender_id", otherUserId)
+                .eq("receiver_id", user.id)
+                .is("read_at", null),
+            ]);
+
+            const lastMsgPreview = lastMsg
+              ? (lastMsg.message_type === "image" ? "📷 Photo" : lastMsg.message_type === "video" ? "🎥 Video" : lastMsg.message_type === "gif" ? "🎞 GIF" : lastMsg.message.slice(0, 60))
+              : null;
+
+            return {
+              id: `private-${otherUserId}`,
+              activity_type: "private",
+              city: "",
+              scheduled_for: lastMsg?.created_at || new Date().toISOString(),
+              participant_count: 2,
+              unread_count: unreadCount || 0,
+              is_plan: false,
+              is_private: true,
+              other_user_id: otherUserId,
+              other_user_name: profile?.name || "Shaker",
+              other_user_avatar: profile?.avatar_url || null,
+              last_message_preview: lastMsgPreview,
+            } as ChatActivity;
+          })
+        ),
       ]);
 
-      const chatActivities: ChatActivity[] = [...carouselResults, ...planResults, ...eventResults];
+      const chatActivities: ChatActivity[] = [...carouselResults, ...planResults, ...eventResults, ...privateResults];
 
       const serverEventIds = new Set(
         chatActivities.filter((a) => a.is_event && a.event_id).map((a) => a.event_id as string),
@@ -473,6 +536,28 @@ export function ChatTab({
         { event: "*", schema: "public", table: "event_chat_messages" },
         () => fetchActivities()
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "greetings" },
+        (payload) => {
+          const r = payload.new as any;
+          const o = payload.old as any;
+          if (r?.from_user_id === user.id || r?.to_user_id === user.id ||
+              o?.from_user_id === user.id || o?.to_user_id === user.id) {
+            fetchActivities();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "private_messages" },
+        (payload) => {
+          const r = payload.new as any;
+          if (r?.sender_id === user.id || r?.receiver_id === user.id) {
+            fetchActivities();
+          }
+        }
+      )
       .subscribe();
 
     return () => {
@@ -521,6 +606,15 @@ export function ChatTab({
   };
 
   const handleActivityClick = async (activity: ChatActivity) => {
+    if (activity.is_private && activity.other_user_id) {
+      setSelectedPrivateChat({
+        userId: activity.other_user_id,
+        name: activity.other_user_name || null,
+        avatar: activity.other_user_avatar || null,
+      });
+      return;
+    }
+
     if (activity.is_event && activity.event_id) {
       navigate(`/chat/event/${activity.event_id}`, {
         state: buildEventChatNavigateState({
@@ -613,6 +707,7 @@ export function ChatTab({
   }
 
   return (
+    <>
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 bg-white shrink-0">
@@ -643,6 +738,57 @@ export function ChatTab({
         ) : (
           <>
           {filteredActivities.map((activity) => {
+            // ── Private (DM) chat row ──────────────────────────────────────
+            if (activity.is_private) {
+              return (
+                <div
+                  key={activity.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleActivityClick(activity)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleActivityClick(activity);
+                    }
+                  }}
+                  className="w-full text-left rounded-xl p-4 transition-colors cursor-pointer relative border border-gray-200 bg-gray-50 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.99]"
+                >
+                  {(activity.unread_count ?? 0) > 0 && (
+                    <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full z-[1]" />
+                  )}
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-neutral-200 shadow-sm shrink-0 bg-gray-100 flex items-center justify-center">
+                      {activity.other_user_avatar ? (
+                        <img
+                          src={getDisplayAvatarUrl(activity.other_user_avatar) ?? activity.other_user_avatar}
+                          alt={activity.other_user_name || "User"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <MessageCircle className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-gray-900 text-[15px] leading-snug truncate">
+                          {activity.other_user_name || "Shaker"}
+                        </h3>
+                        <span className="text-[10px] font-medium uppercase tracking-wide text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-xl border border-purple-200 shrink-0">
+                          Match
+                        </span>
+                      </div>
+                      {activity.last_message_preview ? (
+                        <p className="mt-0.5 text-[13px] text-gray-500 truncate">{activity.last_message_preview}</p>
+                      ) : (
+                        <p className="mt-0.5 text-[13px] text-gray-400 italic">Start a conversation!</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             const locationLine = activity.is_event
               ? (activity.event_venue ?? activity.city)
               : activity.city;
@@ -768,5 +914,16 @@ export function ChatTab({
       </div>
 
     </div>
+
+    {selectedPrivateChat && (
+      <PrivateChatDialog
+        open={!!selectedPrivateChat}
+        onOpenChange={(open) => { if (!open) { setSelectedPrivateChat(null); fetchActivities(); } }}
+        otherUserId={selectedPrivateChat.userId}
+        otherUserName={selectedPrivateChat.name}
+        otherUserAvatar={selectedPrivateChat.avatar}
+      />
+    )}
+  </>
   );
 }

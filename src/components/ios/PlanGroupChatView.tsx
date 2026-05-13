@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Trash2, Images, MoreVertical, LogOut } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { Send, User, Trash2, Images, MoreVertical, LogOut, Camera } from "lucide-react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
 import { MessageBubbleReactions } from "@/components/chat/MessageBubbleReactions";
@@ -27,6 +27,7 @@ import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphy
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { getNationalityFlag } from "@/data/countryCodes";
+import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
 
 interface PlanMessage {
   id: string;
@@ -105,6 +106,8 @@ export function PlanGroupChatView({
 
   const { canSendText, addCharacters } = useTextMessageLimit();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mediaFileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const { user, isPremium } = useAuth();
 
   const messageIds = useMemo(() => messages.map((m) => m.id), [messages]);
@@ -382,6 +385,35 @@ export function PlanGroupChatView({
     }
   };
 
+  const handleMediaFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (e.target) e.target.value = "";
+
+    if (file.size > CHAT_MEDIA_MAX_SIZE_MB * 1024 * 1024) {
+      toast.error(`File too large. Maximum size is ${CHAT_MEDIA_MAX_SIZE_MB}MB.`);
+      return;
+    }
+
+    const mediaType = getMediaMessageType(file);
+    setIsUploadingMedia(true);
+    try {
+      const publicUrl = await uploadChatMedia(file, user.id);
+      const { error } = await supabase.from("plan_messages").insert({
+        activity_id: activity.id,
+        user_id: user.id,
+        message: publicUrl,
+        message_type: mediaType,
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error("Error uploading media:", err);
+      toast.error("Failed to send media");
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  }, [user, activity.id]);
+
   const isCreator = user?.id === activity.user_id;
 
   const handleLeavePlan = async () => {
@@ -607,6 +639,8 @@ export function PlanGroupChatView({
             const msgReactions = reactionsByMessage[msg.id];
             const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
             const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+            const isImage = msg.message_type === "image" && /^https?:\/\//i.test(msg.message);
+            const isVideo = msg.message_type === "video" && /^https?:\/\//i.test(msg.message);
 
             return (
               <div key={msg.id} className={`group flex items-end gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}>
@@ -627,7 +661,7 @@ export function PlanGroupChatView({
                     </AvatarFallback>
                   </Avatar>
                 </button>
-                <div className={`min-w-0 max-w-[70%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}>
+                <div className={`min-w-0 max-w-[70%] ${isGif || isImage || isVideo ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}>
                   <MessageBubbleReactions
                     variant="light"
                     isOwn={isOwnMessage}
@@ -667,6 +701,22 @@ export function PlanGroupChatView({
                           src={msg.message}
                           variant="light"
                           onLoad={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
+                        />
+                      ) : isImage ? (
+                        <img
+                          src={msg.message}
+                          alt="shared image"
+                          className="rounded-2xl max-w-[260px] w-full object-cover"
+                          onLoad={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
+                        />
+                      ) : isVideo ? (
+                        <video
+                          src={msg.message}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="rounded-2xl max-w-[260px] w-full bg-black/30"
+                          onLoadedMetadata={() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}
                         />
                       ) : (
                         <div
@@ -725,6 +775,15 @@ export function PlanGroupChatView({
         </div>
       )}
 
+      {/* Hidden file input for media upload */}
+      <input
+        ref={mediaFileInputRef}
+        type="file"
+        accept="video/*,image/*"
+        className="hidden"
+        onChange={handleMediaFileSelect}
+      />
+
       {/* Input area */}
       <div className="p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
@@ -734,21 +793,33 @@ export function PlanGroupChatView({
             size="icon"
             className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
             onClick={() => setGiphyPickerOpen(true)}
-            disabled={!user || isSending || giphyPickerOpen}
+            disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
             aria-label="GIFs"
             title="GIFs"
           >
             <Images className="w-5 h-5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
+            onClick={() => mediaFileInputRef.current?.click()}
+            disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
+            aria-label="Attach photo or video"
+            title="Photo/Video"
+          >
+            {isUploadingMedia ? <LoadingSpinner size="sm" /> : <Camera className="w-5 h-5" />}
           </Button>
           <Input
             placeholder={user ? (canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')) : t('chat.signInToChat', 'Sign in to chat')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            disabled={!user || (!isPremium && !canSendText) || giphyPickerOpen}
+            disabled={!user || (!isPremium && !canSendText) || giphyPickerOpen || isUploadingMedia}
             className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
           />
-          <Button onClick={handleSendMessage} disabled={!message.trim() || isSending || !user || giphyPickerOpen} variant="shake">
+          <Button onClick={handleSendMessage} disabled={!message.trim() || isSending || isUploadingMedia || !user || giphyPickerOpen} variant="shake">
             {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>

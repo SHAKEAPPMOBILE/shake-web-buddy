@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, User, Images } from "lucide-react";
+import { Send, User, Images, Camera, MoreVertical, Trash2 } from "lucide-react";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -22,6 +22,8 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { useTranslation } from "react-i18next";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
+import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PrivateChatDialogProps {
   open: boolean;
@@ -45,9 +47,12 @@ export function PrivateChatDialog({
   );
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const mediaFileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
   
   const { canSendText, addCharacters } = useTextMessageLimit();
@@ -133,6 +138,45 @@ export function PrivateChatDialog({
     }
   };
 
+  const handleMediaFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (e.target) e.target.value = "";
+
+    if (file.size > CHAT_MEDIA_MAX_SIZE_MB * 1024 * 1024) {
+      toast.error(`File too large. Maximum size is ${CHAT_MEDIA_MAX_SIZE_MB}MB.`);
+      return;
+    }
+
+    const mediaType = getMediaMessageType(file);
+    setIsUploadingMedia(true);
+    try {
+      const publicUrl = await uploadChatMedia(file, user.id);
+      const { error } = await sendMessage(publicUrl, mediaType);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Error uploading media:", err);
+      toast.error("Failed to send media");
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  }, [user, sendMessage]);
+
+  const handleDeleteChat = useCallback(async () => {
+    if (!user) return;
+    setShowMenu(false);
+    try {
+      await supabase
+        .from("private_messages")
+        .delete()
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`);
+      toast.success("Conversation deleted");
+      onOpenChange(false);
+    } catch {
+      toast.error("Failed to delete conversation");
+    }
+  }, [user, otherUserId, onOpenChange]);
+
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -147,7 +191,7 @@ export function PrivateChatDialog({
         )}
         <DialogHeader className="pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-black/20 shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-black/20 shadow-sm shrink-0">
               {otherUserAvatar ? (
                 <img
                   src={getDisplayAvatarUrl(otherUserAvatar) ?? otherUserAvatar}
@@ -158,9 +202,33 @@ export function PrivateChatDialog({
                 <User className="w-5 h-5 text-black/60" />
               )}
             </div>
-            <DialogTitle className="font-display text-lg text-black">
+            <DialogTitle className="font-display text-lg text-black flex-1 min-w-0 truncate">
               {otherUserName || "Shaker"}
             </DialogTitle>
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowMenu(v => !v)}
+                className="p-2 rounded-full hover:bg-black/5 transition-colors"
+                aria-label="More options"
+              >
+                <MoreVertical className="w-5 h-5 text-black/60" />
+              </button>
+              {showMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={handleDeleteChat}
+                      className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" /> Delete conversation
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </DialogHeader>
 
@@ -179,16 +247,18 @@ export function PrivateChatDialog({
             <div className="space-y-3 px-1">
               {messages.map((msg) => {
                 const isMe = msg.sender_id === user?.id;
-                const isGif =
-                  (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+                const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+                const isImage = msg.message_type === "image" && /^https?:\/\//i.test(msg.message);
+                const isVideo = msg.message_type === "video" && /^https?:\/\//i.test(msg.message);
+                const isMedia = isGif || isImage || isVideo;
                 return (
                   <div
                     key={msg.id}
                     className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[80%] ${isGif ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"} ${
-                        isGif
+                      className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"} ${
+                        isMedia
                           ? ""
                           : isMe
                             ? "bg-black text-white rounded-xl-sm"
@@ -206,14 +276,36 @@ export function PrivateChatDialog({
                             {format(new Date(msg.created_at), "HH:mm")}
                           </p>
                         </>
+                      ) : isImage ? (
+                        <>
+                          <img
+                            src={msg.message}
+                            alt="shared image"
+                            className="rounded-2xl max-w-[260px] w-full object-cover"
+                            onLoad={scrollMessagesToBottom}
+                          />
+                          <p className="text-[10px] mt-1 text-black/50">
+                            {format(new Date(msg.created_at), "HH:mm")}
+                          </p>
+                        </>
+                      ) : isVideo ? (
+                        <>
+                          <video
+                            src={msg.message}
+                            controls
+                            playsInline
+                            preload="metadata"
+                            className="rounded-2xl max-w-[260px] w-full bg-black/30"
+                            onLoadedMetadata={scrollMessagesToBottom}
+                          />
+                          <p className="text-[10px] mt-1 text-black/50">
+                            {format(new Date(msg.created_at), "HH:mm")}
+                          </p>
+                        </>
                       ) : (
                         <>
                           <p className="text-sm break-words">{msg.message}</p>
-                          <p
-                            className={`text-[10px] mt-1 ${
-                              isMe ? "text-white/60" : "text-white/60"
-                            }`}
-                          >
+                          <p className="text-[10px] mt-1 text-white/60">
                             {format(new Date(msg.created_at), "HH:mm")}
                           </p>
                         </>
@@ -243,6 +335,15 @@ export function PrivateChatDialog({
           </div>
         )}
 
+        {/* Hidden file input for media */}
+        <input
+          ref={mediaFileInputRef}
+          type="file"
+          accept="video/*,image/*"
+          className="hidden"
+          onChange={handleMediaFileSelect}
+        />
+
         {/* Input */}
         <form onSubmit={handleSend} className="pt-4 px-4 pb-4">
           <div className="flex items-center gap-2">
@@ -252,23 +353,35 @@ export function PrivateChatDialog({
               size="icon"
               className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
               onClick={() => setGiphyPickerOpen(true)}
-              disabled={!user || isSending || giphyPickerOpen}
+              disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
               aria-label="GIFs"
               title="GIFs"
             >
               <Images className="w-5 h-5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
+              onClick={() => mediaFileInputRef.current?.click()}
+              disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
+              aria-label="Attach photo or video"
+              title="Photo/Video"
+            >
+              {isUploadingMedia ? <LoadingSpinner size="sm" /> : <Camera className="w-5 h-5" />}
             </Button>
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
               className="flex-1"
-              disabled={isSending || (!isPremium && !canSendText) || giphyPickerOpen}
+              disabled={isSending || isUploadingMedia || (!isPremium && !canSendText) || giphyPickerOpen}
             />
             <Button
               type="submit"
               size="icon"
-              disabled={!newMessage.trim() || isSending || giphyPickerOpen}
+              disabled={!newMessage.trim() || isSending || isUploadingMedia || giphyPickerOpen}
               variant="shake"
             >
               {isSending ? (
