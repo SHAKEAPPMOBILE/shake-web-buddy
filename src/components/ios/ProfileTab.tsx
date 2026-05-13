@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type CSSProperties } from "react";
 import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -65,7 +65,16 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const { t } = useTranslation();
   const { user, isPremium, isManualOverride, signOut } = useAuth();
   const isNative = Capacitor.isNativePlatform();
-  const { style: profileIconGradientStyle } = useSettlingGradient("profile");
+  // Teal/blue gradient matching the nav + button, with a 1.5s teal sweep on open.
+  const { style: profileIconGradientStyle } = useSettlingGradient("profile", {
+    fixedSettled: "linear-gradient(135deg, #00C6B6, #7c3aed)",
+    animationGradient: "linear-gradient(270deg, #00C6B6, #7c3aed, #06b6d4, #38bdf8, #00C6B6)",
+    settleDelayMs: 1500,
+  });
+  // The Premium upgrade banner keeps its own orange gradient (intentional brand colour).
+  const premiumBannerStyle: CSSProperties = {
+    background: "linear-gradient(135deg, #f97316, #ec4899)",
+  };
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -483,7 +492,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <button
                 onClick={() => setShowPremiumDialog(true)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left"
-                style={profileIconGradientStyle}
+                style={premiumBannerStyle}
               >
                 <img src={supermanImg} alt="Premium" className="w-10 object-contain" />
                 <div className="flex-1">

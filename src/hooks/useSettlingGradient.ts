@@ -50,14 +50,24 @@ function releasePageGradient(pageKey: string) {
 interface UseSettlingGradientOptions {
   settleDelayMs?: number;
   alwaysAnimated?: boolean;
+  /** When set, use this gradient as the settled state instead of the random picker. */
+  fixedSettled?: string;
+  /** Custom gradient used during the animation phase (defaults to the rainbow sweep). */
+  animationGradient?: string;
 }
 
 export function useSettlingGradient(
   pageKey: string,
-  { settleDelayMs = 2000, alwaysAnimated = false }: UseSettlingGradientOptions = {},
+  {
+    settleDelayMs = 2000,
+    alwaysAnimated = false,
+    fixedSettled,
+    animationGradient,
+  }: UseSettlingGradientOptions = {},
 ) {
   const [settledBackground] = useState(() => {
     if (alwaysAnimated) return null;
+    if (fixedSettled) return fixedSettled;
     return retainPageGradient(pageKey);
   });
   const [isAnimating, setIsAnimating] = useState(true);
@@ -75,17 +85,27 @@ export function useSettlingGradient(
 
     return () => {
       window.clearTimeout(timeoutId);
-      releasePageGradient(pageKey);
+      // Only release registry slot for randomly-picked gradients.
+      if (!fixedSettled) releasePageGradient(pageKey);
     };
-  }, [alwaysAnimated, pageKey, settleDelayMs]);
+  }, [alwaysAnimated, pageKey, settleDelayMs, fixedSettled]);
+
+  const animatingStyle = useMemo<CSSProperties>(() => {
+    const gradient = animationGradient ?? ANIMATED_RAINBOW_GRADIENT;
+    return {
+      background: gradient,
+      backgroundSize: "400% 400%",
+      animation: "gradientShift 4s ease infinite",
+    };
+  }, [animationGradient]);
 
   const style = useMemo<CSSProperties>(() => {
     if (alwaysAnimated || isAnimating || !settledBackground) {
-      return animatedRainbowGradientStyle;
+      return animatingStyle;
     }
 
     return { background: settledBackground };
-  }, [alwaysAnimated, isAnimating, settledBackground]);
+  }, [alwaysAnimated, isAnimating, settledBackground, animatingStyle]);
 
   return {
     isAnimating,
