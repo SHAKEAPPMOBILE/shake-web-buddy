@@ -1189,7 +1189,7 @@ export default function EventsPage({
         {/* Fixed-height scrollable events container — shows ~4 rows, search results replace list when active */}
         <div
           style={{ overflowY: "auto", scrollbarWidth: "thin", height: 280, minHeight: 280, flexShrink: 0 }}
-          className="rounded-2xl border border-gray-200 bg-white overflow-hidden"
+          className="rounded-2xl border border-gray-200 bg-white"
         >
           {/* Search mode */}
           {searchOpen && searchQuery.length < 2 && (
