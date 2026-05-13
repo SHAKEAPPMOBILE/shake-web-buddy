@@ -185,8 +185,8 @@ function ParticipantAvatar({
 
 // Curtain snap positions — three states
 type SnapState = 'collapsed' | 'partial' | 'full';
-const SNAP_HEIGHTS: Record<SnapState, number> = { collapsed: 88, partial: 430, full: 480 };
-const SNAP_THRESHOLD = 60;
+const SNAP_HEIGHTS: Record<SnapState, number> = { collapsed: 88, partial: 380, full: 560 };
+const SNAP_THRESHOLD = 40;
 
 export function GroupChatView({
   activityType,
