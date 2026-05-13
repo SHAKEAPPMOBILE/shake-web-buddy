@@ -190,27 +190,13 @@ export function UserProfileDialog({
 
           {/* Avatar and Name */}
           <div className="flex flex-col items-center py-4">
-            {/* Avatar with Status Ring */}
+            {/* Avatar */}
             <div className="relative">
               <button
-                onClick={handleAvatarClick}
-                className={cn(
-                  "w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shadow-lg transition-transform hover:scale-105 cursor-pointer",
-                  hasActiveStatus
-                    ? "ring-4 ring-shake-green ring-offset-2 ring-offset-background"
-                    : "border-4 border-border"
-                )}
+                onClick={avatarUrl ? () => setShowEnlargedAvatar(true) : undefined}
+                className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shadow-lg transition-transform hover:scale-105 cursor-pointer border-4 border-border"
               >
-                {hasActiveStatus && statusVideo ? (
-                  <video
-                    src={statusVideo.video_url}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                ) : avatarUrl ? (
+                {avatarUrl ? (
                   <img
                     src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
                     alt={userName || "User"}
@@ -220,41 +206,9 @@ export function UserProfileDialog({
                   <User className="w-12 h-12 text-muted-foreground" />
                 )}
               </button>
-
-              {/* Status Camera Button - only for own profile */}
-              {isOwnProfile && (
-                <button
-                  onClick={() => setShowStatusRecorder(true)}
-                  className={cn(
-                    "absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-background transition-colors",
-                    hasActiveStatus
-                      ? "bg-shake-green hover:bg-shake-green/90"
-                      : "bg-primary hover:bg-primary/90"
-                  )}
-                >
-                  <Video className="w-4 h-4 text-white" />
-                </button>
-              )}
-
-              {/* Status indicator for other users */}
-              {!isOwnProfile && hasActiveStatus && (
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-shake-green flex items-center justify-center border-2 border-background">
-                  <Video className="w-3 h-3 text-white" />
-                </div>
-              )}
             </div>
 
-            {/* Status label for own profile */}
-            {isOwnProfile && (
-              <button
-                onClick={() => setShowStatusRecorder(true)}
-                className="mt-2 text-xs text-gray-500 hover:text-gray-900 transition-colors"
-              >
-                {hasActiveStatus ? t("profile.viewStatus") : t("profile.addStatus")}
-              </button>
-            )}
-
-            <h3 className={cn("text-xl font-semibold text-gray-900", isOwnProfile ? "mt-2" : "mt-4")}>
+            <h3 className="mt-4 text-xl font-semibold text-gray-900">
               {userName || "Shaker"}{userAge ? `, ${userAge}` : ''}
             </h3>
             
@@ -459,8 +413,8 @@ export function UserProfileDialog({
         }}
       />
 
-      {/* Status Video Recorder - only for own profile */}
-      {isOwnProfile && user && (
+      {/* Status Video Recorder — hidden from UI, backend preserved */}
+      {/* {isOwnProfile && user && (
         <StatusVideoRecorder
           open={showStatusRecorder}
           onOpenChange={setShowStatusRecorder}
@@ -468,10 +422,10 @@ export function UserProfileDialog({
           existingVideoUrl={hasActiveStatus ? statusVideo?.video_url : null}
           onVideoUploaded={handleStatusVideoUploaded}
         />
-      )}
+      )} */}
 
-      {/* Status Video Viewer - for viewing other users' status */}
-      {statusVideo && (
+      {/* Status Video Viewer — hidden from UI, backend preserved */}
+      {/* {statusVideo && (
         <StatusVideoViewer
           open={showStatusViewer}
           onOpenChange={setShowStatusViewer}
@@ -479,7 +433,7 @@ export function UserProfileDialog({
           videoId={statusVideo.id}
           userName={userName || undefined}
         />
-      )}
+      )} */}
     </>
   );
 }

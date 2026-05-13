@@ -389,53 +389,21 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         className="flex flex-col items-center px-6 py-8 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors"
       >
         <div className="relative">
-          <div className={cn(
-            "w-24 h-24 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center",
-            hasActiveStatus
-              ? "ring-4 ring-shake-green ring-offset-2 ring-offset-white"
-              : "border-2 border-gray-200"
-          )}>
-            {hasActiveStatus && statusVideo ? (
-              <video
-                src={statusVideo.video_url}
-                autoPlay
-                muted
-                loop
-                playsInline
+          <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center border-2 border-gray-200">
+            <Avatar className="w-full h-full rounded-2xl">
+              <AvatarImage
+                src={getDisplayAvatarUrl(avatarUrl ?? undefined)}
+                alt=""
                 className="w-full h-full object-cover"
               />
-            ) : (
-              <Avatar className="w-full h-full rounded-2xl">
-                <AvatarImage
-                  src={getDisplayAvatarUrl(avatarUrl ?? undefined)}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-                <AvatarFallback className="bg-gray-100">
-                  <User className="w-12 h-12 text-gray-400" />
-                </AvatarFallback>
-              </Avatar>
-            )}
+              <AvatarFallback className="bg-gray-100">
+                <User className="w-12 h-12 text-gray-400" />
+              </AvatarFallback>
+            </Avatar>
           </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowStatusRecorder(true); }}
-            className={cn(
-              "absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white transition-colors",
-              hasActiveStatus ? "bg-shake-green hover:bg-shake-green/90" : "bg-primary hover:bg-primary/90"
-            )}
-          >
-            <Video className="w-4 h-4 text-white" />
-          </button>
         </div>
 
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowStatusRecorder(true); }}
-          className="mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          {hasActiveStatus ? t('profile.viewStatus', 'View Status') : t('profile.addStatus', 'Add Status')}
-        </button>
-
-        <h2 className="mt-2 text-xl font-display font-bold text-gray-900">{userName || t('profile.userFallback', 'User')}</h2>
+        <h2 className="mt-4 text-xl font-display font-bold text-gray-900">{userName || t('profile.userFallback', 'User')}</h2>
         {isPremium && (
           <div
             onClick={(e) => { e.stopPropagation(); setShowPremiumDialog(true); }}
@@ -1188,8 +1156,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Status Video Recorder */}
-      {user && (
+      {/* Status Video Recorder — hidden from UI, backend preserved */}
+      {/* {user && (
         <StatusVideoRecorder
           open={showStatusRecorder}
           onOpenChange={setShowStatusRecorder}
@@ -1200,7 +1168,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             refetchStatus();
           }}
         />
-      )}
+      )} */}
 
       {/* Stripe Country Selector (new) */}
       <StripeCountrySelectorDialog

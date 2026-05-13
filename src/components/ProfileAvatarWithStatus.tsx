@@ -58,28 +58,15 @@ export function ProfileAvatarWithStatus({
   return (
     <>
       <button
-        onClick={handleClick}
+        onClick={onClick}
         className={cn(
           "relative rounded-full overflow-visible bg-muted border-2 border-border flex items-center justify-center transition-all",
           sizeClasses[size],
-          hasActiveStatus && [
-            ringClasses[size],
-            "ring-shake-green ring-offset-background",
-          ],
-          onClick || hasActiveStatus ? "cursor-pointer hover:opacity-90" : "cursor-default",
+          onClick ? "cursor-pointer hover:opacity-90" : "cursor-default",
           className
         )}
       >
-        {hasActiveStatus && statusVideo ? (
-          <video
-            src={statusVideo.video_url}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover rounded-full"
-          />
-        ) : avatarUrl ? (
+        {avatarUrl ? (
           <img
             src={avatarUrl}
             alt={userName || "User"}
@@ -88,17 +75,10 @@ export function ProfileAvatarWithStatus({
         ) : (
           <User className={cn("text-muted-foreground", iconSizes[size])} />
         )}
-
-        {/* Status video indicator */}
-        {showStatusBadge && hasActiveStatus && (
-          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-shake-green flex items-center justify-center border-2 border-background">
-            <Video className="w-2.5 h-2.5 text-white" />
-          </div>
-        )}
       </button>
 
-      {/* Status viewer */}
-      {statusVideo && (
+      {/* Status viewer — hidden from UI, backend preserved */}
+      {/* {statusVideo && (
         <StatusVideoViewer
           open={showStatusViewer}
           onOpenChange={setShowStatusViewer}
@@ -106,7 +86,7 @@ export function ProfileAvatarWithStatus({
           videoId={statusVideo.id}
           userName={userName || undefined}
         />
-      )}
+      )} */}
     </>
   );
 }
