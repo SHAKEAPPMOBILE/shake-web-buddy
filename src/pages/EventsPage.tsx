@@ -1184,8 +1184,8 @@ export default function EventsPage({
         </div>
       </div>
 
-      <div className="flex-1 relative overflow-hidden">
-      <div className="absolute inset-0 px-4 pt-4 pb-8 flex flex-col gap-5 overflow-y-auto">
+      <div className="flex-1 relative overflow-hidden" style={{ background: 'white', backgroundColor: 'white' }}>
+      <div className="absolute inset-0 px-4 pt-4 pb-8 flex flex-col gap-5 overflow-y-auto" style={{ background: 'white', backgroundColor: 'white' }}>
         {/* Fixed-height scrollable events container — shows ~4 rows, search results replace list when active */}
         <div
           style={{ overflowY: "auto", scrollbarWidth: "thin", height: 280, minHeight: 280, flexShrink: 0 }}
