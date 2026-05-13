@@ -494,7 +494,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 className="w-full flex items-center gap-3 px-4 py-3 text-left"
                 style={premiumBannerStyle}
               >
-                <img src={supermanImg} alt="Premium" className="w-10 object-contain" />
+                <img src={shakeCoin} alt="Premium" className="w-10 object-contain" />
                 <div className="flex-1">
                   <span className="text-sm font-medium text-white">{t('profile.upgradeToPremium', 'Upgrade to Premium')}</span>
                   <p className="text-xs text-white/70">{t('profile.unlimitedMessages', 'Unlimited messages & more')}</p>
@@ -509,7 +509,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
-                <img src={shakeCoin} alt="Points" className="w-5 h-5" />
+                <span className="text-white font-bold text-lg">P</span>
               </div>
               <div className="flex-1">
                 <span className="text-sm font-medium text-gray-900">{t('profile.myPoints')}</span>
