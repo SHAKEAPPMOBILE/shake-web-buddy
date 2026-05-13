@@ -77,7 +77,9 @@ export function useCapacitorPushNotifications() {
         const data = action.notification.data as Record<string, string> | undefined;
         if (!data) return;
 
-        if (data.tab === "chat" && data.activity_id) {
+        if (data.tab === "chat" && data.other_user_id) {
+          navigate("/", { state: { activeTab: "chat", other_user_id: data.other_user_id } });
+        } else if (data.tab === "chat" && data.activity_id) {
           navigate("/", { state: { activeTab: "chat", activityId: data.activity_id } });
         } else if (data.tab) {
           navigate("/", { state: { activeTab: data.tab } });

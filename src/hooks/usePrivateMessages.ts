@@ -70,6 +70,7 @@ export function usePrivateMessages(otherUserId: string | null) {
             to_user_id: otherUserId,
             title: `${senderName} sent you a message 💬`,
             body: trimmed.slice(0, 80),
+            data: { tab: "chat", other_user_id: user.id },
           },
         });
       })();

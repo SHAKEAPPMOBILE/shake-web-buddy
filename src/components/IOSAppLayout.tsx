@@ -47,6 +47,7 @@ export function IOSAppLayout() {
   // State for navigating to chat tab with a specific activity
   const [pendingChatActivity, setPendingChatActivity] = useState<{ activityType: string; city: string } | null>(null);
   const [pendingPlanActivityId, setPendingPlanActivityId] = useState<string | null>(null);
+  const [pendingPrivateChatUserId, setPendingPrivateChatUserId] = useState<string | null>(null);
   
   // Track the city used for the current activity/chat (for cross-city joins)
   const [activityCity, setActivityCity] = useState<string>("");
@@ -175,6 +176,7 @@ export function IOSAppLayout() {
       openEvents?: boolean;
       activeTab?: string;
       activityId?: string;
+      other_user_id?: string;
     } | null;
     if (!state) return;
 
@@ -195,6 +197,7 @@ export function IOSAppLayout() {
     if (state.activeTab === "chat") {
       setActiveTab("chat");
       if (state.activityId) setPendingPlanActivityId(state.activityId);
+      if (state.other_user_id) setPendingPrivateChatUserId(state.other_user_id);
       shouldClear = true;
     }
     if (state.openEvents) {
@@ -732,6 +735,8 @@ export function IOSAppLayout() {
                   onPendingActivityHandled={() => setPendingChatActivity(null)}
                   pendingPlanActivityId={pendingPlanActivityId}
                   onPendingPlanActivityHandled={() => setPendingPlanActivityId(null)}
+                  pendingPrivateChatUserId={pendingPrivateChatUserId}
+                  onPendingPrivateChatHandled={() => setPendingPrivateChatUserId(null)}
                   isActiveTab={activeTab === "chat"}
                 />
               </div>

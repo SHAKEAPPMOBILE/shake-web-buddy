@@ -64,6 +64,9 @@ interface ChatTabProps {
   onPendingActivityHandled?: () => void;
   pendingPlanActivityId?: string | null;
   onPendingPlanActivityHandled?: () => void;
+  /** Open a private chat directly (e.g. from a push notification deep link). */
+  pendingPrivateChatUserId?: string | null;
+  onPendingPrivateChatHandled?: () => void;
   /** False while another bottom tab is selected; refetch when user returns so new memberships appear. */
   isActiveTab?: boolean;
 }
@@ -74,6 +77,8 @@ export function ChatTab({
   onPendingActivityHandled,
   pendingPlanActivityId,
   onPendingPlanActivityHandled,
+  pendingPrivateChatUserId,
+  onPendingPrivateChatHandled,
   isActiveTab = true,
 }: ChatTabProps = {}) {
   const { t, i18n } = useTranslation();
@@ -97,9 +102,9 @@ export function ChatTab({
 
   // Notify parent when entering/leaving chat view
   useEffect(() => {
-    const isInChat = showChatDialog || showPlanChatDialog;
+    const isInChat = showChatDialog || showPlanChatDialog || !!selectedPrivateChat;
     onChatViewChange?.(isInChat);
-  }, [showChatDialog, showPlanChatDialog, onChatViewChange]);
+  }, [showChatDialog, showPlanChatDialog, selectedPrivateChat, onChatViewChange]);
 
   // Handle deep-link from push notification tap
   useEffect(() => {
@@ -126,6 +131,19 @@ export function ChatTab({
       onPendingActivityHandled?.();
     }
   }, [pendingActivity, onPendingActivityHandled]);
+
+  // Handle deep-link from push notification to a private chat
+  useEffect(() => {
+    if (!pendingPrivateChatUserId) return;
+    // Try to find the user info from already-loaded activities
+    const existing = activities.find(a => a.is_private && a.other_user_id === pendingPrivateChatUserId);
+    setSelectedPrivateChat({
+      userId: pendingPrivateChatUserId,
+      name: existing?.other_user_name ?? null,
+      avatar: existing?.other_user_avatar ?? null,
+    });
+    onPendingPrivateChatHandled?.();
+  }, [pendingPrivateChatUserId, onPendingPrivateChatHandled]);
 
   const fetchActivities = useCallback(async () => {
     if (!user?.id) {
@@ -724,6 +742,18 @@ export function ChatTab({
     );
   }
 
+  // Show full-page PrivateChatDialog when a private match chat is selected
+  if (selectedPrivateChat) {
+    return (
+      <PrivateChatDialog
+        onClose={() => { setSelectedPrivateChat(null); fetchActivities(); }}
+        otherUserId={selectedPrivateChat.userId}
+        otherUserName={selectedPrivateChat.name}
+        otherUserAvatar={selectedPrivateChat.avatar}
+      />
+    );
+  }
+
   return (
     <>
     <div className="flex flex-col h-full bg-white">
@@ -776,15 +806,32 @@ export function ChatTab({
                     <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full z-[1]" />
                   )}
                   <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-full overflow-hidden border border-neutral-200 shadow-sm shrink-0 bg-gray-100 flex items-center justify-center">
+                    <div
+                      className="w-12 h-12 rounded-full overflow-hidden border border-neutral-200 shadow-sm shrink-0 flex items-center justify-center"
+                      style={{ background: activity.other_user_avatar ? undefined : "linear-gradient(135deg, #00C6B6, #7c3aed)" }}
+                    >
                       {activity.other_user_avatar ? (
                         <img
                           src={getDisplayAvatarUrl(activity.other_user_avatar) ?? activity.other_user_avatar}
                           alt={activity.other_user_name || "User"}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            target.style.display = "none";
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.style.background = "linear-gradient(135deg, #00C6B6, #7c3aed)";
+                              const span = document.createElement("span");
+                              span.className = "text-white font-bold text-lg";
+                              span.textContent = (activity.other_user_name || "S").charAt(0).toUpperCase();
+                              parent.appendChild(span);
+                            }
+                          }}
                         />
                       ) : (
-                        <MessageCircle className="w-6 h-6 text-gray-400" />
+                        <span className="text-white font-bold text-lg">
+                          {(activity.other_user_name || "S").charAt(0).toUpperCase()}
+                        </span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -933,15 +980,6 @@ export function ChatTab({
 
     </div>
 
-    {selectedPrivateChat && (
-      <PrivateChatDialog
-        open={!!selectedPrivateChat}
-        onOpenChange={(open) => { if (!open) { setSelectedPrivateChat(null); fetchActivities(); } }}
-        otherUserId={selectedPrivateChat.userId}
-        otherUserName={selectedPrivateChat.name}
-        otherUserAvatar={selectedPrivateChat.avatar}
-      />
-    )}
   </>
   );
 }

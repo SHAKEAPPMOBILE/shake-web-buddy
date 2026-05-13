@@ -1,10 +1,4 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,8 +6,6 @@ import { Send, User, Images, Camera, MoreVertical, LogOut, Ban } from "lucide-re
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { toast } from "@/lib/app-toast";
@@ -24,39 +16,36 @@ import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphy
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
 import { supabase } from "@/integrations/supabase/client";
+import { MinimalBackButton } from "@/components/MinimalBackButton";
 
 interface PrivateChatDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onClose: () => void;
   otherUserId: string;
   otherUserName: string | null;
   otherUserAvatar: string | null;
 }
 
 export function PrivateChatDialog({
-  open,
-  onOpenChange,
+  onClose,
   otherUserId,
   otherUserName,
   otherUserAvatar,
 }: PrivateChatDialogProps) {
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
-  const { messages, isLoading, sendMessage, markAsRead } = usePrivateMessages(
-    open ? otherUserId : null
-  );
+  const { messages, isLoading, sendMessage, markAsRead } = usePrivateMessages(otherUserId);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
-  const isMobile = useIsMobile();
-  
+
   const { canSendText, addCharacters } = useTextMessageLimit();
-  
+
   const chatSuggestions = useMemo(() => [
     t('chat.suggestions.hey', 'Hey! 👋'),
     t('chat.suggestions.howAreYou', 'How are you?'),
@@ -64,12 +53,6 @@ export function PrivateChatDialog({
     t('chat.suggestions.letsCatchUp', "Let's catch up!"),
     t('chat.suggestions.seeYouSoon', 'See you soon! 😊'),
   ], [t]);
-  
-  const swipeHandlers = useSwipeToClose({
-    onClose: () => onOpenChange(false),
-    threshold: 80,
-    enabled: isMobile,
-  });
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -78,16 +61,20 @@ export function PrivateChatDialog({
     }
   }, [messages]);
 
-  // Mark messages as read when opening
+  // Mark messages as read on mount
   useEffect(() => {
-    if (open) {
-      markAsRead();
-    }
-  }, [open, markAsRead]);
+    markAsRead();
+  }, [markAsRead]);
 
+  // Remove hidden record so the conversation reappears after re-opening
   useEffect(() => {
-    if (!open) setGiphyPickerOpen(false);
-  }, [open]);
+    if (!user) return;
+    supabase
+      .from("private_conversation_hidden")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("other_user_id", otherUserId);
+  }, [user?.id, otherUserId]);
 
   const scrollMessagesToBottom = () => {
     if (scrollRef.current) {
@@ -97,10 +84,9 @@ export function PrivateChatDialog({
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!newMessage.trim() || isSending) return;
 
-    // Check text character limit for free users
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
       toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
@@ -162,17 +148,6 @@ export function PrivateChatDialog({
     }
   }, [user, sendMessage]);
 
-  // When the dialog opens, remove any "left" record so the conversation
-  // reappears in the Chat tab (e.g. after tapping Chat from a profile).
-  useEffect(() => {
-    if (!open || !user) return;
-    supabase
-      .from("private_conversation_hidden")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("other_user_id", otherUserId);
-  }, [open, user?.id, otherUserId]);
-
   const handleLeaveConversation = useCallback(async () => {
     if (!user) return;
     setShowMenu(false);
@@ -183,253 +158,245 @@ export function PrivateChatDialog({
       toast.error("Failed to leave conversation");
     } else {
       toast.success("Conversation hidden");
-      onOpenChange(false);
+      onClose();
     }
-  }, [user, otherUserId, onOpenChange]);
+  }, [user, otherUserId, onClose]);
 
   const handleBlockUser = useCallback(async () => {
     if (!user) return;
     setShowMenu(false);
-    // Block the user
     await supabase.from("user_blocks").upsert(
       { blocker_id: user.id, blocked_id: otherUserId },
       { onConflict: "blocker_id,blocked_id" }
     );
-    // Also hide the conversation
     await supabase.from("private_conversation_hidden").upsert(
       { user_id: user.id, other_user_id: otherUserId },
       { onConflict: "user_id,other_user_id" }
     );
     toast.success("User blocked");
-    onOpenChange(false);
-  }, [user, otherUserId, onOpenChange]);
+    onClose();
+  }, [user, otherUserId, onClose]);
+
+  const avatarUrl = avatarError ? null : (getDisplayAvatarUrl(otherUserAvatar) ?? otherUserAvatar);
+  const initial = (otherUserName || "S").charAt(0).toUpperCase();
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="sm:max-w-md bg-[hsl(50,40%,92%)] backdrop-blur-xl border-border/50 flex flex-col max-h-[80vh] [&>button.dialog-close]:text-black"
-        {...(isMobile ? swipeHandlers : {})}
-      >
-        {isMobile && (
-          <div className="flex justify-center py-2 shrink-0">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-          </div>
-        )}
-        <DialogHeader className="pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-black/20 shadow-sm shrink-0">
-              {otherUserAvatar ? (
-                <img
-                  src={getDisplayAvatarUrl(otherUserAvatar) ?? otherUserAvatar}
-                  alt={otherUserName || "User"}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="w-5 h-5 text-black/60" />
-              )}
-            </div>
-            <DialogTitle className="font-display text-lg text-black flex-1 min-w-0 truncate">
-              {otherUserName || "Shaker"}
-            </DialogTitle>
-            <div className="relative shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowMenu(v => !v)}
-                className="p-2 rounded-full hover:bg-black/5 transition-colors"
-                aria-label="More options"
-              >
-                <MoreVertical className="w-5 h-5 text-black/60" />
-              </button>
-              {showMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={handleLeaveConversation}
-                      className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
-                    >
-                      <LogOut className="w-4 h-4 text-gray-500" /> Leave conversation
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleBlockUser}
-                      className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      <Ban className="w-4 h-4" /> Block user
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </DialogHeader>
-
-        {/* Messages */}
-        <ScrollArea className="flex-1 py-4" ref={scrollRef}>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <LoadingSpinner size="lg" />
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p className="text-sm">{t('chat.noMessages', 'No messages yet.')}</p>
-              <p className="text-xs mt-1">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
-            </div>
-          ) : (
-            <div className="space-y-3 px-1">
-              {messages.map((msg) => {
-                const isMe = msg.sender_id === user?.id;
-                const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
-                const isImage = msg.message_type === "image" && /^https?:\/\//i.test(msg.message);
-                const isVideo = msg.message_type === "video" && /^https?:\/\//i.test(msg.message);
-                const isMedia = isGif || isImage || isVideo;
-                return (
-                  <div
-                    key={msg.id}
-                    className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"} ${
-                        isMedia
-                          ? ""
-                          : isMe
-                            ? "bg-black text-white rounded-xl-sm"
-                            : "bg-blue-500 text-white rounded-xl-sm"
-                      }`}
-                    >
-                      {isGif ? (
-                        <>
-                          <InlineChatGif
-                            src={msg.message}
-                            variant="light"
-                            onLoad={scrollMessagesToBottom}
-                          />
-                          <p className="text-[10px] mt-1 text-black/50">
-                            {format(new Date(msg.created_at), "HH:mm")}
-                          </p>
-                        </>
-                      ) : isImage ? (
-                        <>
-                          <img
-                            src={msg.message}
-                            alt="shared image"
-                            className="rounded-2xl max-w-[260px] w-full object-cover"
-                            onLoad={scrollMessagesToBottom}
-                          />
-                          <p className="text-[10px] mt-1 text-black/50">
-                            {format(new Date(msg.created_at), "HH:mm")}
-                          </p>
-                        </>
-                      ) : isVideo ? (
-                        <>
-                          <video
-                            src={msg.message}
-                            controls
-                            playsInline
-                            preload="metadata"
-                            className="rounded-2xl max-w-[260px] w-full bg-black/30"
-                            onLoadedMetadata={scrollMessagesToBottom}
-                          />
-                          <p className="text-[10px] mt-1 text-black/50">
-                            {format(new Date(msg.created_at), "HH:mm")}
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm break-words">{msg.message}</p>
-                          <p className="text-[10px] mt-1 text-white/60">
-                            {format(new Date(msg.created_at), "HH:mm")}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </ScrollArea>
-
-        {/* Quick suggestions - show when input is empty */}
-        {user && !newMessage.trim() && !giphyPickerOpen && (
-          <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2 w-max">
-              {chatSuggestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => setNewMessage(suggestion)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20 whitespace-nowrap shrink-0"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Hidden file input for media */}
-        <input
-          ref={mediaFileInputRef}
-          type="file"
-          accept="video/*,image/*"
-          className="hidden"
-          onChange={handleMediaFileSelect}
-        />
-
-        {/* Input */}
-        <form onSubmit={handleSend} className="pt-4 px-4 pb-4">
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
-              onClick={() => setGiphyPickerOpen(true)}
-              disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
-              aria-label="GIFs"
-              title="GIFs"
-            >
-              <Images className="w-5 h-5" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
-              onClick={() => mediaFileInputRef.current?.click()}
-              disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
-              aria-label="Attach photo or video"
-              title="Photo/Video"
-            >
-              {isUploadingMedia ? <LoadingSpinner size="sm" /> : <Camera className="w-5 h-5" />}
-            </Button>
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
-              className="flex-1"
-              disabled={isSending || isUploadingMedia || (!isPremium && !canSendText) || giphyPickerOpen}
+    <div className="fixed inset-0 z-50 flex flex-col bg-[hsl(50,40%,92%)]">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-safe-top pb-3 pt-4 bg-[hsl(50,40%,92%)] border-b border-black/10 shrink-0">
+        <MinimalBackButton onClick={onClose} className="text-black/70 border-black/20" />
+        <div className="w-9 h-9 rounded-full overflow-hidden border border-black/20 shadow-sm shrink-0 bg-white flex items-center justify-center">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={otherUserName || "User"}
+              className="w-full h-full object-cover"
+              onError={() => setAvatarError(true)}
             />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={!newMessage.trim() || isSending || isUploadingMedia || giphyPickerOpen}
-              variant="shake"
-            >
-              {isSending ? (
-                <LoadingSpinner size="sm" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
+          ) : (
+            <span className="text-sm font-bold" style={{ color: "#00C6B6" }}>{initial}</span>
+          )}
+        </div>
+        <h2 className="font-display text-lg text-black flex-1 min-w-0 truncate">
+          {otherUserName || "Shaker"}
+        </h2>
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowMenu(v => !v)}
+            className="p-2 rounded-full hover:bg-black/5 transition-colors"
+            aria-label="More options"
+          >
+            <MoreVertical className="w-5 h-5 text-black/60" />
+          </button>
+          {showMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+              <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={handleLeaveConversation}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                >
+                  <LogOut className="w-4 h-4 text-gray-500" /> Leave conversation
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBlockUser}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <Ban className="w-4 h-4" /> Block user
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <ScrollArea className="flex-1 py-4" ref={scrollRef}>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <LoadingSpinner size="lg" />
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        ) : messages.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-sm">{t('chat.noMessages', 'No messages yet.')}</p>
+            <p className="text-xs mt-1">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
+          </div>
+        ) : (
+          <div className="space-y-3 px-4">
+            {messages.map((msg) => {
+              const isMe = msg.sender_id === user?.id;
+              const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+              const isImage = msg.message_type === "image" && /^https?:\/\//i.test(msg.message);
+              const isVideo = msg.message_type === "video" && /^https?:\/\//i.test(msg.message);
+              const isMedia = isGif || isImage || isVideo;
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"} ${
+                      isMedia
+                        ? ""
+                        : isMe
+                          ? "bg-black text-white rounded-xl-sm"
+                          : "bg-blue-500 text-white rounded-xl-sm"
+                    }`}
+                  >
+                    {isGif ? (
+                      <>
+                        <InlineChatGif
+                          src={msg.message}
+                          variant="light"
+                          onLoad={scrollMessagesToBottom}
+                        />
+                        <p className="text-[10px] mt-1 text-black/50">
+                          {format(new Date(msg.created_at), "HH:mm")}
+                        </p>
+                      </>
+                    ) : isImage ? (
+                      <>
+                        <img
+                          src={msg.message}
+                          alt="shared image"
+                          className="rounded-2xl max-w-[260px] w-full object-cover"
+                          onLoad={scrollMessagesToBottom}
+                        />
+                        <p className="text-[10px] mt-1 text-black/50">
+                          {format(new Date(msg.created_at), "HH:mm")}
+                        </p>
+                      </>
+                    ) : isVideo ? (
+                      <>
+                        <video
+                          src={msg.message}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="rounded-2xl max-w-[260px] w-full bg-black/30"
+                          onLoadedMetadata={scrollMessagesToBottom}
+                        />
+                        <p className="text-[10px] mt-1 text-black/50">
+                          {format(new Date(msg.created_at), "HH:mm")}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm break-words">{msg.message}</p>
+                        <p className="text-[10px] mt-1 text-white/60">
+                          {format(new Date(msg.created_at), "HH:mm")}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </ScrollArea>
+
+      {/* Quick suggestions - show when input is empty */}
+      {user && !newMessage.trim() && !giphyPickerOpen && (
+        <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 w-max">
+            {chatSuggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                onClick={() => setNewMessage(suggestion)}
+                className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20 whitespace-nowrap shrink-0"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Hidden file input for media */}
+      <input
+        ref={mediaFileInputRef}
+        type="file"
+        accept="video/*,image/*"
+        className="hidden"
+        onChange={handleMediaFileSelect}
+      />
+
+      {/* Input */}
+      <form onSubmit={handleSend} className="px-4 pb-safe-bottom pb-4 pt-2 bg-[hsl(50,40%,92%)] border-t border-black/10 shrink-0">
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
+            onClick={() => setGiphyPickerOpen(true)}
+            disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
+            aria-label="GIFs"
+            title="GIFs"
+          >
+            <Images className="w-5 h-5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
+            onClick={() => mediaFileInputRef.current?.click()}
+            disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
+            aria-label="Attach photo or video"
+            title="Photo/Video"
+          >
+            {isUploadingMedia ? <LoadingSpinner size="sm" /> : <Camera className="w-5 h-5" />}
+          </Button>
+          <Input
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
+            className="flex-1"
+            disabled={isSending || isUploadingMedia || (!isPremium && !canSendText) || giphyPickerOpen}
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!newMessage.trim() || isSending || isUploadingMedia || giphyPickerOpen}
+            variant="shake"
+          >
+            {isSending ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
     <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
-    {open && user ? (
+    {user ? (
       <EventChatGiphyPickerModal
         open={giphyPickerOpen}
         onOpenChange={setGiphyPickerOpen}
