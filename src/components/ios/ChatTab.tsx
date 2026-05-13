@@ -152,6 +152,8 @@ export function ChatTab({
         eventMembershipsResult,
         { data: sentGreetings },
         { data: receivedGreetings },
+        { data: hiddenConvos },
+        { data: blockedUsers },
       ] = await Promise.all([
         supabase
           .from("activity_joins")
@@ -175,6 +177,8 @@ export function ChatTab({
           .eq("user_id", user.id),
         supabase.from("greetings").select("to_user_id").eq("from_user_id", user.id),
         supabase.from("greetings").select("from_user_id, created_at").eq("to_user_id", user.id),
+        supabase.from("private_conversation_hidden").select("other_user_id").eq("user_id", user.id),
+        supabase.from("user_blocks").select("blocked_id").eq("blocker_id", user.id),
       ]);
 
       if (carouselError) throw carouselError;
@@ -218,10 +222,14 @@ export function ChatTab({
         rowCount: eventMemberships.length,
       });
 
-      // ── Compute matches from greetings ─────────────────────────────────────
+      // ── Compute matches from greetings, minus hidden/blocked ───────────────
       const sentToIds = new Set((sentGreetings || []).map(g => g.to_user_id));
       const receivedFromIds = new Set((receivedGreetings || []).map(g => g.from_user_id));
-      const matchedUserIds = [...sentToIds].filter(id => receivedFromIds.has(id));
+      const hiddenIds = new Set((hiddenConvos || []).map(h => h.other_user_id));
+      const blockedIds = new Set((blockedUsers || []).map(b => b.blocked_id));
+      const matchedUserIds = [...sentToIds].filter(
+        id => receivedFromIds.has(id) && !hiddenIds.has(id) && !blockedIds.has(id)
+      );
 
       // Process all groups in parallel (carousel, plans, events, private chats)
       const [carouselResults, planResults, eventResults, privateResults] = await Promise.all([
@@ -557,6 +565,16 @@ export function ChatTab({
             fetchActivities();
           }
         }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "private_conversation_hidden", filter: `user_id=eq.${user.id}` },
+        () => fetchActivities()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_blocks", filter: `blocker_id=eq.${user.id}` },
+        () => fetchActivities()
       )
       .subscribe();
 

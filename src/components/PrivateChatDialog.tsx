@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, User, Images, Camera, MoreVertical, Trash2 } from "lucide-react";
+import { Send, User, Images, Camera, MoreVertical, LogOut, Ban } from "lucide-react";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -162,19 +162,46 @@ export function PrivateChatDialog({
     }
   }, [user, sendMessage]);
 
-  const handleDeleteChat = useCallback(async () => {
+  // When the dialog opens, remove any "left" record so the conversation
+  // reappears in the Chat tab (e.g. after tapping Chat from a profile).
+  useEffect(() => {
+    if (!open || !user) return;
+    supabase
+      .from("private_conversation_hidden")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("other_user_id", otherUserId);
+  }, [open, user?.id, otherUserId]);
+
+  const handleLeaveConversation = useCallback(async () => {
     if (!user) return;
     setShowMenu(false);
-    try {
-      await supabase
-        .from("private_messages")
-        .delete()
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`);
-      toast.success("Conversation deleted");
+    const { error } = await supabase
+      .from("private_conversation_hidden")
+      .upsert({ user_id: user.id, other_user_id: otherUserId }, { onConflict: "user_id,other_user_id" });
+    if (error) {
+      toast.error("Failed to leave conversation");
+    } else {
+      toast.success("Conversation hidden");
       onOpenChange(false);
-    } catch {
-      toast.error("Failed to delete conversation");
     }
+  }, [user, otherUserId, onOpenChange]);
+
+  const handleBlockUser = useCallback(async () => {
+    if (!user) return;
+    setShowMenu(false);
+    // Block the user
+    await supabase.from("user_blocks").upsert(
+      { blocker_id: user.id, blocked_id: otherUserId },
+      { onConflict: "blocker_id,blocked_id" }
+    );
+    // Also hide the conversation
+    await supabase.from("private_conversation_hidden").upsert(
+      { user_id: user.id, other_user_id: otherUserId },
+      { onConflict: "user_id,other_user_id" }
+    );
+    toast.success("User blocked");
+    onOpenChange(false);
   }, [user, otherUserId, onOpenChange]);
 
   return (
@@ -217,13 +244,20 @@ export function PrivateChatDialog({
               {showMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
+                  <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
                     <button
                       type="button"
-                      onClick={handleDeleteChat}
+                      onClick={handleLeaveConversation}
+                      className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                    >
+                      <LogOut className="w-4 h-4 text-gray-500" /> Leave conversation
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBlockUser}
                       className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
-                      <Trash2 className="w-4 h-4" /> Delete conversation
+                      <Ban className="w-4 h-4" /> Block user
                     </button>
                   </div>
                 </>
