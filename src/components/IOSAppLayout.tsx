@@ -196,7 +196,10 @@ export function IOSAppLayout() {
     }
     if (state.activeTab === "chat") {
       setActiveTab("chat");
-      if (state.activityId) setPendingPlanActivityId(state.activityId);
+      if (state.activityId) {
+        setPendingPlanActivityId(state.activityId);
+        setPendingPrivateChatUserId(null);
+      }
       if (state.other_user_id) setPendingPrivateChatUserId(state.other_user_id);
       shouldClear = true;
     }
@@ -380,6 +383,11 @@ export function IOSAppLayout() {
 
   const { refresh: refreshUnreadCount, markAllAsRead } = useTotalUnreadChats();
 
+  // Clear private chat state whenever the user leaves the chat tab
+  useEffect(() => {
+    if (activeTab !== "chat") setPendingPrivateChatUserId(null);
+  }, [activeTab]);
+
   const handleTabChange = (tab: string) => {
     if (tab === "shake") {
       handleShakeClick();
@@ -454,6 +462,7 @@ export function IOSAppLayout() {
 
   const handleJoinGroupChatFromConfirmation = useCallback(() => {
     // Navigate to chat tab with full-screen view
+    setPendingPrivateChatUserId(null);
     setPendingChatActivity({ activityType: selectedActivity, city: activityCity || selectedCity });
     setActiveTab("chat");
     setShowHomeActivities(false);

@@ -100,11 +100,11 @@ export function ChatTab({
   } | null>(null);
   const { getActivityJoinCount } = useActivityJoins(selectedCity);
 
-  // Notify parent when entering/leaving chat view
+  // Notify parent when entering/leaving chat view — only report "in chat" when this tab is active
   useEffect(() => {
-    const isInChat = showChatDialog || showPlanChatDialog || !!selectedPrivateChat;
+    const isInChat = isActiveTab && (showChatDialog || showPlanChatDialog || !!selectedPrivateChat);
     onChatViewChange?.(isInChat);
-  }, [showChatDialog, showPlanChatDialog, selectedPrivateChat, onChatViewChange]);
+  }, [showChatDialog, showPlanChatDialog, selectedPrivateChat, onChatViewChange, isActiveTab]);
 
   // Handle deep-link from push notification tap
   useEffect(() => {
@@ -742,8 +742,8 @@ export function ChatTab({
     );
   }
 
-  // Show full-page PrivateChatDialog when a private match chat is selected
-  if (selectedPrivateChat) {
+  // Show full-page PrivateChatDialog only when this tab is active and a private chat is selected
+  if (selectedPrivateChat && isActiveTab) {
     return (
       <PrivateChatDialog
         onClose={() => { setSelectedPrivateChat(null); fetchActivities(); }}
