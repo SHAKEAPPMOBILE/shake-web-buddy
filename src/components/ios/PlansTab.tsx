@@ -460,6 +460,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     return activity?.emoji || "📍";
   };
 
+  const getActivityIcon = (type: string) => {
+    const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
+    return activity?.icon || null;
+  };
+
   // Map activity type to translation key
   const activityKeyMap: Record<string, string> = {
     dinner: "dinner",
@@ -1034,8 +1039,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 style={{}}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl shrink-0">
-                    {getActivityEmoji(plan.activity_type)}
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0">
+                    {getActivityIcon(plan.activity_type) ? (
+                      <img src={getActivityIcon(plan.activity_type)!} alt={plan.activity_type} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="flex items-center justify-center w-full h-full text-xl">{getActivityEmoji(plan.activity_type)}</span>
+                    )}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
