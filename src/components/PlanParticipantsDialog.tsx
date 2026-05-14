@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
-import { SuperHumanIcon } from "./SuperHumanIcon";
 import { UserActivity } from "@/hooks/useUserActivities";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
@@ -202,48 +201,14 @@ export function PlanParticipantsDialog({
                   );
                 })}
 
-                {/* Blurred participants for non-premium */}
+                {/* Unlock button at 4th slot for non-premium */}
                 {hasMoreParticipants && !isPremium && (
-                  <div className="space-y-2">
-                    {blurredParticipants.map((participant, index) => (
-                      <div
-                        key={participant.user_id}
-                        className="relative"
-                      >
-                        <div
-                          className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl blur-sm pointer-events-none select-none"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
-                            {participant.avatar_url ? (
-                              <img
-                                src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
-                                alt={participant.name || "User"}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <User className="w-5 h-5 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="flex-1 text-left">
-                            <p className="font-medium text-sm text-gray-900">
-                              {participant.name || "Shaker"}
-                            </p>
-                          </div>
-                        </div>
-                        {/* Unlock button on second blurred user */}
-                        {index === 1 && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Button
-                              onClick={handleUnlockClick}
-                              className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg"
-                            >
-                              <span className="animate-peek inline-block mr-1">👀</span> Unlock {blurredParticipants.length} more
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <Button
+                    onClick={handleUnlockClick}
+                    className="w-full bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg"
+                  >
+                    <span className="animate-peek inline-block mr-1">👀</span> Unlock {blurredParticipants.length} more
+                  </Button>
                 )}
 
                 {/* Show all participants for premium users */}
