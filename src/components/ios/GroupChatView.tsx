@@ -22,7 +22,6 @@ import { useActivityVenue } from "@/contexts/VenueContext";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityById, getActivityLabel } from "@/data/activityTypes";
-import { getVenueTypeForActivity, useVenuesForActivity } from "@/hooks/useDatabaseVenues";
 import { useTranslation } from "react-i18next";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
@@ -210,8 +209,6 @@ export function GroupChatView({
     avatarUrl: string | null;
   } | null>(null);
   const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null; nationality: string | null; occupation: string | null }[]>([]);
-  const [currentVenueIndex, setCurrentVenueIndex] = useState(0);
-  const weekVenueInitialized = useRef(false);
   const MAX_CHAT_CAPACITY = 7;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevParticipantsRef = useRef<typeof participants>([]);
@@ -260,48 +257,6 @@ export function GroupChatView({
   }, [messages, user?.id]);
 
   const { profiles } = useUserProfiles(userIds);
-
-  // Get own profile for venue suggestions
-  const ownProfile = user ? profiles[user.id] : null;
-
-  // Get the assigned venue (from weekly rotation) and all venues for this city/activity
-  const venueType = getVenueTypeForActivity(activityType);
-  const { data: filteredVenues = [] } = useVenuesForActivity(city, activityType);
-
-  const cityVenues = useMemo(() => {
-    if (!venueType) return [];
-    const allVenues = filteredVenues;
-
-    // Ensure assigned venue is first in the list
-    if (assignedVenue) {
-      const withoutAssigned = allVenues.filter(v => v.id !== assignedVenue.id);
-      return [assignedVenue, ...withoutAssigned];
-    }
-    return allVenues;
-  }, [filteredVenues, venueType, assignedVenue]);
-
-  const currentVenue = cityVenues[currentVenueIndex];
-  const hasVenues = cityVenues.length > 0;
-  const isCurrentVenueAssigned = assignedVenue ? currentVenue?.id === assignedVenue.id : false;
-
-  useEffect(() => {
-    console.log('chat header venue:', {
-      assignedVenue,
-      activityType,
-      city,
-      venueType,
-      cityVenuesCount: cityVenues.length,
-    });
-  }, [assignedVenue, activityType, city, venueType, cityVenues.length]);
-
-  // Set initial venue index using weekly rotation formula (once, when venues first load)
-  useEffect(() => {
-    if (cityVenues.length > 0 && !weekVenueInitialized.current) {
-      weekVenueInitialized.current = true;
-      const weekVenueIndex = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % cityVenues.length;
-      setCurrentVenueIndex(weekVenueIndex);
-    }
-  }, [cityVenues.length]);
 
   // Fetch participants
   useEffect(() => {
@@ -673,24 +628,6 @@ export function GroupChatView({
     [user, isSending, isPremium, canSendText, activityType, city]
   );
 
-  const handleSuggestVenue = async (venue: DbVenue) => {
-    if (!user) return;
-
-    const suggestionMessage = `${ownProfile?.name || "Someone"} suggested: ${venue.name}, ${venue.address}`;
-
-    const { error } = await supabase.from("activity_messages").insert({
-      user_id: user.id,
-      activity_type: activityType,
-      city: city,
-      message: suggestionMessage,
-    });
-
-    if (error) {
-      toast.error("Failed to suggest venue");
-    } else {
-      toast.success(t('chat.venueSuggested', 'Venue suggested!'));
-    }
-  };
 
   const activityTime = activityType === "lunch" ? "12:30 PM" : activityType === "dinner" ? "7:00 PM" : activityType === "drinks" ? "8:00 PM" : activityType === "brunch" ? "11:00 AM" : activityType === "hike" ? "9:00 AM" : null;
   // Compute split header date parts (day / date / time on separate lines)
@@ -810,11 +747,9 @@ export function GroupChatView({
 
                 {/* Venue pill — show whenever assignedVenue is available */}
                 {assignedVenue && (() => {
-                  const displayVenue = currentVenue ?? assignedVenue;
-                  const isAssigned = !currentVenue || currentVenue.id === assignedVenue.id;
-                  const venueUrl = displayVenue.latitude && displayVenue.longitude
-                    ? `https://www.google.com/maps/search/?api=1&query=${displayVenue.latitude},${displayVenue.longitude}`
-                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${displayVenue.name}, ${displayVenue.address}`)}`;
+                  const venueUrl = assignedVenue.latitude && assignedVenue.longitude
+                    ? `https://www.google.com/maps/search/?api=1&query=${assignedVenue.latitude},${assignedVenue.longitude}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${assignedVenue.name}, ${assignedVenue.address}`)}`;
                   return (
                     <div className="flex items-center justify-center gap-1.5 mt-2 min-w-0">
                       <button
@@ -824,19 +759,9 @@ export function GroupChatView({
                       >
                         📍
                       </button>
-                      {isAssigned ? (
-                        <span className="inline-flex items-center px-3 py-1.5 bg-white text-green-600 rounded-full text-sm font-semibold border border-green-500/30 max-w-[200px] truncate">
-                          {displayVenue.name}
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleSuggestVenue(displayVenue)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-gray-900 rounded-full text-sm font-semibold border border-white/20 hover:bg-white/20 max-w-[200px]"
-                        >
-                          <span className="truncate">{displayVenue.name}</span>
-                          <span className="text-xs text-gray-500 shrink-0">({t('chat.suggest', 'Suggest')})</span>
-                        </button>
-                      )}
+                      <span className="inline-flex items-center px-3 py-1.5 bg-white text-green-600 rounded-full text-sm font-semibold border border-green-500/30 max-w-[200px] truncate">
+                        {assignedVenue.name}
+                      </span>
                     </div>
                   );
                 })()}
