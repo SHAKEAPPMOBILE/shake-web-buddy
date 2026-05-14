@@ -258,6 +258,13 @@ export function GroupChatView({
 
   const { profiles } = useUserProfiles(userIds);
 
+  const [ownProfile, setOwnProfile] = useState<{ name: string | null; avatar_url: string | null } | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("name, avatar_url").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => { if (data) setOwnProfile(data); });
+  }, [user]);
+
   // Fetch participants
   useEffect(() => {
     const fetchParticipants = async () => {
