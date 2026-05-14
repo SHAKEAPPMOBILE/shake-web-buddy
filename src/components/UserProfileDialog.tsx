@@ -392,13 +392,14 @@ export function UserProfileDialog({
         </DialogContent>
       </Dialog>
 
-      <PrivateChatDialog
-        open={showChatDialog}
-        onOpenChange={setShowChatDialog}
-        otherUserId={userId}
-        otherUserName={userName}
-        otherUserAvatar={avatarUrl}
-      />
+      {showChatDialog && (
+        <PrivateChatDialog
+          onClose={() => setShowChatDialog(false)}
+          otherUserId={userId}
+          otherUserName={userName}
+          otherUserAvatar={avatarUrl}
+        />
+      )}
 
       <ReportUserDialog
         open={showReportDialog}

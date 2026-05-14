@@ -199,10 +199,9 @@ export function GreetingsIndicator() {
         </DialogContent>
       </Dialog>
 
-      {selectedChatUser && (
+      {selectedChatUser && showChatDialog && (
         <PrivateChatDialog
-          open={showChatDialog}
-          onOpenChange={setShowChatDialog}
+          onClose={() => { setShowChatDialog(false); setSelectedChatUser(null); }}
           otherUserId={selectedChatUser.userId}
           otherUserName={selectedChatUser.userName}
           otherUserAvatar={selectedChatUser.avatarUrl}

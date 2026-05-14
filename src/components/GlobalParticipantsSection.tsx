@@ -456,10 +456,9 @@ export function GlobalParticipantsSection() {
         />
       )}
 
-      {chatUser && (
+      {chatUser && showChatDialog && (
         <PrivateChatDialog
-          open={showChatDialog}
-          onOpenChange={setShowChatDialog}
+          onClose={() => { setShowChatDialog(false); setChatUser(null); }}
           otherUserId={chatUser.userId}
           otherUserName={chatUser.userName}
           otherUserAvatar={chatUser.avatarUrl}
