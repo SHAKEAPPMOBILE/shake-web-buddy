@@ -95,15 +95,6 @@ export function useActivityVenue(city: string, activityType: string) {
   const location = getVenueLocationString(venue, activityType);
   const mapsUrl = getVenueMapsUrlFromDb(venue);
 
-  console.log('[VenueDebug] query path:', {
-    serverFilters: city && mappedVenueType
-      ? { city, venue_type: mappedVenueType, is_active: true }
-      : { skipped: true, city: city || '(missing)', venue_type: mappedVenueType || '(missing)' },
-    queriedVenuesCount: queriedVenues.length,
-    selectedVenue: venue?.name ?? null,
-    queryLoading,
-  });
-
   return {
     venue,
     location,

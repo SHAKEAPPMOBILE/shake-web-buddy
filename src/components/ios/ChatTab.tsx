@@ -191,7 +191,7 @@ export function ChatTab({
           .gte("scheduled_for", todayIso),
         supabase
           .from("event_chat_members")
-          .select("event_id, user_id, paid_at, expires_at, event_name, event_starts_at, amount_cents, id, stripe_payment_intent_id")
+          .select("event_id, user_id, paid_at, expires_at, event_name, event_starts_at, amount_cents, id")
           .eq("user_id", user.id),
         supabase.from("greetings").select("to_user_id").eq("from_user_id", user.id),
         supabase.from("greetings").select("from_user_id, created_at").eq("to_user_id", user.id),

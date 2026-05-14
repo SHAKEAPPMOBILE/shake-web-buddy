@@ -76,8 +76,6 @@ export function useAllVenues() {
   return useQuery({
     queryKey: ['db-venues'],
     queryFn: async () => {
-      console.log('[VenueDebug] useAllVenues: fetching ALL venues (no city/type filter — used by VenueProvider cache only)');
-
       const { data, error } = await supabase
         .from('venues')
         .select('*')
@@ -92,13 +90,6 @@ export function useAllVenues() {
       }
       const list = (data ?? []) as DbVenue[];
       const active = list.filter((v) => v.is_active !== false);
-      console.log('[VenueDebug] useAllVenues result:', {
-        totalRows: list.length,
-        activeRows: active.length,
-      });
-      if (typeof window !== 'undefined') {
-        console.info('[Venues] Loaded', active.length, 'active venues (total rows:', list.length, ')');
-      }
       return active;
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
@@ -137,13 +128,6 @@ export function useVenuesForActivity(city: string, activityType: string) {
         return [] as DbVenue[];
       }
 
-      console.log('[VenueDebug] venueType mapped:', { activityType, venueType, normalizedCity });
-
-      console.log('[VenueDebug] direct Supabase query (all active for type, then fuzzy-filter by city):', {
-        lookupCity: normalizedCity,
-        venue_type: venueType,
-      });
-
       // Fetch all active venues for this venue_type (no city filter server-side)
       // then apply fuzzy city matching client-side to handle "Austin" vs "Austin, TX" etc.
       const { data, error } = await supabase
@@ -157,21 +141,7 @@ export function useVenuesForActivity(city: string, activityType: string) {
       const allRows = (data ?? []) as DbVenue[];
 
       // Fuzzy city filter
-      const rows = allRows.filter(v => {
-        const match = citiesMatch(v.city, normalizedCity);
-        if (!match) {
-          console.log('[VenueCity] useVenuesForActivity mismatch — lookup:', JSON.stringify(normalizedCity), '| stored:', JSON.stringify(v.city));
-        }
-        return match;
-      });
-
-      console.log('[VenueDebug] useVenuesForActivity response:', {
-        totalFetched: allRows.length,
-        afterCityFilter: rows.length,
-        lookupCity: normalizedCity,
-        firstRow: rows[0] ?? null,
-        error: null,
-      });
+      const rows = allRows.filter(v => citiesMatch(v.city, normalizedCity));
       return rows;
     },
     enabled: !!normalizedCity && !!venueType,
@@ -221,15 +191,10 @@ export function getCurrentVenueForActivity(
   const matchingVenues = venues.filter(v => {
     if (v.venue_type !== venueType) return false;
     const match = citiesMatch(v.city, city);
-    if (!match) {
-      // Log mismatches so we can see what's stored vs what's being looked up
-      console.log('[VenueCity] mismatch — lookup:', JSON.stringify(city), '| stored:', JSON.stringify(v.city), '| normalized lookup:', cityNorm, '| normalized stored:', normalizeCity(v.city));
-    }
     return match;
   });
 
   if (matchingVenues.length === 0) {
-    console.log('[VenueCity] no venues found for', JSON.stringify(city), 'type:', venueType, '— checked', venues.filter(v => v.venue_type === venueType).length, 'venues of this type');
     return null;
   }
   
