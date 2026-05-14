@@ -201,14 +201,50 @@ export function PlanParticipantsDialog({
                   );
                 })}
 
-                {/* Unlock button at 4th slot for non-premium */}
+                {/* Blurred rows + overlay unlock pill for non-premium */}
                 {hasMoreParticipants && !isPremium && (
-                  <Button
-                    onClick={handleUnlockClick}
-                    className="w-full bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg"
-                  >
-                    <span className="animate-peek inline-block mr-1">👀</span> Unlock {blurredParticipants.length} more
-                  </Button>
+                  <div className="relative">
+                    <div className="space-y-2 pointer-events-none select-none" style={{ filter: 'blur(4px)' }}>
+                      {blurredParticipants.map((participant) => (
+                        <div
+                          key={participant.user_id}
+                          className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                            {participant.avatar_url ? (
+                              <img
+                                src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
+                                alt={participant.name || "User"}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-5 h-5 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm text-gray-900">
+                                {participant.name || "Shaker"}
+                              </p>
+                              {participant.isOwner && (
+                                <span className="text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
+                                  Host
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Button
+                        onClick={handleUnlockClick}
+                        className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg rounded-full px-5"
+                      >
+                        🔒 Unlock all {participants.length} participants
+                      </Button>
+                    </div>
+                  </div>
                 )}
 
                 {/* Show all participants for premium users */}
