@@ -1034,6 +1034,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 style={{}}
               >
                 <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl shrink-0">
+                    {getActivityEmoji(plan.activity_type)}
+                  </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900">
@@ -1158,6 +1161,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     style={{}}
                   >
                     <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl shrink-0">
+                        {getActivityEmoji(plan.activity_type)}
+                      </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-gray-900">
