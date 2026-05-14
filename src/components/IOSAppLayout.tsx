@@ -739,6 +739,7 @@ export function IOSAppLayout() {
               <div className={cn("h-full", activeTab === "chat" && "hidden")}>{renderNonChatTab()}</div>
               <div className={cn("h-full", activeTab !== "chat" && "hidden")}>
                 <ChatTab
+                  key={activeTab === "chat" ? "chat-active" : "chat-inactive"}
                   onChatViewChange={handleChatViewChange}
                   pendingActivity={pendingChatActivity}
                   onPendingActivityHandled={() => setPendingChatActivity(null)}

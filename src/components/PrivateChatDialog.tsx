@@ -23,6 +23,7 @@ interface PrivateChatDialogProps {
   otherUserId: string;
   otherUserName: string | null;
   otherUserAvatar: string | null;
+  isActiveTab?: boolean;
 }
 
 export function PrivateChatDialog({
@@ -30,7 +31,10 @@ export function PrivateChatDialog({
   otherUserId,
   otherUserName,
   otherUserAvatar,
+  isActiveTab = true,
 }: PrivateChatDialogProps) {
+  // Safety guard: never render if we're not on the chat tab
+  if (!isActiveTab) return null;
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const { messages, isLoading, sendMessage, markAsRead } = usePrivateMessages(otherUserId);

@@ -750,6 +750,7 @@ export function ChatTab({
         otherUserId={selectedPrivateChat.userId}
         otherUserName={selectedPrivateChat.name}
         otherUserAvatar={selectedPrivateChat.avatar}
+        isActiveTab={isActiveTab}
       />
     );
   }
