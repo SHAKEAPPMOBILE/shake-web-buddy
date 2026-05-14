@@ -14,7 +14,6 @@ import { format, isToday, isTomorrow } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
 import { formatDateWithTranslation } from "@/lib/date-utils";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { LoadingSpinner } from "../LoadingSpinner";
@@ -459,11 +458,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
     return activity?.emoji || "📍";
-  };
-
-  const getActivityIcon = (type: string) => {
-    const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
-    return activity?.icon;
   };
 
   // Map activity type to translation key
@@ -1040,26 +1034,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 style={{}}
               >
                 <div className="flex items-start gap-3">
-                  {/* Profile Picture or Activity Emoji */}
-                  <div className="relative">
-                    {plan.isCarouselJoin ? (
-                      <div className="w-12 h-12 rounded-full overflow-hidden">
-                        {getActivityIcon(plan.activity_type) ? (
-                          <img src={getActivityIcon(plan.activity_type)} alt={plan.activity_type} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-2xl">{getActivityEmoji(plan.activity_type)}</span>
-                        )}
-                      </div>
-                    ) : (
-                      <Avatar className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
-                        <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
-                        <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
-                          {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                  </div>
-
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900">
@@ -1184,13 +1158,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     style={{}}
                   >
                     <div className="flex items-start gap-3">
-                      <Avatar className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
-                        <AvatarImage src={plan.creator_avatar || undefined} alt={plan.creator_name} />
-                        <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
-                          {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-gray-900">
