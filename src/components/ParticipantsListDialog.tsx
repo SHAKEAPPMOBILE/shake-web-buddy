@@ -212,9 +212,9 @@ export function ParticipantsListDialog({
                     <div className="absolute inset-0 flex items-center justify-center">
                       <Button
                         onClick={handleUnlockClick}
-                        className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg rounded-full px-5"
+                        className="bg-shake-yellow text-shake-dark hover:bg-shake-yellow/90 shadow-lg rounded-full px-3 py-1.5 text-sm"
                       >
-                        🔒 Unlock all {participants.length} participants
+                        <span className="animate-peek inline-block mr-1">👀</span> Unlock all
                       </Button>
                     </div>
                   </div>
