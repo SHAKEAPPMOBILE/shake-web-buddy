@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
-import { Camera, ChevronLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Camera, ChevronLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff, Globe } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -19,7 +19,6 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { Switch } from "@/components/ui/switch";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NationalitySelector } from "@/components/NationalitySelector";
-import { getNationalityFlag } from "@/data/countryCodes";
 import { PointsDisplay } from "@/components/PointsDisplay";
 import { useTranslation } from "react-i18next";
 import {
@@ -423,7 +422,7 @@ export default function Profile() {
             {/* Nationality */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
-                <span className="text-lg">{nationality ? getNationalityFlag(nationality) : "🌍"}</span>
+                <Globe className="w-4 h-4 text-muted-foreground" />
                 {t('profile.nationality')}
               </Label>
               <NationalitySelector
