@@ -38,7 +38,7 @@ export function IOSAppLayout() {
   
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
-  const [showHomeActivities, setShowHomeActivities] = useState(false);
+  const [showHomeActivities, setShowHomeActivities] = useState(true);
   const [isHeroShaking, setIsHeroShaking] = useState(false);
   const [isInFullPageChat, setIsInFullPageChat] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
