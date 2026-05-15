@@ -63,7 +63,17 @@ export function useStatusVideo(userId: string | undefined) {
 
   const hasActiveStatus = !!statusVideo && new Date(statusVideo.expires_at) > new Date();
 
-  return { statusVideo, hasActiveStatus, loading, refetch: fetchStatusVideo };
+  // Hook-bound delete: clears state immediately (optimistic) then force-refetches
+  // after the async deletion so callers don't depend on Realtime alone.
+  const deleteVideo = async (): Promise<boolean> => {
+    if (!userId) return false;
+    setStatusVideo(null); // optimistic clear
+    const ok = await deleteStatusVideo(userId);
+    await fetchStatusVideo(); // force-refetch to sync authoritative state
+    return ok;
+  };
+
+  return { statusVideo, hasActiveStatus, loading, refetch: fetchStatusVideo, deleteVideo };
 }
 
 export async function uploadStatusVideo(

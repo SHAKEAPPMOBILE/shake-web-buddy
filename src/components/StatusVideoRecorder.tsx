@@ -1,5 +1,5 @@
 import { VideoUploadModal } from "./VideoUploadModal";
-import { uploadStatusVideo, deleteStatusVideo } from "@/hooks/useStatusVideo";
+import { uploadStatusVideo } from "@/hooks/useStatusVideo";
 
 interface StatusVideoRecorderProps {
   open: boolean;
@@ -7,6 +7,8 @@ interface StatusVideoRecorderProps {
   userId: string;
   existingVideoUrl?: string | null;
   onVideoUploaded: () => void;
+  /** Hook-bound delete that clears state immediately and force-refetches. */
+  onDeleteVideo: () => Promise<boolean>;
 }
 
 export function StatusVideoRecorder({
@@ -15,6 +17,7 @@ export function StatusVideoRecorder({
   userId,
   existingVideoUrl,
   onVideoUploaded,
+  onDeleteVideo,
 }: StatusVideoRecorderProps) {
   return (
     <VideoUploadModal
@@ -23,7 +26,7 @@ export function StatusVideoRecorder({
       title="Status Video"
       maxDurationSeconds={10}
       existingVideoUrl={existingVideoUrl}
-      onDeleteExisting={() => deleteStatusVideo(userId)}
+      onDeleteExisting={onDeleteVideo}
       onUploadFile={async (file, onProgress) => {
         onProgress(0);
         const result = await uploadStatusVideo(userId, file);

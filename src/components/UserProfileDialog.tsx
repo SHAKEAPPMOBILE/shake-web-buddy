@@ -68,7 +68,7 @@ export function UserProfileDialog({
   const { user } = useAuth();
   const { blockUser, isBlocking } = useBlockedUsers();
   const isMobile = useIsMobile();
-  const { statusVideo, hasActiveStatus } = useStatusVideo(userId);
+  const { statusVideo, hasActiveStatus, deleteVideo: deleteStatusVideo } = useStatusVideo(userId);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
   const { t } = useTranslation();
   
@@ -421,6 +421,7 @@ export function UserProfileDialog({
           onOpenChange={setShowStatusRecorder}
           userId={user.id}
           existingVideoUrl={hasActiveStatus ? statusVideo?.video_url : null}
+          onDeleteVideo={deleteStatusVideo}
           onVideoUploaded={handleStatusVideoUploaded}
         />
       )} */}

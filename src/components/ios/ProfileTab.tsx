@@ -85,7 +85,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
   const [showPointsDialog, setShowPointsDialog] = useState(false);
   const [showSubscriptionDropdown, setShowSubscriptionDropdown] = useState(false);
-  const { statusVideo, hasActiveStatus, refetch: refetchStatus } = useStatusVideo(user?.id);
+  const { statusVideo, hasActiveStatus, refetch: refetchStatus, deleteVideo: deleteStatusVideo } = useStatusVideo(user?.id);
   const { points } = useUserPoints(user?.id);
   const { referralCode } = useReferralCode(user?.id);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -1172,6 +1172,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           onOpenChange={setShowStatusRecorder}
           userId={user.id}
           existingVideoUrl={hasActiveStatus ? statusVideo?.video_url : null}
+          onDeleteVideo={deleteStatusVideo}
           onVideoUploaded={() => {
             fetchProfile();
             refetchStatus();
