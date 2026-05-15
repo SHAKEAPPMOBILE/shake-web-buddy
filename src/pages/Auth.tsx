@@ -26,7 +26,7 @@ import {
 import { z } from "zod";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { NationalitySelector } from "@/components/NationalitySelector";
-import { isNativePlatform } from "@/lib/platform-utils";
+import { isNativePlatform, isNativeAndroid } from "@/lib/platform-utils";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { hasValidAvatarUrl } from "@/lib/avatar";
 import { FaceCaptureModal } from "@/components/FaceCaptureModal";
@@ -87,7 +87,9 @@ async function signInWithOAuth(provider: 'google' | 'apple') {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: 'com.shakeapp.shakeapp://auth/callback',
+          redirectTo: isNativeAndroid()
+            ? 'com.shakebyleo.app://auth/callback'
+            : 'com.shakeapp.shakeapp://auth/callback',
           skipBrowserRedirect: true,
           // Request name + email so Apple sends display name on first sign-in.
           // Without this scope Apple omits the name field entirely.

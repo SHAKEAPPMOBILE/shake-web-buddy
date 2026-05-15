@@ -3,7 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredReferralCode, clearStoredReferralCode } from "@/hooks/useReferralTracking";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
-import { isNativePlatform } from "@/lib/platform-utils";
+import { isNativePlatform, isNativeAndroid } from "@/lib/platform-utils";
 
 export type OtpResult = {
   success: boolean;
@@ -393,11 +393,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return raw || fallback;
   };
 
-  const authCallbackBaseUrl = isNativePlatform()
-    ? "com.shakeapp.shakeapp://auth/callback"
-    : import.meta.env.DEV
-      ? "http://localhost:8080/auth/callback"
-      : "https://app.shakeapp.today/auth/callback";
+  const authCallbackBaseUrl = isNativeAndroid()
+    ? "com.shakebyleo.app://auth/callback"
+    : isNativePlatform()
+      ? "com.shakeapp.shakeapp://auth/callback"
+      : import.meta.env.DEV
+        ? "http://localhost:8080/auth/callback"
+        : "https://app.shakeapp.today/auth/callback";
 
   // Signup magic link uses `?intent=signup` so OAuthCallback can route to set-password.
   // Add the full URL with query to Supabase Auth → Redirect URLs if your project requires exact matches.
@@ -415,6 +417,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         timestamp: new Date().toISOString(),
         attempt: attemptNumber,
       });
+
+      // For signup (first attempt only): check if the account already exists by
+      // calling signInWithOtp with shouldCreateUser: false.
+      // - No error → user exists → tell them to sign in instead.
+      // - Error → user doesn't exist (or rate-limit hit) → proceed to create.
+      if (purpose === "signup" && attemptNumber === 1) {
+        const { error: existsError } = await supabase.auth.signInWithOtp({
+          email: email.toLowerCase().trim(),
+          options: {
+            emailRedirectTo: redirectUrl,
+            shouldCreateUser: false,
+          },
+        });
+
+        if (!existsError) {
+          // Success with shouldCreateUser: false means the user already has an account.
+          // We've also sent them a usable login magic link in the email.
+          console.log("[AuthContext][sendEmailOtp] User already exists (shouldCreateUser: false succeeded)", {
+            email: email.toLowerCase().trim(),
+          });
+          return {
+            success: false,
+            retryable: false,
+            message: "An account with this email already exists. Try signing in instead.",
+          };
+        }
+
+        // Rate-limit from the existence check → propagate immediately.
+        const existsCode = (existsError as any)?.code;
+        const existsStatus = (existsError as any)?.status;
+        const existsLower = (existsError.message || "").toLowerCase();
+        if (
+          existsCode === "over_email_send_rate_limit" ||
+          existsStatus === 429 ||
+          existsLower.includes("too many")
+        ) {
+          const waitSecondsMatch = (existsError.message || "").match(/after\s+(\d+)\s+seconds?/i);
+          const waitSeconds = waitSecondsMatch?.[1] ? Number(waitSecondsMatch[1]) : null;
+          return {
+            success: false,
+            retryable: false,
+            message: waitSeconds && Number.isFinite(waitSeconds)
+              ? `Please wait ${waitSeconds} seconds before trying again.`
+              : "Too many attempts. Please wait a minute and try again.",
+          };
+        }
+
+        // Any other error (user_not_found, email_not_confirmed, etc.) means the
+        // user doesn't exist yet — fall through to create them below.
+      }
 
       const { error } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase().trim(),

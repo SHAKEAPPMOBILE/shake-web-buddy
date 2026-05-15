@@ -22,7 +22,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep link handler for OAuth callbacks (Android: shake://auth/callback) -->
+            <!-- Deep link handler for OAuth / magic-link callbacks (shake:// legacy + com.shakebyleo.app://) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -31,6 +31,18 @@
 
                 <data
                     android:scheme="shake"
+                    android:host="auth"
+                    android:pathPrefix="/callback" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="com.shakebyleo.app"
                     android:host="auth"
                     android:pathPrefix="/callback" />
             </intent-filter>
