@@ -194,7 +194,9 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
                 <SelectContent>
                   <SelectItem value="lunch_dinner">Lunch/Dinner</SelectItem>
                   <SelectItem value="brunch">Brunch</SelectItem>
+                  {/* HIDDEN — uncomment to re-enable Drinks venue type:
                   <SelectItem value="drinks">Drinks</SelectItem>
+                  */}
                 </SelectContent>
               </Select>
             </div>

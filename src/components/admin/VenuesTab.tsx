@@ -415,7 +415,8 @@ export function VenuesTab() {
             ) : (
               <ScrollArea className="h-[400px]">
                 <Tabs defaultValue="lunchDinner" className="w-full">
-                  <TabsList className="w-full grid grid-cols-3">
+                  {/* grid-cols-3 → grid-cols-2 while Drinks tab is hidden */}
+                  <TabsList className="w-full grid grid-cols-2">
                     <TabsTrigger value="lunchDinner" className="text-xs">
                       <Utensils className="w-3 h-3 mr-1" />
                       L/D ({selectedCityVenues.lunchDinner.length})
@@ -424,10 +425,12 @@ export function VenuesTab() {
                       <Coffee className="w-3 h-3 mr-1" />
                       Brunch ({selectedCityVenues.brunch.length})
                     </TabsTrigger>
+                    {/* HIDDEN — re-enable by restoring the grid-cols-3 above and uncommenting:
                     <TabsTrigger value="drinks" className="text-xs">
                       <Wine className="w-3 h-3 mr-1" />
                       Drinks ({selectedCityVenues.drinks.length})
                     </TabsTrigger>
+                    */}
                   </TabsList>
                   
                   <TabsContent value="lunchDinner" className="mt-4 space-y-2">
@@ -472,6 +475,7 @@ export function VenuesTab() {
                     )}
                   </TabsContent>
                   
+                  {/* HIDDEN — uncomment to re-enable Drinks tab content:
                   <TabsContent value="drinks" className="mt-4 space-y-2">
                     <Button size="sm" variant="outline" className="w-full mb-2" onClick={() => handleAddVenue('drinks')}>
                       <Plus className="w-4 h-4 mr-2" /> Add Drinks Venue
@@ -492,6 +496,7 @@ export function VenuesTab() {
                       ))
                     )}
                   </TabsContent>
+                  */}
                 </Tabs>
               </ScrollArea>
             )}
