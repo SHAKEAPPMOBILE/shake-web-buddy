@@ -722,6 +722,7 @@ export function IOSAppLayout() {
           activeTab === "chat" && "bg-white",
           activeTab === "plans" && "bg-white dark:bg-white",
           activeTab === "profile" && "bg-white dark:bg-white",
+          showEvents && "bg-white dark:bg-white",
           !isInFullPageChat && "pb-20"
         )}
       >
