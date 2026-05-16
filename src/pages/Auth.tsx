@@ -1149,7 +1149,7 @@ export default function Auth() {
             <form onSubmit={handleCompleteSignupPassword} className="space-y-4">
               <div className="space-y-2 text-center">
                 <h2 className="text-xl font-bold text-black">Set your password</h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-white/80">
                   Choose a password for <span className="font-medium">{user?.email ?? email}</span>. You&apos;ll use it
                   next time you log in.
                 </p>
