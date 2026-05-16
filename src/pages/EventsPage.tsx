@@ -673,7 +673,7 @@ function EventDetail({
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-y-auto">
       {/* Hero */}
-      <div className="relative w-full aspect-[2/1] sm:aspect-[16/9] bg-black overflow-hidden">
+      <div className="relative w-full h-48 sm:h-56 bg-black overflow-hidden shrink-0">
         {event.imageUrl ? (
           <>
             <img
@@ -706,7 +706,7 @@ function EventDetail({
         )}
       </div>
 
-      <div className="flex-1 px-4 pt-3 pb-20 sm:pt-5 sm:pb-24">
+      <div className="flex-1 px-4 py-6 sm:py-8 flex flex-col justify-center max-w-lg mx-auto w-full">
         <h1 className="text-xl font-extrabold text-foreground leading-tight mb-2 sm:text-2xl sm:mb-4">
           {event.name}
         </h1>
