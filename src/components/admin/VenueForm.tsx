@@ -27,6 +27,7 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
   const [longitude, setLongitude] = useState(venue?.longitude?.toString() || "");
   const [sortOrder, setSortOrder] = useState(venue?.sort_order?.toString() || "0");
   const [instagramUrl, setInstagramUrl] = useState(venue?.instagram_url || "");
+  const [isCurrent, setIsCurrent] = useState(venue?.is_current ?? false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeSuccess, setGeocodeSuccess] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -123,9 +124,25 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
       longitude: longitude ? parseFloat(longitude) : null,
       sort_order: parseInt(sortOrder) || 0,
       instagram_url: instagramUrl.trim() || null,
+      is_current: isCurrent,
     };
 
     try {
+      // If pinning this venue as current, clear is_current on all other venues
+      // of the same city+type first so only one is current at a time.
+      if (isCurrent) {
+        const clearQuery = supabase
+          .from('venues')
+          .update({ is_current: false })
+          .eq('city', city.trim())
+          .eq('venue_type', venueType);
+        if (venue) {
+          await clearQuery.neq('id', venue.id);
+        } else {
+          await clearQuery;
+        }
+      }
+
       if (venue) {
         await updateVenue.mutateAsync({ id: venue.id, ...venueData });
         toast({ title: "Venue updated successfully" });
@@ -274,6 +291,17 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
               placeholder="https://instagram.com/venuename"
             />
           </div>
+
+          <label className="flex items-center gap-3 cursor-pointer select-none rounded-lg border border-border px-3 py-2.5 hover:bg-muted/50 transition-colors">
+            <input
+              type="checkbox"
+              checked={isCurrent}
+              onChange={(e) => setIsCurrent(e.target.checked)}
+              className="w-4 h-4 accent-primary"
+            />
+            <span className="text-sm font-medium">⭐ Current rotation venue</span>
+            <span className="text-xs text-muted-foreground ml-auto">Overrides automatic weekly/daily rotation</span>
+          </label>
 
           <div className="flex gap-2 pt-2">
             <Button type="submit" disabled={isLoading} className="flex-1">

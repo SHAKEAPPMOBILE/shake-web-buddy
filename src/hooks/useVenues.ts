@@ -11,6 +11,7 @@ export interface DbVenue {
   longitude: number | null;
   sort_order: number;
   is_active: boolean;
+  is_current?: boolean | null;
   instagram_url?: string | null;
   created_at: string;
   updated_at: string;
@@ -25,6 +26,7 @@ export interface VenueInsert {
   longitude?: number | null;
   sort_order?: number;
   is_active?: boolean;
+  is_current?: boolean | null;
   instagram_url?: string | null;
 }
 
@@ -125,21 +127,29 @@ export function useDeleteVenue() {
 // Helper to get weekly venue from database venues
 export function getWeeklyVenueFromList(venues: DbVenue[]): DbVenue | null {
   if (!venues || venues.length === 0) return null;
-  
+
+  // Prefer an explicitly pinned venue
+  const pinned = venues.find(v => v.is_current === true);
+  if (pinned) return pinned;
+
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 1);
   const weekOfYear = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7));
-  
+
   return venues[weekOfYear % venues.length];
 }
 
 // Helper to get daily venue (for bars/drinks)
 export function getDailyVenueFromList(venues: DbVenue[]): DbVenue | null {
   if (!venues || venues.length === 0) return null;
-  
+
+  // Prefer an explicitly pinned venue
+  const pinned = venues.find(v => v.is_current === true);
+  if (pinned) return pinned;
+
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 1);
   const dayOfYear = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  
+
   return venues[dayOfYear % venues.length];
 }
