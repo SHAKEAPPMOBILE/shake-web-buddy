@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +30,6 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
   const [isCurrent, setIsCurrent] = useState(venue?.is_current ?? false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeSuccess, setGeocodeSuccess] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const lastGeocodedAddress = useRef<string>("");
 
   const addVenue = useAddVenue();
@@ -65,27 +64,6 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
       setIsGeocoding(false);
     }
   }, []);
-
-  // Auto-geocode when address changes (debounced)
-  useEffect(() => {
-    if (!address.trim() || address.length < 10) return;
-    
-    // Clear previous timeout
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
-    // Debounce geocoding by 1 second after user stops typing
-    debounceRef.current = setTimeout(() => {
-      geocodeAddress(address);
-    }, 1000);
-
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, [address, geocodeAddress]);
 
   const handleManualGeocode = async () => {
     const success = await geocodeAddress(address);
