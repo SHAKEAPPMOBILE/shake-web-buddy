@@ -1040,10 +1040,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               >
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0">
-                    {getActivityIcon(plan.activity_type) ? (
-                      <img src={getActivityIcon(plan.activity_type)!} alt={plan.activity_type} className="w-full h-full object-cover" />
+                    {plan.creator_avatar ? (
+                      <img src={plan.creator_avatar} alt={plan.creator_name || "Creator"} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="flex items-center justify-center w-full h-full text-xl">{getActivityEmoji(plan.activity_type)}</span>
+                      <span className="flex items-center justify-center w-full h-full text-base font-bold text-gray-500">
+                        {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                      </span>
                     )}
                   </div>
                   <div className="flex-1">
@@ -1170,8 +1172,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     style={{}}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl shrink-0">
-                        {getActivityEmoji(plan.activity_type)}
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0">
+                        {plan.creator_avatar ? (
+                          <img src={plan.creator_avatar} alt={plan.creator_name || "Creator"} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="flex items-center justify-center w-full h-full text-base font-bold text-gray-500">
+                            {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
