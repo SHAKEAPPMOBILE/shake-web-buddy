@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -206,18 +207,23 @@ export function VenuesTab() {
 
   return (
     <div className="space-y-6">
-      {/* Form */}
-      {showForm && (
-        <VenueForm
-          venue={editingVenue || undefined}
-          onClose={() => {
-            setShowForm(false);
-            setEditingVenue(null);
-          }}
-          defaultCity={selectedCity || undefined}
-          defaultType={defaultType}
-        />
-      )}
+      {/* Edit / Add Venue modal — Dialog so it appears centered regardless of page scroll */}
+      <Dialog open={showForm} onOpenChange={(open) => { if (!open) { setShowForm(false); setEditingVenue(null); } }}>
+        <DialogContent className="max-w-2xl p-0 overflow-y-auto max-h-[90vh]">
+          {showForm && (
+            <VenueForm
+              key={editingVenue?.id ?? 'new'}
+              venue={editingVenue || undefined}
+              onClose={() => {
+                setShowForm(false);
+                setEditingVenue(null);
+              }}
+              defaultCity={selectedCity || undefined}
+              defaultType={defaultType}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2 flex-wrap">
