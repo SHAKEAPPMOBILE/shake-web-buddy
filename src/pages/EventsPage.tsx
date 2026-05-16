@@ -671,7 +671,7 @@ function EventDetail({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-background overflow-y-auto">
+    <div className="fixed inset-0 z-40 flex flex-col bg-white overflow-y-auto">
       {/* Hero */}
       <div className="relative w-full h-48 sm:h-56 bg-black overflow-hidden shrink-0">
         {event.imageUrl ? (
