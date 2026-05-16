@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import confetti from 'canvas-confetti';
 import barManAndCook from "@/assets/bar-man-and-cook.png";
-import { Calendar, Users, Plus, Plane, Share2, Trash2 } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Send, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1140,7 +1140,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       title="Share with friends"
                       aria-label="Share plan"
                     >
-                      <Share2 className="w-5 h-5" />
+                      <Send className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
@@ -1250,7 +1250,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           title="Share with friends"
                           aria-label="Share plan"
                         >
-                          <Share2 className="w-5 h-5" />
+                          <Send className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
