@@ -85,12 +85,13 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     isProposePlan?: boolean;
   };
 
-  // FIXED ORDER - This order NEVER changes: Drinks → Dinner → Brunch → Propose a plan
+  // FIXED ORDER - Dinner → Brunch → Propose a plan
+  // HIDDEN: 'drinks' removed from carousel — uncomment to re-enable: ['drinks', 'dinner', 'brunch']
   const CAROUSEL_ITEMS: CarouselItem[] = useMemo(() => {
     const activities = getActivitiesWithDates();
 
     // Map in strict fixed order
-    const fixedOrder = ['drinks', 'dinner', 'brunch'];
+    const fixedOrder = ['dinner', 'brunch'];
     const orderedItems: CarouselItem[] = fixedOrder.map(id => {
       const activity = activities.find(a => a.id === id)!;
       return {
