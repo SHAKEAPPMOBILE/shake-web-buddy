@@ -118,32 +118,45 @@ async function callClaudeWithWebSearch(
   // Handle pause_turn: server-side tool loop hit its iteration cap — just
   // re-send with the assistant turn appended (up to MAX_CONTINUATIONS times).
   const MAX_CONTINUATIONS = 3;
+  // Retry on 429 rate-limit: wait 65s (full minute window) then retry twice.
+  const MAX_RATE_RETRIES = 2;
 
   for (let attempt = 0; attempt < MAX_CONTINUATIONS; attempt++) {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-beta": "web-search-2025-03-05",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 2000,
-        tools: [{ type: "web_search_20250305", name: "web_search" }],
-        messages,
-      }),
-    });
+    let res: Response | null = null;
 
-    if (!res.ok) {
-      const errText = await res.text();
+    for (let rateRetry = 0; rateRetry <= MAX_RATE_RETRIES; rateRetry++) {
+      res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-beta": "web-search-2025-03-05",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 1500,
+          tools: [{ type: "web_search_20250305", name: "web_search" }],
+          messages,
+        }),
+      });
+
+      if (res.status === 429 && rateRetry < MAX_RATE_RETRIES) {
+        console.warn(`  Rate limited (429), waiting 65s before retry ${rateRetry + 1}/${MAX_RATE_RETRIES}…`);
+        await new Promise((r) => setTimeout(r, 65000));
+        continue;
+      }
+      break;
+    }
+
+    if (!res!.ok) {
+      const errText = await res!.text();
       throw new Error(
-        `Claude API error ${res.status}: ${errText.slice(0, 400)}`,
+        `Claude API error ${res!.status}: ${errText.slice(0, 400)}`,
       );
     }
 
-    const data = (await res.json()) as ClaudeResponse;
+    const data = (await res!.json()) as ClaudeResponse;
     console.log(
       `  Claude stop_reason=${data.stop_reason} blocks=${data.content.length}`,
     );
@@ -192,6 +205,11 @@ serve(async (req) => {
       });
     }
 
+    // Optional batch params: ?offset=0&limit=8
+    const url = new URL(req.url);
+    const offset = Math.max(0, parseInt(url.searchParams.get("offset") ?? "0", 10));
+    const limit = Math.min(20, Math.max(1, parseInt(url.searchParams.get("limit") ?? "3", 10)));
+
     // 1. Distinct cities from venues
     const { data: venueRows, error: venuesError } = await supabase
       .from("venues")
@@ -200,13 +218,15 @@ serve(async (req) => {
 
     if (venuesError) throw venuesError;
 
-    const cities: string[] = [
+    const allCities: string[] = [
       ...new Set(
         (venueRows ?? []).map((v: { city: string }) => v.city).filter(Boolean),
       ),
     ];
 
-    console.log(`Processing ${cities.length} cities:`, cities);
+    const cities = allCities.slice(offset, offset + limit);
+
+    console.log(`Processing cities ${offset}–${offset + cities.length - 1} of ${allCities.length}:`, cities);
 
     const weekOf = getCurrentMonday();
     const results: {
@@ -216,9 +236,14 @@ serve(async (req) => {
       error?: string;
     }[] = [];
 
-    for (const city of cities) {
+    for (let cityIdx = 0; cityIdx < cities.length; cityIdx++) {
+      const city = cities[cityIdx];
+      // Small gap between cities; 429 retry logic in callClaudeWithWebSearch handles rate limits
+      if (cityIdx > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
       try {
-        console.log(`\n=== ${city} ===`);
+        console.log(`\n=== ${city} (${cityIdx + 1}/${cities.length}) ===`);
 
         // 2. Call Claude with web_search
         const events = await callClaudeWithWebSearch(anthropicApiKey, city);
@@ -309,8 +334,18 @@ serve(async (req) => {
       }
     }
 
+    const nextOffset = offset + cities.length;
+    const hasMore = nextOffset < allCities.length;
     return new Response(
-      JSON.stringify({ success: true, weekOf, results }),
+      JSON.stringify({
+        success: true,
+        weekOf,
+        offset,
+        limit,
+        total: allCities.length,
+        nextOffset: hasMore ? nextOffset : null,
+        results,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error: unknown) {
