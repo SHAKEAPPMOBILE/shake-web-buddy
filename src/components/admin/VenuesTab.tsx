@@ -527,50 +527,53 @@ function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete }: 
   const hasMissingCoords = venue.latitude === null || venue.longitude === null;
   
   return (
-    <div className={`p-3 rounded-2xl border ${isCurrent ? 'bg-primary/10 border-primary' : hasMissingCoords ? 'bg-amber-500/10 border-amber-500/50' : 'bg-muted/50'}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            {isCurrent && <span className="text-sm">⭐</span>}
-            <span className="font-medium text-sm truncate">{venue.name}</span>
-            <Badge variant="outline" className="text-xs shrink-0">
-              #{index + 1}
-            </Badge>
-            {hasMissingCoords && (
-              <Badge variant="outline" className="text-xs shrink-0 border-amber-500 text-amber-600">
-                <AlertTriangle className="w-3 h-3 mr-1" />
-                No GPS
-              </Badge>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground truncate mt-1">{venue.address}</p>
-          {venue.latitude && venue.longitude && (
-            <p className="text-xs text-green-600 mt-0.5">
-              📍 {venue.latitude.toFixed(4)}, {venue.longitude.toFixed(4)}
-            </p>
-          )}
-          {venue.instagram_url && (
-            <a
-              href={venue.instagram_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-pink-500 hover:underline mt-0.5 block truncate"
-            >
-              📷 {venue.instagram_url.replace('https://', '')}
-            </a>
-          )}
-          {isCurrent && (
-            <p className="text-xs text-primary mt-1">Currently active this {rotationType.toLowerCase()}</p>
-          )}
-        </div>
-        <div className="flex gap-1 shrink-0">
-          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
-            <Pencil className="w-3 h-3" />
-          </Button>
-          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}>
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        </div>
+    <div className={`relative p-4 rounded-2xl border ${isCurrent ? 'bg-primary/10 border-primary' : hasMissingCoords ? 'bg-amber-500/10 border-amber-500/50' : 'bg-muted/50'}`}>
+      {/* Edit / delete actions pinned top-right */}
+      <div className="absolute top-2 right-2 flex gap-1">
+        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
+          <Pencil className="w-3 h-3" />
+        </Button>
+        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}>
+          <Trash2 className="w-3 h-3" />
+        </Button>
+      </div>
+
+      {/* Name row — badges inline, name wraps freely */}
+      <div className="flex items-start gap-2 flex-wrap pr-16">
+        {isCurrent && <span className="text-sm leading-5">⭐</span>}
+        <Badge variant="outline" className="text-xs shrink-0">
+          #{index + 1}
+        </Badge>
+        {hasMissingCoords && (
+          <Badge variant="outline" className="text-xs shrink-0 border-amber-500 text-amber-600">
+            <AlertTriangle className="w-3 h-3 mr-1" />
+            No GPS
+          </Badge>
+        )}
+        <span className="font-medium text-sm leading-snug">{venue.name}</span>
+      </div>
+
+      {/* Details */}
+      <div className="mt-2 space-y-0.5">
+        <p className="text-xs text-muted-foreground">{venue.address}</p>
+        {venue.latitude && venue.longitude && (
+          <p className="text-xs text-green-600">
+            📍 {venue.latitude.toFixed(4)}, {venue.longitude.toFixed(4)}
+          </p>
+        )}
+        {venue.instagram_url && (
+          <a
+            href={venue.instagram_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-pink-500 hover:underline block"
+          >
+            📷 {venue.instagram_url.replace('https://', '')}
+          </a>
+        )}
+        {isCurrent && (
+          <p className="text-xs text-primary">Currently active this {rotationType.toLowerCase()}</p>
+        )}
       </div>
     </div>
   );
