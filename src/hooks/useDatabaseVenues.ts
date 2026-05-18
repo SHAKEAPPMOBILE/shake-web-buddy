@@ -11,6 +11,8 @@ export interface DbVenue {
   longitude: number | null;
   sort_order: number;
   is_active: boolean;
+  is_starred?: boolean | null;
+  instagram_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -197,12 +199,16 @@ export function getCurrentVenueForActivity(
   if (matchingVenues.length === 0) {
     return null;
   }
-  
+
+  // Starred venue always wins over rotation
+  const starred = matchingVenues.find(v => v.is_starred === true);
+  if (starred) return starred;
+
   // For drinks, rotate daily; for others, rotate weekly
   if (activityType === 'drinks') {
     return getDailyVenueFromList(matchingVenues);
   }
-  
+
   return getWeeklyVenueFromList(matchingVenues);
 }
 

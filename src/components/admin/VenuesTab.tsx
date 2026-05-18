@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Globe, Loader2, AlertTriangle, Upload } from "lucide-react";
+import { Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Globe, Loader2, AlertTriangle, Upload, Star } from "lucide-react";
 import { useVenues, useDeleteVenue, getWeeklyVenueFromList, getDailyVenueFromList, DbVenue } from "@/hooks/useVenues";
 import { VenueForm } from "./VenueForm";
 import { toast } from "@/hooks/use-toast";
@@ -147,15 +147,18 @@ export function VenuesTab() {
     );
   }, [venueSummaries, searchQuery]);
 
-  // Get venues for selected city
+  // Get venues for selected city — starred always first within each type
   const selectedCityVenues = useMemo(() => {
     if (!selectedCity) return { lunchDinner: [], brunch: [], drinks: [] };
-    
+
     const cityVenues = dbVenues.filter(v => v.city === selectedCity);
+    const sortStarredFirst = (list: DbVenue[]) =>
+      [...list].sort((a, b) => (b.is_starred ? 1 : 0) - (a.is_starred ? 1 : 0));
+
     return {
-      lunchDinner: cityVenues.filter(v => v.venue_type === 'lunch_dinner'),
-      brunch: cityVenues.filter(v => v.venue_type === 'brunch'),
-      drinks: cityVenues.filter(v => v.venue_type === 'drinks'),
+      lunchDinner: sortStarredFirst(cityVenues.filter(v => v.venue_type === 'lunch_dinner')),
+      brunch: sortStarredFirst(cityVenues.filter(v => v.venue_type === 'brunch')),
+      drinks: sortStarredFirst(cityVenues.filter(v => v.venue_type === 'drinks')),
     };
   }, [selectedCity, dbVenues]);
 
@@ -203,6 +206,31 @@ export function VenuesTab() {
   const handleEditVenue = (venue: DbVenue) => {
     setEditingVenue(venue);
     setShowForm(true);
+  };
+
+  const handleStarVenue = async (venue: DbVenue) => {
+    try {
+      // Unstar all venues of same city + type first (only one starred per city/type)
+      await supabase
+        .from('venues')
+        .update({ is_starred: false })
+        .eq('city', venue.city)
+        .eq('venue_type', venue.venue_type);
+
+      // Toggle: if already starred, leave it unstarred; otherwise star it
+      if (!venue.is_starred) {
+        await supabase
+          .from('venues')
+          .update({ is_starred: true })
+          .eq('id', venue.id);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['venues'] });
+      queryClient.invalidateQueries({ queryKey: ['db-venues'] });
+      toast({ title: venue.is_starred ? 'Venue unpinned' : `${venue.name} pinned as active venue` });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
   };
 
   return (
@@ -455,6 +483,7 @@ export function VenuesTab() {
                           rotationType="Week"
                           onEdit={() => handleEditVenue(venue)}
                           onDelete={() => handleDelete(venue)}
+                          onStar={() => handleStarVenue(venue)}
                         />
                       ))
                     )}
@@ -476,6 +505,7 @@ export function VenuesTab() {
                           rotationType="Week"
                           onEdit={() => handleEditVenue(venue)}
                           onDelete={() => handleDelete(venue)}
+                          onStar={() => handleStarVenue(venue)}
                         />
                       ))
                     )}
@@ -521,15 +551,26 @@ interface VenueCardProps {
   rotationType: "Week" | "Day";
   onEdit: () => void;
   onDelete: () => void;
+  onStar: () => void;
 }
 
-function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete }: VenueCardProps) {
+function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete, onStar }: VenueCardProps) {
   const hasMissingCoords = venue.latitude === null || venue.longitude === null;
-  
+  const isStarred = venue.is_starred === true;
+
   return (
-    <div className={`relative p-4 rounded-2xl border ${isCurrent ? 'bg-primary/10 border-primary' : hasMissingCoords ? 'bg-amber-500/10 border-amber-500/50' : 'bg-muted/50'}`}>
-      {/* Edit / delete actions pinned top-right */}
+    <div className={`relative p-4 rounded-2xl border ${isStarred ? 'bg-yellow-50 border-yellow-400' : isCurrent ? 'bg-primary/10 border-primary' : hasMissingCoords ? 'bg-amber-500/10 border-amber-500/50' : 'bg-muted/50'}`}>
+      {/* Star / edit / delete actions pinned top-right */}
       <div className="absolute top-2 right-2 flex gap-1">
+        <Button
+          size="icon"
+          variant="ghost"
+          className={`h-7 w-7 ${isStarred ? 'text-yellow-500 hover:text-yellow-600' : 'text-muted-foreground hover:text-yellow-500'}`}
+          onClick={onStar}
+          title={isStarred ? 'Unpin venue' : 'Pin as active venue'}
+        >
+          <Star className={`w-3.5 h-3.5 ${isStarred ? 'fill-yellow-400' : ''}`} />
+        </Button>
         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
           <Pencil className="w-3 h-3" />
         </Button>
@@ -539,8 +580,8 @@ function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete }: 
       </div>
 
       {/* Name row — badges inline, name wraps freely */}
-      <div className="flex items-start gap-2 flex-wrap pr-16">
-        {isCurrent && <span className="text-sm leading-5">⭐</span>}
+      <div className="flex items-start gap-2 flex-wrap pr-24">
+        {isStarred && <span className="text-sm leading-5" title="Pinned as active venue">📌</span>}
         <Badge variant="outline" className="text-xs shrink-0">
           #{index + 1}
         </Badge>
@@ -571,8 +612,11 @@ function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete }: 
             📷 {venue.instagram_url.replace('https://', '')}
           </a>
         )}
-        {isCurrent && (
-          <p className="text-xs text-primary">Currently active this {rotationType.toLowerCase()}</p>
+        {isStarred && (
+          <p className="text-xs text-yellow-600 font-medium">📌 Pinned — always shown as active</p>
+        )}
+        {!isStarred && isCurrent && (
+          <p className="text-xs text-primary">Currently active this {rotationType.toLowerCase()} (by rotation)</p>
         )}
       </div>
     </div>

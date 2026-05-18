@@ -12,6 +12,7 @@ export interface DbVenue {
   sort_order: number;
   is_active: boolean;
   is_current?: boolean | null;
+  is_starred?: boolean | null;
   instagram_url?: string | null;
   created_at: string;
   updated_at: string;
@@ -27,6 +28,7 @@ export interface VenueInsert {
   sort_order?: number;
   is_active?: boolean;
   is_current?: boolean | null;
+  is_starred?: boolean | null;
   instagram_url?: string | null;
 }
 
@@ -128,7 +130,11 @@ export function useDeleteVenue() {
 export function getWeeklyVenueFromList(venues: DbVenue[]): DbVenue | null {
   if (!venues || venues.length === 0) return null;
 
-  // Prefer an explicitly pinned venue
+  // Starred venue always wins
+  const starred = venues.find(v => v.is_starred === true);
+  if (starred) return starred;
+
+  // Legacy pinned fallback
   const pinned = venues.find(v => v.is_current === true);
   if (pinned) return pinned;
 
@@ -143,7 +149,11 @@ export function getWeeklyVenueFromList(venues: DbVenue[]): DbVenue | null {
 export function getDailyVenueFromList(venues: DbVenue[]): DbVenue | null {
   if (!venues || venues.length === 0) return null;
 
-  // Prefer an explicitly pinned venue
+  // Starred venue always wins
+  const starred = venues.find(v => v.is_starred === true);
+  if (starred) return starred;
+
+  // Legacy pinned fallback
   const pinned = venues.find(v => v.is_current === true);
   if (pinned) return pinned;
 
