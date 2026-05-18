@@ -90,7 +90,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
 
     setIsLoading(true);
-    const effectiveCity = selectedCity || detectedCity?.name || null;
+    // Use only the user's explicitly selected city — never fall back to GPS/detected city
+    const effectiveCity = selectedCity;
 
     // Safety timeout: stop the spinner after 5 s and show whatever is already rendered
     const loadingTimeout = setTimeout(() => setIsLoading(false), 5000);
@@ -179,11 +180,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         showAllCities
           ? await (async () => {
               const nowISO = new Date().toISOString();
+              // No city filter, no user filter — all active plans with a future date or no date
               const result = await supabase
                 .from("user_activities")
                 .select("*")
                 .eq("is_active", true)
-                .neq("user_id", user.id)
                 .or(`scheduled_for.gte.${nowISO},scheduled_for.is.null`)
                 .order("scheduled_for", { ascending: true, nullsFirst: false })
                 .limit(50);
@@ -210,9 +211,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         ? visibleJoined.filter((a: { city: string }) => a.city === joinedPlansCityFilter)
         : visibleJoined;
 
-      // Filter city plans with smart expiry + exclude already-joined
+      // Filter city plans with smart expiry.
+      // In all-cities mode: show every active plan regardless of join status.
+      // In my-city mode: exclude plans the user already joined (they appear in the top section).
       const cityPublicPlans: any[] = (cityPlansDataResult.data || [])
-        .filter((a: { id: string }) => !allJoinedIds.includes(a.id))
+        .filter((a: { id: string }) => showAllCities ? true : !allJoinedIds.includes(a.id))
         .filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a));
 
       const allActivitiesMap = new Map<string, any>();
@@ -307,12 +310,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       ]);
 
       setActivities(sortByDate([...activitiesWithDetails, ...virtualPlans]));
-      setCityPlans(sortByDate(cityPlansWithDetails));
+      // In all-cities mode only show plans that have at least 1 member
+      const visibleCityPlans = showAllCities
+        ? cityPlansWithDetails.filter(p => (p.participant_count ?? 0) > 0)
+        : cityPlansWithDetails;
+      console.log("[PlansTab] cityPlans after filter →", { showAllCities, total: cityPlansWithDetails.length, visible: visibleCityPlans.length });
+      setCityPlans(sortByDate(visibleCityPlans));
     } finally {
       clearTimeout(loadingTimeout);
       setIsLoading(false);
     }
-  }, [selectedCity, detectedCity, user, joinedPlansCityFilter, showAllCities]);
+  }, [selectedCity, user, joinedPlansCityFilter, showAllCities]);
 
   // Initial fetch and realtime subscription
   useEffect(() => {
