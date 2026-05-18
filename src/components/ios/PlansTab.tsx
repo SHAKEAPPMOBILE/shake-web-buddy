@@ -499,6 +499,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     return activity?.icon || null;
   };
 
+  // True when the plan's activity_type maps to a known standard type (dinner, brunch, etc.)
+  const isStandardActivity = (type: string) => ALL_ACTIVITY_TYPES.some(a => a.id === type);
+
   // Map activity type to translation key
   const activityKeyMap: Record<string, string> = {
     dinner: "dinner",
@@ -1063,11 +1066,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 style={{}}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0">
-                    {plan.creator_avatar ? (
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0 flex items-center justify-center">
+                    {isStandardActivity(plan.activity_type) ? (
+                      getActivityIcon(plan.activity_type) ? (
+                        <img src={getActivityIcon(plan.activity_type)!} alt={plan.activity_type} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xl">{getActivityEmoji(plan.activity_type)}</span>
+                      )
+                    ) : plan.creator_avatar ? (
                       <img src={plan.creator_avatar} alt={plan.creator_name || "Creator"} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="flex items-center justify-center w-full h-full text-base font-bold text-gray-500">
+                      <span className="text-base font-bold text-gray-500">
                         {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
                       </span>
                     )}
@@ -1193,7 +1202,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       : t("plans.moreInCity", "More in {{city}}", { city: selectedCity })}
                   </div>
                 )}
-                {cityPlans.map((plan) => (
+                {cityPlans.filter(p => !activities.some(a => a.id === p.id)).map((plan) => (
                   <SwipeableCard
                     key={plan.id}
                     canDelete={false}
@@ -1203,12 +1212,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     style={{}}
                   >
                     <div className="flex items-start gap-3">
-                      {/* Avatar */}
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0">
-                        {plan.creator_avatar ? (
+                      {/* Activity icon for standard types, creator avatar for custom plans */}
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0 flex items-center justify-center">
+                        {isStandardActivity(plan.activity_type) ? (
+                          getActivityIcon(plan.activity_type) ? (
+                            <img src={getActivityIcon(plan.activity_type)!} alt={plan.activity_type} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xl">{getActivityEmoji(plan.activity_type)}</span>
+                          )
+                        ) : plan.creator_avatar ? (
                           <img src={plan.creator_avatar} alt={plan.creator_name || "Creator"} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="flex items-center justify-center w-full h-full text-base font-bold text-gray-500">
+                          <span className="text-base font-bold text-gray-500">
                             {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
                           </span>
                         )}
