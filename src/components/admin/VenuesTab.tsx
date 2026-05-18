@@ -559,7 +559,7 @@ function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete, on
   const isStarred = venue.is_starred === true;
 
   return (
-    <div className={`relative p-4 rounded-2xl border ${isStarred ? 'bg-yellow-50 border-yellow-400' : isCurrent ? 'bg-primary/10 border-primary' : hasMissingCoords ? 'bg-amber-500/10 border-amber-500/50' : 'bg-muted/50'}`}>
+    <div className={`relative p-4 rounded-2xl border ${isCurrent || isStarred ? 'bg-primary/10 border-primary' : hasMissingCoords ? 'bg-amber-500/10 border-amber-500/50' : 'bg-muted/50'}`}>
       {/* Star / edit / delete actions pinned top-right */}
       <div className="absolute top-2 right-2 flex gap-1">
         <Button
@@ -591,14 +591,14 @@ function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete, on
             No GPS
           </Badge>
         )}
-        <span className={`font-medium text-sm leading-snug ${isStarred ? 'text-yellow-900' : ''}`}>{venue.name}</span>
+        <span className="font-medium text-sm leading-snug">{venue.name}</span>
       </div>
 
       {/* Details */}
       <div className="mt-2 space-y-0.5">
-        <p className={`text-xs ${isStarred ? 'text-yellow-800' : 'text-muted-foreground'}`}>{venue.address}</p>
+        <p className="text-xs text-muted-foreground">{venue.address}</p>
         {venue.latitude && venue.longitude && (
-          <p className={`text-xs ${isStarred ? 'text-yellow-800' : 'text-green-600'}`}>
+          <p className="text-xs text-green-600">
             📍 {venue.latitude.toFixed(4)}, {venue.longitude.toFixed(4)}
           </p>
         )}
@@ -607,7 +607,7 @@ function VenueCard({ venue, isCurrent, index, rotationType, onEdit, onDelete, on
             href={venue.instagram_url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`text-xs hover:underline block ${isStarred ? 'text-yellow-800' : 'text-pink-500'}`}
+            className="text-xs text-pink-500 hover:underline block"
           >
             📷 {venue.instagram_url.replace('https://', '')}
           </a>

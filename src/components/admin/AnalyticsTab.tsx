@@ -111,7 +111,7 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
     <div className="space-y-6">
       {/* Refresh Button */}
       <div className="flex justify-end">
-        <Button variant="outline" onClick={fetchAnalytics} className="gap-2">
+        <Button variant="outline" onClick={fetchAnalytics} className="gap-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50">
           <RefreshCw className="w-4 h-4" />
           Refresh Data
         </Button>
