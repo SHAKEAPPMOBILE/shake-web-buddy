@@ -76,6 +76,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [joinedPlansCityFilter, setJoinedPlansCityFilter] = useState<string | null>(null);
   const [cityAtPickerOpen, setCityAtPickerOpen] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // "My City" (false) is the default; "All Cities" (true) is opt-in
+  const [showAllCities, setShowAllCities] = useState(false);
 
   // Fetch all plans for the selected city (global CityContext)
   const fetchPlans = useCallback(async () => {
@@ -173,15 +175,24 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               .in("id", allJoinedIds)
               .limit(20)
           : Promise.resolve({ data: [] as any[], error: null }),
-        effectiveCity
+        showAllCities
           ? supabase
               .from("user_activities")
               .select("*")
-              .eq("city", effectiveCity)
               .eq("is_active", true)
               .neq("user_id", user.id)
-              .limit(20)
-          : Promise.resolve({ data: [] as any[], error: null }),
+              .order("scheduled_for", { ascending: true, nullsFirst: false })
+              .limit(50)
+          : effectiveCity
+            ? supabase
+                .from("user_activities")
+                .select("*")
+                .eq("city", effectiveCity)
+                .eq("is_active", true)
+                .neq("user_id", user.id)
+                .order("scheduled_for", { ascending: true, nullsFirst: false })
+                .limit(20)
+            : Promise.resolve({ data: [] as any[], error: null }),
       ]);
 
       // Filter joined activities with smart expiry + optional city filter
@@ -294,7 +305,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       clearTimeout(loadingTimeout);
       setIsLoading(false);
     }
-  }, [selectedCity, detectedCity, user, joinedPlansCityFilter]);
+  }, [selectedCity, detectedCity, user, joinedPlansCityFilter, showAllCities]);
 
   // Initial fetch and realtime subscription
   useEffect(() => {
@@ -454,6 +465,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     !!detectedCity &&
     !!selectedCity &&
     selectedCity.toLowerCase() !== detectedCity.name.toLowerCase();
+
+  const isSoon = (scheduledFor: string | null): boolean => {
+    if (!scheduledFor) return false;
+    const diff = new Date(scheduledFor).getTime() - Date.now();
+    return diff > 0 && diff <= 3 * 60 * 60 * 1000;
+  };
 
   const getActivityEmoji = (type: string) => {
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
@@ -971,6 +988,33 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           </div>
         </div>
 
+        {/* My City / All Cities filter chips */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setShowAllCities(false)}
+            className={cn(
+              "px-3 py-1 rounded-full text-xs font-semibold transition-all border",
+              !showAllCities
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
+            )}
+          >
+            My City
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAllCities(true)}
+            className={cn(
+              "px-3 py-1 rounded-full text-xs font-semibold transition-all border",
+              showAllCities
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
+            )}
+          >
+            🌍 All Cities
+          </button>
+        </div>
       </div>
 
       <CityPickerModal
@@ -1000,19 +1044,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             <LoadingSpinner size="lg" />
           </div>
         ) : activities.length === 0 && cityPlans.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted dark:bg-gray-100 flex items-center justify-center mb-4">
-              <span
-                className="inline-flex items-center justify-center w-8 h-8 text-muted-foreground text-2xl leading-none"
-                aria-hidden
-              >
-                🚧
-              </span>
-            </div>
-            <p className="text-muted-foreground">
-              {joinedPlansCityFilter
-                ? t("plans.noPlansInCity", { city: joinedPlansCityFilter })
-                : t("plans.noPlansAllCities", "No joined plans found in any city")}
+          <div className="flex flex-col items-center justify-center h-40 text-center px-4">
+            <p className="text-base font-medium text-gray-700 mb-1">
+              No plans yet — be the first to shake in your city! 🌎
             </p>
             {browsingDifferentFromDetected && (
               <button
@@ -1056,6 +1090,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       {plan.isJoined && (
                         <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">
                           {t('common.joined')} ✓
+                        </span>
+                      )}
+                      {isSoon(plan.scheduled_for) && (
+                        <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
+                          🔴 Soon
                         </span>
                       )}
                       {/* Price badge for paid activities */}
@@ -1159,7 +1198,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               <>
                 {activities.length > 0 && (
                   <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-2 pb-0.5">
-                    {t("plans.moreInCity", "More in {{city}}", { city: selectedCity })}
+                    {showAllCities
+                      ? "🌍 Live feed — all cities"
+                      : t("plans.moreInCity", "More in {{city}}", { city: selectedCity })}
                   </div>
                 )}
                 {cityPlans.map((plan) => (
@@ -1168,10 +1209,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     canDelete={false}
                     onDelete={() => {}}
                     onClick={() => handleCityPlanClick(plan)}
-                    className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 dark:bg-gray-50 dark:border-gray-200 dark:hover:bg-gray-100 cursor-pointer transition-colors"
+                    className="w-full text-left p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 dark:bg-gray-50 dark:border-gray-200 dark:hover:bg-gray-100 cursor-pointer transition-colors"
                     style={{}}
                   >
                     <div className="flex items-start gap-3">
+                      {/* Avatar */}
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0">
                         {plan.creator_avatar ? (
                           <img src={plan.creator_avatar} alt={plan.creator_name || "Creator"} className="w-full h-full object-cover" />
@@ -1181,11 +1223,19 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           </span>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-gray-900">
-                            {plan.note || t('plans.untitledPlan', 'Untitled Plan')}
+
+                      <div className="flex-1 min-w-0">
+                        {/* Activity emoji + type name */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-base leading-none">{getActivityEmoji(plan.activity_type)}</span>
+                          <h3 className="font-semibold text-gray-900 text-sm">
+                            {plan.note || getActivityLabel(plan.activity_type)}
                           </h3>
+                          {isSoon(plan.scheduled_for) && (
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
+                              🔴 Soon
+                            </span>
+                          )}
                           {plan.price_amount ? (
                             <span className="text-xs bg-green-50 text-green-700 border border-green-200 font-semibold px-2 py-0.5 rounded-full">
                               {plan.price_amount}
@@ -1197,10 +1247,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-xs text-gray-600">{plan.city}</span>
+                        {/* City + organiser */}
+                        <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                          <span className="text-xs font-medium text-primary">{plan.city}</span>
+                          <span className="text-xs text-gray-400">·</span>
                           <span className="text-xs text-gray-500">
-                            • {t('common.by')}{' '}
                             <button
                               type="button"
                               onClick={(e) => {
@@ -1218,27 +1269,38 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2 mt-1">
-                          <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                        {/* Date + time */}
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
                           <span className="text-xs text-gray-500">
                             {plan.scheduled_for
-                              ? formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)
+                              ? format(new Date(plan.scheduled_for), "EEE, d MMM · h:mm a")
                               : t('common.today')}
                           </span>
                           {plan.scheduled_for && isToday(new Date(plan.scheduled_for)) && (
-                            <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full animate-pulse">
+                            <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-1.5 py-0.5 rounded-full animate-pulse">
                               {t('common.today')}
                             </span>
                           )}
                           {plan.scheduled_for && isTomorrow(new Date(plan.scheduled_for)) && (
-                            <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">
+                            <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-1.5 py-0.5 rounded-full">
                               {t('common.tomorrow')}
                             </span>
                           )}
                         </div>
+
+                        {/* Attendee count */}
+                        {(plan.participant_count ?? 0) > 0 && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Users className="w-3 h-3 text-gray-400" />
+                            <span className="text-xs text-gray-500">
+                              {plan.participant_count} {t('common.joined').toLowerCase()}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
                         <button
                           type="button"
@@ -1254,12 +1316,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         </button>
                       </div>
                     </div>
-
-                    {plan.participant_count > 0 && (
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <span className="text-sm text-gray-600">+{plan.participant_count} {t('common.joined').toLowerCase()}</span>
-                      </div>
-                    )}
                   </SwipeableCard>
                 ))}
               </>
