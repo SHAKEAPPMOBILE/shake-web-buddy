@@ -186,11 +186,11 @@ export function PrivateChatDialog({
 
   return (
     <>
-    <div className="fixed inset-0 z-50 flex flex-col bg-[hsl(50,40%,92%)]">
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "#0d0d1a" }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-safe-top pb-3 pt-4 bg-[hsl(50,40%,92%)] border-b border-black/10 shrink-0">
-        <MinimalBackButton onClick={onClose} className="text-black/70 border-black/20" />
-        <div className="w-9 h-9 rounded-full overflow-hidden border border-black/20 shadow-sm shrink-0 bg-white flex items-center justify-center">
+      <div className="flex items-center gap-3 px-4 pt-safe-top pb-3 pt-4 border-b shrink-0" style={{ background: "#0d0d1a", borderColor: "rgba(255,255,255,0.08)" }}>
+        <MinimalBackButton onClick={onClose} className="text-white/70 border-white/20" />
+        <div className="w-9 h-9 rounded-full overflow-hidden border shrink-0 flex items-center justify-center" style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)" }}>
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -202,33 +202,34 @@ export function PrivateChatDialog({
             <span className="text-sm font-bold" style={{ color: "#00C6B6" }}>{initial}</span>
           )}
         </div>
-        <h2 className="font-display text-lg text-black flex-1 min-w-0 truncate">
+        <h2 className="font-display text-lg text-white flex-1 min-w-0 truncate">
           {otherUserName || "Shaker"}
         </h2>
         <div className="relative shrink-0">
           <button
             type="button"
             onClick={() => setShowMenu(v => !v)}
-            className="p-2 rounded-full hover:bg-black/5 transition-colors"
+            className="p-2 rounded-full transition-colors hover:bg-white/10"
             aria-label="More options"
           >
-            <MoreVertical className="w-5 h-5 text-black/60" />
+            <MoreVertical className="w-5 h-5 text-white/60" />
           </button>
           {showMenu && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
+              <div className="absolute right-0 top-full mt-1 w-52 rounded-xl shadow-xl z-50 overflow-hidden border" style={{ background: "#1a1a2e", borderColor: "rgba(255,255,255,0.12)" }}>
                 <button
                   type="button"
                   onClick={handleLeaveConversation}
-                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-white/80 hover:bg-white/10 transition-colors border-b"
+                  style={{ borderColor: "rgba(255,255,255,0.08)" }}
                 >
-                  <LogOut className="w-4 h-4 text-gray-500" /> Leave conversation
+                  <LogOut className="w-4 h-4 text-white/50" /> Leave conversation
                 </button>
                 <button
                   type="button"
                   onClick={handleBlockUser}
-                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                 >
                   <Ban className="w-4 h-4" /> Block user
                 </button>
@@ -245,9 +246,9 @@ export function PrivateChatDialog({
             <LoadingSpinner size="lg" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">{t('chat.noMessages', 'No messages yet.')}</p>
-            <p className="text-xs mt-1">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
+          <div className="text-center py-8">
+            <p className="text-sm text-white/50">{t('chat.noMessages', 'No messages yet.')}</p>
+            <p className="text-xs mt-1 text-white/35">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
           </div>
         ) : (
           <div className="space-y-3 px-4">
@@ -257,28 +258,36 @@ export function PrivateChatDialog({
               const isImage = msg.message_type === "image" && /^https?:\/\//i.test(msg.message);
               const isVideo = msg.message_type === "video" && /^https?:\/\//i.test(msg.message);
               const isMedia = isGif || isImage || isVideo;
+
+              // Bubble styles
+              const incomingBubble: React.CSSProperties = {
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.12)",
+              };
+              const outgoingBubble: React.CSSProperties = {
+                background: "rgba(0,198,182,0.18)",
+                border: "1px solid rgba(0,198,182,0.25)",
+              };
+
               return (
                 <div
                   key={msg.id}
                   className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"} ${
-                      isMedia
-                        ? ""
-                        : isMe
-                          ? "bg-black text-white rounded-xl-sm"
-                          : "bg-blue-500 text-white rounded-xl-sm"
-                    }`}
+                    className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
+                    style={isMedia ? undefined : isMe ? outgoingBubble : incomingBubble}
                   >
                     {isGif ? (
                       <>
                         <InlineChatGif
                           src={msg.message}
-                          variant="light"
+                          variant="dark"
                           onLoad={scrollMessagesToBottom}
                         />
-                        <p className="text-[10px] mt-1 text-black/50">
+                        <p className="text-[10px] mt-1 text-white/40">
                           {format(new Date(msg.created_at), "HH:mm")}
                         </p>
                       </>
@@ -290,7 +299,7 @@ export function PrivateChatDialog({
                           className="rounded-2xl max-w-[260px] w-full object-cover"
                           onLoad={scrollMessagesToBottom}
                         />
-                        <p className="text-[10px] mt-1 text-black/50">
+                        <p className="text-[10px] mt-1 text-white/40">
                           {format(new Date(msg.created_at), "HH:mm")}
                         </p>
                       </>
@@ -304,14 +313,14 @@ export function PrivateChatDialog({
                           className="rounded-2xl max-w-[260px] w-full bg-black/30"
                           onLoadedMetadata={scrollMessagesToBottom}
                         />
-                        <p className="text-[10px] mt-1 text-black/50">
+                        <p className="text-[10px] mt-1 text-white/40">
                           {format(new Date(msg.created_at), "HH:mm")}
                         </p>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm break-words">{msg.message}</p>
-                        <p className="text-[10px] mt-1 text-white/60">
+                        <p className="text-sm break-words text-white">{msg.message}</p>
+                        <p className="text-[10px] mt-1 text-white/50">
                           {format(new Date(msg.created_at), "HH:mm")}
                         </p>
                       </>
@@ -332,7 +341,12 @@ export function PrivateChatDialog({
               <button
                 key={suggestion}
                 onClick={() => setNewMessage(suggestion)}
-                className="text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors border border-blue-500/20 whitespace-nowrap shrink-0"
+                className="text-xs px-3 py-1.5 rounded-full transition-colors whitespace-nowrap shrink-0"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  color: "rgba(255,255,255,0.7)",
+                }}
               >
                 {suggestion}
               </button>
@@ -351,13 +365,13 @@ export function PrivateChatDialog({
       />
 
       {/* Input */}
-      <form onSubmit={handleSend} className="px-4 pb-safe-bottom pb-4 pt-2 bg-[hsl(50,40%,92%)] border-t border-black/10 shrink-0">
+      <form onSubmit={handleSend} className="px-4 pb-safe-bottom pb-4 pt-2 border-t shrink-0" style={{ background: "#0d0d1a", borderColor: "rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
+            className="shrink-0 h-9 w-9 hover:bg-white/10 text-white/60 hover:text-white"
             onClick={() => setGiphyPickerOpen(true)}
             disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
             aria-label="GIFs"
@@ -369,7 +383,7 @@ export function PrivateChatDialog({
             type="button"
             variant="ghost"
             size="icon"
-            className="shrink-0 h-9 w-9 text-black/60 hover:text-black hover:bg-black/5"
+            className="shrink-0 h-9 w-9 hover:bg-white/10 text-white/60 hover:text-white"
             onClick={() => mediaFileInputRef.current?.click()}
             disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
             aria-label="Attach photo or video"
@@ -381,7 +395,8 @@ export function PrivateChatDialog({
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
-            className="flex-1"
+            className="flex-1 bg-white/8 border-white/15 text-white placeholder:text-white/35 focus-visible:ring-white/20"
+            style={{ background: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.15)", color: "white" }}
             disabled={isSending || isUploadingMedia || (!isPremium && !canSendText) || giphyPickerOpen}
           />
           <Button
