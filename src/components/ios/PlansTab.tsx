@@ -92,6 +92,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     setIsLoading(true);
     // Use only the user's explicitly selected city — never fall back to GPS/detected city
     const effectiveCity = selectedCity;
+    console.log("[PlansTab] fetchPlans →", { effectiveCity, showAllCities });
 
     // Safety timeout: stop the spinner after 5 s and show whatever is already rendered
     const loadingTimeout = setTimeout(() => setIsLoading(false), 5000);
@@ -192,14 +193,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               return result;
             })()
           : effectiveCity
-            ? supabase
-                .from("user_activities")
-                .select("*")
-                .eq("city", effectiveCity)
-                .eq("is_active", true)
-                .neq("user_id", user.id)
-                .order("scheduled_for", { ascending: true, nullsFirst: false })
-                .limit(20)
+            ? await (async () => {
+                const result = await supabase
+                  .from("user_activities")
+                  .select("*")
+                  .eq("city", effectiveCity)
+                  .eq("is_active", true)
+                  .neq("user_id", user.id)
+                  .order("scheduled_for", { ascending: true, nullsFirst: false })
+                  .limit(20);
+                console.log("[PlansTab] my-city query →", { effectiveCity, count: result.data?.length, error: result.error, cities: result.data?.map((p: any) => p.city) });
+                return result;
+              })()
             : Promise.resolve({ data: [] as any[], error: null }),
       ]);
 
@@ -310,12 +315,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       ]);
 
       setActivities(sortByDate([...activitiesWithDetails, ...virtualPlans]));
-      // In all-cities mode only show plans that have at least 1 member
-      const visibleCityPlans = showAllCities
-        ? cityPlansWithDetails.filter(p => (p.participant_count ?? 0) > 0)
-        : cityPlansWithDetails;
-      console.log("[PlansTab] cityPlans after filter →", { showAllCities, total: cityPlansWithDetails.length, visible: visibleCityPlans.length });
-      setCityPlans(sortByDate(visibleCityPlans));
+      // All-cities: is_active=true on the query is the only gate — show everything returned
+      console.log("[PlansTab] cityPlans →", { showAllCities, total: cityPlansWithDetails.length, counts: cityPlansWithDetails.map(p => ({ id: p.id, city: p.city, participant_count: p.participant_count })) });
+      setCityPlans(sortByDate(cityPlansWithDetails));
     } finally {
       clearTimeout(loadingTimeout);
       setIsLoading(false);
