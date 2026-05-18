@@ -27,9 +27,8 @@ interface CityEvent {
   event_url?: string;
 }
 
-/** Extract a JSON array from Claude's text response. */
+/** Extract a JSON array from Claude's text response (handles bare arrays and fenced blocks). */
 function parseEventsFromText(text: string): CityEvent[] {
-  // Try a fenced code block first, then a bare array
   const fenced = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
   const raw = fenced ? fenced[1] : text.match(/\[[\s\S]*\]/)?.[0];
   if (!raw) return [];
@@ -54,7 +53,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const anthropic = new Anthropic({ apiKey: anthropicApiKey });
 
-    // Verify bearer token is present (cron/service callers pass the service role key)
+    // Require a bearer token (cron and manual callers pass the service role key)
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -63,7 +62,7 @@ serve(async (req) => {
       });
     }
 
-    // 1. Query distinct cities that have venues
+    // 1. Get distinct cities from venues
     const { data: venueRows, error: venuesError } = await supabase
       .from("venues")
       .select("city")
@@ -86,21 +85,22 @@ serve(async (req) => {
       try {
         console.log(`Searching events for: ${city}`);
 
-        // 2. Call Claude with web_search to find real events this week
+        // 2. Call Claude with web_search and a strict JSON-only system prompt
         const message = await anthropic.messages.create({
           model: "claude-sonnet-4-20250514",
           max_tokens: 4096,
+          system:
+            `You are a local events researcher. Search the web and return ONLY a valid JSON array, no markdown, no explanation. Each object must have: title, description, venue, address, event_date (ISO 8601), event_url. Find up to 8 real events with specific dates and venues happening in ${city} this week.`,
           tools: [{ type: "web_search_20260209", name: "web_search" }],
           messages: [
             {
               role: "user",
-              content:
-                `Search for real events happening in ${city} this week (concerts, parties, markets, food festivals, art shows, nightlife, sports). Return a JSON array of up to 8 events, each with: title, description, venue, address, event_date (ISO format), event_url. Only include events with specific dates and venues.`,
+              content: `Find real events happening in ${city} this week and return them as a JSON array.`,
             },
           ],
         });
 
-        // Extract the text block from the response
+        // 3. Extract JSON from the final text block
         let events: CityEvent[] = [];
         for (const block of message.content) {
           if (block.type === "text") {
@@ -116,7 +116,7 @@ serve(async (req) => {
           continue;
         }
 
-        // 3. Upsert into city_events with week_of = current Monday
+        // 4. Upsert into city_events (week_of = current Monday)
         const cityEventRows = events.map((event) => ({
           city,
           title: event.title,
@@ -138,7 +138,7 @@ serve(async (req) => {
           console.error(`Error upserting city_events for ${city}:`, upsertError);
         }
 
-        // 4. Create user_activities group chat entry for each event
+        // 5. Create a user_activities entry for each event (group chat seed)
         for (const event of events) {
           if (!event.event_date) continue;
 
@@ -147,14 +147,15 @@ serve(async (req) => {
             .insert({
               activity_type: "city_event",
               city,
-              title: event.title,
+              // note has a 50-char max constraint
+              note: event.title.substring(0, 50),
               scheduled_for: event.event_date,
               is_active: true,
               is_auto_generated: true,
             });
 
           if (activityError) {
-            // Non-fatal — log and continue
+            // Non-fatal — log and move on
             console.error(
               `Error creating user_activity for "${event.title}" in ${city}:`,
               activityError.message,
