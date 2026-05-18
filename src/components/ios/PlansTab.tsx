@@ -177,13 +177,19 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               .limit(20)
           : Promise.resolve({ data: [] as any[], error: null }),
         showAllCities
-          ? supabase
-              .from("user_activities")
-              .select("*")
-              .eq("is_active", true)
-              .neq("user_id", user.id)
-              .order("scheduled_for", { ascending: true, nullsFirst: false })
-              .limit(50)
+          ? await (async () => {
+              const nowISO = new Date().toISOString();
+              const result = await supabase
+                .from("user_activities")
+                .select("*")
+                .eq("is_active", true)
+                .neq("user_id", user.id)
+                .or(`scheduled_for.gte.${nowISO},scheduled_for.is.null`)
+                .order("scheduled_for", { ascending: true, nullsFirst: false })
+                .limit(50);
+              console.log("[PlansTab] all-cities query →", { count: result.data?.length, error: result.error, sample: result.data?.slice(0, 3) });
+              return result;
+            })()
           : effectiveCity
             ? supabase
                 .from("user_activities")
@@ -952,15 +958,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-display font-bold text-gray-900 dark:text-gray-900">{t('plans.myPlans')}</h2>
           <div className="flex items-center gap-2">
-            {/* City picker then Events */}
-            <button
-              type="button"
-              onClick={openCityPicker}
-              className="flex items-center gap-1 max-w-[min(50vw,200px)] px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-primary text-primary-foreground"
-            >
-              <Plane className="w-4 h-4 shrink-0" />
-              <span className="truncate">{joinedPlansCityFilter || t("plans.allCities", "All cities")}</span>
-            </button>
             <button
               type="button"
               onClick={() => onOpenEvents?.()}
@@ -969,15 +966,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               <span>⚡️</span>
               <span>{t('plans.events', 'Events')}</span>
             </button>
-            {joinedPlansCityFilter && (
-              <button
-                type="button"
-                onClick={clearJoinedPlansCityFilter}
-                className="flex items-center justify-center px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-muted dark:bg-gray-100 text-foreground dark:text-gray-800"
-              >
-                {t("plans.clearCityFilter", "All cities")}
-              </button>
-            )}
             <button
               onClick={handleCreatePlan}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
@@ -1049,15 +1037,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             <p className="text-base font-medium text-gray-700 mb-1">
               No plans yet — be the first to shake in your city! 🌎
             </p>
-            {browsingDifferentFromDetected && (
-              <button
-                type="button"
-                onClick={() => revertToDetectedLocation()}
-                className="mt-3 text-sm text-primary hover:underline"
-              >
-                {t("plans.resetToMyCity")}
-              </button>
-            )}
           </div>
         ) : (
           <>
