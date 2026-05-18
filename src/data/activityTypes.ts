@@ -24,31 +24,6 @@ export const getActivityDay = (id: string): string => {
   return '';
 };
 
-// Get the next occurrence date for an activity based on its default day
-export const getNextOccurrenceDate = (activityId: string): Date => {
-  const activity = ACTIVITY_TYPES.find(a => a.id === activityId);
-  const today = new Date();
-  today.setHours(12, 0, 0, 0); // Normalize to noon
-  
-  if (activity?.defaultDay === undefined) {
-    return today;
-  }
-  
-  const targetDay = activity.defaultDay;
-  const currentDay = today.getDay();
-  
-  // Calculate days until target day (0 = today, positive = upcoming)
-  let daysUntil = targetDay - currentDay;
-  if (daysUntil < 0) {
-    daysUntil += 7; // Wrap to next week
-  }
-  // daysUntil === 0 means today IS the activity day — keep it as 0 (today)
-  
-  const nextDate = new Date(today);
-  nextDate.setDate(today.getDate() + daysUntil);
-  return nextDate;
-};
-
 // Start times for joinable carousel activities
 export const ACTIVITY_START_TIMES: Record<string, string> = {
   dinner: "7:00 PM",
@@ -72,6 +47,45 @@ export function isActivityStillJoinable(activityDate: Date, startTimeStr: string
   const cutoff = new Date(eventStart.getTime() + 10 * 60 * 1000);
   return new Date() <= cutoff;
 }
+
+// Get the next occurrence date for an activity based on its default day.
+// If today IS the activity day but the 10-min grace period has passed,
+// automatically advances to next week so the card always shows a future event.
+export const getNextOccurrenceDate = (activityId: string): Date => {
+  const activity = ACTIVITY_TYPES.find(a => a.id === activityId);
+  const now = new Date();
+
+  if (activity?.defaultDay === undefined) {
+    const d = new Date(now);
+    d.setHours(12, 0, 0, 0);
+    return d;
+  }
+
+  const targetDay = activity.defaultDay;
+  const currentDay = now.getDay();
+
+  // Days until the target weekday (0 = today, positive = upcoming)
+  let daysUntil = targetDay - currentDay;
+  if (daysUntil < 0) daysUntil += 7;
+
+  // If today IS the activity day, check whether the grace period has passed.
+  // If so, advance to next week so the card shows a joinable future event.
+  if (daysUntil === 0) {
+    const startTime = ACTIVITY_START_TIMES[activityId];
+    if (startTime) {
+      const todayMidnight = new Date(now);
+      todayMidnight.setHours(0, 0, 0, 0);
+      if (!isActivityStillJoinable(todayMidnight, startTime)) {
+        daysUntil = 7;
+      }
+    }
+  }
+
+  const nextDate = new Date(now);
+  nextDate.setHours(12, 0, 0, 0); // normalise to noon for display
+  nextDate.setDate(now.getDate() + daysUntil);
+  return nextDate;
+};
 
 // Get activity with its next occurrence date
 export interface ActivityWithDate extends ActivityType {
