@@ -49,6 +49,30 @@ export const getNextOccurrenceDate = (activityId: string): Date => {
   return nextDate;
 };
 
+// Start times for joinable carousel activities
+export const ACTIVITY_START_TIMES: Record<string, string> = {
+  dinner: "7:00 PM",
+  drinks: "8:00 PM",
+  brunch: "11:00 AM",
+};
+
+/**
+ * Returns true if the activity can still be joined.
+ * Joinable until 10 minutes after the scheduled start time.
+ * Uses local time — no UTC conversion.
+ */
+export function isActivityStillJoinable(activityDate: Date, startTimeStr: string): boolean {
+  const [time, meridiem] = startTimeStr.split(' ');
+  const [hours, minutes] = time.split(':').map(Number);
+  let hour24 = hours;
+  if (meridiem === 'PM' && hours !== 12) hour24 = hours + 12;
+  if (meridiem === 'AM' && hours === 12) hour24 = 0;
+  const eventStart = new Date(activityDate);
+  eventStart.setHours(hour24, minutes, 0, 0);
+  const cutoff = new Date(eventStart.getTime() + 10 * 60 * 1000);
+  return new Date() <= cutoff;
+}
+
 // Get activity with its next occurrence date
 export interface ActivityWithDate extends ActivityType {
   nextDate: Date;

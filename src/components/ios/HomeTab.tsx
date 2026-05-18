@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getActivitiesWithDates, getStartingIndexByProximity } from "@/data/activityTypes";
+import { getActivitiesWithDates, getStartingIndexByProximity, getActivityDay, isActivityStillJoinable, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -51,6 +51,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [showTapInstruction, setShowTapInstruction] = useState(false);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(() => getStartingIndexByProximity());
+  const [showPastActivityModal, setShowPastActivityModal] = useState(false);
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -170,6 +171,10 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       navigate("/propose-plan");
       return;
     }
+    if (!currentActivityJoinable) {
+      setShowPastActivityModal(true);
+      return;
+    }
     if (onConfirmActivity) {
       console.log('[Carousel] → JOIN path via onConfirmActivity', {
         activityId: currentActivity.id,
@@ -216,6 +221,15 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     : currentActivity?.id === "drinks"
       ? "8:00 PM"
       : null;
+
+  // Is this activity still open for joining (within 10-min grace period)?
+  const currentActivityJoinable = useMemo(() => {
+    if (!currentActivity || currentActivity.isProposePlan || !currentActivity.nextDate) return true;
+    const startTime = ACTIVITY_START_TIMES[currentActivity.id];
+    if (!startTime) return true;
+    return isActivityStillJoinable(currentActivity.nextDate, startTime);
+  }, [currentActivity]);
+
   const joinCity = selectedJoinCity || selectedCity || "";
   const VENUE_ACTIVITY_IDS = ['dinner', 'drinks', 'brunch', 'lunch'];
   const currentActivityNeedsVenue = VENUE_ACTIVITY_IDS.includes(currentActivity?.id || '');
@@ -401,7 +415,10 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   </button>
 
                   <div
-                    className="w-32 h-32 mx-6 rounded-full bg-card overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
+                    className={cn(
+                      "w-32 h-32 mx-6 rounded-full bg-card overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float",
+                      !currentActivityJoinable && "opacity-40"
+                    )}
                     onPointerDown={() => {
                       tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
                     }}
@@ -488,7 +505,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                       // (expression evaluates to null, renders nothing)
                       (() => { console.log('[Carousel] hasNoVenue=true for', currentActivity?.id, 'in', joinCity, '— still allowing join (venue not required to join)'); return null; })()
                     )}
-                    <>
+                    {currentActivityJoinable ? (
+                      <>
                         <button
                           type="button"
                           onClick={handleConfirmSelection}
@@ -520,6 +538,13 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                           {t('activityDialog.joinDifferentCity', 'Join in a different city')}
                         </button>
                       </>
+                    ) : (
+                      <div className="text-center py-1">
+                        <span className="inline-block px-5 py-2 rounded-full text-sm font-semibold text-muted-foreground border border-border bg-muted/40">
+                          Next week →
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {showCityChoices && (
@@ -551,6 +576,48 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Past activity modal — frosted glass */}
+      {showPastActivityModal && currentActivity && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0"
+            style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            onClick={() => setShowPastActivityModal(false)}
+          />
+          {/* Card */}
+          <div
+            className="relative z-10 w-full max-w-sm rounded-3xl px-6 py-7 text-center"
+            style={{
+              background: "rgba(255,255,255,0.55)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.4)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            }}
+          >
+            <p className="text-3xl mb-3">😅</p>
+            <h2 className="text-lg font-display font-bold text-gray-900 mb-2">You're a little late!</h2>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              This {currentActivity.label.toLowerCase()} already happened. The next one is next{" "}
+              <span className="font-semibold">{getActivityDay(currentActivity.id)}</span> — see you then! 👋
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowPastActivityModal(false)}
+              className="mt-5 w-full h-11 rounded-full font-semibold text-sm transition-all hover:opacity-90 active:scale-95"
+              style={{
+                background: "rgba(255,255,255,0.55)",
+                border: "1px solid rgba(0,0,0,0.12)",
+                color: "#1a1a1a",
+              }}
+            >
+              Got it
+            </button>
           </div>
         </div>
       )}
