@@ -377,7 +377,7 @@ export function GlobalParticipantsSection() {
                           <div className="absolute inset-0 flex items-center justify-center">
                             <Button
                               onClick={handleUnlockClick}
-                              className="bg-[#7c5cfc] text-white hover:bg-[#8b6dfc] shadow-lg"
+                              className="bg-[#3B82F6] text-white hover:bg-[#2563EB] shadow-lg"
                             >
                               <span className="animate-peek inline-block mr-1">👀</span> Unlock {blurredParticipants.length} more
                             </Button>
