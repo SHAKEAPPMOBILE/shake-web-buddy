@@ -1107,7 +1107,7 @@ export default function EventsPage({
 
   useEffect(() => {
     if (events.length === 0 || cat === "All" || cat === FESTIVAL_TAB) return;
-    const n = events.filter((e) => e.category === cat).length;
+    const n = events.filter((e) => e.category?.toLowerCase() === cat.toLowerCase()).length;
     if (n === 0) {
       console.log("[EventsPage] category filter matched 0 events — resetting to All", {
         cat,
@@ -1123,11 +1123,11 @@ export default function EventsPage({
       ? festivalEvents
       : cat === "All"
       ? events
-      : events.filter((e) => e.category === cat);
+      : events.filter((e) => e.category?.toLowerCase() === cat.toLowerCase());
 
   useEffect(() => {
     const filteredCount =
-      cat === "All" ? events.length : events.filter((e) => e.category === cat).length;
+      cat === "All" ? events.length : events.filter((e) => e.category?.toLowerCase() === cat.toLowerCase()).length;
     const hotCount = events.filter((e) => e.isHot).length;
     console.log("[EventsPage] filter/render snapshot", {
       eventsCount: events.length,
