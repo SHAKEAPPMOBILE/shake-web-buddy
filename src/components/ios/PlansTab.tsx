@@ -208,13 +208,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             : Promise.resolve({ data: [] as any[], error: null }),
       ]);
 
-      // Filter joined activities with smart expiry + optional city filter
+      // Filter joined activities with smart expiry + city filter
       const visibleJoined = (joinedDataResult.data || []).filter(
         (a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a)
       );
+      // My City mode: strict city match on the 'city' column. All Cities: no city filter.
       const joinedActivities: any[] = joinedPlansCityFilter
         ? visibleJoined.filter((a: { city: string }) => a.city === joinedPlansCityFilter)
-        : visibleJoined;
+        : (!showAllCities && effectiveCity)
+          ? visibleJoined.filter((a: { city: string }) => a.city === effectiveCity)
+          : visibleJoined;
+      console.log("[PlansTab] joinedActivities →", { showAllCities, effectiveCity, total: visibleJoined.length, afterCityFilter: joinedActivities.length, cities: visibleJoined.map((a: any) => a.city) });
 
       // Filter city plans with smart expiry.
       // In all-cities mode: show every active plan regardless of join status.
@@ -1195,11 +1199,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             {/* City discovery plans — other users' plans in selectedCity */}
             {cityPlans.length > 0 && (
               <>
-                {activities.length > 0 && (
+                {showAllCities && activities.length > 0 && (
                   <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-2 pb-0.5">
-                    {showAllCities
-                      ? "🌍 Live feed — all cities"
-                      : t("plans.moreInCity", "More in {{city}}", { city: selectedCity })}
+                    🌍 Live feed — all cities
                   </div>
                 )}
                 {cityPlans.filter(p => !activities.some(a => a.id === p.id)).map((plan) => (
