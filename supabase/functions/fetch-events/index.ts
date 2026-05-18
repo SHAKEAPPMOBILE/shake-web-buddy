@@ -77,6 +77,7 @@ interface EventItem {
   presaleCount?: number;
   isHot: boolean;
   ticketmasterUrl: string | undefined;
+  source?: string;
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -555,6 +556,121 @@ function dedupeByEventNameKeepingEarliestStart(events: EventItem[]): EventItem[]
   return deduped;
 }
 
+// ---------------------------------------------------------------------------
+// Claude city_events helpers
+// ---------------------------------------------------------------------------
+
+function getCurrentMonday(): string {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sun
+  const daysBack = day === 0 ? 6 : day - 1;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - daysBack);
+  return monday.toISOString().split("T")[0];
+}
+
+interface CityEventRow {
+  id: string;
+  city: string | null;
+  title: string | null;
+  description: string | null;
+  venue: string | null;
+  address: string | null;
+  event_date: string | null;
+  event_url: string | null;
+  image_url: string | null;
+  category: string | null;
+}
+
+const CLAUDE_CATEGORY_EMOJI: Record<string, string> = {
+  music: "🎵",
+  sports: "🏆",
+  art: "🎨",
+  comedy: "😂",
+  festivals: "🎪",
+  all: "🌆",
+};
+
+function mapCityEventToItem(row: CityEventRow): EventItem {
+  const cat = (row.category ?? "all").toLowerCase();
+  const emoji = CLAUDE_CATEGORY_EMOJI[cat] ?? "🌆";
+  const category = cat.charAt(0).toUpperCase() + cat.slice(1);
+  let eventStartAt: string | undefined;
+  let date = "TBD";
+  if (row.event_date) {
+    try {
+      const d = new Date(row.event_date);
+      eventStartAt = d.toISOString();
+      date = d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch { /* leave TBD */ }
+  }
+  return {
+    id: `ce_${row.id}`,
+    name: row.title ?? "Unnamed Event",
+    date,
+    eventStartAt,
+    imageUrl: row.image_url ?? undefined,
+    venue: row.venue ?? "—",
+    city: row.city ?? "—",
+    distance: "—",
+    priceMin: 0,
+    priceMax: 0,
+    category,
+    emoji,
+    chatCount: 0,
+    ticketsSold: 0,
+    isHot: false,
+    ticketmasterUrl: row.event_url ?? undefined,
+    source: "claude",
+  };
+}
+
+/** Fetch active city_events for this week and return ones not already in `existing`. */
+async function fetchCityEvents(
+  supabaseUrl: string | undefined,
+  supabaseKey: string | undefined,
+  cityFilter: string | null,
+  existing: EventItem[],
+): Promise<EventItem[]> {
+  if (!supabaseUrl || !supabaseKey || !cityFilter) return [];
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const weekOf = getCurrentMonday();
+    const { data, error } = await supabase
+      .from("city_events")
+      .select("id, city, title, description, venue, address, event_date, event_url, image_url, category")
+      .ilike("city", cityFilter)
+      .gte("week_of", weekOf)
+      .eq("is_active", true);
+
+    if (error) {
+      console.warn("[fetch-events] city_events query error:", error.message);
+      return [];
+    }
+
+    const rows = (data ?? []) as CityEventRow[];
+    console.log(`[fetch-events] city_events returned ${rows.length} rows for "${cityFilter}"`);
+
+    // Dedup against existing items by normalized title
+    const existingNames = new Set(existing.map((e) => normalizeForMatch(e.name)));
+    const novel = rows.filter((row) => {
+      if (!row.title) return false;
+      return !existingNames.has(normalizeForMatch(row.title));
+    });
+
+    console.log(`[fetch-events] city_events adding ${novel.length} new (${rows.length - novel.length} deduped against existing)`);
+    return novel.map(mapCityEventToItem);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("[fetch-events] city_events fetch failed:", msg);
+    return [];
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -793,14 +909,17 @@ serve(async (req) => {
     if (ticketmasterEvents.length > 0) {
       const tmBeforeDedupe = ticketmasterEvents.length;
       const events = dedupeByEventNameKeepingEarliestStart(ticketmasterEvents);
+      const claudeEvents = await fetchCityEvents(supabaseUrl ?? undefined, supabaseServiceKey ?? undefined, cityFilter, events);
+      const merged = [...events, ...claudeEvents];
       console.log("[fetch-events] fetch summary", {
         cityRequested: cityFilter,
         ticketmasterEventsReturned: events.length,
         ticketmasterRawBeforeDedupe: tmBeforeDedupe,
+        claudeEventsAdded: claudeEvents.length,
         dbFallbackUsed: false,
         dbEventsReturned: 0,
       });
-      return new Response(JSON.stringify({ events }), {
+      return new Response(JSON.stringify({ events: merged }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
@@ -914,8 +1033,10 @@ serve(async (req) => {
     });
 
     const combined = dedupeByEventNameKeepingEarliestStart([...dbEvents]);
+    const claudeEvents = await fetchCityEvents(supabaseUrl ?? undefined, supabaseServiceKey ?? undefined, cityFilter, combined);
+    const merged = [...combined, ...claudeEvents];
 
-    if (!combined.length) {
+    if (!merged.length) {
       return respondWithEmpty("No events found from Ticketmaster or public_events", {
         cityFilter,
         latlong,
@@ -928,7 +1049,7 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ events: combined }), {
+    return new Response(JSON.stringify({ events: merged }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
