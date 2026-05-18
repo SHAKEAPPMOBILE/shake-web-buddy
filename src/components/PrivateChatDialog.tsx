@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, User, Images, Camera, MoreVertical, LogOut, Ban } from "lucide-react";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
@@ -240,7 +239,7 @@ export function PrivateChatDialog({
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 py-4" ref={scrollRef}>
+      <div className="flex-1 min-h-0 overflow-y-auto py-4" ref={scrollRef}>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <LoadingSpinner size="lg" />
@@ -331,11 +330,11 @@ export function PrivateChatDialog({
             })}
           </div>
         )}
-      </ScrollArea>
+      </div>
 
       {/* Quick suggestions - show when input is empty */}
       {user && !newMessage.trim() && !giphyPickerOpen && (
-        <div className="px-4 pb-2 overflow-x-auto scrollbar-hide">
+        <div className="shrink-0 px-4 pb-2 overflow-x-auto scrollbar-hide">
           <div className="flex gap-2 w-max">
             {chatSuggestions.map((suggestion) => (
               <button
