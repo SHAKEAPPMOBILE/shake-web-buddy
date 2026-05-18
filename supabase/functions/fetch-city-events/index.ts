@@ -118,45 +118,32 @@ async function callClaudeWithWebSearch(
   // Handle pause_turn: server-side tool loop hit its iteration cap — just
   // re-send with the assistant turn appended (up to MAX_CONTINUATIONS times).
   const MAX_CONTINUATIONS = 3;
-  // Retry on 429 rate-limit: wait 65s (full minute window) then retry twice.
-  const MAX_RATE_RETRIES = 2;
 
   for (let attempt = 0; attempt < MAX_CONTINUATIONS; attempt++) {
-    let res: Response | null = null;
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "web-search-2025-03-05",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1500,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        messages,
+      }),
+    });
 
-    for (let rateRetry = 0; rateRetry <= MAX_RATE_RETRIES; rateRetry++) {
-      res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-beta": "web-search-2025-03-05",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 1500,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-          messages,
-        }),
-      });
-
-      if (res.status === 429 && rateRetry < MAX_RATE_RETRIES) {
-        console.warn(`  Rate limited (429), waiting 65s before retry ${rateRetry + 1}/${MAX_RATE_RETRIES}…`);
-        await new Promise((r) => setTimeout(r, 65000));
-        continue;
-      }
-      break;
-    }
-
-    if (!res!.ok) {
-      const errText = await res!.text();
+    if (!res.ok) {
+      const errText = await res.text();
       throw new Error(
-        `Claude API error ${res!.status}: ${errText.slice(0, 400)}`,
+        `Claude API error ${res.status}: ${errText.slice(0, 400)}`,
       );
     }
 
-    const data = (await res!.json()) as ClaudeResponse;
+    const data = (await res.json()) as ClaudeResponse;
     console.log(
       `  Claude stop_reason=${data.stop_reason} blocks=${data.content.length}`,
     );
@@ -238,10 +225,6 @@ serve(async (req) => {
 
     for (let cityIdx = 0; cityIdx < cities.length; cityIdx++) {
       const city = cities[cityIdx];
-      // Small gap between cities; 429 retry logic in callClaudeWithWebSearch handles rate limits
-      if (cityIdx > 0) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      }
       try {
         console.log(`\n=== ${city} (${cityIdx + 1}/${cities.length}) ===`);
 
@@ -309,15 +292,25 @@ serve(async (req) => {
           is_active: true,
         }));
 
+        // Dedupe within the batch — Claude sometimes returns the same title twice,
+        // which causes "ON CONFLICT DO UPDATE command cannot affect row a second time".
+        const uniqueRows = rows.filter((row, idx, arr) =>
+          arr.findIndex((r) => r.title.toLowerCase() === row.title.toLowerCase()) === idx
+        );
+
         const { error: upsertError } = await supabase
           .from("city_events")
-          .upsert(rows, { onConflict: "city,title,week_of" });
+          .upsert(uniqueRows, { onConflict: "city,title,week_of" });
 
         if (upsertError) {
-          console.error(
-            `  Upsert error for ${city}:`,
-            upsertError.message,
-          );
+          console.error(`  Upsert error for ${city}:`, upsertError.message);
+          results.push({
+            city,
+            eventsFound: events.length,
+            eventsInserted: 0,
+            error: `upsert: ${upsertError.message}`,
+          });
+          continue;
         }
 
         results.push({
