@@ -623,6 +623,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           <GlobalParticipantsSection />
         </div>
 
+        {false && (
         <div className="flex items-center justify-center">
           <button
             type="button"
@@ -633,6 +634,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             {t('home.eventsNearYou', 'Events near you')}
           </button>
         </div>
+        )}
 
       </div>
       <CityPickerModal open={isCitySelectorOpen} onOpenChange={setIsCitySelectorOpen} title="Choose your city">
