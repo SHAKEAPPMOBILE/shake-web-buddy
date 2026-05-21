@@ -1238,7 +1238,7 @@ export default function EventsPage({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm mb-0.5 truncate">{e.name}</p>
+                      <p className="font-semibold text-black text-sm mb-0.5 truncate">{e.name}</p>
                       <p className="text-gray-500 text-xs mb-0.5 truncate">{e.venue} · {e.city}</p>
                       <p className="text-gray-500 text-xs">{e.date}</p>
                     </div>
@@ -1295,7 +1295,7 @@ export default function EventsPage({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm mb-0.5 truncate">{e.name}</p>
+                      <p className="font-semibold text-black text-sm mb-0.5 truncate">{e.name}</p>
                       <p className="text-gray-500 text-xs mb-0.5 truncate">{e.venue} · {e.date}</p>
                       <div className="flex gap-3 items-center flex-wrap">
                         {(e.priceMin != null && e.priceMax != null && e.priceMin > 0 && e.priceMax > 0) && (
