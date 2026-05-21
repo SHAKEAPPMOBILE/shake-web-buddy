@@ -974,24 +974,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       <div className="flex flex-col px-4 py-3 border-b border-neutral-200 bg-white dark:bg-white dark:border-neutral-200 gap-2 shrink-0">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-display font-bold text-gray-900 dark:text-gray-900">{t('plans.myPlans')}</h2>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onOpenEvents?.()}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium transition-all bg-primary text-primary-foreground"
-            >
-              <span>⚡️</span>
-              <span>{t('plans.events', 'Events')}</span>
-            </button>
-            <button
-              onClick={handleCreatePlan}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all"
-              style={plansSettlingGradientStyle}
-            >
-              <Plus className="w-4 h-4" />
-              {t('common.create')}
-            </button>
-          </div>
         </div>
 
         {/* My City / All Cities filter chips */}
