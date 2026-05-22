@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getStoredReferralCode, clearStoredReferralCode } from "@/hooks/useReferralTracking";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { isNativePlatform, isNativeAndroid } from "@/lib/platform-utils";
+import { getNextOccurrenceDate } from "@/data/activityTypes";
 
 export type OtpResult = {
   success: boolean;
@@ -212,6 +213,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // If the user signed up via the marketing site, a row in `marketing_joins`
+  // holds their requested activity_type and city. On first-ever login we
+  // honour that by inserting them into `activity_joins` and cleaning up.
+  const processMarketingJoin = async (currentUser: User) => {
+    const email = currentUser.email?.toLowerCase().trim();
+    if (!email) return;
+
+    try {
+      // 1. Look up a pending marketing_joins row for this email.
+      const { data: marketingRow, error: lookupErr } = await supabase
+        .from("marketing_joins")
+        .select("id, activity_type, city")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (lookupErr) {
+        logPostgrestError("AuthContext processMarketingJoin lookup", lookupErr);
+        return;
+      }
+      if (!marketingRow) return; // No pending marketing join — nothing to do.
+
+      const { id: marketingId, activity_type, city } = marketingRow;
+
+      // 2. Check if user already has an active join for this activity (avoid duplicates).
+      const { data: existingJoin } = await supabase
+        .from("activity_joins")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .eq("activity_type", activity_type)
+        .gt("expires_at", new Date().toISOString())
+        .maybeSingle();
+
+      if (!existingJoin) {
+        // 3. Insert the activity_joins row using the same expiry logic as joinActivity.
+        const nextOccurrence = getNextOccurrenceDate(activity_type);
+        nextOccurrence.setUTCHours(23, 59, 59, 999);
+        const expiresAt = nextOccurrence.toISOString();
+
+        const { error: insertErr } = await supabase.from("activity_joins").insert({
+          user_id: currentUser.id,
+          activity_type,
+          city,
+          expires_at: expiresAt,
+        });
+
+        if (insertErr) {
+          // 23505 = unique violation — already joined, safe to ignore.
+          if (insertErr.code !== "23505") {
+            logPostgrestError("AuthContext processMarketingJoin insert", insertErr);
+            return; // Don't delete the marketing row if the insert failed.
+          }
+        }
+      }
+
+      // 4. Delete the marketing_joins row so it doesn't trigger again.
+      const { error: deleteErr } = await supabase
+        .from("marketing_joins")
+        .delete()
+        .eq("id", marketingId);
+
+      if (deleteErr) {
+        logPostgrestError("AuthContext processMarketingJoin delete", deleteErr);
+      } else {
+        console.log("[AuthContext] Marketing join processed and cleaned up", { activity_type, city });
+      }
+    } catch (e) {
+      console.error("[AuthContext] processMarketingJoin threw (ignored):", e);
+    }
+  };
+
   const checkSubscription = async (currentSession?: Session | null) => {
     // Use passed session or fall back to state (for external calls)
     const activeSession = currentSession ?? session;
@@ -314,6 +385,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => {
           processReferral(currentSession.user.id);
         }, 500); // Slight delay to ensure profile exists first
+
+        // On first-ever login, honour any marketing_joins pre-signup entry.
+        if (isFirstEverLogin) {
+          setTimeout(() => {
+            processMarketingJoin(currentSession.user);
+          }, 600); // After profile + referral are both underway
+        }
       }
 
       // Defer subscription check with the current session
