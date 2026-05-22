@@ -16,6 +16,7 @@ import { CityPickerModal } from "@/components/CityPickerModal";
 import { LocationPinEmoji } from "@/components/LocationPinEmoji";
 import { REGIONS, SHAKE_CITIES } from "@/data/cities";
 import { useVenueContext } from "@/contexts/VenueContext";
+import { supabase } from "@/integrations/supabase/client";
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
   onConfirmActivity?: (activity: { id: string; label: string; emoji: string }, cityOverride?: string) => void | Promise<void>;
@@ -55,6 +56,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
   const tappedActivityRef = useRef<CarouselItem | null>(null);
+  const [carouselJoinCount, setCarouselJoinCount] = useState(0);
 
   useEffect(() => {
     phraseIntervalRef.current = setInterval(() => {
@@ -127,6 +129,27 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       setShowCityChoices(false);
     }
   }, [showActivities]);
+
+  // Fetch live join count for the currently visible carousel activity
+  useEffect(() => {
+    const activityId = CAROUSEL_ITEMS[currentActivityIndex]?.id;
+    if (!activityId || activityId === 'propose-plan' || !selectedCity) {
+      setCarouselJoinCount(0);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from("activity_joins")
+      .select("*", { count: "exact", head: true })
+      .eq("activity_type", activityId)
+      .eq("city", selectedCity)
+      .is("activity_id", null)
+      .gt("expires_at", new Date().toISOString())
+      .then(({ count }) => {
+        if (!cancelled) setCarouselJoinCount(count ?? 0);
+      });
+    return () => { cancelled = true; };
+  }, [CAROUSEL_ITEMS, currentActivityIndex, selectedCity]);
 
   const handleHandshakeClick = () => {
     setShowTapInstruction(true);
@@ -430,10 +453,15 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
                 <div className="mt-8 animate-fade-in text-center">
                   <div className="text-xl font-semibold text-foreground">
-                    {currentActivity?.isProposePlan 
+                    {currentActivity?.isProposePlan
                       ? t('home.anytimeAnywhere', 'Anytime, Anywhere.')
                       : currentActivity?.label}
                   </div>
+                  {!currentActivity?.isProposePlan && carouselJoinCount > 0 && (
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {carouselJoinCount} joined
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-center gap-2 mt-6">
