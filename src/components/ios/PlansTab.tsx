@@ -358,6 +358,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     if (cityAtPickerOpen && selectedCity === cityAtPickerOpen) return;
     setJoinedPlansCityFilter(selectedCity);
   }, [isCitySheetOpen, selectedCity, cityAtPickerOpen]);
+
+  // When the city changes from the home screen (picker is closed), clear any stale
+  // Plans-internal city override so My City always reflects the global CityContext value.
+  useEffect(() => {
+    if (isCitySheetOpen) return;
+    setJoinedPlansCityFilter(null);
+  }, [selectedCity]); // eslint-disable-line react-hooks/exhaustive-deps
   
   const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
   const [showChatView, setShowChatView] = useState(false);
