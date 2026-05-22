@@ -30,6 +30,7 @@ import { MessageBubbleReactions } from "@/components/chat/MessageBubbleReactions
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { aggregateReactionsByMessage, sortedReactionEntries } from "@/lib/eventChatReactions";
 import { markEventChatViewedNow } from "@/lib/eventChatLastSeen";
+import { removePendingEventChat } from "@/lib/pendingEventChat";
 
 interface EventChatPageParams {
   eventId?: string;
@@ -402,6 +403,9 @@ export default function EventChatPage() {
                     .delete()
                     .eq("event_id", eventId)
                     .eq("user_id", user.id);
+                  // Clear the pending-chat entry so the chat list doesn't re-show
+                  // this event from the optimistic sessionStorage cache after leaving.
+                  if (eventId) removePendingEventChat(eventId);
                   navigateBackFromEventChat();
                 }}
                 className="shrink-0 text-white/50 hover:text-red-400 hover:bg-white/5 h-8 w-8"
