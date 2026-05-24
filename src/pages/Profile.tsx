@@ -94,7 +94,12 @@ export default function Profile() {
         console.error("Error fetching public profile:", publicError);
       } else if (publicProfile) {
         setName(publicProfile.name || "");
-        setAvatarUrl(publicProfile.avatar_url);
+        // Fall back to OAuth metadata (Google/Apple picture) when the DB column is null
+        const metaAvatar =
+          (user.user_metadata?.picture as string | undefined) ||
+          (user.user_metadata?.avatar_url as string | undefined) ||
+          null;
+        setAvatarUrl(publicProfile.avatar_url || metaAvatar);
         setNationality(publicProfile.nationality || "");
         setOccupation(publicProfile.occupation || "");
         setInterests(publicProfile.interests || []);
@@ -345,11 +350,10 @@ export default function Profile() {
             <div className="relative mb-4">
               <div className="w-24 h-24 rounded-full bg-muted border-2 border-border overflow-hidden flex items-center justify-center">
                 {avatarUrl ? (
-                  <img 
-                    src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl} 
-                    alt="" 
+                  <img
+                    src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
+                    alt=""
                     className="w-full h-full object-cover"
-                    onError={() => setAvatarUrl(null)}
                   />
                 ) : (
                   <User className="w-12 h-12 text-muted-foreground" />
