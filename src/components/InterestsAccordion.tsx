@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { INTEREST_CATEGORIES, MAX_INTERESTS } from "@/lib/interests";
+import { INTEREST_CATEGORIES } from "@/lib/interests";
 import { cn } from "@/lib/utils";
 
 interface InterestsAccordionProps {

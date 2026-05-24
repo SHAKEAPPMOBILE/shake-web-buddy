@@ -32,7 +32,7 @@ import { hasValidAvatarUrl } from "@/lib/avatar";
 import { FaceCaptureModal } from "@/components/FaceCaptureModal";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
-import { MAX_INTERESTS } from "@/lib/interests";
+import {} from "@/lib/interests";
 import { InterestsAccordion } from "@/components/InterestsAccordion";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
@@ -1551,7 +1551,7 @@ export default function Auth() {
             <div className="space-y-6">
               <div className="space-y-1 text-center">
                 <h2 className="text-xl font-bold">What are you into?</h2>
-                <p className="text-sm text-muted-foreground">Pick up to {MAX_INTERESTS} interests</p>
+                <p className="text-sm text-muted-foreground">Pick your interests</p>
               </div>
 
               <InterestsAccordion
@@ -1559,8 +1559,6 @@ export default function Auth() {
                 onToggle={(interest) => {
                   if (selectedInterests.includes(interest)) {
                     setSelectedInterests((prev) => prev.filter((i) => i !== interest));
-                  } else if (selectedInterests.length >= MAX_INTERESTS) {
-                    setInterestsShaking(true);
                   } else {
                     setSelectedInterests((prev) => [...prev, interest]);
                   }

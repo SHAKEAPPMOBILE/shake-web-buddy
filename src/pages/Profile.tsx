@@ -21,7 +21,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { PointsDisplay } from "@/components/PointsDisplay";
 import { useTranslation } from "react-i18next";
-import { MAX_INTERESTS } from "@/lib/interests";
+import {} from "@/lib/interests";
 import { InterestsAccordion } from "@/components/InterestsAccordion";
 import {
   AlertDialog,
@@ -471,15 +471,15 @@ export default function Profile() {
               <Label className="flex items-center gap-2">
                 <span className="text-lg">✨</span>
                 Interests
-                <span className="text-xs text-muted-foreground font-normal">({interests.length}/{MAX_INTERESTS})</span>
+                {interests.length > 0 && (
+                  <span className="text-xs text-muted-foreground font-normal">({interests.length})</span>
+                )}
               </Label>
               <InterestsAccordion
                 selected={interests}
                 onToggle={(interest) => {
                   if (interests.includes(interest)) {
                     setInterests((prev) => prev.filter((i) => i !== interest));
-                  } else if (interests.length >= MAX_INTERESTS) {
-                    setInterestsShaking(true);
                   } else {
                     setInterests((prev) => [...prev, interest]);
                   }
