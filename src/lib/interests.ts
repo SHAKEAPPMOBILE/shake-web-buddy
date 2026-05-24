@@ -32,7 +32,7 @@ export const INTEREST_CATEGORIES: InterestCategory[] = [
   },
   {
     name: "Health & Wellness",
-    interests: ["Fitness", "Yoga", "Running", "Cycling", "Meditation", "Mental Health", "Nutrition", "Hiking", "Gym"],
+    interests: ["Fitness", "Meditation", "Mental Health", "Nutrition", "Gym", "Wellness", "Sleep", "Mindfulness"],
   },
   {
     name: "Causes & Identity",
