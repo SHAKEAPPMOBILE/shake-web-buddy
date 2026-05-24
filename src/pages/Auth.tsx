@@ -976,7 +976,7 @@ export default function Auth() {
                 setConfirmPassword("");
               }}
               aria-label="Back"
-              className="absolute top-[60px] left-4 text-primary/80 hover:text-primary"
+              className="absolute top-[60px] left-4 text-gray-900 hover:text-gray-600"
               iconClassName="w-4 h-4"
             />
           )}
@@ -1249,7 +1249,7 @@ export default function Auth() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-gray-100 text-gray-900 placeholder:text-gray-400 border-gray-200"
                     required
                   />
                 </div>
@@ -1257,7 +1257,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-black text-white hover:bg-black/90"
+                className="w-full bg-gray-800 text-white hover:bg-gray-700"
                 size="lg"
                 disabled={isLoading}
               >
