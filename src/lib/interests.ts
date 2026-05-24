@@ -30,6 +30,14 @@ export const INTEREST_CATEGORIES: InterestCategory[] = [
     name: "Nightlife",
     interests: ["Nightlife", "Parties", "Bars", "Beach", "Adventure"],
   },
+  {
+    name: "Health & Wellness",
+    interests: ["Fitness", "Yoga", "Running", "Cycling", "Meditation", "Mental Health", "Nutrition", "Hiking", "Gym"],
+  },
+  {
+    name: "Causes & Identity",
+    interests: ["LGBTQ+", "Feminism", "Activism", "Sustainability", "Climate", "Human Rights", "Politics", "Social Justice"],
+  },
 ];
 
 /** Flat list of every interest across all categories (for backwards-compat display). */

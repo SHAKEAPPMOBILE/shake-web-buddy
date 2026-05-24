@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { INTEREST_CATEGORIES, MAX_INTERESTS } from "@/lib/interests";
 import { cn } from "@/lib/utils";
 
@@ -15,12 +15,26 @@ export function InterestsAccordion({
   shaking,
   onShakingEnd,
 }: InterestsAccordionProps) {
-  const [activeCategory, setActiveCategory] = useState(INTEREST_CATEGORIES[0].name);
+  const [activeCategory, setActiveCategory] = useState<string | null>(INTEREST_CATEGORIES[0].name);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const currentCategory = INTEREST_CATEGORIES.find((c) => c.name === activeCategory)!;
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setActiveCategory(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const currentCategory = activeCategory
+    ? INTEREST_CATEGORIES.find((c) => c.name === activeCategory) ?? null
+    : null;
 
   return (
     <div
+      ref={wrapperRef}
       className={cn("space-y-3", shaking && "animate-shake-x")}
       onAnimationEnd={onShakingEnd}
     >
@@ -33,7 +47,7 @@ export function InterestsAccordion({
             <button
               key={category.name}
               type="button"
-              onClick={() => setActiveCategory(category.name)}
+              onClick={() => setActiveCategory(isActive ? null : category.name)}
               className={cn(
                 "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
                 isActive
@@ -56,28 +70,30 @@ export function InterestsAccordion({
       </div>
 
       {/* Interests for the active category */}
-      <div className="flex flex-wrap gap-2">
-        {currentCategory.interests.map((interest) => {
-          const isSelected = selected.includes(interest);
-          return (
-            <button
-              key={interest}
-              type="button"
-              onClick={() => onToggle(interest)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
-                isSelected
-                  ? "bg-blue-500 text-white border-blue-500"
-                  : selected.length >= MAX_INTERESTS
-                  ? "bg-background text-muted-foreground border-border cursor-not-allowed opacity-50"
-                  : "bg-background text-foreground border-border hover:border-blue-400"
-              )}
-            >
-              {interest}
-            </button>
-          );
-        })}
-      </div>
+      {currentCategory && (
+        <div className="flex flex-wrap gap-2">
+          {currentCategory.interests.map((interest) => {
+            const isSelected = selected.includes(interest);
+            return (
+              <button
+                key={interest}
+                type="button"
+                onClick={() => onToggle(interest)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
+                  isSelected
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : selected.length >= MAX_INTERESTS
+                    ? "bg-background text-muted-foreground border-border cursor-not-allowed opacity-50"
+                    : "bg-background text-foreground border-border hover:border-blue-400"
+                )}
+              >
+                {interest}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

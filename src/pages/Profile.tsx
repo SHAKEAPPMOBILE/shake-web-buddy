@@ -52,6 +52,7 @@ export default function Profile() {
   const [twitterUrl, setTwitterUrl] = useState("");
   const [billingEmail, setBillingEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -94,12 +95,15 @@ export default function Profile() {
         console.error("Error fetching public profile:", publicError);
       } else if (publicProfile) {
         setName(publicProfile.name || "");
-        // Fall back to OAuth metadata (Google/Apple picture) when the DB column is null
+        // Fall back to OAuth metadata (Google/Apple picture) when the DB column is null.
+        // Run through getDisplayAvatarUrl so relative preset paths become absolute URLs
+        // before being stored in state — the img src uses the state value directly.
         const metaAvatar =
           (user.user_metadata?.picture as string | undefined) ||
           (user.user_metadata?.avatar_url as string | undefined) ||
           null;
-        setAvatarUrl(publicProfile.avatar_url || metaAvatar);
+        const rawAvatarUrl = publicProfile.avatar_url || metaAvatar;
+        setAvatarUrl(getDisplayAvatarUrl(rawAvatarUrl) ?? rawAvatarUrl);
         setNationality(publicProfile.nationality || "");
         setOccupation(publicProfile.occupation || "");
         setInterests(publicProfile.interests || []);
@@ -129,6 +133,11 @@ export default function Profile() {
       fetchProfile();
     }
   }, [user]);
+
+  // Reset load-failed flag whenever the avatar URL changes so the img retries.
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [avatarUrl]);
 
   // When coming from the subscription flow, focus + highlight the billing email input.
   useEffect(() => {
@@ -349,11 +358,12 @@ export default function Profile() {
             {/* Avatar with camera button */}
             <div className="relative mb-4">
               <div className="w-24 h-24 rounded-full bg-muted border-2 border-border overflow-hidden flex items-center justify-center">
-                {avatarUrl ? (
+                {avatarUrl && !avatarLoadFailed ? (
                   <img
-                    src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
+                    src={avatarUrl}
                     alt=""
                     className="w-full h-full object-cover"
+                    onError={() => setAvatarLoadFailed(true)}
                   />
                 ) : (
                   <User className="w-12 h-12 text-muted-foreground" />
