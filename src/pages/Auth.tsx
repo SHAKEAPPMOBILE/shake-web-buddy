@@ -32,7 +32,8 @@ import { hasValidAvatarUrl } from "@/lib/avatar";
 import { FaceCaptureModal } from "@/components/FaceCaptureModal";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
-import { PRESET_INTERESTS, MAX_INTERESTS } from "@/lib/interests";
+import { MAX_INTERESTS } from "@/lib/interests";
+import { InterestsAccordion } from "@/components/InterestsAccordion";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
 const FACE_ID_FEATURE_ENABLED = false;
@@ -1553,38 +1554,20 @@ export default function Auth() {
                 <p className="text-sm text-muted-foreground">Pick up to {MAX_INTERESTS} interests</p>
               </div>
 
-              <div
-                className={interestsShaking ? "animate-shake-x" : ""}
-                onAnimationEnd={() => setInterestsShaking(false)}
-              >
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {PRESET_INTERESTS.map((interest) => {
-                    const selected = selectedInterests.includes(interest);
-                    return (
-                      <button
-                        key={interest}
-                        type="button"
-                        onClick={() => {
-                          if (selected) {
-                            setSelectedInterests((prev) => prev.filter((i) => i !== interest));
-                          } else if (selectedInterests.length >= MAX_INTERESTS) {
-                            setInterestsShaking(true);
-                          } else {
-                            setSelectedInterests((prev) => [...prev, interest]);
-                          }
-                        }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                          selected
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-foreground border-border hover:border-primary/60"
-                        }`}
-                      >
-                        {interest}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <InterestsAccordion
+                selected={selectedInterests}
+                onToggle={(interest) => {
+                  if (selectedInterests.includes(interest)) {
+                    setSelectedInterests((prev) => prev.filter((i) => i !== interest));
+                  } else if (selectedInterests.length >= MAX_INTERESTS) {
+                    setInterestsShaking(true);
+                  } else {
+                    setSelectedInterests((prev) => [...prev, interest]);
+                  }
+                }}
+                shaking={interestsShaking}
+                onShakingEnd={() => setInterestsShaking(false)}
+              />
 
               <div className="flex gap-3">
                 <Button

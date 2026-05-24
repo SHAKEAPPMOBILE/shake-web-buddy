@@ -21,7 +21,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { PointsDisplay } from "@/components/PointsDisplay";
 import { useTranslation } from "react-i18next";
-import { PRESET_INTERESTS, MAX_INTERESTS } from "@/lib/interests";
+import { MAX_INTERESTS } from "@/lib/interests";
+import { InterestsAccordion } from "@/components/InterestsAccordion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -458,38 +459,20 @@ export default function Profile() {
                 Interests
                 <span className="text-xs text-muted-foreground font-normal">({interests.length}/{MAX_INTERESTS})</span>
               </Label>
-              <div
-                className={interestsShaking ? "animate-shake-x" : ""}
-                onAnimationEnd={() => setInterestsShaking(false)}
-              >
-                <div className="flex flex-wrap gap-2">
-                  {PRESET_INTERESTS.map((interest) => {
-                    const selected = interests.includes(interest);
-                    return (
-                      <button
-                        key={interest}
-                        type="button"
-                        onClick={() => {
-                          if (selected) {
-                            setInterests((prev) => prev.filter((i) => i !== interest));
-                          } else if (interests.length >= MAX_INTERESTS) {
-                            setInterestsShaking(true);
-                          } else {
-                            setInterests((prev) => [...prev, interest]);
-                          }
-                        }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                          selected
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-foreground border-border hover:border-primary/60"
-                        }`}
-                      >
-                        {interest}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <InterestsAccordion
+                selected={interests}
+                onToggle={(interest) => {
+                  if (interests.includes(interest)) {
+                    setInterests((prev) => prev.filter((i) => i !== interest));
+                  } else if (interests.length >= MAX_INTERESTS) {
+                    setInterestsShaking(true);
+                  } else {
+                    setInterests((prev) => [...prev, interest]);
+                  }
+                }}
+                shaking={interestsShaking}
+                onShakingEnd={() => setInterestsShaking(false)}
+              />
             </div>
 
             {/* Social Links Section */}
