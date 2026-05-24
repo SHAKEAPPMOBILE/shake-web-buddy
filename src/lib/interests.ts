@@ -1,4 +1,4 @@
-export const MAX_INTERESTS = 7;
+export const MAX_INTERESTS = 999;
 
 export interface InterestCategory {
   name: string;

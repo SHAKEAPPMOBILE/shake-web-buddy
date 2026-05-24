@@ -83,8 +83,6 @@ export function InterestsAccordion({
                   "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
                   isSelected
                     ? "bg-blue-500 text-white border-blue-500"
-                    : selected.length >= MAX_INTERESTS
-                    ? "bg-background text-muted-foreground border-border cursor-not-allowed opacity-50"
                     : "bg-background text-foreground border-border hover:border-blue-400"
                 )}
               >
