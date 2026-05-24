@@ -66,6 +66,7 @@ export default function ProposePlanPage() {
   const [showIDVerification, setShowIDVerification] = useState(false);
   const [profanityError, setProfanityError] = useState<string | null>(null);
   const [dayLimitError, setDayLimitError] = useState(false);
+  const [cityInput, setCityInput] = useState("");
 
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
@@ -106,7 +107,8 @@ export default function ProposePlanPage() {
   }, [planText]);
 
   const isPaidActivity = priceAmount.trim().length > 0;
-  const isValid = planText.trim().length > 0 && !hasProfanity;
+  const effectiveCity = city || cityInput.trim();
+  const isValid = planText.trim().length > 0 && !hasProfanity && effectiveCity.length > 0;
   const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
   const needsPayoutSetup = isPaidActivity && !hasPayoutMethod;
 
@@ -141,7 +143,7 @@ export default function ProposePlanPage() {
       detectedActivity.type,
       activityDate,
       planText.trim(),
-      undefined,
+      city || cityInput.trim() || undefined,
       formattedPrice,
       endOfSelectedDay
     );
@@ -247,6 +249,19 @@ export default function ProposePlanPage() {
                 </p>
               )}
             </div>
+
+            {/* Your city input — shown only when no city is selected in context */}
+            {!city && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Your city</label>
+                <Input
+                  value={cityInput}
+                  onChange={(e) => setCityInput(e.target.value)}
+                  placeholder="e.g. Paris, New York, São Paulo…"
+                  className="border-blue-300 focus-visible:ring-blue-400 focus-visible:border-blue-400"
+                />
+              </div>
+            )}
 
             {/* Date picker pills */}
             {(() => {
@@ -401,7 +416,7 @@ export default function ProposePlanPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{city} • {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")}</span>
+                      <span>{effectiveCity} • {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")}</span>
                       {priceAmount.trim() && (
                         <span className="text-green-600 font-medium">
                           {selectedCurrencySymbol}{priceAmount}
