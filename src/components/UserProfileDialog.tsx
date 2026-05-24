@@ -238,7 +238,7 @@ export function UserProfileDialog({
                 {socialLinks.interests.map((interest) => (
                   <span
                     key={interest}
-                    className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium"
+                    className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 text-xs font-medium"
                   >
                     {interest}
                   </span>
