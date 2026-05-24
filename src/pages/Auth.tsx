@@ -1058,7 +1058,7 @@ export default function Auth() {
                           placeholder="you@example.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 bg-gray-100 text-gray-900 placeholder:text-gray-400 border-gray-200"
                           required
                           autoComplete="email"
                         />
@@ -1075,7 +1075,7 @@ export default function Auth() {
                           placeholder="Your password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="pl-10 pr-10"
+                          className="pl-10 pr-10 bg-gray-100 text-gray-900 placeholder:text-gray-400 border-gray-200"
                           required
                           autoComplete="current-password"
                         />
@@ -1092,7 +1092,7 @@ export default function Auth() {
 
                     <Button
                       type="submit"
-                      className="w-full bg-black text-white hover:bg-black/90"
+                      className="w-full bg-gray-800 text-white hover:bg-gray-700"
                       size="lg"
                       disabled={isLoading}
                     >
@@ -1107,7 +1107,7 @@ export default function Auth() {
                           setStep("forgotPassword");
                           setShowEmailLogin(false);
                         }}
-                        className="text-sm text-muted-foreground hover:text-foreground"
+                        className="text-sm text-gray-900 hover:text-gray-600"
                       >
                         Forgot password?
                       </button>
@@ -1139,7 +1139,7 @@ export default function Auth() {
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-gray-100 text-gray-900 placeholder:text-gray-400 border-gray-200"
                     required
                   />
                 </div>
