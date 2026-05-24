@@ -214,6 +214,7 @@ export default function Profile() {
 
     try {
       // Update public profile (include avatar so preset/custom avatar is saved)
+      console.log("Saving interests:", interests, "length:", interests.length, "value sent:", interests.length > 0 ? interests : null);
       const { error: publicError } = await supabase
         .from("profiles")
         .update({
