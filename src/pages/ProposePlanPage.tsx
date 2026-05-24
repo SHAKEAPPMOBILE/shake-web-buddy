@@ -51,10 +51,10 @@ export default function ProposePlanPage() {
     const now = new Date();
     const day = now.getDay();   // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
     const hour = now.getHours();
-    const late = hour >= 19 || (hour === 19 && now.getMinutes() >= 15); // 19:15+
-    if (day === 5) return late ? "brunch" : "dinner";  // Friday
-    if (day === 6) return late ? "dinner" : "brunch";  // Saturday
-    return "dinner";                                    // all other days
+    const isLate = hour > 19 || (hour === 19 && now.getMinutes() >= 15); // 19:15+
+    if (day === 5) return isLate ? "brunch" : "dinner"; // Friday
+    if (day === 6) return isLate ? "dinner" : "brunch"; // Saturday
+    return "";                                           // Sun/Mon/other — no forced activity
   });
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
