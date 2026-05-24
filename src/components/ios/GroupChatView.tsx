@@ -208,7 +208,7 @@ export function GroupChatView({
     userName: string | null;
     avatarUrl: string | null;
   } | null>(null);
-  const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null; nationality: string | null; occupation: string | null }[]>([]);
+  const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null; nationality: string | null; occupation: string | null; interests: string[] | null }[]>([]);
   const MAX_CHAT_CAPACITY = 7;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevParticipantsRef = useRef<typeof participants>([]);
@@ -284,7 +284,7 @@ export function GroupChatView({
 
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("user_id, name, avatar_url, nationality, occupation")
+        .select("user_id, name, avatar_url, nationality, occupation, interests")
         .in("user_id", uniqueUserIds);
 
       const participantsList = uniqueUserIds.map((userId) => {
@@ -295,6 +295,7 @@ export function GroupChatView({
           avatar_url: profile?.avatar_url || null,
           nationality: profile?.nationality || null,
           occupation: profile?.occupation || null,
+          interests: (profile as any)?.interests ?? null,
         };
       });
 
@@ -834,6 +835,38 @@ export function GroupChatView({
                 </div>
               </div>
             )}
+
+            {/* ── INTEREST PILLS ── */}
+            {(() => {
+              const MAX_PILLS = 7;
+              // Count how many participants have each interest
+              const freq: Record<string, number> = {};
+              for (const p of participants) {
+                for (const i of p.interests ?? []) {
+                  freq[i] = (freq[i] ?? 0) + 1;
+                }
+              }
+              if (Object.keys(freq).length === 0) return null;
+
+              // Shared first (2+ users), then unique, both sorted descending by freq
+              const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+              const shared = sorted.filter(([, c]) => c >= 2).map(([i]) => i);
+              const others = sorted.filter(([, c]) => c < 2).map(([i]) => i);
+              const pills = [...shared, ...others].slice(0, MAX_PILLS);
+
+              return (
+                <div className="flex flex-wrap justify-center gap-1.5 px-4 pb-3">
+                  {pills.map((interest) => (
+                    <span
+                      key={interest}
+                      className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 text-xs font-medium"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Collapsed thin bar — shown when header is collapsed */}
