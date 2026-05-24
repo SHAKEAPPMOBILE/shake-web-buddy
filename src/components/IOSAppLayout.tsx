@@ -28,7 +28,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { hasValidAvatarUrl } from "@/lib/avatar";
-import { getOrderedActivities, getNextOccurrenceDate } from "@/data/activityTypes";
+import { getOrderedActivities, getNextOccurrenceDate, getActivityLabel } from "@/data/activityTypes";
+import { triggerConfettiWaterfall } from "@/lib/confetti";
 import EventsPage from "@/pages/EventsPage";
 
 export function IOSAppLayout() {
@@ -349,19 +350,39 @@ export function IOSAppLayout() {
 
   const executeShakeAction = useCallback(async () => {
     if (!user) return;
+    if (!selectedCity) {
+      toast.error("Set your city first to join an activity");
+      return;
+    }
 
-    const activity = getShakeActivity(getOrderedActivities());
-    if (!activity) return;
+    // Determine activity by day + time (mirrors carousel rules)
+    const now = new Date();
+    const day = now.getDay();   // 0=Sun … 6=Sat
+    const hour = now.getHours();
+    const min = now.getMinutes();
+    const isLate = hour > 19 || (hour === 19 && min >= 15); // 19:15+
+
+    let activityType: string;
+    if (day === 5 && !isLate)       activityType = "dinner";  // Friday before 19:15
+    else if (day === 5 && isLate)   activityType = "brunch";  // Friday 19:15+
+    else if (day === 6) {
+      activityType = (hour < 11 || (hour === 11 && min < 50)) ? "brunch" : "dinner"; // Saturday
+    } else {
+      activityType = "dinner";                                 // All other days
+    }
 
     await triggerHapticFeedback();
 
-    setTimeout(() => {
-      setSelectedActivity(activity.id);
+    const result = await joinActivity(activityType);
+    if (result.success) {
+      triggerConfettiWaterfall();
+      const label = getActivityLabel(activityType);
+      toast.success(`🎉 You're in for ${label} in ${selectedCity}!`);
+      setShowHomeActivities(false);
       setShowEvents(false);
-      setActiveTab("home");
-      setShowHomeActivities(true);
-    }, 600);
-  }, [user, triggerHapticFeedback]);
+      setActiveTab("plans");
+    }
+  }, [user, selectedCity, triggerHapticFeedback, joinActivity]);
 
   // + tab bar button → propose-plan page
   const handleShakeClick = () => {
