@@ -102,6 +102,9 @@ export default function Profile() {
           (user.user_metadata?.picture as string | undefined) ||
           (user.user_metadata?.avatar_url as string | undefined) ||
           null;
+        console.log("avatarUrl raw:", publicProfile.avatar_url);
+        console.log("metaAvatar:", metaAvatar);
+        console.log("getDisplayAvatarUrl result:", getDisplayAvatarUrl(publicProfile.avatar_url));
         setAvatarUrl(publicProfile.avatar_url || metaAvatar);
         setNationality(publicProfile.nationality || "");
         setOccupation(publicProfile.occupation || "");
