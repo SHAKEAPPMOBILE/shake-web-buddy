@@ -1342,12 +1342,12 @@ export default function Auth() {
           {step === 'confirmation' && (
             <div className="space-y-6 text-center">
               <div className="space-y-3 text-center">
-                <div className="text-4xl">📬</div>
+                <div className="text-4xl animate-shake-x inline-block">📬</div>
                 <h2 className="text-xl font-bold text-black">Check your email</h2>
                 <p className="text-sm text-muted-foreground">
                   {confirmationKind === "reset"
-                    ? "We've sent you a password reset link. Check your inbox (and spam folder)."
-                    : "We've sent you a sign-in link. Check your inbox (and spam folder)."}
+                    ? "We've sent you a password reset link."
+                    : "We've sent you a sign-in link."}
                 </p>
               </div>
 
