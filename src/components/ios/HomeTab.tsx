@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getActivitiesWithDates, getStartingIndexByProximity } from "@/data/activityTypes";
+import { getActivitiesWithDates } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,43 @@ import { LocationPinEmoji } from "@/components/LocationPinEmoji";
 import { REGIONS, SHAKE_CITIES } from "@/data/cities";
 import { useVenueContext } from "@/contexts/VenueContext";
 import { supabase } from "@/integrations/supabase/client";
+
+// Fixed carousel order mirrors the useMemo fixedOrder inside HomeTab.
+// ['dinner'=0, 'brunch'=1, propose-plan appended at end]
+const CAROUSEL_FIXED_ORDER = ['dinner', 'brunch'];
+
+/**
+ * Returns the carousel index to show on load based on the current day and time.
+ * Indices are looked up dynamically so they stay correct if the order changes.
+ */
+function getSmartCarouselIndex(): number {
+  const now = new Date();
+  const day = now.getDay();   // 0=Sun … 6=Sat
+  const hour = now.getHours();
+  const min = now.getMinutes();
+  const isLate = hour > 19 || (hour === 19 && min >= 15); // 19:15+
+
+  const dinnerIndex = CAROUSEL_FIXED_ORDER.indexOf('dinner');
+  const brunchIndex = CAROUSEL_FIXED_ORDER.indexOf('brunch');
+
+  // Sunday → first slide (index 0)
+  if (day === 0) return 0;
+
+  // Monday–Friday before 19:15 → dinner
+  if (day >= 1 && day <= 5 && !isLate) return dinnerIndex;
+
+  // Friday 19:15 or later → brunch
+  if (day === 5 && isLate) return brunchIndex;
+
+  // Saturday before 11:50 → brunch; 11:50+ → dinner
+  if (day === 6) {
+    const beforeBrunchTime = hour < 11 || (hour === 11 && min < 50);
+    return beforeBrunchTime ? brunchIndex : dinnerIndex;
+  }
+
+  return 0;
+}
+
 interface HomeTabProps {
   onSelectActivity?: (activity: { id: string; label: string; emoji: string }) => void;
   onConfirmActivity?: (activity: { id: string; label: string; emoji: string }, cityOverride?: string) => void | Promise<void>;
@@ -51,7 +88,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [showTapInstruction, setShowTapInstruction] = useState(false);
-  const [currentActivityIndex, setCurrentActivityIndex] = useState(() => getStartingIndexByProximity());
+  const [currentActivityIndex, setCurrentActivityIndex] = useState(() => getSmartCarouselIndex());
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
@@ -123,7 +160,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   // Reset to closest-by-proximity when activities are shown
   useEffect(() => {
     if (showActivities) {
-      setCurrentActivityIndex(getStartingIndexByProximity());
+      setCurrentActivityIndex(getSmartCarouselIndex());
       setShowActivityDetails(false);
       setSelectedJoinCity(null);
       setShowCityChoices(false);
