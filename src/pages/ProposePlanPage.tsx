@@ -48,8 +48,13 @@ export default function ProposePlanPage() {
   const { createActivity, isLoading, remainingActivities, fetchMyActivities } = useUserActivities(city);
 
   const [planText, setPlanText] = useState(() => {
-    const dow = new Date().getDay(); // 0=Sun, 1=Mon, …, 5=Fri, 6=Sat
-    return dow === 6 ? "brunch" : "dinner"; // Saturday → brunch; Friday + all other days → dinner
+    const now = new Date();
+    const day = now.getDay();   // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+    const hour = now.getHours();
+    const late = hour >= 19 || (hour === 19 && now.getMinutes() >= 15); // 19:15+
+    if (day === 5) return late ? "brunch" : "dinner";  // Friday
+    if (day === 6) return late ? "dinner" : "brunch";  // Saturday
+    return "dinner";                                    // all other days
   });
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
