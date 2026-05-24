@@ -32,6 +32,7 @@ import { hasValidAvatarUrl } from "@/lib/avatar";
 import { FaceCaptureModal } from "@/components/FaceCaptureModal";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
+import { PRESET_INTERESTS, MAX_INTERESTS } from "@/lib/interests";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
 const FACE_ID_FEATURE_ENABLED = false;
@@ -44,6 +45,7 @@ const AUTH_WIZARD_STEPS = new Set([
   "name",
   "nationality",
   "occupation",
+  "interests",
   "social",
   "avatar",
   "email",
@@ -148,6 +150,7 @@ export default function Auth() {
     | "name"
     | "nationality"
     | "occupation"
+    | "interests"
     | "social"
     | "avatar"
   >("method");
@@ -164,6 +167,8 @@ export default function Auth() {
   const [occupation, setOccupation] = useState("");
   const [occupationTouched, setOccupationTouched] = useState(false);
   const [occupationError, setOccupationError] = useState<string | null>(null);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [interestsShaking, setInterestsShaking] = useState(false);
   const [instagramUrl, setInstagramUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
@@ -667,7 +672,7 @@ export default function Auth() {
         await Promise.all([
           supabase
             .from("profiles")
-            .select("name, avatar_url, nationality, occupation")
+            .select("name, avatar_url, nationality, occupation, interests")
             .eq("user_id", currentUser.id)
             .maybeSingle(),
           supabase
@@ -747,6 +752,7 @@ export default function Auth() {
           avatar_url: avatarUrl,
           nationality: nationality || existingProfile?.nationality || null,
           occupation: occupation || existingProfile?.occupation || null,
+          interests: selectedInterests.length > 0 ? selectedInterests : (existingProfile?.interests ?? null),
           instagram_url: instagramUrl || null,
           linkedin_url: linkedinUrl || null,
           twitter_url: twitterUrl || null,
@@ -1473,7 +1479,7 @@ export default function Auth() {
               const err = validateOccupation(occupation);
               setOccupationError(err);
               if (err) return;
-              setStep('social');
+              setStep('interests');
             }} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="occupation">Occupation</Label>
@@ -1513,7 +1519,7 @@ export default function Auth() {
                   variant="outline"
                   className="flex-1"
                   size="lg"
-                  onClick={() => setStep('social')}
+                  onClick={() => setStep('interests')}
                 >
                   Skip
                 </Button>
@@ -1526,6 +1532,69 @@ export default function Auth() {
                 </Button>
               </div>
             </form>
+          )}
+
+          {/* Interests Step */}
+          {step === 'interests' && (
+            <div className="space-y-6">
+              <div className="space-y-1 text-center">
+                <h2 className="text-xl font-bold">What are you into?</h2>
+                <p className="text-sm text-muted-foreground">Pick up to {MAX_INTERESTS} interests</p>
+              </div>
+
+              <div
+                className={interestsShaking ? "animate-shake-x" : ""}
+                onAnimationEnd={() => setInterestsShaking(false)}
+              >
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {PRESET_INTERESTS.map((interest) => {
+                    const selected = selectedInterests.includes(interest);
+                    return (
+                      <button
+                        key={interest}
+                        type="button"
+                        onClick={() => {
+                          if (selected) {
+                            setSelectedInterests((prev) => prev.filter((i) => i !== interest));
+                          } else if (selectedInterests.length >= MAX_INTERESTS) {
+                            setInterestsShaking(true);
+                          } else {
+                            setSelectedInterests((prev) => [...prev, interest]);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                          selected
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background text-foreground border-border hover:border-primary/60"
+                        }`}
+                      >
+                        {interest}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
+                  onClick={() => setStep('social')}
+                >
+                  Skip
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1 bg-shake-green text-background hover:bg-shake-green/90"
+                  size="lg"
+                  onClick={() => setStep('social')}
+                >
+                  Continue
+                </Button>
+              </div>
+            </div>
           )}
 
           {/* Social Links Form */}

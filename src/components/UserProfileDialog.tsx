@@ -45,6 +45,7 @@ interface SocialLinks {
   twitter_url: string | null;
   nationality: string | null;
   occupation: string | null;
+  interests: string[] | null;
 }
 
 export function UserProfileDialog({ 
@@ -55,7 +56,7 @@ export function UserProfileDialog({
   avatarUrl 
 }: UserProfileDialogProps) {
   const [activityHistory, setActivityHistory] = useState<ActivityJoin[]>([]);
-  const [socialLinks, setSocialLinks] = useState<SocialLinks>({ instagram_url: null, linkedin_url: null, twitter_url: null, nationality: null, occupation: null });
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({ instagram_url: null, linkedin_url: null, twitter_url: null, nationality: null, occupation: null, interests: null });
   const [userAge, setUserAge] = useState<number | null>(null);
   const [lastKnownCity, setLastKnownCity] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -118,7 +119,7 @@ export function UserProfileDialog({
         // Fetch social links from profile
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
-          .select("instagram_url, linkedin_url, twitter_url, nationality, occupation")
+          .select("instagram_url, linkedin_url, twitter_url, nationality, occupation, interests")
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -131,6 +132,7 @@ export function UserProfileDialog({
             twitter_url: profileData.twitter_url,
             nationality: profileData.nationality,
             occupation: profileData.occupation,
+            interests: profileData.interests,
           });
         }
 
@@ -227,6 +229,20 @@ export function UserProfileDialog({
                     <span className="text-gray-900">{socialLinks.occupation}</span>
                   </span>
                 )}
+              </div>
+            )}
+
+            {/* Interests */}
+            {socialLinks.interests && socialLinks.interests.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2">
+                {socialLinks.interests.map((interest) => (
+                  <span
+                    key={interest}
+                    className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium"
+                  >
+                    {interest}
+                  </span>
+                ))}
               </div>
             )}
             

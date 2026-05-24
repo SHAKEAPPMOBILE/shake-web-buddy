@@ -107,6 +107,13 @@ export default {
           "25%": { transform: "rotate(-10deg)" },
           "75%": { transform: "rotate(10deg)" },
         },
+        "shake-x": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "15%": { transform: "translateX(-4px)" },
+          "45%": { transform: "translateX(4px)" },
+          "75%": { transform: "translateX(-3px)" },
+          "90%": { transform: "translateX(2px)" },
+        },
         "float": {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-6px)" },
@@ -133,6 +140,7 @@ export default {
         "scale-in": "scale-in 0.3s ease-out forwards",
         "slide-in-right": "slide-in-right 0.4s ease-out forwards",
         "shake": "shake 0.4s ease-in-out",
+        "shake-x": "shake-x 0.4s ease-in-out",
         "float": "float 3s ease-in-out infinite",
         "scroll-flags": "scroll-flags 30s linear infinite",
         "peek": "peek 1s ease-in-out infinite",

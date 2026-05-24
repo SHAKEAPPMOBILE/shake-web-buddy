@@ -592,6 +592,7 @@ export type Database = {
           created_at: string
           id: string
           instagram_url: string | null
+          interests: string[] | null
           linkedin_url: string | null
           name: string | null
           nationality: string | null
@@ -607,6 +608,7 @@ export type Database = {
           created_at?: string
           id?: string
           instagram_url?: string | null
+          interests?: string[] | null
           linkedin_url?: string | null
           name?: string | null
           nationality?: string | null
@@ -622,6 +624,7 @@ export type Database = {
           created_at?: string
           id?: string
           instagram_url?: string | null
+          interests?: string[] | null
           linkedin_url?: string | null
           name?: string | null
           nationality?: string | null

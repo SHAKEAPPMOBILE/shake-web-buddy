@@ -21,6 +21,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NationalitySelector } from "@/components/NationalitySelector";
 import { PointsDisplay } from "@/components/PointsDisplay";
 import { useTranslation } from "react-i18next";
+import { PRESET_INTERESTS, MAX_INTERESTS } from "@/lib/interests";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +44,8 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [nationality, setNationality] = useState("");
   const [occupation, setOccupation] = useState("");
+  const [interests, setInterests] = useState<string[]>([]);
+  const [interestsShaking, setInterestsShaking] = useState(false);
   const [instagramUrl, setInstagramUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
@@ -82,7 +85,7 @@ export default function Profile() {
       // Fetch public profile
       const { data: publicProfile, error: publicError } = await supabase
         .from("profiles")
-        .select("name, avatar_url, nationality, occupation, instagram_url, linkedin_url, twitter_url")
+        .select("name, avatar_url, nationality, occupation, interests, instagram_url, linkedin_url, twitter_url")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -93,6 +96,7 @@ export default function Profile() {
         setAvatarUrl(publicProfile.avatar_url);
         setNationality(publicProfile.nationality || "");
         setOccupation(publicProfile.occupation || "");
+        setInterests(publicProfile.interests || []);
         setInstagramUrl(publicProfile.instagram_url || "");
         setLinkedinUrl(publicProfile.linkedin_url || "");
         setTwitterUrl(publicProfile.twitter_url || "");
@@ -202,6 +206,7 @@ export default function Profile() {
           avatar_url: avatarUrl?.trim() || null,
           nationality: nationality.trim() || null,
           occupation: occupation.trim() || null,
+          interests: interests.length > 0 ? interests : null,
           instagram_url: instagramUrl.trim() || null,
           linkedin_url: linkedinUrl.trim() || null,
           twitter_url: twitterUrl.trim() || null,
@@ -444,6 +449,47 @@ export default function Profile() {
                 onChange={(e) => setOccupation(e.target.value)}
                 placeholder={t('profile.occupation')}
               />
+            </div>
+
+            {/* Interests */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <span className="text-lg">✨</span>
+                Interests
+                <span className="text-xs text-muted-foreground font-normal">({interests.length}/{MAX_INTERESTS})</span>
+              </Label>
+              <div
+                className={interestsShaking ? "animate-shake-x" : ""}
+                onAnimationEnd={() => setInterestsShaking(false)}
+              >
+                <div className="flex flex-wrap gap-2">
+                  {PRESET_INTERESTS.map((interest) => {
+                    const selected = interests.includes(interest);
+                    return (
+                      <button
+                        key={interest}
+                        type="button"
+                        onClick={() => {
+                          if (selected) {
+                            setInterests((prev) => prev.filter((i) => i !== interest));
+                          } else if (interests.length >= MAX_INTERESTS) {
+                            setInterestsShaking(true);
+                          } else {
+                            setInterests((prev) => [...prev, interest]);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                          selected
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background text-foreground border-border hover:border-primary/60"
+                        }`}
+                      >
+                        {interest}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             {/* Social Links Section */}
