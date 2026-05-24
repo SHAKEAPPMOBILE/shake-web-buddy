@@ -132,8 +132,12 @@ export default function Profile() {
       if (privateError) {
         logPostgrestError("Profile.tsx profiles_private select", privateError);
       } else if (privateProfile) {
-        setBillingEmail(privateProfile.billing_email || "");
+        // Fall back to auth email (e.g. Google OAuth) if no billing email is stored
+        setBillingEmail(privateProfile.billing_email || user.email || "");
         setPushNotificationsEnabled(privateProfile.push_notifications_enabled ?? true);
+      } else {
+        // No private profile row yet — still show the auth email
+        setBillingEmail(user.email || "");
       }
 
       // Record the just-loaded values as the saved baseline
@@ -444,7 +448,8 @@ export default function Profile() {
                 value={billingEmail}
                 onChange={(e) => setBillingEmail(e.target.value)}
                 placeholder="your@email.com"
-                className={highlightBillingEmail ? "ring-2 ring-shake-yellow/50 border-shake-yellow/50" : undefined}
+                readOnly
+                className={highlightBillingEmail ? "ring-2 ring-shake-yellow/50 border-shake-yellow/50 bg-gray-50 cursor-default" : "bg-gray-50 cursor-default"}
               />
               <p className="text-xs text-muted-foreground">
                 Used for billing and to receive updates from us.
