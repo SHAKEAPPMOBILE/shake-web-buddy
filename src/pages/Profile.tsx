@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useLocation, useNavigate, useBlocker } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
@@ -72,6 +72,44 @@ export default function Profile() {
   const returnTo = (location.state as any)?.returnTo as string | undefined;
   const [highlightBillingEmail, setHighlightBillingEmail] = useState(false);
 
+  // ── Unsaved changes tracking ──────────────────────────────────────────────
+  type ProfileSnapshot = {
+    name: string; nationality: string; occupation: string; interests: string[];
+    instagramUrl: string; linkedinUrl: string; twitterUrl: string;
+    avatarUrl: string | null; billingEmail: string; pushNotificationsEnabled: boolean;
+  };
+  const [savedState, setSavedState] = useState<ProfileSnapshot | null>(null);
+
+  const isDirty = useMemo(() => {
+    if (!savedState || isLoading) return false;
+    return (
+      name !== savedState.name ||
+      nationality !== savedState.nationality ||
+      occupation !== savedState.occupation ||
+      JSON.stringify([...interests].sort()) !== JSON.stringify([...savedState.interests].sort()) ||
+      instagramUrl !== savedState.instagramUrl ||
+      linkedinUrl !== savedState.linkedinUrl ||
+      twitterUrl !== savedState.twitterUrl ||
+      avatarUrl !== savedState.avatarUrl ||
+      billingEmail !== savedState.billingEmail ||
+      pushNotificationsEnabled !== savedState.pushNotificationsEnabled
+    );
+  }, [name, nationality, occupation, interests, instagramUrl, linkedinUrl, twitterUrl,
+      avatarUrl, billingEmail, pushNotificationsEnabled, savedState, isLoading]);
+
+  const blocker = useBlocker(isDirty && !isSaving);
+
+  // Warn on browser tab close / page refresh
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
   // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
@@ -125,6 +163,24 @@ export default function Profile() {
         setBillingEmail(privateProfile.billing_email || "");
         setPushNotificationsEnabled(privateProfile.push_notifications_enabled ?? true);
       }
+
+      // Record the just-loaded values as the saved baseline
+      const resolvedAvatar = (publicProfile?.avatar_url) ||
+        (user.user_metadata?.picture as string | undefined) ||
+        (user.user_metadata?.avatar_url as string | undefined) ||
+        null;
+      setSavedState({
+        name: publicProfile?.name || "",
+        nationality: publicProfile?.nationality || "",
+        occupation: publicProfile?.occupation || "",
+        interests: publicProfile?.interests || [],
+        instagramUrl: publicProfile?.instagram_url || "",
+        linkedinUrl: publicProfile?.linkedin_url || "",
+        twitterUrl: publicProfile?.twitter_url || "",
+        avatarUrl: resolvedAvatar,
+        billingEmail: privateProfile?.billing_email || "",
+        pushNotificationsEnabled: privateProfile?.push_notifications_enabled ?? true,
+      });
 
       setIsLoading(false);
     };
@@ -244,6 +300,8 @@ export default function Profile() {
 
       if (privateError) throw privateError;
 
+      // Update saved baseline so isDirty resets to false
+      setSavedState({ name, nationality, occupation, interests, instagramUrl, linkedinUrl, twitterUrl, avatarUrl, billingEmail, pushNotificationsEnabled });
       toast.success("Profile saved!");
       triggerConfettiWaterfall();
 
@@ -696,6 +754,22 @@ export default function Profile() {
             >
               {isDeleting ? "Deleting..." : "Delete Account"}
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unsaved changes dialog — triggered by React Router navigation blocker */}
+      <AlertDialog open={blocker.state === "blocked"} onOpenChange={() => blocker.reset?.()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>You have unsaved changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your changes haven't been saved yet. Leave anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={() => blocker.proceed?.()}>Leave anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
