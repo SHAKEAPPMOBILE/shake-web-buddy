@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Calendar, Instagram, Linkedin, Twitter, Flag, X, Video, Ban } from "lucide-react";
+import { User, Calendar, Instagram, Linkedin, Twitter, Flag, X, Video, Ban, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -254,14 +254,18 @@ export function UserProfileDialog({
               </div>
             )}
 
-            {/* Say Hi Button */}
-            <div className="mt-4">
-              <SayHiButton
-                targetUserId={userId}
-                targetUserName={userName}
-                onMatch={handleMatch}
-              />
-            </div>
+            {/* Direct message button */}
+            {!isOwnProfile && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={() => setShowChatDialog(true)}
+                  className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+                  aria-label="Send direct message"
+                >
+                  <Send className="w-4 h-4 text-primary" />
+                </button>
+              </div>
+            )}
 
             {/* Social Links */}
             {hasSocialLinks && (

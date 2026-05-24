@@ -859,7 +859,7 @@ export function GroupChatView({
                   {pills.map((interest) => (
                     <span
                       key={interest}
-                      className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 text-xs font-medium"
+                      className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/15 border border-white/30 text-white/90 text-xs font-medium"
                     >
                       {interest}
                     </span>
