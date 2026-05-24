@@ -96,14 +96,13 @@ export default function Profile() {
       } else if (publicProfile) {
         setName(publicProfile.name || "");
         // Fall back to OAuth metadata (Google/Apple picture) when the DB column is null.
-        // Run through getDisplayAvatarUrl so relative preset paths become absolute URLs
-        // before being stored in state — the img src uses the state value directly.
+        // Store the raw URL from DB — getDisplayAvatarUrl is called at render time only,
+        // so the state value is always the canonical raw string (relative or absolute).
         const metaAvatar =
           (user.user_metadata?.picture as string | undefined) ||
           (user.user_metadata?.avatar_url as string | undefined) ||
           null;
-        const rawAvatarUrl = publicProfile.avatar_url || metaAvatar;
-        setAvatarUrl(getDisplayAvatarUrl(rawAvatarUrl) ?? rawAvatarUrl);
+        setAvatarUrl(publicProfile.avatar_url || metaAvatar);
         setNationality(publicProfile.nationality || "");
         setOccupation(publicProfile.occupation || "");
         setInterests(publicProfile.interests || []);
@@ -360,7 +359,7 @@ export default function Profile() {
               <div className="w-24 h-24 rounded-full bg-muted border-2 border-border overflow-hidden flex items-center justify-center">
                 {avatarUrl && !avatarLoadFailed ? (
                   <img
-                    src={avatarUrl}
+                    src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
                     alt=""
                     className="w-full h-full object-cover"
                     onError={() => setAvatarLoadFailed(true)}
