@@ -37,15 +37,15 @@ export function InterestsAccordion({
               className={cn(
                 "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
                 isActive
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-foreground border-border hover:border-primary/60"
+                  ? "bg-blue-500 text-white border-blue-500"
+                  : "bg-background text-foreground border-border hover:border-blue-400"
               )}
             >
               {category.name}
               {countInCategory > 0 && (
                 <span className={cn(
                   "ml-1.5 text-xs rounded-full px-1 leading-none",
-                  isActive ? "bg-white/30 text-white" : "bg-primary/15 text-primary"
+                  isActive ? "bg-white/30 text-white" : "bg-blue-500/15 text-blue-500"
                 )}>
                   {countInCategory}
                 </span>
@@ -67,10 +67,10 @@ export function InterestsAccordion({
               className={cn(
                 "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
                 isSelected
-                  ? "bg-primary text-primary-foreground border-primary"
+                  ? "bg-blue-500 text-white border-blue-500"
                   : selected.length >= MAX_INTERESTS
                   ? "bg-background text-muted-foreground border-border cursor-not-allowed opacity-50"
-                  : "bg-background text-foreground border-border hover:border-primary/60"
+                  : "bg-background text-foreground border-border hover:border-blue-400"
               )}
             >
               {interest}
