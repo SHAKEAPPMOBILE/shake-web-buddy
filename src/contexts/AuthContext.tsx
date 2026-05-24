@@ -10,6 +10,8 @@ export type OtpResult = {
   success: boolean;
   retryable: boolean;
   message: string;
+  /** True when the email already has an account — a login link was sent instead of a signup link */
+  isExistingUser?: boolean;
 };
 
 interface AuthContextType {
@@ -498,27 +500,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // For signup (first attempt only): check if the account already exists by
       // calling signInWithOtp with shouldCreateUser: false.
-      // - No error → user exists → tell them to sign in instead.
+      // - No error → user exists → a plain login link was sent; return success so the UI shows confirmation.
       // - Error → user doesn't exist (or rate-limit hit) → proceed to create.
       if (purpose === "signup" && attemptNumber === 1) {
         const { error: existsError } = await supabase.auth.signInWithOtp({
           email: email.toLowerCase().trim(),
           options: {
-            emailRedirectTo: redirectUrl,
+            // Use base URL only (no ?intent=signup) so existing users are not routed
+            // to the set-password screen — they should land on the app home.
+            emailRedirectTo: authCallbackBaseUrl,
             shouldCreateUser: false,
           },
         });
 
         if (!existsError) {
-          // Success with shouldCreateUser: false means the user already has an account.
-          // We've also sent them a usable login magic link in the email.
-          console.log("[AuthContext][sendEmailOtp] User already exists (shouldCreateUser: false succeeded)", {
+          // User already has an account — a login magic link was just sent to them.
+          console.log("[AuthContext][sendEmailOtp] User already exists — login link sent", {
             email: email.toLowerCase().trim(),
           });
           return {
-            success: false,
+            success: true,
+            isExistingUser: true,
             retryable: false,
-            message: "An account with this email already exists. Try signing in instead.",
+            message: "Check your email for a link to sign in",
           };
         }
 

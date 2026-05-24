@@ -489,13 +489,18 @@ export default function Auth() {
 
         toast.error(toFriendlyAuthMessage(result.message, "email"));
       } else {
-        try {
-          sessionStorage.setItem(STORAGE_SIGNUP_EMAIL, email.toLowerCase().trim());
-        } catch {
-          /* ignore */
+        // Only tag the email as "pending signup" for genuinely new users.
+        // Existing users received a plain login link (no ?intent=signup) and
+        // must not be routed to the set-password screen on return.
+        if (!result.isExistingUser) {
+          try {
+            sessionStorage.setItem(STORAGE_SIGNUP_EMAIL, email.toLowerCase().trim());
+          } catch {
+            /* ignore */
+          }
         }
         setConfirmationKind("signup");
-        toast.success("Check your email — open the link, then you'll create a password.");
+        toast.success("Check your email for a link to sign in");
         setStep("confirmation");
       }
     } catch (error) {
@@ -1335,8 +1340,14 @@ export default function Auth() {
           {/* Confirmation Screen */}
           {step === 'confirmation' && (
             <div className="space-y-6 text-center">
-              <div className="space-y-2 text-center">
-                <h2 className="text-xl font-bold text-black">Check your email/spam please! 🙏</h2>
+              <div className="space-y-3 text-center">
+                <div className="text-4xl">📬</div>
+                <h2 className="text-xl font-bold text-black">Check your email</h2>
+                <p className="text-sm text-muted-foreground">
+                  {confirmationKind === "reset"
+                    ? "We've sent you a password reset link. Check your inbox (and spam folder)."
+                    : "We've sent you a sign-in link. Check your inbox (and spam folder)."}
+                </p>
               </div>
 
               <Button
