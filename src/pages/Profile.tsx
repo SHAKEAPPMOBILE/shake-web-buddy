@@ -91,18 +91,19 @@ export default function Profile() {
         .eq("user_id", user.id)
         .maybeSingle();
 
+      // Always seed avatar from OAuth metadata so it shows even if there is no DB row yet.
+      const metaAvatar =
+        (user.user_metadata?.picture as string | undefined) ||
+        (user.user_metadata?.avatar_url as string | undefined) ||
+        null;
+      setAvatarUrl(metaAvatar);
+
       if (publicError) {
         console.error("Error fetching public profile:", publicError);
       } else if (publicProfile) {
         setName(publicProfile.name || "");
-        // Fall back to OAuth metadata (Google/Apple picture) when the DB column is null.
-        // Store the raw URL from DB — getDisplayAvatarUrl is called at render time only,
-        // so the state value is always the canonical raw string (relative or absolute).
-        const finalAvatar = publicProfile.avatar_url ||
-          (user.user_metadata?.picture as string) ||
-          (user.user_metadata?.avatar_url as string) ||
-          null;
-        setAvatarUrl(finalAvatar);
+        // DB avatar_url takes priority over OAuth metadata; fall back to metadata if null.
+        setAvatarUrl(publicProfile.avatar_url || metaAvatar);
         setNationality(publicProfile.nationality || "");
         setOccupation(publicProfile.occupation || "");
         setInterests(publicProfile.interests || []);
