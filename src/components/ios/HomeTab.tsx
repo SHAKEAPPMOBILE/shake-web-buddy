@@ -36,8 +36,8 @@ function getSmartCarouselIndex(): number {
   const dinnerIndex = CAROUSEL_FIXED_ORDER.indexOf('dinner');
   const brunchIndex = CAROUSEL_FIXED_ORDER.indexOf('brunch');
 
-  // Sunday → first slide (index 0)
-  if (day === 0) return 0;
+  // Sunday → propose-plan slide (index 2)
+  if (day === 0) return 2;
 
   // Monday–Friday before 19:15 → dinner
   if (day >= 1 && day <= 5 && !isLate) return dinnerIndex;
