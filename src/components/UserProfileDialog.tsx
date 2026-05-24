@@ -3,7 +3,7 @@ import { User, Calendar, Instagram, Linkedin, Twitter, Flag, X, Video, Ban, Send
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { SayHiButton } from "./SayHiButton";
+
 import { PrivateChatDialog } from "./PrivateChatDialog";
 import { ReportUserDialog } from "./ReportUserDialog";
 import { useGreetings } from "@/hooks/useGreetings";
