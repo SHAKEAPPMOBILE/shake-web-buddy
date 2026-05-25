@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,6 +67,19 @@ export default function Profile() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+
+  // Baseline values as loaded from DB — used to detect unsaved changes
+  const savedValuesRef = useRef<{
+    name: string;
+    nationality: string;
+    occupation: string;
+    interests: string[];
+    instagramUrl: string;
+    linkedinUrl: string;
+    twitterUrl: string;
+    pushNotificationsEnabled: boolean;
+  } | null>(null);
 
   const focusBillingEmail = Boolean((location.state as any)?.focusBillingEmail);
   const returnTo = (location.state as any)?.returnTo as string | undefined;
@@ -141,6 +154,16 @@ export default function Profile() {
       }
 
       // Record the just-loaded values as the saved baseline
+      savedValuesRef.current = {
+        name: publicProfile?.name || "",
+        nationality: publicProfile?.nationality || "",
+        occupation: publicProfile?.occupation || "",
+        interests: publicProfile?.interests || [],
+        instagramUrl: publicProfile?.instagram_url || "",
+        linkedinUrl: publicProfile?.linkedin_url || "",
+        twitterUrl: publicProfile?.twitter_url || "",
+        pushNotificationsEnabled: privateProfile?.push_notifications_enabled ?? true,
+      };
       setIsLoading(false);
     };
 
@@ -259,6 +282,18 @@ export default function Profile() {
 
       if (privateError) throw privateError;
 
+      // Update saved baseline so isDirty resets to false
+      savedValuesRef.current = {
+        name: name.trim(),
+        nationality: nationality.trim(),
+        occupation: occupation.trim(),
+        interests: [...interests],
+        instagramUrl: instagramUrl.trim(),
+        linkedinUrl: linkedinUrl.trim(),
+        twitterUrl: twitterUrl.trim(),
+        pushNotificationsEnabled,
+      };
+
       toast.success("Profile saved!");
       triggerConfettiWaterfall();
 
@@ -329,6 +364,32 @@ export default function Profile() {
     }
   };
 
+  const isDirty = useMemo(() => {
+    const s = savedValuesRef.current;
+    if (!s) return false;
+    const sortedCurrent = [...interests].sort().join(",");
+    const sortedSaved = [...s.interests].sort().join(",");
+    return (
+      name !== s.name ||
+      nationality !== s.nationality ||
+      occupation !== s.occupation ||
+      sortedCurrent !== sortedSaved ||
+      instagramUrl !== s.instagramUrl ||
+      linkedinUrl !== s.linkedinUrl ||
+      twitterUrl !== s.twitterUrl ||
+      pushNotificationsEnabled !== s.pushNotificationsEnabled
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, nationality, occupation, interests, instagramUrl, linkedinUrl, twitterUrl, pushNotificationsEnabled]);
+
+  const handleBack = () => {
+    if (isDirty) {
+      setShowUnsavedDialog(true);
+    } else {
+      navigate("/");
+    }
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -343,7 +404,7 @@ export default function Profile() {
       <header className="shrink-0 bg-card/95 backdrop-blur-xl border-b border-border pt-[max(env(safe-area-inset-top,0px),1rem)]">
         <div className="flex items-center justify-between px-4 h-14">
           <MinimalBackButton
-            onClick={() => navigate("/")}
+            onClick={handleBack}
             className="text-muted-foreground hover:text-foreground"
             aria-label={t('common.back')}
             iconClassName="w-6 h-6"
@@ -711,6 +772,26 @@ export default function Profile() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? "Deleting..." : "Delete Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unsaved Changes Dialog */}
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>🐯 You have unsaved changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your changes haven't been saved yet. Leave anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
+              Stay
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/")}>
+              Leave anyway
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
