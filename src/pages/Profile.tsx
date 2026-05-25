@@ -449,7 +449,7 @@ export default function Profile() {
                 onChange={(e) => setBillingEmail(e.target.value)}
                 placeholder="your@email.com"
                 readOnly
-                className={highlightBillingEmail ? "ring-2 ring-shake-yellow/50 border-shake-yellow/50 bg-gray-50 cursor-default" : "bg-gray-50 cursor-default"}
+                className={highlightBillingEmail ? "ring-2 ring-shake-yellow/50 border-shake-yellow/50 bg-gray-50 cursor-default text-gray-900" : "bg-gray-50 cursor-default text-gray-900"}
               />
               <p className="text-xs text-muted-foreground">
                 Used for billing and to receive updates from us.
