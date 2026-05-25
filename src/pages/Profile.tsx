@@ -69,8 +69,10 @@ export default function Profile() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
-  // Baseline values as loaded from DB — used to detect unsaved changes
-  const savedValuesRef = useRef<{
+  // Baseline values as loaded from DB — used to detect unsaved changes.
+  // Must be state (not a ref) so that updating it after save triggers a re-render
+  // and isDirty recalculates to false.
+  const [savedValues, setSavedValues] = useState<{
     name: string;
     nationality: string;
     occupation: string;
@@ -154,7 +156,7 @@ export default function Profile() {
       }
 
       // Record the just-loaded values as the saved baseline
-      savedValuesRef.current = {
+      setSavedValues({
         name: publicProfile?.name || "",
         nationality: publicProfile?.nationality || "",
         occupation: publicProfile?.occupation || "",
@@ -163,7 +165,7 @@ export default function Profile() {
         linkedinUrl: publicProfile?.linkedin_url || "",
         twitterUrl: publicProfile?.twitter_url || "",
         pushNotificationsEnabled: privateProfile?.push_notifications_enabled ?? true,
-      };
+      });
       setIsLoading(false);
     };
 
@@ -283,7 +285,7 @@ export default function Profile() {
       if (privateError) throw privateError;
 
       // Update saved baseline so isDirty resets to false
-      savedValuesRef.current = {
+      setSavedValues({
         name: name.trim(),
         nationality: nationality.trim(),
         occupation: occupation.trim(),
@@ -292,7 +294,7 @@ export default function Profile() {
         linkedinUrl: linkedinUrl.trim(),
         twitterUrl: twitterUrl.trim(),
         pushNotificationsEnabled,
-      };
+      });
 
       toast.success("Profile saved!");
       triggerConfettiWaterfall();
@@ -365,7 +367,7 @@ export default function Profile() {
   };
 
   const isDirty = useMemo(() => {
-    const s = savedValuesRef.current;
+    const s = savedValues;
     if (!s) return false;
     const sortedCurrent = [...interests].sort().join(",");
     const sortedSaved = [...s.interests].sort().join(",");
@@ -379,8 +381,7 @@ export default function Profile() {
       twitterUrl !== s.twitterUrl ||
       pushNotificationsEnabled !== s.pushNotificationsEnabled
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, nationality, occupation, interests, instagramUrl, linkedinUrl, twitterUrl, pushNotificationsEnabled]);
+  }, [name, nationality, occupation, interests, instagramUrl, linkedinUrl, twitterUrl, pushNotificationsEnabled, savedValues]);
 
   const handleBack = () => {
     if (isDirty) {
