@@ -258,7 +258,7 @@ export function UserProfileDialog({
             {!isOwnProfile && (
               <div className="mt-4 flex justify-center">
                 <button
-                  onClick={() => setShowChatDialog(true)}
+                  onClick={() => { onOpenChange(false); setShowChatDialog(true); }}
                   className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
                   aria-label="Send direct message"
                 >

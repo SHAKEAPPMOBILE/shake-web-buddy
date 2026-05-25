@@ -815,24 +815,19 @@ export function GroupChatView({
               )}
             </div>
 
-            {/* ── OCCUPATION PILL — only reachable in FULL (clipped in PARTIAL) ── */}
-            {participants.some(p => p.occupation || p.nationality) && (
-              <div className="flex justify-center px-4 pb-3">
-                <div
-                  className="flex flex-col gap-1"
-                  style={{ background: 'white', border: '1px solid #e5e7eb', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999, padding: '10px 20px' }}
-                >
-                  {participants
-                    .filter(p => p.occupation || p.nationality)
-                    .map((p) => (
-                      <p key={p.user_id} className="text-xs text-gray-900 leading-snug text-center whitespace-nowrap">
-                        {p.name || 'Shaker'}
-                        {p.nationality ? ` ${getNationalityFlag(p.nationality)}` : ''}
-                        {p.occupation ? ` · ${p.occupation}` : ''}
-                      </p>
-                    ))
-                  }
-                </div>
+            {/* ── PARTICIPANT PILLS — name / flag / occupation ── */}
+            {participants.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-1.5 px-4 pb-3">
+                {participants.map((p) => (
+                  <span
+                    key={p.user_id}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-900 text-xs"
+                  >
+                    <span className="font-medium">{p.name || 'Shaker'}</span>
+                    {p.nationality && <span>{getNationalityFlag(p.nationality)}</span>}
+                    {p.occupation && <span className="text-gray-500">· {p.occupation}</span>}
+                  </span>
+                ))}
               </div>
             )}
 
