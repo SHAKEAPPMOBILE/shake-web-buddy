@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTotalUnreadChats } from "@/hooks/useTotalUnreadChats";
 import { useTranslation } from "react-i18next";
-import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 
 interface IOSTabBarProps {
   activeTab: string;
@@ -15,10 +14,8 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const { t } = useTranslation();
   const { user } = useAuth();
   const { totalUnread } = useTotalUnreadChats();
-  const { style: settlingGradientStyle } = useSettlingGradient("bottom-nav-shake");
-
-  // Apply settling gradient only when user is logged in, otherwise use solid blue
-  const shakeButtonStyle = user ? settlingGradientStyle : { background: "rgb(59, 130, 246)" }; // bg-blue-500
+  // Always use the same blue as the activity ring (border-blue-400 = #60a5fa)
+  const shakeButtonStyle = { background: "#60a5fa" };
 
   const tabs = [
     { id: "home", icon: Home, label: t('home.title', 'Home') },
