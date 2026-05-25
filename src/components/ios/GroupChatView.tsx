@@ -832,37 +832,6 @@ export function GroupChatView({
               </div>
             )}
 
-            {/* ── INTEREST PILLS ── */}
-            {(() => {
-              const MAX_PILLS = 7;
-              // Count how many participants have each interest
-              const freq: Record<string, number> = {};
-              for (const p of participants) {
-                for (const i of p.interests ?? []) {
-                  freq[i] = (freq[i] ?? 0) + 1;
-                }
-              }
-              if (Object.keys(freq).length === 0) return null;
-
-              // Shared first (2+ users), then unique, both sorted descending by freq
-              const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-              const shared = sorted.filter(([, c]) => c >= 2).map(([i]) => i);
-              const others = sorted.filter(([, c]) => c < 2).map(([i]) => i);
-              const pills = [...shared, ...others].slice(0, MAX_PILLS);
-
-              return (
-                <div className="flex flex-wrap justify-center gap-1.5 px-4 pb-3">
-                  {pills.map((interest) => (
-                    <span
-                      key={interest}
-                      className="inline-flex items-center px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-900 text-xs font-medium"
-                    >
-                      {interest}
-                    </span>
-                  ))}
-                </div>
-              );
-            })()}
           </div>
 
           {/* Collapsed thin bar — shown when header is collapsed */}
