@@ -815,19 +815,20 @@ export function GroupChatView({
               )}
             </div>
 
-            {/* ── PARTICIPANT PILLS — name / flag / occupation ── */}
-            {participants.length > 0 && (
+            {/* ── PARTICIPANT PILLS — flag / occupation only ── */}
+            {participants.some(p => p.nationality || p.occupation) && (
               <div className="flex flex-wrap justify-center gap-1.5 px-4 pb-3">
-                {participants.map((p) => (
-                  <span
-                    key={p.user_id}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-900 text-xs"
-                  >
-                    <span className="font-medium">{p.name || 'Shaker'}</span>
-                    {p.nationality && <span>{getNationalityFlag(p.nationality)}</span>}
-                    {p.occupation && <span className="text-gray-500">· {p.occupation}</span>}
-                  </span>
-                ))}
+                {participants
+                  .filter(p => p.nationality || p.occupation)
+                  .map((p) => (
+                    <span
+                      key={p.user_id}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-900 text-xs font-medium"
+                    >
+                      {p.nationality && <span>{getNationalityFlag(p.nationality)}</span>}
+                      {p.occupation && <span>{p.occupation}</span>}
+                    </span>
+                  ))}
               </div>
             )}
 
