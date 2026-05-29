@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -19,6 +19,8 @@ export function usePrivateMessages(otherUserId: string | null) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<PrivateMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Ref guard: prevents concurrent sends from firing the insert twice
+  const isSendingRef = useRef(false);
 
   const fetchMessages = useCallback(async () => {
     if (!user || !isValidUuid(otherUserId)) {
@@ -48,38 +50,48 @@ export function usePrivateMessages(otherUserId: string | null) {
   // Send a message
   const sendMessage = async (message: string, messageType: "text" | "gif" | "image" | "video" = "text") => {
     if (!user || !isValidUuid(otherUserId)) return { error: new Error("Not authenticated") };
+    // Ref guard: bail if a send is already in flight
+    if (isSendingRef.current) return { error: null };
+    isSendingRef.current = true;
 
     const trimmed = message.trim();
     if ((messageType === "gif" || messageType === "image" || messageType === "video") && !/^https?:\/\//i.test(trimmed)) {
+      isSendingRef.current = false;
       return { error: new Error("Invalid media URL") };
     }
 
-    const { error } = await supabase.from("private_messages").insert({
-      sender_id: user.id,
-      receiver_id: otherUserId,
-      message: trimmed,
-      message_type: messageType,
-    });
+    try {
+      const { error } = await supabase.from("private_messages").insert({
+        sender_id: user.id,
+        receiver_id: otherUserId,
+        message: trimmed,
+        message_type: messageType,
+      });
 
-    if (!error) {
-      await fetchMessages();
+      if (!error) {
+        // Do NOT call fetchMessages() here — the realtime subscription delivers
+        // the new message. Calling fetchMessages() AND having realtime both append
+        // the same row is the root cause of the duplicate-message bug.
 
-      // Fire-and-forget push to recipient
-      void (async () => {
-        const { data: senderProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
-        const senderName = senderProfile?.name || "Someone";
-        await supabase.functions.invoke("send-push-notification", {
-          body: {
-            to_user_id: otherUserId,
-            title: `${senderName} sent you a message 💬`,
-            body: trimmed.slice(0, 80),
-            data: { tab: "chat", other_user_id: user.id },
-          },
-        });
-      })();
+        // Fire-and-forget push to recipient
+        void (async () => {
+          const { data: senderProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
+          const senderName = senderProfile?.name || "Someone";
+          await supabase.functions.invoke("send-push-notification", {
+            body: {
+              to_user_id: otherUserId,
+              title: `${senderName} sent you a message 💬`,
+              body: trimmed.slice(0, 80),
+              data: { tab: "chat", other_user_id: user.id },
+            },
+          });
+        })();
+      }
+
+      return { error };
+    } finally {
+      isSendingRef.current = false;
     }
-
-    return { error };
   };
 
   // Mark messages as read
@@ -119,7 +131,12 @@ export function usePrivateMessages(otherUserId: string | null) {
             (newMessage.sender_id === user.id && newMessage.receiver_id === otherUserId) ||
             (newMessage.sender_id === otherUserId && newMessage.receiver_id === user.id)
           ) {
-            setMessages((prev) => [...prev, newMessage]);
+            // Deduplicate: skip if this message id is already in state.
+            // Prevents double-render when fetchMessages() and realtime both
+            // deliver the same row (fetchMessages runs after insert; realtime fires shortly after).
+            setMessages((prev) =>
+              prev.some((m) => m.id === newMessage.id) ? prev : [...prev, newMessage]
+            );
           }
         }
       )
