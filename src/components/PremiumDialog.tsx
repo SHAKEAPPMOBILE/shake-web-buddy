@@ -28,6 +28,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
   const [productPrice, setProductPrice] = useState("$1.88");
+  const [subscribeError, setSubscribeError] = useState<string | null>(null);
   const { user, isPremium, isManualOverride } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,31 +47,52 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     { icon: Video, text: "Upload status video" },
   ];
 
-  // Initialize in-app purchases and load product info
+  // Initialize in-app purchases and load product info; clear stale errors on open
   useEffect(() => {
-    if (open && !isPremium) {
-      initializePurchases();
+    if (open) {
+      setSubscribeError(null);
+      if (!isPremium) {
+        initializePurchases();
+      }
     }
   }, [open, isPremium]);
 
   const initializePurchases = async () => {
-    if (shouldUseStripeSubscriptionCheckout()) {
+    const useStripe = shouldUseStripeSubscriptionCheckout();
+    console.log('[PremiumDialog] initializePurchases — useStripe:', useStripe,
+      'platform:', typeof window !== 'undefined' ? (window as any)?.Capacitor?.getPlatform?.() : 'unknown');
+    if (useStripe) {
+      console.log('[PremiumDialog] Web/Stripe path — skipping RevenueCat offerings fetch');
       return;
     }
     try {
       // Load pricing from RevenueCat offerings (native iOS/Android only).
       const offerings = await CapacitorPurchases.getOfferings();
+      const packages = offerings.current?.availablePackages ?? [];
+      console.log('[PremiumDialog] offerings packages:', packages.map(p => ({
+        id: p.identifier,
+        productId: p.product?.identifier,
+        price: p.product?.priceString,
+      })));
       const pkg =
-        offerings.current?.availablePackages.find(
-          p =>
-            p.product?.identifier === "SuperHuman" ||
-            p.identifier === "monthly" ||
-            p.product?.identifier?.includes("SuperHuman")
-        ) ?? offerings.current?.availablePackages[0];
+        packages.find(p => p.product?.identifier === "SuperHuman") ??
+        packages.find(p => p.product?.identifier?.toLowerCase().includes("superhuman")) ??
+        packages.find(p => p.identifier === "monthly") ??
+        packages[0];
 
-      if (pkg?.product?.priceString) setProductPrice(pkg.product.priceString);
-    } catch (error) {
-      console.error("Error initializing purchases:", error);
+      if (pkg?.product?.priceString) {
+        console.log('[PremiumDialog] setting price from RevenueCat:', pkg.product.priceString);
+        setProductPrice(pkg.product.priceString);
+      } else {
+        console.warn('[PremiumDialog] no priceString found — keeping default', productPrice);
+      }
+    } catch (error: any) {
+      console.error('[PremiumDialog] Error initializing purchases:', {
+        message: error?.message,
+        code: error?.code,
+        readableErrorCode: error?.readableErrorCode,
+        raw: JSON.stringify(error),
+      });
     }
   };
 
@@ -87,8 +109,20 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       return;
     }
 
-    const platform = shouldUseStripeSubscriptionCheckout() ? "web/stripe" : "native/revenuecat";
-    console.log('[Subscribe] handleSubscribe start — platform:', platform, 'userId:', user.id);
+    // Clear any previous error on a new attempt
+    setSubscribeError(null);
+
+    const useStripe = shouldUseStripeSubscriptionCheckout();
+    const platform = useStripe ? "web/stripe" : "native/revenuecat";
+
+    // Log full platform context so we can see exactly which path is taken on device
+    console.log('[Subscribe] handleSubscribe start', {
+      platform,
+      userId: user.id,
+      useStripe,
+      capacitorPlatform: (() => { try { const { Capacitor } = require('@capacitor/core'); return Capacitor.getPlatform(); } catch { return 'unknown'; } })(),
+      isNative: (() => { try { const { Capacitor } = require('@capacitor/core'); return Capacitor.isNativePlatform(); } catch { return 'unknown'; } })(),
+    });
 
     setIsLoading(true);
 
@@ -96,13 +130,14 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     const loadingResetTimer = setTimeout(() => {
       console.warn('[Subscribe] Safety timeout fired — resetting loading state after 15s');
       setIsLoading(false);
+      setSubscribeError("Purchase timed out. Please try again.");
       toast.error("Purchase timed out. Please try again.");
     }, 15000);
 
     try {
       // Web / non-native: Stripe Checkout. Native iOS/Android: RevenueCat IAP.
-      if (shouldUseStripeSubscriptionCheckout()) {
-        console.log('[Subscribe] Web path: calling create-checkout edge function...');
+      if (useStripe) {
+        console.log('[Subscribe] → Web/Stripe path: calling create-checkout edge function...');
         const { data, error } = await supabase.functions.invoke("create-checkout", {
           body: {
             userId: user.id,
@@ -125,16 +160,15 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       }
 
       // Native purchase via RevenueCat; webhook updates `premium_override` server-side.
-      console.log('[Subscribe] Native path: identifying user in RevenueCat before purchase...');
+      console.log('[Subscribe] → Native/RevenueCat path: identifying user...');
       await identifyRevenueCatUser(user.id);
-      console.log('[Subscribe] Native path: calling purchasePremium via RevenueCat...');
+      console.log('[Subscribe] identifyRevenueCatUser done, calling purchasePremium...');
       const customerInfo = await purchasePremium();
       console.log('[Subscribe] purchasePremium returned, entitlements:', Object.keys(customerInfo?.entitlements?.active ?? {}));
 
       if (hasPremiumEntitlement(customerInfo)) {
         toast.success("Welcome to Super-Human! 🎉");
         onOpenChange(false);
-        // Refresh user premium status
         window.location.reload();
       } else {
         // Entitlement confirmation may lag behind the client purchase result.
@@ -143,15 +177,20 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         window.location.reload();
       }
     } catch (error: any) {
-      console.error('[Subscribe] Purchase error:', {
+      // Log every property the RevenueCat/Stripe error object may carry
+      console.error('[Subscribe] Purchase error — full details:', {
         message: error?.message,
         code: error?.code,
         name: error?.name,
-        raw: error,
+        readableErrorCode: error?.readableErrorCode,
+        userCancelled: error?.userCancelled,
+        underlyingErrorMessage: error?.underlyingErrorMessage,
+        raw: (() => { try { return JSON.stringify(error); } catch { return String(error); } })(),
       });
 
       const msg = String(error?.message ?? error ?? "");
       const lower = msg.toLowerCase();
+      const readableCode = String(error?.readableErrorCode ?? "").toLowerCase();
 
       if (lower.includes("email required for subscription")) {
         onOpenChange(false);
@@ -165,21 +204,37 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         return;
       }
 
-      // Handle user cancellation gracefully
-      if (error?.code === "userCancelled" || error?.userCancelled) {
+      // RevenueCat user cancellation: check both the boolean flag and common code strings
+      const isUserCancelled =
+        error?.userCancelled === true ||
+        error?.code === 1 || // PurchasesErrorCode.purchaseCancelledError
+        readableCode.includes("cancelled") ||
+        lower.includes("cancelled") ||
+        lower.includes("user cancel");
+
+      if (isUserCancelled) {
+        console.log('[Subscribe] User cancelled purchase — not an error');
         toast.info("Purchase cancelled");
+        // No error state shown for user-initiated cancellation
       } else {
+        let errorMsg: string;
         if (lower.includes("stripe") && (lower.includes("not set") || lower.includes("missing"))) {
-          toast.error("Payments are not configured yet. Please try again later.");
+          errorMsg = "Payments are not configured yet. Please try again later.";
         } else if (lower.includes("no purchasable package")) {
-          toast.error("No subscription package found. Please try again later.");
+          errorMsg = "No subscription package available. Check your App Store connection.";
         } else if (lower.includes("product not found")) {
-          toast.error("Subscription product not found. Please contact support.");
-        } else if (lower.includes("verify-purchase")) {
-          toast.error("Subscription verification isn't set up yet. Please try again later.");
+          errorMsg = "Subscription product not found. Please contact support.";
+        } else if (lower.includes("verify-purchase") || lower.includes("not implemented")) {
+          errorMsg = "Purchase verification failed. Please try again.";
+        } else if (lower.includes("not configured") || lower.includes("not initialized")) {
+          errorMsg = "Payment system not ready. Restart the app and try again.";
+        } else if (lower.includes("network") || lower.includes("internet")) {
+          errorMsg = "Network error. Check your connection and try again.";
         } else {
-          toast.error(msg ? `Purchase failed: ${msg}` : "Purchase failed. Please try again.");
+          errorMsg = msg ? `Purchase failed: ${msg}` : "Purchase failed. Please try again.";
         }
+        toast.error(errorMsg);
+        setSubscribeError(errorMsg);
       }
     } finally {
       clearTimeout(loadingResetTimer);
@@ -391,6 +446,12 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         >
           {isLoading ? "Processing..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
         </button>
+
+        {subscribeError && (
+          <p className="text-xs text-red-500 text-center px-2 -mt-1">
+            {subscribeError}
+          </p>
+        )}
 
         <button
           onClick={handleRestore}

@@ -66,15 +66,38 @@ export const purchasePremium = async () => {
     throw new Error("Not available on web — use Stripe checkout");
   }
 
-  console.log('[RevenueCat] purchasePremium: fetching offerings...');
-  const offerings = await Purchases.getOfferings();
-  console.log('[RevenueCat] offerings.current:', offerings.current?.identifier);
+  // Warn if RevenueCat was never configured (initializeRevenueCat wasn't called or failed)
+  if (!_revenueCatReady) {
+    console.warn('[RevenueCat] purchasePremium called but _revenueCatReady=false — attempting anyway, may throw "not configured"');
+  }
+
+  console.log('[RevenueCat] purchasePremium: fetching offerings... (ready:', _revenueCatReady, ')');
+  let offerings: Awaited<ReturnType<typeof Purchases.getOfferings>>;
+  try {
+    offerings = await Purchases.getOfferings();
+  } catch (offeringsErr: any) {
+    console.error('[RevenueCat] getOfferings threw:', {
+      message: offeringsErr?.message,
+      code: offeringsErr?.code,
+      readableErrorCode: offeringsErr?.readableErrorCode,
+      underlyingErrorMessage: offeringsErr?.underlyingErrorMessage,
+      raw: JSON.stringify(offeringsErr),
+    });
+    throw offeringsErr;
+  }
+
+  console.log('[RevenueCat] offerings.current:', offerings.current?.identifier ?? 'null');
   const packages = offerings.current?.availablePackages ?? [];
   console.log('[RevenueCat] available packages:', packages.map(p => ({
     identifier: p.identifier,
     productId: p.product?.identifier,
     price: p.product?.priceString,
   })));
+
+  if (packages.length === 0) {
+    console.error('[RevenueCat] offerings.current is null or has no packages. Full offerings:', JSON.stringify(offerings));
+    throw new Error('No purchasable package found in RevenueCat offerings');
+  }
 
   // Broad search: match by product identifier, package identifier, or substring
   const pkg =
@@ -88,8 +111,23 @@ export const purchasePremium = async () => {
     throw new Error('No purchasable package found in RevenueCat offerings');
   }
 
-  console.log('[RevenueCat] purchasing package:', pkg.identifier, pkg.product?.identifier);
-  const result = await Purchases.purchasePackage({ aPackage: pkg });
+  console.log('[RevenueCat] purchasing package:', pkg.identifier, pkg.product?.identifier, pkg.product?.priceString);
+  let result: Awaited<ReturnType<typeof Purchases.purchasePackage>>;
+  try {
+    result = await Purchases.purchasePackage({ aPackage: pkg });
+  } catch (purchaseErr: any) {
+    // Log every field RevenueCat may put on the error object
+    console.error('[RevenueCat] purchasePackage threw:', {
+      message: purchaseErr?.message,
+      code: purchaseErr?.code,
+      readableErrorCode: purchaseErr?.readableErrorCode,
+      userCancelled: purchaseErr?.userCancelled,
+      underlyingErrorMessage: purchaseErr?.underlyingErrorMessage,
+      raw: JSON.stringify(purchaseErr),
+    });
+    throw purchaseErr;
+  }
+
   console.log('[RevenueCat] purchase complete, entitlements:', Object.keys(result.customerInfo?.entitlements?.active ?? {}));
   return result.customerInfo;
 };
