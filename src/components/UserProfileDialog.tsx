@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
-import { PrivateChatDialog } from "./PrivateChatDialog";
 import { ReportUserDialog } from "./ReportUserDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
@@ -22,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/lib/app-toast";
+import { useNavigate } from "react-router-dom";
 
 interface UserProfileDialogProps {
   open: boolean;
@@ -59,7 +59,6 @@ export function UserProfileDialog({
   const [userAge, setUserAge] = useState<number | null>(null);
   const [lastKnownCity, setLastKnownCity] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showChatDialog, setShowChatDialog] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showEnlargedAvatar, setShowEnlargedAvatar] = useState(false);
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
@@ -70,6 +69,7 @@ export function UserProfileDialog({
   const { statusVideo, hasActiveStatus, deleteVideo: deleteStatusVideo } = useStatusVideo(userId);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
   const { t } = useTranslation();
+  const navigate = useNavigate();
   
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -155,10 +155,6 @@ export function UserProfileDialog({
 
   const hasSocialLinks = socialLinks.instagram_url || socialLinks.linkedin_url || socialLinks.twitter_url;
   const isOwnProfile = user?.id === userId;
-
-  const handleMatch = () => {
-    setShowChatDialog(true);
-  };
 
   const handleAvatarClick = () => {
     if (hasActiveStatus && statusVideo) {
@@ -256,7 +252,7 @@ export function UserProfileDialog({
             {!isOwnProfile && (
               <div className="mt-4 flex justify-center">
                 <button
-                  onClick={() => { onOpenChange(false); setShowChatDialog(true); }}
+                  onClick={() => { onOpenChange(false); navigate("/", { state: { activeTab: "chat", other_user_id: userId } }); }}
                   className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
                   aria-label="Send direct message"
                 >
@@ -409,15 +405,6 @@ export function UserProfileDialog({
           </div>
         </DialogContent>
       </Dialog>
-
-      {showChatDialog && (
-        <PrivateChatDialog
-          onClose={() => setShowChatDialog(false)}
-          otherUserId={userId}
-          otherUserName={userName}
-          otherUserAvatar={avatarUrl}
-        />
-      )}
 
       <ReportUserDialog
         open={showReportDialog}

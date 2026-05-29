@@ -11,26 +11,21 @@ import { Hand, MessageCircle, User, Bell } from "lucide-react";
 import { useGreetings } from "@/hooks/useGreetings";
 import { useAuth } from "@/contexts/AuthContext";
 import { SayHiButton } from "./SayHiButton";
-import { PrivateChatDialog } from "./PrivateChatDialog";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { useNavigate } from "react-router-dom";
 
 export function GreetingsIndicator() {
   const { user } = useAuth();
   const { pendingReceived, matches, isLoading } = useGreetings();
   const [showDialog, setShowDialog] = useState(false);
-  const [showChatDialog, setShowChatDialog] = useState(false);
-  const [selectedChatUser, setSelectedChatUser] = useState<{
-    userId: string;
-    userName: string | null;
-    avatarUrl: string | null;
-  } | null>(null);
   const isMobile = useIsMobile();
-  
+  const navigate = useNavigate();
+
   const swipeHandlers = useSwipeToClose({
     onClose: () => setShowDialog(false),
     threshold: 80,
@@ -41,9 +36,9 @@ export function GreetingsIndicator() {
 
   const totalNotifications = pendingReceived.length + matches.length;
 
-  const handleOpenChat = (userId: string, userName: string | null, avatarUrl: string | null) => {
-    setSelectedChatUser({ userId, userName, avatarUrl });
-    setShowChatDialog(true);
+  const handleOpenChat = (userId: string) => {
+    setShowDialog(false);
+    navigate("/", { state: { activeTab: "chat", other_user_id: userId } });
   };
 
   return (
@@ -136,13 +131,7 @@ export function GreetingsIndicator() {
                         targetUserId={greeting.from_user_id}
                         targetUserName={greeting.from_user?.name || null}
                         size="sm"
-                        onMatch={() =>
-                          handleOpenChat(
-                            greeting.from_user_id,
-                            greeting.from_user?.name || null,
-                            greeting.from_user?.avatar_url || null
-                          )
-                        }
+                        onMatch={() => handleOpenChat(greeting.from_user_id)}
                       />
                     </div>
                   ))}
@@ -166,13 +155,7 @@ export function GreetingsIndicator() {
                   {matches.map((match) => (
                     <button
                       key={match.id}
-                      onClick={() =>
-                        handleOpenChat(
-                          match.from_user_id,
-                          match.from_user?.name || null,
-                          match.from_user?.avatar_url || null
-                        )
-                      }
+                      onClick={() => handleOpenChat(match.from_user_id)}
                       className="w-full flex items-center gap-3 p-3 rounded-2xl bg-muted/50 hover:bg-muted transition-colors"
                     >
                       <Avatar className="w-10 h-10 rounded-full border-2 border-shake-yellow bg-muted shrink-0">
@@ -199,14 +182,6 @@ export function GreetingsIndicator() {
         </DialogContent>
       </Dialog>
 
-      {selectedChatUser && showChatDialog && (
-        <PrivateChatDialog
-          onClose={() => { setShowChatDialog(false); setSelectedChatUser(null); }}
-          otherUserId={selectedChatUser.userId}
-          otherUserName={selectedChatUser.userName}
-          otherUserAvatar={selectedChatUser.avatarUrl}
-        />
-      )}
     </>
   );
 }
