@@ -47,6 +47,7 @@ interface PlanActivity {
   is_active: boolean;
   note?: string | null;
   price_amount?: string | null;
+  group_number?: number | null;
   creator_name?: string;
   creator_avatar?: string;
   participant_count?: number;
@@ -371,6 +372,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [showChatView, setShowChatView] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
   const [planToLeave, setPlanToLeave] = useState<PlanActivity | null>(null);
+  const [showAlreadyJoinedPlan, setShowAlreadyJoinedPlan] = useState(false);
   const [duplicateActivityBlock, setDuplicateActivityBlock] = useState<{
     activityType: string;
     oldCity: string;
@@ -537,6 +539,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
     const activity = ALL_ACTIVITY_TYPES.find(a => a.id === type);
     return activity?.label || type;
+  };
+
+  // Returns " · Group N" suffix for overflow groups (group_number >= 2)
+  const getGroupSuffix = (plan: PlanActivity) => {
+    if ((plan.group_number ?? 1) >= 2) return ` · Group ${plan.group_number}`;
+    return "";
   };
 
   const handleCreatePlan = () => {
@@ -724,7 +732,21 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       }
     }
 
-    // No sibling with space — create a fresh group
+    // No sibling with space — create a fresh overflow group
+    // Determine the next group_number
+    const { data: allGroups } = await supabase
+      .from("user_activities")
+      .select("group_number")
+      .eq("activity_type", plan.activity_type)
+      .eq("city", plan.city)
+      .eq("scheduled_for", plan.scheduled_for)
+      .eq("is_active", true);
+    const maxGroupNum = Math.max(
+      1,
+      ...((allGroups ?? []).map((g: any) => g.group_number ?? 1))
+    );
+    const nextGroupNumber = maxGroupNum + 1;
+
     const { data: newActivity, error: createError } = await supabase
       .from("user_activities")
       .insert({
@@ -734,6 +756,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         scheduled_for: plan.scheduled_for,
         is_active: true,
         note: plan.note ?? null,
+        group_number: nextGroupNumber,
       })
       .select()
       .single();
@@ -757,6 +780,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const handleJoinPlan = async (plan: PlanActivity, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) return;
+    if (plan.isJoined) {
+      setShowAlreadyJoinedPlan(true);
+      return;
+    }
 
     const targetPlan = await findOrCreateOpenGroup(plan);
 
@@ -1080,7 +1107,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900">
-                        {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || t('plans.untitledPlan', 'Untitled Plan'))}
+                        {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || t('plans.untitledPlan', 'Untitled Plan'))}{getGroupSuffix(plan)}
                       </h3>
                       {plan.isJoined && (
                         <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">
@@ -1228,7 +1255,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-base leading-none">{getActivityEmoji(plan.activity_type)}</span>
                           <h3 className="font-semibold text-gray-900 text-sm">
-                            {plan.note || getActivityLabel(plan.activity_type)}
+                            {plan.note || getActivityLabel(plan.activity_type)}{getGroupSuffix(plan)}
                           </h3>
                           {isSoon(plan.scheduled_for) && (
                             <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
@@ -1532,6 +1559,37 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             });
           }}
         />
+      )}
+
+      {/* Already-joined dialog */}
+      {showAlreadyJoinedPlan && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 pointer-events-auto">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
+            onClick={() => setShowAlreadyJoinedPlan(false)}
+          />
+          <div className="relative z-10 w-full max-w-sm pointer-events-auto px-6 py-8 flex flex-col gap-4 rounded-3xl bg-white shadow-2xl text-center">
+            <div className="text-6xl">🐯</div>
+            <h2 className="text-xl font-bold text-gray-900">You're already in! 🐯</h2>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              You already joined this activity. Go to Plans to see it, Tiger.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowAlreadyJoinedPlan(false)}
+              className="w-full h-11 rounded-full font-semibold text-base text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              Go to Plans
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAlreadyJoinedPlan(false)}
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

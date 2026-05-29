@@ -638,11 +638,12 @@ export function IOSAppLayout() {
             isShaking={isHeroShaking}
             onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
+            isActivityJoined={hasUserJoined}
           />
         );
       case "plans":
         return (
-          <PlansTab 
+          <PlansTab
             onChatViewChange={handleChatViewChange}
             pendingPaidActivityId={pendingPaidActivityId}
             onPendingPaidActivityHandled={() => setPendingPaidActivityId(null)}
@@ -662,6 +663,7 @@ export function IOSAppLayout() {
               isShaking={isHeroShaking}
               onOpenEvents={() => openNearYou("home")}
               onUpgradeClick={() => setShowPremiumDialog(true)}
+              isActivityJoined={hasUserJoined}
             />
           );
         }
@@ -683,6 +685,7 @@ export function IOSAppLayout() {
             isShaking={isHeroShaking}
             onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
+            isActivityJoined={hasUserJoined}
           />
         );
     }

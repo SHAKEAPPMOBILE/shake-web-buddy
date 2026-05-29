@@ -63,11 +63,12 @@ interface HomeTabProps {
   isShaking?: boolean;
   onOpenEvents?: () => void;
   onUpgradeClick?: () => void;
+  isActivityJoined?: (activityType: string) => boolean;
 }
 
 // Separate dialog state for "Propose a plan" flow
 
-export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, isShaking = false, onOpenEvents, onUpgradeClick }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, isShaking = false, onOpenEvents, onUpgradeClick, isActivityJoined }: HomeTabProps) {
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const navigate = useNavigate();
@@ -94,6 +95,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const touchEndX = useRef<number>(0);
   const tappedActivityRef = useRef<CarouselItem | null>(null);
   const [carouselJoinCount, setCarouselJoinCount] = useState(0);
+  const [showAlreadyJoinedDialog, setShowAlreadyJoinedDialog] = useState(false);
+  const MAX_GROUP_SIZE = 7;
 
   useEffect(() => {
     phraseIntervalRef.current = setInterval(() => {
@@ -222,6 +225,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
     if (!currentActivity) {
       console.warn('[Carousel] handleConfirmSelection — currentActivity is null, aborting');
+      return;
+    }
+    // Check if user already joined this activity
+    if (!currentActivity.isProposePlan && isActivityJoined?.(currentActivity.id)) {
+      setShowAlreadyJoinedDialog(true);
       return;
     }
     if (currentActivity.isProposePlan) {
@@ -555,6 +563,15 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                       (() => { console.log('[Carousel] hasNoVenue=true for', currentActivity?.id, 'in', joinCity, '— still allowing join (venue not required to join)'); return null; })()
                     )}
                     <>
+                      {carouselJoinCount >= MAX_GROUP_SIZE && !currentActivity?.isProposePlan ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full rounded-full px-4 py-2.5 text-white font-semibold bg-gray-400 cursor-not-allowed opacity-70"
+                        >
+                          Full
+                        </button>
+                      ) : (
                       <button
                         type="button"
                         onClick={handleConfirmSelection}
@@ -562,6 +579,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                       >
                         {t('home.yesBtn', 'Yes!')}
                       </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
@@ -709,6 +727,39 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           onPickerClose={() => setIsCitySelectorOpen(false)}
         />
       </CityPickerModal>
+
+      {/* Already-joined dialog */}
+      {showAlreadyJoinedDialog && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 pointer-events-auto">
+          <div
+            className="absolute inset-0 pointer-events-auto bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowAlreadyJoinedDialog(false)}
+          />
+          <div
+            className="relative z-10 w-full max-w-sm pointer-events-auto px-6 py-8 flex flex-col gap-4 rounded-3xl bg-white shadow-2xl text-center"
+          >
+            <div className="text-6xl">🐯</div>
+            <h2 className="text-xl font-bold text-gray-900">You're already in! 🐯</h2>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              You already joined this activity. Go to Plans to see it, Tiger.
+            </p>
+            <button
+              type="button"
+              onClick={() => { setShowAlreadyJoinedDialog(false); navigate("/plans"); }}
+              className="w-full h-11 rounded-full font-semibold text-base text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              Go to Plans
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAlreadyJoinedDialog(false)}
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

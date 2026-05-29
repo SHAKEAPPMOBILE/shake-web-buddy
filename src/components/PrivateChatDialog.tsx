@@ -44,6 +44,8 @@ export function PrivateChatDialog({
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [fetchedName, setFetchedName] = useState<string | null>(null);
+  const [fetchedAvatar, setFetchedAvatar] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -68,6 +70,20 @@ export function PrivateChatDialog({
   useEffect(() => {
     markAsRead();
   }, [markAsRead]);
+
+  // Fetch other user's profile if name/avatar not provided
+  useEffect(() => {
+    if (otherUserName && otherUserName !== "Shaker" && otherUserAvatar !== undefined) return;
+    supabase
+      .from("profiles")
+      .select("name, avatar_url")
+      .eq("user_id", otherUserId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.name) setFetchedName(data.name);
+        if (data?.avatar_url) setFetchedAvatar(data.avatar_url);
+      });
+  }, [otherUserId, otherUserName, otherUserAvatar]);
 
   // Remove hidden record so the conversation reappears after re-opening
   useEffect(() => {
@@ -180,8 +196,10 @@ export function PrivateChatDialog({
     onClose();
   }, [user, otherUserId, onClose]);
 
-  const avatarUrl = avatarError ? null : (getDisplayAvatarUrl(otherUserAvatar) ?? otherUserAvatar);
-  const initial = (otherUserName || "S").charAt(0).toUpperCase();
+  const displayName = (otherUserName && otherUserName !== "Shaker") ? otherUserName : (fetchedName || otherUserName);
+  const rawAvatarUrl = (otherUserAvatar && !avatarError) ? otherUserAvatar : fetchedAvatar;
+  const avatarUrl = avatarError ? null : (getDisplayAvatarUrl(rawAvatarUrl) ?? rawAvatarUrl);
+  const initial = (displayName || "S").charAt(0).toUpperCase();
 
   return (
     <>
@@ -193,7 +211,7 @@ export function PrivateChatDialog({
           {avatarUrl ? (
             <img
               src={avatarUrl}
-              alt={otherUserName || "User"}
+              alt={displayName || "User"}
               className="w-full h-full object-cover"
               onError={() => setAvatarError(true)}
             />
@@ -202,7 +220,7 @@ export function PrivateChatDialog({
           )}
         </div>
         <h2 className="font-display text-lg text-white flex-1 min-w-0 truncate">
-          {otherUserName || "Shaker"}
+          {displayName || "Shaker"}
         </h2>
         <div className="relative shrink-0">
           <button

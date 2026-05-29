@@ -27,7 +27,7 @@ interface PremiumDialogProps {
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
-  const [productPrice, setProductPrice] = useState("$0.99");
+  const [productPrice, setProductPrice] = useState("$1.88");
   const { user, isPremium, isManualOverride } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -386,7 +386,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           disabled={isLoading}
           className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50"
           style={{
-            background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
+            background: "linear-gradient(to right, #2563EB, #1d4ed8)",
           }}
         >
           {isLoading ? "Processing..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
