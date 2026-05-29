@@ -2,10 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
-import { Eye, User, Sparkles } from "lucide-react";
+import { Eye, User, Sparkles, MessageCircle } from "lucide-react";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
-import { SayHiButton } from "@/components/SayHiButton";
 import { Button } from "@/components/ui/button";
 import { SuperHumanIcon } from "./SuperHumanIcon";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -19,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { useNavigate } from "react-router-dom";
 
 interface Participant {
   user_id: string;
@@ -44,6 +44,7 @@ export function GlobalParticipantsSection() {
   const { user, isPremium } = useAuth();
   const { blockedUserIds } = useBlockedUsers();
   const isInitialLoad = useRef(true);
+  const navigate = useNavigate();
 
   // Seeded random for consistent shuffling (changes twice per week)
   const getWeekSeed = (): number => {
@@ -76,10 +77,12 @@ export function GlobalParticipantsSection() {
       setIsLoading(true);
     }
 
-    // Get all users who signed up (ordered by most recent), excluding test users
+    // Get all users who signed up with a name set (ordered by most recent), excluding test users
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("user_id, name, avatar_url, created_at")
+      .not("name", "is", null)
+      .neq("name", "")
       .order("created_at", { ascending: false });
 
     if (profilesError) {
@@ -314,12 +317,13 @@ export function GlobalParticipantsSection() {
                       {isCurrentUser ? (
                         <span className="text-xs text-gray-500">(You)</span>
                       ) : (
-                        <SayHiButton
-                          targetUserId={participant.user_id}
-                          targetUserName={participant.name}
-                          size="sm"
-                          onMatch={() => handleParticipantClick(participant)}
-                        />
+                        <button
+                          onClick={() => { setShowListDialog(false); navigate("/", { state: { activeTab: "chat", other_user_id: participant.user_id } }); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          Message
+                        </button>
                       )}
                     </div>
                   );
@@ -410,12 +414,13 @@ export function GlobalParticipantsSection() {
                           {isCurrentUser ? (
                             <span className="text-xs text-muted-foreground">(You)</span>
                           ) : (
-                            <SayHiButton
-                              targetUserId={participant.user_id}
-                              targetUserName={participant.name}
-                              size="sm"
-                              onMatch={() => handleParticipantClick(participant)}
-                            />
+                            <button
+                              onClick={() => { setShowListDialog(false); navigate("/", { state: { activeTab: "chat", other_user_id: participant.user_id } }); }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              Message
+                            </button>
                           )}
                         </div>
                       );
