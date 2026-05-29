@@ -430,7 +430,7 @@ export default function Auth() {
         }
 
         clearTimeout(timeoutId);
-        navigate("/", { replace: true });
+        await navigateHome(true);
       })().catch(() => {
           resolveSessionRouteDone();
         // If anything fails, don't block the user
@@ -442,6 +442,28 @@ export default function Auth() {
       clearTimeout(timeoutId);
     };
   }, [user, isAuthLoading, navigate, step]);
+
+  // After a successful login, check for a pending activity join and process it.
+  const navigateHome = async (replace = false) => {
+    const pendingActivityId = localStorage.getItem("shake_pending_activity_id");
+    if (pendingActivityId) {
+      localStorage.removeItem("shake_pending_activity_id");
+      try {
+        const { data: { user: u } } = await supabase.auth.getUser();
+        if (u) {
+          await supabase.from("activity_joins").insert({
+            user_id: u.id,
+            activity_id: pendingActivityId,
+          });
+        }
+      } catch (err) {
+        console.error("[Auth] pending activity join failed", err);
+      }
+      navigate("/plans", { replace });
+      return;
+    }
+    navigate("/", { replace });
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -520,7 +542,7 @@ export default function Auth() {
       setStep("name");
       setName((prev) => prev || getFallbackProfileName(u));
     } else {
-      navigate("/", { replace: true });
+      await navigateHome(true);
     }
   };
 
@@ -640,7 +662,7 @@ export default function Auth() {
         }
       } else {
         toast.success("Welcome!");
-        navigate("/");
+        await navigateHome();
       }
     } catch (error) {
       toast.error("An unexpected error occurred");
@@ -804,7 +826,7 @@ export default function Auth() {
 
       toast.success("Profile complete!");
       triggerConfettiWaterfall();
-      navigate("/", { replace: true });
+      await navigateHome(true);
     } catch (error) {
       console.error("Profile save error:", error);
       toast.error("We couldn't save your profile. Please try again.");
@@ -843,7 +865,7 @@ export default function Auth() {
       } finally {
         setPendingFaceSetupUserId(null);
         setIsFaceCaptureOpen(false);
-        navigate("/");
+        await navigateHome();
       }
       return;
     }
@@ -900,7 +922,7 @@ export default function Auth() {
 
       toast.success("Welcome!");
       setIsFaceCaptureOpen(false);
-      navigate("/");
+      await navigateHome();
     } catch (error) {
       console.error("Face auth failed", error);
       toast.warning("Face not recognized. Try again or use another method");
@@ -1703,10 +1725,10 @@ export default function Auth() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel
-                  onClick={() => {
+                  onClick={async () => {
                     setShowFaceSetupPrompt(false);
                     setPendingFaceSetupUserId(null);
-                    navigate("/");
+                    await navigateHome();
                   }}
                 >
                   Skip

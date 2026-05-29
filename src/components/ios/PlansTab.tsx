@@ -657,7 +657,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       ? formatDateWithTranslation(new Date(plan.scheduled_for), "EEE, d MMM", selectedLanguage.code)
       : formatDateWithTranslation(new Date(), "EEE, d MMM", selectedLanguage.code);
     
-    const shareUrl = getReferralLink(referralCode);
+    const shareUrl = `https://app.shakeapp.today/invite/${plan.id}`;
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
     
     if (navigator.share) {
