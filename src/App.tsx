@@ -6,7 +6,7 @@ import { Browser } from "@capacitor/browser";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CityProvider } from "@/contexts/CityContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -33,9 +33,38 @@ import EventChatPage from "./pages/EventChatPage";
 
 const queryClient = new QueryClient();
 
-// Component to track referral codes from URLs
+// Referral code pattern — same regex as useReferralTracking
+const REFERRAL_CODE_RE = /^[a-z0-9]+-[a-z0-9]+$/i;
+
+const KNOWN_ROUTES = new Set([
+  "auth", "profile", "admin", "welcome",
+  "privacy-policy", "terms-of-service", "community-guidelines",
+  "subscription-success", "propose-plan", "plans",
+  "chat", "events", "home", "",
+]);
+
+// Component to track referral codes from URLs.
+// When a visitor lands on /<referral-code> (e.g. /eonel-f50), store the code
+// and immediately redirect to / so the app renders at a clean path.
 function ReferralTracker() {
   useReferralTracking();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    const segment = path.slice(1).split("/")[0]; // first path segment only
+
+    if (
+      segment &&
+      !KNOWN_ROUTES.has(segment) &&
+      REFERRAL_CODE_RE.test(segment)
+    ) {
+      // Code was already stored by useReferralTracking; redirect to home
+      console.log("[ReferralTracker] referral path detected, redirecting to /", segment);
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
+
   return null;
 }
 

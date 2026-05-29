@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import confetti from 'canvas-confetti';
 import barManAndCook from "@/assets/bar-man-and-cook.png";
-import { Calendar, Users, Plus, Plane, UserPlus, Trash2 } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Send, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1201,7 +1201,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       title="Invite a friend"
                       aria-label="Invite a friend"
                     >
-                      <UserPlus className="w-4 h-4 text-gray-500" />
+                      <Send className="w-4 h-4 text-gray-500" />
                       <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">Invite a Friend</span>
                     </button>
                   </div>
@@ -1339,7 +1339,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           title="Invite a friend"
                           aria-label="Invite a friend"
                         >
-                          <UserPlus className="w-4 h-4 text-gray-500" />
+                          <Send className="w-4 h-4 text-gray-500" />
                           <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">Invite a Friend</span>
                         </button>
                       </div>
