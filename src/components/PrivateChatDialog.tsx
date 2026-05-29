@@ -206,7 +206,7 @@ export function PrivateChatDialog({
 
   return (
     <>
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "#0d0d1a" }}>
+    <div className="fixed inset-0 z-[9999] flex flex-col" style={{ background: "#0d0d1a" }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pb-3 border-b shrink-0" style={{ background: "#0d0d1a", borderColor: "rgba(255,255,255,0.08)", paddingTop: 'env(safe-area-inset-top)' }}>
         <MinimalBackButton onClick={onClose} className="text-white/70 border-white/20" />
