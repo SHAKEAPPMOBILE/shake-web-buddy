@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Check, User, MessageSquare, Sparkles, Settings, Video } from "lucide-react";
+import { Check, User, MessageSquare, Sparkles, Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +44,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     { icon: Sparkles, text: "Create your own activities unlimited" },
     { icon: User, text: "See other users' profiles unlimited" },
     { icon: MessageSquare, text: "Unlimited text messages" },
-    { icon: Video, text: "Upload status video" },
   ];
 
   // Initialize in-app purchases and load product info; clear stale errors on open
