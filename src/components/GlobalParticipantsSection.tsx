@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
-import { Eye, User, Sparkles, MessageCircle } from "lucide-react";
+import { Eye, User, Sparkles } from "lucide-react";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
-import { useNavigate } from "react-router-dom";
 
 interface Participant {
   user_id: string;
@@ -44,7 +43,6 @@ export function GlobalParticipantsSection() {
   const { user, isPremium } = useAuth();
   const { blockedUserIds } = useBlockedUsers();
   const isInitialLoad = useRef(true);
-  const navigate = useNavigate();
 
   // Seeded random for consistent shuffling (changes twice per week)
   const getWeekSeed = (): number => {
@@ -80,7 +78,7 @@ export function GlobalParticipantsSection() {
     // Get all users who signed up (ordered by most recent), excluding test users
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("user_id, name, avatar_url, created_at")
+      .select("user_id, name, avatar_url, created_at, username, display_name")
       .order("created_at", { ascending: false });
 
     if (profilesError) {
@@ -109,7 +107,7 @@ export function GlobalParticipantsSection() {
 
     const allParticipants: Participant[] = realProfiles.map((profile: any) => ({
       user_id: profile.user_id,
-      name: profile.name || null,
+      name: profile.name?.trim() || profile.username?.trim() || profile.display_name?.trim() || null,
       avatar_url: profile.avatar_url || null,
       joined_at: profile.created_at,
     }));
@@ -312,16 +310,6 @@ export function GlobalParticipantsSection() {
                           {isCurrentUser ? "You" : participant.name || "User"}
                         </p>
                       </button>
-                      {isCurrentUser ? (
-                        <span className="text-xs text-gray-500">(You)</span>
-                      ) : (
-                        <button
-                          onClick={() => { setShowListDialog(false); navigate("/", { state: { activeTab: "chat", other_user_id: participant.user_id } }); }}
-                          className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                        </button>
-                      )}
                     </div>
                   );
                 })}
@@ -408,16 +396,6 @@ export function GlobalParticipantsSection() {
                               {isCurrentUser ? "You" : participant.name || "User"}
                             </p>
                           </button>
-                          {isCurrentUser ? (
-                            <span className="text-xs text-muted-foreground">(You)</span>
-                          ) : (
-                            <button
-                              onClick={() => { setShowListDialog(false); navigate("/", { state: { activeTab: "chat", other_user_id: participant.user_id } }); }}
-                              className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                            >
-                              <MessageCircle className="w-4 h-4" />
-                            </button>
-                          )}
                         </div>
                       );
                     })}
