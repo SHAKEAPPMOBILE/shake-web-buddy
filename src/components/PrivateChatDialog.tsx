@@ -34,6 +34,7 @@ export function PrivateChatDialog({
 }: PrivateChatDialogProps) {
   // Safety guard: never render if we're not on the chat tab
   if (!isActiveTab) return null;
+  console.log('[PrivateChatDialog] props:', { otherUserId, otherUserName, otherUserAvatar });
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const { messages, isLoading, sendMessage, markAsRead } = usePrivateMessages(otherUserId);

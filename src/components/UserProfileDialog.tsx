@@ -6,7 +6,6 @@ import { format } from "date-fns";
 
 import { PrivateChatDialog } from "./PrivateChatDialog";
 import { ReportUserDialog } from "./ReportUserDialog";
-import { useGreetings } from "@/hooks/useGreetings";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { normalizeInstagramUrl, normalizeTwitterUrl } from "@/lib/social-utils";
@@ -65,7 +64,6 @@ export function UserProfileDialog({
   const [showEnlargedAvatar, setShowEnlargedAvatar] = useState(false);
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
   const [showStatusViewer, setShowStatusViewer] = useState(false);
-  const { isMatched } = useGreetings();
   const { user } = useAuth();
   const { blockUser, isBlocking } = useBlockedUsers();
   const isMobile = useIsMobile();
