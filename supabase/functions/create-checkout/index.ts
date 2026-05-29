@@ -93,7 +93,7 @@ serve(async (req) => {
 
     const priceId =
       Deno.env.get("STRIPE_PRICE_ID") ||
-      "price_1Sv5uXE15hgUkq5HNnVbe7gA";
+      "price_1TcYkFE15hgUkq5H7tk1JrtS";
     if (!priceId) {
       logStep("Stripe price id missing");
       return new Response(JSON.stringify({
