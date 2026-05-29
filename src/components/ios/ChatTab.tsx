@@ -241,8 +241,12 @@ export function ChatTab({
       });
 
       // ── Compute matches from greetings, minus hidden/blocked ───────────────
-      const sentToIds = new Set((sentGreetings || []).map(g => g.to_user_id));
-      const receivedFromIds = new Set((receivedGreetings || []).map(g => g.from_user_id));
+      // Validate UUID format to guard against stale/test data with numeric IDs
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isValidUuid = (id: string | null | undefined): id is string => !!id && UUID_RE.test(id);
+
+      const sentToIds = new Set((sentGreetings || []).map(g => g.to_user_id).filter(isValidUuid));
+      const receivedFromIds = new Set((receivedGreetings || []).map(g => g.from_user_id).filter(isValidUuid));
       const hiddenIds = new Set((hiddenConvos || []).map(h => h.other_user_id));
       const blockedIds = new Set((blockedUsers || []).map(b => b.blocked_id));
       const matchedUserIds = [...sentToIds].filter(

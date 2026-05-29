@@ -73,7 +73,9 @@ export function PrivateChatDialog({
 
   // Fetch other user's profile if name/avatar not provided
   useEffect(() => {
-    if (otherUserName && otherUserName !== "Shaker" && otherUserAvatar !== undefined) return;
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(otherUserId)) return; // guard against non-UUID IDs
+    if (otherUserName && otherUserName !== "Shaker") return;
     supabase
       .from("profiles")
       .select("name, avatar_url")
@@ -83,11 +85,12 @@ export function PrivateChatDialog({
         if (data?.name) setFetchedName(data.name);
         if (data?.avatar_url) setFetchedAvatar(data.avatar_url);
       });
-  }, [otherUserId, otherUserName, otherUserAvatar]);
+  }, [otherUserId, otherUserName]);
 
   // Remove hidden record so the conversation reappears after re-opening
   useEffect(() => {
-    if (!user) return;
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!user || !UUID_RE.test(otherUserId)) return;
     supabase
       .from("private_conversation_hidden")
       .delete()

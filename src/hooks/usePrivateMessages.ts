@@ -12,13 +12,16 @@ interface PrivateMessage {
   read_at: string | null;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isValidUuid = (id: string | null | undefined): id is string => !!id && UUID_RE.test(id);
+
 export function usePrivateMessages(otherUserId: string | null) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<PrivateMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
-    if (!user || !otherUserId) {
+    if (!user || !isValidUuid(otherUserId)) {
       setMessages([]);
       setIsLoading(false);
       return;
@@ -44,7 +47,7 @@ export function usePrivateMessages(otherUserId: string | null) {
 
   // Send a message
   const sendMessage = async (message: string, messageType: "text" | "gif" | "image" | "video" = "text") => {
-    if (!user || !otherUserId) return { error: new Error("Not authenticated") };
+    if (!user || !isValidUuid(otherUserId)) return { error: new Error("Not authenticated") };
 
     const trimmed = message.trim();
     if ((messageType === "gif" || messageType === "image" || messageType === "video") && !/^https?:\/\//i.test(trimmed)) {
@@ -81,7 +84,7 @@ export function usePrivateMessages(otherUserId: string | null) {
 
   // Mark messages as read
   const markAsRead = async () => {
-    if (!user || !otherUserId) return;
+    if (!user || !isValidUuid(otherUserId)) return;
 
     await supabase
       .from("private_messages")
@@ -98,7 +101,7 @@ export function usePrivateMessages(otherUserId: string | null) {
 
   // Subscribe to real-time updates
   useEffect(() => {
-    if (!user || !otherUserId) return;
+    if (!user || !isValidUuid(otherUserId)) return;
 
     const channel = supabase
       .channel(`private-messages-${otherUserId}`)
