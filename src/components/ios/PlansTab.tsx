@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import confetti from 'canvas-confetti';
 import barManAndCook from "@/assets/bar-man-and-cook.png";
-import { Calendar, Users, Plus, Plane, Send, Trash2 } from "lucide-react";
+import { Calendar, Users, Plus, Plane, UserPlus, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1197,11 +1197,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         e.stopPropagation();
                         handleSharePlan(plan, e);
                       }}
-                      className="p-2.5 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-full transition-all shadow-sm"
-                      title="Share with friends"
-                      aria-label="Share plan"
+                      className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-all border border-gray-200"
+                      title="Invite a friend"
+                      aria-label="Invite a friend"
                     >
-                      <Send className="w-5 h-5" />
+                      <UserPlus className="w-4 h-4 text-gray-500" />
+                      <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">Invite a Friend</span>
                     </button>
                   </div>
                 </div>
@@ -1334,11 +1335,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                             e.stopPropagation();
                             handleSharePlan(plan, e);
                           }}
-                          className="p-2.5 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-full transition-all shadow-sm"
-                          title="Share with friends"
-                          aria-label="Share plan"
+                          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-all border border-gray-200"
+                          title="Invite a friend"
+                          aria-label="Invite a friend"
                         >
-                          <Send className="w-5 h-5" />
+                          <UserPlus className="w-4 h-4 text-gray-500" />
+                          <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">Invite a Friend</span>
                         </button>
                       </div>
                     </div>
