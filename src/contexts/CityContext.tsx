@@ -335,10 +335,20 @@ export function CityProvider({ children }: { children: ReactNode }) {
           console.log("[CityContext] Geolocation success", { latitude, longitude, displayOnly });
           const { city: closestCity, distanceKm } = findClosestCity(latitude, longitude);
           console.log("[CityContext] Geolocation closest city", { closestCity: closestCity.name, distanceKm });
+
+          // Only keep displayOnly=true if the user *explicitly* chose their city from the
+          // picker (SHAKE_MANUAL_CITY_LS === "1"). A stale auto-detected city saved by a
+          // previous session should be overridden by a fresh GPS fix.
+          let wasExplicitManual = false;
+          try {
+            wasExplicitManual = localStorage.getItem(SHAKE_MANUAL_CITY_LS) === "1";
+          } catch { /* ignore */ }
+          const effectiveDisplayOnly = displayOnly && wasExplicitManual;
+
           if (distanceKm <= 500) {
-            setCity(closestCity, displayOnly);
+            setCity(closestCity, effectiveDisplayOnly);
           } else {
-            setCityOutOfRange(closestCity, displayOnly);
+            setCityOutOfRange(closestCity, effectiveDisplayOnly);
           }
         },
         () => {

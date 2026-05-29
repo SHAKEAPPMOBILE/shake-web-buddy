@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
-
+import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getActivitiesWithDates } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
@@ -695,6 +695,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           >
             <span className="text-5xl">🤝</span>
           </div>
+        </div>
+
+        {/* Global participants */}
+        <div className="mb-3">
+          <GlobalParticipantsSection />
         </div>
 
         {false && (
