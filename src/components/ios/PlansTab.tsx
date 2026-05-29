@@ -267,7 +267,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           allActivities.map(async (activity: any) => {
             const [{ data: profile }, { count }] = await Promise.all([
               supabase.from("profiles").select("name, avatar_url").eq("user_id", activity.user_id).maybeSingle(),
-              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id).gt("expires_at", nowISO2),
+              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id).or(`expires_at.is.null,expires_at.gt.${nowISO2}`),
             ]);
             return {
               ...activity,
@@ -283,7 +283,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           cityPublicPlans.map(async (activity: any) => {
             const [{ data: profile }, { count }] = await Promise.all([
               supabase.from("profiles").select("name, avatar_url").eq("user_id", activity.user_id).maybeSingle(),
-              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id).gt("expires_at", nowISO2),
+              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id).or(`expires_at.is.null,expires_at.gt.${nowISO2}`),
             ]);
             return {
               ...activity,
@@ -467,7 +467,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               .from("activity_joins")
               .select("*", { count: "exact", head: true })
               .eq("activity_id", activity.id)
-              .gt("expires_at", new Date().toISOString());
+              .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
 
             const activityWithDetails: PlanActivity = {
               ...activity,
@@ -713,7 +713,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .from("activity_joins")
         .select("*", { count: "exact", head: true })
         .eq("activity_id", sibling.id)
-        .gt("expires_at", new Date().toISOString());
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
 
       if ((sibCount ?? 0) < MAX_CHAT_CAPACITY) {
         const { data: profile } = await supabase
