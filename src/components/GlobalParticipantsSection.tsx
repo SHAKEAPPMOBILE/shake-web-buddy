@@ -319,10 +319,9 @@ export function GlobalParticipantsSection() {
                       ) : (
                         <button
                           onClick={() => { setShowListDialog(false); navigate("/", { state: { activeTab: "chat", other_user_id: participant.user_id } }); }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
+                          className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                         >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          Message
+                          <MessageCircle className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -416,10 +415,9 @@ export function GlobalParticipantsSection() {
                           ) : (
                             <button
                               onClick={() => { setShowListDialog(false); navigate("/", { state: { activeTab: "chat", other_user_id: participant.user_id } }); }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
+                              className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                             >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                              Message
+                              <MessageCircle className="w-4 h-4" />
                             </button>
                           )}
                         </div>
