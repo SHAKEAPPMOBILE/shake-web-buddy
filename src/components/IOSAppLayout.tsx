@@ -12,8 +12,11 @@ import { MandatoryPhotoScreen } from "./MandatoryPhotoScreen";
 import { LoadingSpinner } from "./LoadingSpinner";
 
 import { PremiumDialog } from "./PremiumDialog";
+import { UpdatePrompt } from "./UpdatePrompt";
 import { ProximityCheckInPopup } from "./ProximityCheckInPopup";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAppUpdateCheck } from "@/hooks/useAppUpdateCheck";
+import { useReviewPrompt } from "@/hooks/useReviewPrompt";
 import { useCity } from "@/contexts/CityContext";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { usePrivateMessageNotifications } from "@/hooks/usePrivateMessageNotifications";
@@ -254,6 +257,10 @@ export function IOSAppLayout() {
 
   // Initialize push notifications for private messages
   usePrivateMessageNotifications();
+
+  // Check for app updates and request in-app review on 3rd launch
+  const { needsUpdate } = useAppUpdateCheck();
+  useReviewPrompt();
 
   // Check if user needs to complete profile (name and avatar required for auth redirect)
   useEffect(() => {
@@ -856,6 +863,9 @@ export function IOSAppLayout() {
           </div>
         </div>
       )}
+
+      {/* App update prompt — non-dismissable, shown when remote version > installed */}
+      <UpdatePrompt visible={needsUpdate} />
 
       {/* Proximity Check-in Popup */}
       {venueName && proximityActivityType && distance !== null && (
