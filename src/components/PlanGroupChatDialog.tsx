@@ -347,7 +347,7 @@ export function PlanGroupChatDialog({
           messages.map((msg) => {
             const isOwn = msg.user_id === user?.id;
             const profile = profiles[msg.user_id];
-            const displayName = isOwn ? "You" : profile?.name || "Shaker";
+            const displayName = isOwn ? "You" : profile?.name || "User";
             const avatarUrl = isOwn ? (ownProfile?.avatar_url ?? profile?.avatar_url) : profile?.avatar_url;
             const isGif =
               (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);

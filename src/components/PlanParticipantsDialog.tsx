@@ -185,7 +185,7 @@ export function PlanParticipantsDialog({
                       <div className="flex-1 text-left">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm text-gray-900">
-                            {isCurrentUser ? "You" : participant.name || "Shaker"}
+                            {isCurrentUser ? "You" : participant.name || "User"}
                           </p>
                           {participant.isOwner && (
                             <span className="text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
@@ -224,7 +224,7 @@ export function PlanParticipantsDialog({
                           <div className="flex-1 text-left">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-sm text-gray-900">
-                                {participant.name || "Shaker"}
+                                {participant.name || "User"}
                               </p>
                               {participant.isOwner && (
                                 <span className="text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
@@ -277,7 +277,7 @@ export function PlanParticipantsDialog({
                           <div className="flex-1 text-left">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-sm text-gray-900">
-                                {isCurrentUser ? "You" : participant.name || "Shaker"}
+                                {isCurrentUser ? "You" : participant.name || "User"}
                               </p>
                               {participant.isOwner && (
                                 <span className="text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">

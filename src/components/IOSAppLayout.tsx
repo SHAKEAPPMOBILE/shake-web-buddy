@@ -43,7 +43,6 @@ export function IOSAppLayout() {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState("");
   const [showHomeActivities, setShowHomeActivities] = useState(true);
-  const [isHeroShaking, setIsHeroShaking] = useState(false);
   const [isInFullPageChat, setIsInFullPageChat] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
   const [eventsEntrySource, setEventsEntrySource] = useState<"home" | "plans">("home");
@@ -349,48 +348,6 @@ export function IOSAppLayout() {
     };
   }, [user, isCheckingAvatar]);
 
-  const shakeDebounceRef = useRef(false);
-
-  const triggerHapticFeedback = useCallback(() => {
-    navigator.vibrate?.(200);
-  }, []);
-
-  const executeShakeAction = useCallback(async () => {
-    if (!user) return;
-    if (!selectedCity) {
-      toast.error("Set your city first to join an activity");
-      return;
-    }
-
-    // Determine activity by day + time (mirrors carousel rules)
-    const now = new Date();
-    const day = now.getDay();   // 0=Sun … 6=Sat
-    const hour = now.getHours();
-    const min = now.getMinutes();
-    const isLate = hour > 19 || (hour === 19 && min >= 15); // 19:15+
-
-    let activityType: string;
-    if (day === 5 && !isLate)       activityType = "dinner";  // Friday before 19:15
-    else if (day === 5 && isLate)   activityType = "brunch";  // Friday 19:15+
-    else if (day === 6) {
-      activityType = (hour < 11 || (hour === 11 && min < 50)) ? "brunch" : "dinner"; // Saturday
-    } else {
-      activityType = "dinner";                                 // All other days
-    }
-
-    await triggerHapticFeedback();
-
-    const result = await joinActivity(activityType);
-    if (result.success) {
-      triggerConfettiWaterfall();
-      const label = getActivityLabel(activityType);
-      toast.success(`🎉 You're in for ${label} in ${selectedCity}!`);
-      setShowHomeActivities(false);
-      setShowEvents(false);
-      setActiveTab("plans");
-    }
-  }, [user, selectedCity, triggerHapticFeedback, joinActivity]);
-
   // + tab bar button → propose-plan page
   const handleShakeClick = () => {
     if (!user && !isLoading) {
@@ -527,97 +484,10 @@ export function IOSAppLayout() {
     setActiveTab("home");
   }, []);
 
-  const handleTabBarShake = useCallback(() => {
-    if (shakeDebounceRef.current) {
-      return;
-    }
-    shakeDebounceRef.current = true;
-    setTimeout(() => {
-      shakeDebounceRef.current = false;
-    }, 300);
-
-    setIsHeroShaking(true);
-    setTimeout(() => {
-      setIsHeroShaking(false);
-    }, 3000);
-
-    executeShakeAction();
-  }, [executeShakeAction]);
-
   const handleChatViewChange = useCallback((isInChat: boolean) => {
     setIsInFullPageChat(isInChat);
   }, []);
 
-  // Device motion detection for physical shake
-  useEffect(() => {
-    if (!user) return;
-
-    let lastAcceleration = { x: 0, y: 0, z: 0 };
-    let lastShakeTime = 0;
-    const shakeThreshold = 18; // Acceleration threshold for shake detection
-    const shakeCooldown = 1000; // Minimum time between shakes in milliseconds
-
-    const requestDeviceMotionPermission = async () => {
-      // Check if DeviceMotionEvent.requestPermission exists (iOS 13+)
-      if (typeof (DeviceMotionEvent as any).requestPermission === 'function') {
-        try {
-          const permission = await (DeviceMotionEvent as any).requestPermission();
-          if (permission !== 'granted') {
-            console.log('Device motion permission denied');
-            return false;
-          }
-        } catch (error) {
-          console.log('Error requesting device motion permission:', error);
-          return false;
-        }
-      }
-      return true;
-    };
-
-    const handleDeviceMotion = (event: DeviceMotionEvent) => {
-      const acceleration = event.accelerationIncludingGravity;
-      if (!acceleration) return;
-
-      const { x = 0, y = 0, z = 0 } = acceleration;
-      const currentTime = Date.now();
-
-      // Calculate acceleration change
-      const deltaX = Math.abs(x - lastAcceleration.x);
-      const deltaY = Math.abs(y - lastAcceleration.y);
-      const deltaZ = Math.abs(z - lastAcceleration.z);
-
-      // Check if acceleration exceeds threshold and cooldown has passed
-      if ((deltaX > shakeThreshold || deltaY > shakeThreshold || deltaZ > shakeThreshold) &&
-          (currentTime - lastShakeTime > shakeCooldown)) {
-        lastShakeTime = currentTime;
-        handleTabBarShake();
-      }
-
-      lastAcceleration = { x, y, z };
-    };
-
-    const setupDeviceMotion = async () => {
-      // Check if device motion is supported
-      if (!window.DeviceMotionEvent) {
-        console.log('Device motion not supported');
-        return;
-      }
-
-      // Request permission on iOS
-      const hasPermission = await requestDeviceMotionPermission();
-      if (!hasPermission) return;
-
-      // Add event listener
-      window.addEventListener('devicemotion', handleDeviceMotion, { passive: true });
-    };
-
-    setupDeviceMotion();
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('devicemotion', handleDeviceMotion);
-    };
-  }, [user, handleTabBarShake]);
 
   const openNearYou = useCallback((from: "home" | "plans") => {
     try {
@@ -642,7 +512,7 @@ export function IOSAppLayout() {
             onConfirmActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
             onOpenActivities={handleOpenActivities}
-            isShaking={isHeroShaking}
+
             onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
             isActivityJoined={hasUserJoined}
@@ -667,7 +537,7 @@ export function IOSAppLayout() {
               onConfirmActivity={handleHomeActivitySelect}
               onCloseActivities={() => setShowHomeActivities(false)}
               onOpenActivities={handleOpenActivities}
-              isShaking={isHeroShaking}
+  
               onOpenEvents={() => openNearYou("home")}
               onUpgradeClick={() => setShowPremiumDialog(true)}
               isActivityJoined={hasUserJoined}
@@ -689,7 +559,7 @@ export function IOSAppLayout() {
             onConfirmActivity={handleHomeActivitySelect}
             onCloseActivities={() => setShowHomeActivities(false)}
             onOpenActivities={handleOpenActivities}
-            isShaking={isHeroShaking}
+
             onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
             isActivityJoined={hasUserJoined}
@@ -792,7 +662,7 @@ export function IOSAppLayout() {
         <IOSTabBar
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          onShakeStart={handleTabBarShake}
+
         />
       )}
 

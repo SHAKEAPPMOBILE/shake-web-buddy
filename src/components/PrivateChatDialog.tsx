@@ -76,7 +76,7 @@ export function PrivateChatDialog({
   useEffect(() => {
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!UUID_RE.test(otherUserId)) return; // guard against non-UUID IDs
-    if (otherUserName && otherUserName !== "Shaker") return;
+    if (otherUserName && otherUserName !== "User") return;
     supabase
       .from("profiles")
       .select("name, avatar_url")
@@ -200,7 +200,7 @@ export function PrivateChatDialog({
     onClose();
   }, [user, otherUserId, onClose]);
 
-  const displayName = (otherUserName && otherUserName !== "Shaker") ? otherUserName : (fetchedName || otherUserName);
+  const displayName = (otherUserName && otherUserName !== "User") ? otherUserName : (fetchedName || otherUserName || "User");
   const rawAvatarUrl = (otherUserAvatar && !avatarError) ? otherUserAvatar : fetchedAvatar;
   const avatarUrl = avatarError ? null : (getDisplayAvatarUrl(rawAvatarUrl) ?? rawAvatarUrl);
   const initial = (displayName || "S").charAt(0).toUpperCase();
@@ -224,7 +224,7 @@ export function PrivateChatDialog({
           )}
         </div>
         <h2 className="font-display text-lg text-white flex-1 min-w-0 truncate">
-          {displayName || "Shaker"}
+          {displayName || "User"}
         </h2>
         <div className="relative shrink-0">
           <button

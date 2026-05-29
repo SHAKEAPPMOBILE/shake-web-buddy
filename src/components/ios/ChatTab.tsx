@@ -191,7 +191,7 @@ export function ChatTab({
           .gte("scheduled_for", todayIso),
         supabase
           .from("event_chat_members")
-          .select("event_id, user_id, paid_at, expires_at, event_name, event_starts_at, amount_cents, id")
+          .select("event_id, user_id, paid_at, expires_at, event_name, event_starts_at, amount_cents, joined_at")
           .eq("user_id", user.id),
         supabase.from("greetings").select("to_user_id").eq("from_user_id", user.id),
         supabase.from("greetings").select("from_user_id, created_at").eq("to_user_id", user.id),
@@ -437,7 +437,7 @@ export function ChatTab({
               is_plan: false,
               is_private: true,
               other_user_id: otherUserId,
-              other_user_name: profile?.name || "Shaker",
+              other_user_name: profile?.name || null,
               other_user_avatar: profile?.avatar_url || null,
               last_message_preview: lastMsgPreview,
             } as ChatActivity;
@@ -842,7 +842,7 @@ export function ChatTab({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-bold text-gray-900 text-[15px] leading-snug truncate">
-                          {activity.other_user_name || "Shaker"}
+                          {activity.other_user_name || "User"}
                         </h3>
                         <span className="text-[10px] font-medium uppercase tracking-wide text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-xl border border-purple-200 shrink-0">
                           Match

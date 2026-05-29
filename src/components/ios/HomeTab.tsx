@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
-import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getActivitiesWithDates } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
@@ -60,7 +60,6 @@ interface HomeTabProps {
   showActivities?: boolean;
   onCloseActivities?: () => void;
   onOpenActivities?: () => void;
-  isShaking?: boolean;
   onOpenEvents?: () => void;
   onUpgradeClick?: () => void;
   isActivityJoined?: (activityType: string) => boolean;
@@ -68,7 +67,7 @@ interface HomeTabProps {
 
 // Separate dialog state for "Propose a plan" flow
 
-export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, isShaking = false, onOpenEvents, onUpgradeClick, isActivityJoined }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, onOpenEvents, onUpgradeClick, isActivityJoined }: HomeTabProps) {
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const navigate = useNavigate();
@@ -692,18 +691,10 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
         <div className="relative my-8 flex flex-col items-center justify-center">
           <div
             onClick={onOpenActivities}
-            className={cn(
-              "w-32 h-32 rounded-full bg-card border-2 border-blue-400 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105",
-              isShaking && "animate-shake-center"
-            )}
+            className="w-32 h-32 rounded-full bg-card border-2 border-blue-400 flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-105"
           >
             <span className="text-5xl">🤝</span>
           </div>
-        </div>
-
-        {/* Global participants */}
-        <div className="mb-3">
-          <GlobalParticipantsSection />
         </div>
 
         {false && (

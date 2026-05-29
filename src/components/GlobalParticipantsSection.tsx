@@ -324,7 +324,7 @@ export function GlobalParticipantsSection() {
                         className="flex-1 text-left"
                       >
                         <p className="font-medium text-sm text-gray-900">
-                          {isCurrentUser ? "You" : participant.name || "Shaker"}
+                          {isCurrentUser ? "You" : participant.name || "User"}
                         </p>
                       </button>
                       {isCurrentUser ? (
@@ -368,7 +368,7 @@ export function GlobalParticipantsSection() {
                           </div>
                           <div className="flex-1 text-left">
                             <p className="font-medium text-sm text-gray-900">
-                              {participant.name || "Shaker"}
+                              {participant.name || "User"}
                             </p>
                           </div>
                         </div>
@@ -420,7 +420,7 @@ export function GlobalParticipantsSection() {
                             className="flex-1 text-left"
                           >
                             <p className="font-medium text-sm">
-                              {isCurrentUser ? "You" : participant.name || "Shaker"}
+                              {isCurrentUser ? "You" : participant.name || "User"}
                             </p>
                           </button>
                           {isCurrentUser ? (

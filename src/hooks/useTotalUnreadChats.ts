@@ -111,7 +111,7 @@ export function useTotalUnreadChats() {
           status: eventMembersStatus,
         } = await supabase
           .from("event_chat_members")
-          .select("event_id, expires_at, paid_at, event_starts_at, user_id, id, event_name, amount_cents, stripe_payment_intent_id, joined_at")
+          .select("event_id, expires_at, paid_at, event_starts_at, user_id, event_name, amount_cents, joined_at")
           .eq("user_id", user.id);
 
         if (!eventMembersError && data) {
@@ -253,7 +253,7 @@ export function useTotalUnreadChats() {
     // Mark all event chats as read in Supabase (works on iOS)
     const { data: eventMembersEarly } = await supabase
       .from('event_chat_members')
-      .select('event_id, expires_at, paid_at, event_starts_at, user_id, id, event_name, amount_cents, stripe_payment_intent_id')
+      .select('event_id, expires_at, paid_at, event_starts_at, user_id, event_name, amount_cents, joined_at')
       .eq('user_id', user.id);
 
     const validEventMembersEarly = (eventMembersEarly || []).filter(

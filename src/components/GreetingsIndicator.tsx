@@ -126,7 +126,7 @@ export function GreetingsIndicator() {
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">
-                          {greeting.from_user?.name || "Shaker"}
+                          {greeting.from_user?.name || "User"}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Said hi {format(new Date(greeting.created_at), "MMM d")}
@@ -183,7 +183,7 @@ export function GreetingsIndicator() {
                       </Avatar>
                       <div className="flex-1 min-w-0 text-left">
                         <p className="font-medium text-sm truncate">
-                          {match.from_user?.name || "Shaker"}
+                          {match.from_user?.name || "User"}
                         </p>
                         <p className="text-xs text-shake-yellow">
                           Matched! Tap to chat 💬

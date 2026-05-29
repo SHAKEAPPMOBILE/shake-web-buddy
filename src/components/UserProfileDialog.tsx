@@ -209,7 +209,7 @@ export function UserProfileDialog({
             </div>
 
             <h3 className="mt-4 text-xl font-semibold text-gray-900">
-              {userName || "Shaker"}{userAge ? `, ${userAge}` : ''}
+              {userName || "User"}{userAge ? `, ${userAge}` : ''}
             </h3>
             
             {/* Nationality and Occupation */}

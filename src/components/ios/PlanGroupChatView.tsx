@@ -634,7 +634,7 @@ export function PlanGroupChatView({
           messages.map((msg) => {
             const isOwnMessage = msg.user_id === user?.id;
             const profile = profiles[msg.user_id];
-            const displayName = isOwnMessage ? "You" : profile?.name || "Shaker";
+            const displayName = isOwnMessage ? "You" : profile?.name || "User";
             const avatarUrl = profile?.avatar_url;
             const msgReactions = reactionsByMessage[msg.id];
             const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
