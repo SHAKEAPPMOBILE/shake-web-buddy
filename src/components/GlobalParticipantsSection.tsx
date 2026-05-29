@@ -6,7 +6,6 @@ import { Eye, User, Sparkles } from "lucide-react";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { SayHiButton } from "@/components/SayHiButton";
-import { PrivateChatDialog } from "@/components/PrivateChatDialog";
 import { Button } from "@/components/ui/button";
 import { SuperHumanIcon } from "./SuperHumanIcon";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -38,12 +37,6 @@ export function GlobalParticipantsSection() {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{
-    userId: string;
-    userName: string | null;
-    avatarUrl: string | null;
-  } | null>(null);
-  const [showChatDialog, setShowChatDialog] = useState(false);
-  const [chatUser, setChatUser] = useState<{
     userId: string;
     userName: string | null;
     avatarUrl: string | null;
@@ -214,15 +207,6 @@ export function GlobalParticipantsSection() {
     setShowPremiumDialog(true);
   };
 
-  const handleMatchFromList = (participant: Participant) => {
-    setChatUser({
-      userId: participant.user_id,
-      userName: participant.name,
-      avatarUrl: participant.avatar_url,
-    });
-    setShowChatDialog(true);
-  };
-
   const visibleParticipants = participants.slice(0, FREE_VISIBLE_COUNT);
   const blurredParticipants = participants.slice(FREE_VISIBLE_COUNT);
   const hasMoreParticipants = blurredParticipants.length > 0;
@@ -334,7 +318,7 @@ export function GlobalParticipantsSection() {
                           targetUserId={participant.user_id}
                           targetUserName={participant.name}
                           size="sm"
-                          onMatch={() => handleMatchFromList(participant)}
+                          onMatch={() => handleParticipantClick(participant)}
                         />
                       )}
                     </div>
@@ -430,7 +414,7 @@ export function GlobalParticipantsSection() {
                               targetUserId={participant.user_id}
                               targetUserName={participant.name}
                               size="sm"
-                              onMatch={() => handleMatchFromList(participant)}
+                              onMatch={() => handleParticipantClick(participant)}
                             />
                           )}
                         </div>
@@ -456,14 +440,6 @@ export function GlobalParticipantsSection() {
         />
       )}
 
-      {chatUser && showChatDialog && (
-        <PrivateChatDialog
-          onClose={() => { setShowChatDialog(false); setChatUser(null); }}
-          otherUserId={chatUser.userId}
-          otherUserName={chatUser.userName}
-          otherUserAvatar={chatUser.avatarUrl}
-        />
-      )}
     </>
   );
 }
