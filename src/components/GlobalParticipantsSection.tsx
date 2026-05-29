@@ -77,12 +77,10 @@ export function GlobalParticipantsSection() {
       setIsLoading(true);
     }
 
-    // Get all users who signed up with a name set (ordered by most recent), excluding test users
+    // Get all users who signed up (ordered by most recent), excluding test users
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("user_id, name, avatar_url, created_at")
-      .not("name", "is", null)
-      .neq("name", "")
       .order("created_at", { ascending: false });
 
     if (profilesError) {
