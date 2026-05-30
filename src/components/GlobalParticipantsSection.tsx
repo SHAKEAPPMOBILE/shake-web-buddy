@@ -71,7 +71,6 @@ export function GlobalParticipantsSection() {
   };
 
   const fetchRecentParticipants = async (showSpinner = false) => {
-    console.log('[GPS] fetchRecentParticipants called, showSpinner=', showSpinner);
     if (showSpinner) {
       setIsLoading(true);
     }
@@ -79,19 +78,16 @@ export function GlobalParticipantsSection() {
     // Get all users who signed up (ordered by most recent), excluding test users
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("user_id, name, avatar_url, created_at, username, display_name")
+      .select("user_id, name, avatar_url, created_at")
       .order("created_at", { ascending: false });
 
-    console.log('[GPS] profiles query result — count:', profiles?.length, 'error:', profilesError);
-
     if (profilesError) {
-      console.error('[GPS] profilesError — returning early:', profilesError);
+      console.error("Error fetching profiles:", profilesError);
       setIsLoading(false);
       return;
     }
 
     if (!profiles || profiles.length === 0) {
-      console.warn('[GPS] profiles empty or null — totalCount set to 0');
       setParticipants([]);
       setTotalCount(0);
       setIsLoading(false);
@@ -107,14 +103,11 @@ export function GlobalParticipantsSection() {
       return true;
     });
 
-    console.log('[GPS] after dicebear filter — raw:', profiles.length, 'real:', realProfiles.length,
-      'sample avatars:', profiles.slice(0, 3).map((p: any) => p.avatar_url));
-
     setTotalCount(realProfiles.length);
 
     const allParticipants: Participant[] = realProfiles.map((profile: any) => ({
       user_id: profile.user_id,
-      name: profile.name?.trim() || profile.username?.trim() || profile.display_name?.trim() || null,
+      name: profile.name?.trim() || null,
       avatar_url: profile.avatar_url || null,
       joined_at: profile.created_at,
     }));
@@ -221,12 +214,9 @@ export function GlobalParticipantsSection() {
   const uniqueByUser = Array.from(new Map(participants.map((p) => [p.user_id, p] as const)).values());
   const previewAvatars = uniqueByUser.slice(0, 7);
 
-  console.log('[GPS] render — totalCount:', totalCount, 'isLoading:', isLoading, 'participants:', participants.length);
-
-  // DEBUG: always render so we can see the pill even with 0 results
-  // if (totalCount === 0 && !isLoading) {
-  //   return null;
-  // }
+  if (totalCount === 0 && !isLoading) {
+    return null;
+  }
 
   return (
     <>
