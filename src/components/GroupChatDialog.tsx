@@ -248,15 +248,17 @@ export function GroupChatDialog({
     if (!open || !activityType) return;
 
     const fetchMessages = async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // Show messages from the last 24 h so the chat persists for a full day
+      // after the activity starts and messages don't bleed across weekly occurrences
+      // (same activity_type won't recur within 24 h for weekly activities).
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
       const { data, error } = await supabase
         .from("activity_messages")
         .select("*")
         .eq("activity_type", activityType as any)
         .eq("city", city as any)
-        .gte("created_at", today.toISOString())
+        .gte("created_at", cutoff.toISOString())
         .order("created_at", { ascending: true });
 
       if (error) {

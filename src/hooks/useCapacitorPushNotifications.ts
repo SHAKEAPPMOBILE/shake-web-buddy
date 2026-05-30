@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
+import { InAppReview } from "@capacitor-community/in-app-review";
 
 export function useCapacitorPushNotifications() {
   const { user } = useAuth();
@@ -77,7 +78,20 @@ export function useCapacitorPushNotifications() {
         const data = action.notification.data as Record<string, string> | undefined;
         if (!data) return;
 
-        if (data.tab === "chat" && data.other_user_id) {
+        if (data.action === "rate_app") {
+          // Only show the in-app review once per 30-day window to avoid fatigue
+          const lastReviewKey = "last_review_prompt";
+          const last = localStorage.getItem(lastReviewKey);
+          const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+          if (!last || Date.now() - Number(last) > thirtyDaysMs) {
+            InAppReview.requestReview()
+              .then(() => {
+                localStorage.setItem(lastReviewKey, String(Date.now()));
+                console.log("[Push] In-app review requested");
+              })
+              .catch((err) => console.warn("[Push] In-app review failed:", err));
+          }
+        } else if (data.tab === "chat" && data.other_user_id) {
           navigate("/", { state: { activeTab: "chat", other_user_id: data.other_user_id } });
         } else if (data.tab === "chat" && data.activity_id) {
           navigate("/", { state: { activeTab: "chat", activityId: data.activity_id } });

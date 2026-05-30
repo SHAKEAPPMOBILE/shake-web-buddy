@@ -158,9 +158,9 @@ export function ChatTab({
     setIsLoading(true);
 
     try {
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
-      const todayIso = startOfToday.toISOString();
+      // Show plans scheduled in the last 24 h so chats persist for a full day after the activity starts
+      const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const todayIso = cutoff24h.toISOString();
 
       // ── Step 1: Fetch all top-level data in parallel ──────────────────────
       const [

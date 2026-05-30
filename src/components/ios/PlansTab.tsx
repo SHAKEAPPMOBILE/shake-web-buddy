@@ -103,15 +103,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       // Rule 1: scheduled_for is set → expire at midnight of that day.
       // Rule 2: scheduled_for is null → expire 5 days after created_at.
       const nowMs = Date.now();
-      const nowDate = new Date(nowMs);
-      const todayMidnightUTC = new Date(Date.UTC(
-        nowDate.getUTCFullYear(), nowDate.getUTCMonth(), nowDate.getUTCDate()
-      ));
+      const twentyFourHoursAgo = new Date(nowMs - 24 * 60 * 60 * 1000);
       const fiveDaysAgo = new Date(nowMs - 5 * 24 * 60 * 60 * 1000);
 
+      // Show plans whose scheduled_for is within the last 24 h so chats persist
+      // for a full day after the activity starts (not just until midnight).
       const isActivityVisible = (a: { scheduled_for: string | null; created_at: string }) =>
         a.scheduled_for !== null
-          ? new Date(a.scheduled_for) >= todayMidnightUTC
+          ? new Date(a.scheduled_for) >= twentyFourHoursAgo
           : new Date(a.created_at) >= fiveDaysAgo;
 
       // --- Phase 1: Run all four metadata queries in parallel ---
@@ -785,6 +784,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
+    // Rule 3: block joining more than 10 min after the activity has started
+    if (plan.scheduled_for) {
+      const minutesSinceStart = (Date.now() - new Date(plan.scheduled_for).getTime()) / 60000;
+      if (minutesSinceStart > 10) {
+        toast.error("This activity has already started — you can no longer join.");
+        return;
+      }
+    }
+
     const targetPlan = await findOrCreateOpenGroup(plan);
 
     const conflict = getConflictingActivity(targetPlan.activity_type, targetPlan.city);
@@ -865,6 +873,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   const handleDirectCityJoin = async (plan: PlanActivity) => {
     if (!user) return;
+
+    // Rule 3: block joining more than 10 min after the activity has started
+    if (plan.scheduled_for) {
+      const minutesSinceStart = (Date.now() - new Date(plan.scheduled_for).getTime()) / 60000;
+      if (minutesSinceStart > 10) {
+        toast.error("This activity has already started — you can no longer join.");
+        return;
+      }
+    }
 
     const targetPlan = await findOrCreateOpenGroup(plan);
 

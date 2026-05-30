@@ -85,8 +85,11 @@ export function useActivityJoins(city: string) {
       return { success: true, isNewJoin: false }; // Already joined, no animation
     }
 
-    // Insert new join — expires at 23:59:59 UTC on the activity's next scheduled day
+    // Insert new join — expires 24 h after end of the activity's scheduled day
+    // (end of activity day + 24 h = end of the following day, keeping the chat alive
+    //  for a full day after the activity finishes)
     const nextOccurrence = getNextOccurrenceDate(activityType);
+    nextOccurrence.setDate(nextOccurrence.getDate() + 1); // day after the activity
     nextOccurrence.setUTCHours(23, 59, 59, 999);
     const expiresAt = nextOccurrence.toISOString();
 
