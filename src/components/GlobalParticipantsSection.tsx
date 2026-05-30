@@ -71,6 +71,7 @@ export function GlobalParticipantsSection() {
   };
 
   const fetchRecentParticipants = async (showSpinner = false) => {
+    console.log('[GPS] fetchRecentParticipants called, showSpinner=', showSpinner);
     if (showSpinner) {
       setIsLoading(true);
     }
@@ -81,13 +82,16 @@ export function GlobalParticipantsSection() {
       .select("user_id, name, avatar_url, created_at, username, display_name")
       .order("created_at", { ascending: false });
 
+    console.log('[GPS] profiles query result — count:', profiles?.length, 'error:', profilesError);
+
     if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
+      console.error('[GPS] profilesError — returning early:', profilesError);
       setIsLoading(false);
       return;
     }
 
     if (!profiles || profiles.length === 0) {
+      console.warn('[GPS] profiles empty or null — totalCount set to 0');
       setParticipants([]);
       setTotalCount(0);
       setIsLoading(false);
@@ -102,6 +106,9 @@ export function GlobalParticipantsSection() {
       }
       return true;
     });
+
+    console.log('[GPS] after dicebear filter — raw:', profiles.length, 'real:', realProfiles.length,
+      'sample avatars:', profiles.slice(0, 3).map((p: any) => p.avatar_url));
 
     setTotalCount(realProfiles.length);
 
@@ -214,9 +221,12 @@ export function GlobalParticipantsSection() {
   const uniqueByUser = Array.from(new Map(participants.map((p) => [p.user_id, p] as const)).values());
   const previewAvatars = uniqueByUser.slice(0, 7);
 
-  if (totalCount === 0 && !isLoading) {
-    return null;
-  }
+  console.log('[GPS] render — totalCount:', totalCount, 'isLoading:', isLoading, 'participants:', participants.length);
+
+  // DEBUG: always render so we can see the pill even with 0 results
+  // if (totalCount === 0 && !isLoading) {
+  //   return null;
+  // }
 
   return (
     <>
