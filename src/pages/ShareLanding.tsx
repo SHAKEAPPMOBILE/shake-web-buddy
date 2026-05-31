@@ -24,6 +24,7 @@ export default function ShareLanding() {
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     if (!activityId) {
@@ -59,6 +60,16 @@ export default function ShareLanding() {
           .from("activity_joins")
           .select("id", { count: "exact", head: true })
           .eq("activity_id", activityId);
+
+        // Mark expired only if the activity window (scheduled_for + 24h) has passed.
+        // A future activity or one currently in-progress should never be treated as expired.
+        if (
+          actData.scheduled_for &&
+          new Date(actData.scheduled_for).getTime() + 24 * 60 * 60 * 1000 < Date.now()
+        ) {
+          setIsExpired(true);
+          return;
+        }
 
         setActivity({
           id: actData.id,
@@ -133,6 +144,18 @@ export default function ShareLanding() {
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
           <p className="text-white/50 text-sm">Loading activity…</p>
+        </div>
+      ) : isExpired ? (
+        <div className="flex flex-col items-center gap-4 text-center">
+          <span className="text-5xl">⏰</span>
+          <p className="text-white text-lg font-semibold">This activity has ended</p>
+          <p className="text-white/50 text-sm">The invite window for this activity has passed.</p>
+          <button
+            onClick={() => navigate("/")}
+            className="mt-4 px-6 py-3 rounded-full bg-white/10 text-white text-sm font-medium"
+          >
+            Find new activities
+          </button>
         </div>
       ) : notFound || !activity ? (
         <div className="flex flex-col items-center gap-4 text-center">
