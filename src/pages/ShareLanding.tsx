@@ -21,7 +21,6 @@ export default function ShareLanding() {
   const [activity, setActivity] = useState<ActivityInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     if (!activityId) {
@@ -41,16 +40,6 @@ export default function ShareLanding() {
 
       if (actError || !actData) {
         setNotFound(true);
-        setIsLoading(false);
-        return;
-      }
-
-      // Only show as expired once the 24-hour join window has closed.
-      const expired =
-        !!actData.scheduled_for &&
-        new Date(actData.scheduled_for).getTime() + 24 * 60 * 60 * 1000 < Date.now();
-      if (expired) {
-        setIsExpired(true);
         setIsLoading(false);
         return;
       }
@@ -103,9 +92,6 @@ export default function ShareLanding() {
 
       const profileData =
         profileResult.status === "fulfilled" ? profileResult.value.data : null;
-      const profileError =
-        profileResult.status === "fulfilled" ? profileResult.value.error : profileResult.reason;
-      console.log('[ShareLanding] profile lookup — user_id:', actData.user_id, 'data:', profileData, 'error:', profileError);
       const count =
         countResult.status === "fulfilled" ? countResult.value.count : 0;
 
@@ -165,20 +151,6 @@ export default function ShareLanding() {
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
           <p className="text-white/50 text-sm">Loading activity…</p>
-        </div>
-      ) : isExpired ? (
-        <div className="flex flex-col items-center gap-4 text-center">
-          <span className="text-5xl">⏰</span>
-          <p className="text-white text-lg font-semibold">This activity has ended</p>
-          <p className="text-white/50 text-sm">
-            The invite window for this activity has passed.
-          </p>
-          <a
-            href="https://app.shakeapp.today"
-            className="mt-4 px-6 py-3 rounded-full bg-white/10 text-white text-sm font-medium"
-          >
-            Find new activities on SHAKE
-          </a>
         </div>
       ) : notFound || !activity ? (
         <div className="flex flex-col items-center gap-4 text-center">
