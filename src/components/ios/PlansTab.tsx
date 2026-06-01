@@ -653,8 +653,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     e.stopPropagation();
     e.preventDefault();
 
-    console.log('[Share] button clicked, plan.id:', plan.id, 'isNative:', Capacitor.isNativePlatform(), 'hasShare:', !!navigator.share);
-
     if (plan.id.startsWith('carousel-')) {
       toast.error("Join a specific plan first to invite friends.");
       return;
@@ -677,7 +675,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .catch(err => { if (err.name !== 'AbortError') toast.error("Failed to share"); });
     } else {
       navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
-        .then(() => toast.success("📋 Link copied to clipboard!"))
+        .then(() => toast.success("🔗 Link copied! Share it with your friends."))
         .catch(() => toast.error("Failed to copy link"));
     }
   };

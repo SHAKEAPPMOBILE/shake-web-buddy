@@ -627,14 +627,14 @@ export function GroupChatView({
       try {
         await navigator.share({ title: `SHAKE - ${activityLabel} in ${city}`, text: shareText, url: shareUrl });
       } catch (err) {
-        if ((err as Error).name !== "AbortError") console.error("Share error:", err);
+        if ((err as Error).name !== "AbortError") toast.error("Failed to share");
       }
     } else {
       try {
         await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        toast.success("Link copied to clipboard!");
+        toast.success("🔗 Link copied! Share it with your friends.");
       } catch {
-        toast.error("Failed to share");
+        toast.error("Failed to copy link");
       }
     }
   };
