@@ -18,7 +18,6 @@ interface ActivityInfo {
 
 export default function ShareLanding() {
   const { activityId } = useParams<{ activityId: string }>();
-  console.log('[ShareLanding] mounting, activityId:', activityId, 'url:', window.location.href);
   const [activity, setActivity] = useState<ActivityInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -50,7 +49,6 @@ export default function ShareLanding() {
       const expired =
         !!actData.scheduled_for &&
         new Date(actData.scheduled_for).getTime() + 24 * 60 * 60 * 1000 < Date.now();
-      console.log('[ShareLanding] id:', actData.id, 'scheduled_for:', actData.scheduled_for, 'now:', new Date().toISOString(), 'expired:', expired);
       if (expired) {
         setIsExpired(true);
         setIsLoading(false);
@@ -105,6 +103,9 @@ export default function ShareLanding() {
 
       const profileData =
         profileResult.status === "fulfilled" ? profileResult.value.data : null;
+      const profileError =
+        profileResult.status === "fulfilled" ? profileResult.value.error : profileResult.reason;
+      console.log('[ShareLanding] profile lookup — user_id:', actData.user_id, 'data:', profileData, 'error:', profileError);
       const count =
         countResult.status === "fulfilled" ? countResult.value.count : 0;
 
