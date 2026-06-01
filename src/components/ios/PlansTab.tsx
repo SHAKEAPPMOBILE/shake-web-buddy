@@ -654,22 +654,21 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     } else if (!plan.id.startsWith('carousel-')) {
       activityId = plan.id;
     } else {
-      const { data: joinRow } = await supabase
-        .from('activity_joins')
-        .select('activity_id')
-        .eq('user_id', user.id)
+      const { data: ua } = await supabase
+        .from('user_activities')
+        .select('id')
         .eq('activity_type', plan.activity_type)
         .eq('city', plan.city)
-        .not('activity_id', 'is', null)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      activityId = joinRow?.activity_id ?? null;
+      activityId = ua?.id ?? null;
     }
 
     const shareUrl = activityId
       ? `https://app.shakeapp.today/invite/${activityId}`
       : "https://app.shakeapp.today";
-    alert('Share URL: ' + shareUrl + '\nactivityId: ' + activityId + '\nplan.realActivityId: ' + plan.realActivityId + '\nplan.id: ' + plan.id);
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
     const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
 
