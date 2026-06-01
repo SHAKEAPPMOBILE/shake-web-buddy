@@ -127,7 +127,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         // 1. User's own carousel joins (all cities)
         supabase
           .from("activity_joins")
-          .select("activity_type, city, user_id")
+          .select("activity_type, city, user_id, activity_id")
           .eq("user_id", user.id)
           .is("activity_id", null),
         // 2. User's real plan joins (activity_id not null)
@@ -163,12 +163,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const allCarouselJoins = (cityCarouselResult.data || []) as { activity_type: string; city: string; user_id: string }[];
 
       // Build carousel map (user's own joins seeded first so they always appear)
-      const carouselMap = new Map<string, { activity_type: string; city: string; userIds: string[] }>();
-      const addToCarouselMap = (join: { activity_type: string; city: string; user_id: string }) => {
+      const carouselMap = new Map<string, { activity_type: string; city: string; userIds: string[]; activityId?: string | null }>();
+      const addToCarouselMap = (join: { activity_type: string; city: string; user_id: string; activity_id?: string | null }) => {
         const key = `${join.activity_type}-${join.city}`;
         if (!carouselMap.has(key)) carouselMap.set(key, { activity_type: join.activity_type, city: join.city, userIds: [] });
         const entry = carouselMap.get(key)!;
         if (!entry.userIds.includes(join.user_id)) entry.userIds.push(join.user_id);
+        // Store activity_id from the user's own join if available
+        if (join.activity_id && !entry.activityId) entry.activityId = join.activity_id;
       };
       userOwnCarouselJoins.forEach(addToCarouselMap);
       allCarouselJoins.forEach(addToCarouselMap);
@@ -304,16 +306,22 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             const firstUserId = carouselActivity.userIds[0];
             const [{ data: profile }, { data: realActivity }] = await Promise.all([
               supabase.from("profiles").select("name, avatar_url").eq("user_id", firstUserId).maybeSingle(),
-              // Fetch the nearest future user_activities UUID so the share button links to the current event.
-              supabase
-                .from("user_activities")
-                .select("id")
-                .eq("activity_type", carouselActivity.activity_type)
-                .eq("city", carouselActivity.city)
-                .eq("is_active", true)
-                .order("scheduled_for", { ascending: false })
-                .limit(1)
-                .maybeSingle(),
+              // Use the activity_id from the join row if available, else query by type+city.
+              carouselActivity.activityId
+                ? supabase
+                    .from("user_activities")
+                    .select("id")
+                    .eq("id", carouselActivity.activityId)
+                    .maybeSingle()
+                : supabase
+                    .from("user_activities")
+                    .select("id")
+                    .eq("activity_type", carouselActivity.activity_type)
+                    .eq("city", carouselActivity.city)
+                    .eq("is_active", true)
+                    .order("scheduled_for", { ascending: false })
+                    .limit(1)
+                    .maybeSingle(),
             ]);
             const dayLabel = getActivityDay(carouselActivity.activity_type);
             const nextOccurrence = getNextOccurrenceDate(carouselActivity.activity_type);
