@@ -663,46 +663,44 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     ) ?? null;
   };
 
-  const handleSharePlan = (plan: PlanActivity, e: React.MouseEvent) => {
+  const handleSharePlan = async (plan: PlanActivity, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-
-    // For carousel-joined plans use the real user_activities UUID fetched at load time.
-    // If no real activity was found (edge case), bail with a helpful message.
-    const activityId = plan.isCarouselJoin ? plan.realActivityId : plan.id;
-    if (!activityId) {
-      // Fall back to base URL rather than silently doing nothing.
-      const shareUrl = "https://app.shakeapp.today";
-      if (Capacitor.isNativePlatform()) {
-        Share.share({ title: "SHAKE", text: "Join me on SHAKE!", url: shareUrl, dialogTitle: 'Invite a Friend' })
-          .catch(err => { if (err.errorMessage !== 'Share canceled') toast.error("Failed to share"); });
-      } else {
-        navigator.clipboard.writeText(shareUrl)
-          .then(() => toast.success("🔗 Link copied! Share it with your friends."))
-          .catch(() => toast.error("Failed to copy link"));
-      }
-      return;
-    }
 
     const activityLabel = getActivityLabel(plan.activity_type);
     const activityEmoji = getActivityEmoji(plan.activity_type);
     const dateStr = plan.scheduled_for
       ? format(new Date(plan.scheduled_for), "EEE, d MMM")
       : format(new Date(), "EEE, d MMM");
-    const shareUrl = `https://app.shakeapp.today/invite/${activityId}`;
+
+    // Use pre-fetched realActivityId for carousel plans, plan.id for real plan rows.
+    const activityId = plan.realActivityId ?? plan.id;
+    const shareUrl = activityId && !activityId.startsWith('carousel-')
+      ? `https://app.shakeapp.today/invite/${activityId}`
+      : "https://app.shakeapp.today";
+
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
     const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
 
     if (Capacitor.isNativePlatform()) {
-      Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: 'Invite a Friend' })
-        .catch(err => { if (err.errorMessage !== 'Share canceled') toast.error("Failed to share"); });
+      try {
+        await Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: 'Invite a Friend' });
+      } catch (err) {
+        if ((err as any).errorMessage !== 'Share canceled') toast.error("Failed to share");
+      }
     } else if (navigator.share) {
-      navigator.share({ title: shareTitle, text: shareText, url: shareUrl })
-        .catch(err => { if (err.name !== 'AbortError') toast.error("Failed to share"); });
+      try {
+        await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") toast.error("Failed to share");
+      }
     } else {
-      navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
-        .then(() => toast.success("🔗 Link copied! Share it with your friends."))
-        .catch(() => toast.error("Failed to copy link"));
+      try {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        toast.success("🔗 Link copied! Share it with your friends.");
+      } catch {
+        toast.error("Failed to copy link");
+      }
     }
   };
 
