@@ -741,7 +741,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             </p>
             <button
               type="button"
-              onClick={() => { setShowAlreadyJoinedDialog(false); navigate("/plans"); }}
+              onClick={() => { setShowAlreadyJoinedDialog(false); navigate("/", { state: { activeTab: "plans" } }); }}
               className="w-full h-11 rounded-full font-semibold text-base text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
               Go to Plans

@@ -1602,7 +1602,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             </p>
             <button
               type="button"
-              onClick={() => setShowAlreadyJoinedPlan(false)}
+              onClick={() => { setShowAlreadyJoinedPlan(false); navigate("/", { state: { activeTab: "plans" } }); }}
               className="w-full h-11 rounded-full font-semibold text-base text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
               Go to Plans
