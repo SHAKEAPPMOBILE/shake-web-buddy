@@ -673,9 +673,32 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       ? format(new Date(plan.scheduled_for), "EEE, d MMM")
       : format(new Date(), "EEE, d MMM");
 
-    // Use pre-fetched realActivityId for carousel plans, plan.id for real plan rows.
-    const activityId = plan.realActivityId ?? plan.id;
-    const shareUrl = activityId && !activityId.startsWith('carousel-')
+    // Resolve a valid (non-synthetic) activity UUID.
+    // For real plan rows, plan.id is already the UUID.
+    // For carousel joins, use realActivityId if already loaded.
+    let activityId: string | null = null;
+    if (!plan.isCarouselJoin && plan.id && !plan.id.startsWith('carousel-')) {
+      activityId = plan.id;
+    } else if (plan.realActivityId && !plan.realActivityId.startsWith('carousel-')) {
+      activityId = plan.realActivityId;
+    }
+
+    // Live fallback: realActivityId may be null if the tab loaded before the async fetch finished.
+    if (!activityId) {
+      const { data } = await supabase
+        .from("user_activities")
+        .select("id")
+        .eq("activity_type", plan.activity_type)
+        .eq("city", plan.city)
+        .eq("is_active", true)
+        .gte("scheduled_for", new Date().toISOString())
+        .order("scheduled_for", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      activityId = data?.id ?? null;
+    }
+
+    const shareUrl = activityId
       ? `https://app.shakeapp.today/invite/${activityId}`
       : "https://app.shakeapp.today";
 
