@@ -647,49 +647,30 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     ) ?? null;
   };
 
-  const handleSharePlan = async (plan: PlanActivity, e: React.MouseEvent) => {
+  const handleSharePlan = (plan: PlanActivity, e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
 
-    // Carousel plans have synthetic ids (carousel-drinks-London) — no real DB row to link to.
     if (plan.id.startsWith('carousel-')) {
       toast.error("Join a specific plan first to invite friends.");
       return;
     }
 
-    // Build the invite URL directly from plan.id — no DB queries needed.
-    const shareUrl = `https://app.shakeapp.today/invite/${plan.id}`;
     const activityLabel = getActivityLabel(plan.activity_type);
     const activityEmoji = getActivityEmoji(plan.activity_type);
     const dateStr = plan.scheduled_for
       ? format(new Date(plan.scheduled_for), "EEE, d MMM")
       : format(new Date(), "EEE, d MMM");
+    const shareUrl = `https://app.shakeapp.today/invite/${plan.id}`;
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
 
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `SHAKE - ${activityLabel} in ${plan.city}`,
-          text: shareText,
-          url: shareUrl,
-        });
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          // Share failed — fall back to clipboard
-          try {
-            await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-            toast.success("Link copied to clipboard!");
-          } catch {
-            toast.error("Failed to share");
-          }
-        }
-      }
+      navigator.share({ title: `SHAKE - ${activityLabel} in ${plan.city}`, text: shareText, url: shareUrl })
+        .catch(err => { if (err.name !== "AbortError") toast.error("Failed to share"); });
     } else {
-      try {
-        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        toast.success("Link copied to clipboard!");
-      } catch {
-        toast.error("Failed to share");
-      }
+      navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
+        .then(() => toast.success("Link copied!"))
+        .catch(() => toast.error("Failed to copy link"));
     }
   };
 
