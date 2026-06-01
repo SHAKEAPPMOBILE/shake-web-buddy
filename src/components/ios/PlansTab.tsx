@@ -660,6 +660,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const shareUrl = activityId
       ? `https://app.shakeapp.today/invite/${activityId}`
       : "https://app.shakeapp.today";
+    alert('Share URL: ' + shareUrl + '\nactivityId: ' + activityId + '\nplan.realActivityId: ' + plan.realActivityId + '\nplan.id: ' + plan.id);
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
     const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
 
