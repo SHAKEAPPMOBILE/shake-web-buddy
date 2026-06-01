@@ -647,28 +647,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       ? format(new Date(plan.scheduled_for), "EEE, d MMM")
       : format(new Date(), "EEE, d MMM");
 
-    // Get activity ID - use realActivityId if valid, plan.id if a real plan, else query the user's join row
-    let activityId: string | null = null;
-    if (plan.realActivityId && !plan.realActivityId.startsWith('carousel-')) {
-      activityId = plan.realActivityId;
-    } else if (!plan.id.startsWith('carousel-')) {
-      activityId = plan.id;
-    } else {
-      const { data: ua } = await supabase
-        .from('user_activities')
-        .select('id')
-        .eq('activity_type', plan.activity_type)
-        .eq('city', plan.city)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      activityId = ua?.id ?? null;
-    }
-
-    const shareUrl = activityId
-      ? `https://app.shakeapp.today/invite/${activityId}`
-      : "https://app.shakeapp.today";
+    // For carousel plans, encode type+city directly. For real plans, use the plan id.
+    const shareId = plan.id.startsWith('carousel-')
+      ? `${plan.activity_type}-${plan.city}`
+      : plan.id;
+    const shareUrl = `https://app.shakeapp.today/invite/${encodeURIComponent(shareId)}`;
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
     const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
 

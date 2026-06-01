@@ -31,12 +31,28 @@ export default function ShareLanding() {
 
     const load = async () => {
       // Phase 1: fetch the core activity row — this determines what we show.
-      const { data: actData, error: actError } = await supabase
+      // activityId is either a UUID (real plan) or "activitytype-city" (carousel plan).
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const decoded = decodeURIComponent(activityId);
+      const isUuid = UUID_RE.test(decoded);
+
+      let query = supabase
         .from("user_activities")
-        .select("id, activity_type, city, scheduled_for, user_id")
-        .eq("id", activityId)
-        .eq("is_active", true)
-        .maybeSingle();
+        .select("id, activity_type, city, scheduled_for, user_id");
+
+      if (isUuid) {
+        query = query.eq("id", decoded);
+      } else {
+        // "activitytype-city" — split on first hyphen only (city may contain hyphens)
+        const dashIdx = decoded.indexOf("-");
+        const actType = decoded.slice(0, dashIdx);
+        const city = decoded.slice(dashIdx + 1);
+        query = query.eq("activity_type", actType).eq("city", city)
+          .order("created_at", { ascending: false })
+          .limit(1);
+      }
+
+      const { data: actData, error: actError } = await query.maybeSingle();
 
       if (actError || !actData) {
         setNotFound(true);
@@ -87,7 +103,7 @@ export default function ShareLanding() {
         supabase
           .from("activity_joins")
           .select("id", { count: "exact", head: true })
-          .eq("activity_id", activityId),
+          .eq("activity_id", actData.id),
       ]);
 
       const profileData =
