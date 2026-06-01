@@ -1138,7 +1138,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
                     <div className="flex items-center gap-1 mt-0.5">
                       <span className="text-xs text-gray-600">{plan.city}</span>
-                      {!plan.isCarouselJoin && (
+                      {!plan.isCarouselJoin && !plan.is_auto_generated && (
                         <span className="text-xs text-gray-500">
                           • {t('common.by')}{' '}
                           <button

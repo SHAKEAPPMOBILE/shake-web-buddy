@@ -112,7 +112,7 @@ export function useActivityJoins(city: string) {
       const { data: newUa } = await supabase
         .from("user_activities")
         .insert({
-          user_id: user.id,
+          user_id: null,
           activity_type: activityType,
           city: targetCity,
           is_active: true,
