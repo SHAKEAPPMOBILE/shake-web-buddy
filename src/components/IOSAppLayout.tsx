@@ -153,10 +153,11 @@ export function IOSAppLayout() {
     // are absent). A user who has an avatar — e.g. assigned by the DB trigger
     // after Apple OAuth — should never be kicked back to registration just
     // because name is transiently null.
-    if (status.nameMissing && status.avatarMissing) {
+    // Never redirect while the user is on a share landing page.
+    if (status.nameMissing && status.avatarMissing && !location.pathname.startsWith('/invite/')) {
       navigate("/auth");
     }
-  }, [navigate]);
+  }, [navigate, location.pathname]);
   
   // Handle payment success from Stripe redirect
   const { isVerifying, wasSuccessful, verifiedActivityId, resetPaymentState } = usePaymentSuccessHandler();
@@ -350,7 +351,7 @@ export function IOSAppLayout() {
 
   // + tab bar button → propose-plan page
   const handleShakeClick = () => {
-    if (!user && !isLoading) {
+    if (!user && !isLoading && !location.pathname.startsWith('/invite/')) {
       navigate("/auth");
       return;
     }
@@ -431,7 +432,7 @@ export function IOSAppLayout() {
   }, [joinActivity, selectedCity]);
 
   const handleSelectActivity = async (activity: string) => {
-    if (!user) {
+    if (!user && !location.pathname.startsWith('/invite/')) {
       toast.error("Please sign in to join an activity");
       setShowActivityDialog(false);
       navigate("/auth");
@@ -465,7 +466,7 @@ export function IOSAppLayout() {
       timestamp: new Date().toISOString(),
     });
 
-    if (!user) {
+    if (!user && !location.pathname.startsWith('/invite/')) {
       console.log('[Join] handleHomeActivitySelect → branch: no user → redirecting to /auth');
       toast.error("Please sign in to join an activity");
       navigate("/auth");
