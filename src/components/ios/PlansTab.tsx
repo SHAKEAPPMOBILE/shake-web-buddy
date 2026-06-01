@@ -1149,7 +1149,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900">
-                        {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || t('plans.untitledPlan', 'Untitled Plan'))}{getGroupSuffix(plan)}
+                        {plan.note || getActivityLabel(plan.activity_type)}{getGroupSuffix(plan)}
                       </h3>
                       {plan.isJoined && (
                         <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">

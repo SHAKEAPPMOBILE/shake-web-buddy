@@ -115,29 +115,6 @@ export function useActivityJoins(city: string) {
       return { success: false, isNewJoin: false };
     }
 
-    // Ensure a user_activities row exists for this carousel join so invite links work.
-    // Check for any active row for this type + city first to avoid duplicates.
-    const activityDate = getNextOccurrenceDate(activityType);
-    const { data: existingActivity } = await supabase
-      .from("user_activities")
-      .select("id")
-      .eq("activity_type", activityType)
-      .eq("city", targetCity)
-      .eq("is_active", true)
-      .order("scheduled_for", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!existingActivity) {
-      await supabase.from("user_activities").insert({
-        user_id: user.id,
-        activity_type: activityType,
-        city: targetCity,
-        is_active: true,
-        scheduled_for: activityDate.toISOString(),
-      });
-    }
-
     toast.success("You've joined the activity!");
     
     // Get user name for notifications
