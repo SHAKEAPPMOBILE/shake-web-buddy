@@ -55,6 +55,7 @@ interface PlanActivity {
   participant_count?: number;
   isJoined?: boolean;
   isCarouselJoin?: boolean;
+  realActivityId?: string | null;
 }
 
 interface PlansTabProps {
@@ -299,12 +300,23 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         Promise.all(
           userJoinedCarouselEntries.map(async (carouselActivity) => {
             const firstUserId = carouselActivity.userIds[0];
-            const { data: profile } = await supabase
-              .from("profiles").select("name, avatar_url").eq("user_id", firstUserId).maybeSingle();
+            const [{ data: profile }, { data: realActivity }] = await Promise.all([
+              supabase.from("profiles").select("name, avatar_url").eq("user_id", firstUserId).maybeSingle(),
+              // Fetch the real user_activities UUID so the share button can link to it directly.
+              supabase
+                .from("user_activities")
+                .select("id")
+                .eq("activity_type", carouselActivity.activity_type)
+                .eq("city", carouselActivity.city)
+                .eq("is_active", true)
+                .limit(1)
+                .maybeSingle(),
+            ]);
             const dayLabel = getActivityDay(carouselActivity.activity_type);
             const nextOccurrence = getNextOccurrenceDate(carouselActivity.activity_type);
             return {
               id: `carousel-${carouselActivity.activity_type}-${carouselActivity.city}`,
+              realActivityId: realActivity?.id ?? null,
               user_id: firstUserId,
               activity_type: carouselActivity.activity_type,
               city: carouselActivity.city,
@@ -653,8 +665,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     e.stopPropagation();
     e.preventDefault();
 
-    if (plan.id.startsWith('carousel-')) {
-      toast.error("Join a specific plan first to invite friends.");
+    // For carousel-joined plans use the real user_activities UUID fetched at load time.
+    // If no real activity was found (edge case), bail with a helpful message.
+    const activityId = plan.isCarouselJoin ? plan.realActivityId : plan.id;
+    if (!activityId) {
+      toast.error("No shareable plan found. Try again in a moment.");
       return;
     }
 
@@ -663,7 +678,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const dateStr = plan.scheduled_for
       ? format(new Date(plan.scheduled_for), "EEE, d MMM")
       : format(new Date(), "EEE, d MMM");
-    const shareUrl = `https://app.shakeapp.today/invite/${plan.id}`;
+    const shareUrl = `https://app.shakeapp.today/invite/${activityId}`;
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
     const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
 
