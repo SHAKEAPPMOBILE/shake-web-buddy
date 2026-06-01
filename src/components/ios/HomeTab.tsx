@@ -735,7 +735,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             className="relative z-10 w-full max-w-sm pointer-events-auto px-6 py-8 flex flex-col gap-4 rounded-3xl bg-white shadow-2xl text-center"
           >
             <div className="text-6xl">🐯</div>
-            <h2 className="text-xl font-bold text-gray-900">You're already in! 🐯</h2>
+            <h2 className="text-xl font-bold text-gray-900">You're already in!</h2>
             <p className="text-sm text-gray-600 leading-relaxed">
               You already joined this activity. Go to Plans to see it, Tiger.
             </p>
