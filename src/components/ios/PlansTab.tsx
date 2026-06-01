@@ -3,7 +3,7 @@ import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import confetti from 'canvas-confetti';
 import barManAndCook from "@/assets/bar-man-and-cook.png";
-import { Calendar, Users, Plus, Plane, Send, Trash2 } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Send } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -387,7 +387,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   
   const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
   const [showChatView, setShowChatView] = useState(false);
-  const [planToDelete, setPlanToDelete] = useState<PlanActivity | null>(null);
   const [planToLeave, setPlanToLeave] = useState<PlanActivity | null>(null);
   const [showAlreadyJoinedPlan, setShowAlreadyJoinedPlan] = useState(false);
   const [duplicateActivityBlock, setDuplicateActivityBlock] = useState<{
@@ -604,40 +603,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const clearJoinedPlansCityFilter = () => {
     setJoinedPlansCityFilter(null);
     setIsCitySheetOpen(false);
-  };
-
-  const handleDeletePlan = async () => {
-    if (!planToDelete || !user) return;
-
-    try {
-      // First delete all joins for this activity
-      await supabase
-        .from("activity_joins")
-        .delete()
-        .eq("activity_id", planToDelete.id);
-
-      // Then delete all messages
-      await supabase
-        .from("plan_messages")
-        .delete()
-        .eq("activity_id", planToDelete.id);
-
-      // Finally delete the activity itself
-      const { error } = await supabase
-        .from("user_activities")
-        .delete()
-        .eq("id", planToDelete.id)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-    toast.success("Plan deleted");
-    setPlanToDelete(null);
-    fetchPlans();
-  } catch (error) {
-      console.error("Error deleting plan:", error);
-      toast.error("Failed to delete plan");
-    }
   };
 
   const handleLeavePlan = async () => {
@@ -1124,8 +1089,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             {activities.map((plan) => (
               <SwipeableCard
                 key={plan.id}
-                canDelete={plan.user_id === user?.id && !plan.isCarouselJoin && !plan.is_auto_generated}
-                onDelete={() => setPlanToDelete(plan)}
+                canDelete={false}
+                onDelete={() => {}}
                 canLeave={plan.user_id !== user?.id && !!plan.isJoined && !plan.isCarouselJoin}
                 onLeave={() => setPlanToLeave(plan)}
                 onClick={() => handlePlanClick(plan)}
@@ -1216,21 +1181,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
                   {/* Action buttons */}
                   <div className="flex items-center gap-2">
-                    {/* Delete button - desktop only, for owner's plans */}
-                    {!isMobile && plan.user_id === user?.id && !plan.isCarouselJoin && !plan.is_auto_generated && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPlanToDelete(plan);
-                        }}
-                        className="p-2.5 bg-destructive/80 hover:bg-destructive text-white rounded-full transition-all shadow-sm"
-                        title="Delete plan"
-                        aria-label="Delete plan"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
                     {/* Report button (only for non-owners) */}
                     {user && plan.user_id !== user.id && (
                       <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
@@ -1389,24 +1339,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           </>
         )}
       </div>
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
-        <AlertDialogContent className="border-2 border-shake-yellow">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('plans.deletePlanTitle', 'Delete this plan?')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('plans.deletePlanDesc', 'This will permanently delete your {{activity}} plan and all its messages. This action cannot be undone.', { activity: planToDelete ? getActivityLabel(planToDelete.activity_type) : '' })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePlan} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {t('plans.deletePlanBtn', 'Delete Plan')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Leave Confirmation Dialog */}
       <AlertDialog open={!!planToLeave} onOpenChange={(open) => !open && setPlanToLeave(null)}>
         <AlertDialogContent className="border-2 border-destructive/40">
