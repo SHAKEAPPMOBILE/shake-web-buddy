@@ -647,22 +647,23 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       ? format(new Date(plan.scheduled_for), "EEE, d MMM")
       : format(new Date(), "EEE, d MMM");
 
-    // Get activity ID - use realActivityId if valid, otherwise query live
-    let activityId = plan.realActivityId && !plan.realActivityId.startsWith('carousel-')
-      ? plan.realActivityId
-      : (!plan.id.startsWith('carousel-') ? plan.id : null);
-
-    if (!activityId) {
-      const { data: ua } = await supabase
-        .from("user_activities")
-        .select("id")
-        .eq("activity_type", plan.activity_type)
-        .eq("city", plan.city)
-        .eq("is_active", true)
-        .order("scheduled_for", { ascending: false })
+    // Get activity ID - use realActivityId if valid, plan.id if a real plan, else query the user's join row
+    let activityId: string | null = null;
+    if (plan.realActivityId && !plan.realActivityId.startsWith('carousel-')) {
+      activityId = plan.realActivityId;
+    } else if (!plan.id.startsWith('carousel-')) {
+      activityId = plan.id;
+    } else {
+      const { data: joinRow } = await supabase
+        .from('activity_joins')
+        .select('activity_id')
+        .eq('user_id', user.id)
+        .eq('activity_type', plan.activity_type)
+        .eq('city', plan.city)
+        .not('activity_id', 'is', null)
         .limit(1)
         .maybeSingle();
-      activityId = ua?.id ?? null;
+      activityId = joinRow?.activity_id ?? null;
     }
 
     const shareUrl = activityId
