@@ -67,6 +67,27 @@ export default function ShareLanding() {
       });
       setIsLoading(false);
 
+      // Update OG meta tags so WhatsApp/social previews show activity-specific info.
+      const actInfo = ALL_ACTIVITY_TYPES.find((a) => a.id === actData.activity_type);
+      const label = actInfo?.label ?? actData.activity_type;
+      const emoji = actInfo?.emoji ?? "🎉";
+      const ogImageMap: Record<string, string> = {
+        dinner: "https://app.shakeapp.today/icons/activities/dinner-icon.jpg",
+        drinks: "https://app.shakeapp.today/icons/activities/drinks-icon.jpg",
+        brunch: "https://app.shakeapp.today/icons/activities/brunch-icon.jpg",
+        lunch: "https://app.shakeapp.today/icons/activities/lunch-icon.jpg",
+        hike: "https://app.shakeapp.today/icons/activities/hike-icon.jpg",
+        sports: "https://app.shakeapp.today/icons/activities/sports-icon.jpg",
+      };
+      const ogImage = ogImageMap[actData.activity_type] ?? "https://app.shakeapp.today/shake-logo.png";
+      const ogTitle = `${emoji} Join ${label} in ${actData.city}!`;
+      const ogDesc = `Someone's organising ${label} in ${actData.city}. Join them on SHAKE!`;
+      document.querySelector('meta[property="og:image"]')?.setAttribute("content", ogImage);
+      document.querySelector('meta[property="og:title"]')?.setAttribute("content", ogTitle);
+      document.querySelector('meta[property="og:description"]')?.setAttribute("content", ogDesc);
+      document.querySelector('meta[name="twitter:image"]')?.setAttribute("content", ogImage);
+      document.title = ogTitle;
+
       // Phase 3: enrich with profile + participant count (best-effort — failures don't block UI).
       const [profileResult, countResult] = await Promise.allSettled([
         supabase
@@ -85,16 +106,25 @@ export default function ShareLanding() {
       const count =
         countResult.status === "fulfilled" ? countResult.value.count : 0;
 
+      const finalCount = count ?? 0;
       setActivity((prev) =>
         prev
           ? {
               ...prev,
               creator_name: profileData?.name ?? prev.creator_name,
               creator_avatar: profileData?.avatar_url ?? prev.creator_avatar,
-              participant_count: count ?? 0,
+              participant_count: finalCount,
             }
           : null
       );
+
+      // Enrich OG description with real participant count.
+      if (finalCount > 0) {
+        const actInfo2 = ALL_ACTIVITY_TYPES.find((a) => a.id === actData.activity_type);
+        const label2 = actInfo2?.label ?? actData.activity_type;
+        const updatedDesc = `${finalCount} ${finalCount === 1 ? "person" : "people"} already joined ${label2} in ${actData.city}. Join them on SHAKE!`;
+        document.querySelector('meta[property="og:description"]')?.setAttribute("content", updatedDesc);
+      }
     };
 
     load().catch(() => {
