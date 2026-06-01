@@ -673,17 +673,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       ? format(new Date(plan.scheduled_for), "EEE, d MMM")
       : format(new Date(), "EEE, d MMM");
 
-    // Resolve a valid (non-synthetic) activity UUID.
-    // For real plan rows, plan.id is already the UUID.
-    // For carousel joins, use realActivityId if already loaded.
-    let activityId: string | null = null;
-    if (!plan.isCarouselJoin && plan.id && !plan.id.startsWith('carousel-')) {
-      activityId = plan.id;
-    } else if (plan.realActivityId && !plan.realActivityId.startsWith('carousel-')) {
-      activityId = plan.realActivityId;
-    }
+    // Get activity ID - use realActivityId if valid, otherwise query live
+    let activityId = plan.realActivityId && !plan.realActivityId.startsWith('carousel-')
+      ? plan.realActivityId
+      : (!plan.id.startsWith('carousel-') ? plan.id : null);
 
-    // Live fallback: realActivityId may be null if the tab loaded before the async fetch finished.
     if (!activityId) {
       const { data } = await supabase
         .from("user_activities")
@@ -701,29 +695,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const shareUrl = activityId
       ? `https://app.shakeapp.today/invite/${activityId}`
       : "https://app.shakeapp.today";
-
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
     const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
 
     if (Capacitor.isNativePlatform()) {
-      try {
-        await Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: 'Invite a Friend' });
-      } catch (err) {
-        if ((err as any).errorMessage !== 'Share canceled') toast.error("Failed to share");
-      }
+      try { await Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: 'Invite a Friend' }); }
+      catch (err) { if ((err as any).errorMessage !== 'Share canceled') toast.error("Failed to share"); }
     } else if (navigator.share) {
-      try {
-        await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") toast.error("Failed to share");
-      }
+      try { await navigator.share({ title: shareTitle, text: shareText, url: shareUrl }); }
+      catch (err) { if ((err as Error).name !== "AbortError") toast.error("Failed to share"); }
     } else {
-      try {
-        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        toast.success("🔗 Link copied! Share it with your friends.");
-      } catch {
-        toast.error("Failed to copy link");
-      }
+      try { await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`); toast.success("🔗 Link copied! Share it with your friends."); }
+      catch { toast.error("Failed to copy link"); }
     }
   };
 
