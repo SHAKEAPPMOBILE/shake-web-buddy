@@ -69,7 +69,7 @@ export function ProfileAvatarWithStatus({
         {avatarUrl ? (
           <img
             src={avatarUrl}
-            alt={userName || "User"}
+            alt={userName || "Shaker"}
             className="w-full h-full object-cover rounded-full"
           />
         ) : (

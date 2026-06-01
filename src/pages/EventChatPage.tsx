@@ -435,7 +435,7 @@ export default function EventChatPage() {
 
             {messages.map((m) => {
               const profile = senderMap[m.user_id];
-              const displayName = profile?.name || "User";
+              const displayName = profile?.name || "Shaker";
               const avatarUrl = profile?.avatar_url;
               const isOwn = user?.id === m.user_id;
               const isVideo = m.message_type === "video" && /^https?:\/\//i.test(m.content);

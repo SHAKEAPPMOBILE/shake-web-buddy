@@ -195,7 +195,7 @@ export function UserProfileDialog({
                 {avatarUrl ? (
                   <img
                     src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
-                    alt={userName || "User"}
+                    alt={userName || "Shaker"}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -205,7 +205,7 @@ export function UserProfileDialog({
             </div>
 
             <h3 className="mt-4 text-xl font-semibold text-gray-900">
-              {userName || "User"}{userAge ? `, ${userAge}` : ''}
+              {userName || "Shaker"}{userAge ? `, ${userAge}` : ''}
             </h3>
             
             {/* Nationality and Occupation */}
@@ -398,7 +398,7 @@ export function UserProfileDialog({
             {avatarUrl && (
               <img 
                 src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl} 
-                alt={userName || "User"}
+                alt={userName || "Shaker"}
                 className="max-w-[90vw] max-h-[80vh] rounded-2xl shadow-2xl object-contain"
               />
             )}

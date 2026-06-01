@@ -339,7 +339,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setBlockedUsers(
         (profiles ?? []).map((p) => ({
           user_id: p.user_id,
-          name: p.name ?? "User",
+          name: p.name ?? "Shaker",
           avatar_url: p.avatar_url ?? null,
         }))
       );

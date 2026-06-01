@@ -175,7 +175,7 @@ export function PlanParticipantsDialog({
                         {participant.avatar_url ? (
                           <img
                             src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
-                            alt={participant.name || "User"}
+                            alt={participant.name || "Shaker"}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -185,7 +185,7 @@ export function PlanParticipantsDialog({
                       <div className="flex-1 text-left">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm text-gray-900">
-                            {isCurrentUser ? "You" : participant.name || "User"}
+                            {isCurrentUser ? "You" : participant.name || "Shaker"}
                           </p>
                           {participant.isOwner && (
                             <span className="text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
@@ -214,7 +214,7 @@ export function PlanParticipantsDialog({
                             {participant.avatar_url ? (
                               <img
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
-                                alt={participant.name || "User"}
+                                alt={participant.name || "Shaker"}
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -224,7 +224,7 @@ export function PlanParticipantsDialog({
                           <div className="flex-1 text-left">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-sm text-gray-900">
-                                {participant.name || "User"}
+                                {participant.name || "Shaker"}
                               </p>
                               {participant.isOwner && (
                                 <span className="text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
@@ -267,7 +267,7 @@ export function PlanParticipantsDialog({
                             {participant.avatar_url ? (
                               <img
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
-                                alt={participant.name || "User"}
+                                alt={participant.name || "Shaker"}
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -277,7 +277,7 @@ export function PlanParticipantsDialog({
                           <div className="flex-1 text-left">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-sm text-gray-900">
-                                {isCurrentUser ? "You" : participant.name || "User"}
+                                {isCurrentUser ? "You" : participant.name || "Shaker"}
                               </p>
                               {participant.isOwner && (
                                 <span className="text-xs text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">

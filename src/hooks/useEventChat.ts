@@ -251,7 +251,7 @@ export function useEventChat({
           if (profiles) {
             const map: Record<string, { name: string; avatar_url: string }> = {};
             profiles.forEach((p) => {
-              map[p.user_id] = { name: p.name ?? "User", avatar_url: p.avatar_url ?? "" };
+              map[p.user_id] = { name: p.name ?? "Shaker", avatar_url: p.avatar_url ?? "" };
             });
             setSenderMap(map);
           }
@@ -334,7 +334,7 @@ export function useEventChat({
               if (profile) {
                 setSenderMap((prev) => ({
                   ...prev,
-                  [newMsg.user_id]: { name: profile.name ?? "User", avatar_url: profile.avatar_url ?? "" },
+                  [newMsg.user_id]: { name: profile.name ?? "Shaker", avatar_url: profile.avatar_url ?? "" },
                 }));
               }
             }
@@ -471,7 +471,7 @@ export function useEventChat({
           if (profile) {
             setSenderMap((prev) => ({
               ...prev,
-              [user.id]: { name: profile.name ?? "User", avatar_url: profile.avatar_url ?? "" },
+              [user.id]: { name: profile.name ?? "Shaker", avatar_url: profile.avatar_url ?? "" },
             }));
           }
         }

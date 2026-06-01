@@ -818,7 +818,7 @@ export function ChatTab({
                       {activity.other_user_avatar ? (
                         <img
                           src={getDisplayAvatarUrl(activity.other_user_avatar) ?? activity.other_user_avatar}
-                          alt={activity.other_user_name || "User"}
+                          alt={activity.other_user_name || "Shaker"}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             const target = e.currentTarget;
@@ -842,7 +842,7 @@ export function ChatTab({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-bold text-gray-900 text-[15px] leading-snug truncate">
-                          {activity.other_user_name || "User"}
+                          {activity.other_user_name || "Shaker"}
                         </h3>
                         <span className="text-[10px] font-medium uppercase tracking-wide text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-xl border border-purple-200 shrink-0">
                           Match

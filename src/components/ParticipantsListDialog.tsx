@@ -158,7 +158,7 @@ export function ParticipantsListDialog({
                         {participant.avatar_url ? (
                           <img
                             src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
-                            alt={participant.name || "User"}
+                            alt={participant.name || "Shaker"}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
@@ -171,7 +171,7 @@ export function ParticipantsListDialog({
                       </div>
                       <div className="flex-1 text-left">
                         <p className="font-medium text-sm text-gray-900">
-                          {isCurrentUser ? "You" : participant.name || "User"}
+                          {isCurrentUser ? "You" : participant.name || "Shaker"}
                         </p>
                       </div>
                       {isCurrentUser && (
@@ -194,7 +194,7 @@ export function ParticipantsListDialog({
                             {participant.avatar_url ? (
                               <img
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
-                                alt={participant.name || "User"}
+                                alt={participant.name || "Shaker"}
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -203,7 +203,7 @@ export function ParticipantsListDialog({
                           </div>
                           <div className="flex-1 text-left">
                             <p className="font-medium text-sm text-gray-900">
-                              {participant.name || "User"}
+                              {participant.name || "Shaker"}
                             </p>
                           </div>
                         </div>
@@ -240,7 +240,7 @@ export function ParticipantsListDialog({
                             {participant.avatar_url ? (
                               <img
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
-                                alt={participant.name || "User"}
+                                alt={participant.name || "Shaker"}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
@@ -253,7 +253,7 @@ export function ParticipantsListDialog({
                           </div>
                           <div className="flex-1 text-left">
                             <p className="font-medium text-sm text-gray-900">
-                              {isCurrentUser ? "You" : participant.name || "User"}
+                              {isCurrentUser ? "You" : participant.name || "Shaker"}
                             </p>
                           </div>
                         </button>

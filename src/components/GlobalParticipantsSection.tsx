@@ -237,7 +237,7 @@ export function GlobalParticipantsSection() {
                 {p.avatar_url ? (
                   <img
                     src={getDisplayAvatarUrl(p.avatar_url) ?? p.avatar_url}
-                    alt={p.name || "User"}
+                    alt={p.name || "Shaker"}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
@@ -292,7 +292,7 @@ export function GlobalParticipantsSection() {
                         {participant.avatar_url ? (
                           <img
                             src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
-                            alt={participant.name || "User"}
+                            alt={participant.name || "Shaker"}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
@@ -307,7 +307,7 @@ export function GlobalParticipantsSection() {
                         className="flex-1 text-left"
                       >
                         <p className="font-medium text-sm text-gray-900">
-                          {isCurrentUser ? "You" : participant.name || "User"}
+                          {isCurrentUser ? "You" : participant.name || "Shaker"}
                         </p>
                       </button>
                     </div>
@@ -329,7 +329,7 @@ export function GlobalParticipantsSection() {
                             {participant.avatar_url ? (
                               <img
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
-                                alt={participant.name || "User"}
+                                alt={participant.name || "Shaker"}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
@@ -341,7 +341,7 @@ export function GlobalParticipantsSection() {
                           </div>
                           <div className="flex-1 text-left">
                             <p className="font-medium text-sm text-gray-900">
-                              {participant.name || "User"}
+                              {participant.name || "Shaker"}
                             </p>
                           </div>
                         </div>
@@ -378,7 +378,7 @@ export function GlobalParticipantsSection() {
                             {participant.avatar_url ? (
                               <img
                                 src={getDisplayAvatarUrl(participant.avatar_url) ?? participant.avatar_url}
-                                alt={participant.name || "User"}
+                                alt={participant.name || "Shaker"}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
@@ -393,7 +393,7 @@ export function GlobalParticipantsSection() {
                             className="flex-1 text-left"
                           >
                             <p className="font-medium text-sm">
-                              {isCurrentUser ? "You" : participant.name || "User"}
+                              {isCurrentUser ? "You" : participant.name || "Shaker"}
                             </p>
                           </button>
                         </div>

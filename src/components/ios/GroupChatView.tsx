@@ -156,7 +156,7 @@ function ParticipantAvatar({
       <div className={containerClass}>
         <img
           src={displayUrl}
-          alt={name || 'User'}
+          alt={name || 'Shaker'}
           className="w-full h-full object-cover rounded-full"
           onError={(e) => {
             const img = e.currentTarget;

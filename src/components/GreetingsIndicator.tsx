@@ -114,14 +114,14 @@ export function GreetingsIndicator() {
                       className="flex items-center gap-3 p-3 rounded-2xl bg-muted/50"
                     >
                       <Avatar className="w-10 h-10 rounded-full border border-border bg-muted shrink-0">
-                        <AvatarImage src={getDisplayAvatarUrl(greeting.from_user?.avatar_url)} alt={greeting.from_user?.name || "User"} className="object-cover" />
+                        <AvatarImage src={getDisplayAvatarUrl(greeting.from_user?.avatar_url)} alt={greeting.from_user?.name || "Shaker"} className="object-cover" />
                         <AvatarFallback className="bg-muted flex items-center justify-center">
                           <User className="w-5 h-5 text-muted-foreground" />
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">
-                          {greeting.from_user?.name || "User"}
+                          {greeting.from_user?.name || "Shaker"}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Said hi {format(new Date(greeting.created_at), "MMM d")}
@@ -159,14 +159,14 @@ export function GreetingsIndicator() {
                       className="w-full flex items-center gap-3 p-3 rounded-2xl bg-muted/50 hover:bg-muted transition-colors"
                     >
                       <Avatar className="w-10 h-10 rounded-full border-2 border-shake-yellow bg-muted shrink-0">
-                        <AvatarImage src={getDisplayAvatarUrl(match.from_user?.avatar_url)} alt={match.from_user?.name || "User"} className="object-cover" />
+                        <AvatarImage src={getDisplayAvatarUrl(match.from_user?.avatar_url)} alt={match.from_user?.name || "Shaker"} className="object-cover" />
                         <AvatarFallback className="bg-muted flex items-center justify-center">
                           <User className="w-5 h-5 text-muted-foreground" />
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0 text-left">
                         <p className="font-medium text-sm truncate">
-                          {match.from_user?.name || "User"}
+                          {match.from_user?.name || "Shaker"}
                         </p>
                         <p className="text-xs text-shake-yellow">
                           Matched! Tap to chat 💬

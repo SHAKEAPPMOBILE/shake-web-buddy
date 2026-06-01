@@ -548,7 +548,7 @@ export function PlanGroupChatView({
                 >
                   {otherParticipants.map((p) => (
                     <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-white/30 bg-white/20 shrink-0">
-                      <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "User"} className="object-cover" />
+                      <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "Shaker"} className="object-cover" />
                       <AvatarFallback className="bg-white/20 flex items-center justify-center">
                         <User className="w-3.5 h-3.5 text-white/70" />
                       </AvatarFallback>
@@ -634,7 +634,7 @@ export function PlanGroupChatView({
           messages.map((msg) => {
             const isOwnMessage = msg.user_id === user?.id;
             const profile = profiles[msg.user_id];
-            const displayName = isOwnMessage ? "You" : profile?.name || "User";
+            const displayName = isOwnMessage ? "You" : profile?.name || "Shaker";
             const avatarUrl = profile?.avatar_url;
             const msgReactions = reactionsByMessage[msg.id];
             const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
