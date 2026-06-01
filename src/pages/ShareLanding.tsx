@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ALL_ACTIVITY_TYPES } from "@/data/activityTypes";
+import { ALL_ACTIVITY_TYPES, getNextOccurrenceDate } from "@/data/activityTypes";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { format } from "date-fns";
 import logoShake from "@/assets/shake-logo-new.png";
@@ -36,33 +36,34 @@ export default function ShareLanding() {
       const decoded = decodeURIComponent(activityId);
       const isUuid = UUID_RE.test(decoded);
 
-      let query = supabase
-        .from("user_activities")
-        .select("id, activity_type, city, scheduled_for, user_id");
+      let actData: { id: string | null; activity_type: string; city: string; scheduled_for: string | null; user_id: string | null } | null = null;
 
       if (isUuid) {
-        query = query.eq("id", decoded);
+        const { data, error } = await supabase
+          .from("user_activities")
+          .select("id, activity_type, city, scheduled_for, user_id")
+          .eq("id", decoded)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (error || !data) { setNotFound(true); setIsLoading(false); return; }
+        actData = data;
       } else {
-        // "activitytype-city" — split on first hyphen only (city may contain hyphens)
+        // carousel plan: type-city format, no DB row needed
         const dashIdx = decoded.indexOf("-");
         const actType = decoded.slice(0, dashIdx);
         const city = decoded.slice(dashIdx + 1);
-        query = query.eq("activity_type", actType).eq("city", city)
-          .order("created_at", { ascending: false })
-          .limit(1);
-      }
-
-      const { data: actData, error: actError } = await query.maybeSingle();
-
-      if (actError || !actData) {
-        setNotFound(true);
-        setIsLoading(false);
-        return;
+        actData = {
+          id: null,
+          activity_type: actType,
+          city: city,
+          scheduled_for: getNextOccurrenceDate(actType).toISOString(),
+          user_id: null,
+        };
       }
 
       // Phase 2: render the card immediately with what we have.
       setActivity({
-        id: actData.id,
+        id: actData.id ?? decoded,
         activity_type: actData.activity_type,
         city: actData.city,
         scheduled_for: actData.scheduled_for,
@@ -94,17 +95,15 @@ export default function ShareLanding() {
       document.title = ogTitle;
 
       // Phase 3: enrich with profile + participant count (best-effort — failures don't block UI).
-      const [profileResult, countResult] = await Promise.allSettled([
-        supabase
-          .from("profiles")
-          .select("name, avatar_url")
-          .eq("user_id", actData.user_id)
-          .maybeSingle(),
-        supabase
-          .from("activity_joins")
-          .select("id", { count: "exact", head: true })
-          .eq("activity_id", actData.id),
-      ]);
+      const enrichPromises: Promise<any>[] = [
+        actData.user_id
+          ? supabase.from("profiles").select("name, avatar_url").eq("user_id", actData.user_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        actData.id
+          ? supabase.from("activity_joins").select("id", { count: "exact", head: true }).eq("activity_id", actData.id)
+          : Promise.resolve({ count: 0 }),
+      ];
+      const [profileResult, countResult] = await Promise.allSettled(enrichPromises);
 
       const profileData =
         profileResult.status === "fulfilled" ? profileResult.value.data : null;
