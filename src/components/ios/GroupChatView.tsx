@@ -614,16 +614,13 @@ export function GroupChatView({
       .eq("activity_type", activityType)
       .eq("city", city)
       .eq("is_active", true)
-      .gte("scheduled_for", new Date().toISOString())
-      .order("scheduled_for", { ascending: true })
+      .order("scheduled_for", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (!realActivity?.id) {
-      toast.error("No shareable plan found. Try again in a moment.");
-      return;
-    }
-    const shareUrl = `https://app.shakeapp.today/invite/${realActivity.id}`;
+    const shareUrl = realActivity?.id
+      ? `https://app.shakeapp.today/invite/${realActivity.id}`
+      : "https://app.shakeapp.today";
 
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${city} on ${dateStr}! Let's SHAKE up our social life together.`;
 
