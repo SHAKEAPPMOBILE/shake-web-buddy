@@ -1200,10 +1200,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     )}
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSharePlan(plan, e);
-                      }}
+                      onClick={(e) => handleSharePlan(plan, e)}
                       className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-all border border-gray-200"
                       title="Invite a friend"
                       aria-label="Invite a friend"
@@ -1338,10 +1335,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSharePlan(plan, e);
-                          }}
+                          onClick={(e) => handleSharePlan(plan, e)}
                           className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-all border border-gray-200"
                           title="Invite a friend"
                           aria-label="Invite a friend"
