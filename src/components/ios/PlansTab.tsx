@@ -205,7 +205,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   .eq("city", effectiveCity)
                   .eq("is_active", true)
                   .neq("is_auto_generated", true)
-                  .neq("user_id", user.id)
                   .order("scheduled_for", { ascending: true, nullsFirst: false })
                   .limit(20);
                 console.log("[PlansTab] my-city query →", { effectiveCity, count: result.data?.length, error: result.error, cities: result.data?.map((p: any) => p.city) });
