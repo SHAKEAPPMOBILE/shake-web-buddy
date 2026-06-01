@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 import confetti from 'canvas-confetti';
 import barManAndCook from "@/assets/bar-man-and-cook.png";
 import { Calendar, Users, Plus, Plane, Send, Trash2 } from "lucide-react";
@@ -663,10 +665,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       : format(new Date(), "EEE, d MMM");
     const shareUrl = `https://app.shakeapp.today/invite/${plan.id}`;
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
+    const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
 
-    if (navigator.share) {
-      navigator.share({ title: `SHAKE - ${activityLabel} in ${plan.city}`, text: shareText, url: shareUrl })
-        .catch(err => { if (err.name !== "AbortError") toast.error("Failed to share"); });
+    if (Capacitor.isNativePlatform()) {
+      Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: 'Invite a Friend' })
+        .catch(err => { if (err.errorMessage !== 'Share canceled') toast.error("Failed to share"); });
+    } else if (navigator.share) {
+      navigator.share({ title: shareTitle, text: shareText, url: shareUrl })
+        .catch(err => { if (err.name !== 'AbortError') toast.error("Failed to share"); });
     } else {
       navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
         .then(() => toast.success("Link copied!"))
