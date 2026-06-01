@@ -649,7 +649,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   const handleSharePlan = async (plan: PlanActivity, e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
+    // Carousel plans have synthetic ids (carousel-drinks-London) — not real DB rows.
+    // Sharing them would produce a broken /invite/carousel-... URL.
+    if (plan.id.startsWith('carousel-')) {
+      toast.error("Can't share open-invite activities — join a specific plan first.");
+      return;
+    }
+
     const activityLabel = getActivityLabel(plan.activity_type);
     const activityEmoji = getActivityEmoji(plan.activity_type);
     const dateStr = plan.scheduled_for

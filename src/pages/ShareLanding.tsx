@@ -33,6 +33,8 @@ export default function ShareLanding() {
       return;
     }
 
+    console.log('[ShareLanding] activityId from URL:', activityId);
+
     const load = async () => {
       try {
         // Fetch activity with creator profile
@@ -42,6 +44,8 @@ export default function ShareLanding() {
           .eq("id", activityId)
           .eq("is_active", true)
           .single();
+
+        console.log('[ShareLanding] query result:', actData, actError);
 
         if (actError || !actData) {
           setNotFound(true);
