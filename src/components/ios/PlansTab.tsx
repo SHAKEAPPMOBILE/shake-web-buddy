@@ -56,6 +56,7 @@ interface PlanActivity {
   isJoined?: boolean;
   isCarouselJoin?: boolean;
   realActivityId?: string | null;
+  is_auto_generated?: boolean | null;
 }
 
 interface PlansTabProps {
@@ -1123,7 +1124,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             {activities.map((plan) => (
               <SwipeableCard
                 key={plan.id}
-                canDelete={plan.user_id === user?.id && !plan.isCarouselJoin}
+                canDelete={plan.user_id === user?.id && !plan.isCarouselJoin && !plan.is_auto_generated}
                 onDelete={() => setPlanToDelete(plan)}
                 canLeave={plan.user_id !== user?.id && !!plan.isJoined && !plan.isCarouselJoin}
                 onLeave={() => setPlanToLeave(plan)}
@@ -1216,7 +1217,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   {/* Action buttons */}
                   <div className="flex items-center gap-2">
                     {/* Delete button - desktop only, for owner's plans */}
-                    {!isMobile && plan.user_id === user?.id && !plan.isCarouselJoin && (
+                    {!isMobile && plan.user_id === user?.id && !plan.isCarouselJoin && !plan.is_auto_generated && (
                       <button
                         type="button"
                         onClick={(e) => {
