@@ -47,10 +47,11 @@ export default function ShareLanding() {
       }
 
       // Only show as expired once the 24-hour join window has closed.
-      if (
-        actData.scheduled_for &&
-        new Date(actData.scheduled_for).getTime() + 24 * 60 * 60 * 1000 < Date.now()
-      ) {
+      const expired =
+        !!actData.scheduled_for &&
+        new Date(actData.scheduled_for).getTime() + 24 * 60 * 60 * 1000 < Date.now();
+      console.log('[ShareLanding] id:', actData.id, 'scheduled_for:', actData.scheduled_for, 'now:', new Date().toISOString(), 'expired:', expired);
+      if (expired) {
         setIsExpired(true);
         setIsLoading(false);
         return;
