@@ -18,6 +18,7 @@ interface ActivityInfo {
 
 export default function ShareLanding() {
   const { activityId } = useParams<{ activityId: string }>();
+  console.log('[ShareLanding] mounting, activityId:', activityId, 'url:', window.location.href);
   const [activity, setActivity] = useState<ActivityInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);

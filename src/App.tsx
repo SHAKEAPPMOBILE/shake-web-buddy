@@ -140,6 +140,17 @@ const App = () => {
           }
         } else {
           console.log('No recognizable auth payload found on deep link');
+
+          // If this is a share/invite link, navigate the React app to the ShareLanding route.
+          try {
+            const parsed = new URL(url);
+            if (parsed.pathname.startsWith('/invite/')) {
+              console.log('[DeepLink] invite path detected, navigating to', parsed.pathname);
+              window.history.pushState({}, "", parsed.pathname);
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            }
+          } catch {}
+
           await Browser.close().catch(() => {});
           return;
         }
