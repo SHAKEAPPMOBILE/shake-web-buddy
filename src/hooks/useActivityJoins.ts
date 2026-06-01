@@ -106,6 +106,24 @@ export function useActivityJoins(city: string) {
       .limit(1)
       .maybeSingle();
 
+    let uaId = ua?.id ?? null;
+    if (!uaId) {
+      const nextDate = getNextOccurrenceDate(activityType);
+      const { data: newUa } = await supabase
+        .from("user_activities")
+        .insert({
+          user_id: user.id,
+          activity_type: activityType,
+          city: targetCity,
+          is_active: true,
+          is_auto_generated: true,
+          scheduled_for: nextDate.toISOString(),
+        })
+        .select("id")
+        .single();
+      uaId = newUa?.id ?? null;
+    }
+
     const { error: insertError } = await supabase
       .from("activity_joins")
       .insert({
@@ -113,7 +131,7 @@ export function useActivityJoins(city: string) {
         activity_type: activityType,
         city: targetCity,
         expires_at: expiresAt,
-        activity_id: ua?.id ?? null,
+        activity_id: uaId,
       });
 
     if (insertError) {
