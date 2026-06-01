@@ -309,8 +309,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 .eq("activity_type", carouselActivity.activity_type)
                 .eq("city", carouselActivity.city)
                 .eq("is_active", true)
-                .gte("scheduled_for", new Date().toISOString())
-                .order("scheduled_for", { ascending: true })
+                .order("scheduled_for", { ascending: false })
                 .limit(1)
                 .maybeSingle(),
             ]);

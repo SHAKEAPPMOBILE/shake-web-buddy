@@ -93,6 +93,17 @@ export function useActivityJoins(city: string) {
     nextOccurrence.setUTCHours(23, 59, 59, 999);
     const expiresAt = nextOccurrence.toISOString();
 
+    // Look up the matching user_activities row so we can store its UUID on the join.
+    const { data: ua } = await supabase
+      .from("user_activities")
+      .select("id")
+      .eq("activity_type", activityType)
+      .eq("city", targetCity)
+      .eq("is_active", true)
+      .order("scheduled_for", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     const { error: insertError } = await supabase
       .from("activity_joins")
       .insert({
@@ -100,6 +111,7 @@ export function useActivityJoins(city: string) {
         activity_type: activityType,
         city: targetCity,
         expires_at: expiresAt,
+        activity_id: ua?.id ?? null,
       });
 
     if (insertError) {
