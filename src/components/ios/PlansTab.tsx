@@ -302,13 +302,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             const firstUserId = carouselActivity.userIds[0];
             const [{ data: profile }, { data: realActivity }] = await Promise.all([
               supabase.from("profiles").select("name, avatar_url").eq("user_id", firstUserId).maybeSingle(),
-              // Fetch the real user_activities UUID so the share button can link to it directly.
+              // Fetch the nearest future user_activities UUID so the share button links to the current event.
               supabase
                 .from("user_activities")
                 .select("id")
                 .eq("activity_type", carouselActivity.activity_type)
                 .eq("city", carouselActivity.city)
                 .eq("is_active", true)
+                .gte("scheduled_for", new Date().toISOString())
+                .order("scheduled_for", { ascending: true })
                 .limit(1)
                 .maybeSingle(),
             ]);
