@@ -117,37 +117,6 @@ export function useActivityJoins(city: string) {
 
     toast.success("You've joined the activity!");
 
-    // Ensure a user_activities row exists so the share link and Plans tab work.
-    // Only create one if none is active for this type+city (any owner is fine).
-    const activityLabelMap: Record<string, string> = {
-      dinner: "Dinner",
-      brunch: "Brunch",
-      drinks: "Drinks",
-      lunch: "Lunch",
-      hike: "Hike",
-      sports: "Sports",
-    };
-
-    const { data: existingActivity } = await supabase
-      .from("user_activities")
-      .select("id")
-      .eq("activity_type", activityType)
-      .eq("city", targetCity)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (!existingActivity) {
-      const nextDate = getNextOccurrenceDate(activityType);
-      await supabase.from("user_activities").insert({
-        user_id: user.id,
-        activity_type: activityType,
-        city: targetCity,
-        is_active: true,
-        scheduled_for: nextDate.toISOString(),
-        note: activityLabelMap[activityType] ?? activityType,
-      });
-    }
-
     // Get user name for notifications
     const userName = user.user_metadata?.name || user.email?.split('@')[0] || "Someone";
     

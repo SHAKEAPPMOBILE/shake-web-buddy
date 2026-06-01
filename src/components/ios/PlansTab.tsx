@@ -679,16 +679,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       : (!plan.id.startsWith('carousel-') ? plan.id : null);
 
     if (!activityId) {
-      const { data } = await supabase
-        .from("user_activities")
-        .select("id")
+      const { data: joinRow } = await supabase
+        .from("activity_joins")
+        .select("activity_id")
         .eq("activity_type", plan.activity_type)
         .eq("city", plan.city)
-        .eq("is_active", true)
-        .order("scheduled_for", { ascending: false })
         .limit(1)
         .maybeSingle();
-      activityId = data?.id ?? null;
+      activityId = joinRow?.activity_id ?? null;
     }
 
     const shareUrl = activityId
