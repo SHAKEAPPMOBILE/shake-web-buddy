@@ -670,6 +670,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // For carousel-joined plans use the real user_activities UUID fetched at load time.
     // If no real activity was found (edge case), bail with a helpful message.
     const activityId = plan.isCarouselJoin ? plan.realActivityId : plan.id;
+    console.log('[Share] activityId:', activityId, 'plan.id:', plan.id, 'plan.realActivityId:', plan.realActivityId, 'isCarouselJoin:', plan.isCarouselJoin);
     if (!activityId) {
       toast.error("No shareable plan found. Try again in a moment.");
       return;

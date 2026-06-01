@@ -604,22 +604,26 @@ export function GroupChatView({
       ? format(new Date(eventDate), "EEE, d MMM")
       : format(new Date(), "EEE, d MMM");
 
-    // Look up the current user's real plan UUID for this activity type + city.
-    // Carousel group chats don't have a fixed activityId in props, so we query on demand.
-    let shareUrl = "https://app.shakeapp.today";
-    if (user) {
-      const { data } = await supabase
-        .from("user_activities")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("activity_type", activityType)
-        .eq("city", city)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (data?.id) {
-        shareUrl = `https://app.shakeapp.today/invite/${data.id}`;
-      }
+    // Look up the nearest future activity UUID for this type + city.
+    // Carousel group chats don't carry a fixed activityId in props, so we query on demand.
+    // We search all active activities (not just the current user's own) because carousel
+    // participants may have joined someone else's activity row.
+    const { data: realActivity } = await supabase
+      .from("user_activities")
+      .select("id")
+      .eq("activity_type", activityType)
+      .eq("city", city)
+      .eq("is_active", true)
+      .gte("scheduled_for", new Date().toISOString())
+      .order("scheduled_for", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (!realActivity?.id) {
+      toast.error("No shareable plan found. Try again in a moment.");
+      return;
     }
+    const shareUrl = `https://app.shakeapp.today/invite/${realActivity.id}`;
 
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${city} on ${dateStr}! Let's SHAKE up our social life together.`;
 
