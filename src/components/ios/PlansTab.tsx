@@ -189,6 +189,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 .from("user_activities")
                 .select("*")
                 .eq("is_active", true)
+                .neq("is_auto_generated", true)
                 .or(`scheduled_for.gte.${nowISO},scheduled_for.is.null`)
                 .order("scheduled_for", { ascending: true, nullsFirst: false })
                 .limit(50);
@@ -202,6 +203,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   .select("*")
                   .eq("city", effectiveCity)
                   .eq("is_active", true)
+                  .neq("is_auto_generated", true)
                   .neq("user_id", user.id)
                   .order("scheduled_for", { ascending: true, nullsFirst: false })
                   .limit(20);

@@ -94,12 +94,14 @@ export function useActivityJoins(city: string) {
     const expiresAt = nextOccurrence.toISOString();
 
     // Look up the matching user_activities row so we can store its UUID on the join.
+    // Exclude auto-generated seed rows so the join points to a real user-created plan.
     const { data: ua } = await supabase
       .from("user_activities")
       .select("id")
       .eq("activity_type", activityType)
       .eq("city", targetCity)
       .eq("is_active", true)
+      .neq("is_auto_generated", true)
       .order("scheduled_for", { ascending: false })
       .limit(1)
       .maybeSingle();
