@@ -597,6 +597,48 @@ export function GroupChatView({
     toast.success(isMuted ? "Notifications unmuted" : "Notifications muted");
   };
 
+  const handleShare = async () => {
+    const activityLabel = getActivityLabel(activityType);
+    const activityEmoji = activityMeta?.emoji ?? "🎉";
+    const dateStr = eventDate
+      ? format(new Date(eventDate), "EEE, d MMM")
+      : format(new Date(), "EEE, d MMM");
+
+    // Look up the current user's real plan UUID for this activity type + city.
+    // Carousel group chats don't have a fixed activityId in props, so we query on demand.
+    let shareUrl = "https://app.shakeapp.today";
+    if (user) {
+      const { data } = await supabase
+        .from("user_activities")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("activity_type", activityType)
+        .eq("city", city)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (data?.id) {
+        shareUrl = `https://app.shakeapp.today/invite/${data.id}`;
+      }
+    }
+
+    const shareText = `${activityEmoji} Join me for ${activityLabel} in ${city} on ${dateStr}! Let's SHAKE up our social life together.`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `SHAKE - ${activityLabel} in ${city}`, text: shareText, url: shareUrl });
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") console.error("Share error:", err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        toast.success("Link copied to clipboard!");
+      } catch {
+        toast.error("Failed to share");
+      }
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -715,6 +757,9 @@ export function GroupChatView({
                   />
                 </div>
                 <div className="flex items-center gap-0.5 pointer-events-auto">
+                  <Button variant="ghost" size="icon" onClick={handleShare} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title="Invite a friend">
+                    <Send className="w-4 h-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
                     {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                   </Button>
@@ -860,6 +905,9 @@ export function GroupChatView({
               <span className="text-xs font-normal text-gray-500">{participants.length}/{MAX_CHAT_CAPACITY}</span>
             </span>
             <div className="flex items-center gap-0.5">
+              <Button variant="ghost" size="icon" onClick={handleShare} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title="Invite a friend">
+                <Send className="w-4 h-4" />
+              </Button>
               <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title={isMuted ? "Unmute" : "Mute"}>
                 {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
               </Button>
