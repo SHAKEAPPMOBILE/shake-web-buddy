@@ -1149,7 +1149,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900">
-                        {plan.note || getActivityLabel(plan.activity_type)}{getGroupSuffix(plan)}
+                        {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || getActivityLabel(plan.activity_type))}{getGroupSuffix(plan)}
                       </h3>
                       {plan.isJoined && (
                         <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">
@@ -1295,7 +1295,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-base leading-none">{getActivityEmoji(plan.activity_type)}</span>
                           <h3 className="font-semibold text-gray-900 text-sm">
-                            {plan.note || getActivityLabel(plan.activity_type)}{getGroupSuffix(plan)}
+                            {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || getActivityLabel(plan.activity_type))}{getGroupSuffix(plan)}
                           </h3>
                           {isSoon(plan.scheduled_for) && (
                             <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
