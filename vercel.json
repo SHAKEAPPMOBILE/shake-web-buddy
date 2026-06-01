@@ -1,6 +1,11 @@
 {
   "rewrites": [
     {
+      "source": "/invite/:id",
+      "missing": [{ "type": "query", "key": "_" }],
+      "destination": "/api/share/:id"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
