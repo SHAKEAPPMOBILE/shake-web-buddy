@@ -141,13 +141,16 @@ const App = () => {
         } else {
           console.log('No recognizable auth payload found on deep link');
 
-          // If this is a share/invite link, navigate the React app to the ShareLanding route.
+          // If this is a share/invite link, force a full navigation to the invite URL.
+          // window.history.pushState doesn't work when the app is on auth/welcome screen,
+          // so we use window.location.href to force a clean load of the ShareLanding page.
           try {
             const parsed = new URL(url);
             if (parsed.pathname.startsWith('/invite/')) {
               console.log('[DeepLink] invite path detected, navigating to', parsed.pathname);
-              window.history.pushState({}, "", parsed.pathname);
-              window.dispatchEvent(new PopStateEvent("popstate"));
+              await Browser.close().catch(() => {});
+              window.location.href = `https://app.shakeapp.today${parsed.pathname}`;
+              return;
             }
           } catch {}
 
