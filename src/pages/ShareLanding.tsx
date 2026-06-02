@@ -48,16 +48,19 @@ export default function ShareLanding() {
         if (error || !data) { setNotFound(true); setIsLoading(false); return; }
         actData = data;
       } else {
-        // carousel plan: type-city format, no DB row needed
-        const dashIdx = decoded.indexOf("-");
-        const actType = decoded.slice(0, dashIdx);
-        const city = decoded.slice(dashIdx + 1);
+        // carousel plan: "acttype-city-useruuid" format, no DB row needed
+        const parts = decoded.split("-");
+        const actType = parts[0];
+        // last 5 parts are the user UUID (8-4-4-4-12), city is everything in between
+        const userIdParts = parts.slice(-5);
+        const userId = userIdParts.join("-");
+        const city = parts.slice(1, -5).join("-");
         actData = {
           id: null,
           activity_type: actType,
           city: city,
           scheduled_for: getNextOccurrenceDate(actType).toISOString(),
-          user_id: null,
+          user_id: userId || null,
         };
       }
 
