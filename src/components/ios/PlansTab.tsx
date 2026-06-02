@@ -656,13 +656,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
 
     if (Capacitor.isNativePlatform()) {
-      try { await Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: 'Invite a Friend' }); }
+      try { await Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: shareTitle }); }
       catch (err) { if ((err as any).errorMessage !== 'Share canceled') toast.error("Failed to share"); }
     } else if (navigator.share) {
       try { await navigator.share({ title: shareTitle, text: shareText, url: shareUrl }); }
       catch (err) { if ((err as Error).name !== "AbortError") toast.error("Failed to share"); }
     } else {
-      try { await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`); toast.success("🔗 Link copied! Share it with your friends."); }
+      try { await navigator.clipboard.writeText(shareUrl); toast.success("Link copied!", { description: "Share it with your friends." }); }
       catch { toast.error("Failed to copy link"); }
     }
   };
