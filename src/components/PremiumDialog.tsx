@@ -455,12 +455,12 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         <button
           onClick={handleRestore}
           disabled={isLoading}
-          className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="w-full text-sm text-white/60 hover:text-white transition-colors"
         >
           Restore Purchases
         </button>
 
-        <p className="text-xs text-center text-muted-foreground">
+        <p className="text-xs text-center text-white/60">
           By subscribing, you agree to our Terms of Service
         </p>
       </DialogContent>
