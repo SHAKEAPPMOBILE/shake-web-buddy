@@ -635,6 +635,8 @@ export function PrivateChatDialog({
       open={showProfile}
       onOpenChange={setShowProfile}
       userId={otherUserId}
+      userName={displayName}
+      avatarUrl={avatarUrl ?? null}
     />
     </>
   );
