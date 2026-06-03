@@ -54,7 +54,8 @@ export const checkPremiumAccess = async (): Promise<boolean> => {
   
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    return (customerInfo as any).entitlements?.active?.['premium'] !== undefined;
+    // RevenueCat entitlement identifier is "Premium" (case-sensitive)
+    return (customerInfo as any).entitlements?.active?.['Premium'] !== undefined;
   } catch (error) {
     console.error('Error checking premium:', error);
     return false;

@@ -29,7 +29,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isManageLoading, setIsManageLoading] = useState(false);
   const [productPrice, setProductPrice] = useState("$1.88");
   const [subscribeError, setSubscribeError] = useState<string | null>(null);
-  const { user, isPremium, isManualOverride } = useAuth();
+  const { user, isPremium, isManualOverride, checkSubscription } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -97,7 +97,8 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
   const hasPremiumEntitlement = (customerInfo: any): boolean => {
     const entitlements = customerInfo?.entitlements?.active ?? {};
-    return entitlements?.premium !== undefined || entitlements?.superhuman !== undefined;
+    // RevenueCat entitlement identifier is "Premium" (case-sensitive)
+    return entitlements["Premium"] !== undefined;
   };
 
   const handleSubscribe = async () => {
@@ -166,14 +167,23 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       console.log('[Subscribe] purchasePremium returned, entitlements:', Object.keys(customerInfo?.entitlements?.active ?? {}));
 
       if (hasPremiumEntitlement(customerInfo)) {
+        // Update global premium state immediately — no reload needed
+        await checkSubscription();
         toast.success("Welcome to Super-Human! 🎉");
         onOpenChange(false);
-        window.location.reload();
       } else {
-        // Entitlement confirmation may lag behind the client purchase result.
-        toast.info("Subscription confirmed. Finalizing access...");
-        onOpenChange(false);
-        window.location.reload();
+        // Entitlement may lag — fetch fresh data from RevenueCat then re-check
+        const fresh = await CapacitorPurchases.getCustomerInfo();
+        if (hasPremiumEntitlement(fresh)) {
+          await checkSubscription();
+          toast.success("Welcome to Super-Human! 🎉");
+          onOpenChange(false);
+        } else {
+          // Entitlement confirmation may lag behind the client purchase result.
+          toast.info("Subscription confirmed. Finalizing access...");
+          onOpenChange(false);
+          window.location.reload();
+        }
       }
     } catch (error: any) {
       // Log every property the RevenueCat/Stripe error object may carry
