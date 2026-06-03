@@ -61,6 +61,7 @@ export function UserProfileDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showEnlargedAvatar, setShowEnlargedAvatar] = useState(false);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
   const [showStatusViewer, setShowStatusViewer] = useState(false);
   const { user } = useAuth();
@@ -81,6 +82,7 @@ export function UserProfileDialog({
     if (!open || !userId) return;
 
     setLastKnownCity(null);
+    setAvatarLoadError(false);
 
     const fetchUserData = async () => {
       setIsLoading(true);
@@ -186,22 +188,20 @@ export function UserProfileDialog({
 
           {/* Avatar and Name */}
           <div className="flex flex-col items-center py-4">
-            {/* Avatar */}
-            <div className="relative">
-              <button
-                onClick={avatarUrl ? () => setShowEnlargedAvatar(true) : undefined}
-                className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shadow-lg transition-transform hover:scale-105 cursor-pointer border-4 border-border"
-              >
-                {avatarUrl ? (
-                  <img
-                    src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
-                    alt={userName || "Shaker"}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-12 h-12 text-muted-foreground" />
-                )}
-              </button>
+            {/* Avatar — not clickable/expandable */}
+            <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shadow-lg border-4 border-border shrink-0">
+              {avatarUrl && !avatarLoadError ? (
+                <img
+                  src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
+                  alt={userName || "Shaker"}
+                  className="w-full h-full object-cover"
+                  onError={() => setAvatarLoadError(true)}
+                />
+              ) : (
+                <span className="text-3xl font-bold text-muted-foreground">
+                  {(userName || "S").charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
 
             <h3 className="mt-4 text-xl font-semibold text-gray-900">
