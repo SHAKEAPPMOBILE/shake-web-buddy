@@ -1,9 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   triggerConfettiWaterfall,
@@ -16,6 +15,7 @@ export default function SubscriptionSuccess() {
   const { checkSubscription } = useAuth();
 
   const isDonation = searchParams.get("donation") === "true";
+  const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
     if (isDonation) {
@@ -64,6 +64,22 @@ export default function SubscriptionSuccess() {
         handleDonationBack();
       }, 5000);
       return () => clearTimeout(timer);
+    }
+  }, [isDonation]);
+
+  // Auto-redirect for subscription success after 5 seconds
+  useEffect(() => {
+    if (!isDonation) {
+      const timer = setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 5000);
+      const tick = setInterval(() => {
+        setCountdown((c) => c - 1);
+      }, 1000);
+      return () => {
+        clearTimeout(timer);
+        clearInterval(tick);
+      };
     }
   }, [isDonation]);
 
@@ -169,97 +185,57 @@ export default function SubscriptionSuccess() {
         }
       `}</style>
 
-      <header
-        className="sticky top-0 z-30 border-b border-[#1e293b]/80 backdrop-blur-md"
-        style={{ backgroundColor: "rgba(6, 8, 16, 0.94)" }}
-      >
-        <div className="flex items-center gap-3 px-4 py-3">
-          <MinimalBackButton
-            onClick={handleBack}
-            className="text-[#94a3b8] hover:text-[#e8f0ff]"
-            aria-label="Go back"
-          />
-          <h1 className="font-medium text-sm tracking-[0.2em] text-[#64748b] uppercase">
-            Subscription Complete
-          </h1>
-        </div>
-      </header>
-
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-lg w-full flex flex-col items-center gap-10">
-          {/* HUD frame — blue glow, depth, radar scan */}
-          <div
-            className="relative w-full overflow-hidden px-6 py-10 sm:px-10 sm:py-12 rounded-sm"
-            style={{
-              background: "linear-gradient(180deg, #0d1117 0%, #0a0e14 100%)",
-              border: "1px solid #1e3a5f",
-              boxShadow:
-                "0 -1px 20px rgba(59,130,246,0.3), inset 0 1px 0 rgba(59,130,246,0.2), 0 20px 60px rgba(0,0,0,0.8)",
-            }}
-          >
-            {/* Scanning line (radar / HUD) */}
+          <div className="flex flex-col items-center text-center gap-6">
             <div
-              className="pointer-events-none absolute inset-0 z-[1] overflow-hidden rounded-sm"
-              aria-hidden
+              className="flex h-16 w-16 items-center justify-center rounded-full border border-[#1e3a5f]"
+              style={{
+                background:
+                  "linear-gradient(145deg, rgba(15,23,42,0.9) 0%, rgba(10,14,20,0.95) 100%)",
+                boxShadow: "inset 0 1px 0 rgba(59,130,246,0.12)",
+              }}
             >
-              <div className="hud-scan-line" />
+              <LoadingSpinner size="lg" />
             </div>
 
-            {/* L-shaped corner brackets — bright blue */}
-            <span
-              className="pointer-events-none absolute left-0 top-0 z-[3] h-5 w-5 border-l-2 border-t-2 border-[#3b82f6]"
-              aria-hidden
-            />
-            <span
-              className="pointer-events-none absolute right-0 top-0 z-[3] h-5 w-5 border-r-2 border-t-2 border-[#3b82f6]"
-              aria-hidden
-            />
-            <span
-              className="pointer-events-none absolute bottom-0 left-0 z-[3] h-5 w-5 border-b-2 border-l-2 border-[#3b82f6]"
-              aria-hidden
-            />
-            <span
-              className="pointer-events-none absolute bottom-0 right-0 z-[3] h-5 w-5 border-b-2 border-r-2 border-[#3b82f6]"
-              aria-hidden
-            />
-
-            <div className="relative z-[2] flex flex-col items-center text-center gap-6">
-              <div
-                className="flex h-16 w-16 items-center justify-center rounded-full border border-[#1e3a5f]"
-                style={{
-                  background:
-                    "linear-gradient(145deg, rgba(15,23,42,0.9) 0%, rgba(10,14,20,0.95) 100%)",
-                  boxShadow: "inset 0 1px 0 rgba(59,130,246,0.12)",
-                }}
+            <div className="space-y-5 w-full">
+              <p
+                className="font-mono flex items-center justify-center gap-2 text-[11px] sm:text-xs uppercase text-[#3b82f6] tracking-[0.35em]"
+                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
               >
-                <LoadingSpinner size="lg" />
-              </div>
-
-              <div className="space-y-5 w-full">
-                <p
-                  className="font-mono flex items-center justify-center gap-2 text-[11px] sm:text-xs uppercase text-[#3b82f6] tracking-[0.35em]"
-                  style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
-                >
-                  <span
-                    className="status-pulse-dot inline-block h-2 w-2 shrink-0 rounded-full bg-[#3b82f6]"
-                    aria-hidden
-                  />
-                  STATUS: UNLOCKED
-                </p>
-                <h2 className="subscription-success-heading px-1">
-                  {"You're a Super-Human!"}
-                </h2>
-              </div>
+                <span
+                  className="status-pulse-dot inline-block h-2 w-2 shrink-0 rounded-full bg-[#3b82f6]"
+                  aria-hidden
+                />
+                STATUS: UNLOCKED
+              </p>
+              <h2 className="subscription-success-heading px-1">
+                {"You're a Super-Human!"}
+              </h2>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => navigate("/", { replace: true })}
-            className="w-full max-w-sm rounded-2xl border border-[#3b82f6] bg-transparent py-3.5 px-6 text-base font-medium text-[#3b82f6] transition-all duration-300 hover:bg-[#3b82f6] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] active:scale-[0.99]"
-          >
-            Start Exploring!
-          </button>
+          <div className="w-full max-w-sm flex flex-col items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/", { replace: true })}
+              className="w-full rounded-2xl border border-[#3b82f6] bg-transparent py-3.5 px-6 text-base font-medium text-[#3b82f6] transition-all duration-300 hover:bg-[#3b82f6] hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] active:scale-[0.99]"
+            >
+              Start Exploring!
+            </button>
+
+            {/* Auto-redirect countdown */}
+            <p className="text-xs text-[#475569]">
+              Redirecting in {Math.max(countdown, 0)}s…
+            </p>
+            <div className="w-full h-0.5 rounded-full bg-[#1e293b] overflow-hidden">
+              <div
+                className="h-full bg-[#3b82f6] rounded-full transition-all duration-1000 ease-linear"
+                style={{ width: `${(Math.max(countdown, 0) / 5) * 100}%` }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
