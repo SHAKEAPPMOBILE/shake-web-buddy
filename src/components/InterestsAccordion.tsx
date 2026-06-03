@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { INTEREST_CATEGORIES } from "@/lib/interests";
 import { cn } from "@/lib/utils";
 
@@ -16,17 +16,13 @@ export function InterestsAccordion({
   onShakingEnd,
 }: InterestsAccordionProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(INTEREST_CATEGORIES[0].name);
-  const wrapperRef = useRef<HTMLDivElement>(null);
 
+  // Auto-close after 10 seconds; resets whenever a different category is opened
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setActiveCategory(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    if (!activeCategory) return;
+    const timer = setTimeout(() => setActiveCategory(null), 10000);
+    return () => clearTimeout(timer);
+  }, [activeCategory]);
 
   const currentCategory = activeCategory
     ? INTEREST_CATEGORIES.find((c) => c.name === activeCategory) ?? null
@@ -34,7 +30,6 @@ export function InterestsAccordion({
 
   return (
     <div
-      ref={wrapperRef}
       className={cn("space-y-3", shaking && "animate-shake-x")}
       onAnimationEnd={onShakingEnd}
     >
@@ -71,25 +66,32 @@ export function InterestsAccordion({
 
       {/* Interests for the active category */}
       {currentCategory && (
-        <div className="flex flex-wrap gap-2">
-          {currentCategory.interests.map((interest) => {
-            const isSelected = selected.includes(interest);
-            return (
-              <button
-                key={interest}
-                type="button"
-                onClick={() => onToggle(interest)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
-                  isSelected
-                    ? "bg-blue-500 text-white border-blue-500"
-                    : "bg-background text-foreground border-border hover:border-blue-400"
-                )}
-              >
-                {interest}
-              </button>
-            );
-          })}
+        <div className="relative">
+          {/* Tap-outside overlay — behind the interest pills */}
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setActiveCategory(null)}
+          />
+          <div className="relative z-20 flex flex-wrap gap-2">
+            {currentCategory.interests.map((interest) => {
+              const isSelected = selected.includes(interest);
+              return (
+                <button
+                  key={interest}
+                  type="button"
+                  onClick={() => onToggle(interest)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
+                    isSelected
+                      ? "bg-blue-500 text-white border-blue-500"
+                      : "bg-background text-foreground border-border hover:border-blue-400"
+                  )}
+                >
+                  {interest}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
