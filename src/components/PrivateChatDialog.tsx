@@ -445,6 +445,18 @@ export function PrivateChatDialog({
                   key={msg.id}
                   className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                 >
+                  {/* Bubble row: trash icon sits beside the bubble for own messages */}
+                  <div className={`flex items-end gap-1 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                  {/* Trash icon — only for own messages, only when this msg is active */}
+                  {isMe && activeMsg?.id === msg.id && (
+                    <button
+                      onClick={() => handleDeleteMessage(msg.id)}
+                      className="opacity-50 hover:opacity-100 p-1 shrink-0 self-center"
+                      aria-label="Delete message"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-400" />
+                    </button>
+                  )}
                   <div
                     className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
                     style={isMedia ? undefined : isMe ? outgoingBubble : incomingBubble}
@@ -475,6 +487,7 @@ export function PrivateChatDialog({
                       </>
                     )}
                   </div>
+                  </div>{/* end bubble row */}
 
                   {/* Reaction pills */}
                   {msgReactions.length > 0 && (
@@ -609,16 +622,6 @@ export function PrivateChatDialog({
               );
             })}
           </div>
-          {/* Delete — own messages only */}
-          {activeMsg.isMe && (
-            <button
-              onClick={() => handleDeleteMessage(activeMsg.id)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-red-400 text-sm font-medium shadow-xl"
-              style={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.12)" }}
-            >
-              <Trash2 className="w-4 h-4" /> Delete message
-            </button>
-          )}
         </div>
       </>
     )}
