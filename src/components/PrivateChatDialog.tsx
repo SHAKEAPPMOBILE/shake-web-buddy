@@ -55,12 +55,13 @@ export function PrivateChatDialog({
 
   // Reactions
   const [reactions, setReactions] = useState<ReactionsMap>({});
-  const [activeMsg, setActiveMsg] = useState<{ id: string; isMe: boolean } | null>(null);
+  const [activeMsg, setActiveMsg] = useState<{ id: string; isMe: boolean; pickerY: number } | null>(null);
 
   // Long-press / double-tap refs
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
   const lastTapRef = useRef<{ id: string; time: number } | null>(null);
+  const touchClientYRef = useRef<number>(0);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
 
@@ -174,11 +175,12 @@ export function PrivateChatDialog({
 
   // ── Long press / double tap handlers ─────────────────────────────────────
 
-  const startLongPress = (msgId: string, isMe: boolean) => {
+  const startLongPress = (msgId: string, isMe: boolean, clientY: number) => {
+    touchClientYRef.current = clientY;
     longPressFired.current = false;
     longPressTimer.current = setTimeout(() => {
       longPressFired.current = true;
-      setActiveMsg({ id: msgId, isMe });
+      setActiveMsg({ id: msgId, isMe, pickerY: touchClientYRef.current });
     }, 500);
   };
 
@@ -206,27 +208,23 @@ export function PrivateChatDialog({
     }
   };
 
-  // ── Reaction toggle ───────────────────────────────────────────────────────
+  // ── Reaction toggle (one per user per message) ───────────────────────────
 
   const handleReaction = async (messageId: string, emoji: string) => {
     if (!user) return;
     setActiveMsg(null);
 
     const msgReactions = reactions[messageId] || [];
-    const existing = msgReactions.find(r => r.emoji === emoji);
-    const alreadyReacted = existing?.userIds.includes(user.id) ?? false;
+    // Find user's current reaction on this message (may be a different emoji)
+    const userExisting = msgReactions.find(r => r.userIds.includes(user.id));
+    const alreadyReactedSame = userExisting?.emoji === emoji;
 
-    // Optimistic update
+    // Optimistic update: strip user from all emoji groups, then add to new one if not toggling off
     setReactions(prev => {
-      const msgR = [...(prev[messageId] || [])];
-      if (alreadyReacted) {
-        const idx = msgR.findIndex(r => r.emoji === emoji);
-        if (idx !== -1) {
-          const updated = { ...msgR[idx], userIds: msgR[idx].userIds.filter(id => id !== user.id) };
-          if (updated.userIds.length === 0) msgR.splice(idx, 1);
-          else msgR[idx] = updated;
-        }
-      } else {
+      const msgR = (prev[messageId] || [])
+        .map(r => ({ ...r, userIds: r.userIds.filter(id => id !== user.id) }))
+        .filter(r => r.userIds.length > 0);
+      if (!alreadyReactedSame) {
         const idx = msgR.findIndex(r => r.emoji === emoji);
         if (idx !== -1) msgR[idx] = { ...msgR[idx], userIds: [...msgR[idx].userIds, user.id] };
         else msgR.push({ emoji, userIds: [user.id] });
@@ -234,17 +232,18 @@ export function PrivateChatDialog({
       return { ...prev, [messageId]: msgR };
     });
 
-    if (alreadyReacted) {
+    // DB: always delete any existing reaction from this user first (enforces one-per-user)
+    await supabase
+      .from("private_message_reactions")
+      .delete()
+      .eq("message_id", messageId)
+      .eq("user_id", user.id);
+
+    // Insert new reaction only if not toggling the same one off
+    if (!alreadyReactedSame) {
       await supabase
         .from("private_message_reactions")
-        .delete()
-        .eq("message_id", messageId)
-        .eq("user_id", user.id)
-        .eq("emoji", emoji);
-    } else {
-      await supabase
-        .from("private_message_reactions")
-        .upsert({ message_id: messageId, user_id: user.id, emoji }, { onConflict: "message_id,user_id,emoji" });
+        .insert({ message_id: messageId, user_id: user.id, emoji });
     }
   };
 
@@ -449,10 +448,10 @@ export function PrivateChatDialog({
                   <div
                     className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
                     style={isMedia ? undefined : isMe ? outgoingBubble : incomingBubble}
-                    onTouchStart={() => startLongPress(msg.id, isMe)}
+                    onTouchStart={(e) => startLongPress(msg.id, isMe, e.touches[0].clientY)}
                     onTouchMove={cancelLongPress}
                     onTouchEnd={() => handleTouchEnd(msg.id, isMe)}
-                    onContextMenu={(e) => { e.preventDefault(); setActiveMsg({ id: msg.id, isMe }); }}
+                    onContextMenu={(e) => { e.preventDefault(); setActiveMsg({ id: msg.id, isMe, pickerY: e.clientY }); }}
                   >
                     {isGif ? (
                       <>
@@ -582,11 +581,14 @@ export function PrivateChatDialog({
       </form>
     </div>
 
-    {/* Reaction / action context menu */}
+    {/* Reaction / action context menu — anchored above the long-pressed message */}
     {activeMsg && (
       <>
         <div className="fixed inset-0 z-[99998]" onClick={() => setActiveMsg(null)} />
-        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[99999] flex flex-col items-center gap-2">
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-[99999] flex flex-col items-center gap-2"
+          style={{ top: Math.max(60, activeMsg.pickerY - 100) }}
+        >
           {/* Emoji picker row */}
           <div
             className="flex items-center gap-1 px-3 py-2.5 rounded-2xl shadow-2xl"
