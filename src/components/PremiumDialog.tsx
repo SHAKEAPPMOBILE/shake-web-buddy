@@ -412,10 +412,10 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
           <div className="flex items-center justify-center mb-2">
             <img src={superhumanImg} alt="Super-Human" className="w-32 object-contain" />
           </div>
-          <DialogTitle className="text-center text-xl font-display">
+          <DialogTitle className="text-center text-xl font-display text-gray-900">
             Become a Super-Human
           </DialogTitle>
-          <DialogDescription className="text-center text-muted-foreground text-sm">
+          <DialogDescription className="text-center text-gray-600 text-sm">
             Unlock unlimited creation, profiles, messaging, and more
           </DialogDescription>
         </DialogHeader>
@@ -432,17 +432,17 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
                   </span>
                 )}
               </div>
-              <span className="text-foreground text-sm">{feature.text}</span>
+              <span className="text-gray-800 text-sm">{feature.text}</span>
               <Check className="w-3.5 h-3.5 text-shake-green ml-auto shrink-0" />
             </div>
           ))}
         </div>
 
         <div className="text-center py-2">
-          <div className="text-3xl font-display font-bold text-foreground">
-            {productPrice}<span className="text-base font-normal text-muted-foreground">/month</span>
+          <div className="text-3xl font-display font-bold text-gray-900">
+            {productPrice}<span className="text-base font-normal text-gray-500">/month</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">Cancel anytime • Best value!</p>
+          <p className="text-xs text-gray-500 mt-0.5">Cancel anytime • Best value!</p>
         </div>
 
         <button
@@ -465,12 +465,12 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         <button
           onClick={handleRestore}
           disabled={isLoading}
-          className="w-full text-sm text-white/60 hover:text-white transition-colors"
+          className="w-full text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
           Restore Purchases
         </button>
 
-        <p className="text-xs text-center text-white/60">
+        <p className="text-xs text-center text-gray-500">
           By subscribing, you agree to our Terms of Service
         </p>
       </DialogContent>
