@@ -926,9 +926,6 @@ export function ChatTab({
                           <h3 className="font-bold text-gray-900 text-[15px] leading-snug truncate">
                             {activity.other_user_name || "Shaker"}
                           </h3>
-                          <span className="text-[10px] font-medium uppercase tracking-wide text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-xl border border-purple-200 shrink-0">
-                            Match
-                          </span>
                         </div>
                         {activity.last_message_preview ? (
                           <p className="mt-0.5 text-[13px] text-gray-500 truncate">{activity.last_message_preview}</p>
