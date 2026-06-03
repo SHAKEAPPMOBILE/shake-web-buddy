@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Images, Camera, MoreVertical, LogOut, Ban } from "lucide-react";
+import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2 } from "lucide-react";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +17,10 @@ import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
+
+const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢"];
+
+type ReactionsMap = Record<string, Array<{ emoji: string; userIds: string[] }>>;
 
 interface PrivateChatDialogProps {
   onClose: () => void;
@@ -37,7 +41,7 @@ export function PrivateChatDialog({
   if (!isActiveTab) return null;
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
-  const { messages, isLoading, sendMessage, markAsRead } = usePrivateMessages(otherUserId);
+  const { messages, isLoading, sendMessage, markAsRead, deleteMessage } = usePrivateMessages(otherUserId);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
@@ -47,6 +51,19 @@ export function PrivateChatDialog({
   const [avatarError, setAvatarError] = useState(false);
   const [fetchedName, setFetchedName] = useState<string | null>(null);
   const [fetchedAvatar, setFetchedAvatar] = useState<string | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
+
+  // Reactions
+  const [reactions, setReactions] = useState<ReactionsMap>({});
+  const [activeMsg, setActiveMsg] = useState<{ id: string; isMe: boolean } | null>(null);
+
+  // Long-press / double-tap refs
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  const lastTapRef = useRef<{ id: string; time: number } | null>(null);
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,7 +92,7 @@ export function PrivateChatDialog({
   // Fetch other user's profile if name/avatar not provided
   useEffect(() => {
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!UUID_RE.test(otherUserId)) return; // guard against non-UUID IDs
+    if (!UUID_RE.test(otherUserId)) return;
     if (otherUserName && otherUserName !== "Shaker") return;
     supabase
       .from("profiles")
@@ -99,27 +116,159 @@ export function PrivateChatDialog({
       .eq("other_user_id", otherUserId);
   }, [user?.id, otherUserId]);
 
+  // Load reactions for current messages
+  const messageIdsKey = messages.map(m => m.id).join(",");
+  useEffect(() => {
+    const ids = messagesRef.current.map(m => m.id);
+    if (ids.length === 0) { setReactions({}); return; }
+    supabase
+      .from("private_message_reactions")
+      .select("message_id, user_id, emoji")
+      .in("message_id", ids)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: ReactionsMap = {};
+        for (const r of data) {
+          if (!map[r.message_id]) map[r.message_id] = [];
+          const existing = map[r.message_id].find(x => x.emoji === r.emoji);
+          if (existing) existing.userIds.push(r.user_id);
+          else map[r.message_id].push({ emoji: r.emoji, userIds: [r.user_id] });
+        }
+        setReactions(map);
+      });
+  }, [messageIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Realtime subscription for reactions
+  useEffect(() => {
+    if (!user || !otherUserId) return;
+    const channel = supabase
+      .channel(`private-reactions-${otherUserId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "private_message_reactions" }, () => {
+        const ids = messagesRef.current.map(m => m.id);
+        if (ids.length === 0) return;
+        supabase
+          .from("private_message_reactions")
+          .select("message_id, user_id, emoji")
+          .in("message_id", ids)
+          .then(({ data }) => {
+            if (!data) return;
+            const map: ReactionsMap = {};
+            for (const r of data) {
+              if (!map[r.message_id]) map[r.message_id] = [];
+              const existing = map[r.message_id].find(x => x.emoji === r.emoji);
+              if (existing) existing.userIds.push(r.user_id);
+              else map[r.message_id].push({ emoji: r.emoji, userIds: [r.user_id] });
+            }
+            setReactions(map);
+          });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, otherUserId]);
+
   const scrollMessagesToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   };
 
+  // ── Long press / double tap handlers ─────────────────────────────────────
+
+  const startLongPress = (msgId: string, isMe: boolean) => {
+    longPressFired.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      setActiveMsg({ id: msgId, isMe });
+    }, 500);
+  };
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleTouchEnd = (msgId: string, isMe: boolean) => {
+    cancelLongPress();
+    if (longPressFired.current) {
+      longPressFired.current = false;
+      return;
+    }
+    // Double-tap detection
+    const now = Date.now();
+    const last = lastTapRef.current;
+    if (last && last.id === msgId && now - last.time < 300) {
+      lastTapRef.current = null;
+      handleReaction(msgId, "❤️");
+    } else {
+      lastTapRef.current = { id: msgId, time: now };
+    }
+  };
+
+  // ── Reaction toggle ───────────────────────────────────────────────────────
+
+  const handleReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
+    setActiveMsg(null);
+
+    const msgReactions = reactions[messageId] || [];
+    const existing = msgReactions.find(r => r.emoji === emoji);
+    const alreadyReacted = existing?.userIds.includes(user.id) ?? false;
+
+    // Optimistic update
+    setReactions(prev => {
+      const msgR = [...(prev[messageId] || [])];
+      if (alreadyReacted) {
+        const idx = msgR.findIndex(r => r.emoji === emoji);
+        if (idx !== -1) {
+          const updated = { ...msgR[idx], userIds: msgR[idx].userIds.filter(id => id !== user.id) };
+          if (updated.userIds.length === 0) msgR.splice(idx, 1);
+          else msgR[idx] = updated;
+        }
+      } else {
+        const idx = msgR.findIndex(r => r.emoji === emoji);
+        if (idx !== -1) msgR[idx] = { ...msgR[idx], userIds: [...msgR[idx].userIds, user.id] };
+        else msgR.push({ emoji, userIds: [user.id] });
+      }
+      return { ...prev, [messageId]: msgR };
+    });
+
+    if (alreadyReacted) {
+      await supabase
+        .from("private_message_reactions")
+        .delete()
+        .eq("message_id", messageId)
+        .eq("user_id", user.id)
+        .eq("emoji", emoji);
+    } else {
+      await supabase
+        .from("private_message_reactions")
+        .upsert({ message_id: messageId, user_id: user.id, emoji }, { onConflict: "message_id,user_id,emoji" });
+    }
+  };
+
+  // ── Delete message ────────────────────────────────────────────────────────
+
+  const handleDeleteMessage = async (messageId: string) => {
+    setActiveMsg(null);
+    const { error } = await deleteMessage(messageId);
+    if (error) toast.error("Failed to delete message");
+  };
+
+  // ── Send / media handlers ─────────────────────────────────────────────────
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!newMessage.trim() || isSending) return;
-
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
       toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
       return;
     }
-
     setIsSending(true);
     const { error } = await sendMessage(newMessage.trim());
     setIsSending(false);
-
     if (!error) {
       addCharacters(newMessage.trim().length);
       setNewMessage("");
@@ -128,35 +277,25 @@ export function PrivateChatDialog({
 
   const handleGifSelect = async (url: string) => {
     if (isSending) return;
-
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
-      toast.error(
-        "You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!"
-      );
+      toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
       throw new Error("Character limit reached");
     }
-
     setIsSending(true);
     const { error } = await sendMessage(url, "gif");
     setIsSending(false);
-
-    if (error) {
-      toast.error("Failed to send GIF");
-      throw error;
-    }
+    if (error) { toast.error("Failed to send GIF"); throw error; }
   };
 
   const handleMediaFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     if (e.target) e.target.value = "";
-
     if (file.size > CHAT_MEDIA_MAX_SIZE_MB * 1024 * 1024) {
       toast.error(`File too large. Maximum size is ${CHAT_MEDIA_MAX_SIZE_MB}MB.`);
       return;
     }
-
     const mediaType = getMediaMessageType(file);
     setIsUploadingMedia(true);
     try {
@@ -211,21 +350,30 @@ export function PrivateChatDialog({
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pb-3 border-b shrink-0" style={{ background: "#0d0d1a", borderColor: "rgba(255,255,255,0.08)", paddingTop: 'env(safe-area-inset-top)' }}>
         <MinimalBackButton onClick={onClose} className="text-white/70 border-white/20" />
-        <div className="w-9 h-9 rounded-full overflow-hidden border shrink-0 flex items-center justify-center" style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)" }}>
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={displayName || "Shaker"}
-              className="w-full h-full object-cover"
-              onError={() => setAvatarError(true)}
-            />
-          ) : (
-            <span className="text-sm font-bold" style={{ color: "#00C6B6" }}>{initial}</span>
-          )}
-        </div>
-        <h2 className="font-display text-lg text-white flex-1 min-w-0 truncate">
-          {displayName || "Shaker"}
-        </h2>
+
+        {/* Tappable avatar + name → opens profile */}
+        <button
+          type="button"
+          onClick={() => setShowProfile(true)}
+          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+        >
+          <div className="w-9 h-9 rounded-full overflow-hidden border shrink-0 flex items-center justify-center" style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)" }}>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={displayName || "Shaker"}
+                className="w-full h-full object-cover"
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <span className="text-sm font-bold" style={{ color: "#00C6B6" }}>{initial}</span>
+            )}
+          </div>
+          <h2 className="font-display text-lg text-white truncate">
+            {displayName || "Shaker"}
+          </h2>
+        </button>
+
         <div className="relative shrink-0">
           <button
             type="button"
@@ -280,7 +428,8 @@ export function PrivateChatDialog({
               const isVideo = msg.message_type === "video" && /^https?:\/\//i.test(msg.message);
               const isMedia = isGif || isImage || isVideo;
 
-              // Bubble styles
+              const msgReactions = reactions[msg.id] || [];
+
               const incomingBubble: React.CSSProperties = {
                 background: "rgba(255,255,255,0.08)",
                 backdropFilter: "blur(12px)",
@@ -295,58 +444,59 @@ export function PrivateChatDialog({
               return (
                 <div
                   key={msg.id}
-                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                  className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                 >
                   <div
                     className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
                     style={isMedia ? undefined : isMe ? outgoingBubble : incomingBubble}
+                    onTouchStart={() => startLongPress(msg.id, isMe)}
+                    onTouchMove={cancelLongPress}
+                    onTouchEnd={() => handleTouchEnd(msg.id, isMe)}
+                    onContextMenu={(e) => { e.preventDefault(); setActiveMsg({ id: msg.id, isMe }); }}
                   >
                     {isGif ? (
                       <>
-                        <InlineChatGif
-                          src={msg.message}
-                          variant="dark"
-                          onLoad={scrollMessagesToBottom}
-                        />
-                        <p className="text-[10px] mt-1 text-white/40">
-                          {format(new Date(msg.created_at), "HH:mm")}
-                        </p>
+                        <InlineChatGif src={msg.message} variant="dark" onLoad={scrollMessagesToBottom} />
+                        <p className="text-[10px] mt-1 text-white/40">{format(new Date(msg.created_at), "HH:mm")}</p>
                       </>
                     ) : isImage ? (
                       <>
-                        <img
-                          src={msg.message}
-                          alt="shared image"
-                          className="rounded-2xl max-w-[260px] w-full object-cover"
-                          onLoad={scrollMessagesToBottom}
-                        />
-                        <p className="text-[10px] mt-1 text-white/40">
-                          {format(new Date(msg.created_at), "HH:mm")}
-                        </p>
+                        <img src={msg.message} alt="shared image" className="rounded-2xl max-w-[260px] w-full object-cover" onLoad={scrollMessagesToBottom} />
+                        <p className="text-[10px] mt-1 text-white/40">{format(new Date(msg.created_at), "HH:mm")}</p>
                       </>
                     ) : isVideo ? (
                       <>
-                        <video
-                          src={msg.message}
-                          controls
-                          playsInline
-                          preload="metadata"
-                          className="rounded-2xl max-w-[260px] w-full bg-black/30"
-                          onLoadedMetadata={scrollMessagesToBottom}
-                        />
-                        <p className="text-[10px] mt-1 text-white/40">
-                          {format(new Date(msg.created_at), "HH:mm")}
-                        </p>
+                        <video src={msg.message} controls playsInline preload="metadata" className="rounded-2xl max-w-[260px] w-full bg-black/30" onLoadedMetadata={scrollMessagesToBottom} />
+                        <p className="text-[10px] mt-1 text-white/40">{format(new Date(msg.created_at), "HH:mm")}</p>
                       </>
                     ) : (
                       <>
                         <p className="text-sm break-words text-white">{msg.message}</p>
-                        <p className="text-[10px] mt-1 text-white/50">
-                          {format(new Date(msg.created_at), "HH:mm")}
-                        </p>
+                        <p className="text-[10px] mt-1 text-white/50">{format(new Date(msg.created_at), "HH:mm")}</p>
                       </>
                     )}
                   </div>
+
+                  {/* Reaction pills */}
+                  {msgReactions.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {msgReactions.map(({ emoji, userIds }) => (
+                        <button
+                          key={emoji}
+                          onClick={() => handleReaction(msg.id, emoji)}
+                          className="flex items-center gap-0.5 text-xs px-2 py-0.5 rounded-full border transition-colors"
+                          style={
+                            user && userIds.includes(user.id)
+                              ? { background: "rgba(0,198,182,0.2)", borderColor: "rgba(0,198,182,0.5)", color: "white" }
+                              : { background: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.7)" }
+                          }
+                        >
+                          <span>{emoji}</span>
+                          {userIds.length > 1 && <span className="ml-0.5">{userIds.length}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -426,15 +576,51 @@ export function PrivateChatDialog({
             disabled={!newMessage.trim() || isSending || isUploadingMedia || giphyPickerOpen}
             variant="shake"
           >
-            {isSending ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
+            {isSending ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
       </form>
     </div>
+
+    {/* Reaction / action context menu */}
+    {activeMsg && (
+      <>
+        <div className="fixed inset-0 z-[99998]" onClick={() => setActiveMsg(null)} />
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[99999] flex flex-col items-center gap-2">
+          {/* Emoji picker row */}
+          <div
+            className="flex items-center gap-1 px-3 py-2.5 rounded-2xl shadow-2xl"
+            style={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.14)" }}
+          >
+            {REACTION_EMOJIS.map((emoji) => {
+              const reacted = user && (reactions[activeMsg.id] || [])
+                .find(r => r.emoji === emoji)?.userIds.includes(user.id);
+              return (
+                <button
+                  key={emoji}
+                  onClick={() => handleReaction(activeMsg.id, emoji)}
+                  className="text-2xl px-1 py-0.5 rounded-xl transition-transform active:scale-90 hover:scale-125"
+                  style={reacted ? { background: "rgba(0,198,182,0.2)" } : undefined}
+                >
+                  {emoji}
+                </button>
+              );
+            })}
+          </div>
+          {/* Delete — own messages only */}
+          {activeMsg.isMe && (
+            <button
+              onClick={() => handleDeleteMessage(activeMsg.id)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-red-400 text-sm font-medium shadow-xl"
+              style={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.12)" }}
+            >
+              <Trash2 className="w-4 h-4" /> Delete message
+            </button>
+          )}
+        </div>
+      </>
+    )}
+
     <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
     {user ? (
       <EventChatGiphyPickerModal
@@ -443,6 +629,11 @@ export function PrivateChatDialog({
         onGifSelect={handleGifSelect}
       />
     ) : null}
+    <UserProfileDialog
+      open={showProfile}
+      onOpenChange={setShowProfile}
+      userId={otherUserId}
+    />
     </>
   );
 }

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { MessageSquare, Users, Ticket, MessageCircle } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { MessageSquare, Users, Ticket, MessageCircle, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +25,7 @@ import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 import { PrivateChatDialog } from "@/components/PrivateChatDialog";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { toast } from "@/lib/app-toast";
 
 function safeActivityDate(iso: string | undefined): Date {
   if (!iso) return new Date();
@@ -98,6 +99,9 @@ export function ChatTab({
     name: string | null;
     avatar: string | null;
   } | null>(null);
+  // Swipe-to-leave state for DM rows
+  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
+  const swipeTouchRef = useRef<{ id: string; startX: number; startY: number; isHorizontal: boolean | null } | null>(null);
   const { getActivityJoinCount } = useActivityJoins(selectedCity);
 
   // Notify parent when entering/leaving chat view — only report "in chat" when this tab is active
@@ -172,6 +176,7 @@ export function ChatTab({
         { data: receivedGreetings },
         { data: hiddenConvos },
         { data: blockedUsers },
+        { data: privateMsgRows },
       ] = await Promise.all([
         supabase
           .from("activity_joins")
@@ -197,6 +202,11 @@ export function ChatTab({
         supabase.from("greetings").select("from_user_id, created_at").eq("to_user_id", user.id),
         supabase.from("private_conversation_hidden").select("other_user_id").eq("user_id", user.id),
         supabase.from("user_blocks").select("blocked_id").eq("blocker_id", user.id),
+        supabase
+          .from("private_messages")
+          .select("sender_id, receiver_id")
+          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .limit(500),
       ]);
 
       if (carouselError) throw carouselError;
@@ -252,6 +262,14 @@ export function ChatTab({
       const matchedUserIds = [...sentToIds].filter(
         id => receivedFromIds.has(id) && !hiddenIds.has(id) && !blockedIds.has(id)
       );
+
+      // Also include users who have exchanged private messages directly (e.g. received without going through greetings)
+      const msgPartnerIds = [...new Set(
+        (privateMsgRows || []).map(r =>
+          r.sender_id === user.id ? r.receiver_id : r.sender_id
+        ).filter(isValidUuid)
+      )].filter(id => !hiddenIds.has(id) && !blockedIds.has(id));
+      const allDmUserIds = [...new Set([...matchedUserIds, ...msgPartnerIds])];
 
       // Process all groups in parallel (carousel, plans, events, private chats)
       const [carouselResults, planResults, eventResults, privateResults] = await Promise.all([
@@ -405,7 +423,7 @@ export function ChatTab({
 
         // ── Private (DM) chats ────────────────────────────────────────────────
         Promise.all(
-          matchedUserIds.map(async (otherUserId) => {
+          allDmUserIds.map(async (otherUserId) => {
             const [{ data: profile }, { data: lastMsg }, { count: unreadCount }] = await Promise.all([
               supabase.from("profiles").select("name, avatar_url").eq("user_id", otherUserId).maybeSingle(),
               supabase
@@ -685,6 +703,50 @@ export function ChatTab({
     }
   };
 
+  const handleLeavePrivateChat = useCallback(async (otherUserId: string) => {
+    if (!user) return;
+    // Optimistically remove from list
+    setActivities(prev => prev.filter(a => !(a.is_private && a.other_user_id === otherUserId)));
+    setSwipeOffsets(prev => { const n = { ...prev }; delete n[`private-${otherUserId}`]; return n; });
+    const { error } = await supabase
+      .from("private_conversation_hidden")
+      .upsert({ user_id: user.id, other_user_id: otherUserId }, { onConflict: "user_id,other_user_id" });
+    if (error) {
+      toast.error("Failed to leave conversation");
+      fetchActivities(); // revert on error
+    }
+  }, [user, fetchActivities]);
+
+  const handleSwipeTouchStart = (e: React.TouchEvent, activityId: string) => {
+    const touch = e.touches[0];
+    swipeTouchRef.current = { id: activityId, startX: touch.clientX, startY: touch.clientY, isHorizontal: null };
+  };
+
+  const handleSwipeTouchMove = (e: React.TouchEvent, activityId: string) => {
+    const ref = swipeTouchRef.current;
+    if (!ref || ref.id !== activityId) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - ref.startX;
+    const dy = touch.clientY - ref.startY;
+    // Determine direction on first significant movement
+    if (ref.isHorizontal === null && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      ref.isHorizontal = Math.abs(dx) > Math.abs(dy);
+    }
+    if (!ref.isHorizontal) return;
+    // Only allow left swipe (negative dx)
+    const offset = Math.min(0, Math.max(-80, dx));
+    setSwipeOffsets(prev => ({ ...prev, [activityId]: offset }));
+  };
+
+  const handleSwipeTouchEnd = (activityId: string) => {
+    const ref = swipeTouchRef.current;
+    swipeTouchRef.current = null;
+    if (!ref || !ref.isHorizontal) return;
+    const current = swipeOffsets[activityId] ?? 0;
+    // Snap: if swiped past halfway, lock open; else snap closed
+    setSwipeOffsets(prev => ({ ...prev, [activityId]: current < -40 ? -80 : 0 }));
+  };
+
   const handleBackToActivities = () => {
     setShowChatDialog(false);
     setShowPlanChatDialog(false);
@@ -793,66 +855,87 @@ export function ChatTab({
           {filteredActivities.map((activity) => {
             // ── Private (DM) chat row ──────────────────────────────────────
             if (activity.is_private) {
+              const swipeOffset = swipeOffsets[activity.id] ?? 0;
               return (
-                <div
-                  key={activity.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleActivityClick(activity)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleActivityClick(activity);
-                    }
-                  }}
-                  className="w-full text-left rounded-xl p-4 transition-colors cursor-pointer relative border border-gray-200 bg-gray-50 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.99]"
-                >
-                  {(activity.unread_count ?? 0) > 0 && (
-                    <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full z-[1]" />
-                  )}
-                  <div className="flex items-center gap-3.5">
-                    <div
-                      className="w-12 h-12 rounded-full overflow-hidden border border-neutral-200 shadow-sm shrink-0 flex items-center justify-center"
-                      style={{ background: activity.other_user_avatar ? undefined : "linear-gradient(135deg, #00C6B6, #7c3aed)" }}
+                <div key={activity.id} className="relative overflow-hidden rounded-xl">
+                  {/* Red leave button revealed on swipe */}
+                  <div
+                    className="absolute inset-y-0 right-0 flex items-center justify-center bg-red-500"
+                    style={{ width: 80 }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => activity.other_user_id && handleLeavePrivateChat(activity.other_user_id)}
+                      className="flex flex-col items-center gap-0.5 text-white text-xs font-semibold px-3"
                     >
-                      {activity.other_user_avatar ? (
-                        <img
-                          src={getDisplayAvatarUrl(activity.other_user_avatar) ?? activity.other_user_avatar}
-                          alt={activity.other_user_name || "Shaker"}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.currentTarget;
-                            target.style.display = "none";
-                            const parent = target.parentElement;
-                            if (parent) {
-                              parent.style.background = "linear-gradient(135deg, #00C6B6, #7c3aed)";
-                              const span = document.createElement("span");
-                              span.className = "text-white font-bold text-lg";
-                              span.textContent = (activity.other_user_name || "S").charAt(0).toUpperCase();
-                              parent.appendChild(span);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <span className="text-white font-bold text-lg">
-                          {(activity.other_user_name || "S").charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-gray-900 text-[15px] leading-snug truncate">
-                          {activity.other_user_name || "Shaker"}
-                        </h3>
-                        <span className="text-[10px] font-medium uppercase tracking-wide text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-xl border border-purple-200 shrink-0">
-                          Match
-                        </span>
+                      <LogOut className="w-4 h-4" />
+                      Leave
+                    </button>
+                  </div>
+                  {/* Swipeable row content */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => swipeOffset === 0 && handleActivityClick(activity)}
+                    onKeyDown={(e) => {
+                      if ((e.key === "Enter" || e.key === " ") && swipeOffset === 0) {
+                        e.preventDefault();
+                        handleActivityClick(activity);
+                      }
+                    }}
+                    onTouchStart={(e) => handleSwipeTouchStart(e, activity.id)}
+                    onTouchMove={(e) => handleSwipeTouchMove(e, activity.id)}
+                    onTouchEnd={() => handleSwipeTouchEnd(activity.id)}
+                    className="w-full text-left p-4 transition-colors cursor-pointer relative border border-gray-200 bg-gray-50 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    style={{ transform: `translateX(${swipeOffset}px)`, transition: swipeTouchRef.current ? "none" : "transform 0.2s ease" }}
+                  >
+                    {(activity.unread_count ?? 0) > 0 && (
+                      <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full z-[1]" />
+                    )}
+                    <div className="flex items-center gap-3.5">
+                      <div
+                        className="w-12 h-12 rounded-full overflow-hidden border border-neutral-200 shadow-sm shrink-0 flex items-center justify-center"
+                        style={{ background: activity.other_user_avatar ? undefined : "linear-gradient(135deg, #00C6B6, #7c3aed)" }}
+                      >
+                        {activity.other_user_avatar ? (
+                          <img
+                            src={getDisplayAvatarUrl(activity.other_user_avatar) ?? activity.other_user_avatar}
+                            alt={activity.other_user_name || "Shaker"}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = "none";
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.style.background = "linear-gradient(135deg, #00C6B6, #7c3aed)";
+                                const span = document.createElement("span");
+                                span.className = "text-white font-bold text-lg";
+                                span.textContent = (activity.other_user_name || "S").charAt(0).toUpperCase();
+                                parent.appendChild(span);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="text-white font-bold text-lg">
+                            {(activity.other_user_name || "S").charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
-                      {activity.last_message_preview ? (
-                        <p className="mt-0.5 text-[13px] text-gray-500 truncate">{activity.last_message_preview}</p>
-                      ) : (
-                        <p className="mt-0.5 text-[13px] text-gray-400 italic">Start a conversation!</p>
-                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-gray-900 text-[15px] leading-snug truncate">
+                            {activity.other_user_name || "Shaker"}
+                          </h3>
+                          <span className="text-[10px] font-medium uppercase tracking-wide text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-xl border border-purple-200 shrink-0">
+                            Match
+                          </span>
+                        </div>
+                        {activity.last_message_preview ? (
+                          <p className="mt-0.5 text-[13px] text-gray-500 truncate">{activity.last_message_preview}</p>
+                        ) : (
+                          <p className="mt-0.5 text-[13px] text-gray-400 italic">Start a conversation!</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

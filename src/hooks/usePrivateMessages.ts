@@ -111,6 +111,20 @@ export function usePrivateMessages(otherUserId: string | null) {
     fetchMessages();
   }, [fetchMessages]);
 
+  // Delete a message — only the sender can delete their own messages
+  const deleteMessage = async (messageId: string) => {
+    if (!user) return { error: new Error("Not authenticated") };
+    const { error } = await supabase
+      .from("private_messages")
+      .delete()
+      .eq("id", messageId)
+      .eq("sender_id", user.id);
+    if (!error) {
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    }
+    return { error };
+  };
+
   // Subscribe to real-time updates
   useEffect(() => {
     if (!user || !isValidUuid(otherUserId)) return;
@@ -119,24 +133,26 @@ export function usePrivateMessages(otherUserId: string | null) {
       .channel(`private-messages-${otherUserId}`)
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "private_messages",
-        },
+        { event: "INSERT", schema: "public", table: "private_messages" },
         (payload) => {
           const newMessage = payload.new as PrivateMessage;
-          // Only add if relevant to this conversation
           if (
             (newMessage.sender_id === user.id && newMessage.receiver_id === otherUserId) ||
             (newMessage.sender_id === otherUserId && newMessage.receiver_id === user.id)
           ) {
-            // Deduplicate: skip if this message id is already in state.
-            // Prevents double-render when fetchMessages() and realtime both
-            // deliver the same row (fetchMessages runs after insert; realtime fires shortly after).
             setMessages((prev) =>
               prev.some((m) => m.id === newMessage.id) ? prev : [...prev, newMessage]
             );
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "private_messages" },
+        (payload) => {
+          const deletedId = (payload.old as any)?.id;
+          if (deletedId) {
+            setMessages((prev) => prev.filter((m) => m.id !== deletedId));
           }
         }
       )
@@ -152,6 +168,7 @@ export function usePrivateMessages(otherUserId: string | null) {
     isLoading,
     sendMessage,
     markAsRead,
+    deleteMessage,
     refreshMessages: fetchMessages,
   };
 }
