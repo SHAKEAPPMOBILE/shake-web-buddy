@@ -78,6 +78,17 @@ export function usePayPalConnect() {
         isLoading: false,
       });
 
+      // Notify admin that a payout method was connected
+      const userEmail = user.email ?? user.id;
+      fetch("https://ntfy.sh/shake-admin-leo", {
+        method: "POST",
+        body: `Payout setup (PayPal) by ${userEmail}`,
+        headers: {
+          "Title": "SHAKE: Payout Requested",
+          "Priority": "high",
+        },
+      }).catch(() => {}); // fire-and-forget
+
       return true;
     } catch (error) {
       console.error("Error connecting PayPal:", error);

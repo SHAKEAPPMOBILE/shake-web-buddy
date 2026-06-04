@@ -224,11 +224,11 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Submitted</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Reviewed</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-gray-900 font-semibold">User</TableHead>
+              <TableHead className="text-gray-900 font-semibold">Submitted</TableHead>
+              <TableHead className="text-gray-900 font-semibold">Status</TableHead>
+              <TableHead className="text-gray-900 font-semibold">Reviewed</TableHead>
+              <TableHead className="text-right text-gray-900 font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -236,31 +236,31 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
               <TableRow key={verification.id}>
                 <TableCell>
                   <div>
-                    <p className="font-medium">{verification.user_name || "Unknown"}</p>
-                    <p className="text-xs text-muted-foreground">{verification.user_email}</p>
+                    <p className="font-medium text-gray-900">{verification.user_name || "Unknown"}</p>
+                    <p className="text-xs text-gray-600">{verification.user_email}</p>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-gray-800">
                   {format(new Date(verification.submitted_at), "MMM d, yyyy HH:mm")}
                 </TableCell>
                 <TableCell>
                   {getStatusBadge(verification.status)}
                   {verification.auto_approved_at && (
-                    <span className="ml-2 text-xs text-muted-foreground">(auto)</span>
+                    <span className="ml-2 text-xs text-gray-600">(auto)</span>
                   )}
                 </TableCell>
                 <TableCell>
                   {verification.reviewed_at ? (
-                    <span className="text-sm">
+                    <span className="text-sm text-gray-800">
                       {format(new Date(verification.reviewed_at), "MMM d, yyyy HH:mm")}
                       {verification.reviewed_by && (
-                        <span className="text-xs text-muted-foreground block">
+                        <span className="text-xs text-gray-600 block">
                           by {verification.reviewed_by}
                         </span>
                       )}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">-</span>
+                    <span className="text-gray-500">-</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
@@ -286,41 +286,41 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
           setPreviewUrl(null);
         }
       }}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-white">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-gray-900">
               ID Verification - {selectedVerification?.user_name || "Unknown User"}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* User Info */}
-            <div className="p-3 rounded-2xl bg-muted/50 space-y-1">
-              <p className="text-sm"><strong>User:</strong> {selectedVerification?.user_name}</p>
-              <p className="text-sm"><strong>Email:</strong> {selectedVerification?.user_email}</p>
-              <p className="text-sm">
+            <div className="p-3 rounded-2xl bg-gray-50 space-y-1">
+              <p className="text-sm text-gray-800"><strong>User:</strong> {selectedVerification?.user_name}</p>
+              <p className="text-sm text-gray-800"><strong>Email:</strong> {selectedVerification?.user_email}</p>
+              <p className="text-sm text-gray-800">
                 <strong>Submitted:</strong>{" "}
                 {selectedVerification && format(new Date(selectedVerification.submitted_at), "PPpp")}
               </p>
-              <p className="text-sm">
+              <p className="text-sm text-gray-800">
                 <strong>Status:</strong> {selectedVerification?.status}
                 {selectedVerification?.auto_approved_at && " (auto-approved)"}
               </p>
             </div>
 
             {/* Document Preview */}
-            <div className="border rounded-2xl p-4 bg-muted/30">
+            <div className="border rounded-2xl p-4 bg-gray-50">
               {previewUrl === "error" ? (
                 <div className="text-center py-8">
                   <p className="text-destructive">Failed to load document</p>
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-sm text-gray-600 mt-2">
                     The document could not be retrieved from storage.
                   </p>
                 </div>
               ) : previewUrl ? (
                 previewUrl.toLowerCase().includes(".pdf") ? (
                   <div className="text-center">
-                    <p className="text-sm text-muted-foreground mb-2">PDF Document</p>
+                    <p className="text-sm text-gray-600 mb-2">PDF Document</p>
                     <a 
                       href={previewUrl} 
                       target="_blank" 

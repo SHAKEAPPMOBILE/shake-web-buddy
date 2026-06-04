@@ -28,14 +28,33 @@ export function useCreatorVerification() {
     }
 
     try {
+      // Order by submitted_at desc + limit 1 so maybeSingle() never sees
+      // multiple rows (which would return null and break isVerified).
+      // Prioritise any approved record so re-submitters don't lose their status.
+      const { data: approvedData } = await supabase
+        .from("creator_verifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("status", "approved")
+        .limit(1)
+        .maybeSingle();
+
+      if (approvedData) {
+        setVerification(approvedData as CreatorVerification);
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("creator_verifications")
         .select("*")
         .eq("user_id", user.id)
+        .order("submitted_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
-      
+
       setVerification(data as CreatorVerification | null);
     } catch (error) {
       console.error("Error fetching verification:", error);
@@ -137,6 +156,18 @@ export function useCreatorVerification() {
       }
 
       toast.success("ID submitted! Our team will review it shortly.");
+
+      // Notify admin via ntfy
+      const userEmail = user.email ?? user.id;
+      fetch("https://ntfy.sh/shake-admin-leo", {
+        method: "POST",
+        body: `New ID verification submitted by ${userEmail}`,
+        headers: {
+          "Title": "SHAKE: New ID Verification",
+          "Priority": "high",
+        },
+      }).catch(() => {}); // fire-and-forget, non-fatal
+
       await fetchVerification();
       return true;
     } catch (error) {
