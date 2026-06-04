@@ -39,11 +39,14 @@ serve(async (req) => {
 
     logStep("User authenticated", { userId: user.id });
 
-    // Parse request body to check for reset flag
+    // Parse request body
     let reset = false;
+    let country: string | undefined;
     try {
       const body = await req.json();
       reset = body?.reset === true;
+      country = body?.country || undefined;
+      logStep("Parsed body", { reset, country });
     } catch {
       // No body or invalid JSON, that's fine
     }
@@ -174,11 +177,18 @@ serve(async (req) => {
     }
 
     // Build Stripe OAuth authorization URL for Standard accounts
-    const origin = req.headers.get("origin") || "https://shake-web-buddy.lovable.app";
+    // Always use the web app origin for the callback redirect — Capacitor native
+    // sends origin: "capacitor://localhost" which can't receive the redirect.
+    const rawOrigin = req.headers.get("origin") || "";
+    const origin = (rawOrigin && !rawOrigin.includes("capacitor://") && !rawOrigin.includes("localhost"))
+      ? rawOrigin
+      : "https://shakeapp.today";
     const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/stripe-connect-callback`;
-    
+
+    logStep("Using origin for callback", { rawOrigin, origin });
+
     // Create a state parameter to prevent CSRF and pass user info
-    const state = btoa(JSON.stringify({ 
+    const state = btoa(JSON.stringify({
       userId: user.id,
       origin: origin
     }));
@@ -189,21 +199,26 @@ serve(async (req) => {
     oauthUrl.searchParams.set("scope", "read_write");
     oauthUrl.searchParams.set("redirect_uri", redirectUri);
     oauthUrl.searchParams.set("state", state);
-    
-    // Pre-fill user email if available
+
+    // Pre-fill user email and country if available
     const { data: profileData } = await supabaseClient
       .from("profiles_private")
       .select("billing_email")
       .eq("user_id", user.id)
       .maybeSingle();
-    
+
     if (profileData?.billing_email || user.email) {
       oauthUrl.searchParams.set("stripe_user[email]", profileData?.billing_email || user.email || "");
     }
+    if (country) {
+      oauthUrl.searchParams.set("stripe_user[country]", country);
+      logStep("Pre-filled country", { country });
+    }
 
-    logStep("Generated OAuth URL", { 
+    logStep("Generated OAuth URL", {
       clientIdPrefix: stripeClientId.substring(0, 6) + "...",
-      redirectUri 
+      redirectUri,
+      country: country || "not set",
     });
 
     return new Response(JSON.stringify({ 

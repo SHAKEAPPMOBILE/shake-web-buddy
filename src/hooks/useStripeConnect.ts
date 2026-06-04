@@ -53,15 +53,22 @@ export function useStripeConnect() {
    * @param reset - If true, deletes existing account and creates a new one
    */
   const startOnboarding = useCallback(async (country?: string, reset?: boolean) => {
-    if (!user) return;
+    console.log('[Stripe] startOnboarding called - country:', country, 'reset:', reset, 'user:', user?.id);
+    if (!user) {
+      console.error('[Stripe] startOnboarding: no user, aborting');
+      return;
+    }
 
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      console.log('[Stripe] invoking create-connect-account...');
       const { data, error } = await supabase.functions.invoke("create-connect-account", {
         body: { country, reset }
       });
-      
+
+      console.log('[Stripe] invoke result - data:', JSON.stringify(data), 'error:', error);
+
       if (error) throw error;
 
       // Handle error from the edge function
@@ -70,45 +77,47 @@ export function useStripeConnect() {
       }
 
       if (data?.url) {
-        console.log('[Stripe] opening onboarding URL, native:', Capacitor.isNativePlatform(), 'url:', data.url);
-        if (Capacitor.isNativePlatform()) {
-          // On native iOS/Android use Capacitor Browser so it opens in-app browser
+        const isNative = Capacitor.isNativePlatform();
+        console.log('[Stripe] opening URL - native:', isNative, 'url:', data.url);
+        if (isNative) {
           await Browser.open({ url: data.url });
+          console.log('[Stripe] Browser.open returned');
         } else {
-          // On web open in new tab
           window.open(data.url, '_blank');
         }
+        // Reset loading after opening — don't leave button stuck
+        setState(prev => ({ ...prev, isLoading: false }));
       } else if (data?.status === "complete") {
-        // Already connected
-        setState(prev => ({ 
-          ...prev, 
-          isConnected: true, 
+        setState(prev => ({
+          ...prev,
+          isConnected: true,
           status: "complete",
           isLoading: false,
           error: null,
         }));
         toast.success("Your Stripe account is already connected!");
       } else if (data?.status === "verification_pending") {
-        // Account is under Stripe verification
-        setState(prev => ({ 
-          ...prev, 
-          isConnected: true, 
+        setState(prev => ({
+          ...prev,
+          isConnected: true,
           status: "verification_pending",
           isLoading: false,
           error: null,
         }));
         toast.info(data.message || "Stripe is verifying your account. This can take 1-3 business days.");
+      } else {
+        console.warn('[Stripe] unexpected response shape:', data);
+        setState(prev => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
-      console.error("Error starting Stripe Connect onboarding:", error);
+      console.error('[Stripe] startOnboarding error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       setState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
-      
-      // Show user-friendly error message
+
       if (errorMessage.includes("STRIPE_CLIENT_ID")) {
         toast.error("Stripe Connect configuration error. Please contact support.");
       } else {
-        toast.error(errorMessage);
+        toast.error("Stripe error: " + errorMessage);
       }
     }
   }, [user]);
