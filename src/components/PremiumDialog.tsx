@@ -166,23 +166,38 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       const customerInfo = await purchasePremium();
       console.log('[Subscribe] purchasePremium returned, entitlements:', Object.keys(customerInfo?.entitlements?.active ?? {}));
 
-      if (hasPremiumEntitlement(customerInfo)) {
-        // Update global premium state immediately — no reload needed
-        await checkSubscription();
-        toast.success("Welcome to Super-Human! 🎉");
-        onOpenChange(false);
+      // Purchase confirmed by RevenueCat — close modal and show success immediately.
+      // Never await checkSubscription() here: if it hangs or throws the modal would
+      // stay stuck even though the user paid. Sync state in the background instead.
+      toast.success("Welcome to Super-Human! 🎉");
+      onOpenChange(false);
+
+      const hasEntitlement = hasPremiumEntitlement(customerInfo);
+      console.log('[Subscribe] immediate hasPremiumEntitlement:', hasEntitlement);
+      if (hasEntitlement) {
+        // Entitlement active — sync app state quietly in background.
+        checkSubscription().catch((err: any) =>
+          console.warn('[Subscribe] background checkSubscription error (non-fatal):', err?.message ?? err)
+        );
       } else {
-        // Entitlement may lag — fetch fresh data from RevenueCat then re-check
-        const fresh = await CapacitorPurchases.getCustomerInfo();
-        if (hasPremiumEntitlement(fresh)) {
-          await checkSubscription();
-          toast.success("Welcome to Super-Human! 🎉");
-          onOpenChange(false);
-        } else {
-          // Entitlement confirmation may lag behind the client purchase result.
-          toast.info("Subscription confirmed. Finalizing access...");
-          onOpenChange(false);
-          window.location.reload();
+        // Entitlement may lag RevenueCat client — fetch once more then reload.
+        console.log('[Subscribe] entitlement not yet active, fetching fresh customerInfo...');
+        try {
+          const freshResult = await CapacitorPurchases.getCustomerInfo();
+          // SDK may return { customerInfo } wrapper or plain CustomerInfo depending on version
+          const freshInfo = (freshResult as any).customerInfo ?? freshResult;
+          console.log('[Subscribe] fresh entitlements:', Object.keys(freshInfo?.entitlements?.active ?? {}));
+          if (hasPremiumEntitlement(freshInfo)) {
+            checkSubscription().catch((err: any) =>
+              console.warn('[Subscribe] background checkSubscription error (non-fatal):', err?.message ?? err)
+            );
+          } else {
+            console.log('[Subscribe] entitlement still lagging — reloading in 2s');
+            setTimeout(() => window.location.reload(), 2000);
+          }
+        } catch (freshErr: any) {
+          console.warn('[Subscribe] getCustomerInfo fresh check failed (non-fatal):', freshErr?.message ?? freshErr);
+          setTimeout(() => window.location.reload(), 2000);
         }
       }
     } catch (error: any) {
@@ -282,7 +297,9 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     }, 15000);
     try {
       await CapacitorPurchases.restorePurchases();
-      const customerInfo = await CapacitorPurchases.getCustomerInfo();
+      const restoreResult = await CapacitorPurchases.getCustomerInfo();
+      // SDK may return { customerInfo } wrapper or plain CustomerInfo depending on version
+      const customerInfo = (restoreResult as any).customerInfo ?? restoreResult;
       console.log('[Subscribe] restore customerInfo entitlements:', Object.keys((customerInfo as any)?.entitlements?.active ?? {}));
       if (hasPremiumEntitlement(customerInfo)) {
         toast.success("Purchases restored successfully!");
