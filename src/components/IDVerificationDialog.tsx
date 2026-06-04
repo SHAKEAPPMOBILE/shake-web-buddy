@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,14 @@ export function IDVerificationDialog({
   const { verification, isUploading, isVerified, isPending, isRejected, uploadVerification } = useCreatorVerification();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Auto-close after 5s when Under Review
+  useEffect(() => {
+    if (isPending) {
+      const timer = setTimeout(() => onOpenChange(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isPending]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -132,7 +140,7 @@ export function IDVerificationDialog({
       <div className="space-y-4">
         <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-100">
           <Shield className="w-5 h-5 text-primary shrink-0" />
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-800">
             {t("idVerification.securityNote")}
           </p>
         </div>
@@ -153,19 +161,19 @@ export function IDVerificationDialog({
             </div>
           )}
           
-          <p className="font-medium">
+          <p className="font-medium text-gray-900">
             {selectedFile ? selectedFile.name : t("idVerification.clickToUpload")}
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-600 mt-1">
             {t("idVerification.acceptedDocuments")}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-gray-600">
             {t("idVerification.fileFormats")}
           </p>
         </div>
 
 
-        <div className="flex items-start gap-2 text-xs text-gray-500">
+        <div className="flex items-start gap-2 text-xs text-gray-600">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <p>
             {t("idVerification.privacyNote")}
@@ -198,7 +206,7 @@ export function IDVerificationDialog({
             <Shield className="w-5 h-5 text-gray-900" />
             {t("idVerification.title")}
           </DialogTitle>
-          <DialogDescription className="text-gray-500">
+          <DialogDescription className="text-gray-700">
             {t("idVerification.description")}
           </DialogDescription>
         </DialogHeader>

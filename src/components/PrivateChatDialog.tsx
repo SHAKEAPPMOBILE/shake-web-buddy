@@ -341,7 +341,8 @@ export function PrivateChatDialog({
   const displayName = (otherUserName && otherUserName !== "Shaker") ? otherUserName : (fetchedName || otherUserName || "Shaker");
   const rawAvatarUrl = (otherUserAvatar && !avatarError) ? otherUserAvatar : fetchedAvatar;
   const avatarUrl = avatarError ? null : (getDisplayAvatarUrl(rawAvatarUrl) ?? rawAvatarUrl);
-  const photoUrl = rawAvatarUrl || avatarUrl || fetchedAvatar || otherUserAvatar;
+  const photoUrl = otherUserAvatar || fetchedAvatar || rawAvatarUrl || avatarUrl;
+  console.log('[PhotoTap] photoUrl:', photoUrl);
   const initial = (displayName || "S").charAt(0).toUpperCase();
 
   return (
@@ -356,7 +357,7 @@ export function PrivateChatDialog({
           <button
             type="button"
             onClick={() => {
-              console.log('[Avatar tap] rawAvatarUrl:', rawAvatarUrl, 'avatarUrl:', avatarUrl, 'fetchedAvatar:', fetchedAvatar, 'photoUrl:', photoUrl);
+              console.log('[PhotoTap] tap - otherUserAvatar:', otherUserAvatar, 'fetchedAvatar:', fetchedAvatar, 'photoUrl:', photoUrl);
               if (photoUrl) setShowFullPhoto(true);
             }}
             className="w-9 h-9 rounded-full overflow-hidden border shrink-0 flex items-center justify-center"
