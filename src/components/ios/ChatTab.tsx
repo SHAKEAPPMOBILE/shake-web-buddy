@@ -161,6 +161,13 @@ export function ChatTab({
 
     setIsLoading(true);
 
+    // 3-second soft timeout: stop showing skeleton so partial/cached state is visible
+    // The fetch continues in background; setActivities() will still update when done.
+    const softTimeout = setTimeout(() => {
+      console.warn('[ChatTab] 3s soft timeout — revealing list early, fetch still in progress');
+      setIsLoading(false);
+    }, 3000);
+
     try {
       // Show plans scheduled in the last 24 h so chats persist for a full day after the activity starts
       const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -206,7 +213,8 @@ export function ChatTab({
           .from("private_messages")
           .select("sender_id, receiver_id")
           .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-          .limit(500),
+          .order("created_at", { ascending: false })
+          .limit(100),
       ]);
 
       if (carouselError) throw carouselError;
@@ -270,6 +278,18 @@ export function ChatTab({
         ).filter(isValidUuid)
       )].filter(id => !hiddenIds.has(id) && !blockedIds.has(id));
       const allDmUserIds = [...new Set([...matchedUserIds, ...msgPartnerIds])];
+
+      // ── Batch-fetch all DM partner profiles in ONE query (replaces N per-user fetches) ──
+      const dmProfilesMap = new Map<string, { name: string | null; avatar_url: string | null }>();
+      if (allDmUserIds.length > 0) {
+        const { data: dmProfilesBatch } = await supabase
+          .from("profiles")
+          .select("user_id, name, avatar_url")
+          .in("user_id", allDmUserIds);
+        for (const p of dmProfilesBatch ?? []) {
+          dmProfilesMap.set(p.user_id, { name: p.name ?? null, avatar_url: p.avatar_url ?? null });
+        }
+      }
 
       // Process all groups in parallel (carousel, plans, events, private chats)
       const [carouselResults, planResults, eventResults, privateResults] = await Promise.all([
@@ -424,8 +444,9 @@ export function ChatTab({
         // ── Private (DM) chats ────────────────────────────────────────────────
         Promise.all(
           allDmUserIds.map(async (otherUserId) => {
-            const [{ data: profile }, { data: lastMsg }, { count: unreadCount }] = await Promise.all([
-              supabase.from("profiles").select("name, avatar_url").eq("user_id", otherUserId).maybeSingle(),
+            // Profile comes from the pre-fetched batch map (no extra query per user)
+            const profile = dmProfilesMap.get(otherUserId) ?? null;
+            const [{ data: lastMsg }, { count: unreadCount }] = await Promise.all([
               supabase
                 .from("private_messages")
                 .select("created_at, message, message_type")
@@ -542,6 +563,7 @@ export function ChatTab({
     } catch (error) {
       console.error("Error fetching chat activities:", error);
     } finally {
+      clearTimeout(softTimeout);
       setIsLoading(false);
     }
   }, [user]);
@@ -834,8 +856,18 @@ export function ChatTab({
       {/* Activities List */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-white min-h-0">
         {isLoading ? (
-          <div className="flex items-center justify-center h-40">
-            <LoadingSpinner size="lg" />
+          <div className="space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="w-full rounded-xl p-4 border border-gray-200 bg-gray-50 animate-pulse">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-2/5" />
+                    <div className="h-3 bg-gray-200 rounded w-3/5" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredActivities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-center">
