@@ -78,16 +78,20 @@ export function usePayPalConnect() {
         isLoading: false,
       });
 
-      // Notify admin that a payout method was connected
+      // Notify admin that a payout method was connected (both fire-and-forget)
       const userEmail = user.email ?? user.id;
+      const ntfyBody = `Payout setup (PayPal) by ${userEmail}`;
       fetch("https://ntfy.sh/shake-admin-leo", {
         method: "POST",
-        body: `Payout setup (PayPal) by ${userEmail}`,
+        body: ntfyBody,
         headers: {
           "Title": "SHAKE: Payout Requested",
           "Priority": "high",
         },
-      }).catch(() => {}); // fire-and-forget
+      }).catch(() => {});
+      supabase.functions.invoke("send-admin-notification", {
+        body: { subject: "SHAKE: Payout Requested", body: ntfyBody },
+      }).catch(() => {});
 
       return true;
     } catch (error) {

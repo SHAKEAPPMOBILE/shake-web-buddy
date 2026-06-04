@@ -157,16 +157,20 @@ export function useCreatorVerification() {
 
       toast.success("ID submitted! Our team will review it shortly.");
 
-      // Notify admin via ntfy
+      // Notify admin via ntfy + email (both fire-and-forget)
       const userEmail = user.email ?? user.id;
+      const ntfyBody = `New ID verification submitted by ${userEmail}`;
       fetch("https://ntfy.sh/shake-admin-leo", {
         method: "POST",
-        body: `New ID verification submitted by ${userEmail}`,
+        body: ntfyBody,
         headers: {
           "Title": "SHAKE: New ID Verification",
           "Priority": "high",
         },
-      }).catch(() => {}); // fire-and-forget, non-fatal
+      }).catch(() => {});
+      supabase.functions.invoke("send-admin-notification", {
+        body: { subject: "SHAKE: New ID Verification", body: ntfyBody },
+      }).catch(() => {});
 
       await fetchVerification();
       return true;
