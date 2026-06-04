@@ -40,7 +40,7 @@ export function GlobalParticipantsSection() {
     userName: string | null;
     avatarUrl: string | null;
   } | null>(null);
-  const { user, isPremium } = useAuth();
+  const { user, isPremium, checkSubscription } = useAuth();
   const { blockedUserIds } = useBlockedUsers();
   const isInitialLoad = useRef(true);
 
@@ -132,6 +132,11 @@ export function GlobalParticipantsSection() {
     setParticipants(prioritizedList.filter((p) => !blockedSet.has(p.user_id)));
     setIsLoading(false);
   };
+
+  // Refresh premium state on mount so web subscriptions reflect in native app
+  useEffect(() => {
+    checkSubscription();
+  }, []);
 
   useEffect(() => {
     // Initial load: show spinner
@@ -340,7 +345,7 @@ export function GlobalParticipantsSection() {
                             <User className={`w-5 h-5 text-muted-foreground ${participant.avatar_url ? 'hidden' : ''}`} />
                           </div>
                           <div className="flex-1 text-left">
-                            <p className="font-medium text-sm text-gray-900">
+                            <p className="font-medium text-sm text-gray-400">
                               {participant.name || "Shaker"}
                             </p>
                           </div>
