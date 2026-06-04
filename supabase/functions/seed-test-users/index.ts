@@ -974,12 +974,23 @@ Deno.serve(async (req) => {
         .from("activity_joins")
         .select("city, user_id");
       
+      // Normalize city names before grouping
+      const normalizeCity = (city: string): string | null => {
+        if (!city) return null;
+        const c = city.trim();
+        if (!c || c.toLowerCase() === "detecting..." || c.toLowerCase() === "detecting") return null;
+        if (c.toLowerCase() === "new york") return "New York City";
+        return c;
+      };
+
       const cityUserSet: Record<string, Set<string>> = {};
       (joinsByCity || []).forEach(j => {
-        if (!cityUserSet[j.city]) cityUserSet[j.city] = new Set();
-        cityUserSet[j.city].add(j.user_id);
+        const city = normalizeCity(j.city);
+        if (!city) return; // skip invalid/placeholder values
+        if (!cityUserSet[city]) cityUserSet[city] = new Set();
+        cityUserSet[city].add(j.user_id);
       });
-      
+
       const usersByCity = Object.entries(cityUserSet)
         .map(([city, users]) => ({ city, count: users.size }))
         .sort((a, b) => b.count - a.count);
@@ -992,7 +1003,8 @@ Deno.serve(async (req) => {
       const activitiesByCity: Record<string, number> = {};
       const activitiesByType: Record<string, number> = {};
       (activities || []).forEach(a => {
-        activitiesByCity[a.city] = (activitiesByCity[a.city] || 0) + 1;
+        const city = normalizeCity(a.city);
+        if (city) activitiesByCity[city] = (activitiesByCity[city] || 0) + 1;
         activitiesByType[a.activity_type] = (activitiesByType[a.activity_type] || 0) + 1;
       });
       
@@ -1004,10 +1016,11 @@ Deno.serve(async (req) => {
       const checkInsByCity: Record<string, number> = {};
       const checkInsByVenue: Record<string, { venue: string; city: string; count: number }> = {};
       (checkIns || []).forEach(c => {
-        checkInsByCity[c.city] = (checkInsByCity[c.city] || 0) + 1;
-        const key = `${c.venue_name}|${c.city}`;
+        const city = normalizeCity(c.city) ?? c.city;
+        checkInsByCity[city] = (checkInsByCity[city] || 0) + 1;
+        const key = `${c.venue_name}|${city}`;
         if (!checkInsByVenue[key]) {
-          checkInsByVenue[key] = { venue: c.venue_name, city: c.city, count: 0 };
+          checkInsByVenue[key] = { venue: c.venue_name, city, count: 0 };
         }
         checkInsByVenue[key].count += 1;
       });
