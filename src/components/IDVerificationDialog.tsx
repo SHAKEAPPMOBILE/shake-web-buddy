@@ -102,13 +102,13 @@ export function IDVerificationDialog({
             <Clock className="w-8 h-8 text-yellow-500" />
           </div>
           <h3 className="text-lg font-semibold text-yellow-500">{t("idVerification.underReview")}</h3>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-gray-700 mt-2">
             {t("idVerification.underReviewMessage")}
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             {t("idVerification.submitted")}: {new Date(verification!.submitted_at).toLocaleString()}
           </p>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="mt-4 text-gray-900 border-gray-300">
             {t("common.close")}
           </Button>
         </div>
