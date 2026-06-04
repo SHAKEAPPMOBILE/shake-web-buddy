@@ -451,34 +451,56 @@ Deno.serve(async (req) => {
   // Handle list-users action - returns all users with profile data
   if (action === "list-users") {
     try {
-      // Get all users from auth
-      const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
-      const users = usersData?.users || [];
-      
-      // Get profiles for names
-      const { data: profiles } = await supabaseAdmin.from("profiles").select("user_id, name, created_at");
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-      
-      // Get private profiles for phone and premium status
-      const { data: privateProfiles } = await supabaseAdmin.from("profiles_private").select("user_id, phone_number, premium_override");
-      const privateProfileMap = new Map(privateProfiles?.map(p => [p.user_id, p]) || []);
-      
+      // Paginate through all auth users (listUsers defaults to 50/page)
+      let allAuthUsers: any[] = [];
+      let page = 1;
+      while (true) {
+        const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+        const batch = usersData?.users || [];
+        allAuthUsers = allAuthUsers.concat(batch);
+        if (batch.length < 1000) break;
+        page++;
+      }
+
+      // Get extended profiles
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, name, created_at, city, occupation, nationality, date_of_birth, interests, instagram_url, linkedin_url, twitter_url, bio, avatar_url");
+      const profileMap = new Map(profiles?.map((p: any) => [p.user_id, p]) || []);
+
+      // Get private profiles for phone, premium, email
+      const { data: privateProfiles } = await supabaseAdmin
+        .from("profiles_private")
+        .select("user_id, phone_number, premium_override, billing_email");
+      const privateProfileMap = new Map(privateProfiles?.map((p: any) => [p.user_id, p]) || []);
+
       // Build user list with all data
-      const allUsers = users.map(user => {
-        const profile = profileMap.get(user.id);
-        const privateProfile = privateProfileMap.get(user.id);
+      const allUsers = allAuthUsers.map((user: any) => {
+        const profile = profileMap.get(user.id) as any;
+        const privateProfile = privateProfileMap.get(user.id) as any;
         return {
           user_id: user.id,
           name: profile?.name || user.user_metadata?.name || null,
           phone_number: privateProfile?.phone_number || (user.phone ? (user.phone.startsWith('+') ? user.phone : '+' + user.phone) : null),
+          email: privateProfile?.billing_email || user.email || null,
           created_at: profile?.created_at || user.created_at,
           isPremium: privateProfile?.premium_override || false,
           password: user.user_metadata?.admin_password || null,
+          city: profile?.city || null,
+          occupation: profile?.occupation || null,
+          nationality: profile?.nationality || null,
+          date_of_birth: profile?.date_of_birth || null,
+          interests: profile?.interests || null,
+          instagram_url: profile?.instagram_url || null,
+          linkedin_url: profile?.linkedin_url || null,
+          twitter_url: profile?.twitter_url || null,
+          bio: profile?.bio || null,
+          avatar_url: profile?.avatar_url || null,
         };
       });
-      
+
       console.log(`[ADMIN] list-users: returning ${allUsers.length} users`);
-      
+
       return new Response(
         JSON.stringify({ success: true, users: allUsers }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
