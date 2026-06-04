@@ -67,6 +67,7 @@ export function PrivateChatDialog({
   messagesRef.current = messages;
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
   const { canSendText, addCharacters } = useTextMessageLimit();
@@ -79,11 +80,9 @@ export function PrivateChatDialog({
     t('chat.suggestions.seeYouSoon', 'See you soon! 😊'),
   ], [t]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on initial load and new messages (instant — no top-to-bottom animation)
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    bottomRef.current?.scrollIntoView({ behavior: 'instant' });
   }, [messages]);
 
   // Mark messages as read on mount
@@ -524,6 +523,7 @@ export function PrivateChatDialog({
             })}
           </div>
         )}
+        <div ref={bottomRef} />
       </div>
 
       {/* Quick suggestions - show when input is empty */}
