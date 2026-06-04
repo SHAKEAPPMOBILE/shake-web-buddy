@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
@@ -68,8 +70,14 @@ export function useStripeConnect() {
       }
 
       if (data?.url) {
-        // Navigate to Stripe onboarding (using location.href to avoid popup blockers)
-        window.location.href = data.url;
+        console.log('[Stripe] opening onboarding URL, native:', Capacitor.isNativePlatform(), 'url:', data.url);
+        if (Capacitor.isNativePlatform()) {
+          // On native iOS/Android use Capacitor Browser so it opens in-app browser
+          await Browser.open({ url: data.url });
+        } else {
+          // On web open in new tab
+          window.open(data.url, '_blank');
+        }
       } else if (data?.status === "complete") {
         // Already connected
         setState(prev => ({ 

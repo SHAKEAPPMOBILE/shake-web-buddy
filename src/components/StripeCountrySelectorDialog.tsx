@@ -87,7 +87,9 @@ export function StripeCountrySelectorDialog({
   const selectedCountry = PAYOUT_COUNTRIES.find(c => c.code === selectedCode);
 
   const handleContinue = () => {
+    console.log('[Stripe] handleContinue - selectedCode:', selectedCode);
     if (selectedCode) {
+      console.log('[Stripe] calling onSelectCountry with:', selectedCode);
       onSelectCountry(selectedCode);
     }
   };
