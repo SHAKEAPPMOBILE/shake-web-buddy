@@ -198,7 +198,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <Input
               placeholder="Search..."
               value={searchQuery}
@@ -206,7 +206,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
               className="pl-9 w-64"
             />
           </div>
-          <Button variant="outline" size="icon" onClick={fetchVerifications}>
+          <Button variant="outline" size="icon" onClick={fetchVerifications} className="border-gray-300 text-gray-700 hover:text-gray-900">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
@@ -217,7 +217,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
           <LoadingSpinner size="lg" />
         </div>
       ) : filteredVerifications.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
+        <div className="text-center py-8 text-gray-600">
           No verifications found
         </div>
       ) : (
@@ -268,6 +268,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => handleViewDocument(verification)}
+                    className="border-gray-300 text-gray-700 hover:text-gray-900"
                   >
                     <Eye className="w-4 h-4 mr-1" />
                     View
@@ -383,7 +384,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
             {selectedVerification?.status === "rejected" && selectedVerification.rejection_reason && (
               <div className="p-3 rounded-2xl bg-destructive/10 border border-destructive/20">
                 <p className="text-sm font-medium text-destructive">Rejection Reason:</p>
-                <p className="text-sm">{selectedVerification.rejection_reason}</p>
+                <p className="text-sm text-gray-800">{selectedVerification.rejection_reason}</p>
               </div>
             )}
           </div>
