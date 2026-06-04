@@ -52,6 +52,7 @@ export function PrivateChatDialog({
   const [fetchedName, setFetchedName] = useState<string | null>(null);
   const [fetchedAvatar, setFetchedAvatar] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showFullPhoto, setShowFullPhoto] = useState(false);
 
   // Reactions
   const [reactions, setReactions] = useState<ReactionsMap>({});
@@ -350,13 +351,15 @@ export function PrivateChatDialog({
       <div className="flex items-center gap-3 px-4 pb-3 border-b shrink-0" style={{ background: "#0d0d1a", borderColor: "rgba(255,255,255,0.08)", paddingTop: 'env(safe-area-inset-top)' }}>
         <MinimalBackButton onClick={onClose} className="text-white/70 border-white/20" />
 
-        {/* Tappable avatar + name → opens profile */}
-        <button
-          type="button"
-          onClick={() => setShowProfile(true)}
-          className="flex items-center gap-3 flex-1 min-w-0 text-left"
-        >
-          <div className="w-9 h-9 rounded-full overflow-hidden border shrink-0 flex items-center justify-center" style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)" }}>
+        {/* Avatar → fullscreen photo. Name → opens profile. */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <button
+            type="button"
+            onClick={() => avatarUrl && setShowFullPhoto(true)}
+            className="w-9 h-9 rounded-full overflow-hidden border shrink-0 flex items-center justify-center"
+            style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)" }}
+            aria-label="View photo"
+          >
             {avatarUrl ? (
               <img
                 src={avatarUrl}
@@ -367,11 +370,18 @@ export function PrivateChatDialog({
             ) : (
               <span className="text-sm font-bold" style={{ color: "#00C6B6" }}>{initial}</span>
             )}
-          </div>
-          <h2 className="font-display text-lg text-white truncate">
-            {displayName || "Shaker"}
-          </h2>
-        </button>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowProfile(true)}
+            className="flex-1 min-w-0 text-left"
+            aria-label="View profile"
+          >
+            <h2 className="font-display text-lg text-white truncate">
+              {displayName || "Shaker"}
+            </h2>
+          </button>
+        </div>
 
         <div className="relative shrink-0">
           <button
@@ -641,6 +651,18 @@ export function PrivateChatDialog({
       userName={displayName}
       avatarUrl={avatarUrl ?? null}
     />
+    {showFullPhoto && avatarUrl && (
+      <div
+        className="fixed inset-0 z-[20000] bg-black/90 flex items-center justify-center"
+        onClick={() => setShowFullPhoto(false)}
+      >
+        <img
+          src={avatarUrl}
+          alt={displayName || "Shaker"}
+          className="max-w-[90vw] max-h-[90vh] rounded-xl object-contain"
+        />
+      </div>
+    )}
     </>
   );
 }

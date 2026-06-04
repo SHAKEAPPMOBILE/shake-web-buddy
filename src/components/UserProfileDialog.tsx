@@ -195,7 +195,14 @@ export function UserProfileDialog({
                   src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
                   alt={userName || "Shaker"}
                   className="w-full h-full object-cover"
-                  onError={() => setAvatarLoadError(true)}
+                  onError={(e) => {
+                    // Try raw URL before giving up (getDisplayAvatarUrl may transform incorrectly)
+                    if (e.currentTarget.src !== avatarUrl) {
+                      e.currentTarget.src = avatarUrl;
+                    } else {
+                      setAvatarLoadError(true);
+                    }
+                  }}
                 />
               ) : (
                 <span className="text-3xl font-bold text-muted-foreground">
