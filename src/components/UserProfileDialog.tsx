@@ -188,8 +188,11 @@ export function UserProfileDialog({
 
           {/* Avatar and Name */}
           <div className="flex flex-col items-center py-4">
-            {/* Avatar — not clickable/expandable */}
-            <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shadow-lg border-4 border-border shrink-0">
+            {/* Avatar — tap to enlarge */}
+            <div
+              className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shadow-lg border-4 border-border shrink-0 cursor-pointer"
+              onClick={() => avatarUrl && !avatarLoadError && setShowEnlargedAvatar(true)}
+            >
               {avatarUrl && !avatarLoadError ? (
                 <img
                   src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
