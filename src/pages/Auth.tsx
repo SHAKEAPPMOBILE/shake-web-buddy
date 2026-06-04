@@ -1456,14 +1456,15 @@ export default function Auth() {
               setStep('occupation');
             }} className="space-y-6">
               <div className="space-y-2">
-                <Label>Nationality</Label>
+                <Label>
+                  Nationality <span className="text-destructive">*</span>
+                </Label>
                 <NationalitySelector
                   value={nationality}
                   onChange={(value) => {
                     setNationality(value);
-                    if (nationalityInteracted) {
-                      setNationalityError(validateNationality(value, true));
-                    }
+                    setNationalityInteracted(true);
+                    setNationalityError(validateNationality(value, true));
                   }}
                   placeholder="Select your nationality"
                   onOpenChange={(open) => {
@@ -1481,27 +1482,14 @@ export default function Auth() {
                 ) : null}
               </div>
 
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  size="lg"
-                  onClick={() => {
-                    setNationalityError(null);
-                    setStep('occupation');
-                  }}
-                >
-                  Skip
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 bg-shake-green text-background hover:bg-shake-green/90"
-                  size="lg"
-                >
-                  Continue
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                className="w-full bg-shake-green text-background hover:bg-shake-green/90"
+                size="lg"
+                disabled={!nationality.trim()}
+              >
+                Continue
+              </Button>
             </form>
           )}
 
