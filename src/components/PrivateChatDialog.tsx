@@ -341,6 +341,7 @@ export function PrivateChatDialog({
   const displayName = (otherUserName && otherUserName !== "Shaker") ? otherUserName : (fetchedName || otherUserName || "Shaker");
   const rawAvatarUrl = (otherUserAvatar && !avatarError) ? otherUserAvatar : fetchedAvatar;
   const avatarUrl = avatarError ? null : (getDisplayAvatarUrl(rawAvatarUrl) ?? rawAvatarUrl);
+  const photoUrl = rawAvatarUrl || avatarUrl || fetchedAvatar || otherUserAvatar;
   const initial = (displayName || "S").charAt(0).toUpperCase();
 
   return (
@@ -354,7 +355,10 @@ export function PrivateChatDialog({
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <button
             type="button"
-            onClick={() => rawAvatarUrl && setShowFullPhoto(true)}
+            onClick={() => {
+              console.log('[Avatar tap] rawAvatarUrl:', rawAvatarUrl, 'avatarUrl:', avatarUrl, 'fetchedAvatar:', fetchedAvatar, 'photoUrl:', photoUrl);
+              if (photoUrl) setShowFullPhoto(true);
+            }}
             className="w-9 h-9 rounded-full overflow-hidden border shrink-0 flex items-center justify-center"
             style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)" }}
             aria-label="View photo"
@@ -651,13 +655,13 @@ export function PrivateChatDialog({
       userName={displayName}
       avatarUrl={avatarUrl ?? null}
     />
-    {showFullPhoto && rawAvatarUrl && (
+    {showFullPhoto && photoUrl && (
       <div
         className="fixed inset-0 z-[20000] bg-black/90 flex items-center justify-center"
         onClick={() => setShowFullPhoto(false)}
       >
         <img
-          src={rawAvatarUrl}
+          src={photoUrl}
           alt={displayName || "Shaker"}
           className="max-w-[90vw] max-h-[90vh] rounded-xl object-contain"
         />
