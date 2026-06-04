@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow } from "date-fns";
-import { Plus, User, Shield } from "lucide-react";
+import { Plus, User, Shield, Calendar } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -67,6 +67,7 @@ export default function ProposePlanPage() {
   const [profanityError, setProfanityError] = useState<string | null>(null);
   const [dayLimitError, setDayLimitError] = useState(false);
   const [cityInput, setCityInput] = useState("");
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
@@ -289,17 +290,25 @@ export default function ProposePlanPage() {
                 ...(sunDate ? [{ label: "This Sunday", date: sunDate }] : []),
               ];
 
+              const calYear = today.getFullYear();
+              const calMonth = today.getMonth();
+              const firstDayOffset = new Date(calYear, calMonth, 1).getDay();
+              const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+              const isCustomDate = !pills.some(
+                (p) => format(p.date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
+              );
+
               return (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">When?</label>
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="flex gap-2 flex-wrap items-center">
                     {pills.map(({ label, date }) => {
                       const isSelected = format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
                       return (
                         <button
                           key={label}
                           type="button"
-                          onClick={() => setSelectedDate(date)}
+                          onClick={() => { setSelectedDate(date); setShowCalendar(false); }}
                           className={cn(
                             "px-3 py-1.5 rounded-full text-sm font-medium border transition-all",
                             isSelected
@@ -311,7 +320,73 @@ export default function ProposePlanPage() {
                         </button>
                       );
                     })}
+                    {/* Custom date pill — shown when selected date isn't one of the presets */}
+                    {isCustomDate && (
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 rounded-full text-sm font-medium border bg-primary text-primary-foreground border-primary"
+                      >
+                        {format(selectedDate, "MMM d")}
+                      </button>
+                    )}
+                    {/* Calendar icon button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowCalendar((v) => !v)}
+                      className={cn(
+                        "w-9 h-9 rounded-full border flex items-center justify-center transition-all shrink-0",
+                        showCalendar
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-border text-foreground hover:border-primary/50"
+                      )}
+                      aria-label="Pick a date"
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </button>
                   </div>
+
+                  {/* Inline month calendar */}
+                  {showCalendar && (
+                    <div className="p-3 rounded-xl border border-border bg-background">
+                      <p className="text-xs font-medium text-center text-muted-foreground mb-2">
+                        {format(new Date(calYear, calMonth, 1), "MMMM yyyy")}
+                      </p>
+                      <div className="grid grid-cols-7 gap-0.5 text-center">
+                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+                          <div key={d} className="text-muted-foreground font-medium py-1 text-[11px]">{d}</div>
+                        ))}
+                        {[...Array(firstDayOffset)].map((_, i) => (
+                          <div key={`empty-${i}`} />
+                        ))}
+                        {[...Array(daysInMonth)].map((_, i) => {
+                          const dayNum = i + 1;
+                          const dayDate = startOfDay(new Date(calYear, calMonth, dayNum));
+                          const isPast = dayDate < today;
+                          const isDaySelected =
+                            format(dayDate, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
+                          return (
+                            <button
+                              key={dayNum}
+                              type="button"
+                              disabled={isPast}
+                              onClick={() => { setSelectedDate(dayDate); setShowCalendar(false); }}
+                              className={cn(
+                                "aspect-square rounded-full text-xs flex items-center justify-center mx-auto w-7 h-7 transition-colors",
+                                isPast
+                                  ? "text-muted-foreground/30 cursor-not-allowed"
+                                  : "hover:bg-muted cursor-pointer",
+                                isDaySelected
+                                  ? "bg-primary text-primary-foreground hover:bg-primary"
+                                  : ""
+                              )}
+                            >
+                              {dayNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
