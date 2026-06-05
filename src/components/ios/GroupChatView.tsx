@@ -35,6 +35,7 @@ interface GroupChatViewProps {
   onBack: () => void;
   attendeeCount?: number;
   eventDate?: string | null;
+  activityId?: string | null;
 }
 
 interface Message {
@@ -194,6 +195,7 @@ export function GroupChatView({
   onBack,
   attendeeCount = 0,
   eventDate,
+  activityId,
 }: GroupChatViewProps) {
   const isCrossCity = homeCity && city !== homeCity;
   const [message, setMessage] = useState("");
@@ -268,11 +270,23 @@ export function GroupChatView({
   // Fetch participants
   useEffect(() => {
     const fetchParticipants = async () => {
-      const { data: joins, error: joinsError } = await supabase
-        .from("activity_joins")
-        .select("user_id")
-        .eq("activity_type", activityType)
-        .eq("city", city);
+      let query = supabase.from("activity_joins").select("user_id");
+
+      if (activityId) {
+        // Prefer filtering by the specific group's activity_id for an exact match.
+        query = query.eq("activity_id", activityId);
+      } else {
+        // Fall back to current-week joins for this activity type + city.
+        const weekStart = new Date();
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        query = query
+          .eq("activity_type", activityType)
+          .eq("city", city)
+          .gte("created_at", weekStart.toISOString());
+      }
+
+      const { data: joins, error: joinsError } = await query;
 
       if (joinsError || !joins?.length) {
         setParticipants([]);
@@ -302,7 +316,7 @@ export function GroupChatView({
     };
 
     fetchParticipants();
-  }, [activityType, city]);
+  }, [activityType, city, activityId]);
 
   // Notify existing participants when a new person joins
   useEffect(() => {

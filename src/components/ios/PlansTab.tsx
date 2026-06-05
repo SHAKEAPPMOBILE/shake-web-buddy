@@ -1064,6 +1064,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         onBack={handleBackFromChat}
         attendeeCount={selectedCarouselActivity.participant_count || 1}
         eventDate={selectedCarouselActivity.scheduled_for}
+        activityId={selectedCarouselActivity.realActivityId ?? null}
       />
     );
   }
