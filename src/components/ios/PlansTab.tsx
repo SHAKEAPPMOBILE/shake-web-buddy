@@ -246,7 +246,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const userJoinedCarouselEntries = showAllCities
         ? Array.from(carouselMap.values()).filter(c =>
             SHOWN_ACTIVITY_TYPES.includes(c.activity_type) &&
-            c.userIds.length > 0 &&
+            c.userIds.length >= 3 &&
             (!c.activityId || !joinedActivityIds.includes(c.activityId))
           )
         : Array.from(carouselMap.values()).filter(c =>
