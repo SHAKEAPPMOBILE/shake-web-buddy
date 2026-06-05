@@ -52,48 +52,48 @@ export function PayPalConnectDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm bg-white">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-gray-900">
             <div className="w-8 h-8 bg-[#0070BA] rounded-full flex items-center justify-center">
               <span className="text-white text-xs font-bold">PP</span>
             </div>
             {t('paypal.connectTitle', 'Connect PayPal')}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-600">
             {t('paypal.connectDescription', 'Enter your PayPal email to receive payouts. You\'ll receive 90% of each payment.')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
           <div>
-            <label className="text-sm font-medium mb-2 block">
+            <label className="text-sm font-medium mb-2 block text-gray-900">
               {t('paypal.emailLabel', 'PayPal Email')}
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <Input
                 type="email"
                 placeholder="your@paypal.email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-gray-900 bg-white border-gray-300 placeholder:text-gray-400"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">
+            <label className="text-sm font-medium mb-2 block text-gray-900">
               {t('paypal.confirmEmailLabel', 'Confirm Email')}
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <Input
                 type="email"
                 placeholder="your@paypal.email"
                 value={confirmEmail}
                 onChange={(e) => setConfirmEmail(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-gray-900 bg-white border-gray-300 placeholder:text-gray-400"
               />
               {confirmEmail && emailsMatch && (
                 <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-shake-green" />
@@ -125,7 +125,7 @@ export function PayPalConnectDialog({
             )}
           </button>
 
-          <p className="text-xs text-center text-muted-foreground">
+          <p className="text-xs text-center text-gray-600">
             {t('paypal.securityNote', 'Your PayPal email is stored securely and only used to send you payouts.')}
           </p>
         </div>
