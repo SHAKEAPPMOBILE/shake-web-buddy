@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Calendar, Instagram, Linkedin, Twitter, Flag, X, Video, Ban, Send } from "lucide-react";
+import { User, Calendar, Instagram, Linkedin, Twitter, Flag, Video, Ban, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -390,31 +390,19 @@ export function UserProfileDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Enlarged Avatar Modal - using Dialog for proper close behavior */}
-      <Dialog open={showEnlargedAvatar} onOpenChange={setShowEnlargedAvatar}>
-        <DialogContent 
-          className="p-0 bg-transparent border-none shadow-none max-w-[90vw] max-h-[90vh] w-auto"
-          style={{ background: 'transparent' }}
+      {/* Enlarged Avatar Modal - full-screen overlay */}
+      {showEnlargedAvatar && avatarUrl && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center cursor-pointer"
+          onClick={() => setShowEnlargedAvatar(false)}
         >
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowEnlargedAvatar(false)}
-              className="absolute -top-12 right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 transition-colors touch-manipulation"
-              aria-label="Close enlarged avatar"
-            >
-              <X className="w-6 h-6 text-white" />
-            </button>
-            {avatarUrl && (
-              <img 
-                src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl} 
-                alt={userName || "Shaker"}
-                className="max-w-[90vw] max-h-[80vh] rounded-2xl shadow-2xl object-contain"
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+          <img
+            src={getDisplayAvatarUrl(avatarUrl) ?? avatarUrl}
+            alt={userName || "Shaker"}
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-2xl"
+          />
+        </div>
+      )}
 
       <ReportUserDialog
         open={showReportDialog}
