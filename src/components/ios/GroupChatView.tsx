@@ -270,30 +270,39 @@ export function GroupChatView({
   // Fetch participants
   useEffect(() => {
     const fetchParticipants = async () => {
-      let query = supabase.from("activity_joins").select("user_id");
+      // Use two separate query paths to avoid Supabase query-builder reassignment
+      // issues that corrupt the select list (e.g. activityType value leaking into
+      // select columns → 400 "column does not exist").
+      let joinRows: { user_id: string }[] = [];
 
       if (activityId) {
-        // Prefer filtering by the specific group's activity_id for an exact match.
-        query = query.eq("activity_id", activityId);
+        // Exact group match via activity_id.
+        const { data } = await supabase
+          .from("activity_joins")
+          .select("user_id")
+          .eq("activity_id", activityId);
+        joinRows = data ?? [];
       } else {
         // Fall back to current-week joins for this activity type + city.
         const weekStart = new Date();
         weekStart.setDate(weekStart.getDate() - weekStart.getDay());
         weekStart.setHours(0, 0, 0, 0);
-        query = query
+        const { data } = await supabase
+          .from("activity_joins")
+          .select("user_id")
           .eq("activity_type", activityType)
           .eq("city", city)
           .gte("created_at", weekStart.toISOString());
+        joinRows = data ?? [];
       }
 
-      const { data: joins, error: joinsError } = await query;
-
-      if (joinsError || !joins?.length) {
-        setParticipants([]);
-        return;
+      // If no joins found but the current user IS in this group (they opened the chat),
+      // show them as the sole participant rather than "You're the first one here" with 0.
+      if (!joinRows.length && user?.id) {
+        joinRows = [{ user_id: user.id }];
       }
 
-      const uniqueUserIds = [...new Set(joins.map((j) => j.user_id))];
+      const uniqueUserIds = [...new Set(joinRows.map((j) => j.user_id))];
 
       const { data: profilesData } = await supabase
         .from("profiles")
