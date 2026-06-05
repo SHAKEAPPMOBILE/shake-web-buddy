@@ -149,7 +149,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           ? supabase
               .from("activity_joins")
               .select("activity_type, city, user_id, activity_id")
-              .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
           : effectiveCity
             ? supabase
                 .from("activity_joins")
@@ -1219,8 +1218,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
                   {/* Action buttons */}
                   <div className="flex items-center gap-2">
-                    {/* Report button (only for non-owners) */}
-                    {user && plan.user_id !== user.id && (
+                    {/* Report button (only for non-owners on custom activities) */}
+                    {user && plan.user_id !== user.id && !isStandardActivity(plan.activity_type) && (
                       <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
                     )}
                     <button
@@ -1357,7 +1356,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
+                        {!isStandardActivity(plan.activity_type) && (
+                          <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
+                        )}
                         <button
                           type="button"
                           onClick={(e) => handleSharePlan(plan, e)}
