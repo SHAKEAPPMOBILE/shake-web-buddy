@@ -91,6 +91,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [showPayoutOptions, setShowPayoutOptions] = useState(false);
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showPayPalDisconnectConfirm, setShowPayPalDisconnectConfirm] = useState(false);
+  const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
   const [showManagePlanDialog, setShowManagePlanDialog] = useState(false);
   const { isConnected: paypalConnected, paypalEmail, isLoading: paypalLoading, connectPayPal, disconnectPayPal } = usePayPalConnect();
   const { totalNet, currency, activities, isLoading: earningsLoading } = useCreatorEarnings();
@@ -604,110 +605,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     <span className="text-sm text-shake-green font-medium">{t('profile.payoutsReady', 'Ready to receive payouts')}</span>
                   </div>
                 )}
-
-                {/* Stripe - intentionally removed; using PayPal only */}
-                <div className="hidden">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-[#635BFF] rounded-xl flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold">S</span>
-                      </div>
-                      <span className="text-sm font-medium">Stripe</span>
-                      {preferredMethod === "stripe" && stripeConnected && stripeStatus === "complete" && (
-                        <span className="text-[10px] text-shake-green font-medium uppercase">Active</span>
-                      )}
-                    </div>
-                    {stripeConnected && stripeStatus === "complete" && (
-                      <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">Connected</span>
-                    )}
-                    {stripeConnected && (stripeStatus === "pending" || stripeStatus === "verification_pending") && (
-                      <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                        {stripeStatus === "verification_pending" ? "Verifying" : "Pending"}
-                      </span>
-                    )}
-                  </div>
-                  {stripeConnected && stripeStatus === "complete" ? (
-                    <>
-                      {stripeEmail && (
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          <Mail className="w-3 h-3" />
-                          <span className="truncate">{stripeEmail}</span>
-                        </div>
-                      )}
-                      {preferredMethod !== "stripe" && paypalConnected && (
-                        <button
-                          onClick={() => handleSetPreferredMethod("stripe")}
-                          className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-2xl hover:bg-[#635BFF]/10 transition-colors"
-                        >
-                          {t('profile.useStripe', 'Use Stripe for payouts')}
-                        </button>
-                      )}
-                    </>
-                  ) : stripeConnected && stripeStatus === "verification_pending" ? (
-                    <>
-                      <p className="text-xs text-gray-400">{t('profile.stripeVerificationPending', 'Stripe is reviewing your account. This usually takes 1-3 business days.')}</p>
-                      {stripeEmail && (
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          <Mail className="w-3 h-3" />
-                          <span className="truncate">{stripeEmail}</span>
-                        </div>
-                      )}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={checkStripeStatus}
-                          disabled={stripeLoading}
-                          className="flex-1 py-2 text-xs font-medium text-amber-600 border border-amber-500/30 rounded-2xl hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
-                        >
-                          {stripeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                          {t('profile.checkStatus', 'Check Status')}
-                        </button>
-                      </div>
-                    </>
-                  ) : stripeConnected && stripeStatus === "pending" ? (
-                    <>
-                      <p className="text-xs text-gray-400">{t('profile.stripePendingDesc', 'Complete your Stripe onboarding to receive payments.')}</p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => { startOnboarding(); setShowPayoutOptions(false); }}
-                          disabled={stripeLoading}
-                          className="flex-1 py-2 text-xs font-medium text-amber-600 border border-amber-500/30 rounded-2xl hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
-                        >
-                          {stripeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
-                          {t('profile.completeOnboarding', 'Complete Setup')}
-                        </button>
-                        <button
-                          onClick={checkStripeStatus}
-                          disabled={stripeLoading}
-                          className="py-2 px-3 text-xs text-gray-400 border border-border rounded-2xl hover:bg-muted/50 transition-colors disabled:opacity-50"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => { setShowPayoutOptions(false); setShowResetCountrySelector(true); }}
-                          disabled={stripeLoading}
-                          className="py-2 px-3 text-xs text-destructive border border-destructive/30 rounded-2xl hover:bg-destructive/10 transition-colors disabled:opacity-50"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-xs text-gray-400">{t('profile.stripeDesc', 'Credit/debit card payments with identity verification.')}</p>
-                      <button
-                        onClick={() => { setShowPayoutOptions(false); setShowCountrySelector(true); }}
-                        disabled={stripeLoading}
-                        className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-2xl hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
-                      >
-                        {stripeLoading ? (
-                          <><Loader2 className="w-3 h-3 animate-spin" />{t('profile.connecting', 'Connecting to Stripe...')}</>
-                        ) : (
-                          <><ExternalLink className="w-3 h-3" />{t('profile.connectStripe', 'Connect Stripe')}</>
-                        )}
-                      </button>
-                    </>
-                  )}
-                </div>
 
                 {/* PayPal */}
                 <div className={`border rounded-2xl p-3 space-y-2 ${paypalConnected ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
