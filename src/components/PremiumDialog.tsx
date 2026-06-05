@@ -169,7 +169,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       // Purchase confirmed by RevenueCat — close modal and show success immediately.
       // Never await checkSubscription() here: if it hangs or throws the modal would
       // stay stuck even though the user paid. Sync state in the background instead.
-      toast.success("Welcome to Super-Human! 🎉");
+      toast.success("Welcome to Super-Human!");
       onOpenChange(false);
 
       const hasEntitlement = hasPremiumEntitlement(customerInfo);
@@ -333,10 +333,10 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
             <div className="flex items-center justify-center mb-2">
               <img src={superhumanImg} alt="Super-Human" className="w-32 object-contain" />
             </div>
-            <DialogTitle className="text-center text-xl font-display">
-              You're a Super-Human! 🎉
+            <DialogTitle className="text-center text-xl font-display text-black dark:text-white">
+              You're a Super-Human!
             </DialogTitle>
-            <DialogDescription className="text-center text-muted-foreground text-sm">
+            <DialogDescription className="text-center text-black dark:text-white text-sm">
               You have access to all premium features
             </DialogDescription>
           </DialogHeader>
@@ -386,10 +386,10 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
             <div className="flex items-center justify-center mb-2">
               <img src={superhumanImg} alt="Super-Human" className="w-32 object-contain" />
             </div>
-            <DialogTitle className="text-center text-xl font-display">
-              You're a Super-Human! 🎉
+            <DialogTitle className="text-center text-xl font-display text-black dark:text-white">
+              You're a Super-Human!
             </DialogTitle>
-            <DialogDescription className="text-center text-muted-foreground text-sm">
+            <DialogDescription className="text-center text-black dark:text-white text-sm">
               You have premium access with all features unlocked
             </DialogDescription>
           </DialogHeader>

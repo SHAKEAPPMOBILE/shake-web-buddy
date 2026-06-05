@@ -477,8 +477,7 @@ export default function Profile() {
 
             {/* Premium Badge */}
             {isPremium && (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-shake-yellow/10 rounded-full">
-                <SuperHumanIcon size={14} />
+              <div className="flex items-center px-3 py-1 bg-shake-yellow/10 rounded-full">
                 <span className="text-sm font-medium text-shake-yellow">Super-Human</span>
               </div>
             )}

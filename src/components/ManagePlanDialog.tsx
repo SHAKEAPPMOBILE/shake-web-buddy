@@ -105,10 +105,7 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
             </div>
           )}
           <DialogHeader className="pb-2">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <SuperHumanIcon size={48} />
-            </div>
-            <DialogTitle className="text-center text-xl font-display">
+            <DialogTitle className="text-center text-xl font-display text-black dark:text-white">
               {t("managePlan.yourPlan")}
             </DialogTitle>
           </DialogHeader>
@@ -121,8 +118,8 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
                   <CreditCard className="w-5 h-5 text-shake-yellow" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">{t("managePlan.superHuman")}</p>
-                  <p className="text-sm text-muted-foreground">{t("managePlan.pricePerMonth")}</p>
+                  <p className="font-medium text-black dark:text-white">{t("managePlan.superHuman")}</p>
+                  <p className="text-sm text-black dark:text-white">{t("managePlan.pricePerMonth")}</p>
                 </div>
               </div>
 
@@ -132,8 +129,8 @@ export function ManagePlanDialog({ open, onOpenChange }: ManagePlanDialogProps) 
                     <Calendar className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">{t("managePlan.nextBilling")}</p>
-                    <p className="text-sm text-muted-foreground">{formattedEndDate}</p>
+                    <p className="font-medium text-black dark:text-white">{t("managePlan.nextBilling")}</p>
+                    <p className="text-sm text-black dark:text-white">{formattedEndDate}</p>
                   </div>
                 </div>
               )}

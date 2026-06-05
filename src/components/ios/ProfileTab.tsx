@@ -741,17 +741,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     <>
                       <p className="text-xs text-gray-400">{t('profile.stripeDesc', 'Credit/debit card payments with identity verification.')}</p>
                       <button
-                        onClick={() => {
-                          console.log('[Stripe] Connect button clicked', { stripeLoading, stripeConnected, stripeStatus, stripeError });
-                          const result = startOnboarding();
-                          if (result && typeof (result as any).then === 'function') {
-                            (result as Promise<unknown>)
-                              .then(r => console.log('[Stripe] startOnboarding resolved:', r))
-                              .catch(e => console.error('[Stripe] startOnboarding rejected:', e));
-                          } else {
-                            console.log('[Stripe] startOnboarding returned (sync):', result);
-                          }
-                        }}
+                        onClick={() => { setShowPayoutOptions(false); setShowCountrySelector(true); }}
                         disabled={stripeLoading}
                         className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-2xl hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
@@ -783,7 +773,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   </div>
                   {paypalConnected ? (
                     <>
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <div className="flex items-center gap-2 text-xs text-black">
                         <Mail className="w-3 h-3" />
                         <span className="truncate">{paypalEmail}</span>
                       </div>
@@ -806,7 +796,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   ) : (
                     <>
-                      <p className="text-xs text-gray-400">{t('profile.paypalDesc', 'Simple email-based payouts with no verification needed.')}</p>
+                      <p className="text-xs text-black">{t('profile.paypalDesc', 'Simple email-based payouts with no verification needed.')}</p>
                       <button
                         onClick={() => { setShowPayoutOptions(false); setShowPayPalDialog(true); }}
                         disabled={paypalLoading}
@@ -819,7 +809,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   )}
                 </div>
 
-                <p className="text-xs text-center text-gray-400">
+                <p className="text-xs text-center text-black">
                   {t('profile.payoutNote', "You'll receive 90% of each payment. Connect at least one method.")}
                 </p>
               </div>
