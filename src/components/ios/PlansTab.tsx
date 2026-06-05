@@ -245,9 +245,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       //   appears in the user's joined activities (avoids duplicate cards)
       const userJoinedCarouselEntries = showAllCities
         ? Array.from(carouselMap.values()).filter(c =>
-            c.activityId != null &&                           // only real groups (not open-interest nulls)
-            SHOWN_ACTIVITY_TYPES.includes(c.activity_type) && // dinner + brunch only
-            !joinedActivityIds.includes(c.activityId)         // not already shown as a joined plan
+            SHOWN_ACTIVITY_TYPES.includes(c.activity_type) &&
+            c.userIds.length > 0 &&
+            (!c.activityId || !joinedActivityIds.includes(c.activityId))
           )
         : Array.from(carouselMap.values()).filter(c =>
             c.userIds.includes(user.id) && (!effectiveCity || c.city === effectiveCity)
@@ -316,7 +316,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         Promise.all(
           userJoinedCarouselEntries.map(async (carouselActivity) => {
             const firstUserId = carouselActivity.userIds[0];
-            const [{ data: profile }, { data: realActivity }] = await Promise.all([
+            const [{ data: profile }, { data: realActivity }, { count: liveCount }] = await Promise.all([
               supabase.from("profiles").select("name, avatar_url").eq("user_id", firstUserId).maybeSingle(),
               // Use the activity_id from the join row if available, else query by type+city.
               carouselActivity.activityId
@@ -334,11 +334,19 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     .order("scheduled_for", { ascending: false })
                     .limit(1)
                     .maybeSingle(),
+              // Fetch live member count from activity_joins for real groups so the
+              // card count matches what users see inside the group chat.
+              carouselActivity.activityId
+                ? supabase
+                    .from("activity_joins")
+                    .select("user_id", { count: "exact", head: true })
+                    .eq("activity_id", carouselActivity.activityId)
+                : Promise.resolve({ count: carouselActivity.userIds.length }),
             ]);
             const dayLabel = getActivityDay(carouselActivity.activity_type);
             const nextOccurrence = getNextOccurrenceDate(carouselActivity.activity_type);
             return {
-              id: `carousel-${carouselActivity.activity_type}-${carouselActivity.city}`,
+              id: `carousel-${carouselActivity.activity_type}-${carouselActivity.city}-${carouselActivity.activityId ?? firstUserId}`,
               realActivityId: realActivity?.id ?? null,
               user_id: firstUserId,
               activity_type: carouselActivity.activity_type,
@@ -348,7 +356,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               note: dayLabel ? `This ${dayLabel}` : null,
               creator_name: profile?.name || "Anonymous",
               creator_avatar: profile?.avatar_url,
-              participant_count: carouselActivity.userIds.length,
+              participant_count: liveCount ?? carouselActivity.userIds.length,
               isJoined: carouselActivity.userIds.includes(user.id),
               isCarouselJoin: true,
             } as PlanActivity;

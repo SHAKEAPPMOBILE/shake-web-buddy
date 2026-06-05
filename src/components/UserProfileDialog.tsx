@@ -79,7 +79,11 @@ export function UserProfileDialog({
   });
 
   useEffect(() => {
-    if (!open || !userId) return;
+    if (!open) {
+      setShowEnlargedAvatar(false);
+      return;
+    }
+    if (!userId) return;
 
     setLastKnownCity(null);
     setAvatarLoadError(false);
