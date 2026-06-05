@@ -397,7 +397,7 @@ export function GlobalParticipantsSection() {
                             onClick={() => handleParticipantClick(participant)}
                             className="flex-1 text-left"
                           >
-                            <p className="font-medium text-sm">
+                            <p className="font-medium text-sm text-gray-900">
                               {isCurrentUser ? "You" : participant.name || "Shaker"}
                             </p>
                           </button>
