@@ -168,15 +168,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const allJoinedIds = [...new Set([...joinedActivityIds, ...myCreatedIds])];
       const allCarouselJoins = (cityCarouselResult.data || []) as { activity_type: string; city: string; user_id: string }[];
 
-      // Build carousel map (user's own joins seeded first so they always appear)
+      // Build carousel map keyed by activity_type + city + activity_id so each
+      // distinct group gets its own entry and its own member count.
+      // Joins with activity_id=null (open interest, no specific group) are
+      // bucketed under the null key and shown as a single "interest" card.
       const carouselMap = new Map<string, { activity_type: string; city: string; userIds: string[]; activityId?: string | null }>();
       const addToCarouselMap = (join: { activity_type: string; city: string; user_id: string; activity_id?: string | null }) => {
-        const key = `${join.activity_type}-${join.city}`;
-        if (!carouselMap.has(key)) carouselMap.set(key, { activity_type: join.activity_type, city: join.city, userIds: [] });
+        const key = `${join.activity_type}-${join.city}-${join.activity_id ?? "null"}`;
+        if (!carouselMap.has(key)) carouselMap.set(key, { activity_type: join.activity_type, city: join.city, userIds: [], activityId: join.activity_id ?? null });
         const entry = carouselMap.get(key)!;
         if (!entry.userIds.includes(join.user_id)) entry.userIds.push(join.user_id);
-        // Store activity_id from the user's own join if available
-        if (join.activity_id && !entry.activityId) entry.activityId = join.activity_id;
       };
       userOwnCarouselJoins.forEach(addToCarouselMap);
       allCarouselJoins.forEach(addToCarouselMap);
