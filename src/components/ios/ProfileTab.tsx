@@ -532,7 +532,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       <DollarSign className="w-4 h-4 text-shake-green" />
                       <span className="text-sm font-medium">{t('profile.yourEarnings', 'Your Earnings')}</span>
                     </div>
-                    <span className="text-xs text-gray-400">85% {t('profile.afterFee', 'after platform fee')}</span>
+                    <span className="text-xs text-gray-400">{new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(totalNet || 0)}</span>
                   </div>
                   {earningsLoading ? (
                     <div className="flex items-center justify-center py-2">
