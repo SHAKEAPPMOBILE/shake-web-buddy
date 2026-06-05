@@ -166,21 +166,28 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .filter(a => isActivityVisible(a as { scheduled_for: string | null; created_at: string }))
         .map(a => a.id as string);
       const allJoinedIds = [...new Set([...joinedActivityIds, ...myCreatedIds])];
+      // All Cities only surfaces dinner and brunch groups.
+      const SHOWN_ACTIVITY_TYPES = ['dinner', 'brunch'];
       const allCarouselJoins = (cityCarouselResult.data || []) as { activity_type: string; city: string; user_id: string }[];
 
       // Build carousel map keyed by activity_type + city + activity_id so each
-      // distinct group gets its own entry and its own member count.
-      // Joins with activity_id=null (open interest, no specific group) are
-      // bucketed under the null key and shown as a single "interest" card.
+      // distinct group gets its own entry with its own member count.
+      // Null-activity_id joins (open interest, no specific group assigned) use a
+      // per-user key so they never aggregate — each user is their own bucket.
       const carouselMap = new Map<string, { activity_type: string; city: string; userIds: string[]; activityId?: string | null }>();
       const addToCarouselMap = (join: { activity_type: string; city: string; user_id: string; activity_id?: string | null }) => {
-        const key = `${join.activity_type}-${join.city}-${join.activity_id ?? "null"}`;
+        const key = join.activity_id
+          ? `${join.activity_type}-${join.city}-${join.activity_id}`
+          : `${join.activity_type}-${join.city}-null-${join.user_id}`;
         if (!carouselMap.has(key)) carouselMap.set(key, { activity_type: join.activity_type, city: join.city, userIds: [], activityId: join.activity_id ?? null });
         const entry = carouselMap.get(key)!;
         if (!entry.userIds.includes(join.user_id)) entry.userIds.push(join.user_id);
       };
       userOwnCarouselJoins.forEach(addToCarouselMap);
-      allCarouselJoins.forEach(addToCarouselMap);
+      // Filter to whitelisted types before building the map for All Cities
+      allCarouselJoins
+        .filter(j => SHOWN_ACTIVITY_TYPES.includes((j as any).activity_type))
+        .forEach(addToCarouselMap);
 
       // --- Phase 2: Fetch joined activities and city plans in parallel ---
       const [joinedDataResult, cityPlansDataResult] = await Promise.all([
@@ -238,8 +245,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       //   appears in the user's joined activities (avoids duplicate cards)
       const userJoinedCarouselEntries = showAllCities
         ? Array.from(carouselMap.values()).filter(c =>
-            c.userIds.length > 0 &&
-            (!c.activityId || !joinedActivityIds.includes(c.activityId))
+            c.activityId != null &&                           // only real groups (not open-interest nulls)
+            SHOWN_ACTIVITY_TYPES.includes(c.activity_type) && // dinner + brunch only
+            !joinedActivityIds.includes(c.activityId)         // not already shown as a joined plan
           )
         : Array.from(carouselMap.values()).filter(c =>
             c.userIds.includes(user.id) && (!effectiveCity || c.city === effectiveCity)

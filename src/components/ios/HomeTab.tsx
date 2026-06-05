@@ -18,56 +18,6 @@ import { REGIONS, SHAKE_CITIES } from "@/data/cities";
 import { useVenueContext } from "@/contexts/VenueContext";
 import { supabase } from "@/integrations/supabase/client";
 
-// ── StarField ─────────────────────────────────────────────────────────────────
-// 25 tiny white dots animate outward from the centre (parallax/starfield effect).
-// Each star gets a random starting position, size, and animation delay so they
-// never all pulse together.
-const STAR_COUNT = 25;
-const stars = Array.from({ length: STAR_COUNT }, (_, i) => ({
-  id: i,
-  // Place stars scattered across the full area (0–100 vw/vh)
-  x: 5 + Math.floor(((i * 37 + 13) % 91)),   // pseudo-random spread
-  y: 5 + Math.floor(((i * 53 + 29) % 87)),
-  size: 1 + (i % 3),                           // 1px, 2px, or 3px
-  opacity: 0.25 + ((i % 6) * 0.1),             // 0.25–0.75
-  duration: 6 + (i % 8),                        // 6–13 s cycle
-  delay: -((i * 1.3) % 13),                     // staggered, no cold start
-}));
-
-function StarField() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
-      <style>{`
-        @keyframes star-drift {
-          0%   { transform: scale(0.4) translate(0, 0); opacity: 0; }
-          15%  { opacity: 1; }
-          85%  { opacity: 1; }
-          100% { transform: scale(1.6) translate(var(--sx), var(--sy)); opacity: 0; }
-        }
-      `}</style>
-      {stars.map((s) => (
-        <div
-          key={s.id}
-          style={{
-            position: 'absolute',
-            left: `${s.x}%`,
-            top: `${s.y}%`,
-            width: `${s.size}px`,
-            height: `${s.size}px`,
-            borderRadius: '50%',
-            background: s.id % 7 === 0 ? '#b3d4ff' : '#ffffff',
-            opacity: s.opacity,
-            // Each star drifts slightly away from centre
-            ['--sx' as string]: `${(s.x - 50) * 0.18}px`,
-            ['--sy' as string]: `${(s.y - 50) * 0.18}px`,
-            animation: `star-drift ${s.duration}s ${s.delay}s linear infinite`,
-            willChange: 'transform, opacity',
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 // Fixed carousel order mirrors the useMemo fixedOrder inside HomeTab.
 // ['dinner'=0, 'brunch'=1, propose-plan appended at end]
@@ -522,11 +472,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           onTouchEnd={handleTouchEnd}
           style={{ touchAction: 'pan-y' }}
         >
-          {/* Subtle starfield behind all overlay content */}
-          <StarField />
           <div
             className="flex flex-col items-center justify-center w-full px-6"
-            style={{ position: 'relative', zIndex: 1 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative w-full max-w-sm">
