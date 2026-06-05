@@ -239,6 +239,28 @@ serve(async (req) => {
           metadata_keys: Object.keys(metadata),
         });
       }
+
+      // Subscription checkout: grant premium_override when payment completes.
+      if (session.mode === "subscription" && paymentReady) {
+        const userId = String(session.client_reference_id ?? metadata.user_id ?? "").trim();
+        if (userId) {
+          logStep("Granting premium for subscription payment", { userId });
+          const { error: premiumErr } = await supabaseClient
+            .from("profiles_private")
+            .update({ premium_override: true })
+            .eq("user_id", userId);
+          if (premiumErr) {
+            logStep("ERROR: failed to grant premium_override", { error: premiumErr.message, userId });
+          } else {
+            logStep("premium_override granted", { userId });
+          }
+        } else {
+          logStep("WARN: subscription checkout missing user id — cannot grant premium automatically", {
+            client_reference_id: session.client_reference_id,
+            metadata_keys: Object.keys(metadata),
+          });
+        }
+      }
       } catch (checkoutHandlerErr) {
         const msg = checkoutHandlerErr instanceof Error ? checkoutHandlerErr.message : String(checkoutHandlerErr);
         const stack = checkoutHandlerErr instanceof Error ? checkoutHandlerErr.stack : undefined;
@@ -415,6 +437,38 @@ serve(async (req) => {
           logStep("Failed to send cancellation email", { error: emailError });
         } else {
           logStep("Cancellation email sent successfully", { email: customerEmail });
+        }
+      }
+
+      // Revoke premium_override when the subscription is fully cancelled (not just scheduled).
+      // cancel_at_period_end = true means they keep access until period end; only revoke on hard delete.
+      if (isCancelled) {
+        const supabaseClient = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+          { auth: { persistSession: false } }
+        );
+        // Look up user by billing_email stored in profiles_private.
+        const { data: ppRow, error: ppErr } = await supabaseClient
+          .from("profiles_private")
+          .select("user_id")
+          .eq("billing_email", customerEmail)
+          .maybeSingle();
+
+        if (ppErr) {
+          logStep("WARN: profiles_private lookup for cancellation revocation failed", { error: ppErr.message });
+        } else if (ppRow?.user_id) {
+          const { error: revokeErr } = await supabaseClient
+            .from("profiles_private")
+            .update({ premium_override: false })
+            .eq("user_id", ppRow.user_id);
+          if (revokeErr) {
+            logStep("ERROR: failed to revoke premium_override on cancellation", { error: revokeErr.message });
+          } else {
+            logStep("premium_override revoked on cancellation", { userId: ppRow.user_id });
+          }
+        } else {
+          logStep("Could not find user by billing_email for revocation — check-subscription will sync on next app open", { customerEmail });
         }
       }
       } catch (subscriptionHandlerErr) {

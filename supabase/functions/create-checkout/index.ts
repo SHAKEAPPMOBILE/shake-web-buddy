@@ -120,6 +120,8 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "http://localhost:5173";
 
+    const appUserId = typeof requestBody?.userId === "string" ? requestBody.userId : undefined;
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
@@ -130,8 +132,9 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      // Optional: let us correlate the checkout session to the app user.
-      client_reference_id: typeof requestBody?.userId === "string" ? requestBody.userId : undefined,
+      // Store user_id in both client_reference_id and metadata so the webhook can grant premium.
+      client_reference_id: appUserId,
+      metadata: appUserId ? { user_id: appUserId } : undefined,
       success_url: `${origin}/subscription-success`,
       cancel_url: `${origin}/?subscription=canceled`,
     });

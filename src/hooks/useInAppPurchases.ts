@@ -4,8 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from "@/lib/app-toast";
 import { isNativePlatform } from '@/lib/revenuecat';
 
-// RevenueCat entitlement identifier for premium access
-const PREMIUM_ENTITLEMENT_ID = 'premium';
+// RevenueCat entitlement identifier for premium access (case-sensitive — must match RevenueCat dashboard)
+const PREMIUM_ENTITLEMENT_ID = 'Premium';
 
 // Product identifiers from App Store Connect
 export const PRODUCT_IDS = {
