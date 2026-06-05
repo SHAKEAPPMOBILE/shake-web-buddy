@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type CSSProperties } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, RefreshCw, RotateCcw, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,10 +20,8 @@ import { LanguageSelector } from "../LanguageSelector";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "react-i18next";
-import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { usePayPalConnect } from "@/hooks/usePayPalConnect";
 import { useCreatorEarnings } from "@/hooks/useCreatorEarnings";
-import { StripeCountrySelectorDialog } from "../StripeCountrySelectorDialog";
 import { PayPalConnectDialog } from "../PayPalConnectDialog";
 import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { IDVerificationDialog } from "../IDVerificationDialog";
@@ -91,13 +89,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [copiedLink, setCopiedLink] = useState(false);
   const [showReferralLink, setShowReferralLink] = useState(false);
   const [showPayoutOptions, setShowPayoutOptions] = useState(false);
-  const [showCountrySelector, setShowCountrySelector] = useState(false);
-  const [showResetCountrySelector, setShowResetCountrySelector] = useState(false);
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showPayPalDisconnectConfirm, setShowPayPalDisconnectConfirm] = useState(false);
-  const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
   const [showManagePlanDialog, setShowManagePlanDialog] = useState(false);
-  const { isConnected: stripeConnected, status: stripeStatus, email: stripeEmail, isLoading: stripeLoading, error: stripeError, startOnboarding, checkStatus: checkStripeStatus, resetAndRecreate } = useStripeConnect();
   const { isConnected: paypalConnected, paypalEmail, isLoading: paypalLoading, connectPayPal, disconnectPayPal } = usePayPalConnect();
   const { totalNet, currency, activities, isLoading: earningsLoading } = useCreatorEarnings();
   const { isVerified, isPending, isRejected, isLoading: verificationLoading } = useCreatorVerification();
@@ -133,41 +127,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const handleOpenManagePlan = () => {
     setShowSubscriptionDropdown(false);
     setShowManagePlanDialog(true);
-  };
-
-  const handleStartOnboarding = (countryCode: string) => {
-    setShowCountrySelector(false);
-    startOnboarding(countryCode);
-  };
-
-  const handleResetAndRecreate = (countryCode: string) => {
-    setShowResetCountrySelector(false);
-    resetAndRecreate(countryCode);
-  };
-
-  const handleSetPreferredMethod = async (method: "stripe" | "paypal") => {
-    if (!user) return;
-    try {
-      const { error } = await supabase
-        .from("profiles_private")
-        .update({ preferred_payout_method: method })
-        .eq("user_id", user.id);
-      if (error) throw error;
-      setPreferredMethod(method);
-      toast({
-        title: t('profile.payoutMethodUpdated', 'Payout method updated'),
-        description: method === "stripe"
-          ? t('profile.stripeIsNowActive', 'Stripe is now your active payout method')
-          : t('profile.paypalIsNowActive', 'PayPal is now your active payout method'),
-      });
-    } catch (error) {
-      console.error("Error updating preferred method:", error);
-      toast({
-        title: t('profile.errorTitle', 'Error'),
-        description: t('profile.failedPayoutMethod', 'Failed to update payout method'),
-        variant: "destructive",
-      });
-    }
   };
 
   const handleCopyReferralLink = async () => {
@@ -535,18 +494,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <div className="flex-1">
                 <span className="text-sm font-medium text-gray-900">{t('profile.creatorPayouts', 'Creator Payouts')}</span>
                 <p className="text-xs text-gray-400">
-                  {(stripeConnected && stripeStatus === "complete") || paypalConnected
+                  {paypalConnected
                     ? t('profile.payoutsConnected', 'Ready to receive payments')
-                    : stripeConnected && stripeStatus === "pending"
-                    ? t('profile.stripePending', 'Verification pending')
                     : t('profile.payoutsNotConnected', 'Set up to receive payments')}
                 </p>
               </div>
-              {((stripeConnected && stripeStatus === "complete") || paypalConnected) && (
+              {paypalConnected && (
                 <div className="w-2 h-2 rounded-full bg-shake-green mr-1" />
-              )}
-              {stripeConnected && stripeStatus === "pending" && !paypalConnected && (
-                <div className="w-2 h-2 rounded-full bg-amber-500 mr-1" />
               )}
               <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showPayoutOptions && "rotate-90")} />
             </button>
@@ -644,15 +598,15 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 </button>
 
                 {/* Connected status banner */}
-                {((stripeConnected && stripeStatus === "complete") || paypalConnected) && (
+                {paypalConnected && (
                   <div className="flex items-center gap-2 p-2 bg-shake-green/10 rounded-2xl">
                     <Check className="w-4 h-4 text-shake-green" />
                     <span className="text-sm text-shake-green font-medium">{t('profile.payoutsReady', 'Ready to receive payouts')}</span>
                   </div>
                 )}
 
-                {/* Stripe */}
-                <div className={`border rounded-2xl p-3 space-y-2 ${preferredMethod === "stripe" ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                {/* Stripe - intentionally removed; using PayPal only */}
+                <div className="hidden">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-[#635BFF] rounded-xl flex items-center justify-center">
@@ -756,16 +710,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 </div>
 
                 {/* PayPal */}
-                <div className={`border rounded-2xl p-3 space-y-2 ${preferredMethod === "paypal" ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                <div className={`border rounded-2xl p-3 space-y-2 ${paypalConnected ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-[#0070BA] rounded-xl flex items-center justify-center">
                         <span className="text-white text-[10px] font-bold">PP</span>
                       </div>
                       <span className="text-sm font-medium">PayPal</span>
-                      {preferredMethod === "paypal" && paypalConnected && (
-                        <span className="text-[10px] text-shake-green font-medium uppercase">Active</span>
-                      )}
                     </div>
                     {paypalConnected && (
                       <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">Connected</span>
@@ -777,14 +728,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                         <Mail className="w-3 h-3" />
                         <span className="truncate">{paypalEmail}</span>
                       </div>
-                      {preferredMethod !== "paypal" && stripeConnected && stripeStatus === "complete" && (
-                        <button
-                          onClick={() => handleSetPreferredMethod("paypal")}
-                          className="w-full py-2 text-xs font-medium text-[#0070BA] border border-[#0070BA]/30 rounded-2xl hover:bg-[#0070BA]/10 transition-colors"
-                        >
-                          {t('profile.usePayPal', 'Use PayPal for payouts')}
-                        </button>
-                      )}
                       <button
                         onClick={() => setShowPayPalDisconnectConfirm(true)}
                         disabled={paypalLoading}
@@ -1171,23 +1114,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         />
       )} */}
 
-      {/* Stripe Country Selector (new) */}
-      <StripeCountrySelectorDialog
-        open={showCountrySelector}
-        onOpenChange={setShowCountrySelector}
-        onSelectCountry={handleStartOnboarding}
-        isLoading={stripeLoading}
-        isReset={false}
-      />
-
-      {/* Stripe Country Selector (reset) */}
-      <StripeCountrySelectorDialog
-        open={showResetCountrySelector}
-        onOpenChange={setShowResetCountrySelector}
-        onSelectCountry={handleResetAndRecreate}
-        isLoading={stripeLoading}
-        isReset={true}
-      />
 
       {/* PayPal Connect */}
       <PayPalConnectDialog

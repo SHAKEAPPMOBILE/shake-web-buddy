@@ -414,7 +414,7 @@ function EventDetail({
       }
       const { data: existingMember, error: memberError } = await supabase
         .from("event_chat_members")
-        .select("event_id, paid_at, expires_at, event_starts_at, user_id, id, event_name, amount_cents, stripe_payment_intent_id")
+        .select("event_id, paid_at, expires_at, event_starts_at, user_id, id, event_name, amount_cents")
         .eq("event_id", event.id)
         .eq("user_id", user.id)
         .maybeSingle();
