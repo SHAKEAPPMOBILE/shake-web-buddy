@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PremiumDialog } from "../PremiumDialog";
 import { ManagePlanDialog } from "../ManagePlanDialog";
-import { SuperHumanIcon } from "../SuperHumanIcon";
 import { UserProfileDialog } from "../UserProfileDialog";
 import { useStatusVideo } from "@/hooks/useStatusVideo";
 import { StatusVideoRecorder } from "../StatusVideoRecorder";
@@ -378,7 +377,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             onClick={(e) => { e.stopPropagation(); setShowPremiumDialog(true); }}
             className="flex items-center gap-1.5 mt-2 px-3 py-1 bg-shake-yellow/10 rounded-full cursor-pointer hover:bg-shake-yellow/20 transition-colors"
           >
-            <SuperHumanIcon size={14} />
             <span className="text-sm font-medium text-shake-yellow">{t('profile.superHuman')}</span>
           </div>
         )}
@@ -436,7 +434,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 {showSubscriptionDropdown && (
                   <div className="px-4 py-4 bg-gray-50 animate-fade-in space-y-3">
                     <div className="flex items-center gap-2">
-                      <SuperHumanIcon size={16} />
                       <span className="text-sm font-medium text-shake-yellow">{t('profile.superHumanActive', 'Super-Human Active')}</span>
                     </div>
                     <button

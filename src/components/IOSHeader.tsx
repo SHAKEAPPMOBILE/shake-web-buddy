@@ -1,5 +1,3 @@
-import { SuperHumanIcon } from "./SuperHumanIcon";
-import { useAuth } from "@/contexts/AuthContext";
 import logoShake from "@/assets/shake-logo-new.png";
 
 interface IOSHeaderProps {
@@ -8,7 +6,6 @@ interface IOSHeaderProps {
 }
 
 export function IOSHeader({ title, onUpgradeClick }: IOSHeaderProps) {
-  const { isPremium } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border safe-area-top">
@@ -28,9 +25,6 @@ export function IOSHeader({ title, onUpgradeClick }: IOSHeaderProps) {
               social
             </span>
           </div>
-          {isPremium && (
-            <SuperHumanIcon size={14} className="text-shake-yellow ml-1" />
-          )}
         </div>
       </div>
     </header>
