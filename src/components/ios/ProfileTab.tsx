@@ -88,10 +88,18 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [showPayoutOptions, setShowPayoutOptions] = useState(false);
   const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
   const [showManagePlanDialog, setShowManagePlanDialog] = useState(false);
-  const [payoutPaypal, setPayoutPaypal] = useState("");
-  const [payoutBank, setPayoutBank] = useState("");
-  const [payoutVenmo, setPayoutVenmo] = useState("");
-  const [payoutCashApp, setPayoutCashApp] = useState("");
+  // Saved = persisted DB value (drives checkmark + collapsed view)
+  // Input = current text-field value while editing
+  // Editing = whether the input is expanded
+  const [savedPaypal, setSavedPaypal] = useState("");
+  const [paypalInput, setPaypalInput] = useState("");
+  const [editingPaypal, setEditingPaypal] = useState(true);
+  const [savedVenmo, setSavedVenmo] = useState("");
+  const [venmoInput, setVenmoInput] = useState("");
+  const [editingVenmo, setEditingVenmo] = useState(true);
+  const [savedCashApp, setSavedCashApp] = useState("");
+  const [cashAppInput, setCashAppInput] = useState("");
+  const [editingCashApp, setEditingCashApp] = useState(true);
   const [payoutSaving, setPayoutSaving] = useState<string | null>(null);
   const { totalNet, currency, activities, isLoading: earningsLoading } = useCreatorEarnings();
   const { isVerified, isPending, isRejected, isLoading: verificationLoading } = useCreatorVerification();
@@ -254,7 +262,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     const [publicProfile, privateProfile] = await Promise.all([
       supabase
         .from("profiles")
-        .select("avatar_url, name, face_auth_enabled, payout_paypal, payout_bank, payout_venmo, payout_cashapp")
+        .select("avatar_url, name, face_auth_enabled, payout_paypal, payout_venmo, payout_cashapp")
         .eq("user_id", user.id)
         .maybeSingle(),
       supabase
@@ -267,10 +275,12 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setAvatarUrl(publicProfile.data.avatar_url);
       setUserName(publicProfile.data.name);
       setFaceAuthEnabled(Boolean(publicProfile.data.face_auth_enabled));
-      setPayoutPaypal(publicProfile.data.payout_paypal ?? "");
-      setPayoutBank(publicProfile.data.payout_bank ?? "");
-      setPayoutVenmo(publicProfile.data.payout_venmo ?? "");
-      setPayoutCashApp(publicProfile.data.payout_cashapp ?? "");
+      const pp = publicProfile.data.payout_paypal ?? "";
+      setSavedPaypal(pp); setEditingPaypal(!pp);
+      const vm = publicProfile.data.payout_venmo ?? "";
+      setSavedVenmo(vm); setEditingVenmo(!vm);
+      const ca = publicProfile.data.payout_cashapp ?? "";
+      setSavedCashApp(ca); setEditingCashApp(!ca);
     }
     if (privateProfile.error) {
       logPostgrestError("ProfileTab profiles_private select", privateProfile.error);
@@ -513,12 +523,12 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <div className="flex-1">
                 <span className="text-sm font-medium text-gray-900">{t('profile.creatorPayouts', 'Creator Payouts')}</span>
                 <p className="text-xs text-gray-400">
-                  {(payoutPaypal || payoutBank || payoutVenmo || payoutCashApp)
+                  {(savedPaypal || savedVenmo || savedCashApp)
                     ? t('profile.payoutsConnected', 'Ready to receive payments')
                     : t('profile.payoutsNotConnected', 'Set up to receive payments')}
                 </p>
               </div>
-              {(payoutPaypal || payoutBank || payoutVenmo || payoutCashApp) && (
+              {(savedPaypal || savedVenmo || savedCashApp) && (
                 <div className="w-2 h-2 rounded-full bg-shake-green mr-1" />
               )}
               <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showPayoutOptions && "rotate-90")} />
@@ -619,136 +629,169 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <p className="text-xs text-black mb-1">{t('profile.payoutNote', "Add at least one method so we can send your earnings.")}</p>
 
                 {/* PayPal */}
-                {(() => {
-                  const saved = Boolean(payoutPaypal);
-                  return (
-                    <div className={`border rounded-2xl p-3 space-y-2 ${saved ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-[#0070BA] rounded-xl flex items-center justify-center">
-                            <span className="text-white text-[10px] font-bold">PP</span>
-                          </div>
-                          <span className="text-sm font-medium">PayPal</span>
-                        </div>
-                        {saved && <Check className="w-4 h-4 text-shake-green" />}
+                <div className={`border rounded-2xl p-3 space-y-2 ${savedPaypal ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-[#0070BA] rounded-xl flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold">PP</span>
                       </div>
+                      <span className="text-sm font-medium">PayPal</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {savedPaypal && <Check className="w-4 h-4 text-shake-green" />}
+                      {savedPaypal && !editingPaypal && (
+                        <button onClick={() => { setPaypalInput(savedPaypal); setEditingPaypal(true); }}
+                                className="text-xs text-gray-500 underline">{t('profile.edit', 'Edit')}</button>
+                      )}
+                    </div>
+                  </div>
+                  {savedPaypal && !editingPaypal ? (
+                    <p className="text-xs text-gray-600 px-1">{savedPaypal}</p>
+                  ) : (
+                    <>
                       <input
                         type="email"
-                        value={payoutPaypal}
-                        onChange={e => setPayoutPaypal(e.target.value)}
+                        value={paypalInput}
+                        onChange={e => setPaypalInput(e.target.value)}
                         placeholder="your@email.com"
                         className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none focus:border-[#0070BA]"
                       />
                       <button
-                        onClick={() => savePayoutField("payout_paypal", payoutPaypal)}
+                        onClick={async () => {
+                          if (!user) return;
+                          setPayoutSaving("payout_paypal");
+                          try {
+                            const { error } = await supabase.from("profiles").update({ payout_paypal: paypalInput.trim() || null }).eq("user_id", user.id);
+                            if (error) throw error;
+                            setSavedPaypal(paypalInput.trim());
+                            setPaypalInput("");
+                            setEditingPaypal(false);
+                            toast({ title: t('profile.payoutSaved', 'Payout method saved') });
+                          } catch (err) {
+                            toast({ title: t('profile.errorTitle', 'Error'), description: String(err), variant: "destructive" });
+                          } finally {
+                            setPayoutSaving(null);
+                          }
+                        }}
                         disabled={payoutSaving === "payout_paypal"}
                         className="w-full py-2 text-xs font-medium text-[#0070BA] border border-[#0070BA]/30 rounded-2xl hover:bg-[#0070BA]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
                         {payoutSaving === "payout_paypal" ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                         {t('profile.save', 'Save')}
                       </button>
-                    </div>
-                  );
-                })()}
-
-                {/* Bank Transfer */}
-                {(() => {
-                  const saved = Boolean(payoutBank);
-                  return (
-                    <div className={`border rounded-2xl p-3 space-y-2 ${saved ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-gray-700 rounded-xl flex items-center justify-center">
-                            <span className="text-white text-[10px] font-bold">$$</span>
-                          </div>
-                          <span className="text-sm font-medium">Bank Transfer</span>
-                        </div>
-                        {saved && <Check className="w-4 h-4 text-shake-green" />}
-                      </div>
-                      <input
-                        type="text"
-                        value={payoutBank}
-                        onChange={e => setPayoutBank(e.target.value)}
-                        placeholder="IBAN or account + routing number"
-                        className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none focus:border-gray-500"
-                      />
-                      <button
-                        onClick={() => savePayoutField("payout_bank", payoutBank)}
-                        disabled={payoutSaving === "payout_bank"}
-                        className="w-full py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
-                      >
-                        {payoutSaving === "payout_bank" ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                        {t('profile.save', 'Save')}
-                      </button>
-                    </div>
-                  );
-                })()}
+                    </>
+                  )}
+                </div>
 
                 {/* Venmo */}
-                {(() => {
-                  const saved = Boolean(payoutVenmo);
-                  return (
-                    <div className={`border rounded-2xl p-3 space-y-2 ${saved ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-[#3D95CE] rounded-xl flex items-center justify-center">
-                            <span className="text-white text-[10px] font-bold">V</span>
-                          </div>
-                          <span className="text-sm font-medium">Venmo</span>
-                        </div>
-                        {saved && <Check className="w-4 h-4 text-shake-green" />}
+                <div className={`border rounded-2xl p-3 space-y-2 ${savedVenmo ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-[#3D95CE] rounded-xl flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold">V</span>
                       </div>
+                      <span className="text-sm font-medium">Venmo</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {savedVenmo && <Check className="w-4 h-4 text-shake-green" />}
+                      {savedVenmo && !editingVenmo && (
+                        <button onClick={() => { setVenmoInput(savedVenmo); setEditingVenmo(true); }}
+                                className="text-xs text-gray-500 underline">{t('profile.edit', 'Edit')}</button>
+                      )}
+                    </div>
+                  </div>
+                  {savedVenmo && !editingVenmo ? (
+                    <p className="text-xs text-gray-600 px-1">{savedVenmo}</p>
+                  ) : (
+                    <>
                       <input
                         type="text"
-                        value={payoutVenmo}
-                        onChange={e => setPayoutVenmo(e.target.value)}
+                        value={venmoInput}
+                        onChange={e => setVenmoInput(e.target.value)}
                         placeholder="@username"
                         className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none focus:border-[#3D95CE]"
                       />
                       <button
-                        onClick={() => savePayoutField("payout_venmo", payoutVenmo)}
+                        onClick={async () => {
+                          if (!user) return;
+                          setPayoutSaving("payout_venmo");
+                          try {
+                            const { error } = await supabase.from("profiles").update({ payout_venmo: venmoInput.trim() || null }).eq("user_id", user.id);
+                            if (error) throw error;
+                            setSavedVenmo(venmoInput.trim());
+                            setVenmoInput("");
+                            setEditingVenmo(false);
+                            toast({ title: t('profile.payoutSaved', 'Payout method saved') });
+                          } catch (err) {
+                            toast({ title: t('profile.errorTitle', 'Error'), description: String(err), variant: "destructive" });
+                          } finally {
+                            setPayoutSaving(null);
+                          }
+                        }}
                         disabled={payoutSaving === "payout_venmo"}
                         className="w-full py-2 text-xs font-medium text-[#3D95CE] border border-[#3D95CE]/30 rounded-2xl hover:bg-[#3D95CE]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
                         {payoutSaving === "payout_venmo" ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                         {t('profile.save', 'Save')}
                       </button>
-                    </div>
-                  );
-                })()}
+                    </>
+                  )}
+                </div>
 
                 {/* CashApp */}
-                {(() => {
-                  const saved = Boolean(payoutCashApp);
-                  return (
-                    <div className={`border rounded-2xl p-3 space-y-2 ${saved ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-[#00D632] rounded-xl flex items-center justify-center">
-                            <span className="text-white text-[10px] font-bold">$</span>
-                          </div>
-                          <span className="text-sm font-medium">CashApp</span>
-                        </div>
-                        {saved && <Check className="w-4 h-4 text-shake-green" />}
+                <div className={`border rounded-2xl p-3 space-y-2 ${savedCashApp ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-[#00D632] rounded-xl flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold">$</span>
                       </div>
+                      <span className="text-sm font-medium">CashApp</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {savedCashApp && <Check className="w-4 h-4 text-shake-green" />}
+                      {savedCashApp && !editingCashApp && (
+                        <button onClick={() => { setCashAppInput(savedCashApp); setEditingCashApp(true); }}
+                                className="text-xs text-gray-500 underline">{t('profile.edit', 'Edit')}</button>
+                      )}
+                    </div>
+                  </div>
+                  {savedCashApp && !editingCashApp ? (
+                    <p className="text-xs text-gray-600 px-1">{savedCashApp}</p>
+                  ) : (
+                    <>
                       <input
                         type="text"
-                        value={payoutCashApp}
-                        onChange={e => setPayoutCashApp(e.target.value)}
+                        value={cashAppInput}
+                        onChange={e => setCashAppInput(e.target.value)}
                         placeholder="$cashtag"
                         className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none focus:border-[#00D632]"
                       />
                       <button
-                        onClick={() => savePayoutField("payout_cashapp", payoutCashApp)}
+                        onClick={async () => {
+                          if (!user) return;
+                          setPayoutSaving("payout_cashapp");
+                          try {
+                            const { error } = await supabase.from("profiles").update({ payout_cashapp: cashAppInput.trim() || null }).eq("user_id", user.id);
+                            if (error) throw error;
+                            setSavedCashApp(cashAppInput.trim());
+                            setCashAppInput("");
+                            setEditingCashApp(false);
+                            toast({ title: t('profile.payoutSaved', 'Payout method saved') });
+                          } catch (err) {
+                            toast({ title: t('profile.errorTitle', 'Error'), description: String(err), variant: "destructive" });
+                          } finally {
+                            setPayoutSaving(null);
+                          }
+                        }}
                         disabled={payoutSaving === "payout_cashapp"}
                         className="w-full py-2 text-xs font-medium text-[#00D632] border border-[#00D632]/30 rounded-2xl hover:bg-[#00D632]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
                         {payoutSaving === "payout_cashapp" ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                         {t('profile.save', 'Save')}
                       </button>
-                    </div>
-                  );
-                })()}
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </div>
