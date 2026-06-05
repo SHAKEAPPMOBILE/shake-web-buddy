@@ -272,8 +272,7 @@ export function GroupChatView({
         .from("activity_joins")
         .select("user_id")
         .eq("activity_type", activityType)
-        .eq("city", city)
-        .gt("expires_at", new Date().toISOString());
+        .eq("city", city);
 
       if (joinsError || !joins?.length) {
         setParticipants([]);
