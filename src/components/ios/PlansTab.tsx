@@ -142,14 +142,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           .select("id, scheduled_for, created_at")
           .eq("user_id", user.id)
           .limit(50),
-        // 4. Carousel joins for participant counts
-        // All Cities mode: fetch all cities so every group gets a virtual card
-        // My City mode: restrict to effectiveCity
+        // 4. Activity joins for group discovery
+        // All Cities: ALL joins from ALL cities (no activity_id or city filter) — source of truth
+        // My City: only null-activity_id joins for effectiveCity (carousel-only counts)
         showAllCities
           ? supabase
               .from("activity_joins")
-              .select("activity_type, city, user_id")
-              .is("activity_id", null)
+              .select("activity_type, city, user_id, activity_id")
               .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
           : effectiveCity
             ? supabase
@@ -193,20 +192,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               .limit(20)
           : Promise.resolve({ data: [] as any[], error: null }),
         showAllCities
-          ? await (async () => {
-              const nowISO = new Date().toISOString();
-              // No city filter, no user filter — all active plans with a future date or no date
-              const result = await supabase
-                .from("user_activities")
-                .select("*")
-                .eq("is_active", true)
-                .neq("is_auto_generated", true)
-                .or(`scheduled_for.gte.${nowISO},scheduled_for.is.null`)
-                .order("scheduled_for", { ascending: true, nullsFirst: false })
-                .limit(50);
-              console.log("[PlansTab] all-cities query →", { count: result.data?.length, error: result.error, sample: result.data?.slice(0, 3) });
-              return result;
-            })()
+          ? Promise.resolve({ data: [] as any[], error: null }) // All Cities: purely join-driven, no separate user_activities query
           : effectiveCity
             ? await (async () => {
                 const result = await supabase
@@ -248,9 +234,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
       // --- Phase 3: Show plan cards immediately without avatars (stops the spinner early) ---
       // My City: only the current user's carousel joins in effectiveCity (prevents other cities leaking in)
-      // All Cities: every group that has at least one join, any city
+      // All Cities: every group with at least one join, excluding groups whose real plan already
+      //   appears in the user's joined activities (avoids duplicate cards)
       const userJoinedCarouselEntries = showAllCities
-        ? Array.from(carouselMap.values()).filter(c => c.userIds.length > 0)
+        ? Array.from(carouselMap.values()).filter(c =>
+            c.userIds.length > 0 &&
+            (!c.activityId || !allJoinedIds.includes(c.activityId))
+          )
         : Array.from(carouselMap.values()).filter(c =>
             c.userIds.includes(user.id) && (!effectiveCity || c.city === effectiveCity)
           );
