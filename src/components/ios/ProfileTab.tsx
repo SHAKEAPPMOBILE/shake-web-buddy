@@ -19,9 +19,7 @@ import { LanguageSelector } from "../LanguageSelector";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "react-i18next";
-import { usePayPalConnect } from "@/hooks/usePayPalConnect";
 import { useCreatorEarnings } from "@/hooks/useCreatorEarnings";
-import { PayPalConnectDialog } from "../PayPalConnectDialog";
 import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { IDVerificationDialog } from "../IDVerificationDialog";
 import { ContactSupport } from "../ContactSupport";
@@ -88,11 +86,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [copiedLink, setCopiedLink] = useState(false);
   const [showReferralLink, setShowReferralLink] = useState(false);
   const [showPayoutOptions, setShowPayoutOptions] = useState(false);
-  const [showPayPalDialog, setShowPayPalDialog] = useState(false);
-  const [showPayPalDisconnectConfirm, setShowPayPalDisconnectConfirm] = useState(false);
   const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
   const [showManagePlanDialog, setShowManagePlanDialog] = useState(false);
-  const { isConnected: paypalConnected, paypalEmail, isLoading: paypalLoading, connectPayPal, disconnectPayPal } = usePayPalConnect();
+  const [payoutPaypal, setPayoutPaypal] = useState("");
+  const [payoutBank, setPayoutBank] = useState("");
+  const [payoutVenmo, setPayoutVenmo] = useState("");
+  const [payoutCashApp, setPayoutCashApp] = useState("");
+  const [payoutSaving, setPayoutSaving] = useState<string | null>(null);
   const { totalNet, currency, activities, isLoading: earningsLoading } = useCreatorEarnings();
   const { isVerified, isPending, isRejected, isLoading: verificationLoading } = useCreatorVerification();
   const [showIDVerificationDialog, setShowIDVerificationDialog] = useState(false);
@@ -254,7 +254,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     const [publicProfile, privateProfile] = await Promise.all([
       supabase
         .from("profiles")
-        .select("avatar_url, name, face_auth_enabled")
+        .select("avatar_url, name, face_auth_enabled, payout_paypal, payout_bank, payout_venmo, payout_cashapp")
         .eq("user_id", user.id)
         .maybeSingle(),
       supabase
@@ -267,6 +267,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setAvatarUrl(publicProfile.data.avatar_url);
       setUserName(publicProfile.data.name);
       setFaceAuthEnabled(Boolean(publicProfile.data.face_auth_enabled));
+      setPayoutPaypal(publicProfile.data.payout_paypal ?? "");
+      setPayoutBank(publicProfile.data.payout_bank ?? "");
+      setPayoutVenmo(publicProfile.data.payout_venmo ?? "");
+      setPayoutCashApp(publicProfile.data.payout_cashapp ?? "");
     }
     if (privateProfile.error) {
       logPostgrestError("ProfileTab profiles_private select", privateProfile.error);
@@ -275,6 +279,23 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setPreferredMethod(privateProfile.data.preferred_payout_method ?? null);
     }
   }, [user]);
+
+  const savePayoutField = async (field: string, value: string) => {
+    if (!user) return;
+    setPayoutSaving(field);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ [field]: value.trim() || null })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      toast({ title: t('profile.payoutSaved', 'Payout method saved') });
+    } catch (err) {
+      toast({ title: t('profile.errorTitle', 'Error'), description: String(err), variant: "destructive" });
+    } finally {
+      setPayoutSaving(null);
+    }
+  };
 
   const fetchBlockedUsers = useCallback(async () => {
     if (!user) return;
@@ -492,12 +513,12 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <div className="flex-1">
                 <span className="text-sm font-medium text-gray-900">{t('profile.creatorPayouts', 'Creator Payouts')}</span>
                 <p className="text-xs text-gray-400">
-                  {paypalConnected
+                  {(payoutPaypal || payoutBank || payoutVenmo || payoutCashApp)
                     ? t('profile.payoutsConnected', 'Ready to receive payments')
                     : t('profile.payoutsNotConnected', 'Set up to receive payments')}
                 </p>
               </div>
-              {paypalConnected && (
+              {(payoutPaypal || payoutBank || payoutVenmo || payoutCashApp) && (
                 <div className="w-2 h-2 rounded-full bg-shake-green mr-1" />
               )}
               <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showPayoutOptions && "rotate-90")} />
@@ -595,60 +616,139 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   </p>
                 </button>
 
-                {/* Connected status banner */}
-                {paypalConnected && (
-                  <div className="flex items-center gap-2 p-2 bg-shake-green/10 rounded-2xl">
-                    <Check className="w-4 h-4 text-shake-green" />
-                    <span className="text-sm text-shake-green font-medium">{t('profile.payoutsReady', 'Ready to receive payouts')}</span>
-                  </div>
-                )}
+                <p className="text-xs text-black mb-1">{t('profile.payoutNote', "Add at least one method so we can send your earnings.")}</p>
 
                 {/* PayPal */}
-                <div className={`border rounded-2xl p-3 space-y-2 ${paypalConnected ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-[#0070BA] rounded-xl flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold">PP</span>
+                {(() => {
+                  const saved = Boolean(payoutPaypal);
+                  return (
+                    <div className={`border rounded-2xl p-3 space-y-2 ${saved ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-[#0070BA] rounded-xl flex items-center justify-center">
+                            <span className="text-white text-[10px] font-bold">PP</span>
+                          </div>
+                          <span className="text-sm font-medium">PayPal</span>
+                        </div>
+                        {saved && <Check className="w-4 h-4 text-shake-green" />}
                       </div>
-                      <span className="text-sm font-medium">PayPal</span>
-                    </div>
-                    {paypalConnected && (
-                      <span className="text-xs text-shake-green bg-shake-green/10 px-2 py-0.5 rounded-full">Connected</span>
-                    )}
-                  </div>
-                  {paypalConnected ? (
-                    <>
-                      <div className="flex items-center gap-2 text-xs text-black">
-                        <Mail className="w-3 h-3" />
-                        <span className="truncate">{paypalEmail}</span>
-                      </div>
+                      <input
+                        type="email"
+                        value={payoutPaypal}
+                        onChange={e => setPayoutPaypal(e.target.value)}
+                        placeholder="your@email.com"
+                        className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none focus:border-[#0070BA]"
+                      />
                       <button
-                        onClick={() => setShowPayPalDisconnectConfirm(true)}
-                        disabled={paypalLoading}
-                        className="w-full py-2 text-xs font-medium text-destructive border border-destructive/30 rounded-2xl hover:bg-destructive/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        {t('profile.disconnectPayPal', 'Disconnect PayPal')}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-xs text-black">{t('profile.paypalDesc', 'Simple email-based payouts with no verification needed.')}</p>
-                      <button
-                        onClick={() => { setShowPayoutOptions(false); setShowPayPalDialog(true); }}
-                        disabled={paypalLoading}
+                        onClick={() => savePayoutField("payout_paypal", payoutPaypal)}
+                        disabled={payoutSaving === "payout_paypal"}
                         className="w-full py-2 text-xs font-medium text-[#0070BA] border border-[#0070BA]/30 rounded-2xl hover:bg-[#0070BA]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
                       >
-                        {paypalLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-                        {t('profile.connectPayPal', 'Connect PayPal')}
+                        {payoutSaving === "payout_paypal" ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        {t('profile.save', 'Save')}
                       </button>
-                    </>
-                  )}
-                </div>
+                    </div>
+                  );
+                })()}
 
-                <p className="text-xs text-center text-black">
-                  {t('profile.payoutNote', "You'll receive 90% of each payment. Connect at least one method.")}
-                </p>
+                {/* Bank Transfer */}
+                {(() => {
+                  const saved = Boolean(payoutBank);
+                  return (
+                    <div className={`border rounded-2xl p-3 space-y-2 ${saved ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-gray-700 rounded-xl flex items-center justify-center">
+                            <span className="text-white text-[10px] font-bold">$$</span>
+                          </div>
+                          <span className="text-sm font-medium">Bank Transfer</span>
+                        </div>
+                        {saved && <Check className="w-4 h-4 text-shake-green" />}
+                      </div>
+                      <input
+                        type="text"
+                        value={payoutBank}
+                        onChange={e => setPayoutBank(e.target.value)}
+                        placeholder="IBAN or account + routing number"
+                        className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none focus:border-gray-500"
+                      />
+                      <button
+                        onClick={() => savePayoutField("payout_bank", payoutBank)}
+                        disabled={payoutSaving === "payout_bank"}
+                        className="w-full py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                      >
+                        {payoutSaving === "payout_bank" ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        {t('profile.save', 'Save')}
+                      </button>
+                    </div>
+                  );
+                })()}
+
+                {/* Venmo */}
+                {(() => {
+                  const saved = Boolean(payoutVenmo);
+                  return (
+                    <div className={`border rounded-2xl p-3 space-y-2 ${saved ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-[#3D95CE] rounded-xl flex items-center justify-center">
+                            <span className="text-white text-[10px] font-bold">V</span>
+                          </div>
+                          <span className="text-sm font-medium">Venmo</span>
+                        </div>
+                        {saved && <Check className="w-4 h-4 text-shake-green" />}
+                      </div>
+                      <input
+                        type="text"
+                        value={payoutVenmo}
+                        onChange={e => setPayoutVenmo(e.target.value)}
+                        placeholder="@username"
+                        className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none focus:border-[#3D95CE]"
+                      />
+                      <button
+                        onClick={() => savePayoutField("payout_venmo", payoutVenmo)}
+                        disabled={payoutSaving === "payout_venmo"}
+                        className="w-full py-2 text-xs font-medium text-[#3D95CE] border border-[#3D95CE]/30 rounded-2xl hover:bg-[#3D95CE]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                      >
+                        {payoutSaving === "payout_venmo" ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        {t('profile.save', 'Save')}
+                      </button>
+                    </div>
+                  );
+                })()}
+
+                {/* CashApp */}
+                {(() => {
+                  const saved = Boolean(payoutCashApp);
+                  return (
+                    <div className={`border rounded-2xl p-3 space-y-2 ${saved ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-[#00D632] rounded-xl flex items-center justify-center">
+                            <span className="text-white text-[10px] font-bold">$</span>
+                          </div>
+                          <span className="text-sm font-medium">CashApp</span>
+                        </div>
+                        {saved && <Check className="w-4 h-4 text-shake-green" />}
+                      </div>
+                      <input
+                        type="text"
+                        value={payoutCashApp}
+                        onChange={e => setPayoutCashApp(e.target.value)}
+                        placeholder="$cashtag"
+                        className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none focus:border-[#00D632]"
+                      />
+                      <button
+                        onClick={() => savePayoutField("payout_cashapp", payoutCashApp)}
+                        disabled={payoutSaving === "payout_cashapp"}
+                        className="w-full py-2 text-xs font-medium text-[#00D632] border border-[#00D632]/30 rounded-2xl hover:bg-[#00D632]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                      >
+                        {payoutSaving === "payout_cashapp" ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        {t('profile.save', 'Save')}
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -1008,35 +1108,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         />
       )} */}
 
-
-      {/* PayPal Connect */}
-      <PayPalConnectDialog
-        open={showPayPalDialog}
-        onOpenChange={setShowPayPalDialog}
-        onConnect={connectPayPal}
-        isLoading={paypalLoading}
-      />
-
-      {/* PayPal Disconnect Confirmation */}
-      <AlertDialog open={showPayPalDisconnectConfirm} onOpenChange={setShowPayPalDisconnectConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('profile.disconnectPayPalTitle', 'Disconnect PayPal?')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('profile.disconnectPayPalDesc', "You won't be able to receive PayPal payouts until you reconnect your account.")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => { disconnectPayPal(); setShowPayPalDisconnectConfirm(false); }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('profile.disconnect', 'Disconnect')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Face ID (hidden feature flag) */}
       {FACE_ID_FEATURE_ENABLED && (
