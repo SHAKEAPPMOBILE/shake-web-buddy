@@ -18,6 +18,57 @@ import { REGIONS, SHAKE_CITIES } from "@/data/cities";
 import { useVenueContext } from "@/contexts/VenueContext";
 import { supabase } from "@/integrations/supabase/client";
 
+// ── StarField ─────────────────────────────────────────────────────────────────
+// 25 tiny white dots animate outward from the centre (parallax/starfield effect).
+// Each star gets a random starting position, size, and animation delay so they
+// never all pulse together.
+const STAR_COUNT = 25;
+const stars = Array.from({ length: STAR_COUNT }, (_, i) => ({
+  id: i,
+  // Place stars scattered across the full area (0–100 vw/vh)
+  x: 5 + Math.floor(((i * 37 + 13) % 91)),   // pseudo-random spread
+  y: 5 + Math.floor(((i * 53 + 29) % 87)),
+  size: 1 + (i % 3),                           // 1px, 2px, or 3px
+  opacity: 0.25 + ((i % 6) * 0.1),             // 0.25–0.75
+  duration: 6 + (i % 8),                        // 6–13 s cycle
+  delay: -((i * 1.3) % 13),                     // staggered, no cold start
+}));
+
+function StarField() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+      <style>{`
+        @keyframes star-drift {
+          0%   { transform: scale(0.4) translate(0, 0); opacity: 0; }
+          15%  { opacity: 1; }
+          85%  { opacity: 1; }
+          100% { transform: scale(1.6) translate(var(--sx), var(--sy)); opacity: 0; }
+        }
+      `}</style>
+      {stars.map((s) => (
+        <div
+          key={s.id}
+          style={{
+            position: 'absolute',
+            left: `${s.x}%`,
+            top: `${s.y}%`,
+            width: `${s.size}px`,
+            height: `${s.size}px`,
+            borderRadius: '50%',
+            background: s.id % 7 === 0 ? '#b3d4ff' : '#ffffff',
+            opacity: s.opacity,
+            // Each star drifts slightly away from centre
+            ['--sx' as string]: `${(s.x - 50) * 0.18}px`,
+            ['--sy' as string]: `${(s.y - 50) * 0.18}px`,
+            animation: `star-drift ${s.duration}s ${s.delay}s linear infinite`,
+            willChange: 'transform, opacity',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // Fixed carousel order mirrors the useMemo fixedOrder inside HomeTab.
 // ['dinner'=0, 'brunch'=1, propose-plan appended at end]
 const CAROUSEL_FIXED_ORDER = ['dinner', 'brunch'];
@@ -114,6 +165,37 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       img.src = src;
     });
   }, []);
+
+  // ── Shake detection ─────────────────────────────────────────────────────────
+  // Only active when the user has granted motion permission in Profile settings.
+  // On shake: jump to the first activity card and open the carousel overlay.
+  useEffect(() => {
+    if (localStorage.getItem("shake_motion_permission") !== "granted") return;
+
+    let lastShakeAt = 0;
+    const THRESHOLD = 15;   // m/s² — clear shake, not walking vibration
+    const DEBOUNCE_MS = 3000;
+
+    const handleMotion = (e: DeviceMotionEvent) => {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
+      const magnitude = Math.max(
+        Math.abs(acc.x ?? 0),
+        Math.abs(acc.y ?? 0),
+        Math.abs(acc.z ?? 0),
+      );
+      if (magnitude < THRESHOLD) return;
+      const now = Date.now();
+      if (now - lastShakeAt < DEBOUNCE_MS) return;
+      lastShakeAt = now;
+      // Jump to first activity and open the carousel
+      setCurrentActivityIndex(0);
+      onOpenActivities?.();
+    };
+
+    window.addEventListener("devicemotion", handleMotion);
+    return () => window.removeEventListener("devicemotion", handleMotion);
+  }, [onOpenActivities]);
 
   // Extended type for carousel items including "propose plan"
   type CarouselItem = {
@@ -440,8 +522,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           onTouchEnd={handleTouchEnd}
           style={{ touchAction: 'pan-y' }}
         >
+          {/* Subtle starfield behind all overlay content */}
+          <StarField />
           <div
             className="flex flex-col items-center justify-center w-full px-6"
+            style={{ position: 'relative', zIndex: 1 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative w-full max-w-sm">
