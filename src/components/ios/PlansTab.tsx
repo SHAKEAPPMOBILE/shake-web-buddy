@@ -142,14 +142,22 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           .select("id, scheduled_for, created_at")
           .eq("user_id", user.id)
           .limit(50),
-        // 4. City-wide carousel joins for participant counts (skip if no city)
-        effectiveCity
+        // 4. Carousel joins for participant counts
+        // All Cities mode: fetch all cities so every group gets a virtual card
+        // My City mode: restrict to effectiveCity
+        showAllCities
           ? supabase
               .from("activity_joins")
               .select("activity_type, city, user_id")
-              .eq("city", effectiveCity)
               .is("activity_id", null)
-          : Promise.resolve({ data: [] as { activity_type: string; city: string; user_id: string }[], error: null }),
+              .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+          : effectiveCity
+            ? supabase
+                .from("activity_joins")
+                .select("activity_type, city, user_id")
+                .eq("city", effectiveCity)
+                .is("activity_id", null)
+            : Promise.resolve({ data: [] as { activity_type: string; city: string; user_id: string }[], error: null }),
       ]);
 
       const userOwnCarouselJoins = myCarouselJoinsResult.data || [];
@@ -239,7 +247,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const allActivities = Array.from(allActivitiesMap.values());
 
       // --- Phase 3: Show plan cards immediately without avatars (stops the spinner early) ---
-      const userJoinedCarouselEntries = Array.from(carouselMap.values()).filter(c => c.userIds.includes(user.id));
+      // My City: only the current user's carousel joins in effectiveCity (prevents other cities leaking in)
+      // All Cities: every group that has at least one join, any city
+      const userJoinedCarouselEntries = showAllCities
+        ? Array.from(carouselMap.values()).filter(c => c.userIds.length > 0)
+        : Array.from(carouselMap.values()).filter(c =>
+            c.userIds.includes(user.id) && (!effectiveCity || c.city === effectiveCity)
+          );
 
       if (allActivities.length > 0) {
         const quickPlans = allActivities.map((a: any) => ({
@@ -337,7 +351,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               creator_name: profile?.name || "Anonymous",
               creator_avatar: profile?.avatar_url,
               participant_count: carouselActivity.userIds.length,
-              isJoined: true,
+              isJoined: carouselActivity.userIds.includes(user.id),
               isCarouselJoin: true,
             } as PlanActivity;
           })
@@ -778,10 +792,25 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     const targetPlan = await findOrCreateOpenGroup(plan);
 
-    const conflict = getConflictingActivity(targetPlan.activity_type, targetPlan.city);
-    if (conflict) {
-      setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: conflict.city, newCity: targetPlan.city });
-      return;
+    // DB check: already joined this activity type anywhere? Catches carousel joins and
+    // cross-city joins that may not appear in the stale in-memory activities list.
+    {
+      const nowCheck = new Date().toISOString();
+      const { data: existingJoin } = await supabase
+        .from("activity_joins")
+        .select("id, city")
+        .eq("user_id", user.id)
+        .eq("activity_type", targetPlan.activity_type)
+        .or(`expires_at.is.null,expires_at.gt.${nowCheck}`)
+        .maybeSingle();
+      if (existingJoin) {
+        if (existingJoin.city.toLowerCase() === targetPlan.city.toLowerCase()) {
+          setShowAlreadyJoinedPlan(true);
+        } else {
+          setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
+        }
+        return;
+      }
     }
 
     const { error } = await supabase
@@ -868,10 +897,24 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     const targetPlan = await findOrCreateOpenGroup(plan);
 
-    const conflict = getConflictingActivity(targetPlan.activity_type, targetPlan.city);
-    if (conflict) {
-      setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: conflict.city, newCity: targetPlan.city });
-      return;
+    // DB check: already joined this activity type anywhere?
+    {
+      const nowCheck = new Date().toISOString();
+      const { data: existingJoin } = await supabase
+        .from("activity_joins")
+        .select("id, city")
+        .eq("user_id", user.id)
+        .eq("activity_type", targetPlan.activity_type)
+        .or(`expires_at.is.null,expires_at.gt.${nowCheck}`)
+        .maybeSingle();
+      if (existingJoin) {
+        if (existingJoin.city.toLowerCase() === targetPlan.city.toLowerCase()) {
+          setShowAlreadyJoinedPlan(true);
+        } else {
+          setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
+        }
+        return;
+      }
     }
 
     const { error } = await supabase
@@ -926,10 +969,24 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     const targetPlan = await findOrCreateOpenGroup(plan);
 
-    const conflict = getConflictingActivity(targetPlan.activity_type, targetPlan.city);
-    if (conflict) {
-      setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: conflict.city, newCity: targetPlan.city });
-      return;
+    // DB check: already joined this activity type anywhere?
+    {
+      const nowCheck = new Date().toISOString();
+      const { data: existingJoin } = await supabase
+        .from("activity_joins")
+        .select("id, city")
+        .eq("user_id", user.id)
+        .eq("activity_type", targetPlan.activity_type)
+        .or(`expires_at.is.null,expires_at.gt.${nowCheck}`)
+        .maybeSingle();
+      if (existingJoin) {
+        if (existingJoin.city.toLowerCase() === targetPlan.city.toLowerCase()) {
+          setShowAlreadyJoinedPlan(true);
+        } else {
+          setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
+        }
+        return;
+      }
     }
 
     const { error } = await supabase
