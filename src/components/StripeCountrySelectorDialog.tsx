@@ -83,8 +83,12 @@ export function StripeCountrySelectorDialog({
   const { t } = useTranslation();
   const [selectedCode, setSelectedCode] = useState<string>("");
   const [showCountryList, setShowCountryList] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
 
   const selectedCountry = PAYOUT_COUNTRIES.find(c => c.code === selectedCode);
+  const filteredCountries = PAYOUT_COUNTRIES.filter(c =>
+    c.name.toLowerCase().includes(countrySearch.toLowerCase())
+  );
 
   const handleContinue = () => {
     console.log('[Stripe] handleContinue - selectedCode:', selectedCode);
@@ -95,7 +99,7 @@ export function StripeCountrySelectorDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { setCountrySearch(""); setShowCountryList(false); } onOpenChange(v); }}>
       <DialogContent className="max-w-sm bg-white">
         <DialogHeader>
           <DialogTitle className="text-gray-900">
@@ -140,14 +144,23 @@ export function StripeCountrySelectorDialog({
 
               {showCountryList && (
                 <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={countrySearch}
+                    onChange={e => setCountrySearch(e.target.value)}
+                    placeholder={t('stripe.searchCountry', 'Search country...')}
+                    className="w-full px-3 py-2 border-b border-gray-200 text-sm outline-none bg-white text-gray-900 placeholder-gray-400"
+                  />
                   <div className="max-h-52 overflow-y-auto">
-                    {PAYOUT_COUNTRIES.map(country => (
+                    {filteredCountries.length > 0 ? filteredCountries.map(country => (
                       <button
                         key={country.code}
                         type="button"
                         onClick={() => {
                           setSelectedCode(country.code);
                           setShowCountryList(false);
+                          setCountrySearch("");
                         }}
                         className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-900 hover:bg-gray-50 transition-colors"
                       >
@@ -156,7 +169,9 @@ export function StripeCountrySelectorDialog({
                           <Check className="w-4 h-4 text-primary" />
                         )}
                       </button>
-                    ))}
+                    )) : (
+                      <p className="px-3 py-3 text-sm text-gray-400">{t('stripe.noCountryMatch', 'No countries found')}</p>
+                    )}
                   </div>
                 </div>
               )}
