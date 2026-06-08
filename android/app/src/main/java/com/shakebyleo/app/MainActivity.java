@@ -1,4 +1,4 @@
-package com.shake.app;
+package com.shakebyleo.app;
 
 import com.getcapacitor.BridgeActivity;
 
