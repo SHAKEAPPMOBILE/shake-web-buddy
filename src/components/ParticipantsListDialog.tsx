@@ -68,18 +68,20 @@ export function ParticipantsListDialog({
         return;
       }
 
-      if (!joins || joins.length === 0) {
+      // Mirror GroupChatView's fallback: if the query returned nothing but the
+      // current user opened this dialog (they joined), seed with their own ID.
+      let joinRows: { user_id: string }[] = joins ?? [];
+      if (!joinRows.length && user?.id) {
+        joinRows = [{ user_id: user.id }];
+      }
+
+      if (!joinRows.length) {
         setParticipants([]);
         setIsLoading(false);
         return;
       }
 
-      // Get unique user IDs; always include the current user even if their join
-      // pre-dates the week-start cutoff used by the query above.
-      const uniqueUserIds = [...new Set(joins.map((j) => j.user_id))];
-      if (user?.id && !uniqueUserIds.includes(user.id)) {
-        uniqueUserIds.push(user.id);
-      }
+      const uniqueUserIds = [...new Set(joinRows.map((j) => j.user_id))];
 
       // Fetch profiles for these users
       const { data: profiles, error: profilesError } = await supabase
