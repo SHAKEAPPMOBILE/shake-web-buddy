@@ -9,6 +9,20 @@ export const isNativePlatform = () => {
   return platform === "ios" || platform === "android";
 };
 
+// RevenueCat entitlement identifier — must match the RevenueCat dashboard exactly
+// (case-sensitive). The webhook accepts this key case-insensitively as a safety net.
+export const PREMIUM_ENTITLEMENT_ID = 'Premium';
+
+// App Store product identifier for SHAKE Premium (non-consumable)
+export const PREMIUM_PRODUCT_ID = 'Superhuman01';
+
+// Per-platform RevenueCat public API keys. Android has no Google Play app
+// configured in RevenueCat yet — purchases there fail until a goog_ key exists.
+const REVENUECAT_API_KEYS: Record<string, string | undefined> = {
+  ios: 'appl_RUTGAWevlfwjFrJjnUlJWYtiXlD',
+  android: undefined,
+};
+
 let _revenueCatReady = false;
 
 export const initializeRevenueCat = async () => {
@@ -20,13 +34,18 @@ export const initializeRevenueCat = async () => {
     return;
   }
 
+  const apiKey = REVENUECAT_API_KEYS[platform];
+  if (!apiKey) {
+    console.warn(`[RevenueCat] No API key for platform "${platform}" — purchases unavailable`);
+    return;
+  }
+
   try {
-    await Purchases.configure({
-      apiKey: 'appl_RUTGAWevlfwjFrJjnUlJWYtiXlD',
-    });
+    await Purchases.configure({ apiKey });
     _revenueCatReady = true;
     console.log('✅ RevenueCat configured successfully (anonymous session — call identifyUser() after sign-in)');
   } catch (error) {
+    // Don't rethrow at app start; purchasePremium retries configuration on demand.
     console.error('❌ RevenueCat initialization error:', error);
   }
 };
@@ -34,6 +53,9 @@ export const initializeRevenueCat = async () => {
 /**
  * Link RevenueCat session to the app's signed-in user.
  * Must be called after sign-in so purchases are attributed to the correct account.
+ * Throws on failure: a purchase made before logIn succeeds is attributed to an
+ * anonymous RevenueCat user and can never be matched to the Supabase profile —
+ * the user would pay without receiving premium.
  */
 export const identifyRevenueCatUser = async (appUserId: string) => {
   if (!isNativePlatform()) return;
@@ -44,6 +66,7 @@ export const identifyRevenueCatUser = async (appUserId: string) => {
       'entitlements:', Object.keys(customerInfo?.entitlements?.active ?? {}));
   } catch (error) {
     console.error('[RevenueCat] logIn error:', error);
+    throw error;
   }
 };
 
@@ -51,11 +74,10 @@ export const isRevenueCatReady = () => _revenueCatReady;
 
 export const checkPremiumAccess = async (): Promise<boolean> => {
   if (!isNativePlatform()) return false;
-  
+
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    // RevenueCat entitlement identifier is "Premium" (case-sensitive)
-    return (customerInfo as any).entitlements?.active?.['Premium'] !== undefined;
+    return (customerInfo as any).entitlements?.active?.[PREMIUM_ENTITLEMENT_ID] !== undefined;
   } catch (error) {
     console.error('Error checking premium:', error);
     return false;
@@ -67,9 +89,14 @@ export const purchasePremium = async () => {
     throw new Error("Not available on web — use Stripe checkout");
   }
 
-  // Warn if RevenueCat was never configured (initializeRevenueCat wasn't called or failed)
+  // If configuration failed at app start (e.g. launched offline), retry now
+  // instead of letting getOfferings throw an opaque "not configured" error.
   if (!_revenueCatReady) {
-    console.warn('[RevenueCat] purchasePremium called but _revenueCatReady=false — attempting anyway, may throw "not configured"');
+    console.warn('[RevenueCat] purchasePremium called but _revenueCatReady=false — retrying configuration');
+    await initializeRevenueCat();
+    if (!_revenueCatReady) {
+      throw new Error('Payment system not configured — restart the app and try again');
+    }
   }
 
   console.log('[RevenueCat] purchasePremium: fetching offerings... (ready:', _revenueCatReady, ')');
@@ -100,9 +127,9 @@ export const purchasePremium = async () => {
     throw new Error('No purchasable package found in RevenueCat offerings');
   }
 
-  // Broad search: match by product identifier, package identifier, or substring
+  // Exact product match first, then fall back to looser matching
   const pkg =
-    packages.find(p => p.product?.identifier === 'SuperHuman') ??
+    packages.find(p => p.product?.identifier === PREMIUM_PRODUCT_ID) ??
     packages.find(p => p.product?.identifier?.toLowerCase().includes('superhuman')) ??
     packages.find(p => p.identifier === 'monthly') ??
     packages.find(p => p.identifier === '$rc_monthly') ??
@@ -131,20 +158,4 @@ export const purchasePremium = async () => {
 
   console.log('[RevenueCat] purchase complete, entitlements:', Object.keys(result.customerInfo?.entitlements?.active ?? {}));
   return result.customerInfo;
-};
-
-export const purchaseDonation = async (
-  donationId: 'Donations5' | 'Donations10' | 'Donations25'
-) => {
-  if (!isNativePlatform()) throw new Error('Not available on web');
-  
-  try {
-    const result = await Purchases.purchaseStoreProduct({
-      product: { identifier: donationId } as any
-    });
-    return result.customerInfo;
-  } catch (error) {
-    console.error('Donation error:', error);
-    throw error;
-  }
 };

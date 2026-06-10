@@ -125,16 +125,25 @@ serve(async (req) => {
       logStep("No active subscription found");
     }
 
-    // Sync premium status to profiles_private for RLS policy to use
-    const { error: updateError } = await supabaseClient
-      .from("profiles_private")
-      .update({ premium_override: hasActiveSub })
-      .eq("user_id", user.id);
-    
-    if (updateError) {
-      logStep("Warning: Could not sync premium status to database", { error: updateError.message });
+    // Sync premium status to profiles_private for RLS policy to use.
+    // Only write when an active Stripe subscription exists. Reaching this point
+    // means premium_override was false when we read it (true early-returns above),
+    // so writing false would be a no-op — except when the RevenueCat webhook set
+    // it true while our Stripe calls were in flight, in which case writing false
+    // would strip premium from a user who just paid via Apple. Never downgrade here.
+    if (hasActiveSub) {
+      const { error: updateError } = await supabaseClient
+        .from("profiles_private")
+        .update({ premium_override: true })
+        .eq("user_id", user.id);
+
+      if (updateError) {
+        logStep("Warning: Could not sync premium status to database", { error: updateError.message });
+      } else {
+        logStep("Premium status synced to database", { premium: true });
+      }
     } else {
-      logStep("Premium status synced to database", { premium: hasActiveSub });
+      logStep("No active Stripe subscription - leaving premium_override untouched");
     }
 
     return new Response(JSON.stringify({

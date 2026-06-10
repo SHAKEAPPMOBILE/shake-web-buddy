@@ -1,53 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { crypto } from "https://deno.land/std@0.190.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-revenuecat-signature",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[REVENUECAT-WEBHOOK] ${step}${detailsStr}`);
 };
-
-// Verify RevenueCat webhook signature
-async function verifySignature(payload: string, signature: string | null, secret: string): Promise<boolean> {
-  if (!signature) {
-    logStep("No signature provided");
-    return false;
-  }
-
-  try {
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    
-    const signatureBuffer = await crypto.subtle.sign(
-      "HMAC",
-      key,
-      encoder.encode(payload)
-    );
-    
-    const computedSignature = Array.from(new Uint8Array(signatureBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-    
-    // RevenueCat sends signature in format: sha256=<hex>
-    const expectedSignature = signature.replace('sha256=', '');
-    
-    return computedSignature === expectedSignature;
-  } catch (error) {
-    logStep("Signature verification error", { error: String(error) });
-    return false;
-  }
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -62,31 +24,27 @@ serve(async (req) => {
       throw new Error("REVENUECAT_WEBHOOK_SECRET is not set");
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    const body = await req.text();
-    const signature = req.headers.get("x-revenuecat-signature");
-
-    // Verify webhook signature
-    const isValid = await verifySignature(body, signature, webhookSecret);
-    if (!isValid) {
-      logStep("Invalid webhook signature");
-      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+    // RevenueCat does not sign webhook payloads. It sends the literal value
+    // configured under Integrations → Webhooks → "Authorization header" in the
+    // dashboard. That field must be set to this secret (a "Bearer " prefix is
+    // tolerated either way).
+    const authHeader = req.headers.get("authorization") ?? "";
+    const providedSecret = authHeader.startsWith("Bearer ")
+      ? authHeader.slice("Bearer ".length)
+      : authHeader;
+    if (providedSecret !== webhookSecret) {
+      logStep("Invalid Authorization header");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const event = JSON.parse(body);
-    logStep("Event received", { type: event.event?.type, app_user_id: event.event?.app_user_id });
-
+    const event = await req.json();
     const eventType = event.event?.type;
     const appUserId = event.event?.app_user_id;
-    
+    logStep("Event received", { type: eventType, app_user_id: appUserId });
+
     if (!appUserId) {
       logStep("No app_user_id in event");
       return new Response(JSON.stringify({ received: true }), {
@@ -95,92 +53,128 @@ serve(async (req) => {
       });
     }
 
-    // Map RevenueCat events to subscription status updates
-    const premiumEvents = [
+    // Purchases made before Purchases.logIn() are attributed to an anonymous
+    // RevenueCat user and cannot be matched to a Supabase profile. Log loudly:
+    // each of these is a paying user who won't receive premium automatically.
+    if (appUserId.startsWith("$RCAnonymousID")) {
+      logStep("WARNING: anonymous app_user_id — purchase cannot be linked to a profile", {
+        appUserId,
+        eventType,
+        productId: event.event?.product_id,
+      });
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // The app's entitlement identifier is "Premium" (case-sensitive in the client
+    // + RevenueCat dashboard), with legacy "superhuman" also accepted. Match
+    // case-insensitively here so a dashboard/casing mismatch can never silently
+    // drop a paid user's premium status.
+    const PREMIUM_ENTITLEMENT_KEYS = ["premium", "superhuman"];
+    const isPremiumKey = (key: string) =>
+      PREMIUM_ENTITLEMENT_KEYS.includes(key.toLowerCase());
+
+    // Webhook events carry granted entitlements in `entitlement_ids` (array) /
+    // `entitlement_id` (legacy single field).
+    const entitlementIds: string[] = Array.isArray(event.event?.entitlement_ids)
+      ? event.event.entitlement_ids
+      : event.event?.entitlement_id
+        ? [event.event.entitlement_id]
+        : [];
+    const grantsPremiumEntitlement = entitlementIds.some(isPremiumKey);
+
+    // The premium product (Superhuman01) is a NON-CONSUMABLE: buying it fires
+    // NON_RENEWING_PURCHASE (not INITIAL_PURCHASE), it never expires, and the
+    // only revocation that applies to it is a refund. The subscription event
+    // types are kept so a future switch to auto-renewable subscriptions keeps
+    // working.
+    const grantEvents = [
       "INITIAL_PURCHASE",
       "RENEWAL",
       "UNCANCELLATION",
-      "NON_RENEWING_PURCHASE", // For one-time purchases like donations (optional tracking)
+      "NON_RENEWING_PURCHASE",
     ];
 
-    const nonPremiumEvents = [
-      "CANCELLATION",
-      "EXPIRATION",
-      "BILLING_ISSUE",
-    ];
+    // null = this event does not change premium status; don't touch the DB.
+    // Unknown event types (TEST, TRANSFER, PRODUCT_CHANGE, ...) must never
+    // overwrite a paying user's status.
+    let isPremium: boolean | null = null;
 
-    // Get subscription info from event
-    const subscriberInfo = event.event?.subscriber_info;
-    const entitlements = subscriberInfo?.entitlements;
-    
-    // Check if user has active "premium" or "superhuman" entitlement
-    const hasPremiumEntitlement = entitlements?.premium?.expires_date || 
-                                   entitlements?.superhuman?.expires_date;
-    
-    let isPremium = false;
-    let subscriptionEnd: string | null = null;
-
-    if (premiumEvents.includes(eventType)) {
-      isPremium = true;
-      // Get expiration date from the entitlement
-      const expiresDate = entitlements?.premium?.expires_date || 
-                          entitlements?.superhuman?.expires_date ||
-                          event.event?.expiration_at_ms;
-      
-      if (expiresDate) {
-        subscriptionEnd = typeof expiresDate === 'number' 
-          ? new Date(expiresDate).toISOString()
-          : expiresDate;
+    if (grantEvents.includes(eventType)) {
+      if (grantsPremiumEntitlement) {
+        isPremium = true;
+        logStep("Premium purchase event - granting premium", { eventType, entitlementIds });
+      } else {
+        // e.g. a legacy donation product not attached to the Premium entitlement
+        logStep("Purchase without premium entitlement - ignoring", {
+          eventType,
+          entitlementIds,
+          productId: event.event?.product_id,
+        });
       }
-      logStep("Premium event - setting premium status", { isPremium, subscriptionEnd });
-    } else if (nonPremiumEvents.includes(eventType)) {
-      isPremium = false;
-      logStep("Non-premium event - removing premium status");
-    } else {
-      // For other events, check current entitlement status
-      if (hasPremiumEntitlement) {
-        const expiresDate = entitlements?.premium?.expires_date || 
-                            entitlements?.superhuman?.expires_date;
-        if (expiresDate && new Date(expiresDate) > new Date()) {
-          isPremium = true;
-          subscriptionEnd = expiresDate;
+    } else if (eventType === "EXPIRATION") {
+      // Access actually ended (subscription lapsed). Only revoke when the
+      // expired entitlement is actually the premium one — expiration of an
+      // unrelated product must not strip premium granted via Stripe or a
+      // still-valid Apple purchase.
+      if (grantsPremiumEntitlement) {
+        isPremium = false;
+        logStep("Expiration event - removing premium");
+      } else {
+        logStep("Expiration without premium entitlement - ignoring", { entitlementIds });
+      }
+    } else if (eventType === "CANCELLATION") {
+      // CANCELLATION means auto-renew was disabled OR a refund was issued
+      // (cancellation_reason distinguishes). Auto-renew opt-out keeps access
+      // until the paid period ends — EXPIRATION fires then. Only refunds
+      // revoke immediately, and only when the refunded product carried the
+      // premium entitlement.
+      if (event.event?.cancellation_reason === "CUSTOMER_SUPPORT") {
+        if (grantsPremiumEntitlement) {
+          isPremium = false;
+          logStep("Refund - removing premium");
+        } else {
+          logStep("Refund without premium entitlement - ignoring", { entitlementIds });
         }
+      } else {
+        logStep("Auto-renew disabled - keeping premium until EXPIRATION", {
+          reason: event.event?.cancellation_reason,
+        });
       }
-      logStep("Other event - checked entitlement", { isPremium, subscriptionEnd });
-    }
-
-    // Update user's premium status in profiles_private
-    // app_user_id should be the Supabase user ID
-    const { error: updateError } = await supabaseClient
-      .from("profiles_private")
-      .update({
-        premium_override: isPremium,
-        // Store RevenueCat subscription end if available
-        // Note: We're using premium_override for RevenueCat-managed subscriptions
-        // This differs from Stripe which uses the check-subscription function
-      })
-      .eq("user_id", appUserId);
-
-    if (updateError) {
-      logStep("Error updating user premium status", { error: updateError.message, userId: appUserId });
-      // Don't throw - we still want to acknowledge the webhook
+    } else if (eventType === "BILLING_ISSUE") {
+      // Grace period: RevenueCat keeps the entitlement active while Apple
+      // retries billing; EXPIRATION follows if it can't be resolved.
+      logStep("Billing issue - keeping premium until EXPIRATION");
     } else {
-      logStep("Updated user premium status", { userId: appUserId, isPremium });
+      logStep("Unhandled event type - no status change", { eventType });
     }
 
-    // Handle Kind Human donations (non-renewing purchases)
-    if (eventType === "NON_RENEWING_PURCHASE") {
-      const productId = event.event?.product_id;
-      const price = event.event?.price;
-      const currency = event.event?.currency;
-      
-      logStep("Kind Human donation received", { 
-        productId, 
-        price, 
-        currency, 
-        userId: appUserId 
-      });
-      // You could track donations in a separate table here if needed
+    if (isPremium !== null) {
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { persistSession: false } }
+      );
+
+      // app_user_id is the Supabase user ID (set via Purchases.logIn in the app)
+      const { data: updated, error: updateError } = await supabaseClient
+        .from("profiles_private")
+        .update({ premium_override: isPremium })
+        .eq("user_id", appUserId)
+        .select("user_id");
+
+      if (updateError) {
+        logStep("Error updating user premium status", { error: updateError.message, userId: appUserId });
+        // Don't throw - we still want to acknowledge the webhook
+      } else if (!updated || updated.length === 0) {
+        // A zero-row update is not an error in PostgREST — surface it, because
+        // it means a real purchase event couldn't be applied to any profile.
+        logStep("WARNING: no profiles_private row matched app_user_id", { appUserId, isPremium });
+      } else {
+        logStep("Updated user premium status", { userId: appUserId, isPremium });
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {
