@@ -211,11 +211,6 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
     weekStart.setHours(0, 0, 0, 0);
-    console.log("[HomeTab] carousel count query params", {
-      activity_type: activityId,
-      city: selectedCity,
-      joined_at_gte: weekStart.toISOString(),
-    });
     let cancelled = false;
     supabase
       .from("activity_joins")
@@ -223,8 +218,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       .eq("activity_type", activityId)
       .eq("city", selectedCity)
       .gte("joined_at", weekStart.toISOString())
-      .then(({ count, error }) => {
-        console.log("[HomeTab] carousel count result", { count, error });
+      .then(({ count }) => {
         if (!cancelled) setCarouselJoinCount(count ?? 0);
       });
     return () => { cancelled = true; };
