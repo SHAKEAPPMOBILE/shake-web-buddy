@@ -55,6 +55,12 @@ export function ParticipantsListDialog({
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       weekStart.setHours(0, 0, 0, 0);
+      console.log("[ParticipantsListDialog] joins query params", {
+        activity_type: activityType,
+        city,
+        created_at_gte: weekStart.toISOString(),
+        user_id: user?.id,
+      });
       const { data: joins, error: joinsError } = await supabase
         .from("activity_joins")
         .select("user_id")
@@ -62,8 +68,10 @@ export function ParticipantsListDialog({
         .eq("city", city)
         .gte("created_at", weekStart.toISOString());
 
+      console.log("[ParticipantsListDialog] joins raw result", { joins, joinsError });
+
       if (joinsError) {
-        console.error("Error fetching joins:", joinsError);
+        console.error("[ParticipantsListDialog] joins error", joinsError);
         setIsLoading(false);
         return;
       }
@@ -72,16 +80,19 @@ export function ParticipantsListDialog({
       // current user opened this dialog (they joined), seed with their own ID.
       let joinRows: { user_id: string }[] = joins ?? [];
       if (!joinRows.length && user?.id) {
+        console.log("[ParticipantsListDialog] no joins from DB, seeding with current user", user.id);
         joinRows = [{ user_id: user.id }];
       }
 
       if (!joinRows.length) {
+        console.log("[ParticipantsListDialog] truly empty, no user — showing 'No participants'");
         setParticipants([]);
         setIsLoading(false);
         return;
       }
 
       const uniqueUserIds = [...new Set(joinRows.map((j) => j.user_id))];
+      console.log("[ParticipantsListDialog] uniqueUserIds", uniqueUserIds);
 
       // Fetch profiles for these users
       const { data: profiles, error: profilesError } = await supabase
@@ -89,8 +100,10 @@ export function ParticipantsListDialog({
         .select("user_id, name, avatar_url")
         .in("user_id", uniqueUserIds);
 
+      console.log("[ParticipantsListDialog] profiles raw result", { profiles, profilesError });
+
       if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
+        console.error("[ParticipantsListDialog] profiles error", profilesError);
       }
 
       const participantsList: Participant[] = uniqueUserIds.map((userId) => {
