@@ -291,11 +291,32 @@ export function ChatTab({
         }
       }
 
+      // Filter carousel joins: only show within 24h after the last occurrence OR within 24h of joining.
+      // Direct message chats (privateResults) are always shown unless manually left.
+      const nowMs = Date.now();
+      const ms24h = 24 * 60 * 60 * 1000;
+      const validCarouselJoins = (carouselJoins || []).filter(join => {
+        // Explicit expires_at set by the server takes precedence
+        if (join.expires_at) {
+          return new Date(join.expires_at).getTime() > nowMs;
+        }
+        // Joined within the last 24h → show
+        if (join.joined_at && nowMs - new Date(join.joined_at).getTime() < ms24h) {
+          return true;
+        }
+        // Show for 24h after the last weekly occurrence.
+        // getNextOccurrenceDate returns NEXT week once the grace period passes,
+        // so (nextOcc − 7 days) correctly resolves to the most recent past occurrence.
+        const nextOcc = getNextOccurrenceDate(join.activity_type);
+        const lastOcc = new Date(nextOcc.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return lastOcc.getTime() > nowMs - ms24h;
+      });
+
       // Process all groups in parallel (carousel, plans, events, private chats)
       const [carouselResults, planResults, eventResults, privateResults] = await Promise.all([
         // ── Carousel joins ──────────────────────────────────────────────────
         Promise.all(
-          (carouselJoins || []).map(async (join) => {
+          validCarouselJoins.map(async (join) => {
             const [{ count }, { data: readStatus }] = await Promise.all([
               supabase
                 .from("activity_joins")

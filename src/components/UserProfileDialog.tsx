@@ -394,10 +394,10 @@ export function UserProfileDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Enlarged Avatar Modal - full-screen overlay */}
+      {/* Enlarged Avatar Modal - full-screen overlay, must be above dialog (z-[10001]) */}
       {showEnlargedAvatar && avatarUrl && (
         <div
-          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center cursor-pointer"
+          className="fixed inset-0 z-[20000] bg-black/90 flex items-center justify-center cursor-pointer"
           onClick={() => setShowEnlargedAvatar(false)}
         >
           <img
