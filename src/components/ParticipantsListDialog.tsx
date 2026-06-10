@@ -51,13 +51,16 @@ export function ParticipantsListDialog({
     const fetchParticipants = async () => {
       setIsLoading(true);
       
-      // Get active joins for this activity
+      // Get joins for this activity (same week-start filter as GroupChatView participant count)
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      weekStart.setHours(0, 0, 0, 0);
       const { data: joins, error: joinsError } = await supabase
         .from("activity_joins")
         .select("user_id")
         .eq("activity_type", activityType)
         .eq("city", city)
-        .gt("expires_at", new Date().toISOString());
+        .gte("created_at", weekStart.toISOString());
 
       if (joinsError) {
         console.error("Error fetching joins:", joinsError);
