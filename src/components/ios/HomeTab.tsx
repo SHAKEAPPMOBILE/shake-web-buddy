@@ -535,9 +535,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                       ? t('home.anytimeAnywhere', 'Anytime, Anywhere.')
                       : currentActivity?.label}
                   </div>
-                  {!currentActivity?.isProposePlan && carouselJoinCount > 0 && (
+                  {!currentActivity?.isProposePlan && getActivityJoinCount(currentActivity?.id || '') > 0 && (
                     <div className="mt-1 text-sm text-muted-foreground">
-                      {carouselJoinCount} joined
+                      {getActivityJoinCount(currentActivity?.id || '')}/{MAX_GROUP_SIZE} joined
                     </div>
                   )}
                 </div>
@@ -596,7 +596,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                       (() => { console.log('[Carousel] hasNoVenue=true for', currentActivity?.id, 'in', joinCity, '— still allowing join (venue not required to join)'); return null; })()
                     )}
                     <>
-                      {carouselJoinCount >= MAX_GROUP_SIZE && !currentActivity?.isProposePlan ? (
+                      {getActivityJoinCount(currentActivity?.id || '') >= MAX_GROUP_SIZE && !currentActivity?.isProposePlan ? (
                         <button
                           type="button"
                           disabled
