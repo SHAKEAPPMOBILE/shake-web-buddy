@@ -1,121 +1,52 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Heart } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  triggerConfettiWaterfall,
-  triggerConfettiWaterfallMonochrome,
-} from "@/lib/confetti";
+import { triggerConfettiWaterfallMonochrome } from "@/lib/confetti";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { checkSubscription } = useAuth();
 
-  const isDonation = searchParams.get("donation") === "true";
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
-    if (isDonation) {
-      triggerConfettiWaterfall();
-    } else {
-      triggerConfettiWaterfallMonochrome();
-    }
+    triggerConfettiWaterfallMonochrome();
 
-    // Only check subscription status for non-donation flows
-    if (!isDonation) {
-      const refreshStatus = async () => {
-        await checkSubscription();
-      };
+    const refreshStatus = async () => {
+      await checkSubscription();
+    };
 
-      refreshStatus();
+    refreshStatus();
 
-      // Poll every 3 seconds for up to 30 seconds in case Stripe webhook is delayed
-      const interval = setInterval(() => {
-        checkSubscription();
-      }, 3000);
+    // Poll every 3 seconds for up to 30 seconds in case Stripe webhook is delayed
+    const interval = setInterval(() => {
+      checkSubscription();
+    }, 3000);
 
-      const timeout = setTimeout(() => {
-        clearInterval(interval);
-      }, 30000);
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+    }, 30000);
 
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-      };
-    }
-  }, [checkSubscription, isDonation]);
-
-  const handleBack = () => {
-    navigate("/", { replace: true });
-  };
-
-  const handleDonationBack = () => {
-    // Navigate to home with state to open profile tab and subscription dialog
-    navigate("/", { replace: true, state: { openTab: "profile", openSubscription: true } });
-  };
-
-  // Auto-redirect for donation success after 5 seconds
-  useEffect(() => {
-    if (isDonation) {
-      const timer = setTimeout(() => {
-        handleDonationBack();
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [isDonation]);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [checkSubscription]);
 
   // Auto-redirect for subscription success after 5 seconds
   useEffect(() => {
-    if (!isDonation) {
-      const timer = setTimeout(() => {
-        navigate("/", { replace: true });
-      }, 5000);
-      const tick = setInterval(() => {
-        setCountdown((c) => c - 1);
-      }, 1000);
-      return () => {
-        clearTimeout(timer);
-        clearInterval(tick);
-      };
-    }
-  }, [isDonation]);
-
-  // Donation success view
-  if (isDonation) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full text-center space-y-6">
-          <div className="flex justify-center">
-            <div className="w-20 h-20 rounded-full bg-pink-500/20 flex items-center justify-center">
-              <Heart className="w-10 h-10 text-pink-500" fill="currentColor" />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <h2 className="text-3xl font-display font-bold text-foreground">
-              Thank you for your support!
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              It's so beautiful to see other people wanting us to thrive. 💚
-            </p>
-          </div>
-
-          <div className="pt-4">
-            <Button
-              onClick={handleDonationBack}
-              className="w-full bg-shake-yellow text-background hover:bg-shake-yellow/90"
-              size="lg"
-            >
-              Go back to SHAKE
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    const timer = setTimeout(() => {
+      navigate("/", { replace: true });
+    }, 5000);
+    const tick = setInterval(() => {
+      setCountdown((c) => c - 1);
+    }, 1000);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(tick);
+    };
+  }, [navigate]);
 
   // Subscription success — Speedrun-style HUD (a16z-inspired blue terminal)
   return (

@@ -36,7 +36,7 @@ serve(async (req) => {
     for (const join of joins) {
       const pushRes = await fetch(sendPushUrl, {
         method: "POST",
-        headers: { "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZ3JqenViZWdvcmNpamdmanJpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTI4OTYwOSwiZXhwIjoyMDg2ODY1NjA5fQ.A19GJUSvFEKj83PeAv0ti_mzp3vNPU8lJCDALZi957Q", "Content-Type": "application/json" },
+        headers: { "Authorization": "Bearer " + serviceRoleKey, "Content-Type": "application/json" },
         body: JSON.stringify({
           to_user_id: join.user_id,
           title: senderName + " sent a message",

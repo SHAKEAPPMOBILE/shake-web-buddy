@@ -15,7 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import superhumanImg from "@/assets/superhuman-superman.png";
 import { Purchases } from '@revenuecat/purchases-capacitor';
-import { purchasePremium, identifyRevenueCatUser } from "@/lib/revenuecat";
+import { purchasePremium, identifyRevenueCatUser, PREMIUM_ENTITLEMENT_ID, PREMIUM_PRODUCT_ID } from "@/lib/revenuecat";
 import { shouldUseStripeSubscriptionCheckout } from "@/lib/platform-utils";
 const CapacitorPurchases = Purchases;
 
@@ -74,7 +74,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         price: p.product?.priceString,
       })));
       const pkg =
-        packages.find(p => p.product?.identifier === "SuperHuman") ??
+        packages.find(p => p.product?.identifier === PREMIUM_PRODUCT_ID) ??
         packages.find(p => p.product?.identifier?.toLowerCase().includes("superhuman")) ??
         packages.find(p => p.identifier === "monthly") ??
         packages[0];
@@ -97,8 +97,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
   const hasPremiumEntitlement = (customerInfo: any): boolean => {
     const entitlements = customerInfo?.entitlements?.active ?? {};
-    // RevenueCat entitlement identifier is "Premium" (case-sensitive)
-    return entitlements["Premium"] !== undefined;
+    return entitlements[PREMIUM_ENTITLEMENT_ID] !== undefined;
   };
 
   const handleSubscribe = async () => {
@@ -126,14 +125,10 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
 
     setIsLoading(true);
 
-    // Safety net: reset loading after 15s no matter what, so UI never stays stuck
-    const loadingResetTimer = setTimeout(() => {
-      console.warn('[Subscribe] Safety timeout fired — resetting loading state after 15s');
-      setIsLoading(false);
-      setSubscribeError("Purchase timed out. Please try again.");
-      toast.error("Purchase timed out. Please try again.");
-    }, 15000);
-
+    // No timeout here: Face ID, password prompts, and Ask to Buy routinely take
+    // longer than any reasonable timer, and a "timed out" toast while the Apple
+    // sheet is up (with the button re-enabled) invites a duplicate purchase.
+    // The finally block resets loading when the purchase promise settles.
     try {
       // Web / non-native: Stripe Checkout. Native iOS/Android: RevenueCat IAP.
       if (useStripe) {
@@ -261,7 +256,6 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         setSubscribeError(errorMsg);
       }
     } finally {
-      clearTimeout(loadingResetTimer);
       setIsLoading(false);
     }
   };
@@ -296,6 +290,11 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       toast.error("Restore timed out. Please try again.");
     }, 15000);
     try {
+      // Identify first so the restore (and the webhook it triggers) is attributed
+      // to this Supabase user rather than an anonymous RevenueCat session.
+      if (user) {
+        await identifyRevenueCatUser(user.id);
+      }
       await CapacitorPurchases.restorePurchases();
       const restoreResult = await CapacitorPurchases.getCustomerInfo();
       // SDK may return { customerInfo } wrapper or plain CustomerInfo depending on version
