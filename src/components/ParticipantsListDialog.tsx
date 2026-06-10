@@ -74,8 +74,12 @@ export function ParticipantsListDialog({
         return;
       }
 
-      // Get unique user IDs only
+      // Get unique user IDs; always include the current user even if their join
+      // pre-dates the week-start cutoff used by the query above.
       const uniqueUserIds = [...new Set(joins.map((j) => j.user_id))];
+      if (user?.id && !uniqueUserIds.includes(user.id)) {
+        uniqueUserIds.push(user.id);
+      }
 
       // Fetch profiles for these users
       const { data: profiles, error: profilesError } = await supabase
