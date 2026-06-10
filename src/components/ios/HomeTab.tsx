@@ -214,7 +214,6 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       .select("*", { count: "exact", head: true })
       .eq("activity_type", activityId)
       .eq("city", selectedCity)
-      .is("activity_id", null)
       .gt("expires_at", new Date().toISOString())
       .then(({ count }) => {
         if (!cancelled) setCarouselJoinCount(count ?? 0);
