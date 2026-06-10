@@ -214,7 +214,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     console.log("[HomeTab] carousel count query params", {
       activity_type: activityId,
       city: selectedCity,
-      created_at_gte: weekStart.toISOString(),
+      joined_at_gte: weekStart.toISOString(),
     });
     let cancelled = false;
     supabase
@@ -222,7 +222,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       .select("*", { count: "exact", head: true })
       .eq("activity_type", activityId)
       .eq("city", selectedCity)
-      .gte("created_at", weekStart.toISOString())
+      .gte("joined_at", weekStart.toISOString())
       .then(({ count, error }) => {
         console.log("[HomeTab] carousel count result", { count, error });
         if (!cancelled) setCarouselJoinCount(count ?? 0);

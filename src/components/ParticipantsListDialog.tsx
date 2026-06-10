@@ -58,7 +58,7 @@ export function ParticipantsListDialog({
       console.log("[ParticipantsListDialog] joins query params", {
         activity_type: activityType,
         city,
-        created_at_gte: weekStart.toISOString(),
+        joined_at_gte: weekStart.toISOString(),
         user_id: user?.id,
       });
       const { data: joins, error: joinsError } = await supabase
@@ -66,7 +66,7 @@ export function ParticipantsListDialog({
         .select("user_id")
         .eq("activity_type", activityType)
         .eq("city", city)
-        .gte("created_at", weekStart.toISOString());
+        .gte("joined_at", weekStart.toISOString());
 
       console.log("[ParticipantsListDialog] joins raw result", { joins, joinsError });
 
