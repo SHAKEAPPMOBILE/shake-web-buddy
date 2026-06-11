@@ -72,7 +72,7 @@ serve(async (req) => {
     // + RevenueCat dashboard), with legacy "superhuman" also accepted. Match
     // case-insensitively here so a dashboard/casing mismatch can never silently
     // drop a paid user's premium status.
-    const PREMIUM_ENTITLEMENT_KEYS = ["premium", "superhuman"];
+    const PREMIUM_ENTITLEMENT_KEYS = ["premium", "superhuman", "super-human"];
     const isPremiumKey = (key: string) =>
       PREMIUM_ENTITLEMENT_KEYS.includes(key.toLowerCase());
 
