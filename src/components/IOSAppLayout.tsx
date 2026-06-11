@@ -407,7 +407,8 @@ export function IOSAppLayout() {
         .from("activity_joins")
         .select("city")
         .eq("user_id", user.id)
-        .eq("activity_type", activity);
+        .eq("activity_type", activity)
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
       const conflict = (existingJoins ?? []).find(
         (j: { city: string }) => j.city && j.city.toLowerCase() !== targetCity.toLowerCase()
       );
