@@ -68,6 +68,8 @@ export default function ProposePlanPage() {
   const [dayLimitError, setDayLimitError] = useState(false);
   const [cityInput, setCityInput] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedTime, setSelectedTime] = useState("20:00"); // default 8:00 PM
+  const [pastTimeError, setPastTimeError] = useState(false);
 
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
@@ -109,7 +111,15 @@ export default function ProposePlanPage() {
 
   const isPaidActivity = priceAmount.trim().length > 0;
   const effectiveCity = city || cityInput.trim();
-  const isValid = planText.trim().length > 0 && !hasProfanity && effectiveCity.length > 0;
+  const isValid = planText.trim().length > 0 && !hasProfanity && effectiveCity.length > 0 && selectedTime.length > 0;
+
+  // Combine the selected date + time for preview and submission
+  const previewDateTime = useMemo(() => {
+    const [h, m] = selectedTime.split(":").map(Number);
+    const d = new Date(selectedDate);
+    d.setHours(isNaN(h) ? 20 : h, isNaN(m) ? 0 : m, 0, 0);
+    return d;
+  }, [selectedDate, selectedTime]);
   const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
   const needsPayoutSetup = isPaidActivity && !hasPayoutMethod;
 
@@ -136,7 +146,16 @@ export default function ProposePlanPage() {
       ? `${selectedCurrency?.symbol || "$"}${priceAmount.trim()} ${priceCurrency}`
       : undefined;
 
-    const activityDate = selectedDate;
+    // Build the full date+time from the two pickers
+    const activityDate = previewDateTime;
+
+    // Reject plans in the past
+    if (activityDate < new Date()) {
+      setPastTimeError(true);
+      return;
+    }
+    setPastTimeError(false);
+
     const endOfSelectedDay = new Date(selectedDate);
     endOfSelectedDay.setHours(23, 59, 59, 999);
 
@@ -308,7 +327,7 @@ export default function ProposePlanPage() {
                         <button
                           key={label}
                           type="button"
-                          onClick={() => { setSelectedDate(date); setShowCalendar(false); }}
+                          onClick={() => { setSelectedDate(date); setShowCalendar(false); setPastTimeError(false); }}
                           className={cn(
                             "px-3 py-1.5 rounded-full text-sm font-medium border transition-all",
                             isSelected
@@ -369,7 +388,7 @@ export default function ProposePlanPage() {
                               key={dayNum}
                               type="button"
                               disabled={isPast}
-                              onClick={() => { setSelectedDate(dayDate); setShowCalendar(false); }}
+                              onClick={() => { setSelectedDate(dayDate); setShowCalendar(false); setPastTimeError(false); }}
                               className={cn(
                                 "aspect-square rounded-full text-xs flex items-center justify-center mx-auto w-7 h-7 transition-colors",
                                 isPast
@@ -386,6 +405,24 @@ export default function ProposePlanPage() {
                         })}
                       </div>
                     </div>
+                  )}
+
+                  {/* Time picker — required, defaults to 8:00 PM */}
+                  <div className="flex items-center gap-3 pt-1">
+                    <label className="text-sm font-medium text-foreground shrink-0">Time</label>
+                    <input
+                      type="time"
+                      value={selectedTime}
+                      onChange={(e) => { setSelectedTime(e.target.value); setPastTimeError(false); }}
+                      required
+                      className="h-9 rounded-md border border-blue-300 bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 w-32"
+                    />
+                  </div>
+                  {pastTimeError && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <span className="inline-block w-1 h-1 rounded-full bg-destructive" />
+                      This time has already passed — pick a future time.
+                    </p>
                   )}
                 </div>
               );
@@ -491,7 +528,7 @@ export default function ProposePlanPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{effectiveCity} • {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")}</span>
+                      <span>{effectiveCity} • {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}</span>
                       {priceAmount.trim() && (
                         <span className="text-green-600 font-medium">
                           {selectedCurrencySymbol}{priceAmount}

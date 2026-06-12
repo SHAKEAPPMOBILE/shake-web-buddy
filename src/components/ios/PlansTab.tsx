@@ -1598,10 +1598,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   {!planPreview.scheduled_for
                     ? t('common.today')
                     : isToday(new Date(planPreview.scheduled_for))
-                    ? t('common.today')
+                    ? `${t('common.today')} · ${format(new Date(planPreview.scheduled_for), "h:mm a")}`
                     : isTomorrow(new Date(planPreview.scheduled_for))
-                    ? t('common.tomorrow')
-                    : format(new Date(planPreview.scheduled_for), "EEE, d MMM")}
+                    ? `${t('common.tomorrow')} · ${format(new Date(planPreview.scheduled_for), "h:mm a")}`
+                    : format(new Date(planPreview.scheduled_for), "EEE, d MMM · h:mm a")}
                 </p>
               </div>
 
