@@ -830,7 +830,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     if (error) {
       console.error("Error joining plan:", error);
-      toast.error("Failed to join plan");
+      toast.error(`Failed to join: ${error.message}`);
       return;
     }
 
@@ -934,7 +934,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     if (error) {
       console.error("Error joining plan:", error);
-      toast.error("Failed to join plan");
+      toast.error(`Failed to join: ${error.message}`);
       return;
     }
 
@@ -1006,7 +1006,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     if (error) {
       console.error("Error joining plan:", error);
-      toast.error("Failed to join plan");
+      toast.error(`Failed to join: ${error.message}`);
       return;
     }
 
