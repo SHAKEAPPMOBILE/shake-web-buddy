@@ -285,7 +285,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           allActivities.map(async (activity: any) => {
             const [{ data: profile }, { count }] = await Promise.all([
               supabase.from("profiles").select("name, avatar_url").eq("user_id", activity.user_id).maybeSingle(),
-              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id).or(`expires_at.is.null,expires_at.gt.${nowISO2}`),
+              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id),
             ]);
             return {
               ...activity,
@@ -301,7 +301,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           cityPublicPlans.map(async (activity: any) => {
             const [{ data: profile }, { count }] = await Promise.all([
               supabase.from("profiles").select("name, avatar_url").eq("user_id", activity.user_id).maybeSingle(),
-              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id).or(`expires_at.is.null,expires_at.gt.${nowISO2}`),
+              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id),
             ]);
             return {
               ...activity,
@@ -509,8 +509,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             const { count } = await supabase
               .from("activity_joins")
               .select("*", { count: "exact", head: true })
-              .eq("activity_id", activity.id)
-              .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+              .eq("activity_id", activity.id);
 
             const activityWithDetails: PlanActivity = {
               ...activity,
@@ -693,12 +692,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const findOrCreateOpenGroup = async (plan: PlanActivity): Promise<PlanActivity> => {
     if (!user) return plan;
 
-    const { count } = await supabase
+    const nowForCap = new Date().toISOString();
+    const { data: activeJoinsForPlan } = await supabase
       .from("activity_joins")
-      .select("*", { count: "exact", head: true })
-      .eq("activity_id", plan.id);
+      .select("id")
+      .eq("activity_id", plan.id)
+      .or(`expires_at.is.null,expires_at.gt.${nowForCap}`);
+    const count = activeJoinsForPlan?.length ?? 0;
 
-    if ((count ?? 0) < MAX_CHAT_CAPACITY) return plan;
+    if (count < MAX_CHAT_CAPACITY) return plan;
 
     // This group is full — look for a sibling with the same type + city + scheduled_for
     const { data: siblings } = await supabase
@@ -711,13 +713,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       .neq("id", plan.id);
 
     for (const sibling of (siblings ?? [])) {
-      const { count: sibCount } = await supabase
+      const { data: activeSibJoins } = await supabase
         .from("activity_joins")
-        .select("*", { count: "exact", head: true })
+        .select("id")
         .eq("activity_id", sibling.id)
-        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+        .or(`expires_at.is.null,expires_at.gt.${nowForCap}`);
+      const sibCount = activeSibJoins?.length ?? 0;
 
-      if ((sibCount ?? 0) < MAX_CHAT_CAPACITY) {
+      if (sibCount < MAX_CHAT_CAPACITY) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("name, avatar_url")
@@ -792,12 +795,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
-    // Rule 3: block joining more than 10 min after the activity has started
+    // Block joining events that started on a PREVIOUS day.
+    // Same-day events are always joinable (plans often default to midnight).
     if (plan.scheduled_for) {
-      const minutesSinceStart = (Date.now() - new Date(plan.scheduled_for).getTime()) / 60000;
-      if (minutesSinceStart > 10) {
-        console.log("[JOIN:handleJoinPlan] blocked: activity started", { minutesSinceStart });
-        toast.error("This activity has already started — you can no longer join.");
+      const scheduledDate = new Date(plan.scheduled_for);
+      const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
+      if (!isSameDay && scheduledDate < new Date()) {
+        console.log("[JOIN:handleJoinPlan] blocked: past-day event", { scheduledDate });
+        toast.error("This event already started");
         return;
       }
     }
@@ -884,7 +889,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     fetchPlans();
   };
 
-  // Carousel activity types join directly; user-created plan types (general, etc.) show preview first
+  // Plans whose activity_type is in this set join immediately (no preview modal),
+  // regardless of whether the plan was user-created or auto-generated.
+  // A user-created dinner/drinks/brunch plan routes to handleDirectCityJoin, not the preview.
+  // Non-carousel types (general, run, surf, etc.) show the preview modal first.
   const CAROUSEL_ACTIVITY_TYPES = new Set(['dinner', 'drinks', 'brunch']);
 
   const handleCityPlanClick = (plan: PlanActivity) => {
@@ -917,12 +925,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
-    // Rule 3: block joining more than 10 min after the activity has started
+    // Block joining events that started on a PREVIOUS day.
+    // Same-day events are always joinable (plans often default to midnight).
     if (plan.scheduled_for) {
-      const minutesSinceStart = (Date.now() - new Date(plan.scheduled_for).getTime()) / 60000;
-      if (minutesSinceStart > 10) {
-        console.log("[JOIN:handleDirectCityJoin] blocked: activity started", { minutesSinceStart });
-        toast.error("This activity has already started — you can no longer join.");
+      const scheduledDate = new Date(plan.scheduled_for);
+      const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
+      if (!isSameDay && scheduledDate < new Date()) {
+        console.log("[JOIN:handleDirectCityJoin] blocked: past-day event", { scheduledDate });
+        toast.error("This event already started");
         return;
       }
     }
@@ -1010,6 +1020,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
     const plan = planPreview;
     setPlanPreview(null);
+
+    // Block joining events that started on a PREVIOUS day.
+    // Same-day events are always joinable (plans often default to midnight).
+    if (plan.scheduled_for) {
+      const scheduledDate = new Date(plan.scheduled_for);
+      const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
+      if (!isSameDay && scheduledDate < new Date()) {
+        console.log("[JOIN:handleConfirmJoinPreview] blocked: past-day event", { scheduledDate });
+        toast.error("This event already started");
+        return;
+      }
+    }
 
     const targetPlan = await findOrCreateOpenGroup(plan);
     console.log("[JOIN:handleConfirmJoinPreview] targetPlan after capacity check", { targetPlanId: targetPlan.id, originalPlanId: plan.id, redirected: targetPlan.id !== plan.id });
