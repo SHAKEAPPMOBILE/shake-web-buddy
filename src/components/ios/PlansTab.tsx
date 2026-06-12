@@ -784,13 +784,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   const handleJoinPlan = async (plan: PlanActivity, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("[JOIN:handleJoinPlan] tapped", { userId: user?.id, planId: plan.id, activityType: plan.activity_type, city: plan.city, isJoined: plan.isJoined });
     if (!user) {
-      console.log("[JOIN:handleJoinPlan] blocked: no user");
       return;
     }
     if (plan.isJoined) {
-      console.log("[JOIN:handleJoinPlan] blocked: already joined (in-memory flag)");
       setShowAlreadyJoinedPlan(true);
       return;
     }
@@ -801,20 +798,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const scheduledDate = new Date(plan.scheduled_for);
       const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
       if (!isSameDay && scheduledDate < new Date()) {
-        console.log("[JOIN:handleJoinPlan] blocked: past-day event", { scheduledDate });
         toast.error("This event already started");
         return;
       }
     }
 
     const targetPlan = await findOrCreateOpenGroup(plan);
-    console.log("[JOIN:handleJoinPlan] targetPlan after capacity check", { targetPlanId: targetPlan.id, originalPlanId: plan.id, redirected: targetPlan.id !== plan.id });
 
     // DB check: already joined this activity type anywhere? Catches carousel joins and
     // cross-city joins that may not appear in the stale in-memory activities list.
     {
       const nowCheck = new Date().toISOString();
-      console.log("[JOIN:handleJoinPlan] Gate C: querying active joins for", { userId: user.id, activityType: targetPlan.activity_type });
       const { data: existingJoin } = await supabase
         .from("activity_joins")
         .select("id, city")
@@ -822,13 +816,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .eq("activity_type", targetPlan.activity_type)
         .or(`expires_at.is.null,expires_at.gt.${nowCheck}`)
         .maybeSingle();
-      console.log("[JOIN:handleJoinPlan] Gate C result", { existingJoin });
       if (existingJoin) {
         if (existingJoin.city.toLowerCase() === targetPlan.city.toLowerCase()) {
-          console.log("[JOIN:handleJoinPlan] blocked: already joined same city");
           setShowAlreadyJoinedPlan(true);
         } else {
-          console.log("[JOIN:handleJoinPlan] blocked: duplicate type in different city", { existingCity: existingJoin.city, targetCity: targetPlan.city });
           setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
         }
         return;
@@ -841,7 +832,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       activity_type: targetPlan.activity_type,
       city: targetPlan.city,
     };
-    console.log("[JOIN:handleJoinPlan] inserting into activity_joins", insertPayload);
     const { error } = await supabase
       .from("activity_joins")
       .insert(insertPayload);
@@ -851,7 +841,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       toast.error(`Failed to join: ${error.message}`);
       return;
     }
-    console.log("[JOIN:handleJoinPlan] insert succeeded");
 
     // Notify creator (fire-and-forget)
     if (targetPlan.user_id && targetPlan.user_id !== user.id) {
@@ -896,32 +885,25 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const CAROUSEL_ACTIVITY_TYPES = new Set(['dinner', 'drinks', 'brunch']);
 
   const handleCityPlanClick = (plan: PlanActivity) => {
-    console.log("[JOIN:handleCityPlanClick] tapped", { userId: user?.id, planId: plan.id, activityType: plan.activity_type, city: plan.city, price: plan.price_amount, isCarousel: CAROUSEL_ACTIVITY_TYPES.has(plan.activity_type) });
     if (!user) {
-      console.log("[JOIN:handleCityPlanClick] blocked: no user");
       return;
     }
     // Paid plan → show payment/detail dialog
     if (plan.price_amount) {
-      console.log("[JOIN:handleCityPlanClick] routing to payment dialog (price_amount set)");
       setPaidActivityDetail(plan);
       return;
     }
     // Standard carousel types (dinner, drinks, brunch) → join directly without preview
     // User-created plans (general or any non-carousel type) → show preview modal first
     if (CAROUSEL_ACTIVITY_TYPES.has(plan.activity_type)) {
-      console.log("[JOIN:handleCityPlanClick] routing to handleDirectCityJoin (carousel type)");
       handleDirectCityJoin(plan);
     } else {
-      console.log("[JOIN:handleCityPlanClick] routing to preview modal (user-created / non-carousel type)");
       setPlanPreview(plan);
     }
   };
 
   const handleDirectCityJoin = async (plan: PlanActivity) => {
-    console.log("[JOIN:handleDirectCityJoin] tapped", { userId: user?.id, planId: plan.id, activityType: plan.activity_type, city: plan.city });
     if (!user) {
-      console.log("[JOIN:handleDirectCityJoin] blocked: no user");
       return;
     }
 
@@ -931,19 +913,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const scheduledDate = new Date(plan.scheduled_for);
       const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
       if (!isSameDay && scheduledDate < new Date()) {
-        console.log("[JOIN:handleDirectCityJoin] blocked: past-day event", { scheduledDate });
         toast.error("This event already started");
         return;
       }
     }
 
     const targetPlan = await findOrCreateOpenGroup(plan);
-    console.log("[JOIN:handleDirectCityJoin] targetPlan after capacity check", { targetPlanId: targetPlan.id, originalPlanId: plan.id, redirected: targetPlan.id !== plan.id });
 
     // DB check: already joined this activity type anywhere?
     {
       const nowCheck = new Date().toISOString();
-      console.log("[JOIN:handleDirectCityJoin] Gate C: querying active joins for", { userId: user.id, activityType: targetPlan.activity_type });
       const { data: existingJoin } = await supabase
         .from("activity_joins")
         .select("id, city")
@@ -951,13 +930,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .eq("activity_type", targetPlan.activity_type)
         .or(`expires_at.is.null,expires_at.gt.${nowCheck}`)
         .maybeSingle();
-      console.log("[JOIN:handleDirectCityJoin] Gate C result", { existingJoin });
       if (existingJoin) {
         if (existingJoin.city.toLowerCase() === targetPlan.city.toLowerCase()) {
-          console.log("[JOIN:handleDirectCityJoin] blocked: already joined same city");
           setShowAlreadyJoinedPlan(true);
         } else {
-          console.log("[JOIN:handleDirectCityJoin] blocked: duplicate type in different city", { existingCity: existingJoin.city, targetCity: targetPlan.city });
           setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
         }
         return;
@@ -970,7 +946,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       activity_type: targetPlan.activity_type,
       city: targetPlan.city,
     };
-    console.log("[JOIN:handleDirectCityJoin] inserting into activity_joins", insertPayload);
     const { error } = await supabase
       .from("activity_joins")
       .insert(insertPayload);
@@ -980,7 +955,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       toast.error(`Failed to join: ${error.message}`);
       return;
     }
-    console.log("[JOIN:handleDirectCityJoin] insert succeeded");
 
     // Notify creator (fire-and-forget)
     if (targetPlan.user_id && targetPlan.user_id !== user.id) {
@@ -1013,9 +987,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   };
 
   const handleConfirmJoinPreview = async () => {
-    console.log("[JOIN:handleConfirmJoinPreview] 'Yes I'm in' tapped", { userId: user?.id, planPreviewId: planPreview?.id, activityType: planPreview?.activity_type, city: planPreview?.city });
     if (!planPreview || !user) {
-      console.log("[JOIN:handleConfirmJoinPreview] blocked: no planPreview or no user", { hasPlanPreview: !!planPreview, hasUser: !!user });
       return;
     }
     const plan = planPreview;
@@ -1027,19 +999,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const scheduledDate = new Date(plan.scheduled_for);
       const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
       if (!isSameDay && scheduledDate < new Date()) {
-        console.log("[JOIN:handleConfirmJoinPreview] blocked: past-day event", { scheduledDate });
         toast.error("This event already started");
         return;
       }
     }
 
     const targetPlan = await findOrCreateOpenGroup(plan);
-    console.log("[JOIN:handleConfirmJoinPreview] targetPlan after capacity check", { targetPlanId: targetPlan.id, originalPlanId: plan.id, redirected: targetPlan.id !== plan.id });
 
     // DB check: already joined this activity type anywhere?
     {
       const nowCheck = new Date().toISOString();
-      console.log("[JOIN:handleConfirmJoinPreview] Gate C: querying active joins for", { userId: user.id, activityType: targetPlan.activity_type });
       const { data: existingJoin, error: queryError } = await supabase
         .from("activity_joins")
         .select("id, city")
@@ -1047,13 +1016,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .eq("activity_type", targetPlan.activity_type)
         .or(`expires_at.is.null,expires_at.gt.${nowCheck}`)
         .maybeSingle();
-      console.log("[JOIN:handleConfirmJoinPreview] Gate C result", { existingJoin, queryError });
       if (existingJoin) {
         if (existingJoin.city.toLowerCase() === targetPlan.city.toLowerCase()) {
-          console.log("[JOIN:handleConfirmJoinPreview] blocked: already joined same city");
           setShowAlreadyJoinedPlan(true);
         } else {
-          console.log("[JOIN:handleConfirmJoinPreview] blocked: duplicate type in different city", { existingCity: existingJoin.city, targetCity: targetPlan.city });
           setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
         }
         return;
@@ -1066,7 +1032,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       activity_type: targetPlan.activity_type,
       city: targetPlan.city,
     };
-    console.log("[JOIN:handleConfirmJoinPreview] inserting into activity_joins", insertPayload);
     const { error } = await supabase
       .from("activity_joins")
       .insert(insertPayload);
@@ -1076,7 +1041,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       toast.error(`Failed to join: ${error.message}`);
       return;
     }
-    console.log("[JOIN:handleConfirmJoinPreview] insert succeeded");
 
     // Notify creator (fire-and-forget)
     if (targetPlan.user_id && targetPlan.user_id !== user.id) {
