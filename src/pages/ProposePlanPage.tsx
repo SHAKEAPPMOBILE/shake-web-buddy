@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow } from "date-fns";
-import { Plus, User, Calendar, Send } from "lucide-react";
+import { Plus, User, Calendar, Send, ChevronLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
@@ -49,35 +49,14 @@ const BOT_QUESTIONS: Record<StepName, string> = {
 
 function BotBubble({ message }: { message: string }) {
   return (
-    <div className="flex items-start gap-2.5">
+    <div className="flex flex-col items-center gap-3 mb-8 text-center">
       <div
-        className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5"
+        className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
         style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
       >
-        🤝
+        😎
       </div>
-      <div className="max-w-[78%] rounded-2xl rounded-tl-none px-3.5 py-2.5 bg-muted text-foreground text-sm leading-relaxed">
-        {message}
-      </div>
-    </div>
-  );
-}
-
-function UserBubble({ message, onClick }: { message: string; onClick?: () => void }) {
-  return (
-    <div className="flex justify-end">
-      <button
-        type="button"
-        onClick={onClick}
-        title={onClick ? "Tap to edit" : undefined}
-        className={cn(
-          "max-w-[78%] rounded-2xl rounded-tr-none px-3.5 py-2.5 text-sm text-white text-left",
-          onClick && "hover:opacity-80 active:opacity-70 transition-opacity cursor-pointer"
-        )}
-        style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.85), rgba(67,56,202,0.75))" }}
-      >
-        {message}
-      </button>
+      <p className="text-2xl font-semibold text-foreground leading-snug px-2">{message}</p>
     </div>
   );
 }
@@ -117,8 +96,6 @@ export default function ProposePlanPage() {
 
   // Chat flow
   const [currentStep, setCurrentStep] = useState(0);
-  const [isEditingFromPreview, setIsEditingFromPreview] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
@@ -176,7 +153,7 @@ export default function ProposePlanPage() {
 
   const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
 
-  // Ordered chat steps — insert "city" only when context provides no city
+  // Ordered steps — insert "city" only when context provides no city
   const steps: StepName[] = useMemo(() => {
     const s: StepName[] = ["name"];
     if (!city) s.push("city");
@@ -186,15 +163,7 @@ export default function ProposePlanPage() {
 
   const currentStepName = steps[currentStep];
 
-  // Auto-scroll to newest message
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 120);
-    return () => clearTimeout(timer);
-  }, [currentStep, showCalendar]);
-
-  // Auto-focus composer input
+  // Auto-focus input on step change
   useEffect(() => {
     if (currentStepName === "name") nameInputRef.current?.focus();
     else if (currentStepName === "city") cityInputElRef.current?.focus();
@@ -204,25 +173,6 @@ export default function ProposePlanPage() {
 
   const selectedCurrencySymbol = CURRENCIES.find((c) => c.code === priceCurrency)?.symbol || "$";
 
-  const getUserAnswer = (step: StepName): string => {
-    switch (step) {
-      case "name": return planText;
-      case "city": return cityInput || city;
-      case "date":
-        return isToday(selectedDate)
-          ? "Today"
-          : isTomorrow(selectedDate)
-          ? "Tomorrow"
-          : format(selectedDate, "EEE, MMM d");
-      case "time": return format(previewDateTime, "h:mm a");
-      case "price":
-        return priceAmount.trim()
-          ? `${selectedCurrencySymbol}${priceAmount} ${priceCurrency}`
-          : "Free 🎉";
-      default: return "";
-    }
-  };
-
   const advanceStep = () =>
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
 
@@ -231,7 +181,10 @@ export default function ProposePlanPage() {
     setShowCalendar(false);
     setPastTimeError(false);
     setDayLimitError(false);
-    setIsEditingFromPreview(false);
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) jumpToStep(currentStep - 1);
   };
 
   const handleNameSubmit = () => {
@@ -364,11 +317,11 @@ export default function ProposePlanPage() {
     switch (currentStepName) {
       case "name":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {profanityError && (
-              <p className="text-xs text-destructive px-1">{profanityError}</p>
+              <p className="text-sm text-destructive px-1">{profanityError}</p>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className="flex-1 relative">
                 <input
                   ref={nameInputRef}
@@ -377,19 +330,19 @@ export default function ProposePlanPage() {
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNameSubmit(); } }}
                   placeholder={t("createPlan.placeholder")}
                   maxLength={MAX_CHARACTERS}
-                  className="w-full h-11 rounded-full border border-border bg-muted/60 px-4 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+                  className="w-full h-14 rounded-full border border-border bg-muted/60 px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">
+                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                   {planText.length}/{MAX_CHARACTERS}
                 </span>
               </div>
               <button
                 onClick={handleNameSubmit}
                 disabled={!planText.trim() || hasProfanity}
-                className="w-11 h-11 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
+                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
                 style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -397,22 +350,22 @@ export default function ProposePlanPage() {
 
       case "city":
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <input
               ref={cityInputElRef}
               value={cityInput}
               onChange={(e) => setCityInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCitySubmit(); } }}
               placeholder="e.g. Paris, New York, São Paulo…"
-              className="flex-1 h-11 rounded-full border border-border bg-muted/60 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+              className="flex-1 h-14 rounded-full border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
             />
             <button
               onClick={handleCitySubmit}
               disabled={!cityInput.trim()}
-              className="w-11 h-11 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
+              className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
               style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-5 h-5" />
             </button>
           </div>
         );
@@ -429,7 +382,7 @@ export default function ProposePlanPage() {
                     type="button"
                     onClick={() => handleDateSelect(date)}
                     className={cn(
-                      "px-3 py-2 rounded-full text-sm font-medium border transition-all",
+                      "px-5 py-3 rounded-full text-base font-medium border transition-all",
                       isSelected
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-muted/60 text-foreground border-border hover:border-primary/50"
@@ -443,14 +396,14 @@ export default function ProposePlanPage() {
                 type="button"
                 onClick={() => setShowCalendar((v) => !v)}
                 className={cn(
-                  "w-9 h-9 rounded-full border flex items-center justify-center transition-all shrink-0",
+                  "w-12 h-12 rounded-full border flex items-center justify-center transition-all shrink-0",
                   showCalendar
                     ? "bg-primary border-primary text-primary-foreground"
                     : "border-border text-foreground hover:border-primary/50"
                 )}
                 aria-label="Pick a date"
               >
-                <Calendar className="w-4 h-4" />
+                <Calendar className="w-5 h-5" />
               </button>
             </div>
 
@@ -493,26 +446,26 @@ export default function ProposePlanPage() {
 
       case "time":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {pastTimeError && (
-              <p className="text-xs text-destructive px-1">This time has already passed — pick a future time.</p>
+              <p className="text-sm text-destructive px-1">This time has already passed — pick a future time.</p>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <input
                 type="time"
                 ref={timeInputRef}
                 value={selectedTime}
                 onChange={(e) => { setSelectedTime(e.target.value); setPastTimeError(false); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleTimeSubmit(); }}
-                className="flex-1 h-11 rounded-full border border-border bg-muted/60 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                className="flex-1 h-14 rounded-full border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               />
               <button
                 onClick={handleTimeSubmit}
                 disabled={!selectedTime}
-                className="w-11 h-11 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
+                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
                 style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -520,10 +473,10 @@ export default function ProposePlanPage() {
 
       case "price":
         return (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
               <Select value={priceCurrency} onValueChange={setPriceCurrency}>
-                <SelectTrigger className="w-24 shrink-0 h-11 rounded-full border-border bg-muted/60">
+                <SelectTrigger className="w-28 shrink-0 h-14 rounded-full border-border bg-muted/60">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -543,20 +496,20 @@ export default function ProposePlanPage() {
                 onChange={(e) => setPriceAmount(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handlePriceSubmit(); }}
                 placeholder={t("createPlan.amountPlaceholder")}
-                className="flex-1 h-11 rounded-full border border-border bg-muted/60 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+                className="flex-1 h-14 rounded-full border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
               />
               <button
                 onClick={handlePriceSubmit}
                 disabled={!priceAmount.trim()}
-                className="w-11 h-11 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
+                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
                 style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5" />
               </button>
             </div>
             <button
               onClick={handleSkipPrice}
-              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+              className="w-full text-base text-muted-foreground hover:text-foreground transition-colors py-2"
             >
               Skip (keep it free)
             </button>
@@ -565,24 +518,68 @@ export default function ProposePlanPage() {
 
       case "preview":
         return (
-          <button
-            onClick={handleCreate}
-            disabled={!isValid || isLoading || connectLoading}
-            className="w-full py-3.5 rounded-full text-white font-medium transition-all hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
-          >
-            {isLoading || connectLoading ? (
-              <>
-                <LoadingSpinner size="sm" />
-                {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4" />
-                {t("createPlan.createBtn")}
-              </>
+          <div className="space-y-5">
+            {/* Preview card */}
+            <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                  {userAvatarUrl ? (
+                    <img
+                      src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
+                      alt="Your avatar"
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <User className="w-7 h-7 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
+                    {priceAmount.trim() && (
+                      <span className="text-green-500 font-medium ml-1">
+                        · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {dayLimitError && (
+              <p className="text-sm text-destructive text-center">Slow down tiger, one plan a day keeps the chaos away! 🐯</p>
             )}
-          </button>
+
+            {/* Create Plan */}
+            <button
+              onClick={handleCreate}
+              disabled={!isValid || isLoading || connectLoading}
+              className="w-full py-4 rounded-full text-white text-base font-medium transition-all hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+            >
+              {isLoading || connectLoading ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
+                </>
+              ) : (
+                <>
+                  <Plus className="w-5 h-5" />
+                  {t("createPlan.createBtn")}
+                </>
+              )}
+            </button>
+
+            {/* Edit answers — jumps back to the last Q&A step */}
+            <button
+              type="button"
+              onClick={() => jumpToStep(steps.length - 2)}
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-center"
+            >
+              Edit answers
+            </button>
+          </div>
         );
 
       default:
@@ -637,84 +634,28 @@ export default function ProposePlanPage() {
           </div>
         </div>
       ) : (
-        <>
-          {/* Chat messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-3 pb-52">
-            {(currentStepName !== "preview" || isEditingFromPreview) &&
-              steps.slice(0, currentStep).map((step, i) => (
-                <div key={step} className="space-y-2">
-                  <BotBubble message={BOT_QUESTIONS[step]} />
-                  <UserBubble
-                    message={getUserAnswer(step)}
-                    onClick={() => jumpToStep(i)}
-                  />
-                </div>
-              ))
-            }
+        <div className="flex-1 flex flex-col items-center justify-center px-6 pb-[env(safe-area-inset-bottom,0px)]">
+          <div
+            key={currentStep}
+            className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-300"
+          >
+            <BotBubble message={BOT_QUESTIONS[currentStepName]} />
 
-            {currentStepName !== "preview" && (
-              <BotBubble message={BOT_QUESTIONS[currentStepName]} />
-            )}
-
-            {currentStepName === "preview" && (
-              <>
-                <BotBubble message={BOT_QUESTIONS["preview"]} />
-                {/* Preview card */}
-                <div className="pl-10">
-                  <div className="rounded-2xl px-4 py-3 bg-muted/70 space-y-2 border border-border/30 max-w-[85%]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                        {userAvatarUrl ? (
-                          <img
-                            src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
-                            alt="Your avatar"
-                            className="w-full h-full object-cover rounded-full"
-                          />
-                        ) : (
-                          <User className="w-6 h-6 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-foreground truncate text-sm">"{planText.trim()}"</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
-                          {priceAmount.trim() && (
-                            <span className="text-green-500 font-medium ml-1">
-                              · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {!isEditingFromPreview && (
-                  <div className="flex justify-end pr-2 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingFromPreview(true)}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-                    >
-                      Edit answers
-                    </button>
-                  </div>
-                )}
-
-                {dayLimitError && (
-                  <BotBubble message="Slow down tiger, one plan a day keeps the chaos away! 🐯" />
-                )}
-              </>
-            )}
-
-            <div ref={chatEndRef} />
-          </div>
-
-          {/* Fixed composer */}
-          <div className="fixed bottom-0 left-0 right-0 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] bg-background/95 backdrop-blur border-t border-border/40">
             {renderComposer()}
+
+            {/* ← Back: every step after the first, hidden at preview (Edit answers covers it) */}
+            {currentStep > 0 && currentStepName !== "preview" && (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="mt-6 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mx-auto"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Back
+              </button>
+            )}
           </div>
-        </>
+        </div>
       )}
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
