@@ -47,15 +47,17 @@ const BOT_QUESTIONS: Record<StepName, string> = {
   preview: "Here's your plan! Looking good? 👀",
 };
 
-function BotBubble({ message }: { message: string }) {
+function BotBubble({ message, showAvatar = false }: { message: string; showAvatar?: boolean }) {
   return (
     <div className="flex flex-col items-center gap-3 mb-8">
-      <div
-        className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
-        style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
-      >
-        😎
-      </div>
+      {showAvatar && (
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
+          style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+        >
+          😎
+        </div>
+      )}
       <div className="bg-muted rounded-2xl rounded-tl-none px-5 py-4 w-full">
         <p className="text-xl font-semibold text-foreground leading-snug">{message}</p>
       </div>
@@ -636,26 +638,71 @@ export default function ProposePlanPage() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 pb-[env(safe-area-inset-bottom,0px)]">
-          <div
-            key={currentStep}
-            className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-300"
-          >
-            <BotBubble message={BOT_QUESTIONS[currentStepName]} />
+        <div className="flex-1 overflow-y-auto flex flex-col">
+          {/* spacer: centers the view on step 0; collapses as history grows */}
+          <div className="flex-1 min-h-[8vh]" />
+          <div className="w-full max-w-sm mx-auto px-6 pt-4 pb-[max(env(safe-area-inset-bottom,0px),2rem)]">
 
-            {renderComposer()}
-
-            {/* ← Back: every step after the first, hidden at preview (Edit answers covers it) */}
-            {currentStep > 0 && currentStepName !== "preview" && (
-              <button
-                type="button"
-                onClick={handleBack}
-                className="mt-16 flex items-center text-muted-foreground hover:text-foreground transition-colors mx-auto"
-                aria-label="Go back"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
+            {/* Past Q&A — oldest (top) faintest/smallest, most-recent (bottom) clearer */}
+            {currentStep > 0 && (
+              <div className="space-y-4 mb-6">
+                {steps.slice(0, currentStep).map((step, i) => {
+                  const stepsBack = currentStep - i; // 1 = most recent, higher = older
+                  const opacity =
+                    stepsBack === 1 ? "opacity-60" : stepsBack === 2 ? "opacity-40" : "opacity-25";
+                  const labelSize = stepsBack === 1 ? "text-xs" : "text-[10px]";
+                  const answerSize =
+                    stepsBack === 1 ? "text-sm" : stepsBack === 2 ? "text-xs" : "text-[11px]";
+                  return (
+                    <button
+                      key={step}
+                      type="button"
+                      onClick={() => jumpToStep(i)}
+                      className={cn(
+                        "w-full text-left space-y-0.5 transition-all hover:opacity-90 active:opacity-100",
+                        opacity
+                      )}
+                    >
+                      <p className={cn("text-muted-foreground leading-tight", labelSize)}>
+                        {BOT_QUESTIONS[step]}
+                      </p>
+                      <p className={cn("font-medium text-foreground leading-tight", answerSize)}>
+                        {getUserAnswer(step)}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
             )}
+
+            {/* Divider separating history from active step */}
+            {currentStep > 0 && <div className="border-t border-border/20 mb-8" />}
+
+            {/* Active step */}
+            <div
+              key={currentStep}
+              className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+            >
+              <BotBubble
+                message={BOT_QUESTIONS[currentStepName]}
+                showAvatar={currentStep === 0}
+              />
+
+              {renderComposer()}
+
+              {/* ← Back: every step after the first, hidden at preview (Edit answers covers it) */}
+              {currentStep > 0 && currentStepName !== "preview" && (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="mt-16 flex items-center text-muted-foreground hover:text-foreground transition-colors mx-auto"
+                  aria-label="Go back"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
           </div>
         </div>
       )}
