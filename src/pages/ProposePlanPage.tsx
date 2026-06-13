@@ -117,6 +117,7 @@ export default function ProposePlanPage() {
 
   // Chat flow
   const [currentStep, setCurrentStep] = useState(0);
+  const [isEditingFromPreview, setIsEditingFromPreview] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cityInputElRef = useRef<HTMLInputElement>(null);
@@ -230,6 +231,7 @@ export default function ProposePlanPage() {
     setShowCalendar(false);
     setPastTimeError(false);
     setDayLimitError(false);
+    setIsEditingFromPreview(false);
   };
 
   const handleNameSubmit = () => {
@@ -638,15 +640,17 @@ export default function ProposePlanPage() {
         <>
           {/* Chat messages */}
           <div className="flex-1 overflow-y-auto px-4 py-5 space-y-3 pb-52">
-            {steps.slice(0, currentStep).map((step, i) => (
-              <div key={step} className="space-y-2">
-                <BotBubble message={BOT_QUESTIONS[step]} />
-                <UserBubble
-                  message={getUserAnswer(step)}
-                  onClick={() => jumpToStep(i)}
-                />
-              </div>
-            ))}
+            {(currentStepName !== "preview" || isEditingFromPreview) &&
+              steps.slice(0, currentStep).map((step, i) => (
+                <div key={step} className="space-y-2">
+                  <BotBubble message={BOT_QUESTIONS[step]} />
+                  <UserBubble
+                    message={getUserAnswer(step)}
+                    onClick={() => jumpToStep(i)}
+                  />
+                </div>
+              ))
+            }
 
             {currentStepName !== "preview" && (
               <BotBubble message={BOT_QUESTIONS[currentStepName]} />
@@ -684,6 +688,18 @@ export default function ProposePlanPage() {
                     </div>
                   </div>
                 </div>
+
+                {!isEditingFromPreview && (
+                  <div className="flex justify-end pr-2 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingFromPreview(true)}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+                    >
+                      Edit answers
+                    </button>
+                  </div>
+                )}
 
                 {dayLimitError && (
                   <BotBubble message="Slow down tiger, one plan a day keeps the chaos away! 🐯" />
