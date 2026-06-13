@@ -30,6 +30,7 @@ interface AuthContextType {
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   checkSubscription: () => Promise<void>;
+  setIsPremium: (value: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -786,6 +787,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updatePassword,
         signOut,
         checkSubscription,
+        setIsPremium,
       }}
     >
       {children}
