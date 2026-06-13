@@ -648,7 +648,7 @@ export default function ProposePlanPage() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="mt-6 flex items-center text-muted-foreground hover:text-foreground transition-colors mx-auto"
+                className="mt-16 flex items-center text-muted-foreground hover:text-foreground transition-colors mx-auto"
                 aria-label="Go back"
               >
                 <ChevronLeft className="w-4 h-4" />
