@@ -373,7 +373,7 @@ export default function ProposePlanPage() {
       case "date":
         return (
           <div className="space-y-3">
-            <div className="flex gap-2 flex-wrap items-center">
+            <div className="flex gap-2 flex-wrap items-center justify-center">
               {datePills.map(({ label, date }) => {
                 const isSelected = format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
                 return (
@@ -648,10 +648,10 @@ export default function ProposePlanPage() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="mt-6 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mx-auto"
+                className="mt-6 flex items-center text-muted-foreground hover:text-foreground transition-colors mx-auto"
+                aria-label="Go back"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Back
               </button>
             )}
           </div>
