@@ -27,9 +27,9 @@ interface PremiumDialogProps {
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
-  const [productPrice, setProductPrice] = useState("$1.88");
+  const [productPrice, setProductPrice] = useState<string | null>(null);
   const [subscribeError, setSubscribeError] = useState<string | null>(null);
-  const { user, isPremium, isManualOverride, checkSubscription } = useAuth();
+  const { user, isPremium, isManualOverride, checkSubscription, setIsPremium } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -159,41 +159,48 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       await identifyRevenueCatUser(user.id);
       console.log('[Subscribe] identifyRevenueCatUser done, calling purchasePremium...');
       const customerInfo = await purchasePremium();
-      console.log('[Subscribe] purchasePremium returned, entitlements:', Object.keys(customerInfo?.entitlements?.active ?? {}));
 
-      // Purchase confirmed by RevenueCat — close modal and show success immediately.
-      // Never await checkSubscription() here: if it hangs or throws the modal would
-      // stay stuck even though the user paid. Sync state in the background instead.
-      toast.success("Welcome to Super-Human!");
-      onOpenChange(false);
+      // Log full entitlements object so we can verify what RevenueCat returns
+      console.log('[Subscribe] customerInfo.entitlements.active:', customerInfo?.entitlements?.active);
 
       const hasEntitlement = hasPremiumEntitlement(customerInfo);
       console.log('[Subscribe] immediate hasPremiumEntitlement:', hasEntitlement);
+
+      // Set premium state directly from RevenueCat response — no Supabase round-trip needed
       if (hasEntitlement) {
-        // Entitlement active — sync app state quietly in background.
+        setIsPremium(true);
+      }
+
+      // UI unblocked — toast and close happen before any background I/O
+      toast.success("Welcome to Super-Human!");
+      onOpenChange(false);
+
+      // Sync Supabase profile record in the background; UI is already updated above
+      if (hasEntitlement) {
         checkSubscription().catch((err: any) =>
           console.warn('[Subscribe] background checkSubscription error (non-fatal):', err?.message ?? err)
         );
       } else {
-        // Entitlement may lag RevenueCat client — fetch once more then reload.
-        console.log('[Subscribe] entitlement not yet active, fetching fresh customerInfo...');
-        try {
-          const freshResult = await CapacitorPurchases.getCustomerInfo();
-          // SDK may return { customerInfo } wrapper or plain CustomerInfo depending on version
-          const freshInfo = (freshResult as any).customerInfo ?? freshResult;
-          console.log('[Subscribe] fresh entitlements:', Object.keys(freshInfo?.entitlements?.active ?? {}));
-          if (hasPremiumEntitlement(freshInfo)) {
-            checkSubscription().catch((err: any) =>
-              console.warn('[Subscribe] background checkSubscription error (non-fatal):', err?.message ?? err)
-            );
-          } else {
-            console.log('[Subscribe] entitlement still lagging — reloading in 2s');
+        // Entitlement may lag RevenueCat — re-fetch in background, no await so finally fires immediately
+        console.log('[Subscribe] entitlement not yet active, fetching fresh customerInfo in background...');
+        CapacitorPurchases.getCustomerInfo()
+          .then((freshResult: any) => {
+            const freshInfo = freshResult.customerInfo ?? freshResult;
+            console.log('[Subscribe] fresh entitlements.active:', freshInfo?.entitlements?.active);
+            if (hasPremiumEntitlement(freshInfo)) {
+              setIsPremium(true);
+              checkSubscription().catch((err: any) =>
+                console.warn('[Subscribe] background checkSubscription error (non-fatal):', err?.message ?? err)
+              );
+            } else {
+              console.log('[Subscribe] entitlement still lagging — reloading in 2s');
+              setTimeout(() => window.location.reload(), 2000);
+            }
+          })
+          .catch((err: any) => {
+            console.warn('[Subscribe] fresh getCustomerInfo failed (non-fatal):', err?.message ?? err);
             setTimeout(() => window.location.reload(), 2000);
-          }
-        } catch (freshErr: any) {
-          console.warn('[Subscribe] getCustomerInfo fresh check failed (non-fatal):', freshErr?.message ?? freshErr);
-          setTimeout(() => window.location.reload(), 2000);
-        }
+          });
       }
     } catch (error: any) {
       // Log every property the RevenueCat/Stripe error object may carry
@@ -455,9 +462,11 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         </div>
 
         <div className="text-center py-2">
-          <div className="text-3xl font-display font-bold text-gray-900">
-            {productPrice}<span className="text-base font-normal text-gray-500">/month</span>
-          </div>
+          {productPrice && (
+            <div className="text-3xl font-display font-bold text-gray-900">
+              {productPrice}
+            </div>
+          )}
           <p className="text-xs text-gray-500 mt-0.5">Cancel anytime • Best value!</p>
         </div>
 

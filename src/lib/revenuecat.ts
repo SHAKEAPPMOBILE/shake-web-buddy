@@ -11,7 +11,7 @@ export const isNativePlatform = () => {
 
 // RevenueCat entitlement identifier — must match the RevenueCat dashboard exactly
 // (case-sensitive). The webhook accepts this key case-insensitively as a safety net.
-export const PREMIUM_ENTITLEMENT_ID = 'Super-Human';
+export const PREMIUM_ENTITLEMENT_ID = 'Premium';
 
 // App Store product identifier for SHAKE Premium (non-consumable)
 export const PREMIUM_PRODUCT_ID = 'Superhuman01';
@@ -156,6 +156,6 @@ export const purchasePremium = async () => {
     throw purchaseErr;
   }
 
-  console.log('[RevenueCat] purchase complete, entitlements:', Object.keys(result.customerInfo?.entitlements?.active ?? {}));
+  console.log('[RevenueCat] purchase complete — entitlements.active:', result.customerInfo?.entitlements?.active);
   return result.customerInfo;
 };
