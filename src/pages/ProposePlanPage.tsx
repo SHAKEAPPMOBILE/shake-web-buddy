@@ -49,14 +49,16 @@ const BOT_QUESTIONS: Record<StepName, string> = {
 
 function BotBubble({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 mb-8 text-center">
+    <div className="flex flex-col items-center gap-3 mb-8">
       <div
         className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
         style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
       >
         😎
       </div>
-      <p className="text-2xl font-semibold text-foreground leading-snug px-2">{message}</p>
+      <div className="bg-muted rounded-2xl rounded-tl-none px-5 py-4 w-full">
+        <p className="text-xl font-semibold text-foreground leading-snug">{message}</p>
+      </div>
     </div>
   );
 }
@@ -330,7 +332,7 @@ export default function ProposePlanPage() {
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNameSubmit(); } }}
                   placeholder={t("createPlan.placeholder")}
                   maxLength={MAX_CHARACTERS}
-                  className="w-full h-14 rounded-full border border-border bg-muted/60 px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+                  className="w-full h-16 rounded-2xl border border-border bg-muted/60 px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
                 />
                 <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                   {planText.length}/{MAX_CHARACTERS}
@@ -357,7 +359,7 @@ export default function ProposePlanPage() {
               onChange={(e) => setCityInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCitySubmit(); } }}
               placeholder="e.g. Paris, New York, São Paulo…"
-              className="flex-1 h-14 rounded-full border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+              className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
             />
             <button
               onClick={handleCitySubmit}
@@ -382,9 +384,9 @@ export default function ProposePlanPage() {
                     type="button"
                     onClick={() => handleDateSelect(date)}
                     className={cn(
-                      "px-5 py-3 rounded-full text-base font-medium border transition-all",
+                      "px-6 py-3.5 rounded-full text-base font-medium border transition-all",
                       isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-primary text-primary-foreground border-primary shadow-md"
                         : "bg-muted/60 text-foreground border-border hover:border-primary/50"
                     )}
                   >
@@ -457,7 +459,7 @@ export default function ProposePlanPage() {
                 value={selectedTime}
                 onChange={(e) => { setSelectedTime(e.target.value); setPastTimeError(false); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleTimeSubmit(); }}
-                className="flex-1 h-14 rounded-full border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               />
               <button
                 onClick={handleTimeSubmit}
@@ -496,7 +498,7 @@ export default function ProposePlanPage() {
                 onChange={(e) => setPriceAmount(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handlePriceSubmit(); }}
                 placeholder={t("createPlan.amountPlaceholder")}
-                className="flex-1 h-14 rounded-full border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+                className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
               />
               <button
                 onClick={handlePriceSubmit}
