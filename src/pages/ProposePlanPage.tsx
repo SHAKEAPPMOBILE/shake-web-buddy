@@ -177,6 +177,25 @@ export default function ProposePlanPage() {
 
   const selectedCurrencySymbol = CURRENCIES.find((c) => c.code === priceCurrency)?.symbol || "$";
 
+  const getUserAnswer = (step: StepName): string => {
+    switch (step) {
+      case "name": return planText;
+      case "city": return cityInput || city;
+      case "date":
+        return isToday(selectedDate)
+          ? "Today"
+          : isTomorrow(selectedDate)
+          ? "Tomorrow"
+          : format(selectedDate, "EEE, MMM d");
+      case "time": return format(previewDateTime, "h:mm a");
+      case "price":
+        return priceAmount.trim()
+          ? `${selectedCurrencySymbol}${priceAmount} ${priceCurrency}`
+          : "Free 🎉";
+      default: return "";
+    }
+  };
+
   const advanceStep = () =>
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
 
