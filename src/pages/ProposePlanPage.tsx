@@ -54,7 +54,7 @@ function BotBubble({ message, showAvatar = false }: { message: string; showAvata
       {showAvatar && (
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
-          style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+          style={{ background: "#60a5fa" }}
         >
           😎
         </div>
@@ -370,7 +370,7 @@ export default function ProposePlanPage() {
                 onClick={handleNameSubmit}
                 disabled={!planText.trim() || hasProfanity}
                 className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                style={{ background: "#60a5fa" }}
               >
                 <Send className="w-5 h-5" />
               </button>
@@ -393,7 +393,7 @@ export default function ProposePlanPage() {
               onClick={handleCitySubmit}
               disabled={!cityInput.trim()}
               className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+              style={{ background: "#60a5fa" }}
             >
               <Send className="w-5 h-5" />
             </button>
@@ -414,7 +414,7 @@ export default function ProposePlanPage() {
                     className={cn(
                       "px-6 py-3.5 rounded-full text-base font-medium border transition-all",
                       isSelected
-                        ? "bg-primary text-primary-foreground border-primary shadow-md"
+                        ? "bg-[#60a5fa] text-white border-[#60a5fa] shadow-md"
                         : "bg-muted/60 text-foreground border-border hover:border-primary/50"
                     )}
                   >
@@ -493,7 +493,7 @@ export default function ProposePlanPage() {
                 onClick={handleTimeSubmit}
                 disabled={!selectedTime}
                 className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                style={{ background: "#60a5fa" }}
               >
                 <Send className="w-5 h-5" />
               </button>
@@ -551,7 +551,7 @@ export default function ProposePlanPage() {
                   onClick={handlePriceSubmit}
                   disabled={!priceAmount.trim()}
                   className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                  style={{ background: "#60a5fa" }}
                 >
                   <Send className="w-5 h-5" />
                 </button>
@@ -600,7 +600,7 @@ export default function ProposePlanPage() {
               onClick={handleCreate}
               disabled={!isValid || isLoading || connectLoading}
               className="w-full py-4 rounded-full text-white text-base font-medium transition-all hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+              style={{ background: "#60a5fa" }}
             >
               {isLoading || connectLoading ? (
                 <>
@@ -608,7 +608,7 @@ export default function ProposePlanPage() {
                   {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
                 </>
               ) : (
-                "All good? 👀 Create Plan"
+                "Create the plan +"
               )}
             </button>
 
