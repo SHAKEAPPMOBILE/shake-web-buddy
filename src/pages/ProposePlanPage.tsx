@@ -54,7 +54,7 @@ function BotBubble({ message, showAvatar = false }: { message: string; showAvata
       {showAvatar && (
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
-          style={{ background: "#60a5fa" }}
+          style={{ background: "#ef4444" }}
         >
           😎
         </div>
@@ -599,7 +599,7 @@ export default function ProposePlanPage() {
             <button
               onClick={handleCreate}
               disabled={!isValid || isLoading || connectLoading}
-              className="w-full py-4 rounded-full text-white text-base font-medium transition-all hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-full text-white transition-all hover:opacity-90 disabled:opacity-50 flex flex-col items-center justify-center gap-0.5"
               style={{ background: "#60a5fa" }}
             >
               {isLoading || connectLoading ? (
@@ -608,7 +608,10 @@ export default function ProposePlanPage() {
                   {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
                 </>
               ) : (
-                "Create the plan +"
+                <>
+                  <span className="text-xs font-normal opacity-80">All good? 👀</span>
+                  <span className="text-base font-semibold">Create the plan +</span>
+                </>
               )}
             </button>
 
