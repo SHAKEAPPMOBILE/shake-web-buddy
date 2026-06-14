@@ -43,11 +43,12 @@ const BOT_QUESTIONS: Record<StepName, string> = {
   city: "Which city are you in? 📍",
   date: "When? 📅",
   time: "What time? ⏰",
-  price: "Set a price? (optional) 💰",
+  price: "",
   preview: "Here's your plan! Looking good? 👀",
 };
 
 function BotBubble({ message, showAvatar = false }: { message: string; showAvatar?: boolean }) {
+  if (!message) return null;
   return (
     <div className="flex flex-col items-center gap-3 mb-8">
       {showAvatar && (
@@ -100,6 +101,7 @@ export default function ProposePlanPage() {
 
   // Chat flow
   const [currentStep, setCurrentStep] = useState(0);
+  const [showPriceInput, setShowPriceInput] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
@@ -204,6 +206,7 @@ export default function ProposePlanPage() {
     setShowCalendar(false);
     setPastTimeError(false);
     setDayLimitError(false);
+    setShowPriceInput(false);
   };
 
   const handleBack = () => {
@@ -497,45 +500,59 @@ export default function ProposePlanPage() {
       case "price":
         return (
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Select value={priceCurrency} onValueChange={setPriceCurrency}>
-                <SelectTrigger className="w-28 shrink-0 h-14 rounded-full border-border bg-muted/60">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map((currency) => (
-                    <SelectItem key={currency.code} value={currency.code}>
-                      {currency.symbol} {currency.code}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <input
-                ref={priceInputRef}
-                type="number"
-                min="0"
-                step="0.01"
-                value={priceAmount}
-                onChange={(e) => setPriceAmount(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handlePriceSubmit(); }}
-                placeholder={t("createPlan.amountPlaceholder")}
-                className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
-              />
-              <button
-                onClick={handlePriceSubmit}
-                disabled={!priceAmount.trim()}
-                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
-              >
-                <Send className="w-5 h-5" />
-              </button>
-            </div>
-            <button
-              onClick={handleSkipPrice}
-              className="w-full text-base text-muted-foreground hover:text-foreground transition-colors py-2"
-            >
-              Skip (keep it free)
-            </button>
+            {!showPriceInput ? (
+              <div className="flex gap-3 justify-center">
+                <button
+                  type="button"
+                  onClick={handleSkipPrice}
+                  className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
+                >
+                  Free
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPriceInput(true)}
+                  className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
+                >
+                  Priced
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Select value={priceCurrency} onValueChange={setPriceCurrency}>
+                  <SelectTrigger className="w-28 shrink-0 h-14 rounded-full border-border bg-muted/60">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.symbol} {currency.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input
+                  ref={priceInputRef}
+                  autoFocus
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={priceAmount}
+                  onChange={(e) => setPriceAmount(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handlePriceSubmit(); }}
+                  placeholder={t("createPlan.amountPlaceholder")}
+                  className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+                />
+                <button
+                  onClick={handlePriceSubmit}
+                  disabled={!priceAmount.trim()}
+                  className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              </div>
+            )}
           </div>
         );
 
@@ -682,9 +699,11 @@ export default function ProposePlanPage() {
                         opacity
                       )}
                     >
-                      <p className={cn("text-muted-foreground leading-tight", labelSize)}>
-                        {BOT_QUESTIONS[step]}
-                      </p>
+                      {BOT_QUESTIONS[step] && (
+                        <p className={cn("text-muted-foreground leading-tight", labelSize)}>
+                          {BOT_QUESTIONS[step]}
+                        </p>
+                      )}
                       <p className={cn("font-medium text-foreground leading-tight", answerSize)}>
                         {getUserAnswer(step)}
                       </p>

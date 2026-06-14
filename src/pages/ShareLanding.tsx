@@ -14,6 +14,8 @@ interface ActivityInfo {
   creator_name: string;
   creator_avatar: string | null;
   participant_count: number;
+  note: string | null;
+  price_amount: string | null;
 }
 
 export default function ShareLanding() {
@@ -36,12 +38,12 @@ export default function ShareLanding() {
       const decoded = decodeURIComponent(activityId);
       const isUuid = UUID_RE.test(decoded);
 
-      let actData: { id: string | null; activity_type: string; city: string; scheduled_for: string | null; user_id: string | null } | null = null;
+      let actData: { id: string | null; activity_type: string; city: string; scheduled_for: string | null; user_id: string | null; note: string | null; price_amount: string | null } | null = null;
 
       if (isUuid) {
         const { data, error } = await supabase
           .from("user_activities")
-          .select("id, activity_type, city, scheduled_for, user_id")
+          .select("id, activity_type, city, scheduled_for, user_id, note, price_amount")
           .eq("id", decoded)
           .eq("is_active", true)
           .maybeSingle();
@@ -61,6 +63,8 @@ export default function ShareLanding() {
           city: city,
           scheduled_for: getNextOccurrenceDate(actType).toISOString(),
           user_id: userId || null,
+          note: null,
+          price_amount: null,
         };
       }
 
@@ -73,29 +77,44 @@ export default function ShareLanding() {
         creator_name: "Someone",
         creator_avatar: null,
         participant_count: 0,
+        note: actData.note ?? null,
+        price_amount: actData.price_amount ?? null,
       });
       setIsLoading(false);
 
       // Update OG meta tags so WhatsApp/social previews show activity-specific info.
-      const actInfo = ALL_ACTIVITY_TYPES.find((a) => a.id === actData.activity_type);
-      const label = actInfo?.label ?? actData.activity_type;
-      const emoji = actInfo?.emoji ?? "🎉";
-      const ogImageMap: Record<string, string> = {
-        dinner: "https://app.shakeapp.today/icons/activities/dinner-icon.jpg",
-        drinks: "https://app.shakeapp.today/icons/activities/drinks-icon.jpg",
-        brunch: "https://app.shakeapp.today/icons/activities/brunch-icon.jpg",
-        lunch: "https://app.shakeapp.today/icons/activities/lunch-icon.jpg",
-        hike: "https://app.shakeapp.today/icons/activities/hike-icon.jpg",
-        sports: "https://app.shakeapp.today/icons/activities/sports-icon.jpg",
-      };
-      const ogImage = ogImageMap[actData.activity_type] ?? "https://app.shakeapp.today/shake-logo.png";
-      const ogTitle = `${emoji} Join ${label} in ${actData.city}!`;
-      const ogDesc = `Someone's organising ${label} in ${actData.city}. Join them on SHAKE!`;
-      document.querySelector('meta[property="og:image"]')?.setAttribute("content", ogImage);
-      document.querySelector('meta[property="og:title"]')?.setAttribute("content", ogTitle);
-      document.querySelector('meta[property="og:description"]')?.setAttribute("content", ogDesc);
-      document.querySelector('meta[name="twitter:image"]')?.setAttribute("content", ogImage);
-      document.title = ogTitle;
+      if (actData.note) {
+        // User-created plan: use a generic title so we don't expose category labels.
+        const ogTitle = `Join a plan in ${actData.city} on SHAKE!`;
+        const ogDesc = `"${actData.note}" — open SHAKE to see the details and join.`;
+        const ogImage = "https://app.shakeapp.today/shake-logo.png";
+        document.querySelector('meta[property="og:title"]')?.setAttribute("content", ogTitle);
+        document.querySelector('meta[property="og:description"]')?.setAttribute("content", ogDesc);
+        document.querySelector('meta[property="og:image"]')?.setAttribute("content", ogImage);
+        document.querySelector('meta[name="twitter:image"]')?.setAttribute("content", ogImage);
+        document.title = ogTitle;
+      } else {
+        // Carousel / category activity: use the specific activity label + icon.
+        const actInfo = ALL_ACTIVITY_TYPES.find((a) => a.id === actData.activity_type);
+        const label = actInfo?.label ?? actData.activity_type;
+        const emoji = actInfo?.emoji ?? "🎉";
+        const ogImageMap: Record<string, string> = {
+          dinner: "https://app.shakeapp.today/icons/activities/dinner-icon.jpg",
+          drinks: "https://app.shakeapp.today/icons/activities/drinks-icon.jpg",
+          brunch: "https://app.shakeapp.today/icons/activities/brunch-icon.jpg",
+          lunch: "https://app.shakeapp.today/icons/activities/lunch-icon.jpg",
+          hike: "https://app.shakeapp.today/icons/activities/hike-icon.jpg",
+          sports: "https://app.shakeapp.today/icons/activities/sports-icon.jpg",
+        };
+        const ogImage = ogImageMap[actData.activity_type] ?? "https://app.shakeapp.today/shake-logo.png";
+        const ogTitle = `${emoji} Join ${label} in ${actData.city}!`;
+        const ogDesc = `Someone's organising ${label} in ${actData.city}. Join them on SHAKE!`;
+        document.querySelector('meta[property="og:image"]')?.setAttribute("content", ogImage);
+        document.querySelector('meta[property="og:title"]')?.setAttribute("content", ogTitle);
+        document.querySelector('meta[property="og:description"]')?.setAttribute("content", ogDesc);
+        document.querySelector('meta[name="twitter:image"]')?.setAttribute("content", ogImage);
+        document.title = ogTitle;
+      }
 
       // Phase 3: enrich with profile + participant count (best-effort — failures don't block UI).
       const enrichPromises: Promise<any>[] = [
@@ -153,6 +172,11 @@ export default function ShareLanding() {
     ? format(new Date(activity.scheduled_for), "EEE, d MMM")
     : null;
 
+  // For user-created plans: show date + time together.
+  const planDateStr = activity?.scheduled_for
+    ? format(new Date(activity.scheduled_for), "EEE, d MMM · h:mm a")
+    : null;
+
   const creatorAvatarUrl = activity?.creator_avatar
     ? getDisplayAvatarUrl(activity.creator_avatar)
     : null;
@@ -184,60 +208,112 @@ export default function ShareLanding() {
         </div>
       ) : (
         <div className="w-full max-w-sm flex flex-col items-center gap-6">
-          {/* Activity icon + name */}
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
-              {activityIcon ? (
-                <img
-                  src={activityIcon}
-                  alt={activityLabel}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-4xl">{activityEmoji}</span>
-              )}
-            </div>
-            <h1 className="text-white text-2xl font-bold">{activityLabel}</h1>
-            <p className="text-white/60 text-sm">
-              {dateStr ? `${dateStr} · ${activity.city}` : activity.city}
-            </p>
-            {activity.participant_count > 0 && (
-              <span
-                className="px-3 py-1 rounded-full text-xs font-medium text-white/80"
-                style={{ background: "rgba(255,255,255,0.10)" }}
-              >
-                +{activity.participant_count}{" "}
-                {activity.participant_count === 1 ? "person" : "people"} joined
-              </span>
-            )}
-          </div>
+          {activity.note ? (
+            /* ── User-created plan ── */
+            <>
+              <div className="flex flex-col items-center gap-3 text-center">
+                <span className="text-5xl">😎</span>
+                <h1 className="text-white text-2xl font-bold">"{activity.note}"</h1>
+                <p className="text-white/60 text-sm">
+                  {[planDateStr, activity.city, activity.price_amount ?? "Free 🎉"]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+                {activity.participant_count > 0 && (
+                  <span
+                    className="px-3 py-1 rounded-full text-xs font-medium text-white/80"
+                    style={{ background: "rgba(255,255,255,0.10)" }}
+                  >
+                    +{activity.participant_count}{" "}
+                    {activity.participant_count === 1 ? "person" : "people"} joined
+                  </span>
+                )}
+              </div>
 
-          {/* Inviter info card */}
-          <div
-            className="w-full rounded-2xl px-5 py-4 flex items-center gap-3"
-            style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.10)",
-            }}
-          >
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 shrink-0 flex items-center justify-center">
-              {creatorAvatarUrl ? (
-                <img
-                  src={creatorAvatarUrl}
-                  alt={activity.creator_name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-lg">👤</span>
-              )}
-            </div>
-            <p className="text-white/80 text-sm">
-              <span className="text-white font-semibold">
-                {activity.creator_name}
-              </span>{" "}
-              invited you
-            </p>
-          </div>
+              <div
+                className="w-full rounded-2xl px-5 py-4 flex items-center gap-3"
+                style={{
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                }}
+              >
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 shrink-0 flex items-center justify-center">
+                  {creatorAvatarUrl ? (
+                    <img
+                      src={creatorAvatarUrl}
+                      alt={activity.creator_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-lg">👤</span>
+                  )}
+                </div>
+                <p className="text-white/80 text-sm">
+                  <span className="text-white font-semibold">
+                    {activity.creator_name}
+                  </span>{" "}
+                  invited you for{" "}
+                  <span className="text-white font-semibold">A Plan</span>
+                </p>
+              </div>
+            </>
+          ) : (
+            /* ── Carousel / category activity (existing layout) ── */
+            <>
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
+                  {activityIcon ? (
+                    <img
+                      src={activityIcon}
+                      alt={activityLabel}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl">{activityEmoji}</span>
+                  )}
+                </div>
+                <h1 className="text-white text-2xl font-bold">{activityLabel}</h1>
+                <p className="text-white/60 text-sm">
+                  {dateStr ? `${dateStr} · ${activity.city}` : activity.city}
+                </p>
+                {activity.participant_count > 0 && (
+                  <span
+                    className="px-3 py-1 rounded-full text-xs font-medium text-white/80"
+                    style={{ background: "rgba(255,255,255,0.10)" }}
+                  >
+                    +{activity.participant_count}{" "}
+                    {activity.participant_count === 1 ? "person" : "people"} joined
+                  </span>
+                )}
+              </div>
+
+              <div
+                className="w-full rounded-2xl px-5 py-4 flex items-center gap-3"
+                style={{
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                }}
+              >
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 shrink-0 flex items-center justify-center">
+                  {creatorAvatarUrl ? (
+                    <img
+                      src={creatorAvatarUrl}
+                      alt={activity.creator_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-lg">👤</span>
+                  )}
+                </div>
+                <p className="text-white/80 text-sm">
+                  <span className="text-white font-semibold">
+                    {activity.creator_name}
+                  </span>{" "}
+                  invited you
+                </p>
+              </div>
+            </>
+          )}
 
           {/* CTA — plain link to the app, works in any browser / WhatsApp */}
           <a
