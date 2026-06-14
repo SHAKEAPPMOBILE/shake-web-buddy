@@ -54,7 +54,7 @@ function BotBubble({ message, showAvatar = false }: { message: string; showAvata
       {showAvatar && (
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
-          style={{ background: "#ef4444" }}
+          style={{ background: "#facc15" }}
         >
           😎
         </div>
@@ -358,7 +358,7 @@ export default function ProposePlanPage() {
                   value={planText}
                   onChange={handleNameChange}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNameSubmit(); } }}
-                  placeholder={t("createPlan.placeholder")}
+                  placeholder="What's the plan?"
                   maxLength={MAX_CHARACTERS}
                   className="w-full h-16 rounded-2xl border border-border bg-muted/60 px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
                 />
