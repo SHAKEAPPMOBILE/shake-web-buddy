@@ -44,7 +44,7 @@ const BOT_QUESTIONS: Record<StepName, string> = {
   date: "When? 📅",
   time: "What time? ⏰",
   price: "",
-  preview: "Here's your plan! Looking good? 👀",
+  preview: "",
 };
 
 function BotBubble({ message, showAvatar = false }: { message: string; showAvatar?: boolean }) {
@@ -315,8 +315,12 @@ export default function ProposePlanPage() {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
     const getWeekendDate = (dow: number): Date | null => {
+      // Convert JS dow (Sun=0) to ISO week day (Mon=0…Sun=6) so we can
+      // correctly detect whether the target day has already passed this week.
+      const isoToday = (todayDow + 6) % 7;
+      const isoTarget = (dow + 6) % 7;
+      if (isoTarget <= isoToday + 1) return null; // passed, today, or tomorrow
       const daysUntil = (dow - todayDow + 7) % 7;
-      if (daysUntil <= 1) return null;
       const d = new Date(today);
       d.setDate(today.getDate() + daysUntil);
       return d;
@@ -604,10 +608,7 @@ export default function ProposePlanPage() {
                   {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
                 </>
               ) : (
-                <>
-                  <Plus className="w-5 h-5" />
-                  {t("createPlan.createBtn")}
-                </>
+                "All good? 👀 Create Plan"
               )}
             </button>
 
