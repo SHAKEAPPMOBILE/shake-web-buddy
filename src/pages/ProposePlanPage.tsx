@@ -39,7 +39,7 @@ const MAX_CHARACTERS = 50;
 type StepName = "name" | "city" | "date" | "time" | "price" | "preview";
 
 const BOT_QUESTIONS: Record<StepName, string> = {
-  name: "What's your plan? ✨",
+  name: "What's the plan? ✨",
   city: "Which city are you in? 📍",
   date: "When? 📅",
   time: "What time? ⏰",
@@ -610,7 +610,10 @@ export default function ProposePlanPage() {
               ) : (
                 <>
                   <span className="text-xs font-normal opacity-80">All good? 👀</span>
-                  <span className="text-base font-semibold">Create the plan +</span>
+                  <span className="text-lg font-semibold">
+                    <span style={{ color: "#facc15" }}>Create the plan</span>
+                    <span className="text-2xl font-bold text-white"> +</span>
+                  </span>
                 </>
               )}
             </button>
