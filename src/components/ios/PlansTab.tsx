@@ -786,10 +786,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       .eq("city", plan.city)
       .eq("is_active", true)
       .neq("id", plan.id)
-      .or(`scheduled_for.is.null,scheduled_for.gte.${cutoff}`)
       .order("scheduled_for", { ascending: true });
 
-    for (const sibling of (siblings ?? [])) {
+    // Apply the cutoff in JS — PostgREST .or() with ISO timestamps containing
+    // dots (.000Z) and colons silently mis-parses and returns all rows.
+    const currentSiblings = (siblings ?? []).filter((s: any) =>
+      s.scheduled_for == null || s.scheduled_for >= cutoff
+    );
+
+    for (const sibling of currentSiblings) {
       const { data: activeSibJoins } = await supabase
         .from("activity_joins")
         .select("id")
@@ -822,14 +827,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     const { data: allCurrentGroups } = await supabase
       .from("user_activities")
-      .select("group_number")
+      .select("group_number, scheduled_for")
       .eq("activity_type", plan.activity_type)
       .eq("city", plan.city)
-      .eq("is_active", true)
-      .or(`scheduled_for.is.null,scheduled_for.gte.${cutoff}`);
+      .eq("is_active", true);
+    // Same JS cutoff — don't trust .or() with ISO timestamps in PostgREST.
+    const currentGroups = (allCurrentGroups ?? []).filter((g: any) =>
+      g.scheduled_for == null || g.scheduled_for >= cutoff
+    );
     const maxGroupNum = Math.max(
       1,
-      ...((allCurrentGroups ?? []).map((g: any) => g.group_number ?? 1))
+      ...(currentGroups.map((g: any) => g.group_number ?? 1))
     );
     const nextGroupNumber = maxGroupNum + 1;
 
