@@ -758,24 +758,36 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     if (!user) return plan;
 
     const nowForCap = new Date().toISOString();
-    const { data: activeJoinsForPlan } = await supabase
-      .from("activity_joins")
-      .select("id")
-      .eq("activity_id", plan.id)
-      .or(`expires_at.is.null,expires_at.gt.${nowForCap}`);
-    const count = activeJoinsForPlan?.length ?? 0;
+    // A plan is "current" if it has no scheduled date, or its scheduled date is
+    // within the last 24 h (same window as the feed and RPC expiry rule).
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const planIsCurrent =
+      plan.scheduled_for == null || plan.scheduled_for >= cutoff;
 
-    if (count < MAX_CHAT_CAPACITY) return plan;
+    if (planIsCurrent) {
+      const { data: activeJoinsForPlan } = await supabase
+        .from("activity_joins")
+        .select("id")
+        .eq("activity_id", plan.id)
+        .or(`expires_at.is.null,expires_at.gt.${nowForCap}`);
+      const count = activeJoinsForPlan?.length ?? 0;
 
-    // This group is full — look for a sibling with the same type + city + scheduled_for
+      // Current plan with space — use it directly.
+      if (count < MAX_CHAT_CAPACITY) return plan;
+    }
+
+    // Plan is either past-dated or full.
+    // Look for a current sibling: same type + city, scheduled_for within 24 h or null.
+    // Do NOT filter by scheduled_for equality — a past-dated plan must never be a target.
     const { data: siblings } = await supabase
       .from("user_activities")
       .select("*")
       .eq("activity_type", plan.activity_type)
       .eq("city", plan.city)
-      .eq("scheduled_for", plan.scheduled_for)
       .eq("is_active", true)
-      .neq("id", plan.id);
+      .neq("id", plan.id)
+      .or(`scheduled_for.is.null,scheduled_for.gte.${cutoff}`)
+      .order("scheduled_for", { ascending: true });
 
     for (const sibling of (siblings ?? [])) {
       const { data: activeSibJoins } = await supabase
@@ -791,7 +803,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           .select("name, avatar_url")
           .eq("user_id", sibling.user_id)
           .maybeSingle();
-        toast.info("This group is full · joining another group");
+        if (planIsCurrent) toast.info("This group is full · joining another group");
         return {
           ...sibling,
           creator_name: profile?.name ?? "Anonymous",
@@ -802,18 +814,22 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       }
     }
 
-    // No sibling with space — create a fresh overflow group
-    // Determine the next group_number
-    const { data: allGroups } = await supabase
+    // No current sibling with space — create a fresh group.
+    // Use the next canonical occurrence date for this activity type so the new
+    // group is never stamped with a past date.  Compute group_number only among
+    // current plans to avoid inheriting a high sequence from old overflow groups.
+    const freshScheduledFor = getNextOccurrenceDate(plan.activity_type).toISOString();
+
+    const { data: allCurrentGroups } = await supabase
       .from("user_activities")
       .select("group_number")
       .eq("activity_type", plan.activity_type)
       .eq("city", plan.city)
-      .eq("scheduled_for", plan.scheduled_for)
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .or(`scheduled_for.is.null,scheduled_for.gte.${cutoff}`);
     const maxGroupNum = Math.max(
       1,
-      ...((allGroups ?? []).map((g: any) => g.group_number ?? 1))
+      ...((allCurrentGroups ?? []).map((g: any) => g.group_number ?? 1))
     );
     const nextGroupNumber = maxGroupNum + 1;
 
@@ -823,9 +839,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         user_id: user.id,
         activity_type: plan.activity_type,
         city: plan.city,
-        scheduled_for: plan.scheduled_for,
+        scheduled_for: freshScheduledFor,
         is_active: true,
-        note: plan.note ?? null,
+        // Do not copy note from an old plan — the new group is a clean standard event.
+        note: planIsCurrent ? (plan.note ?? null) : null,
         group_number: nextGroupNumber,
       })
       .select()
@@ -837,7 +854,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return plan;
     }
 
-    toast.info("This group is full · a new group has been created for you!");
+    if (planIsCurrent) toast.info("This group is full · a new group has been created for you!");
     return {
       ...newActivity,
       creator_name: "New Group",
