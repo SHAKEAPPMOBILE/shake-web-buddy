@@ -66,6 +66,32 @@ interface PlansTabProps {
   onOpenEvents?: () => void;
 }
 
+/** Shape returned by the get_my_active_plans RPC. */
+interface MyActivePlan {
+  join_id: string;
+  activity_id: string | null;
+  activity_type: string;
+  city: string;
+  expires_at: string | null;
+  joined_at: string;
+  // null for carousel joins (activity_id IS NULL)
+  plan_id: string | null;
+  plan_user_id: string | null;
+  scheduled_for: string | null;
+  is_active: boolean | null;
+  note: string | null;
+  price_amount: string | null;
+  group_number: number | null;
+  is_auto_generated: boolean | null;
+  created_at: string | null;
+  is_carousel: boolean;
+}
+
+/** Normalise a city string for comparison: trim whitespace and lower-case.
+ *  Prevents "New York City " vs "New York City" or capitalisation variants
+ *  from hiding a card the user is actually in. */
+const normalizeCity = (city: string): string => city.trim().toLowerCase();
+
 export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, onOpenEvents }: PlansTabProps = {}) {
   const { t, i18n } = useTranslation();
   const { style: plansSettlingGradientStyle } = useSettlingGradient("plans");
@@ -85,7 +111,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   // "My City" (false) is the default; "All Cities" (true) is opt-in
   const [showAllCities, setShowAllCities] = useState(false);
 
-  // Fetch all plans for the selected city (global CityContext)
+  // Fetch all plans — single source of truth via get_my_active_plans RPC
   const fetchPlans = useCallback(async () => {
     if (!user) {
       setActivities([]);
@@ -95,279 +121,279 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
 
     setIsLoading(true);
-    // Use only the user's explicitly selected city — never fall back to GPS/detected city
     const effectiveCity = selectedCity;
     console.log("[PlansTab] fetchPlans →", { effectiveCity, showAllCities });
 
-    // Safety timeout: stop the spinner after 5 s and show whatever is already rendered
     const loadingTimeout = setTimeout(() => setIsLoading(false), 5000);
 
     try {
-      // --- Expiry helpers ---
-      // Rule 1: scheduled_for is set → expire at midnight of that day.
-      // Rule 2: scheduled_for is null → expire 5 days after created_at.
+      // Visibility window: plans more than 24 h past are hidden from the feed.
       const nowMs = Date.now();
       const twentyFourHoursAgo = new Date(nowMs - 24 * 60 * 60 * 1000);
-      const fiveDaysAgo = new Date(nowMs - 5 * 24 * 60 * 60 * 1000);
+      const fiveDaysAgo        = new Date(nowMs - 5 * 24 * 60 * 60 * 1000);
 
-      // Show plans whose scheduled_for is within the last 24 h so chats persist
-      // for a full day after the activity starts (not just until midnight).
       const isActivityVisible = (a: { scheduled_for: string | null; created_at: string }) =>
         a.scheduled_for !== null
           ? new Date(a.scheduled_for) >= twentyFourHoursAgo
-          : new Date(a.created_at) >= fiveDaysAgo;
+          : new Date(a.created_at)    >= fiveDaysAgo;
 
-      // --- Phase 1: Run all four metadata queries in parallel ---
-      const [
-        myCarouselJoinsResult,
-        joinsResult,
-        myCreatedResult,
-        cityCarouselResult,
-      ] = await Promise.all([
-        // 1. User's own carousel joins (all cities)
-        supabase
-          .from("activity_joins")
-          .select("activity_type, city, user_id, activity_id")
-          .eq("user_id", user.id)
-          .is("activity_id", null),
-        // 2. User's real plan joins (activity_id not null)
-        supabase
-          .from("activity_joins")
-          .select("activity_id")
-          .eq("user_id", user.id)
-          .not("activity_id", "is", null),
-        // 3. User's own created plans (for creator-always-sees fallback)
-        supabase
-          .from("user_activities")
-          .select("id, scheduled_for, created_at")
-          .eq("user_id", user.id)
-          .limit(50),
-        // 4. Activity joins for group discovery
-        // All Cities: ALL joins from ALL cities (no activity_id or city filter) — source of truth
-        // My City: only null-activity_id joins for effectiveCity (carousel-only counts)
+      // Normalised city strings for comparison (trim + lowercase on both sides).
+      // joinedPlansCityFilter is set when the user uses the in-Plans city picker.
+      const cityForJoined = joinedPlansCityFilter ?? effectiveCity;
+      const normCityForJoined = cityForJoined ? normalizeCity(cityForJoined) : null;
+
+      // ── Phase 1: RPC (my active joins) + discovery carousel counts ─────────
+      const SHOWN_ACTIVITY_TYPES = ['dinner', 'brunch'];
+
+      const [myPlansResult, cityCarouselResult] = await Promise.all([
+        // Single source of truth: every non-expired join for this user.
+        // Returns real-plan rows with the plan already joined in, and carousel
+        // rows (activity_id IS NULL) as synthetic entries. SECURITY DEFINER so
+        // soft-deleted plans are still readable by the participant.
+        (supabase as any).rpc('get_my_active_plans', { p_user_id: user.id }) as
+          Promise<{ data: MyActivePlan[] | null; error: unknown }>,
+
+        // Discovery carousel: all open-interest joins in the selected city (or all
+        // cities) so we can count members and surface groups with >=3 people.
         showAllCities
-          ? supabase
-              .from("activity_joins")
-              .select("activity_type, city, user_id, activity_id")
+          ? supabase.from("activity_joins").select("activity_type, city, user_id, activity_id")
           : effectiveCity
             ? supabase
                 .from("activity_joins")
-                .select("activity_type, city, user_id")
+                .select("activity_type, city, user_id, activity_id")
                 .eq("city", effectiveCity)
                 .is("activity_id", null)
-            : Promise.resolve({ data: [] as { activity_type: string; city: string; user_id: string }[], error: null }),
-      ]);
-
-      const userOwnCarouselJoins = myCarouselJoinsResult.data || [];
-      const joinedActivityIds = (joinsResult.data || [])
-        .map(j => j.activity_id)
-        .filter(Boolean) as string[];
-      const myCreatedIds = (myCreatedResult.data || [])
-        .filter(a => isActivityVisible(a as { scheduled_for: string | null; created_at: string }))
-        .map(a => a.id as string);
-      const allJoinedIds = [...new Set([...joinedActivityIds, ...myCreatedIds])];
-      // All Cities only surfaces dinner and brunch groups.
-      const SHOWN_ACTIVITY_TYPES = ['dinner', 'brunch'];
-      const allCarouselJoins = (cityCarouselResult.data || []) as { activity_type: string; city: string; user_id: string }[];
-
-      // Build carousel map keyed by activity_type + city + activity_id so each
-      // distinct group gets its own entry with its own member count.
-      // Null-activity_id joins (open interest, no specific group assigned) use a
-      // per-user key so they never aggregate — each user is their own bucket.
-      const carouselMap = new Map<string, { activity_type: string; city: string; userIds: string[]; activityId?: string | null }>();
-      const addToCarouselMap = (join: { activity_type: string; city: string; user_id: string; activity_id?: string | null }) => {
-        const key = join.activity_id
-          ? `${join.activity_type}-${join.city}-${join.activity_id}`
-          : `${join.activity_type}-${join.city}-null-${join.user_id}`;
-        if (!carouselMap.has(key)) carouselMap.set(key, { activity_type: join.activity_type, city: join.city, userIds: [], activityId: join.activity_id ?? null });
-        const entry = carouselMap.get(key)!;
-        if (!entry.userIds.includes(join.user_id)) entry.userIds.push(join.user_id);
-      };
-      userOwnCarouselJoins.forEach(addToCarouselMap);
-      // Filter to whitelisted types before building the map for All Cities
-      allCarouselJoins
-        .filter(j => SHOWN_ACTIVITY_TYPES.includes((j as any).activity_type))
-        .forEach(addToCarouselMap);
-
-      // --- Phase 2: Fetch joined activities and city plans in parallel ---
-      const [joinedDataResult, cityPlansDataResult] = await Promise.all([
-        allJoinedIds.length > 0
-          ? supabase
-              .from("user_activities")
-              .select("*")
-              .in("id", allJoinedIds)
-              .limit(20)
-          : Promise.resolve({ data: [] as any[], error: null }),
-        showAllCities
-          ? Promise.resolve({ data: [] as any[], error: null }) // All Cities: purely join-driven, no separate user_activities query
-          : effectiveCity
-            ? await (async () => {
-                const result = await supabase
-                  .from("user_activities")
-                  .select("*")
-                  .eq("city", effectiveCity)
-                  .eq("is_active", true)
-                  .neq("is_auto_generated", true)
-                  .order("scheduled_for", { ascending: true, nullsFirst: false })
-                  .limit(20);
-                console.log("[PlansTab] my-city query →", { effectiveCity, count: result.data?.length, error: result.error, cities: result.data?.map((p: any) => p.city) });
-                return result;
-              })()
             : Promise.resolve({ data: [] as any[], error: null }),
       ]);
 
-      // Filter joined activities with smart expiry + city filter
-      const visibleJoined = (joinedDataResult.data || []).filter(
-        (a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a)
-      );
-      // My City mode: strict city match on the 'city' column. All Cities: no city filter.
-      const joinedActivities: any[] = joinedPlansCityFilter
-        ? visibleJoined.filter((a: { city: string }) => a.city === joinedPlansCityFilter)
-        : (!showAllCities && effectiveCity)
-          ? visibleJoined.filter((a: { city: string }) => a.city === effectiveCity)
-          : visibleJoined;
-      console.log("[PlansTab] joinedActivities →", { showAllCities, effectiveCity, total: visibleJoined.length, afterCityFilter: joinedActivities.length, cities: visibleJoined.map((a: any) => a.city) });
+      const myPlans: MyActivePlan[] = myPlansResult.data ?? [];
 
-      // Filter city plans with smart expiry.
-      // In all-cities mode: show every active plan regardless of join status.
-      // In my-city mode: exclude plans the user already joined (they appear in the top section).
-      const cityPublicPlans: any[] = (cityPlansDataResult.data || [])
-        .filter((a: { id: string }) => showAllCities ? true : !allJoinedIds.includes(a.id))
+      // Split into real-plan joins and carousel joins.
+      const realJoins     = myPlans.filter(p => !p.is_carousel);
+      const carouselJoins = myPlans.filter(p =>  p.is_carousel);
+
+      // IDs of real plans I've joined — used to deduplicate the discovery feed.
+      const myJoinedPlanIds  = new Set<string>(realJoins.map(p => p.plan_id!).filter(Boolean));
+      // Activity types I'm currently in — exclude from discovery carousel below.
+      const myActiveTypes    = new Set<string>(myPlans.map(p => p.activity_type));
+
+      // Apply city filter + visibility to my real joins.
+      const filteredRealJoins = realJoins.filter(p => {
+        if (!isActivityVisible({ scheduled_for: p.scheduled_for, created_at: p.created_at! })) return false;
+        if (!showAllCities && normCityForJoined) return normalizeCity(p.city) === normCityForJoined;
+        return true;
+      });
+
+      // Apply city filter to carousel joins (always future-dated, no visibility filter).
+      const filteredCarouselJoins = carouselJoins.filter(p => {
+        if (!showAllCities && normCityForJoined) return normalizeCity(p.city) === normCityForJoined;
+        return true;
+      });
+
+      // ── Phase 2: city discovery real plans ────────────────────────────────
+      const cityPlansDataResult = await (
+        showAllCities || !effectiveCity
+          ? Promise.resolve({ data: [] as any[], error: null })
+          : supabase
+              .from("user_activities")
+              .select("*")
+              .eq("city", effectiveCity)
+              .eq("is_active", true)
+              .neq("is_auto_generated", true)
+              .order("scheduled_for", { ascending: true, nullsFirst: false })
+              .limit(20)
+      );
+      console.log("[PlansTab] my-city query →", { effectiveCity, count: cityPlansDataResult.data?.length, error: cityPlansDataResult.error });
+
+      // Discovery real plans: active plans in the city that I haven't joined.
+      const cityPublicPlans: any[] = (cityPlansDataResult.data ?? [])
+        .filter((a: { id: string }) => !myJoinedPlanIds.has(a.id))
         .filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a));
 
-      const allActivitiesMap = new Map<string, any>();
-      joinedActivities.forEach((a: any) => allActivitiesMap.set(a.id, a));
-      const allActivities = Array.from(allActivitiesMap.values());
+      // Discovery carousel: other users' open groups with >=3 members,
+      // only for activity types I'm not already in.
+      const allCarouselJoins = ((cityCarouselResult.data ?? []) as any[])
+        .filter((j: any) => SHOWN_ACTIVITY_TYPES.includes(j.activity_type));
 
-      // --- Phase 3: Show plan cards immediately without avatars (stops the spinner early) ---
-      // My City: only the current user's carousel joins in effectiveCity (prevents other cities leaking in)
-      // All Cities: every group with at least one join, excluding groups whose real plan already
-      //   appears in the user's joined activities (avoids duplicate cards)
-      const userJoinedCarouselEntries = showAllCities
-        ? Array.from(carouselMap.values()).filter(c =>
-            SHOWN_ACTIVITY_TYPES.includes(c.activity_type) &&
-            c.userIds.length >= 3 &&
-            (!c.activityId || !joinedActivityIds.includes(c.activityId))
-          )
-        : Array.from(carouselMap.values()).filter(c =>
-            c.userIds.includes(user.id) && !!effectiveCity && c.city === effectiveCity
-          );
+      const discoveryCarouselMap = new Map<string, { activity_type: string; city: string; userIds: string[]; activityId: string | null }>();
+      allCarouselJoins.forEach((j: any) => {
+        const key = j.activity_id
+          ? `${j.activity_type}-${j.city}-${j.activity_id}`
+          : `${j.activity_type}-${j.city}-null-${j.user_id}`;
+        if (!discoveryCarouselMap.has(key))
+          discoveryCarouselMap.set(key, { activity_type: j.activity_type, city: j.city, userIds: [], activityId: j.activity_id ?? null });
+        const entry = discoveryCarouselMap.get(key)!;
+        if (!entry.userIds.includes(j.user_id)) entry.userIds.push(j.user_id);
+      });
 
-      if (allActivities.length > 0) {
-        const quickPlans = allActivities.map((a: any) => ({
-          ...a,
-          creator_name: "...",
-          creator_avatar: undefined as string | undefined,
-          participant_count: 0,
-          isJoined: allJoinedIds.includes(a.id),
-        }));
-        setActivities(quickPlans);
-        clearTimeout(loadingTimeout);
-        setIsLoading(false);
-      }
+      // >=3 threshold is a DISCOVERY rule — only applied to other people's groups.
+      const discoveryCarouselEntries = Array.from(discoveryCarouselMap.values()).filter(c =>
+        SHOWN_ACTIVITY_TYPES.includes(c.activity_type) &&
+        c.userIds.length >= 3 &&
+        !c.userIds.includes(user.id) &&          // I'm not already in this specific group
+        !myActiveTypes.has(c.activity_type) &&   // and I don't have this type at all
+        (!c.activityId || !myJoinedPlanIds.has(c.activityId))
+      );
 
-      // --- Phase 4: Enrich everything with profiles + counts in parallel ---
+      // ── Phase 3: quick render — cards without profiles (stops spinner early) ─
       const sortByDate = (arr: PlanActivity[]) =>
         arr.sort((a, b) => {
           const da = a.scheduled_for ? new Date(a.scheduled_for) : new Date((a as any).created_at || 0);
           const db = b.scheduled_for ? new Date(b.scheduled_for) : new Date((b as any).created_at || 0);
-          if (isToday(da) && !isToday(db)) return -1;
-          if (!isToday(da) && isToday(db)) return 1;
+          if (isToday(da)    && !isToday(db))    return -1;
+          if (!isToday(da)   && isToday(db))     return  1;
           if (isTomorrow(da) && !isTomorrow(db)) return -1;
-          if (!isTomorrow(da) && isTomorrow(db)) return 1;
+          if (!isTomorrow(da) && isTomorrow(db)) return  1;
           return da.getTime() - db.getTime();
         });
 
-      const nowISO2 = new Date().toISOString();
-      const [activitiesWithDetails, cityPlansWithDetails, virtualPlans] = await Promise.all([
-        // Enrich joined/owned plans — profile + live participant count in parallel per activity
-        Promise.all(
-          allActivities.map(async (activity: any) => {
-            const [{ data: profile }, { count }] = await Promise.all([
-              supabase.from("profiles").select("name, avatar_url").eq("user_id", activity.user_id).maybeSingle(),
-              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id),
-            ]);
-            return {
-              ...activity,
-              creator_name: profile?.name || "Anonymous",
-              creator_avatar: profile?.avatar_url,
-              participant_count: count || 0,
-              isJoined: allJoinedIds.includes(activity.id),
-            };
-          })
-        ),
-        // Enrich city discovery plans
-        Promise.all(
-          cityPublicPlans.map(async (activity: any) => {
-            const [{ data: profile }, { count }] = await Promise.all([
-              supabase.from("profiles").select("name, avatar_url").eq("user_id", activity.user_id).maybeSingle(),
-              supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id),
-            ]);
-            return {
-              ...activity,
-              creator_name: profile?.name || "Anonymous",
-              creator_avatar: profile?.avatar_url,
-              participant_count: count || 0,
-              isJoined: false,
-            } as PlanActivity;
-          })
-        ),
-        // Build virtual carousel plans
-        Promise.all(
-          userJoinedCarouselEntries.map(async (carouselActivity) => {
-            const firstUserId = carouselActivity.userIds[0];
-            const [{ data: profile }, { data: realActivity }, { count: liveCount }] = await Promise.all([
-              supabase.from("profiles").select("name, avatar_url").eq("user_id", firstUserId).maybeSingle(),
-              // Use the activity_id from the join row if available, else query by type+city.
-              carouselActivity.activityId
-                ? supabase
-                    .from("user_activities")
-                    .select("id")
-                    .eq("id", carouselActivity.activityId)
-                    .maybeSingle()
-                : supabase
-                    .from("user_activities")
-                    .select("id")
-                    .eq("activity_type", carouselActivity.activity_type)
-                    .eq("city", carouselActivity.city)
-                    .eq("is_active", true)
-                    .order("scheduled_for", { ascending: false })
-                    .limit(1)
-                    .maybeSingle(),
-              // Fetch live member count from activity_joins for real groups so the
-              // card count matches what users see inside the group chat.
-              carouselActivity.activityId
-                ? supabase
-                    .from("activity_joins")
-                    .select("user_id", { count: "exact", head: true })
-                    .eq("activity_id", carouselActivity.activityId)
-                : Promise.resolve({ count: carouselActivity.userIds.length }),
-            ]);
-            const dayLabel = getActivityDay(carouselActivity.activity_type);
-            const nextOccurrence = getNextOccurrenceDate(carouselActivity.activity_type);
-            return {
-              id: `carousel-${carouselActivity.activity_type}-${carouselActivity.city}-${carouselActivity.activityId ?? firstUserId}`,
-              realActivityId: realActivity?.id ?? null,
-              user_id: firstUserId,
-              activity_type: carouselActivity.activity_type,
-              city: carouselActivity.city,
-              scheduled_for: nextOccurrence.toISOString(),
-              is_active: true,
-              note: dayLabel ? `This ${dayLabel}` : null,
-              creator_name: profile?.name || "Anonymous",
-              creator_avatar: profile?.avatar_url,
-              participant_count: liveCount ?? carouselActivity.userIds.length,
-              isJoined: carouselActivity.userIds.includes(user.id),
-              isCarouselJoin: true,
-            } as PlanActivity;
-          })
-        ),
+      const quickReal: PlanActivity[] = filteredRealJoins.map(p => ({
+        id: p.plan_id!,
+        user_id: p.plan_user_id!,
+        activity_type: p.activity_type,
+        city: p.city,
+        scheduled_for: p.scheduled_for,
+        is_active: true,
+        note: p.note,
+        price_amount: p.price_amount,
+        group_number: p.group_number,
+        is_auto_generated: p.is_auto_generated,
+        created_at: p.created_at ?? undefined,
+        creator_name: "...",
+        participant_count: 0,
+        isJoined: true,
+        isCarouselJoin: false,
+      }));
+
+      const quickCarousel: PlanActivity[] = filteredCarouselJoins.map(p => ({
+        id: `carousel-${p.activity_type}-${p.city}-${user.id}`,
+        user_id: user.id,
+        activity_type: p.activity_type,
+        city: p.city,
+        scheduled_for: getNextOccurrenceDate(p.activity_type).toISOString(),
+        is_active: true,
+        creator_name: "...",
+        participant_count: 1,
+        isJoined: true,
+        isCarouselJoin: true,
+      }));
+
+      if (quickReal.length > 0 || quickCarousel.length > 0) {
+        setActivities(sortByDate([...quickReal, ...quickCarousel]));
+        clearTimeout(loadingTimeout);
+        setIsLoading(false);
+      }
+
+      // ── Phase 4: enrich with profiles + live counts ────────────────────────
+      const [enrichedReal, enrichedCarousel, enrichedCity, enrichedDiscovery] = await Promise.all([
+        // My real plan joins
+        Promise.all(filteredRealJoins.map(async p => {
+          const [{ data: profile }, { count }] = await Promise.all([
+            supabase.from("profiles").select("name, avatar_url").eq("user_id", p.plan_user_id!).maybeSingle(),
+            supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", p.plan_id!),
+          ]);
+          return {
+            id: p.plan_id!,
+            user_id: p.plan_user_id!,
+            activity_type: p.activity_type,
+            city: p.city,
+            scheduled_for: p.scheduled_for,
+            is_active: true,
+            note: p.note,
+            price_amount: p.price_amount,
+            group_number: p.group_number,
+            is_auto_generated: p.is_auto_generated,
+            created_at: p.created_at ?? undefined,
+            creator_name: profile?.name || "Anonymous",
+            creator_avatar: profile?.avatar_url ?? undefined,
+            participant_count: count || 0,
+            isJoined: true,
+            isCarouselJoin: false,
+          } as PlanActivity;
+        })),
+
+        // My carousel joins — synthetic card, always shown regardless of group size
+        Promise.all(filteredCarouselJoins.map(async p => {
+          const dayLabel = getActivityDay(p.activity_type);
+          const { count: liveCount } = await supabase
+            .from("activity_joins")
+            .select("user_id", { count: "exact", head: true })
+            .eq("activity_type", p.activity_type)
+            .eq("city", p.city);
+          return {
+            id: `carousel-${p.activity_type}-${p.city}-${user.id}`,
+            user_id: user.id,
+            activity_type: p.activity_type,
+            city: p.city,
+            scheduled_for: getNextOccurrenceDate(p.activity_type).toISOString(),
+            is_active: true,
+            note: dayLabel ? `This ${dayLabel}` : null,
+            creator_name: "Open group",
+            participant_count: liveCount ?? 1,
+            isJoined: true,
+            isCarouselJoin: true,
+          } as PlanActivity;
+        })),
+
+        // City discovery real plans
+        Promise.all(cityPublicPlans.map(async (activity: any) => {
+          const [{ data: profile }, { count }] = await Promise.all([
+            supabase.from("profiles").select("name, avatar_url").eq("user_id", activity.user_id).maybeSingle(),
+            supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id),
+          ]);
+          return {
+            ...activity,
+            creator_name: profile?.name || "Anonymous",
+            creator_avatar: profile?.avatar_url,
+            participant_count: count || 0,
+            isJoined: false,
+          } as PlanActivity;
+        })),
+
+        // Discovery carousel groups (>=3 others, not my active type)
+        Promise.all(discoveryCarouselEntries.map(async (carouselActivity) => {
+          const firstUserId = carouselActivity.userIds[0];
+          const [{ data: profile }, { data: realActivity }, { count: liveCount }] = await Promise.all([
+            supabase.from("profiles").select("name, avatar_url").eq("user_id", firstUserId).maybeSingle(),
+            carouselActivity.activityId
+              ? supabase.from("user_activities").select("id").eq("id", carouselActivity.activityId).maybeSingle()
+              : supabase.from("user_activities").select("id")
+                  .eq("activity_type", carouselActivity.activity_type)
+                  .eq("city", carouselActivity.city)
+                  .eq("is_active", true)
+                  .order("scheduled_for", { ascending: false })
+                  .limit(1)
+                  .maybeSingle(),
+            carouselActivity.activityId
+              ? supabase.from("activity_joins").select("user_id", { count: "exact", head: true }).eq("activity_id", carouselActivity.activityId)
+              : Promise.resolve({ count: carouselActivity.userIds.length }),
+          ]);
+          const dayLabel      = getActivityDay(carouselActivity.activity_type);
+          const nextOccurrence = getNextOccurrenceDate(carouselActivity.activity_type);
+          return {
+            id: `carousel-${carouselActivity.activity_type}-${carouselActivity.city}-${carouselActivity.activityId ?? firstUserId}`,
+            realActivityId: realActivity?.id ?? null,
+            user_id: firstUserId,
+            activity_type: carouselActivity.activity_type,
+            city: carouselActivity.city,
+            scheduled_for: nextOccurrence.toISOString(),
+            is_active: true,
+            note: dayLabel ? `This ${dayLabel}` : null,
+            creator_name: profile?.name || "Anonymous",
+            creator_avatar: profile?.avatar_url,
+            participant_count: liveCount ?? carouselActivity.userIds.length,
+            isJoined: false,
+            isCarouselJoin: true,
+          } as PlanActivity;
+        })),
       ]);
 
-      setActivities(sortByDate([...activitiesWithDetails, ...virtualPlans]));
-      // All-cities: is_active=true on the query is the only gate — show everything returned
-      console.log("[PlansTab] cityPlans →", { showAllCities, total: cityPlansWithDetails.length, counts: cityPlansWithDetails.map(p => ({ id: p.id, city: p.city, participant_count: p.participant_count })) });
-      setCityPlans(sortByDate(cityPlansWithDetails));
+      console.log("[PlansTab] myPlans →", { total: myPlans.length, real: filteredRealJoins.length, carousel: filteredCarouselJoins.length });
+      console.log("[PlansTab] cityPlans →", { showAllCities, total: enrichedCity.length });
+
+      setActivities(sortByDate([...enrichedReal, ...enrichedCarousel, ...enrichedDiscovery]));
+      setCityPlans(sortByDate(enrichedCity));
+
     } finally {
       clearTimeout(loadingTimeout);
       setIsLoading(false);
@@ -634,11 +660,23 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const handleLeavePlan = async () => {
     if (!planToLeave || !user) return;
     try {
-      const { error } = await supabase
-        .from("activity_joins")
-        .delete()
-        .eq("activity_id", planToLeave.id)
-        .eq("user_id", user.id);
+      let error: unknown;
+      if (planToLeave.isCarouselJoin) {
+        // Carousel join: no activity_id on the row — delete by type + city
+        ({ error } = await supabase
+          .from("activity_joins")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("activity_type", planToLeave.activity_type)
+          .is("activity_id", null));
+      } else {
+        // Real plan join: delete by activity_id
+        ({ error } = await supabase
+          .from("activity_joins")
+          .delete()
+          .eq("activity_id", planToLeave.id)
+          .eq("user_id", user.id));
+      }
       if (error) throw error;
       setActivities(prev => prev.filter(a => a.id !== planToLeave.id));
       setPlanToLeave(null);
@@ -647,6 +685,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       console.error("Error leaving plan:", err);
       toast.error("Failed to leave");
     }
+  };
+
+  /** Single-source-of-truth guard check.
+   *  Calls the same RPC as the feed so the two can never disagree.
+   *  Returns the active join for the given activity type, or null if the user
+   *  has no non-expired join for that type. */
+  const checkExistingJoin = async (activityType: string): Promise<MyActivePlan | null> => {
+    if (!user) return null;
+    const { data } = await (supabase as any).rpc('get_my_active_plans', { p_user_id: user.id }) as
+      { data: MyActivePlan[] | null };
+    return (data ?? []).find(p => p.activity_type === activityType) ?? null;
   };
 
   // Returns an existing joined activity of the same type in a different city, or null.
@@ -805,19 +854,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     const targetPlan = await findOrCreateOpenGroup(plan);
 
-    // DB check: already joined this activity type anywhere? Catches carousel joins and
-    // cross-city joins that may not appear in the stale in-memory activities list.
+    // Guard: call the same RPC the feed uses so the two sources can never disagree.
+    // This correctly excludes expired joins AND orphaned joins on soft-deleted plans.
     {
-      const nowCheck = new Date().toISOString();
-      const { data: existingJoin } = await supabase
-        .from("activity_joins")
-        .select("id, city")
-        .eq("user_id", user.id)
-        .eq("activity_type", targetPlan.activity_type)
-        .or(`expires_at.is.null,expires_at.gt.${nowCheck}`)
-        .maybeSingle();
+      const existingJoin = await checkExistingJoin(targetPlan.activity_type);
       if (existingJoin) {
-        if (existingJoin.city.toLowerCase() === targetPlan.city.toLowerCase()) {
+        if (normalizeCity(existingJoin.city) === normalizeCity(targetPlan.city)) {
           setShowAlreadyJoinedPlan(true);
         } else {
           setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
@@ -920,18 +962,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     const targetPlan = await findOrCreateOpenGroup(plan);
 
-    // DB check: already joined this activity type anywhere?
+    // Guard: same RPC as the feed — expired and orphaned joins never block here.
     {
-      const nowCheck = new Date().toISOString();
-      const { data: existingJoin } = await supabase
-        .from("activity_joins")
-        .select("id, city")
-        .eq("user_id", user.id)
-        .eq("activity_type", targetPlan.activity_type)
-        .or(`expires_at.is.null,expires_at.gt.${nowCheck}`)
-        .maybeSingle();
+      const existingJoin = await checkExistingJoin(targetPlan.activity_type);
       if (existingJoin) {
-        if (existingJoin.city.toLowerCase() === targetPlan.city.toLowerCase()) {
+        if (normalizeCity(existingJoin.city) === normalizeCity(targetPlan.city)) {
           setShowAlreadyJoinedPlan(true);
         } else {
           setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
@@ -1006,18 +1041,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     const targetPlan = await findOrCreateOpenGroup(plan);
 
-    // DB check: already joined this activity type anywhere?
+    // Guard: same RPC as the feed — expired and orphaned joins never block here.
     {
-      const nowCheck = new Date().toISOString();
-      const { data: existingJoin, error: queryError } = await supabase
-        .from("activity_joins")
-        .select("id, city")
-        .eq("user_id", user.id)
-        .eq("activity_type", targetPlan.activity_type)
-        .or(`expires_at.is.null,expires_at.gt.${nowCheck}`)
-        .maybeSingle();
+      const existingJoin = await checkExistingJoin(targetPlan.activity_type);
       if (existingJoin) {
-        if (existingJoin.city.toLowerCase() === targetPlan.city.toLowerCase()) {
+        if (normalizeCity(existingJoin.city) === normalizeCity(targetPlan.city)) {
           setShowAlreadyJoinedPlan(true);
         } else {
           setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
@@ -1196,7 +1224,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 key={plan.id}
                 canDelete={false}
                 onDelete={() => {}}
-                canLeave={plan.user_id !== user?.id && !!plan.isJoined && !plan.isCarouselJoin}
+                canLeave={!!plan.isJoined && (plan.isCarouselJoin || plan.user_id !== user?.id)}
                 onLeave={() => setPlanToLeave(plan)}
                 onClick={() => handlePlanClick(plan)}
                 className="w-full text-left p-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 dark:bg-gray-50 dark:border-gray-200 dark:hover:bg-gray-100 cursor-pointer transition-colors"
@@ -1492,6 +1520,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 <span className="font-semibold">{duplicateActivityBlock.newCity}</span>.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDuplicateActivityBlock(null);
+                // Switch to All Cities so the user can see their existing plan
+                // regardless of which city is currently selected.
+                setShowAllCities(true);
+              }}
+              className="w-full h-11 rounded-full font-semibold text-base text-white transition-all hover:opacity-90 active:scale-95 bg-blue-600"
+            >
+              See my {getActivityLabel(duplicateActivityBlock.activityType)} plan
+            </button>
             <button
               type="button"
               onClick={() => setDuplicateActivityBlock(null)}
