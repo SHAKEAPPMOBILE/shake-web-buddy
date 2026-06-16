@@ -1,9 +1,8 @@
 interface PlansEmptyStateProps {
-  onInvite: () => void;
-  invitePoints?: number;
+  onJoinActivity: () => void;
 }
 
-export function PlansEmptyState({ onInvite, invitePoints = 5 }: PlansEmptyStateProps) {
+export function PlansEmptyState({ onJoinActivity }: PlansEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center px-4 gap-4 py-6">
       <img
@@ -14,20 +13,13 @@ export function PlansEmptyState({ onInvite, invitePoints = 5 }: PlansEmptyStateP
       <p className="text-base font-medium text-gray-700">
         No plans yet
       </p>
-      <div className="flex flex-col items-center gap-1">
-        <button
-          type="button"
-          onClick={onInvite}
-          className="px-6 py-2.5 rounded-full font-semibold text-sm text-white animate-gradient-shift active:scale-95 transition-transform"
-        >
-          Invite a Friend
-        </button>
-        {invitePoints > 0 && (
-          <p className="text-xs text-gray-500">
-            & earn <span className="font-semibold text-amber-500">{invitePoints} pts</span>
-          </p>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={onJoinActivity}
+        className="px-6 py-2.5 rounded-full font-semibold text-sm text-white animate-gradient-shift active:scale-95 transition-transform"
+      >
+        Join an activity
+      </button>
     </div>
   );
 }

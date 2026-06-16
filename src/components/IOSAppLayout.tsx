@@ -527,6 +527,7 @@ export function IOSAppLayout() {
             pendingPaidActivityId={pendingPaidActivityId}
             onPendingPaidActivityHandled={() => setPendingPaidActivityId(null)}
             onOpenEvents={() => openNearYou("plans")}
+            onJoinActivity={handleOpenActivities}
           />
         );
       case "profile":

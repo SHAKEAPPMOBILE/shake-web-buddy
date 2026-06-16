@@ -65,6 +65,7 @@ interface PlansTabProps {
   pendingPaidActivityId?: string | null;
   onPendingPaidActivityHandled?: () => void;
   onOpenEvents?: () => void;
+  onJoinActivity?: () => void;
 }
 
 /** Shape returned by the get_my_active_plans RPC. */
@@ -93,7 +94,7 @@ interface MyActivePlan {
  *  from hiding a card the user is actually in. */
 const normalizeCity = (city: string): string => city.trim().toLowerCase();
 
-export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, onOpenEvents }: PlansTabProps = {}) {
+export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, onOpenEvents, onJoinActivity }: PlansTabProps = {}) {
   const { t, i18n } = useTranslation();
   const { style: plansSettlingGradientStyle } = useSettlingGradient("plans");
   const { selectedLanguage } = useLanguage();
@@ -1234,7 +1235,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             <LoadingSpinner size="lg" />
           </div>
         ) : activities.length === 0 && cityPlans.length === 0 ? (
-          <PlansEmptyState onInvite={handleInviteFromEmptyState} invitePoints={5} />
+          <PlansEmptyState onJoinActivity={onJoinActivity ?? (() => {})} />
         ) : (
           <>
             {/* Joined / own plans */}
