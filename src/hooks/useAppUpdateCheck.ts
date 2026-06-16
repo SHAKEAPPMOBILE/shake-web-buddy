@@ -1,67 +1,72 @@
 import { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Compare two semver strings. Returns true if `remote` is strictly greater than `local`.
- * Handles "1.2.3" format; ignores pre-release suffixes.
+ * Compare two semver strings. Returns true if `b` is strictly greater than `a`.
+ * Used to check: isBelow(installedVersion, minimumVersion)
  */
-function isRemoteNewer(local: string, remote: string): boolean {
+function isBelow(installed: string, minimum: string): boolean {
   const parse = (v: string) =>
     v
       .replace(/[^0-9.]/g, "")
       .split(".")
       .map((n) => parseInt(n, 10) || 0);
 
-  const [lMaj, lMin, lPat] = parse(local);
-  const [rMaj, rMin, rPat] = parse(remote);
+  const [aMaj, aMin, aPat] = parse(installed);
+  const [bMaj, bMin, bPat] = parse(minimum);
 
-  if (rMaj !== lMaj) return rMaj > lMaj;
-  if (rMin !== lMin) return rMin > lMin;
-  return rPat > lPat;
+  if (bMaj !== aMaj) return bMaj > aMaj;
+  if (bMin !== aMin) return bMin > aMin;
+  return bPat > aPat;
 }
 
 interface UpdateCheckResult {
   needsUpdate: boolean;
-  remoteVersion: string | null;
+  minimumVersion: string | null;
 }
 
 export function useAppUpdateCheck(): UpdateCheckResult {
   const [needsUpdate, setNeedsUpdate] = useState(false);
-  const [remoteVersion, setRemoteVersion] = useState<string | null>(null);
+  const [minimumVersion, setMinimumVersion] = useState<string | null>(null);
 
   useEffect(() => {
-    // Only run on native platforms — skip web
+    // Web always has the latest code — skip entirely.
     if (!Capacitor.isNativePlatform()) return;
 
     let cancelled = false;
 
     const check = async () => {
       try {
-        // Get installed app version from the OS
-        const info = await App.getInfo();
-        const localVersion = info.version; // e.g. "1.0.0"
+        // Read minimum required version from Supabase — no redeploy needed to bump it.
+        const { data, error } = await supabase
+          .from("app_config")
+          .select("value")
+          .eq("key", "minimum_app_version")
+          .maybeSingle();
 
-        // Fetch the remote version manifest
-        const res = await fetch("https://app.shakeapp.today/version.json", {
-          cache: "no-store",
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const remote: string = data?.version;
-        if (!remote) return;
+        if (error || !data?.value || cancelled) return;
+
+        const minimum = data.value;
+
+        // Get the installed build's marketing version (CFBundleShortVersionString on iOS,
+        // versionName on Android).
+        const info = await App.getInfo();
+        const installed = info.version;
 
         if (cancelled) return;
 
-        setRemoteVersion(remote);
-        if (isRemoteNewer(localVersion, remote)) {
-          console.log(`[UpdateCheck] Update available: ${localVersion} → ${remote}`);
+        setMinimumVersion(minimum);
+
+        if (isBelow(installed, minimum)) {
+          console.log(`[UpdateCheck] Force update: installed=${installed} minimum=${minimum}`);
           setNeedsUpdate(true);
         } else {
-          console.log(`[UpdateCheck] Up to date (local=${localVersion} remote=${remote})`);
+          console.log(`[UpdateCheck] OK: installed=${installed} minimum=${minimum}`);
         }
       } catch (err) {
-        // Non-fatal — silently skip
+        // Non-fatal — if the check fails, don't block the user.
         console.warn("[UpdateCheck] check failed:", err);
       }
     };
@@ -72,5 +77,5 @@ export function useAppUpdateCheck(): UpdateCheckResult {
     };
   }, []);
 
-  return { needsUpdate, remoteVersion };
+  return { needsUpdate, minimumVersion };
 }

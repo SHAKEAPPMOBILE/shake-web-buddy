@@ -2,7 +2,7 @@ import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 
 const IOS_STORE_URL =
-  "https://apps.apple.com/app/id6745205695";
+  "https://apps.apple.com/app/id6757654586";
 const ANDROID_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.shakebyleo.app";
 
