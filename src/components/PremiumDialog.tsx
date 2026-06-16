@@ -24,10 +24,35 @@ interface PremiumDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Parse ISO 8601 duration (e.g. "P1M", "P1Y", "P7D") into a human label.
+function formatSubscriptionPeriod(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const match = iso.match(/^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$/i);
+  if (!match) return null;
+  const [, years, months, weeks, days] = match;
+  if (years)  return Number(years)  === 1 ? "1 year"   : `${years} years`;
+  if (months) return Number(months) === 1 ? "1 month"  : `${months} months`;
+  if (weeks)  return Number(weeks)  === 1 ? "1 week"   : `${weeks} weeks`;
+  if (days)   return Number(days)   === 1 ? "1 day"    : `${days} days`;
+  return null;
+}
+
+// Fallback: infer period from the package/product identifier string.
+function periodFromIdentifier(id: string | null | undefined): string | null {
+  if (!id) return null;
+  const lower = id.toLowerCase();
+  if (lower.includes("annual") || lower.includes("yearly") || lower.includes("year")) return "1 year";
+  if (lower.includes("month")) return "1 month";
+  if (lower.includes("week"))  return "1 week";
+  return null;
+}
+
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
   const [productPrice, setProductPrice] = useState<string | null>(null);
+  const [productTitle, setProductTitle] = useState<string | null>(null);
+  const [subscriptionPeriod, setSubscriptionPeriod] = useState<string | null>(null);
   const [subscribeError, setSubscribeError] = useState<string | null>(null);
   const { user, isPremium, isManualOverride, checkSubscription, setIsPremium } = useAuth();
   const location = useLocation();
@@ -84,6 +109,19 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         setProductPrice(pkg.product.priceString);
       } else {
         console.warn('[PremiumDialog] no priceString found — keeping default', productPrice);
+      }
+
+      if (pkg?.product?.title) {
+        setProductTitle(pkg.product.title);
+      }
+
+      const rawPeriod: string | null | undefined = (pkg?.product as any)?.subscriptionPeriod;
+      const parsedPeriod =
+        formatSubscriptionPeriod(rawPeriod) ??
+        periodFromIdentifier(pkg?.product?.identifier) ??
+        periodFromIdentifier(pkg?.identifier);
+      if (parsedPeriod) {
+        setSubscriptionPeriod(parsedPeriod);
       }
     } catch (error: any) {
       console.error('[PremiumDialog] Error initializing purchases:', {
@@ -462,12 +500,23 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         </div>
 
         <div className="text-center py-2">
+          {productTitle && (
+            <p className="text-sm font-semibold text-gray-700 mb-0.5">{productTitle}</p>
+          )}
           {productPrice && (
             <div className="text-3xl font-display font-bold text-gray-900">
               {productPrice}
+              {subscriptionPeriod && (
+                <span className="text-base font-normal text-gray-500 ml-1">/ {subscriptionPeriod}</span>
+              )}
             </div>
           )}
-          <p className="text-xs text-gray-500 mt-0.5">Cancel anytime • Best value!</p>
+          {subscriptionPeriod && (
+            <p className="text-xs text-gray-500 mt-0.5">Billed every {subscriptionPeriod} • Cancel anytime</p>
+          )}
+          {!subscriptionPeriod && (
+            <p className="text-xs text-gray-500 mt-0.5">Cancel anytime • Best value!</p>
+          )}
         </div>
 
         <button
@@ -496,7 +545,22 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
         </button>
 
         <p className="text-xs text-center text-gray-500">
-          By subscribing, you agree to our Terms of Service
+          By subscribing you agree to our{" "}
+          <button
+            type="button"
+            onClick={() => { onOpenChange(false); navigate("/terms-of-service"); }}
+            className="underline text-gray-600 hover:text-gray-900"
+          >
+            Terms of Use
+          </button>
+          {" "}and{" "}
+          <button
+            type="button"
+            onClick={() => { onOpenChange(false); navigate("/privacy-policy"); }}
+            className="underline text-gray-600 hover:text-gray-900"
+          >
+            Privacy Policy
+          </button>
         </p>
       </DialogContent>
     </Dialog>
