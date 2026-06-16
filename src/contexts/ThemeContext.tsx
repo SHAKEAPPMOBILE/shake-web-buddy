@@ -14,14 +14,14 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 const STORAGE_KEY = "shake_theme";
 
 function getInitialTheme(): ThemeMode {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "dark") return "dark";
+    if (stored === "dark" || stored === "light") return stored;
   } catch {
     // localStorage not available
   }
-  return "dark";
+  return "light";
 }
 
 function applyThemeToRoot(theme: ThemeMode) {

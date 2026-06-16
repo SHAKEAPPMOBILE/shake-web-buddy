@@ -227,7 +227,7 @@ export function GlobalParticipantsSection() {
     <>
       <button
         onClick={() => setShowListDialog(true)}
-        className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-card/50 border border-border/50 backdrop-blur-sm hover:bg-card/70 transition-colors cursor-pointer animate-fade-up"
+        className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-card/50 border-2 border-blue-400 dark:border dark:border-border/50 backdrop-blur-sm hover:bg-card/70 transition-colors cursor-pointer animate-fade-up"
         style={{ animationDelay: "250ms" }}
       >
         {/* Stacked avatars */}
