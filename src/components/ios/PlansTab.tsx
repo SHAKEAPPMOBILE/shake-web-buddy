@@ -166,6 +166,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             : Promise.resolve({ data: [] as any[], error: null }),
       ]);
 
+      if (myPlansResult.error) {
+        console.error("[PlansTab] get_my_active_plans error:", myPlansResult.error);
+      }
       const myPlans: MyActivePlan[] = myPlansResult.data ?? [];
 
       // Split into real-plan joins and carousel joins.
