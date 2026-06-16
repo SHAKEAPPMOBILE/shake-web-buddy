@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { CitySelector } from "@/components/CitySelector";
 import { CityPickerModal } from "@/components/CityPickerModal";
 import { PlanGroupChatView } from "./PlanGroupChatView";
+import { PlansEmptyState } from "./PlansEmptyState";
 import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
@@ -616,6 +617,20 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     return "";
   };
 
+  const handleInviteFromEmptyState = async () => {
+    const link = getReferralLink(referralCode);
+    if (Capacitor.isNativePlatform()) {
+      try { await Share.share({ title: "Join SHAKE!", text: "Join me on SHAKE to find fun activities and meet new people!", url: link, dialogTitle: "Invite a Friend" }); }
+      catch (err) { if ((err as any).errorMessage !== 'Share canceled') { try { await navigator.clipboard.writeText(link); toast.success("Link copied!"); } catch {} } }
+    } else if (navigator.share) {
+      try { await navigator.share({ title: "Join SHAKE!", text: "Join me on SHAKE to find fun activities and meet new people!", url: link }); }
+      catch (err) { if ((err as Error).name !== "AbortError") { try { await navigator.clipboard.writeText(link); toast.success("Link copied!"); } catch {} } }
+    } else {
+      try { await navigator.clipboard.writeText(link); toast.success("Link copied!", { description: "Share it with friends to earn points." }); }
+      catch { toast.error("Failed to copy link"); }
+    }
+  };
+
   const handleCreatePlan = () => {
     if (!user) {
       return;
@@ -1194,29 +1209,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             <LoadingSpinner size="lg" />
           </div>
         ) : activities.length === 0 && cityPlans.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-center px-4 gap-3">
-            <p className="text-base font-medium text-gray-700">
-              No plans yet — be the first to shake in your city! 🌎
-            </p>
-            <button
-              onClick={async () => {
-                const link = getReferralLink(referralCode);
-                if (Capacitor.isNativePlatform()) {
-                  try { await Share.share({ title: "Join SHAKE!", text: "Join me on SHAKE to find fun activities and meet new people!", url: link, dialogTitle: "Invite a Friend" }); }
-                  catch (err) { if ((err as any).errorMessage !== 'Share canceled') { try { await navigator.clipboard.writeText(link); toast.success("Link copied!"); } catch {} } }
-                } else if (navigator.share) {
-                  try { await navigator.share({ title: "Join SHAKE!", text: "Join me on SHAKE to find fun activities and meet new people!", url: link }); }
-                  catch (err) { if ((err as Error).name !== "AbortError") { try { await navigator.clipboard.writeText(link); toast.success("Link copied!"); } catch {} } }
-                } else {
-                  try { await navigator.clipboard.writeText(link); toast.success("Link copied!", { description: "Share it with friends to earn points." }); }
-                  catch { toast.error("Failed to copy link"); }
-                }
-              }}
-              className="px-6 py-2.5 rounded-full font-semibold text-sm text-white bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all"
-            >
-              Invite a Friend
-            </button>
-          </div>
+          <PlansEmptyState onInvite={handleInviteFromEmptyState} invitePoints={5} />
         ) : (
           <>
             {/* Joined / own plans */}
