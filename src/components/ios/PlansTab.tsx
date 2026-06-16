@@ -143,8 +143,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const normCityForJoined = cityForJoined ? normalizeCity(cityForJoined) : null;
 
       // ── Phase 1: RPC (my active joins) + discovery carousel counts ─────────
-      const SHOWN_ACTIVITY_TYPES = ['dinner', 'brunch'];
-
       const [myPlansResult, cityCarouselResult] = await Promise.all([
         // Single source of truth: every non-expired join for this user.
         // Returns real-plan rows with the plan already joined in, and carousel
@@ -177,9 +175,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       // Activity types I'm currently in — exclude from discovery carousel below.
       const myActiveTypes    = new Set<string>(myPlans.map(p => p.activity_type));
 
-      // Apply city filter + visibility to my real joins.
+      // Apply city filter to my real joins.
+      // isActivityVisible is intentionally NOT applied here — the RPC already gates on
+      // expires_at, so every row it returns is authoritative.  Applying a second
+      // scheduled_for date check silently dropped plans (e.g. drinks/Medellín) whose
+      // event date had passed the 24-h window but whose join was still active.
       const filteredRealJoins = realJoins.filter(p => {
-        if (!isActivityVisible({ scheduled_for: p.scheduled_for, created_at: p.created_at! })) return false;
         if (!showAllCities && normCityForJoined) return normalizeCity(p.city) === normCityForJoined;
         return true;
       });
@@ -212,8 +213,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
       // Discovery carousel: other users' open groups with >=3 members,
       // only for activity types I'm not already in.
-      const allCarouselJoins = ((cityCarouselResult.data ?? []) as any[])
-        .filter((j: any) => SHOWN_ACTIVITY_TYPES.includes(j.activity_type));
+      // No activity_type allowlist here — any type returned by the DB is eligible.
+      const allCarouselJoins = (cityCarouselResult.data ?? []) as any[];
 
       const discoveryCarouselMap = new Map<string, { activity_type: string; city: string; userIds: string[]; activityId: string | null }>();
       allCarouselJoins.forEach((j: any) => {
@@ -227,8 +228,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       });
 
       // >=3 threshold is a DISCOVERY rule — only applied to other people's groups.
+      // Any activity_type is eligible; unknown types fall back to default label/icon.
       const discoveryCarouselEntries = Array.from(discoveryCarouselMap.values()).filter(c =>
-        SHOWN_ACTIVITY_TYPES.includes(c.activity_type) &&
         c.userIds.length >= 3 &&
         !c.userIds.includes(user.id) &&          // I'm not already in this specific group
         !myActiveTypes.has(c.activity_type) &&   // and I don't have this type at all
