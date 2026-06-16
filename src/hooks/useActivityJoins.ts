@@ -97,7 +97,7 @@ export function useActivityJoins(city: string) {
     // Exclude auto-generated seed rows so the join points to a real user-created plan.
     const { data: ua } = await supabase
       .from("user_activities")
-      .select("id")
+      .select("id, scheduled_for")
       .eq("activity_type", activityType)
       .eq("city", targetCity)
       .eq("is_active", true)
@@ -106,7 +106,14 @@ export function useActivityJoins(city: string) {
       .limit(1)
       .maybeSingle();
 
+    // Reject past-dated plans — same 24 h cutoff as findOrCreateOpenGroup in PlansTab.
+    // PostgREST .or() with ISO timestamps silently mis-parses, so apply this in JS.
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     let uaId = ua?.id ?? null;
+    if (uaId && ua?.scheduled_for && ua.scheduled_for < cutoff) {
+      uaId = null; // fall through to create a fresh current-dated plan below
+    }
+
     if (!uaId) {
       const nextDate = getNextOccurrenceDate(activityType);
       const { data: newUa } = await supabase
