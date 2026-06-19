@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow } from "date-fns";
-import { Plus, User, Calendar, Send, ChevronLeft } from "lucide-react";
+import { Plus, User, Calendar, Send } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
@@ -106,6 +106,10 @@ export default function ProposePlanPage() {
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [composerHeight, setComposerHeight] = useState(96);
 
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
@@ -169,13 +173,54 @@ export default function ProposePlanPage() {
 
   const currentStepName = steps[currentStep];
 
-  // Auto-focus input on step change
+  // Auto-focus input on step change + scroll to bottom
   useEffect(() => {
     if (currentStepName === "name") nameInputRef.current?.focus();
     else if (currentStepName === "city") cityInputElRef.current?.focus();
     else if (currentStepName === "time") timeInputRef.current?.focus();
     else if (currentStepName === "price") priceInputRef.current?.focus();
+    // Scroll the history area to the bottom so the new step is always visible
+    requestAnimationFrame(() => {
+      if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      }
+    });
   }, [currentStepName]);
+
+  // Keyboard avoidance: shift composer above the on-screen keyboard
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKeyboardOffset(offset);
+      // Keep chat history scrolled to bottom when keyboard opens/closes
+      requestAnimationFrame(() => {
+        if (scrollAreaRef.current) {
+          scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+        }
+      });
+    };
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+
+  // Track composer height so scroll-area padding stays accurate
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setComposerHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const selectedCurrencySymbol = CURRENCIES.find((c) => c.code === priceCurrency)?.symbol || "$";
 
@@ -360,7 +405,7 @@ export default function ProposePlanPage() {
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNameSubmit(); } }}
                   placeholder="What's the plan?"
                   maxLength={MAX_CHARACTERS}
-                  className="w-full h-16 rounded-2xl border border-border bg-muted/60 px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+                  className="w-full h-16 rounded-2xl border border-border bg-muted/60 px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
                 />
                 <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                   {planText.length}/{MAX_CHARACTERS}
@@ -387,7 +432,7 @@ export default function ProposePlanPage() {
               onChange={(e) => setCityInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCitySubmit(); } }}
               placeholder="e.g. Paris, New York, São Paulo…"
-              className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+              className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
             />
             <button
               onClick={handleCitySubmit}
@@ -487,7 +532,7 @@ export default function ProposePlanPage() {
                 value={selectedTime}
                 onChange={(e) => { setSelectedTime(e.target.value); setPastTimeError(false); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleTimeSubmit(); }}
-                className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
               />
               <button
                 onClick={handleTimeSubmit}
@@ -545,7 +590,7 @@ export default function ProposePlanPage() {
                   onChange={(e) => setPriceAmount(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handlePriceSubmit(); }}
                   placeholder={t("createPlan.amountPlaceholder")}
-                  className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+                  className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
                 />
                 <button
                   onClick={handlePriceSubmit}
@@ -636,21 +681,13 @@ export default function ProposePlanPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center gap-2">
+      {/* Header — back arrow only */}
+      <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center">
         <MinimalBackButton
-          onClick={() => navigate(-1)}
+          onClick={() => currentStep > 0 ? handleBack() : navigate(-1)}
           className="text-foreground/80 hover:text-foreground"
           aria-label="Back"
         />
-        <h1 className="text-lg font-display font-semibold">{t("createPlan.title")}</h1>
-        <div className="ml-auto">
-          {isPremium ? (
-            <span className="text-xs text-shake-yellow font-medium">{t("createPlan.unlimitedPlans")}</span>
-          ) : canCreate ? (
-            <span className="text-xs text-muted-foreground">{t("createPlan.freePlansLeft", { count: remainingActivities })}</span>
-          ) : null}
-        </div>
       </div>
 
       {!user ? (
@@ -681,75 +718,79 @@ export default function ProposePlanPage() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto flex flex-col">
-          {/* spacer: centers the view on step 0; collapses as history grows */}
-          <div className="flex-1 min-h-[8vh]" />
-          <div className="w-full max-w-sm mx-auto px-6 pt-4 pb-[max(env(safe-area-inset-bottom,0px),2rem)]">
-
-            {/* Past Q&A — oldest (top) faintest/smallest, most-recent (bottom) clearer */}
-            {currentStep > 0 && (
-              <div className="space-y-4 mb-6">
-                {steps.slice(0, currentStep).map((step, i) => {
-                  const stepsBack = currentStep - i; // 1 = most recent, higher = older
-                  const opacity =
-                    stepsBack === 1 ? "opacity-60" : stepsBack === 2 ? "opacity-40" : "opacity-25";
-                  const labelSize = stepsBack === 1 ? "text-xs" : "text-[10px]";
-                  const answerSize =
-                    stepsBack === 1 ? "text-sm" : stepsBack === 2 ? "text-xs" : "text-[11px]";
-                  return (
-                    <button
-                      key={step}
-                      type="button"
-                      onClick={() => jumpToStep(i)}
-                      className={cn(
-                        "w-full text-left space-y-0.5 transition-all hover:opacity-90 active:opacity-100",
-                        opacity
-                      )}
-                    >
-                      {BOT_QUESTIONS[step] && (
-                        <p className={cn("text-muted-foreground leading-tight", labelSize)}>
-                          {BOT_QUESTIONS[step]}
-                        </p>
-                      )}
-                      <p className={cn("font-medium text-foreground leading-tight", answerSize)}>
-                        {getUserAnswer(step)}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Divider separating history from active step */}
-            {currentStep > 0 && <div className="border-t border-border/20 mb-8" />}
-
-            {/* Active step */}
+        <>
+          {/* Scrollable chat history */}
+          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
+            {/* spacer: centers the view on step 0; collapses as history grows */}
+            <div className="min-h-[8vh]" />
             <div
-              key={currentStep}
-              className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+              className="w-full max-w-sm mx-auto px-6 pt-4"
+              style={{ paddingBottom: composerHeight + 32 }}
             >
-              <BotBubble
-                message={BOT_QUESTIONS[currentStepName]}
-                showAvatar={currentStep === 0}
-              />
-
-              {renderComposer()}
-
-              {/* ← Back: every step after the first, hidden at preview (Edit answers covers it) */}
-              {currentStep > 0 && currentStepName !== "preview" && (
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="mt-16 flex items-center text-muted-foreground hover:text-foreground transition-colors mx-auto"
-                  aria-label="Go back"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
+              {/* Past Q&A — oldest (top) faintest/smallest, most-recent (bottom) clearer */}
+              {currentStep > 0 && (
+                <div className="space-y-4 mb-6">
+                  {steps.slice(0, currentStep).map((step, i) => {
+                    const stepsBack = currentStep - i; // 1 = most recent, higher = older
+                    const opacity =
+                      stepsBack === 1 ? "opacity-60" : stepsBack === 2 ? "opacity-40" : "opacity-25";
+                    const labelSize = stepsBack === 1 ? "text-xs" : "text-[10px]";
+                    const answerSize =
+                      stepsBack === 1 ? "text-sm" : stepsBack === 2 ? "text-xs" : "text-[11px]";
+                    return (
+                      <button
+                        key={step}
+                        type="button"
+                        onClick={() => jumpToStep(i)}
+                        className={cn(
+                          "w-full text-left space-y-0.5 transition-all hover:opacity-90 active:opacity-100",
+                          opacity
+                        )}
+                      >
+                        {BOT_QUESTIONS[step] && (
+                          <p className={cn("text-muted-foreground leading-tight", labelSize)}>
+                            {BOT_QUESTIONS[step]}
+                          </p>
+                        )}
+                        <p className={cn("font-medium text-foreground leading-tight", answerSize)}>
+                          {getUserAnswer(step)}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            </div>
 
+              {/* Divider separating history from active step */}
+              {currentStep > 0 && <div className="border-t border-border/20 mb-8" />}
+
+              {/* Active step — bot bubble only (composer is in the fixed bar below) */}
+              <div
+                key={currentStep}
+                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
+                <BotBubble
+                  message={BOT_QUESTIONS[currentStepName]}
+                  showAvatar={currentStep === 0}
+                />
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Composer — fixed above the keyboard */}
+          <div
+            ref={composerRef}
+            className="fixed left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border/40 px-4 pt-3"
+            style={{
+              bottom: keyboardOffset,
+              paddingBottom: `max(env(safe-area-inset-bottom, 0px), 0.75rem)`,
+            }}
+          >
+            <div className="w-full max-w-sm mx-auto">
+              {renderComposer()}
+            </div>
+          </div>
+        </>
       )}
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
