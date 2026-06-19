@@ -653,13 +653,7 @@ export default function ProposePlanPage() {
                   {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
                 </>
               ) : (
-                <>
-                  <span className="text-xs font-normal opacity-80">All good? 👀</span>
-                  <span className="text-lg font-semibold">
-                    <span style={{ color: "#facc15" }}>Create the plan</span>
-                    <span className="text-2xl font-bold text-white"> +</span>
-                  </span>
-                </>
+                <span className="text-lg font-semibold tracking-wide">ADD PLAN</span>
               )}
             </button>
 
