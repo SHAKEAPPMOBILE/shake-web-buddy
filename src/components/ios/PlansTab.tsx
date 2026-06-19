@@ -447,7 +447,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [selectedPlan, setSelectedPlan] = useState<PlanActivity | null>(null);
   const [showChatView, setShowChatView] = useState(false);
   const [planToLeave, setPlanToLeave] = useState<PlanActivity | null>(null);
-  const [showAlreadyJoinedPlan, setShowAlreadyJoinedPlan] = useState(false);
   const [duplicateActivityBlock, setDuplicateActivityBlock] = useState<{
     activityType: string;
     oldCity: string;
@@ -876,95 +875,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     };
   };
 
-  const handleJoinPlan = async (plan: PlanActivity, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user) {
-      return;
-    }
-    if (plan.isJoined) {
-      setShowAlreadyJoinedPlan(true);
-      return;
-    }
-
-    // Block joining events that started on a PREVIOUS day.
-    // Same-day events are always joinable (plans often default to midnight).
-    if (plan.scheduled_for) {
-      const scheduledDate = new Date(plan.scheduled_for);
-      const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
-      if (!isSameDay && scheduledDate < new Date()) {
-        toast.error("This event already started");
-        return;
-      }
-    }
-
-    const targetPlan = await findOrCreateOpenGroup(plan);
-
-    // Guard: call the same RPC the feed uses so the two sources can never disagree.
-    // This correctly excludes expired joins AND orphaned joins on soft-deleted plans.
-    {
-      const existingJoin = await checkExistingJoin(targetPlan.activity_type);
-      if (existingJoin) {
-        if (normalizeCity(existingJoin.city) === normalizeCity(targetPlan.city)) {
-          setShowAlreadyJoinedPlan(true);
-        } else {
-          setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
-        }
-        return;
-      }
-    }
-
-    const insertPayload = {
-      user_id: user.id,
-      activity_id: targetPlan.id,
-      activity_type: targetPlan.activity_type,
-      city: targetPlan.city,
-    };
-    const { error } = await supabase
-      .from("activity_joins")
-      .insert(insertPayload);
-
-    if (error) {
-      console.error("[JOIN:handleJoinPlan] insert failed", { code: error.code, message: error.message, details: error.details, hint: (error as any).hint });
-      toast.error(`Failed to join: ${error.message}`);
-      return;
-    }
-
-    // Notify creator (fire-and-forget)
-    if (targetPlan.user_id && targetPlan.user_id !== user.id) {
-      void (async () => {
-        const { data: joinerProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
-        const joinerName = joinerProfile?.name || "Someone";
-        await supabase.functions.invoke("send-push-notification", {
-          body: {
-            to_user_id: targetPlan.user_id,
-            title: "New shaker joined! 🎉",
-            body: `${joinerName} just joined ${getActivityLabel(targetPlan.activity_type)} in ${targetPlan.city}`,
-          },
-        });
-      })();
-    }
-
-    setActivities(prev => {
-      const existing = prev.find(a => a.id === targetPlan.id);
-      if (existing) {
-        return prev.map(a => a.id === targetPlan.id
-          ? { ...a, isJoined: true, participant_count: (a.participant_count || 0) + 1 }
-          : a);
-      }
-      return [{ ...targetPlan, isJoined: true, participant_count: (targetPlan.participant_count || 0) + 1 }, ...prev];
-    });
-    setCityPlans(prev => prev.filter(p => p.id !== targetPlan.id));
-
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
-    });
-    toast.success("Joined!");
-    fetchPlans();
-  };
-
   // Plans whose activity_type is in this set join immediately (no preview modal),
   // regardless of whether the plan was user-created or auto-generated.
   // A user-created dinner/drinks/brunch plan routes to handleDirectCityJoin, not the preview.
@@ -973,6 +883,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   const handleCityPlanClick = (plan: PlanActivity) => {
     if (!user) {
+      return;
+    }
+    // Creator tapping their own plan — open chat directly, never show join guard.
+    if (plan.user_id === user.id) {
+      setSelectedPlan(plan);
+      setShowChatView(true);
       return;
     }
     // Paid plan → show payment/detail dialog
@@ -1012,7 +928,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const existingJoin = await checkExistingJoin(targetPlan.activity_type);
       if (existingJoin) {
         if (normalizeCity(existingJoin.city) === normalizeCity(targetPlan.city)) {
-          setShowAlreadyJoinedPlan(true);
+          // Already in — open the plan they're actually in, never show the guard.
+          const ownedPlan = activities.find(a => a.id === existingJoin.plan_id) ?? plan;
+          setSelectedPlan(ownedPlan);
+          setShowChatView(true);
         } else {
           setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
         }
@@ -1091,7 +1010,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const existingJoin = await checkExistingJoin(targetPlan.activity_type);
       if (existingJoin) {
         if (normalizeCity(existingJoin.city) === normalizeCity(targetPlan.city)) {
-          setShowAlreadyJoinedPlan(true);
+          // Already in — open the plan they're actually in, never show the guard.
+          const ownedPlan = activities.find(a => a.id === existingJoin.plan_id) ?? plan;
+          setSelectedPlan(ownedPlan);
+          setShowChatView(true);
         } else {
           setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
         }
@@ -1703,36 +1625,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         />
       )}
 
-      {/* Already-joined dialog */}
-      {showAlreadyJoinedPlan && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 pointer-events-auto">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
-            onClick={() => setShowAlreadyJoinedPlan(false)}
-          />
-          <div className="relative z-10 w-full max-w-sm pointer-events-auto px-6 py-8 flex flex-col gap-4 rounded-3xl bg-white shadow-2xl text-center">
-            <div className="text-6xl">🐯</div>
-            <h2 className="text-xl font-bold text-gray-900">You're already in!</h2>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              You already joined this activity. Go to Plans to see it, Tiger.
-            </p>
-            <button
-              type="button"
-              onClick={() => { setShowAlreadyJoinedPlan(false); navigate("/", { state: { activeTab: "plans" } }); }}
-              className="w-full h-11 rounded-full font-semibold text-base text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-            >
-              Go to Plans
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAlreadyJoinedPlan(false)}
-              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

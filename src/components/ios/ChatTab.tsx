@@ -169,9 +169,10 @@ export function ChatTab({
     }, 3000);
 
     try {
-      // Show plans scheduled in the last 24 h so chats persist for a full day after the activity starts
-      const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const todayIso = cutoff24h.toISOString();
+      // Show plans scheduled in the last 7 days so chats stay visible well after the activity.
+      // 24 h was too short — plans from yesterday evening disappeared from Chat the next morning.
+      const cutoff7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const todayIso = cutoff7d.toISOString();
 
       // ── Step 1: Fetch all top-level data in parallel ──────────────────────
       const [
@@ -194,7 +195,8 @@ export function ChatTab({
           .from("activity_joins")
           .select("activity_id")
           .eq("user_id", user.id)
-          .not("activity_id", "is", null),
+          .not("activity_id", "is", null)
+          .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`),
         supabase
           .from("user_activities")
           .select("*")
