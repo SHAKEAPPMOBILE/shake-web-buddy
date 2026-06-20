@@ -99,7 +99,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
               >
                 <div className="relative p-2 rounded-xl transition-all">
                   <div className={cn(
-                    "w-7 h-7 rounded-full overflow-hidden flex items-center justify-center transition-all",
+                    "w-9 h-9 rounded-full overflow-hidden flex items-center justify-center transition-all",
                     isActive
                       ? "ring-2 ring-primary ring-offset-1 ring-offset-card"
                       : "ring-1 ring-border"
