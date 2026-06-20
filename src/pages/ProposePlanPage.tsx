@@ -532,7 +532,7 @@ export default function ProposePlanPage() {
                 value={selectedTime}
                 onChange={(e) => { setSelectedTime(e.target.value); setPastTimeError(false); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleTimeSubmit(); }}
-                className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
               />
               <button
                 onClick={handleTimeSubmit}
