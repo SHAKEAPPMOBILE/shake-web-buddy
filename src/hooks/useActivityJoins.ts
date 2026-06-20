@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
 import { getNextOccurrenceDate } from "@/data/activityTypes";
+import { findOrCreateOpenGroup } from "@/lib/activityGroups";
 
 interface ActivityJoin {
   id: string;
@@ -93,65 +94,11 @@ export function useActivityJoins(city: string) {
     nextOccurrence.setUTCHours(23, 59, 59, 999);
     const expiresAt = nextOccurrence.toISOString();
 
-    // Look up the matching user_activities row so we can store its UUID on the join.
-    // Priority: (1) manually created plan, (2) existing auto-generated plan, (3) create new.
-    // Excluding auto-generated plans at step 1 caused fragmentation — every user who joined
-    // when no manual plan existed created their own solo auto-generated group.
-    const { data: ua } = await supabase
-      .from("user_activities")
-      .select("id, scheduled_for")
-      .eq("activity_type", activityType)
-      .eq("city", targetCity)
-      .eq("is_active", true)
-      .neq("is_auto_generated", true)
-      .order("scheduled_for", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    // Reject past-dated plans — same 24 h cutoff as findOrCreateOpenGroup in PlansTab.
-    // PostgREST .or() with ISO timestamps silently mis-parses, so apply this in JS.
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    let uaId = ua?.id ?? null;
-    if (uaId && ua?.scheduled_for && ua.scheduled_for < cutoff) {
-      uaId = null; // fall through to existing auto-generated plan or create a new one
-    }
-
-    // Step 2: no manual plan — reuse the most recent auto-generated group before creating one.
-    // This is the fix for solo-group fragmentation: joiners land in the same plan.
-    if (!uaId) {
-      const { data: autoUa } = await supabase
-        .from("user_activities")
-        .select("id, scheduled_for")
-        .eq("activity_type", activityType)
-        .eq("city", targetCity)
-        .eq("is_active", true)
-        .eq("is_auto_generated", true)
-        .order("scheduled_for", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (autoUa?.id && (!autoUa.scheduled_for || autoUa.scheduled_for >= cutoff)) {
-        uaId = autoUa.id;
-      }
-    }
-
-    // Step 3: still no plan — create a fresh auto-generated group.
-    if (!uaId) {
-      const nextDate = getNextOccurrenceDate(activityType);
-      const { data: newUa } = await supabase
-        .from("user_activities")
-        .insert({
-          user_id: user.id,
-          activity_type: activityType,
-          city: targetCity,
-          is_active: true,
-          is_auto_generated: true,
-          scheduled_for: nextDate.toISOString(),
-        })
-        .select("id")
-        .single();
-      uaId = newUa?.id ?? null;
-    }
+    // Route through the shared clustering function — same logic as My City cards.
+    // Finds an open group (< MAX_GROUP_CAPACITY active joins) or creates a new
+    // overflow group with group_number = max + 1, is_auto_generated = true.
+    const openGroup = await findOrCreateOpenGroup(activityType, targetCity, user.id);
+    const uaId = openGroup?.id ?? null;
 
     const { error: insertError } = await supabase
       .from("activity_joins")

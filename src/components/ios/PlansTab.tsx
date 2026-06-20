@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
+import { findOrCreateOpenGroup, MAX_GROUP_CAPACITY } from "@/lib/activityGroups";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
@@ -754,126 +755,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
   };
 
-  const MAX_CHAT_CAPACITY = 7;
-
-  // Find a group with open capacity, or create a new one if all full.
-  const findOrCreateOpenGroup = async (plan: PlanActivity): Promise<PlanActivity> => {
-    if (!user) return plan;
-
-    const nowForCap = new Date().toISOString();
-    // A plan is "current" if it has no scheduled date, or its scheduled date is
-    // within the last 24 h (same window as the feed and RPC expiry rule).
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const planIsCurrent =
-      plan.scheduled_for == null || plan.scheduled_for >= cutoff;
-
-    if (planIsCurrent) {
-      const { data: activeJoinsForPlan } = await supabase
-        .from("activity_joins")
-        .select("id")
-        .eq("activity_id", plan.id)
-        .or(`expires_at.is.null,expires_at.gt.${nowForCap}`);
-      const count = activeJoinsForPlan?.length ?? 0;
-
-      // Current plan with space — use it directly.
-      if (count < MAX_CHAT_CAPACITY) return plan;
-    }
-
-    // Plan is either past-dated or full.
-    // Look for a current sibling: same type + city, scheduled_for within 24 h or null.
-    // Do NOT filter by scheduled_for equality — a past-dated plan must never be a target.
-    const { data: siblings } = await supabase
-      .from("user_activities")
-      .select("*")
-      .eq("activity_type", plan.activity_type)
-      .eq("city", plan.city)
-      .eq("is_active", true)
-      .neq("id", plan.id)
-      .order("scheduled_for", { ascending: true });
-
-    // Apply the cutoff in JS — PostgREST .or() with ISO timestamps containing
-    // dots (.000Z) and colons silently mis-parses and returns all rows.
-    const currentSiblings = (siblings ?? []).filter((s: any) =>
-      s.scheduled_for == null || s.scheduled_for >= cutoff
-    );
-
-    for (const sibling of currentSiblings) {
-      const { data: activeSibJoins } = await supabase
-        .from("activity_joins")
-        .select("id")
-        .eq("activity_id", sibling.id)
-        .or(`expires_at.is.null,expires_at.gt.${nowForCap}`);
-      const sibCount = activeSibJoins?.length ?? 0;
-
-      if (sibCount < MAX_CHAT_CAPACITY) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("name, avatar_url")
-          .eq("user_id", sibling.user_id)
-          .maybeSingle();
-        if (planIsCurrent) toast.info("This group is full · joining another group");
-        return {
-          ...sibling,
-          creator_name: profile?.name ?? "Anonymous",
-          creator_avatar: profile?.avatar_url ?? undefined,
-          participant_count: sibCount ?? 0,
-          isJoined: false,
-        };
-      }
-    }
-
-    // No current sibling with space — create a fresh group.
-    // Use the next canonical occurrence date for this activity type so the new
-    // group is never stamped with a past date.  Compute group_number only among
-    // current plans to avoid inheriting a high sequence from old overflow groups.
-    const freshScheduledFor = getNextOccurrenceDate(plan.activity_type).toISOString();
-
-    const { data: allCurrentGroups } = await supabase
-      .from("user_activities")
-      .select("group_number, scheduled_for")
-      .eq("activity_type", plan.activity_type)
-      .eq("city", plan.city)
-      .eq("is_active", true);
-    // Same JS cutoff — don't trust .or() with ISO timestamps in PostgREST.
-    const currentGroups = (allCurrentGroups ?? []).filter((g: any) =>
-      g.scheduled_for == null || g.scheduled_for >= cutoff
-    );
-    const maxGroupNum = Math.max(
-      1,
-      ...(currentGroups.map((g: any) => g.group_number ?? 1))
-    );
-    const nextGroupNumber = maxGroupNum + 1;
-
-    const { data: newActivity, error: createError } = await supabase
-      .from("user_activities")
-      .insert({
-        user_id: user.id,
-        activity_type: plan.activity_type,
-        city: plan.city,
-        scheduled_for: freshScheduledFor,
-        is_active: true,
-        // Do not copy note from an old plan — the new group is a clean standard event.
-        note: planIsCurrent ? (plan.note ?? null) : null,
-        group_number: nextGroupNumber,
-      })
-      .select()
-      .single();
-
-    if (createError || !newActivity) {
-      console.error("[Capacity] Failed to create new group:", createError);
-      toast.error("Group is full — couldn't start a new one");
-      return plan;
-    }
-
-    if (planIsCurrent) toast.info("This group is full · a new group has been created for you!");
-    return {
-      ...newActivity,
-      creator_name: "New Group",
-      creator_avatar: undefined,
-      participant_count: 0,
-      isJoined: false,
-    };
-  };
+  // findOrCreateOpenGroup and MAX_GROUP_CAPACITY are imported from @/lib/activityGroups.
 
   // Plans whose activity_type is in this set join immediately (no preview modal),
   // regardless of whether the plan was user-created or auto-generated.
@@ -921,7 +803,34 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       }
     }
 
-    const targetPlan = await findOrCreateOpenGroup(plan);
+    const targetGroup = await findOrCreateOpenGroup(plan.activity_type, plan.city, user.id);
+    if (!targetGroup) {
+      toast.error("Group is full — couldn't start a new one");
+      return;
+    }
+    if (targetGroup.id !== plan.id) {
+      if ((targetGroup.group_number ?? 1) > (plan.group_number ?? 1)) {
+        toast.info("This group is full · a new group has been created for you!");
+      } else {
+        toast.info("This group is full · joining another group");
+      }
+    }
+    const targetPlan: PlanActivity = targetGroup.id === plan.id
+      ? plan
+      : {
+          id: targetGroup.id,
+          user_id: targetGroup.user_id,
+          activity_type: targetGroup.activity_type,
+          city: targetGroup.city,
+          scheduled_for: targetGroup.scheduled_for,
+          is_active: true,
+          note: targetGroup.note ?? null,
+          group_number: targetGroup.group_number ?? null,
+          is_auto_generated: targetGroup.is_auto_generated ?? null,
+          creator_name: "Open Group",
+          participant_count: 0,
+          isJoined: false,
+        };
 
     // Guard: same RPC as the feed — expired and orphaned joins never block here.
     {
@@ -1003,7 +912,34 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       }
     }
 
-    const targetPlan = await findOrCreateOpenGroup(plan);
+    const targetGroup = await findOrCreateOpenGroup(plan.activity_type, plan.city, user.id);
+    if (!targetGroup) {
+      toast.error("Group is full — couldn't start a new one");
+      return;
+    }
+    if (targetGroup.id !== plan.id) {
+      if ((targetGroup.group_number ?? 1) > (plan.group_number ?? 1)) {
+        toast.info("This group is full · a new group has been created for you!");
+      } else {
+        toast.info("This group is full · joining another group");
+      }
+    }
+    const targetPlan: PlanActivity = targetGroup.id === plan.id
+      ? plan
+      : {
+          id: targetGroup.id,
+          user_id: targetGroup.user_id,
+          activity_type: targetGroup.activity_type,
+          city: targetGroup.city,
+          scheduled_for: targetGroup.scheduled_for,
+          is_active: true,
+          note: targetGroup.note ?? null,
+          group_number: targetGroup.group_number ?? null,
+          is_auto_generated: targetGroup.is_auto_generated ?? null,
+          creator_name: "Open Group",
+          participant_count: 0,
+          isJoined: false,
+        };
 
     // Guard: same RPC as the feed — expired and orphaned joins never block here.
     {

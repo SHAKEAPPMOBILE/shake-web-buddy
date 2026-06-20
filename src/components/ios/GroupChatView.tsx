@@ -14,6 +14,7 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useActivityMute } from "@/hooks/useActivityMute";
 import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { toast } from "@/lib/app-toast";
+import { MAX_GROUP_CAPACITY } from "@/lib/activityGroups";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
@@ -211,7 +212,7 @@ export function GroupChatView({
     avatarUrl: string | null;
   } | null>(null);
   const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null; nationality: string | null; occupation: string | null; interests: string[] | null }[]>([]);
-  const MAX_CHAT_CAPACITY = 7;
+  // MAX_GROUP_CAPACITY imported from @/lib/activityGroups
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevParticipantsRef = useRef<typeof participants>([]);
 
@@ -845,12 +846,12 @@ export function GroupChatView({
                 {/* Capacity indicator */}
                 {(() => {
                   const memberCount = participants.length;
-                  const isFull = memberCount >= MAX_CHAT_CAPACITY;
+                  const isFull = memberCount >= MAX_GROUP_CAPACITY;
                   return (
                     <p className={`text-xs mt-1 leading-tight ${isFull ? 'text-red-400' : 'text-gray-400'}`}>
                       {isFull
-                        ? `Group full · ${memberCount}/${MAX_CHAT_CAPACITY}`
-                        : `${memberCount}/${MAX_CHAT_CAPACITY} joined`}
+                        ? `Group full · ${memberCount}/${MAX_GROUP_CAPACITY}`
+                        : `${memberCount}/${MAX_GROUP_CAPACITY} joined`}
                     </p>
                   );
                 })()}
@@ -925,7 +926,7 @@ export function GroupChatView({
                 <span className="text-base">{activityMeta?.emoji ?? "📍"}</span>
               )}
               {title}
-              <span className="text-xs font-normal text-gray-500">{participants.length}/{MAX_CHAT_CAPACITY}</span>
+              <span className="text-xs font-normal text-gray-500">{participants.length}/{MAX_GROUP_CAPACITY}</span>
             </span>
             <div className="flex items-center gap-0.5">
               <Button variant="ghost" size="icon" onClick={handleShare} className="shrink-0 text-gray-900 hover:text-gray-700 hover:bg-black/5 h-8 w-8" title="Invite a friend">
