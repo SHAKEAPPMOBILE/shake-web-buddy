@@ -1360,14 +1360,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         </div>
 
                         {/* Attendee count */}
-                        {(plan.participant_count ?? 0) > 0 && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <Users className="w-3 h-3 text-gray-400" />
-                            <span className="text-xs text-gray-500">
-                              {plan.participant_count} {t('common.joined').toLowerCase()}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1 mt-1">
+                          <Users className="w-3 h-3 text-gray-400" />
+                          <span className="text-xs text-gray-500">
+                            {plan.participant_count ?? 0}/{MAX_GROUP_CAPACITY} {t('common.joined').toLowerCase()}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
