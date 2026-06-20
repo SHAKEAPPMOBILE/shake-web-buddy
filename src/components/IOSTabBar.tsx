@@ -97,28 +97,29 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                   !user && "opacity-50 cursor-not-allowed"
                 )}
               >
-                <div className="relative p-2 rounded-xl transition-all">
-                  <div className={cn(
-                    "w-9 h-9 rounded-full overflow-hidden flex items-center justify-center transition-all",
-                    isActive
-                      ? "ring-2 ring-primary ring-offset-1 ring-offset-card"
-                      : "ring-1 ring-border"
-                  )}>
-                    {displayAvatar ? (
-                      <img
-                        src={displayAvatar}
-                        alt={userName ?? "Profile"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className={cn(
-                        "w-full h-full flex items-center justify-center text-[10px] font-bold",
-                        isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                      )}>
-                        {initial}
-                      </span>
-                    )}
-                  </div>
+                {/* No p-2 wrapper here — regular icon tabs have p-2 around w-6 h-6 (40px total).
+                    Avatar is w-9 h-9 (36px); skipping the wrapper keeps the slot height close
+                    to 40px so the avatar center aligns with other tab icons under items-end. */}
+                <div className={cn(
+                  "w-9 h-9 rounded-full overflow-hidden flex items-center justify-center transition-all",
+                  isActive
+                    ? "ring-2 ring-primary ring-offset-1 ring-offset-card"
+                    : "ring-1 ring-border"
+                )}>
+                  {displayAvatar ? (
+                    <img
+                      src={displayAvatar}
+                      alt={userName ?? "Profile"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className={cn(
+                      "w-full h-full flex items-center justify-center text-[10px] font-bold",
+                      isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                    )}>
+                      {initial}
+                    </span>
+                  )}
                 </div>
                 {/* Invisible spacer keeps this button the same height as icon+label tabs */}
                 <span className="text-[10px] invisible select-none" aria-hidden>·</span>
