@@ -19,7 +19,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useTextMessageLimit } from "@/hooks/useTextMessageLimit";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { LoadingSpinner } from "../LoadingSpinner";
-import { getActivityEmoji } from "@/data/activityTypes";
+import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
@@ -447,7 +447,7 @@ export function PlanGroupChatView({
   })();
 
   const planEmoji = getActivityEmoji(activity.activity_type);
-  const planTitle = activity.note || t('plans.untitledPlan', 'Untitled Plan');
+  const planTitle = activity.note || getActivityLabel(activity.activity_type) || t('plans.untitledPlan', 'Untitled Plan');
 
   // Curtain live height
   const baseHeight = SNAP_HEIGHTS[snapState];
