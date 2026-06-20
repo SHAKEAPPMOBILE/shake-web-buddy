@@ -669,16 +669,18 @@ export default function ProposePlanPage() {
             <button
               onClick={handleCreate}
               disabled={!isValid || isLoading || connectLoading}
-              className="w-full py-4 rounded-full text-white transition-all hover:opacity-90 disabled:opacity-50 flex flex-col items-center justify-center gap-0.5"
-              style={{ background: "#60a5fa" }}
+              className="w-full py-4 rounded-full transition-all hover:opacity-90 disabled:opacity-50 flex flex-col items-center justify-center gap-0.5"
+              style={{ background: "#000000" }}
             >
               {isLoading || connectLoading ? (
                 <>
                   <LoadingSpinner size="sm" />
-                  {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
+                  <span style={{ color: "#60a5fa" }}>
+                    {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
+                  </span>
                 </>
               ) : (
-                <span className="text-lg font-semibold tracking-wide">ADD PLAN</span>
+                <span className="text-lg font-semibold tracking-wide" style={{ color: "#60a5fa" }}>ADD PLAN</span>
               )}
             </button>
 
