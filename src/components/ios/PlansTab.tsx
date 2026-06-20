@@ -154,10 +154,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         (supabase as any).rpc('get_my_active_plans', { p_user_id: user.id }) as
           Promise<{ data: MyActivePlan[] | null; error: unknown }>,
 
-        // Discovery carousel: all open-interest joins in the selected city (or all
-        // cities) so we can count members and surface groups with >=3 people.
+        // Discovery carousel: open-interest joins used to count members and surface
+        // groups with >=3 people.
+        // My City  → joins in effectiveCity only.
+        // All Cities → joins in cities OTHER than effectiveCity.
         showAllCities
-          ? supabase.from("activity_joins").select("activity_type, city, user_id, activity_id")
+          ? effectiveCity
+            ? supabase.from("activity_joins").select("activity_type, city, user_id, activity_id").neq("city", effectiveCity)
+            : supabase.from("activity_joins").select("activity_type, city, user_id, activity_id")
           : effectiveCity
             ? supabase
                 .from("activity_joins")
@@ -186,29 +190,47 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       // expires_at, so every row it returns is authoritative.  Applying a second
       // scheduled_for date check silently dropped plans (e.g. drinks/Medellín) whose
       // event date had passed the 24-h window but whose join was still active.
+      //
+      // My City  → only plans in normCityForJoined.
+      // All Cities → only plans NOT in normCityForJoined (other cities only).
       const filteredRealJoins = realJoins.filter(p => {
-        if (!showAllCities && normCityForJoined) return normalizeCity(p.city) === normCityForJoined;
-        return true;
+        if (!normCityForJoined) return true;
+        return showAllCities
+          ? normalizeCity(p.city) !== normCityForJoined
+          : normalizeCity(p.city) === normCityForJoined;
       });
 
       // Apply city filter to carousel joins (always future-dated, no visibility filter).
       const filteredCarouselJoins = carouselJoins.filter(p => {
-        if (!showAllCities && normCityForJoined) return normalizeCity(p.city) === normCityForJoined;
-        return true;
+        if (!normCityForJoined) return true;
+        return showAllCities
+          ? normalizeCity(p.city) !== normCityForJoined
+          : normalizeCity(p.city) === normCityForJoined;
       });
 
-      // ── Phase 2: city discovery real plans ────────────────────────────────
+      // ── Phase 2: discovery real plans ─────────────────────────────────────
+      // My City  → non-auto plans in effectiveCity (unchanged).
+      // All Cities → non-auto plans in cities OTHER than effectiveCity.
       const cityPlansDataResult = await (
-        showAllCities || !effectiveCity
+        !effectiveCity
           ? Promise.resolve({ data: [] as any[], error: null })
-          : supabase
-              .from("user_activities")
-              .select("*")
-              .eq("city", effectiveCity)
-              .eq("is_active", true)
-              .neq("is_auto_generated", true)
-              .order("scheduled_for", { ascending: true, nullsFirst: false })
-              .limit(20)
+          : showAllCities
+            ? supabase
+                .from("user_activities")
+                .select("*")
+                .neq("city", effectiveCity)
+                .eq("is_active", true)
+                .neq("is_auto_generated", true)
+                .order("scheduled_for", { ascending: true, nullsFirst: false })
+                .limit(30)
+            : supabase
+                .from("user_activities")
+                .select("*")
+                .eq("city", effectiveCity)
+                .eq("is_active", true)
+                .neq("is_auto_generated", true)
+                .order("scheduled_for", { ascending: true, nullsFirst: false })
+                .limit(20)
       );
       console.log("[PlansTab] my-city query →", { effectiveCity, count: cityPlansDataResult.data?.length, error: cityPlansDataResult.error });
 
