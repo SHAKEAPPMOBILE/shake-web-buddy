@@ -15,7 +15,7 @@ import { PlansEmptyState } from "./PlansEmptyState";
 import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
-import { formatDateWithTranslation } from "@/lib/date-utils";
+import { formatDateWithTranslation, parseDbDate } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,8 +141,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
       const isActivityVisible = (a: { scheduled_for: string | null; created_at: string }) =>
         a.scheduled_for !== null
-          ? new Date(a.scheduled_for) >= twentyFourHoursAgo
-          : new Date(a.created_at)    >= fiveDaysAgo;
+          ? parseDbDate(a.scheduled_for) >= twentyFourHoursAgo
+          : parseDbDate(a.created_at)    >= fiveDaysAgo;
 
       // Normalised city strings for comparison (trim + lowercase on both sides).
       // joinedPlansCityFilter is set when the user uses the in-Plans city picker.
@@ -238,9 +238,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       console.log("[PlansTab] my-city query →", { effectiveCity, count: cityPlansDataResult.data?.length, error: cityPlansDataResult.error });
 
       // Discovery real plans: active plans in the city that I haven't joined.
+      // isActivityVisible uses a 24h-back window (for joined plans), so we add a
+      // strict future-only guard here: discovery cards must never show past events.
+      const nowDate = new Date();
       const cityPublicPlans: any[] = (cityPlansDataResult.data ?? [])
         .filter((a: { id: string }) => !myJoinedPlanIds.has(a.id))
-        .filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a));
+        .filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a))
+        .filter((a: { scheduled_for: string | null }) =>
+          // Past-dated plans must not appear as joinable discovery cards.
+          // Nulls (no scheduled_for) pass through — they're open-ended invites.
+          a.scheduled_for == null || parseDbDate(a.scheduled_for) >= nowDate
+        );
 
       // IDs of plans already in the real-plans feed — used below to deduplicate the
       // discovery carousel so auto-generated plans don't appear in both sections.
@@ -274,8 +282,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       // ── Phase 3: quick render — cards without profiles (stops spinner early) ─
       const sortByDate = (arr: PlanActivity[]) =>
         arr.sort((a, b) => {
-          const da = a.scheduled_for ? new Date(a.scheduled_for) : new Date((a as any).created_at || 0);
-          const db = b.scheduled_for ? new Date(b.scheduled_for) : new Date((b as any).created_at || 0);
+          const da = a.scheduled_for ? parseDbDate(a.scheduled_for) : parseDbDate((a as any).created_at);
+          const db = b.scheduled_for ? parseDbDate(b.scheduled_for) : parseDbDate((b as any).created_at);
           if (isToday(da)    && !isToday(db))    return -1;
           if (!isToday(da)   && isToday(db))     return  1;
           if (isTomorrow(da) && !isTomorrow(db)) return -1;
@@ -603,7 +611,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   const isSoon = (scheduledFor: string | null): boolean => {
     if (!scheduledFor) return false;
-    const diff = new Date(scheduledFor).getTime() - Date.now();
+    const diff = parseDbDate(scheduledFor).getTime() - Date.now();
     return diff > 0 && diff <= 3 * 60 * 60 * 1000;
   };
 
@@ -755,7 +763,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const activityLabel = getActivityLabel(plan.activity_type);
     const activityEmoji = getActivityEmoji(plan.activity_type);
     const dateStr = plan.scheduled_for
-      ? format(new Date(plan.scheduled_for), "EEE, d MMM")
+      ? format(parseDbDate(plan.scheduled_for), "EEE, d MMM")
       : format(new Date(), "EEE, d MMM");
 
     // For carousel plans, encode type+city directly. For real plans, use the plan id.
@@ -818,7 +826,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // Block joining events that started on a PREVIOUS day.
     // Same-day events are always joinable (plans often default to midnight).
     if (plan.scheduled_for) {
-      const scheduledDate = new Date(plan.scheduled_for);
+      const scheduledDate = parseDbDate(plan.scheduled_for);
       const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
       if (!isSameDay && scheduledDate < new Date()) {
         toast.error("This event already started");
@@ -927,7 +935,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // Block joining events that started on a PREVIOUS day.
     // Same-day events are always joinable (plans often default to midnight).
     if (plan.scheduled_for) {
-      const scheduledDate = new Date(plan.scheduled_for);
+      const scheduledDate = parseDbDate(plan.scheduled_for);
       const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
       if (!isSameDay && scheduledDate < new Date()) {
         toast.error("This event already started");
@@ -1215,17 +1223,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       <Calendar className="w-3.5 h-3.5 text-gray-600" />
                       {!plan.scheduled_for ? (
                         <span className="text-xs text-gray-500">{t('common.today')}</span>
-                      ) : isToday(new Date(plan.scheduled_for)) ? (
+                      ) : isToday(parseDbDate(plan.scheduled_for)) ? (
                         <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-2 py-0.5 rounded-full animate-pulse">
                           {t('common.today')}
                         </span>
-                      ) : isTomorrow(new Date(plan.scheduled_for)) ? (
+                      ) : isTomorrow(parseDbDate(plan.scheduled_for)) ? (
                         <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">
                           {t('common.tomorrow')}
                         </span>
                       ) : (
                         <span className="text-sm text-gray-600">
-                          {format(new Date(plan.scheduled_for), "EEE, d MMM")}
+                          {format(parseDbDate(plan.scheduled_for), "EEE, d MMM")}
                         </span>
                       )}
                     </div>
@@ -1344,15 +1352,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
                           <span className="text-xs text-gray-500">
                             {plan.scheduled_for
-                              ? format(new Date(plan.scheduled_for), "EEE, d MMM · h:mm a")
+                              ? format(parseDbDate(plan.scheduled_for), "EEE, d MMM · h:mm a")
                               : t('common.today')}
                           </span>
-                          {plan.scheduled_for && isToday(new Date(plan.scheduled_for)) && (
+                          {plan.scheduled_for && isToday(parseDbDate(plan.scheduled_for)) && (
                             <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-1.5 py-0.5 rounded-full animate-pulse">
                               {t('common.today')}
                             </span>
                           )}
-                          {plan.scheduled_for && isTomorrow(new Date(plan.scheduled_for)) && (
+                          {plan.scheduled_for && isTomorrow(parseDbDate(plan.scheduled_for)) && (
                             <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-1.5 py-0.5 rounded-full">
                               {t('common.tomorrow')}
                             </span>
@@ -1518,11 +1526,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 <p className="text-sm text-gray-500">
                   {!planPreview.scheduled_for
                     ? t('common.today')
-                    : isToday(new Date(planPreview.scheduled_for))
-                    ? `${t('common.today')} · ${format(new Date(planPreview.scheduled_for), "h:mm a")}`
-                    : isTomorrow(new Date(planPreview.scheduled_for))
-                    ? `${t('common.tomorrow')} · ${format(new Date(planPreview.scheduled_for), "h:mm a")}`
-                    : format(new Date(planPreview.scheduled_for), "EEE, d MMM · h:mm a")}
+                    : isToday(parseDbDate(planPreview.scheduled_for))
+                    ? `${t('common.today')} · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`
+                    : isTomorrow(parseDbDate(planPreview.scheduled_for))
+                    ? `${t('common.tomorrow')} · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`
+                    : format(parseDbDate(planPreview.scheduled_for), "EEE, d MMM · h:mm a")}
                 </p>
               </div>
 

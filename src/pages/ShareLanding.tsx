@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ALL_ACTIVITY_TYPES, getNextOccurrenceDate } from "@/data/activityTypes";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { format } from "date-fns";
+import { parseDbDate } from "@/lib/date-utils";
 import logoShake from "@/assets/shake-logo-new.png";
 
 interface ActivityInfo {
@@ -169,12 +170,12 @@ export default function ShareLanding() {
     activityInfo?.label ?? activity?.activity_type ?? "Activity";
 
   const dateStr = activity?.scheduled_for
-    ? format(new Date(activity.scheduled_for), "EEE, d MMM")
+    ? format(parseDbDate(activity.scheduled_for), "EEE, d MMM")
     : null;
 
   // For user-created plans: show date + time together.
   const planDateStr = activity?.scheduled_for
-    ? format(new Date(activity.scheduled_for), "EEE, d MMM · h:mm a")
+    ? format(parseDbDate(activity.scheduled_for), "EEE, d MMM · h:mm a")
     : null;
 
   const creatorAvatarUrl = activity?.creator_avatar

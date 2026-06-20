@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
+import { parseDbDate } from "@/lib/date-utils";
 import { getActivityEmoji, ACTIVITY_TYPES } from "@/data/activityTypes";
 import { getTranslatedActivityLabel } from "@/lib/activity-translations";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -249,8 +250,8 @@ export function MyActivitiesDialog({
       }
 
       const finalList = Array.from(byKey.values()).sort((a, b) => {
-        const aTime = a.scheduled_for ? new Date(a.scheduled_for).getTime() : new Date(a.joined_at).getTime();
-        const bTime = b.scheduled_for ? new Date(b.scheduled_for).getTime() : new Date(b.joined_at).getTime();
+        const aTime = a.scheduled_for ? parseDbDate(a.scheduled_for).getTime() : parseDbDate(a.joined_at).getTime();
+        const bTime = b.scheduled_for ? parseDbDate(b.scheduled_for).getTime() : parseDbDate(b.joined_at).getTime();
         return bTime - aTime;
       });
 

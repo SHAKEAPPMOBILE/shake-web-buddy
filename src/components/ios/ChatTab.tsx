@@ -9,7 +9,7 @@ import { useActivityJoins } from "@/hooks/useActivityJoins";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate, getActivityIcon } from "@/data/activityTypes";
-import { formatDateWithTranslation } from "@/lib/date-utils";
+import { formatDateWithTranslation, parseDbDate } from "@/lib/date-utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingSpinner } from "../LoadingSpinner";
@@ -301,10 +301,10 @@ export function ChatTab({
       const validCarouselJoins = (carouselJoins || []).filter(join => {
         // Explicit expires_at set by the server takes precedence
         if (join.expires_at) {
-          return new Date(join.expires_at).getTime() > nowMs;
+          return parseDbDate(join.expires_at).getTime() > nowMs;
         }
         // Joined within the last 24h → show
-        if (join.joined_at && nowMs - new Date(join.joined_at).getTime() < ms24h) {
+        if (join.joined_at && nowMs - parseDbDate(join.joined_at).getTime() < ms24h) {
           return true;
         }
         // Show for 24h after the last weekly occurrence.

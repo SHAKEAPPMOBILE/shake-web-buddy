@@ -1,5 +1,27 @@
 import { format } from "date-fns";
 
+/**
+ * Safely parses a raw DB timestamp string to a Date.
+ *
+ * PostgreSQL serialises timestamps as "2026-06-20 04:00:00+00" — a space
+ * instead of T and a bare +00 suffix. This format is rejected by
+ * Safari/WebKit's Date parser, returning Invalid Date. Supabase REST
+ * (PostgREST) returns this format for raw table queries; RPC results and
+ * JS-generated .toISOString() values are already valid ISO 8601 and pass
+ * through unchanged.
+ *
+ * Returns new Date(NaN) for null/undefined inputs so callers can guard
+ * with isNaN(d.getTime()).
+ */
+export function parseDbDate(raw: string | null | undefined): Date {
+  if (!raw) return new Date(NaN);
+  // "2026-06-20 04:00:00+00" → "2026-06-20T04:00:00Z"
+  // "2026-06-20 04:00:00+00:00" → "2026-06-20T04:00:00Z"
+  // Already-valid ISO 8601 strings are unchanged.
+  const normalized = raw.replace(' ', 'T').replace(/\+00(:00)?$/, 'Z');
+  return new Date(normalized);
+}
+
 // Day name translations for date formatting
 export const dayTranslations: Record<string, Record<string, string>> = {
   en: {

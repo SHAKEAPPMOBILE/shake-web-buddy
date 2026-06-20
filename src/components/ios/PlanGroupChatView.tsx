@@ -7,6 +7,7 @@ import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
 import { MessageBubbleReactions } from "@/components/chat/MessageBubbleReactions";
 import { aggregateReactionsByMessage, sortedReactionEntries } from "@/lib/eventChatReactions";
 import { format } from "date-fns";
+import { parseDbDate } from "@/lib/date-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
@@ -435,7 +436,7 @@ export function PlanGroupChatView({
   const creatorProfile = profiles[activity.user_id];
 
   const planDateLabel = (() => {
-    const d = activity.scheduled_for ? new Date(activity.scheduled_for) : null;
+    const d = activity.scheduled_for ? parseDbDate(activity.scheduled_for) : null;
     if (!d || isNaN(d.getTime())) return null;
     const today = new Date();
     const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);

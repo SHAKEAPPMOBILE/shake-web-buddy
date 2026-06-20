@@ -8,6 +8,7 @@ import { MessageBubbleReactions } from "@/components/chat/MessageBubbleReactions
 import { aggregateReactionsByMessage, sortedReactionEntries } from "@/lib/eventChatReactions";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { format } from "date-fns";
+import { parseDbDate } from "@/lib/date-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
@@ -624,7 +625,7 @@ export function GroupChatView({
     const activityLabel = getActivityLabel(activityType);
     const activityEmoji = activityMeta?.emoji ?? "🎉";
     const dateStr = eventDate
-      ? format(new Date(eventDate), "EEE, d MMM")
+      ? format(parseDbDate(eventDate), "EEE, d MMM")
       : format(new Date(), "EEE, d MMM");
 
     // Look up the nearest future activity UUID for this type + city.
@@ -707,7 +708,7 @@ export function GroupChatView({
   // Compute split header date parts (day / date / time on separate lines)
   const { headerDay, headerDateOnly } = (() => {
     if (eventDate) {
-      const d = new Date(eventDate);
+      const d = parseDbDate(eventDate);
       const today = new Date();
       const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
       const isToday = d.toDateString() === today.toDateString();
