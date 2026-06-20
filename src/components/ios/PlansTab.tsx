@@ -124,6 +124,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
 
     setIsLoading(true);
+    // Clear stale data immediately so the previous filter mode's cards never flash
+    // while the new query is in flight (e.g. All Cities → My City transition).
+    setActivities([]);
+    setCityPlans([]);
     const effectiveCity = selectedCity;
     console.log("[PlansTab] fetchPlans →", { effectiveCity, showAllCities });
 
