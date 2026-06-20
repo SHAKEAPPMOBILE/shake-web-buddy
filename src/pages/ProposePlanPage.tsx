@@ -280,7 +280,19 @@ export default function ProposePlanPage() {
     advanceStep();
   };
 
+  const [priceError, setPriceError] = useState<string | null>(null);
+
   const handlePriceSubmit = () => {
+    if (!priceAmount.trim()) {
+      setPriceError("Please enter an amount, or tap Free to skip.");
+      return;
+    }
+    const parsed = parseFloat(priceAmount.replace(",", "."));
+    if (isNaN(parsed) || parsed <= 0) {
+      setPriceError("Enter a valid amount greater than 0.");
+      return;
+    }
+    setPriceError(null);
     advanceStep();
   };
 
@@ -567,39 +579,52 @@ export default function ProposePlanPage() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <Select value={priceCurrency} onValueChange={setPriceCurrency}>
-                  <SelectTrigger className="w-28 shrink-0 h-14 rounded-full border-border bg-muted/60">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        {currency.symbol} {currency.code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input
-                  ref={priceInputRef}
-                  autoFocus
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={priceAmount}
-                  onChange={(e) => setPriceAmount(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handlePriceSubmit(); }}
-                  placeholder={t("createPlan.amountPlaceholder")}
-                  className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
-                />
-                <button
-                  onClick={handlePriceSubmit}
-                  disabled={!priceAmount.trim()}
-                  className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
-                  style={{ background: "#60a5fa" }}
-                >
-                  <Send className="w-5 h-5" />
-                </button>
+              <div className="space-y-2">
+                {priceError && (
+                  <p className="text-sm text-destructive px-1">{priceError}</p>
+                )}
+                <div className="flex items-center gap-3">
+                  <Select value={priceCurrency} onValueChange={setPriceCurrency}>
+                    <SelectTrigger className="w-28 shrink-0 h-14 rounded-full border-border bg-muted/60">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((currency) => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.symbol} {currency.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {/*
+                    type="text" inputMode="decimal" instead of type="number":
+                    — mobile shows a numeric keypad that includes the Return/Enter key
+                    — e.target.value never returns "" mid-entry (no invalid-number glitches)
+                    — eliminates the disabled-button flicker that made the button look gone
+                  */}
+                  <input
+                    ref={priceInputRef}
+                    autoFocus
+                    type="text"
+                    inputMode="decimal"
+                    value={priceAmount}
+                    onChange={(e) => {
+                      setPriceAmount(e.target.value);
+                      setPriceError(null);
+                    }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePriceSubmit(); } }}
+                    placeholder={t("createPlan.amountPlaceholder")}
+                    className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
+                  />
+                  {/* Button is always visible — validation is handled in handlePriceSubmit */}
+                  <button
+                    onClick={handlePriceSubmit}
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90"
+                    style={{ background: "#60a5fa" }}
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -726,11 +751,21 @@ export default function ProposePlanPage() {
                 <div className="space-y-4 mb-6">
                   {steps.slice(0, currentStep).map((step, i) => {
                     const stepsBack = currentStep - i; // 1 = most recent, higher = older
+                    // Crescendo: most recent is largest and most opaque; older = smaller + more faded
                     const opacity =
-                      stepsBack === 1 ? "opacity-60" : stepsBack === 2 ? "opacity-40" : "opacity-25";
-                    const labelSize = stepsBack === 1 ? "text-xs" : "text-[10px]";
+                      stepsBack === 1 ? "opacity-80"
+                      : stepsBack === 2 ? "opacity-55"
+                      : stepsBack === 3 ? "opacity-35"
+                      : "opacity-25";
+                    const labelSize =
+                      stepsBack === 1 ? "text-sm"
+                      : stepsBack === 2 ? "text-xs"
+                      : "text-[11px]";
                     const answerSize =
-                      stepsBack === 1 ? "text-sm" : stepsBack === 2 ? "text-xs" : "text-[11px]";
+                      stepsBack === 1 ? "text-xl"
+                      : stepsBack === 2 ? "text-base"
+                      : stepsBack === 3 ? "text-sm"
+                      : "text-xs";
                     return (
                       <button
                         key={step}
@@ -746,7 +781,7 @@ export default function ProposePlanPage() {
                             {BOT_QUESTIONS[step]}
                           </p>
                         )}
-                        <p className={cn("font-medium text-foreground leading-tight", answerSize)}>
+                        <p className={cn("font-semibold text-foreground leading-tight", answerSize)}>
                           {getUserAnswer(step)}
                         </p>
                       </button>
