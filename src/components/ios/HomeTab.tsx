@@ -23,6 +23,17 @@ import { supabase } from "@/integrations/supabase/client";
 // ['dinner'=0, 'brunch'=1, propose-plan appended at end]
 const CAROUSEL_FIXED_ORDER = ['dinner', 'brunch'];
 
+// Hoisted so it can be referenced in state declarations inside the component.
+type CarouselItem = {
+  id: string;
+  label: string;
+  emoji: string;
+  icon?: string;
+  dayNumber: number | null;
+  nextDate: Date | null;
+  isProposePlan?: boolean;
+};
+
 /**
  * Returns the carousel index to show on load based on the current day and time.
  * Indices are looked up dynamically so they stay correct if the order changes.
@@ -98,6 +109,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const [showAlreadyJoinedDialog, setShowAlreadyJoinedDialog] = useState(false);
   const MAX_GROUP_SIZE = 7;
 
+  // Shake quick-confirm state
+  const [showShakeConfirm, setShowShakeConfirm] = useState(false);
+  const [shakeConfirmActivity, setShakeConfirmActivity] = useState<CarouselItem | null>(null);
+  // Ref so the devicemotion listener always calls the latest handler without re-registration.
+  const handleShakeGestureRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     phraseIntervalRef.current = setInterval(() => {
       setCurrentPhraseIndex(prev => (prev + 1) % meetPhrases.length);
@@ -118,7 +135,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
   // ── Shake detection ─────────────────────────────────────────────────────────
   // Only active when the user has granted motion permission in Profile settings.
-  // On shake: jump to the first activity card and open the carousel overlay.
+  // On shake: call handleShakeGestureRef (defined below after CAROUSEL_ITEMS)
+  // which picks the right activity and shows the quick-confirm sheet.
+  // The listener is registered once; the ref keeps it current without re-registering.
   useEffect(() => {
     if (localStorage.getItem("shake_motion_permission") !== "granted") return;
 
@@ -138,25 +157,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       const now = Date.now();
       if (now - lastShakeAt < DEBOUNCE_MS) return;
       lastShakeAt = now;
-      // Jump to first activity and open the carousel
-      setCurrentActivityIndex(0);
-      onOpenActivities?.();
+      handleShakeGestureRef.current?.();
     };
 
     window.addEventListener("devicemotion", handleMotion);
     return () => window.removeEventListener("devicemotion", handleMotion);
-  }, [onOpenActivities]);
-
-  // Extended type for carousel items including "propose plan"
-  type CarouselItem = {
-    id: string;
-    label: string;
-    emoji: string;
-    icon?: string;
-    dayNumber: number | null;
-    nextDate: Date | null;
-    isProposePlan?: boolean;
-  };
+  }, []); // stable — handler is always current via ref
 
   // FIXED ORDER - Dinner → Brunch → Propose a plan
   // HIDDEN: 'drinks' removed from carousel — uncomment to re-enable: ['drinks', 'dinner', 'brunch']
@@ -190,6 +196,34 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     
     return orderedItems;
   }, [t]);
+
+  // ── Shake quick-confirm handler ──────────────────────────────────────────────
+  // Called by the devicemotion listener via handleShakeGestureRef.
+  // Uses getSmartCarouselIndex() to find the right activity for right now.
+  const handleShakeGesture = useCallback(() => {
+    const smartIndex = getSmartCarouselIndex();
+    const activity = CAROUSEL_ITEMS[smartIndex];
+
+    // Sunday or "Propose a plan" slot → fall back to the full carousel
+    if (!activity || activity.isProposePlan) {
+      setCurrentActivityIndex(smartIndex);
+      onOpenActivities?.();
+      return;
+    }
+
+    // Already joined → show the existing already-joined dialog
+    if (isActivityJoined?.(activity.id)) {
+      setShowAlreadyJoinedDialog(true);
+      return;
+    }
+
+    // Happy path: show quick-confirm sheet
+    setShakeConfirmActivity(activity);
+    setShowShakeConfirm(true);
+  }, [CAROUSEL_ITEMS, isActivityJoined, onOpenActivities]);
+
+  // Keep the ref current so the stable devicemotion listener always calls the latest version.
+  handleShakeGestureRef.current = handleShakeGesture;
 
   // Reset to closest-by-proximity when activities are shown
   useEffect(() => {
@@ -754,6 +788,70 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           onPickerClose={() => setIsCitySelectorOpen(false)}
         />
       </CityPickerModal>
+
+      {/* ── Shake quick-confirm sheet ──────────────────────────────────────── */}
+      {showShakeConfirm && shakeConfirmActivity && (
+        <div className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center pointer-events-auto">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowShakeConfirm(false)}
+          />
+          <div className="relative z-10 w-full max-w-sm mx-4 mb-6 sm:mb-0 px-6 py-8 flex flex-col gap-4 rounded-3xl bg-white shadow-2xl text-center pointer-events-auto">
+            {/* Activity avatar */}
+            <div className="w-20 h-20 mx-auto rounded-full overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-lg">
+              {shakeConfirmActivity.icon ? (
+                <img
+                  src={shakeConfirmActivity.icon}
+                  alt={shakeConfirmActivity.label}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-4xl">{shakeConfirmActivity.emoji}</span>
+              )}
+            </div>
+
+            {/* Title + meta */}
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                Join {shakeConfirmActivity.label}?
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {shakeConfirmActivity.nextDate
+                  ? format(shakeConfirmActivity.nextDate, 'EEE d MMM')
+                  : ''}
+                {shakeConfirmActivity.id === 'dinner' ? ' · 7:00 PM' : shakeConfirmActivity.id === 'drinks' ? ' · 8:00 PM' : shakeConfirmActivity.id === 'brunch' ? ' · 11:00 AM' : ''}
+                {selectedCity ? ` · ${selectedCity}` : ''}
+              </p>
+            </div>
+
+            {/* Actions */}
+            <button
+              type="button"
+              onClick={async () => {
+                setShowShakeConfirm(false);
+                await onConfirmActivity?.(
+                  {
+                    id: shakeConfirmActivity.id,
+                    label: shakeConfirmActivity.label,
+                    emoji: shakeConfirmActivity.emoji,
+                  },
+                  selectedCity || undefined,
+                );
+              }}
+              className="w-full h-11 rounded-full font-semibold text-base text-white bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] transition-colors"
+            >
+              Join
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowShakeConfirm(false)}
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+            >
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Already-joined dialog */}
       {showAlreadyJoinedDialog && (
