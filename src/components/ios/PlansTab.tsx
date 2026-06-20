@@ -220,7 +220,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 .select("*")
                 .neq("city", effectiveCity)
                 .eq("is_active", true)
-                .neq("is_auto_generated", true)
                 .order("scheduled_for", { ascending: true, nullsFirst: false })
                 .limit(30)
             : supabase
@@ -239,7 +238,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .filter((a: { id: string }) => !myJoinedPlanIds.has(a.id))
         .filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a));
 
-      // Discovery carousel: other users' open groups with >=3 members,
+      // IDs of plans already in the real-plans feed — used below to deduplicate the
+      // discovery carousel so auto-generated plans don't appear in both sections.
+      const cityPublicPlanIds = new Set<string>(cityPublicPlans.map((a: any) => a.id));
+
+      // Discovery carousel: other users' open groups (any member count),
       // only for activity types I'm not already in.
       // No activity_type allowlist here — any type returned by the DB is eligible.
       const allCarouselJoins = (cityCarouselResult.data ?? []) as any[];
@@ -255,13 +258,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         if (!entry.userIds.includes(j.user_id)) entry.userIds.push(j.user_id);
       });
 
-      // >=3 threshold is a DISCOVERY rule — only applied to other people's groups.
       // Any activity_type is eligible; unknown types fall back to default label/icon.
+      // In All Cities mode: exclude entries already shown in the real-plans feed to
+      // prevent the same group rendering twice (once per section).
       const discoveryCarouselEntries = Array.from(discoveryCarouselMap.values()).filter(c =>
-        c.userIds.length >= 3 &&
         !c.userIds.includes(user.id) &&          // I'm not already in this specific group
         !myActiveTypes.has(c.activity_type) &&   // and I don't have this type at all
-        (!c.activityId || !myJoinedPlanIds.has(c.activityId))
+        (!c.activityId || (!myJoinedPlanIds.has(c.activityId) && !cityPublicPlanIds.has(c.activityId)))
       );
 
       // ── Phase 3: quick render — cards without profiles (stops spinner early) ─
