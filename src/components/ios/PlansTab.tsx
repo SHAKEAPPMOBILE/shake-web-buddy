@@ -1291,9 +1291,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        {/* Activity emoji + type name */}
+                        {/* Activity type name — icon is already in the left circle */}
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-base leading-none">{getActivityEmoji(plan.activity_type)}</span>
                           <h3 className="font-semibold text-gray-900 text-sm">
                             {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || getActivityLabel(plan.activity_type))}
                           </h3>
