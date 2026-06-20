@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Home, MapPin, MessageSquare, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,6 +6,7 @@ import { useTotalUnreadChats } from "@/hooks/useTotalUnreadChats";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { avatarOptions } from "@/components/AvatarPicker";
 
 interface IOSTabBarProps {
   activeTab: string;
@@ -23,6 +24,13 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   // Current user's avatar for the Profile tab
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const userName = (user?.user_metadata?.name as string | undefined) ?? user?.email ?? null;
+
+  // Random illustrated avatar shown in the profile circle before the user logs in.
+  // Picked once on mount so it's stable within a page load but varies between visits.
+  const placeholderAvatar = useMemo(
+    () => avatarOptions[Math.floor(Math.random() * avatarOptions.length)].src,
+    [],
+  );
 
   useEffect(() => {
     if (!user?.id) return;
@@ -87,6 +95,8 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
           if ((tab as any).isProfile) {
             const displayAvatar = getDisplayAvatarUrl(userAvatarUrl ?? undefined);
             const initial = userName?.charAt(0)?.toUpperCase() ?? "?";
+            // Before login: show a random illustrated avatar instead of the "?" placeholder.
+            const effectiveAvatar = displayAvatar ?? (!user ? placeholderAvatar : null);
             return (
               <button
                 key={tab.id}
@@ -106,9 +116,9 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                     ? "ring-2 ring-primary ring-offset-1 ring-offset-card"
                     : "ring-1 ring-border"
                 )}>
-                  {displayAvatar ? (
+                  {effectiveAvatar ? (
                     <img
-                      src={displayAvatar}
+                      src={effectiveAvatar}
                       alt={userName ?? "Profile"}
                       className="w-full h-full object-cover"
                     />
