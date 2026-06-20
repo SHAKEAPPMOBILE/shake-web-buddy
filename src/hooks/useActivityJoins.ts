@@ -94,7 +94,9 @@ export function useActivityJoins(city: string) {
     const expiresAt = nextOccurrence.toISOString();
 
     // Look up the matching user_activities row so we can store its UUID on the join.
-    // Exclude auto-generated seed rows so the join points to a real user-created plan.
+    // Priority: (1) manually created plan, (2) existing auto-generated plan, (3) create new.
+    // Excluding auto-generated plans at step 1 caused fragmentation — every user who joined
+    // when no manual plan existed created their own solo auto-generated group.
     const { data: ua } = await supabase
       .from("user_activities")
       .select("id, scheduled_for")
@@ -111,9 +113,29 @@ export function useActivityJoins(city: string) {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     let uaId = ua?.id ?? null;
     if (uaId && ua?.scheduled_for && ua.scheduled_for < cutoff) {
-      uaId = null; // fall through to create a fresh current-dated plan below
+      uaId = null; // fall through to existing auto-generated plan or create a new one
     }
 
+    // Step 2: no manual plan — reuse the most recent auto-generated group before creating one.
+    // This is the fix for solo-group fragmentation: joiners land in the same plan.
+    if (!uaId) {
+      const { data: autoUa } = await supabase
+        .from("user_activities")
+        .select("id, scheduled_for")
+        .eq("activity_type", activityType)
+        .eq("city", targetCity)
+        .eq("is_active", true)
+        .eq("is_auto_generated", true)
+        .order("scheduled_for", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (autoUa?.id && (!autoUa.scheduled_for || autoUa.scheduled_for >= cutoff)) {
+        uaId = autoUa.id;
+      }
+    }
+
+    // Step 3: still no plan — create a fresh auto-generated group.
     if (!uaId) {
       const nextDate = getNextOccurrenceDate(activityType);
       const { data: newUa } = await supabase
