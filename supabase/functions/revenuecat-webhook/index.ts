@@ -68,13 +68,11 @@ serve(async (req) => {
       });
     }
 
-    // The app's entitlement identifier is "Premium" (case-sensitive in the client
-    // + RevenueCat dashboard), with legacy "superhuman" also accepted. Match
-    // case-insensitively here so a dashboard/casing mismatch can never silently
-    // drop a paid user's premium status.
-    const PREMIUM_ENTITLEMENT_KEYS = ["Premium", "premium", "superhuman", "super-human"];
-    const isPremiumKey = (key: string) =>
-      PREMIUM_ENTITLEMENT_KEYS.includes(key.toLowerCase());
+    // The app's entitlement identifier is "Premium" — exact, case-sensitive,
+    // matching the RevenueCat dashboard and the client PREMIUM_ENTITLEMENT_ID
+    // constant in src/lib/revenuecat.ts. Legacy identifiers ("superhuman",
+    // "super-human") have been removed: the dashboard has been updated.
+    const isPremiumKey = (key: string) => key === "Premium";
 
     // Webhook events carry granted entitlements in `entitlement_ids` (array) /
     // `entitlement_id` (legacy single field).
