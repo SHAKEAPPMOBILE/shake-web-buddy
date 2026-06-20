@@ -1299,6 +1299,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <h3 className="font-semibold text-gray-900 text-sm">
                             {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || getActivityLabel(plan.activity_type))}
+                            {showAllCities && ` · ${plan.city}`}
                           </h3>
                           {isSoon(plan.scheduled_for) && (
                             <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
@@ -1316,10 +1317,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           )}
                         </div>
 
-                        {/* City + organiser */}
+                        {/* City (My City only) + organiser */}
                         <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                          <span className="text-xs font-medium text-primary">{plan.city}</span>
-                          <span className="text-xs text-gray-400">·</span>
+                          {!showAllCities && <span className="text-xs font-medium text-primary">{plan.city}</span>}
+                          {!showAllCities && <span className="text-xs text-gray-400">·</span>}
                           <span className="text-xs text-gray-500">
                             <button
                               type="button"
