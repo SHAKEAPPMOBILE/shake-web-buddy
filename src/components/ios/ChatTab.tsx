@@ -42,6 +42,7 @@ interface ChatActivity {
   unread_count?: number;
   is_plan: boolean;
   plan_id?: string;
+  is_auto_generated?: boolean;
   creator_name?: string;
   creator_avatar?: string;
   note?: string | null;
@@ -92,7 +93,7 @@ export function ChatTab({
   const [isLoading, setIsLoading] = useState(true);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showPlanChatDialog, setShowPlanChatDialog] = useState(false);
-  const [selectedChatActivity, setSelectedChatActivity] = useState<{ activityType: string; city: string } | null>(null);
+  const [selectedChatActivity, setSelectedChatActivity] = useState<{ activityType: string; city: string; activityId?: string } | null>(null);
   const [selectedPlanActivity, setSelectedPlanActivity] = useState<any>(null);
   const [selectedPrivateChat, setSelectedPrivateChat] = useState<{
     userId: string;
@@ -382,6 +383,7 @@ export function ChatTab({
               unread_count: unreadPlanCount || 0,
               is_plan: true,
               plan_id: plan.id,
+              is_auto_generated: plan.is_auto_generated ?? false,
               creator_name: profile?.name || "Anonymous",
               creator_avatar: profile?.avatar_url,
               note: plan.note,
@@ -739,8 +741,16 @@ export function ChatTab({
         .maybeSingle();
 
       if (plan) {
-        setSelectedPlanActivity(plan);
-        setShowPlanChatDialog(true);
+        if (plan.is_auto_generated) {
+          // Auto-generated cluster (dinner/brunch): use GroupChatView — it has
+          // venue pill, X/7 capacity, real participant list, no "Delete plan" UI.
+          setSelectedChatActivity({ activityType: plan.activity_type, city: plan.city, activityId: plan.id });
+          setShowChatDialog(true);
+        } else {
+          // User-created plan: keep PlanGroupChatView (creator controls, plan_messages).
+          setSelectedPlanActivity(plan);
+          setShowPlanChatDialog(true);
+        }
       }
     } else {
       setSelectedChatActivity({ activityType: activity.activity_type, city: activity.city });
@@ -825,7 +835,8 @@ export function ChatTab({
     );
   }
 
-  // Show full-page GroupChatView when a carousel activity is selected
+  // Show full-page GroupChatView for carousel joins and auto-generated cluster plans.
+  // activityId is set for clusters so participant fetch scopes to the exact group.
   if (selectedChatActivity && showChatDialog) {
     // Find the scheduled_for date for the selected activity
     const selected = activities.find(
@@ -839,6 +850,7 @@ export function ChatTab({
         onBack={handleBackToActivities}
         attendeeCount={getActivityJoinCount(selectedChatActivity.activityType)}
         eventDate={selected?.scheduled_for || null}
+        activityId={selectedChatActivity.activityId ?? null}
       />
     );
   }

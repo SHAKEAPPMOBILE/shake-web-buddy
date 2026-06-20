@@ -1025,8 +1025,23 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     setShowChatView(true);
   };
 
-  // Show full-page PlanGroupChatView when a plan is selected
+  // Show full-page chat when a plan is selected.
+  // is_auto_generated plans (dinner/brunch clusters) use GroupChatView — it has
+  // venue, attendee count, and the X/7 capacity pill.
+  // User-created plans (is_auto_generated false/null) keep PlanGroupChatView.
   if (selectedPlan && showChatView) {
+    if (selectedPlan.is_auto_generated) {
+      return (
+        <GroupChatView
+          activityType={selectedPlan.activity_type}
+          city={selectedPlan.city}
+          onBack={handleBackFromChat}
+          attendeeCount={selectedPlan.participant_count || 1}
+          eventDate={selectedPlan.scheduled_for}
+          activityId={selectedPlan.id}
+        />
+      );
+    }
     return (
       <PlanGroupChatView
         activity={{
