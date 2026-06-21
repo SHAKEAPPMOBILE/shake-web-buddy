@@ -1116,7 +1116,7 @@ export default function ProposePlanPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header — back arrow only on native (phone); hidden on web */}
       {Capacitor.isNativePlatform() && (
         <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center">
@@ -1163,7 +1163,7 @@ export default function ProposePlanPage() {
             <div className="min-h-[8vh]" />
             <div
               className="w-full max-w-sm mx-auto px-6 pt-4"
-              style={{ paddingBottom: composerHeight + 32 }}
+              style={{ paddingBottom: composerHeight + keyboardOffset + 32 }}
             >
               {/* Past Q&A — oldest (top) faintest/smallest, most-recent (bottom) clearer */}
               {currentStep > 0 && (
