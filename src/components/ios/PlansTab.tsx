@@ -3,7 +3,7 @@ import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import confetti from 'canvas-confetti';
 import barManAndCook from "@/assets/bar-man-and-cook.png";
-import { Calendar, Users, Plus, Plane, Send } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Send, ChevronLeft, Play } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -506,6 +506,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   // Plan preview before joining (city discovery plans)
   const [planPreview, setPlanPreview] = useState<PlanActivity | null>(null);
   const [planPreviewAttendees, setPlanPreviewAttendees] = useState<{ avatar_url: string | null; name: string | null }[]>([]);
+  const [planPreviewVideoFullscreen, setPlanPreviewVideoFullscreen] = useState(false);
   
 
   // Notify parent when entering/leaving chat view
@@ -1519,81 +1520,90 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
             onClick={() => setPlanPreview(null)}
           />
-          <div className="relative z-10 w-full max-w-md rounded-3xl bg-white shadow-2xl pointer-events-auto overflow-hidden">
-            <div className="px-6 pt-6 pb-4 space-y-4">
-              {/* Organizer avatar (replaces activity icon) */}
-              <div className="text-center">
-                <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3 border-2 border-white shadow-md flex items-center justify-center bg-purple-100 flex-shrink-0">
-                  {planPreview.promo_video_url ? (
-                    <video
-                      src={planPreview.promo_video_url}
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                  ) : planPreview.creator_avatar ? (
-                    <img
-                      src={planPreview.creator_avatar}
-                      alt={planPreview.creator_name || "Organiser"}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-2xl font-bold text-purple-700">
-                      {planPreview.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                    </span>
-                  )}
-                </div>
-                <h2 className="text-lg font-display font-bold text-gray-900">
-                  {planPreview.note || t('plans.untitledPlan', 'Untitled Plan')}
-                </h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  {planPreview.activity_type !== "general" && `${getActivityLabel(planPreview.activity_type)} · `}{planPreview.city}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {!planPreview.scheduled_for
-                    ? t('common.today')
-                    : isToday(parseDbDate(planPreview.scheduled_for))
-                    ? `${t('common.today')} · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`
-                    : isTomorrow(parseDbDate(planPreview.scheduled_for))
-                    ? `${t('common.tomorrow')} · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`
-                    : format(parseDbDate(planPreview.scheduled_for), "EEE, d MMM · h:mm a")}
-                </p>
-              </div>
 
-              {/* Attendees */}
-              {(planPreview.participant_count ?? 0) > 0 && (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="flex">
-                    {planPreviewAttendees.slice(0, 4).map((attendee, i) => (
-                      <div
-                        key={i}
-                        className="w-8 h-8 rounded-full border-2 border-white overflow-hidden flex items-center justify-center bg-purple-100 flex-shrink-0"
-                        style={{ marginLeft: i === 0 ? 0 : -10, zIndex: planPreviewAttendees.length - i }}
-                      >
-                        {attendee.avatar_url ? (
-                          <img src={attendee.avatar_url} alt={attendee.name || ""} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-xs font-semibold text-purple-700">
-                            {attendee.name?.charAt(0)?.toUpperCase() || "?"}
-                          </span>
-                        )}
-                      </div>
-                    ))}
+          {planPreview.promo_video_url ? (
+            /* ── VIDEO PLAN: full-bleed portrait card ── */
+            <div className="relative z-10 w-full max-w-sm pointer-events-auto flex flex-col gap-3">
+              {/* Back arrow */}
+              <button
+                type="button"
+                onClick={() => setPlanPreview(null)}
+                className="self-start w-10 h-10 rounded-full bg-black/40 flex items-center justify-center text-white"
+                style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              {/* Portrait video card */}
+              <button
+                type="button"
+                onClick={() => setPlanPreviewVideoFullscreen(true)}
+                className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
+                aria-label="View video fullscreen"
+              >
+                <video
+                  src={planPreview.promo_video_url}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                {/* Gradient scrim */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.18) 45%, transparent 100%)" }}
+                />
+                {/* Expand icon top-right */}
+                <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center pointer-events-none">
+                  <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
+                </div>
+                {/* Overlay: creator avatar + title + meta */}
+                <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pointer-events-none">
+                  <div className="flex items-end gap-3">
+                    {/* Creator avatar — tappable via stopPropagation below */}
+                    <div
+                      className="w-10 h-10 rounded-full bg-white/20 border border-white/40 overflow-hidden shrink-0 flex items-center justify-center"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (planPreview.user_id) {
+                          setPlanPreview(null);
+                          setSelectedUserProfile({
+                            userId: planPreview.user_id,
+                            userName: planPreview.creator_name || null,
+                            avatarUrl: planPreview.creator_avatar || null,
+                          });
+                        }
+                      }}
+                      style={{ cursor: "pointer", pointerEvents: "auto" }}
+                    >
+                      {planPreview.creator_avatar ? (
+                        <img src={planPreview.creator_avatar} alt={planPreview.creator_name || ""} className="w-full h-full object-cover rounded-full" />
+                      ) : (
+                        <span className="text-sm font-bold text-white">{planPreview.creator_name?.charAt(0)?.toUpperCase() || "?"}</span>
+                      )}
+                    </div>
+                    {/* Text */}
+                    <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
+                      <p className="font-bold text-white truncate">
+                        {planPreview.note || t('plans.untitledPlan', 'Untitled Plan')}
+                      </p>
+                      <p className="text-xs text-white/80 mt-0.5 truncate">
+                        {planPreview.city}
+                        {planPreview.scheduled_for && ` · ${
+                          isToday(parseDbDate(planPreview.scheduled_for))
+                            ? t('common.today')
+                            : isTomorrow(parseDbDate(planPreview.scheduled_for))
+                            ? t('common.tomorrow')
+                            : format(parseDbDate(planPreview.scheduled_for), "EEE, d MMM")
+                        } · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`}
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-sm text-gray-500 font-medium">
-                    {(planPreview.participant_count ?? 0) > 4
-                      ? `+${planPreview.participant_count} going`
-                      : `${planPreview.participant_count} going`}
-                  </span>
                 </div>
-              )}
+              </button>
 
-            </div>
-
-            {/* Actions */}
-            <div className="px-6 pb-6 space-y-2">
+              {/* JOIN / Your plan button below the card */}
               {planPreview.user_id === user?.id ? (
                 <div className="w-full h-12 rounded-full flex items-center justify-center border border-blue-200 bg-blue-50">
                   <span className="text-sm font-semibold text-blue-700">Your plan</span>
@@ -1605,18 +1615,127 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
                   style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
                 >
-                  {t('plans.yesImIn', "Yes, I'm in! 🎉")}
+                  JOIN
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => setPlanPreview(null)}
-                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
-              >
-                {t('plans.humBtn', 'Hum!')}
-              </button>
             </div>
-          </div>
+          ) : (
+            /* ── NO-VIDEO PLAN: existing simple modal, untouched ── */
+            <div className="relative z-10 w-full max-w-md rounded-3xl bg-white shadow-2xl pointer-events-auto overflow-hidden">
+              <div className="px-6 pt-6 pb-4 space-y-4">
+                {/* Organizer avatar */}
+                <div className="text-center">
+                  <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3 border-2 border-white shadow-md flex items-center justify-center bg-purple-100 flex-shrink-0">
+                    {planPreview.creator_avatar ? (
+                      <img
+                        src={planPreview.creator_avatar}
+                        alt={planPreview.creator_name || "Organiser"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl font-bold text-purple-700">
+                        {planPreview.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-lg font-display font-bold text-gray-900">
+                    {planPreview.note || t('plans.untitledPlan', 'Untitled Plan')}
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {planPreview.activity_type !== "general" && `${getActivityLabel(planPreview.activity_type)} · `}{planPreview.city}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {!planPreview.scheduled_for
+                      ? t('common.today')
+                      : isToday(parseDbDate(planPreview.scheduled_for))
+                      ? `${t('common.today')} · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`
+                      : isTomorrow(parseDbDate(planPreview.scheduled_for))
+                      ? `${t('common.tomorrow')} · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`
+                      : format(parseDbDate(planPreview.scheduled_for), "EEE, d MMM · h:mm a")}
+                  </p>
+                </div>
+
+                {/* Attendees */}
+                {(planPreview.participant_count ?? 0) > 0 && (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="flex">
+                      {planPreviewAttendees.slice(0, 4).map((attendee, i) => (
+                        <div
+                          key={i}
+                          className="w-8 h-8 rounded-full border-2 border-white overflow-hidden flex items-center justify-center bg-purple-100 flex-shrink-0"
+                          style={{ marginLeft: i === 0 ? 0 : -10, zIndex: planPreviewAttendees.length - i }}
+                        >
+                          {attendee.avatar_url ? (
+                            <img src={attendee.avatar_url} alt={attendee.name || ""} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-semibold text-purple-700">
+                              {attendee.name?.charAt(0)?.toUpperCase() || "?"}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-500 font-medium">
+                      {(planPreview.participant_count ?? 0) > 4
+                        ? `+${planPreview.participant_count} going`
+                        : `${planPreview.participant_count} going`}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="px-6 pb-6 space-y-2">
+                {planPreview.user_id === user?.id ? (
+                  <div className="w-full h-12 rounded-full flex items-center justify-center border border-blue-200 bg-blue-50">
+                    <span className="text-sm font-semibold text-blue-700">Your plan</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleConfirmJoinPreview}
+                    className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
+                    style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                  >
+                    {t('plans.yesImIn', "Yes, I'm in! 🎉")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setPlanPreview(null)}
+                  className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+                >
+                  {t('plans.humBtn', 'Hum!')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Fullscreen video overlay for video-plan preview */}
+      {planPreviewVideoFullscreen && planPreview?.promo_video_url && (
+        <div
+          className="fixed inset-0 z-[60] bg-black flex items-center justify-center"
+          onClick={() => setPlanPreviewVideoFullscreen(false)}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setPlanPreviewVideoFullscreen(false); }}
+            className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full bg-white/20 text-white"
+            style={{ top: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <video
+            src={planPreview.promo_video_url}
+            autoPlay
+            loop
+            playsInline
+            controls
+            onClick={(e) => e.stopPropagation()}
+            className="w-full h-full object-contain"
+          />
         </div>
       )}
 
