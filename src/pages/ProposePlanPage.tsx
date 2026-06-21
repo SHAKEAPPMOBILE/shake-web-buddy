@@ -27,6 +27,11 @@ import { Capacitor } from "@capacitor/core";
 // Set to true to re-enable ID verification gate on the paid-plan create path.
 const ID_VERIFICATION_ENABLED = false;
 
+// Set to true to re-enable the payout-method gate on the paid-plan create path.
+// When false, users can create a paid plan without completing payout setup.
+// A warning banner in ProfileTab nudges them to complete it afterwards.
+const PAYOUT_METHOD_GATE_ENABLED = false;
+
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
   { code: "EUR", symbol: "€", name: "Euro" },
@@ -506,7 +511,7 @@ export default function ProposePlanPage() {
       return;
     }
 
-    if (priceAmount.trim() && !hasPayoutMethod) {
+    if (PAYOUT_METHOD_GATE_ENABLED && priceAmount.trim() && !hasPayoutMethod) {
       setShowStripeCountrySelector(true);
       return;
     }

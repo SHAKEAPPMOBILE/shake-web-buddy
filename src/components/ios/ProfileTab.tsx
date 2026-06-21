@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type CSSProperties } from "react";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,7 @@ import { ManagePlanDialog } from "../ManagePlanDialog";
 import { UserProfileDialog } from "../UserProfileDialog";
 import { useStatusVideo } from "@/hooks/useStatusVideo";
 import { StatusVideoRecorder } from "../StatusVideoRecorder";
-import { cn } from "@/lib/utils";
+import { cn, getPriceValue } from "@/lib/utils";
 import { PointsDashboard } from "../PointsDashboard";
 import { useUserPoints } from "@/hooks/useUserPoints";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
@@ -412,6 +412,32 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           </div>
         )}
       </button>
+
+      {/* ── Payout warning banner ──────────────────────────────────────────
+           Shows ONLY when:
+             (a) user has ≥1 active paid plan (activities.length > 0 from
+                 useCreatorEarnings — fetches user_activities where price_amount
+                 is NOT NULL), AND
+             (b) no payout method is saved (savedPaypal, savedVenmo, savedCashApp
+                 all empty — the same fields shown in the Creator Payouts section).
+           Tapping opens the Creator Payouts section in-page. */}
+      {!earningsLoading && activities.some(a => getPriceValue(a.priceAmount) > 0) &&
+       !savedPaypal && !savedVenmo && !savedCashApp && (
+        <button
+          type="button"
+          onClick={() => setShowPayoutOptions(true)}
+          className="w-full flex items-start gap-3 px-4 py-3 bg-amber-50 border-b border-amber-200 text-left"
+        >
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800">Payout info missing</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              You haven't completed your payout info yet — set it up to receive money from your paid plans.
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        </button>
+      )}
 
       {/* Sections */}
       <div className="flex-1 px-4 py-6 space-y-6">
