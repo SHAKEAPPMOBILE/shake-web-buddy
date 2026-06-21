@@ -51,6 +51,7 @@ interface PlanActivity {
   is_active: boolean;
   note?: string | null;
   price_amount?: string | null;
+  promo_video_url?: string | null;
   group_number?: number | null;
   creator_name?: string;
   creator_avatar?: string;
@@ -332,9 +333,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const [enrichedReal, enrichedCarousel, enrichedCity, enrichedDiscovery] = await Promise.all([
         // My real plan joins
         Promise.all(filteredRealJoins.map(async p => {
-          const [{ data: profile }, { count }] = await Promise.all([
+          const [{ data: profile }, { count }, { data: activityRow }] = await Promise.all([
             supabase.from("profiles").select("name, avatar_url").eq("user_id", p.plan_user_id!).maybeSingle(),
             supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", p.plan_id!),
+            supabase.from("user_activities").select("promo_video_url").eq("id", p.plan_id!).maybeSingle(),
           ]);
           return {
             id: p.plan_id!,
@@ -345,6 +347,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             is_active: true,
             note: p.note,
             price_amount: p.price_amount,
+            promo_video_url: (activityRow as any)?.promo_video_url ?? null,
             group_number: p.group_number,
             is_auto_generated: p.is_auto_generated,
             created_at: p.created_at ?? undefined,
@@ -1165,6 +1168,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       ) : (
                         <span className="text-xl">{getActivityEmoji(plan.activity_type)}</span>
                       )
+                    ) : plan.promo_video_url ? (
+                      <video src={plan.promo_video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
                     ) : plan.creator_avatar ? (
                       <img src={plan.creator_avatar} alt={plan.creator_name || "Creator"} className="w-full h-full object-cover" />
                     ) : (
@@ -1293,6 +1298,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           ) : (
                             <span className="text-xl">{getActivityEmoji(plan.activity_type)}</span>
                           )
+                        ) : plan.promo_video_url ? (
+                          <video src={plan.promo_video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
                         ) : plan.creator_avatar ? (
                           <img src={plan.creator_avatar} alt={plan.creator_name || "Creator"} className="w-full h-full object-cover" />
                         ) : (
@@ -1505,7 +1512,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               {/* Organizer avatar (replaces activity icon) */}
               <div className="text-center">
                 <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3 border-2 border-white shadow-md flex items-center justify-center bg-purple-100 flex-shrink-0">
-                  {planPreview.creator_avatar ? (
+                  {planPreview.promo_video_url ? (
+                    <video
+                      src={planPreview.promo_video_url}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : planPreview.creator_avatar ? (
                     <img
                       src={planPreview.creator_avatar}
                       alt={planPreview.creator_name || "Organiser"}

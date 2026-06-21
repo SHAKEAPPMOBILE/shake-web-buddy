@@ -14,6 +14,7 @@ export interface UserActivity {
   is_active: boolean;
   note?: string | null;
   price_amount?: string | null;
+  promo_video_url?: string | null;
   creator_name?: string;
   creator_avatar?: string;
   participant_count?: number;

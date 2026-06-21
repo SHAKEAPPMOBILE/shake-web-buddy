@@ -176,6 +176,17 @@ export function ActivitiesListDialog({
                           <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 bg-white shadow-md">
                             <span>{activityConfig.emoji}</span>
                           </div>
+                        ) : activity.promo_video_url ? (
+                          <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-md">
+                            <video
+                              src={activity.promo_video_url}
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         ) : (
                           <Avatar className="w-12 h-12 shrink-0 border-2 border-white shadow-md">
                             <AvatarImage src={activity.creator_avatar || ""} />
