@@ -44,9 +44,11 @@ interface PlanSwipeFeedProps {
   myCity: string | null;
   /** Called when the feed should close (back button) */
   onClose: () => void;
-  /** Called when user confirms join — receives the plan */
-  onJoin: (plan: FeedPlan) => void;
-  /** Called when owner taps "Enter chat" */
+  /** Called when user taps JOIN on a free plan — joins in-place, stays in feed */
+  onJoinInPlace: (plan: FeedPlan) => Promise<{ success: boolean }>;
+  /** Called when user taps PAY on a paid plan — exits feed, opens payment flow */
+  onPayForPlan: (plan: FeedPlan) => void;
+  /** Called when owner taps "Enter chat" or joined user taps "Enter chat" */
   onEnterChat: (plan: FeedPlan) => void;
   /** Called when tapping the creator avatar */
   onViewProfile: (userId: string, name: string | null, avatar: string | null) => void;
@@ -72,15 +74,21 @@ function sortFeedPlans(plans: FeedPlan[], myCity: string | null): FeedPlan[] {
 interface FeedCardProps {
   plan: FeedPlan;
   isOwn: boolean;
-  onJoin: () => void;
+  onJoinInPlace: () => Promise<{ success: boolean }>;
+  onPayForPlan: () => void;
   onEnterChat: () => void;
   onViewProfile: () => void;
 }
 
-function FeedCard({ plan, isOwn, onJoin, onEnterChat, onViewProfile }: FeedCardProps) {
+function FeedCard({ plan, isOwn, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile }: FeedCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
+  const [joinedLocally, setJoinedLocally] = useState(false);
+  const [joining, setJoining] = useState(false);
+
+  const isPaid = !!(plan.price_amount && parseFloat(plan.price_amount) > 0);
+  const isJoined = plan.isJoined || joinedLocally;
 
   /* IntersectionObserver: play when ≥60 % visible, pause+reset when not */
   useEffect(() => {
@@ -91,6 +99,8 @@ function FeedCard({ plan, isOwn, onJoin, onEnterChat, onViewProfile }: FeedCardP
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.intersectionRatio >= 0.6) {
+          // iOS WKWebView: set muted imperatively — JSX prop alone isn't enough
+          vid.muted = muted;
           vid.play().catch(() => {});
         } else {
           vid.pause();
@@ -101,13 +111,52 @@ function FeedCard({ plan, isOwn, onJoin, onEnterChat, onViewProfile }: FeedCardP
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* Keep the DOM muted attribute in sync when user toggles */
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = muted;
+    }
+  }, [muted]);
+
+  const handleJoin = async () => {
+    if (joining) return;
+    setJoining(true);
+    try {
+      const result = await onJoinInPlace();
+      if (result.success) {
+        setJoinedLocally(true);
+      }
+    } finally {
+      setJoining(false);
+    }
+  };
 
   const dateLabel = (() => {
     if (!plan.scheduled_for) return null;
     const d = parseDbDate(plan.scheduled_for);
     const day = isToday(d) ? "Today" : isTomorrow(d) ? "Tomorrow" : format(d, "EEE, d MMM");
     return `${day} · ${format(d, "h:mm a")}`;
+  })();
+
+  /* ── Derive action button props ── */
+  const actionButton = (() => {
+    if (isOwn) {
+      return { label: "Enter chat", handler: onEnterChat, disabled: false };
+    }
+    if (isJoined) {
+      return { label: "Enter chat", handler: onEnterChat, disabled: false };
+    }
+    if (isPaid) {
+      const priceLabel = `PAY $${parseFloat(plan.price_amount!).toFixed(0)}`;
+      return { label: priceLabel, handler: onPayForPlan, disabled: false };
+    }
+    return {
+      label: joining ? "Joining…" : "JOIN",
+      handler: handleJoin,
+      disabled: joining,
+    };
   })();
 
   return (
@@ -224,29 +273,17 @@ function FeedCard({ plan, isOwn, onJoin, onEnterChat, onViewProfile }: FeedCardP
 
         {/* Action button */}
         <div style={{ pointerEvents: "auto" }}>
-          {isOwn ? (
-            <button
-              type="button"
-              onClick={onEnterChat}
-              className="w-full h-13 py-3.5 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
-              style={{
-                background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))",
-              }}
-            >
-              Enter chat
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onJoin}
-              className="w-full py-3.5 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
-              style={{
-                background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))",
-              }}
-            >
-              {plan.isJoined ? "Enter chat" : "JOIN"}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={actionButton.handler}
+            disabled={actionButton.disabled}
+            className="w-full py-3.5 rounded-full font-semibold text-base text-white transition-all hover:opacity-90 disabled:opacity-60"
+            style={{
+              background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))",
+            }}
+          >
+            {actionButton.label}
+          </button>
         </div>
       </div>
     </div>
@@ -259,7 +296,8 @@ export function PlanSwipeFeed({
   startIndex,
   myCity,
   onClose,
-  onJoin,
+  onJoinInPlace,
+  onPayForPlan,
   onEnterChat,
   onViewProfile,
 }: PlanSwipeFeedProps) {
@@ -336,13 +374,8 @@ export function PlanSwipeFeed({
               key={plan.id}
               plan={plan}
               isOwn={plan.user_id === user?.id}
-              onJoin={() => {
-                if (plan.isJoined) {
-                  onEnterChat(plan);
-                } else {
-                  onJoin(plan);
-                }
-              }}
+              onJoinInPlace={() => onJoinInPlace(plan)}
+              onPayForPlan={() => onPayForPlan(plan)}
               onEnterChat={() => onEnterChat(plan)}
               onViewProfile={() => handleViewProfile(plan)}
             />
