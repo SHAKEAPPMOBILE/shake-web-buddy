@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow } from "date-fns";
 import { Plus, User, Calendar, Send } from "lucide-react";
@@ -36,6 +36,7 @@ const CURRENCIES = [
 const MAX_CHARACTERS = 50;
 
 type StepName = "name" | "city" | "date" | "time" | "price" | "video" | "preview";
+type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
 const BOT_QUESTIONS: Record<StepName, string> = {
   name: "What's the plan? ✨",
@@ -43,7 +44,7 @@ const BOT_QUESTIONS: Record<StepName, string> = {
   date: "When? 📅",
   time: "What time? ⏰",
   price: "",
-  video: "Add a short promo video (optional) 🎬",
+  video: "",
   preview: "",
 };
 
@@ -105,11 +106,22 @@ export default function ProposePlanPage() {
   const [promoVideoUrl, setPromoVideoUrl] = useState<string | null>(null);
   const [videoUploading, setVideoUploading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [cameraMode, setCameraMode] = useState<CameraMode>("idle");
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [recordedObjectUrl, setRecordedObjectUrl] = useState<string | null>(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
+  const liveVideoRef = useRef<HTMLVideoElement>(null);
+  const playbackVideoRef = useRef<HTMLVideoElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const chosenMimeTypeRef = useRef<string>("video/mp4");
   const composerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
@@ -226,6 +238,62 @@ export default function ProposePlanPage() {
     return () => observer.disconnect();
   }, []);
 
+  // ── Camera hooks ──────────────────────────────────────────────────────────
+  const stopAllTracks = useCallback(() => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    setVideoError(null);
+    setCameraMode("idle");
+    setRecordedBlob(null);
+    setRecordedObjectUrl(null);
+    setRecordingSeconds(0);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: true,
+      });
+      streamRef.current = stream;
+      setCameraMode("live");
+    } catch {
+      setVideoError("Camera access needed to record — you can Skip instead.");
+      setCameraMode("error");
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+    mediaRecorderRef.current?.stop();
+  }, []);
+
+  // Start camera when entering the video step; stop tracks when leaving
+  useEffect(() => {
+    if (currentStepName !== "video") {
+      stopAllTracks();
+      if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
+      if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+      return;
+    }
+    startCamera();
+    return () => {
+      stopAllTracks();
+      if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
+      if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+    };
+  }, [currentStepName, startCamera, stopAllTracks]);
+
+  // Attach live stream to the preview <video> once both are ready
+  useEffect(() => {
+    if (cameraMode === "live" && liveVideoRef.current && streamRef.current) {
+      liveVideoRef.current.srcObject = streamRef.current;
+      liveVideoRef.current.play().catch(() => {});
+    }
+  }, [cameraMode]);
+  // ── End camera hooks ───────────────────────────────────────────────────────
+
   const selectedCurrencySymbol = CURRENCIES.find((c) => c.code === priceCurrency)?.symbol || "$";
 
   const getUserAnswer = (step: StepName): string => {
@@ -306,42 +374,78 @@ export default function ProposePlanPage() {
     advanceStep();
   };
 
-  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const startRecording = () => {
+    if (!streamRef.current) return;
+    recordingChunksRef.current = [];
+    // mimeType: prefer mp4 (iOS/Safari), fall back to webm
+    const mimeType =
+      MediaRecorder.isTypeSupported("video/mp4") ? "video/mp4" :
+      MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" :
+      "video/webm";
+    chosenMimeTypeRef.current = mimeType;
+    const recorder = new MediaRecorder(streamRef.current, { mimeType });
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordingChunksRef.current.push(e.data);
+    };
+    recorder.onstop = () => {
+      const blob = new Blob(recordingChunksRef.current, { type: chosenMimeTypeRef.current });
+      setRecordedBlob(blob);
+      const url = URL.createObjectURL(blob);
+      setRecordedObjectUrl(url);
+      stopAllTracks();
+      setCameraMode("playback");
+    };
+    recorder.start();
+    mediaRecorderRef.current = recorder;
+    setRecordingSeconds(0);
+    setCameraMode("recording");
+    countdownIntervalRef.current = setInterval(() => {
+      setRecordingSeconds(s => s + 1);
+    }, 1000);
+    recordingTimerRef.current = setTimeout(stopRecording, 10000);
+  };
+
+  const handleRetake = async () => {
+    if (recordedObjectUrl) { URL.revokeObjectURL(recordedObjectUrl); }
+    setRecordedBlob(null);
     setVideoError(null);
-    const objectUrl = URL.createObjectURL(file);
-    const videoEl = document.createElement("video");
-    videoEl.preload = "metadata";
-    videoEl.onloadedmetadata = async () => {
-      URL.revokeObjectURL(objectUrl);
-      if (videoEl.duration > 10) {
-        setVideoError("Video must be 10 seconds or shorter.");
-        return;
-      }
-      setVideoUploading(true);
-      try {
-        const ext = file.name.split(".").pop() || "mp4";
-        const path = `${user!.id}/${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from("plan-videos")
-          .upload(path, file, { contentType: file.type });
-        if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage
-          .from("plan-videos")
-          .getPublicUrl(path);
-        setPromoVideoUrl(publicUrl);
-      } catch {
-        setVideoError("Upload failed. Please try again.");
-      } finally {
-        setVideoUploading(false);
-      }
-    };
-    videoEl.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      setVideoError("Could not read video file.");
-    };
-    videoEl.src = objectUrl;
+    await startCamera();
+  };
+
+  const handleUseVideo = async () => {
+    if (!recordedBlob) return;
+    setVideoUploading(true);
+    setVideoError(null);
+    try {
+      const mimeType = recordedBlob.type;
+      const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+      const path = `${user!.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("plan-videos")
+        .upload(path, recordedBlob, { contentType: mimeType });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage
+        .from("plan-videos")
+        .getPublicUrl(path);
+      if (recordedObjectUrl) { URL.revokeObjectURL(recordedObjectUrl); setRecordedObjectUrl(null); }
+      setPromoVideoUrl(publicUrl);
+      advanceStep();
+    } catch {
+      setVideoError("Upload failed. Please try again.");
+    } finally {
+      setVideoUploading(false);
+    }
+  };
+
+  const handleSkipVideo = () => {
+    stopAllTracks();
+    if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+    if (recordedObjectUrl) { URL.revokeObjectURL(recordedObjectUrl); setRecordedObjectUrl(null); }
+    setRecordedBlob(null);
+    setPromoVideoUrl(null);
+    setCameraMode("idle");
+    advanceStep();
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -443,6 +547,146 @@ export default function ProposePlanPage() {
   const calMonth = today.getMonth();
   const firstDayOffset = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  const renderCameraCapture = () => {
+    const circumference = 2 * Math.PI * 28;
+    return (
+      <div className="space-y-4">
+        {/* Camera / playback box — portrait ~3:4 */}
+        <div
+          className="relative w-full rounded-2xl overflow-hidden bg-black"
+          style={{ aspectRatio: "3/4", maxHeight: "58vh" }}
+        >
+          {/* Live preview (front camera, mirrored so it feels natural) */}
+          {(cameraMode === "live" || cameraMode === "recording") && (
+            <video
+              ref={liveVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ transform: "scaleX(-1)" }}
+            />
+          )}
+
+          {/* Idle / initialising */}
+          {cameraMode === "idle" && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <LoadingSpinner size="sm" />
+            </div>
+          )}
+
+          {/* Camera / permission error */}
+          {cameraMode === "error" && (
+            <div className="absolute inset-0 flex items-center justify-center p-6">
+              <p className="text-white/80 text-center text-sm leading-relaxed">{videoError}</p>
+            </div>
+          )}
+
+          {/* Clip playback (NOT muted so they can hear it) */}
+          {cameraMode === "playback" && recordedObjectUrl && (
+            <video
+              ref={playbackVideoRef}
+              src={recordedObjectUrl}
+              controls
+              playsInline
+              className="absolute inset-0 w-full h-full object-contain"
+            />
+          )}
+
+          {/* REC badge */}
+          {cameraMode === "recording" && (
+            <div className="absolute top-3 left-0 right-0 flex justify-center pointer-events-none">
+              <span className="bg-red-500/90 px-3 py-1 rounded-full text-white text-xs font-semibold tracking-wide">
+                ● REC
+              </span>
+            </div>
+          )}
+
+          {/* REC button (live) / Stop + countdown ring (recording) */}
+          {(cameraMode === "live" || cameraMode === "recording") && (
+            <div className="absolute bottom-5 left-0 right-0 flex justify-center">
+              {cameraMode === "recording" ? (
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  className="relative w-16 h-16 rounded-full bg-red-500 shadow-xl flex items-center justify-center"
+                >
+                  {/* SVG countdown ring — depletes over 10 s */}
+                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 64 64">
+                    <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
+                    <circle
+                      cx="32" cy="32" r="28"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={circumference * (recordingSeconds / 10)}
+                      transform="rotate(-90 32 32)"
+                      style={{ transition: "stroke-dashoffset 1s linear" }}
+                    />
+                  </svg>
+                  <span className="text-white font-bold text-base z-10 leading-none">
+                    {10 - recordingSeconds}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startRecording}
+                  className="w-16 h-16 rounded-full border-4 border-white/70 shadow-xl flex items-center justify-center"
+                  style={{ background: "rgba(239, 68, 68, 0.9)" }}
+                >
+                  <div className="w-5 h-5 rounded-full bg-white" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Playback actions */}
+          {cameraMode === "playback" && (
+            <div className="absolute bottom-4 left-4 right-4 flex gap-3">
+              <button
+                type="button"
+                onClick={handleRetake}
+                disabled={videoUploading}
+                className="flex-1 py-3 rounded-full text-sm font-semibold bg-black/60 text-white backdrop-blur-sm disabled:opacity-50"
+              >
+                Retake
+              </button>
+              <button
+                type="button"
+                onClick={handleUseVideo}
+                disabled={videoUploading}
+                className="flex-1 py-3 rounded-full text-sm font-semibold bg-white text-black flex items-center justify-center gap-2 disabled:opacity-70"
+              >
+                {videoUploading && <LoadingSpinner size="sm" />}
+                {videoUploading ? "Uploading…" : "Use this video"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Upload error (outside the camera box) */}
+        {videoError && cameraMode !== "error" && (
+          <p className="text-sm text-destructive text-center">{videoError}</p>
+        )}
+
+        {/* Skip */}
+        {cameraMode !== "playback" && (
+          <button
+            type="button"
+            onClick={handleSkipVideo}
+            disabled={videoUploading}
+            className="w-full text-center text-sm text-muted-foreground py-1 hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            Skip
+          </button>
+        )}
+      </div>
+    );
+  };
 
   const renderComposer = () => {
     switch (currentStepName) {
@@ -668,62 +912,8 @@ export default function ProposePlanPage() {
         );
 
       case "video":
-        return (
-          <div className="space-y-3">
-            {videoError && (
-              <p className="text-sm text-destructive px-1">{videoError}</p>
-            )}
-            {promoVideoUrl ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-green-500/30 bg-green-500/10">
-                  <span className="text-2xl">🎬</span>
-                  <p className="flex-1 text-sm font-medium text-green-600 dark:text-green-400">Video added!</p>
-                  <button
-                    type="button"
-                    onClick={() => { setPromoVideoUrl(null); setVideoError(null); }}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <button
-                  onClick={advanceStep}
-                  className="w-full h-14 rounded-full flex items-center justify-center text-white font-medium transition-opacity hover:opacity-90"
-                  style={{ background: "#60a5fa" }}
-                >
-                  Continue →
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-3 justify-center">
-                <button
-                  type="button"
-                  onClick={() => videoInputRef.current?.click()}
-                  disabled={videoUploading}
-                  className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {videoUploading ? <LoadingSpinner size="sm" /> : <span>🎬</span>}
-                  Upload Video
-                </button>
-                <button
-                  type="button"
-                  onClick={advanceStep}
-                  disabled={videoUploading}
-                  className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50 disabled:opacity-50"
-                >
-                  Skip
-                </button>
-              </div>
-            )}
-            <input
-              ref={videoInputRef}
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={handleVideoSelect}
-            />
-          </div>
-        );
+        // Camera UI is rendered inline in the scrollable area via renderCameraCapture()
+        return null;
 
       case "preview":
         return (
@@ -890,7 +1080,7 @@ export default function ProposePlanPage() {
               {/* Divider separating history from active step */}
               {currentStep > 0 && <div className="border-t border-border/20 mb-8" />}
 
-              {/* Active step — bot bubble only (composer is in the fixed bar below) */}
+              {/* Active step */}
               <div
                 key={currentStep}
                 className="animate-in fade-in slide-in-from-bottom-2 duration-300"
@@ -899,6 +1089,8 @@ export default function ProposePlanPage() {
                   message={BOT_QUESTIONS[currentStepName]}
                   showAvatar={currentStep === 0}
                 />
+                {/* Camera recorder lives here — no bot bubble, no keyboard */}
+                {currentStepName === "video" && renderCameraCapture()}
               </div>
             </div>
           </div>
