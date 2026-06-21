@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow } from "date-fns";
-import { Plus, User, Calendar, Send } from "lucide-react";
+import { Plus, User, Calendar, Send, ChevronLeft, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -111,6 +111,7 @@ export default function ProposePlanPage() {
   const [recordedObjectUrl, setRecordedObjectUrl] = useState<string | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [playbackProgress, setPlaybackProgress] = useState(0);
+  const [videoFullscreen, setVideoFullscreen] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
@@ -990,6 +991,33 @@ export default function ProposePlanPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Video thumbnail — only when a promo video was recorded */}
+              {promoVideoUrl && (
+                <div className="mt-3 pt-3 border-t border-border/20">
+                  <button
+                    type="button"
+                    onClick={() => setVideoFullscreen(true)}
+                    className="relative w-16 h-20 rounded-xl overflow-hidden block shrink-0"
+                    aria-label="Preview promo video"
+                  >
+                    <video
+                      src={promoVideoUrl}
+                      muted
+                      loop
+                      playsInline
+                      autoPlay
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Play icon overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                      <div className="w-7 h-7 rounded-full bg-white/85 flex items-center justify-center shadow-sm">
+                        <Play className="w-3.5 h-3.5 text-black fill-black ml-0.5" />
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )}
             </div>
 
             {dayLimitError && (
@@ -1179,6 +1207,37 @@ export default function ProposePlanPage() {
         onOpenChange={setShowIDVerification}
         onVerificationComplete={() => {}}
       />
+
+      {/* Promo video fullscreen overlay — z-50, above the composer bar (z-20) */}
+      {videoFullscreen && promoVideoUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+          onClick={() => setVideoFullscreen(false)}
+        >
+          {/* Back button — notch-safe */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setVideoFullscreen(false); }}
+            className="absolute left-4 z-10 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"
+            style={{ top: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
+            aria-label="Close"
+          >
+            <ChevronLeft className="w-5 h-5 text-white" />
+          </button>
+
+          {/* Full video — stopPropagation so tapping controls doesn't close the overlay;
+              tapping the letterbox area (black bg) falls through to the outer div */}
+          <video
+            src={promoVideoUrl}
+            controls
+            autoPlay
+            loop
+            playsInline
+            className="w-full h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
