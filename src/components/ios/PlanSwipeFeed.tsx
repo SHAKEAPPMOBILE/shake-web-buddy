@@ -233,8 +233,13 @@ function FeedCard({ plan, isOwn, onJoinInPlace, onPayForPlan, onEnterChat, onVie
         </>
       )}
 
-      {/* ── Bottom overlay: avatar + title + meta ── */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-[env(safe-area-inset-bottom,1rem)] pointer-events-none">
+      {/* ── Bottom overlay: avatar + title + meta ──
+           paddingBottom = 64px (tab bar) + safe-area-inset-bottom + 16px breathing room
+           The video stays full-bleed (100dvh); only the overlay content is inset. */}
+      <div
+        className="absolute bottom-0 left-0 right-0 px-4 pointer-events-none"
+        style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 16px)" }}
+      >
         <div className="flex items-end gap-3 mb-4">
           {/* Creator avatar — tappable */}
           <button
