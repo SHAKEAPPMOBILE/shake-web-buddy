@@ -935,9 +935,9 @@ export default function ProposePlanPage() {
                 {priceError && (
                   <p className="text-sm text-destructive px-1">{priceError}</p>
                 )}
-                {/* w-full ensures the row fills the container on iOS (content-sized flex overflows otherwise) */}
-                <div className="flex w-full items-center gap-2">
-                  {/* Currency select — fixed width, never shrinks */}
+                {/* min-w-0 on row + input lets them shrink; send is shrink-0 and always on screen */}
+                <div className="flex items-center gap-2 min-w-0">
+                  {/* Currency select — fixed 5rem, never shrinks */}
                   <select
                     value={priceCurrency}
                     onChange={(e) => setPriceCurrency(e.target.value)}
@@ -949,7 +949,8 @@ export default function ProposePlanPage() {
                       </option>
                     ))}
                   </select>
-                  {/* flex-1 min-w-0: takes remaining space but CAN shrink to 0 on iOS (overrides min-width:auto) */}
+                  {/* Compact fixed base — NOT flex-1. min-w-0 lets it shrink on tiny screens.
+                      Max caps growth so long values never push the send button off-screen. */}
                   <input
                     ref={priceInputRef}
                     autoFocus
@@ -962,12 +963,12 @@ export default function ProposePlanPage() {
                     }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePriceSubmit(); } }}
                     placeholder={t("createPlan.amountPlaceholder")}
-                    className="flex-1 min-w-0 h-14 rounded-2xl border border-border bg-muted/60 px-4 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
+                    className="w-24 min-w-0 max-w-[7rem] h-14 rounded-2xl border border-border bg-muted/60 px-4 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
                   />
-                  {/* Send — fixed size, shrink-0 — always visible regardless of input content */}
+                  {/* Send — w-12 h-12 shrink-0: fixed size, always rightmost, never clipped */}
                   <button
                     onClick={handlePriceSubmit}
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90"
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90"
                     style={{ background: "#60a5fa" }}
                   >
                     <Send className="w-5 h-5" />
