@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import confetti from 'canvas-confetti';
@@ -27,6 +27,7 @@ import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import { SwipeableCard } from "../SwipeableCard";
 import { useTranslation } from "react-i18next";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { PlanSwipeFeed } from "./PlanSwipeFeed";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
 import { ActivityDetailDialog } from "@/components/ActivityDetailDialog";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
@@ -507,6 +508,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [planPreview, setPlanPreview] = useState<PlanActivity | null>(null);
   const [planPreviewAttendees, setPlanPreviewAttendees] = useState<{ avatar_url: string | null; name: string | null }[]>([]);
   const [planPreviewVideoFullscreen, setPlanPreviewVideoFullscreen] = useState(false);
+
+  // Swipe feed
+  const [feedOpen, setFeedOpen] = useState(false);
+  const [feedStartIndex, setFeedStartIndex] = useState(0);
   
 
   // Notify parent when entering/leaving chat view
@@ -802,24 +807,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     if (!user) {
       return;
     }
-    // Creator tapping their own plan — show the same preview card with "Enter chat" button.
-    // (was: open chat directly; now routes through preview for consistent UX)
-    if (plan.user_id === user.id) {
-      setPlanPreview(plan);
-      return;
-    }
-    // Paid plan → show payment/detail dialog
-    if (plan.price_amount) {
+    // Paid plan → show payment/detail dialog (not in the feed)
+    if (plan.price_amount && !plan.isJoined && plan.user_id !== user.id) {
       setPaidActivityDetail(plan);
       return;
     }
-    // Standard carousel types (dinner, drinks, brunch) → join directly without preview
-    // User-created plans (general or any non-carousel type) → show preview modal first
-    if (CAROUSEL_ACTIVITY_TYPES.has(plan.activity_type)) {
-      handleDirectCityJoin(plan);
-    } else {
-      setPlanPreview(plan);
-    }
+    // All other plans (own, joined, free unjoined) → open swipe feed at this plan's index
+    const idx = cityPlans.findIndex((p) => p.id === plan.id);
+    setFeedStartIndex(idx >= 0 ? idx : 0);
+    setFeedOpen(true);
   };
 
   const handleDirectCityJoin = async (plan: PlanActivity) => {
@@ -1768,6 +1764,30 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         />
       )}
 
+      {/* ── Swipe feed ─────────────────────────────────────────────────── */}
+      {feedOpen && (
+        <PlanSwipeFeed
+          plans={cityPlans}
+          startIndex={feedStartIndex}
+          myCity={selectedCity}
+          onClose={() => setFeedOpen(false)}
+          onJoin={(plan) => {
+            // Close the feed then route through the preview modal so the user
+            // sees the plan card and taps JOIN to confirm — same 1-tap UX as
+            // tapping JOIN on any card, reusing handleConfirmJoinPreview.
+            setFeedOpen(false);
+            setPlanPreview(plan as PlanActivity);
+          }}
+          onEnterChat={(plan) => {
+            setFeedOpen(false);
+            setSelectedPlan(plan as PlanActivity);
+            setShowChatView(true);
+          }}
+          onViewProfile={(userId, userName, avatarUrl) => {
+            setSelectedUserProfile({ userId, userName, avatarUrl });
+          }}
+        />
+      )}
 
     </div>
   );
