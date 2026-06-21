@@ -802,10 +802,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     if (!user) {
       return;
     }
-    // Creator tapping their own plan — open chat directly, never show join guard.
+    // Creator tapping their own plan — show the same preview card with "Enter chat" button.
+    // (was: open chat directly; now routes through preview for consistent UX)
     if (plan.user_id === user.id) {
-      setSelectedPlan(plan);
-      setShowChatView(true);
+      setPlanPreview(plan);
       return;
     }
     // Paid plan → show payment/detail dialog
@@ -1603,11 +1603,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 </div>
               </button>
 
-              {/* JOIN / Your plan button below the card */}
+              {/* Enter chat (owner) / JOIN (others) */}
               {planPreview.user_id === user?.id ? (
-                <div className="w-full h-12 rounded-full flex items-center justify-center border border-blue-200 bg-blue-50">
-                  <span className="text-sm font-semibold text-blue-700">Your plan</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => { setPlanPreview(null); setSelectedPlan(planPreview); setShowChatView(true); }}
+                  className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
+                  style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                >
+                  Enter chat
+                </button>
               ) : (
                 <button
                   type="button"
@@ -1687,9 +1692,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               {/* Actions */}
               <div className="px-6 pb-6 space-y-2">
                 {planPreview.user_id === user?.id ? (
-                  <div className="w-full h-12 rounded-full flex items-center justify-center border border-blue-200 bg-blue-50">
-                    <span className="text-sm font-semibold text-blue-700">Your plan</span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setPlanPreview(null); setSelectedPlan(planPreview); setShowChatView(true); }}
+                    className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
+                    style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                  >
+                    Enter chat
+                  </button>
                 ) : (
                   <button
                     type="button"

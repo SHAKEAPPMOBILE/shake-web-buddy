@@ -22,6 +22,7 @@ import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useTranslation } from "react-i18next";
+import { Capacitor } from "@capacitor/core";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -665,17 +666,28 @@ export default function ProposePlanPage() {
             </div>
           )}
 
-          {/* REC button (live) / Stop + countdown ring (recording) */}
+          {/* Skip pill — top-right corner, hidden during recording */}
+          {cameraMode === "live" && (
+            <button
+              type="button"
+              onClick={handleSkipVideo}
+              disabled={videoUploading}
+              className="absolute top-3 right-3 px-3 py-1.5 rounded-full text-sm font-medium text-white disabled:opacity-50 z-10"
+              style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            >
+              Skip
+            </button>
+          )}
+
+          {/* REC button (live) / Stop + countdown ring (recording) — always centered */}
           {(cameraMode === "live" || cameraMode === "recording") && (
-            <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center gap-4">
+            <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center">
               {cameraMode === "recording" ? (
-                /* Recording: stop button centered alone */
                 <button
                   type="button"
                   onClick={stopRecording}
                   className="relative w-16 h-16 rounded-full bg-red-500 shadow-xl flex items-center justify-center"
                 >
-                  {/* SVG countdown ring — depletes over 10 s */}
                   <svg className="absolute inset-0 w-full h-full" viewBox="0 0 64 64">
                     <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
                     <circle
@@ -695,26 +707,14 @@ export default function ProposePlanPage() {
                   </span>
                 </button>
               ) : (
-                /* Live: REC button + Skip pill, centered as a pair */
-                <>
-                  <button
-                    type="button"
-                    onClick={startRecording}
-                    className="w-16 h-16 rounded-full border-4 border-white/70 shadow-xl flex items-center justify-center"
-                    style={{ background: "rgba(239, 68, 68, 0.9)" }}
-                  >
-                    <div className="w-5 h-5 rounded-full bg-white" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSkipVideo}
-                    disabled={videoUploading}
-                    className="px-4 py-2 rounded-full text-sm font-medium text-white disabled:opacity-50"
-                    style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
-                  >
-                    Skip
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={startRecording}
+                  className="w-16 h-16 rounded-full border-4 border-white/70 shadow-xl flex items-center justify-center"
+                  style={{ background: "rgba(239, 68, 68, 0.9)" }}
+                >
+                  <div className="w-5 h-5 rounded-full bg-white" />
+                </button>
               )}
             </div>
           )}
@@ -1117,14 +1117,16 @@ export default function ProposePlanPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Header — back arrow only */}
-      <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center">
-        <MinimalBackButton
-          onClick={() => currentStep > 0 ? handleBack() : navigate(-1)}
-          className="text-foreground/80 hover:text-foreground"
-          aria-label="Back"
-        />
-      </div>
+      {/* Header — back arrow only on native (phone); hidden on web */}
+      {Capacitor.isNativePlatform() && (
+        <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center">
+          <MinimalBackButton
+            onClick={() => currentStep > 0 ? handleBack() : navigate(-1)}
+            className="text-foreground/80 hover:text-foreground"
+            aria-label="Back"
+          />
+        </div>
+      )}
 
       {!user ? (
         <div className="flex-1 flex items-center justify-center">
