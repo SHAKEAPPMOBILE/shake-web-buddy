@@ -24,6 +24,9 @@ import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useTranslation } from "react-i18next";
 import { Capacitor } from "@capacitor/core";
 
+// Set to true to re-enable ID verification gate on the paid-plan create path.
+const ID_VERIFICATION_ENABLED = false;
+
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
   { code: "EUR", symbol: "€", name: "Euro" },
@@ -498,7 +501,7 @@ export default function ProposePlanPage() {
   const handleCreate = async () => {
     if (!isValid || !detectedActivity) return;
 
-    if (isPaidActivity && !isVerified && !isVerificationPending) {
+    if (ID_VERIFICATION_ENABLED && isPaidActivity && !isVerified && !isVerificationPending) {
       setShowIDVerification(true);
       return;
     }
