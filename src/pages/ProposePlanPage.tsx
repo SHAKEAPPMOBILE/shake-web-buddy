@@ -126,6 +126,7 @@ export default function ProposePlanPage() {
   const chosenMimeTypeRef = useRef<string>("video/mp4");
   const composerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const cameraBoxRef = useRef<HTMLDivElement>(null);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [composerHeight, setComposerHeight] = useState(96);
 
@@ -299,6 +300,19 @@ export default function ProposePlanPage() {
       playbackVideoRef.current?.play().catch(() => {});
     }
   }, [cameraMode]);
+  // Auto-scroll: when the video step mounts, scroll so the camera box is in view
+  useEffect(() => {
+    if (currentStepName !== "video") return;
+    // rAF ensures the camera box has been painted before we measure
+    const id = requestAnimationFrame(() => {
+      if (cameraBoxRef.current) {
+        cameraBoxRef.current.scrollIntoView({ block: "end", behavior: "smooth" });
+      } else if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [currentStepName]);
   // ── End camera hooks ───────────────────────────────────────────────────────
 
   const selectedCurrencySymbol = CURRENCIES.find((c) => c.code === priceCurrency)?.symbol || "$";
@@ -571,6 +585,7 @@ export default function ProposePlanPage() {
       <div className="space-y-4">
         {/* Camera / playback box — portrait ~3:4 */}
         <div
+          ref={cameraBoxRef}
           className="relative w-full rounded-2xl overflow-hidden bg-black"
           style={{ aspectRatio: "3/4", maxHeight: "58vh" }}
         >
@@ -652,8 +667,9 @@ export default function ProposePlanPage() {
 
           {/* REC button (live) / Stop + countdown ring (recording) */}
           {(cameraMode === "live" || cameraMode === "recording") && (
-            <div className="absolute bottom-5 left-0 right-0 flex justify-center">
+            <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center gap-4">
               {cameraMode === "recording" ? (
+                /* Recording: stop button centered alone */
                 <button
                   type="button"
                   onClick={stopRecording}
@@ -679,14 +695,26 @@ export default function ProposePlanPage() {
                   </span>
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={startRecording}
-                  className="w-16 h-16 rounded-full border-4 border-white/70 shadow-xl flex items-center justify-center"
-                  style={{ background: "rgba(239, 68, 68, 0.9)" }}
-                >
-                  <div className="w-5 h-5 rounded-full bg-white" />
-                </button>
+                /* Live: REC button + Skip pill, centered as a pair */
+                <>
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    className="w-16 h-16 rounded-full border-4 border-white/70 shadow-xl flex items-center justify-center"
+                    style={{ background: "rgba(239, 68, 68, 0.9)" }}
+                  >
+                    <div className="w-5 h-5 rounded-full bg-white" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSkipVideo}
+                    disabled={videoUploading}
+                    className="px-4 py-2 rounded-full text-sm font-medium text-white disabled:opacity-50"
+                    style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+                  >
+                    Skip
+                  </button>
+                </>
               )}
             </div>
           )}
@@ -720,17 +748,6 @@ export default function ProposePlanPage() {
           <p className="text-sm text-destructive text-center">{videoError}</p>
         )}
 
-        {/* Skip */}
-        {cameraMode !== "playback" && (
-          <button
-            type="button"
-            onClick={handleSkipVideo}
-            disabled={videoUploading}
-            className="w-full text-center text-sm text-muted-foreground py-1 hover:text-foreground transition-colors disabled:opacity-50"
-          >
-            Skip
-          </button>
-        )}
       </div>
     );
   };
