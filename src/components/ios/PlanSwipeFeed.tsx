@@ -18,6 +18,7 @@ import { format, isToday, isTomorrow } from "date-fns";
 import { ChevronLeft, Volume2, VolumeX } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
+import { getPriceValue } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
@@ -87,7 +88,8 @@ function FeedCard({ plan, isOwn, onJoinInPlace, onPayForPlan, onEnterChat, onVie
   const [joinedLocally, setJoinedLocally] = useState(false);
   const [joining, setJoining] = useState(false);
 
-  const isPaid = !!(plan.price_amount && parseFloat(plan.price_amount) > 0);
+  const priceValue = getPriceValue(plan.price_amount);
+  const isPaid = priceValue > 0;
   const isJoined = plan.isJoined || joinedLocally;
 
   /* IntersectionObserver: play when ≥60 % visible, pause+reset when not */
@@ -149,8 +151,7 @@ function FeedCard({ plan, isOwn, onJoinInPlace, onPayForPlan, onEnterChat, onVie
       return { label: "Enter chat", handler: onEnterChat, disabled: false };
     }
     if (isPaid) {
-      const priceLabel = `PAY $${parseFloat(plan.price_amount!).toFixed(0)}`;
-      return { label: priceLabel, handler: onPayForPlan, disabled: false };
+      return { label: `Pay $${priceValue.toFixed(0)}`, handler: onPayForPlan, disabled: false };
     }
     return {
       label: joining ? "Joining…" : "JOIN",

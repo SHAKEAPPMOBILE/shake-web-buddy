@@ -16,7 +16,7 @@ import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
 import { formatDateWithTranslation, parseDbDate } from "@/lib/date-utils";
-import { cn } from "@/lib/utils";
+import { cn, getPriceValue } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
@@ -804,15 +804,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const CAROUSEL_ACTIVITY_TYPES = new Set(['dinner', 'drinks', 'brunch']);
 
   const handleCityPlanClick = (plan: PlanActivity) => {
-    if (!user) {
-      return;
-    }
-    // Paid plan → show payment/detail dialog (not in the feed)
-    if (plan.price_amount && !plan.isJoined && plan.user_id !== user.id) {
-      setPaidActivityDetail(plan);
-      return;
-    }
-    // All other plans (own, joined, free unjoined) → open swipe feed at this plan's index
+    if (!user) return;
+    // All plans (own, joined, free, paid) open the swipe feed.
+    // Paid-unjoined cards show a "PAY" button inside the feed that calls onPayForPlan.
     const idx = cityPlans.findIndex((p) => p.id === plan.id);
     setFeedStartIndex(idx >= 0 ? idx : 0);
     setFeedOpen(true);
@@ -820,6 +814,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   const handleDirectCityJoin = async (plan: PlanActivity) => {
     if (!user) {
+      return;
+    }
+
+    // Safety guard: never free-insert a paid plan.
+    if (getPriceValue(plan.price_amount) > 0 && !plan.isJoined && plan.user_id !== user.id) {
+      toast.error("This plan requires payment — tap Pay to continue.");
       return;
     }
 
@@ -925,12 +925,120 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     setShowChatView(true);
   };
 
+  /**
+   * In-feed join: same logic as handleConfirmJoinPreview but takes the plan as a
+   * parameter, fires confetti, and does NOT navigate to chat — lets the feed stay open
+   * and the card update its own joined state.
+   * Returns { success: true } on join, { success: false } otherwise.
+   */
+  const handleFeedJoin = async (plan: PlanActivity): Promise<{ success: boolean }> => {
+    if (!user) return { success: false };
+
+    // Safety guard: never free-insert a paid plan.
+    // The feed button should already call onPayForPlan for paid plans, but if
+    // display logic misfires this is the definitive block.
+    if (getPriceValue(plan.price_amount) > 0 && !plan.isJoined && plan.user_id !== user.id) {
+      toast.error("This plan requires payment — tap Pay to continue.");
+      return { success: false };
+    }
+
+    if (plan.scheduled_for) {
+      const scheduledDate = parseDbDate(plan.scheduled_for);
+      const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
+      if (!isSameDay && scheduledDate < new Date()) {
+        toast.error("This event already started");
+        return { success: false };
+      }
+    }
+
+    const targetGroup = await findOrCreateOpenGroup(plan.activity_type, plan.city, user.id);
+    if (!targetGroup) {
+      toast.error("Group is full — couldn't start a new one");
+      return { success: false };
+    }
+
+    const targetPlan: PlanActivity = targetGroup.id === plan.id
+      ? plan
+      : {
+          id: targetGroup.id,
+          user_id: targetGroup.user_id,
+          activity_type: targetGroup.activity_type,
+          city: targetGroup.city,
+          scheduled_for: targetGroup.scheduled_for,
+          is_active: true,
+          note: targetGroup.note ?? null,
+          group_number: targetGroup.group_number ?? null,
+          is_auto_generated: targetGroup.is_auto_generated ?? null,
+          creator_name: "Open Group",
+          participant_count: 0,
+          isJoined: false,
+        };
+
+    const existingJoin = await checkExistingJoin(targetPlan.activity_type);
+    if (existingJoin) {
+      if (normalizeCity(existingJoin.city) === normalizeCity(targetPlan.city)) {
+        toast.info("You've already joined this plan!");
+        return { success: true }; // already joined — treat as success so button flips
+      } else {
+        setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
+        return { success: false };
+      }
+    }
+
+    const { error } = await supabase.from("activity_joins").insert({
+      user_id: user.id,
+      activity_id: targetPlan.id,
+      activity_type: targetPlan.activity_type,
+      city: targetPlan.city,
+    });
+
+    if (error) {
+      console.error("[JOIN:handleFeedJoin] insert failed", error);
+      toast.error(`Failed to join: ${error.message}`);
+      return { success: false };
+    }
+
+    // Notify creator (fire-and-forget)
+    if (targetPlan.user_id && targetPlan.user_id !== user.id) {
+      void (async () => {
+        const { data: joinerProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
+        const joinerName = joinerProfile?.name || "Someone";
+        await supabase.functions.invoke("send-push-notification", {
+          body: {
+            to_user_id: targetPlan.user_id,
+            title: "New shaker joined! 🎉",
+            body: `${joinerName} just joined ${getActivityLabel(targetPlan.activity_type)} in ${targetPlan.city}`,
+          },
+        });
+      })();
+    }
+
+    const joinedPlan = { ...targetPlan, isJoined: true };
+    setActivities(prev => prev.find(a => a.id === targetPlan.id) ? prev : [joinedPlan, ...prev]);
+    setCityPlans(prev => prev.filter(p => p.id !== targetPlan.id));
+
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+    });
+
+    return { success: true };
+  };
+
   const handleConfirmJoinPreview = async () => {
     if (!planPreview || !user) {
       return;
     }
     const plan = planPreview;
     setPlanPreview(null);
+
+    // Safety guard: never free-insert a paid plan.
+    if (getPriceValue(plan.price_amount) > 0 && !plan.isJoined && plan.user_id !== user.id) {
+      toast.error("This plan requires payment — tap Pay to continue.");
+      return;
+    }
 
     // Block joining events that started on a PREVIOUS day.
     // Same-day events are always joinable (plans often default to midnight).
@@ -1771,12 +1879,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           startIndex={feedStartIndex}
           myCity={selectedCity}
           onClose={() => setFeedOpen(false)}
-          onJoin={(plan) => {
-            // Close the feed then route through the preview modal so the user
-            // sees the plan card and taps JOIN to confirm — same 1-tap UX as
-            // tapping JOIN on any card, reusing handleConfirmJoinPreview.
+          onJoinInPlace={(plan) => handleFeedJoin(plan as PlanActivity)}
+          onPayForPlan={(plan) => {
             setFeedOpen(false);
-            setPlanPreview(plan as PlanActivity);
+            setPaidActivityDetail(plan as PlanActivity);
           }}
           onEnterChat={(plan) => {
             setFeedOpen(false);
