@@ -918,13 +918,13 @@ export default function ProposePlanPage() {
                 {priceError && (
                   <p className="text-sm text-destructive px-1">{priceError}</p>
                 )}
-                {/* min-w-0 on the row lets flex children shrink; send button is shrink-0 last */}
-                <div className="flex items-center gap-2 min-w-0">
+                {/* w-full ensures the row fills the container on iOS (content-sized flex overflows otherwise) */}
+                <div className="flex w-full items-center gap-2">
                   {/* Currency select — fixed width, never shrinks */}
                   <select
                     value={priceCurrency}
                     onChange={(e) => setPriceCurrency(e.target.value)}
-                    className="w-24 h-14 shrink-0 rounded-full border border-border bg-muted/60 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="w-20 h-14 shrink-0 rounded-full border border-border bg-muted/60 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
                   >
                     {CURRENCIES.map((currency) => (
                       <option key={currency.code} value={currency.code}>
@@ -932,7 +932,7 @@ export default function ProposePlanPage() {
                       </option>
                     ))}
                   </select>
-                  {/* Price input — compact base, grows with content up to a cap, never pushes icon off */}
+                  {/* flex-1 min-w-0: takes remaining space but CAN shrink to 0 on iOS (overrides min-width:auto) */}
                   <input
                     ref={priceInputRef}
                     autoFocus
@@ -945,12 +945,12 @@ export default function ProposePlanPage() {
                     }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePriceSubmit(); } }}
                     placeholder={t("createPlan.amountPlaceholder")}
-                    className="min-w-0 w-24 max-w-[8rem] h-14 rounded-2xl border border-border bg-muted/60 px-4 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
+                    className="flex-1 min-w-0 h-14 rounded-2xl border border-border bg-muted/60 px-4 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
                   />
-                  {/* Send — fixed size, always visible, always last */}
+                  {/* Send — fixed size, shrink-0 — always visible regardless of input content */}
                   <button
                     onClick={handlePriceSubmit}
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 ml-auto"
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90"
                     style={{ background: "#60a5fa" }}
                   >
                     <Send className="w-5 h-5" />
