@@ -166,7 +166,8 @@ export function useUserActivities(city: string) {
     note?: string,
     cityOverride?: string,
     priceAmount?: string,
-    expiresAt?: Date
+    expiresAt?: Date,
+    promoVideoUrl?: string
   ): Promise<boolean> => {
     const targetCity = cityOverride || city;
     if (!user) {
@@ -221,6 +222,7 @@ export function useUserActivities(city: string) {
       scheduled_for: scheduledFor.toISOString(),
       note: note?.trim() || null,
       price_amount: priceAmount || null,
+      promo_video_url: promoVideoUrl || null,
     }).select().maybeSingle();
     if (error || !newActivity) {
       console.error("Error creating activity:", error);

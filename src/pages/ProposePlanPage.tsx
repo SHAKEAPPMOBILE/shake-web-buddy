@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow } from "date-fns";
 import { Plus, User, Calendar, Send } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,7 +35,7 @@ const CURRENCIES = [
 
 const MAX_CHARACTERS = 50;
 
-type StepName = "name" | "city" | "date" | "time" | "price" | "preview";
+type StepName = "name" | "city" | "date" | "time" | "price" | "video" | "preview";
 
 const BOT_QUESTIONS: Record<StepName, string> = {
   name: "What's the plan? ✨",
@@ -44,6 +43,7 @@ const BOT_QUESTIONS: Record<StepName, string> = {
   date: "When? 📅",
   time: "What time? ⏰",
   price: "",
+  video: "Add a short promo video (optional) 🎬",
   preview: "",
 };
 
@@ -102,10 +102,14 @@ export default function ProposePlanPage() {
   // Chat flow
   const [currentStep, setCurrentStep] = useState(0);
   const [showPriceInput, setShowPriceInput] = useState(false);
+  const [promoVideoUrl, setPromoVideoUrl] = useState<string | null>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
@@ -167,7 +171,7 @@ export default function ProposePlanPage() {
   const steps: StepName[] = useMemo(() => {
     const s: StepName[] = ["name"];
     if (!city) s.push("city");
-    s.push("date", "time", "price", "preview");
+    s.push("date", "time", "price", "video", "preview");
     return s;
   }, [city]);
 
@@ -239,6 +243,7 @@ export default function ProposePlanPage() {
         return priceAmount.trim()
           ? `${selectedCurrencySymbol}${priceAmount} ${priceCurrency}`
           : "Free 🎉";
+      case "video": return promoVideoUrl ? "🎬 Video added" : "Skipped";
       default: return "";
     }
   };
@@ -301,6 +306,44 @@ export default function ProposePlanPage() {
     advanceStep();
   };
 
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setVideoError(null);
+    const objectUrl = URL.createObjectURL(file);
+    const videoEl = document.createElement("video");
+    videoEl.preload = "metadata";
+    videoEl.onloadedmetadata = async () => {
+      URL.revokeObjectURL(objectUrl);
+      if (videoEl.duration > 10) {
+        setVideoError("Video must be 10 seconds or shorter.");
+        return;
+      }
+      setVideoUploading(true);
+      try {
+        const ext = file.name.split(".").pop() || "mp4";
+        const path = `${user!.id}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("plan-videos")
+          .upload(path, file, { contentType: file.type });
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage
+          .from("plan-videos")
+          .getPublicUrl(path);
+        setPromoVideoUrl(publicUrl);
+      } catch {
+        setVideoError("Upload failed. Please try again.");
+      } finally {
+        setVideoUploading(false);
+      }
+    };
+    videoEl.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      setVideoError("Could not read video file.");
+    };
+    videoEl.src = objectUrl;
+  };
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
     setDayLimitError(false);
@@ -355,7 +398,8 @@ export default function ProposePlanPage() {
       planText.trim(),
       city || cityInput.trim() || undefined,
       formattedPrice,
-      endOfSelectedDay
+      endOfSelectedDay,
+      promoVideoUrl || undefined
     );
 
     if (!success) {
@@ -584,24 +628,18 @@ export default function ProposePlanPage() {
                   <p className="text-sm text-destructive px-1">{priceError}</p>
                 )}
                 <div className="flex items-center gap-3">
-                  <Select value={priceCurrency} onValueChange={setPriceCurrency}>
-                    <SelectTrigger className="w-28 shrink-0 h-14 rounded-full border-border bg-muted/60">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CURRENCIES.map((currency) => (
-                        <SelectItem key={currency.code} value={currency.code}>
-                          {currency.symbol} {currency.code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {/*
-                    type="text" inputMode="decimal" instead of type="number":
-                    — mobile shows a numeric keypad that includes the Return/Enter key
-                    — e.target.value never returns "" mid-entry (no invalid-number glitches)
-                    — eliminates the disabled-button flicker that made the button look gone
-                  */}
+                  {/* Native <select> — predictable flex sizing, no portal overlay */}
+                  <select
+                    value={priceCurrency}
+                    onChange={(e) => setPriceCurrency(e.target.value)}
+                    className="w-24 h-14 shrink-0 rounded-full border border-border bg-muted/60 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  >
+                    {CURRENCIES.map((currency) => (
+                      <option key={currency.code} value={currency.code}>
+                        {currency.symbol} {currency.code}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     ref={priceInputRef}
                     autoFocus
@@ -614,9 +652,8 @@ export default function ProposePlanPage() {
                     }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePriceSubmit(); } }}
                     placeholder={t("createPlan.amountPlaceholder")}
-                    className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
+                    className="flex-1 h-14 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
                   />
-                  {/* Button is always visible — validation is handled in handlePriceSubmit */}
                   <button
                     onClick={handlePriceSubmit}
                     className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90"
@@ -627,6 +664,64 @@ export default function ProposePlanPage() {
                 </div>
               </div>
             )}
+          </div>
+        );
+
+      case "video":
+        return (
+          <div className="space-y-3">
+            {videoError && (
+              <p className="text-sm text-destructive px-1">{videoError}</p>
+            )}
+            {promoVideoUrl ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-green-500/30 bg-green-500/10">
+                  <span className="text-2xl">🎬</span>
+                  <p className="flex-1 text-sm font-medium text-green-600 dark:text-green-400">Video added!</p>
+                  <button
+                    type="button"
+                    onClick={() => { setPromoVideoUrl(null); setVideoError(null); }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <button
+                  onClick={advanceStep}
+                  className="w-full h-14 rounded-full flex items-center justify-center text-white font-medium transition-opacity hover:opacity-90"
+                  style={{ background: "#60a5fa" }}
+                >
+                  Continue →
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-3 justify-center">
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={videoUploading}
+                  className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {videoUploading ? <LoadingSpinner size="sm" /> : <span>🎬</span>}
+                  Upload Video
+                </button>
+                <button
+                  type="button"
+                  onClick={advanceStep}
+                  disabled={videoUploading}
+                  className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50 disabled:opacity-50"
+                >
+                  Skip
+                </button>
+              </div>
+            )}
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={handleVideoSelect}
+            />
           </div>
         );
 
