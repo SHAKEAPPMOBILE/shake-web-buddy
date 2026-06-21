@@ -966,59 +966,94 @@ export default function ProposePlanPage() {
         return (
           <div className="space-y-5">
             {/* Preview card */}
-            <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                  {userAvatarUrl ? (
-                    <img
-                      src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
-                      alt="Your avatar"
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                  ) : (
-                    <User className="w-7 h-7 text-muted-foreground" />
-                  )}
+            {promoVideoUrl ? (
+              /* ── Video card: full-bleed portrait background ── */
+              <button
+                type="button"
+                onClick={() => setVideoFullscreen(true)}
+                className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
+                aria-label="Preview promo video fullscreen"
+              >
+                {/* Background video */}
+                <video
+                  src={promoVideoUrl}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+
+                {/* Gradient scrim — darker at bottom for text legibility */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.18) 45%, transparent 100%)" }}
+                />
+
+                {/* Expand icon — top-right corner */}
+                <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center pointer-events-none">
+                  <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
-                    {priceAmount.trim() && (
-                      <span className="text-green-500 font-medium ml-1">
-                        · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
-                      </span>
+
+                {/* Overlay text — pinned to bottom, non-interactive */}
+                <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pointer-events-none">
+                  <div className="flex items-end gap-3">
+                    {/* Avatar */}
+                    <div className="w-10 h-10 rounded-full bg-white/20 border border-white/40 overflow-hidden shrink-0 flex items-center justify-center">
+                      {userAvatarUrl ? (
+                        <img
+                          src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
+                          alt="Your avatar"
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        <User className="w-5 h-5 text-white/80" />
+                      )}
+                    </div>
+                    {/* Text */}
+                    <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
+                      <p className="font-bold text-white truncate">"{planText.trim()}"</p>
+                      <p className="text-xs text-white/80 mt-0.5 truncate">
+                        {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
+                        {priceAmount.trim() && (
+                          <span className="text-green-300 font-medium ml-1">
+                            · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ) : (
+              /* ── No-video card: existing design, untouched ── */
+              <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                    {userAvatarUrl ? (
+                      <img
+                        src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
+                        alt="Your avatar"
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <User className="w-7 h-7 text-muted-foreground" />
                     )}
-                  </p>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
+                      {priceAmount.trim() && (
+                        <span className="text-green-500 font-medium ml-1">
+                          · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
-
-              {/* Video thumbnail — only when a promo video was recorded */}
-              {promoVideoUrl && (
-                <div className="mt-3 pt-3 border-t border-border/20">
-                  <button
-                    type="button"
-                    onClick={() => setVideoFullscreen(true)}
-                    className="relative w-16 h-20 rounded-xl overflow-hidden block shrink-0"
-                    aria-label="Preview promo video"
-                  >
-                    <video
-                      src={promoVideoUrl}
-                      muted
-                      loop
-                      playsInline
-                      autoPlay
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Play icon overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/25">
-                      <div className="w-7 h-7 rounded-full bg-white/85 flex items-center justify-center shadow-sm">
-                        <Play className="w-3.5 h-3.5 text-black fill-black ml-0.5" />
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
+            )}
 
             {dayLimitError && (
               <p className="text-sm text-destructive text-center">Slow down tiger, one plan a day keeps the chaos away! 🐯</p>
