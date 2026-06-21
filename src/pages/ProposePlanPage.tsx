@@ -110,6 +110,7 @@ export default function ProposePlanPage() {
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordedObjectUrl, setRecordedObjectUrl] = useState<string | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [playbackProgress, setPlaybackProgress] = useState(0);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
@@ -285,11 +286,16 @@ export default function ProposePlanPage() {
     };
   }, [currentStepName, startCamera, stopAllTracks]);
 
-  // Attach live stream to the preview <video> once both are ready
+  // Attach live stream / auto-start playback when cameraMode changes
   useEffect(() => {
     if (cameraMode === "live" && liveVideoRef.current && streamRef.current) {
       liveVideoRef.current.srcObject = streamRef.current;
       liveVideoRef.current.play().catch(() => {});
+    }
+    if (cameraMode === "playback") {
+      setPlaybackProgress(0);
+      // DOM is committed before this effect runs, so ref is set
+      playbackVideoRef.current?.play().catch(() => {});
     }
   }, [cameraMode]);
   // ── End camera hooks ───────────────────────────────────────────────────────
@@ -448,6 +454,16 @@ export default function ProposePlanPage() {
     advanceStep();
   };
 
+  const togglePlayback = () => {
+    const vid = playbackVideoRef.current;
+    if (!vid) return;
+    if (vid.paused) {
+      vid.play().catch(() => {});
+    } else {
+      vid.pause();
+    }
+  };
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
     setDayLimitError(false);
@@ -583,16 +599,46 @@ export default function ProposePlanPage() {
             </div>
           )}
 
-          {/* Clip playback (NOT muted so they can hear it) */}
+          {/* Clip playback — tap to play/pause, no native controls */}
           {cameraMode === "playback" && recordedObjectUrl && (
             <video
               ref={playbackVideoRef}
               src={recordedObjectUrl}
-              controls
               playsInline
-              className="absolute inset-0 w-full h-full object-contain"
+              onClick={togglePlayback}
+              onTimeUpdate={() => {
+                const vid = playbackVideoRef.current;
+                if (vid && vid.duration) setPlaybackProgress(vid.currentTime / vid.duration);
+              }}
+              onEnded={() => setPlaybackProgress(0)}
+              className="absolute inset-0 w-full h-full object-contain cursor-pointer"
             />
           )}
+
+          {/* Playback progress ring — sits in the top letterbox area */}
+          {cameraMode === "playback" && (() => {
+            const r = 15;
+            const c = 2 * Math.PI * r;
+            return (
+              <div className="absolute top-4 left-0 right-0 flex justify-center pointer-events-none">
+                <svg width="36" height="36" viewBox="0 0 36 36">
+                  {/* Faint track */}
+                  <circle cx="18" cy="18" r={r} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2.5" />
+                  {/* Fill — no transition so it freezes instantly when paused */}
+                  <circle
+                    cx="18" cy="18" r={r}
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeDasharray={c}
+                    strokeDashoffset={c * (1 - playbackProgress)}
+                    transform="rotate(-90 18 18)"
+                  />
+                </svg>
+              </div>
+            );
+          })()}
 
           {/* REC badge */}
           {cameraMode === "recording" && (
