@@ -1167,12 +1167,12 @@ export default function ProposePlanPage() {
                 <div className="space-y-4 mb-6">
                   {steps.slice(0, currentStep).map((step, i) => {
                     const stepsBack = currentStep - i; // 1 = most recent, higher = older
-                    // Crescendo: most recent is largest and most opaque; older = smaller + more faded
+                    // Crescendo: most recent is largest and most opaque; older = smaller + more faded.
+                    // Floor at opacity-60 so even the oldest answer stays clearly legible.
                     const opacity =
                       stepsBack === 1 ? "opacity-80"
-                      : stepsBack === 2 ? "opacity-55"
-                      : stepsBack === 3 ? "opacity-35"
-                      : "opacity-25";
+                      : stepsBack === 2 ? "opacity-70"
+                      : "opacity-60";
                     const labelSize =
                       stepsBack === 1 ? "text-sm"
                       : stepsBack === 2 ? "text-xs"
