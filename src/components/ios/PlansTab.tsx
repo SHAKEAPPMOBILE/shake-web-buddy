@@ -1184,9 +1184,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || getActivityLabel(plan.activity_type))}
                       </h3>
                       {plan.isJoined && (
-                        <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">
-                          {t('common.joined')} ✓
-                        </span>
+                        plan.user_id === user?.id ? (
+                          <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                            Your plan
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">
+                            {t('common.joined')} ✓
+                          </span>
+                        )
                       )}
                       {isSoon(plan.scheduled_for) && (
                         <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
@@ -1321,7 +1327,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                               🔴 Soon
                             </span>
                           )}
-                          {plan.price_amount ? (
+                          {plan.user_id === user?.id ? (
+                            /* Owner: never show Join or price CTA */
+                            <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                              Your plan
+                            </span>
+                          ) : plan.price_amount ? (
                             <span className="text-xs bg-green-50 text-green-700 border border-green-200 font-semibold px-2 py-0.5 rounded-full">
                               {plan.price_amount}
                             </span>
@@ -1582,14 +1593,20 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
             {/* Actions */}
             <div className="px-6 pb-6 space-y-2">
-              <button
-                type="button"
-                onClick={handleConfirmJoinPreview}
-                className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
-                style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
-              >
-                {t('plans.yesImIn', "Yes, I'm in! 🎉")}
-              </button>
+              {planPreview.user_id === user?.id ? (
+                <div className="w-full h-12 rounded-full flex items-center justify-center border border-blue-200 bg-blue-50">
+                  <span className="text-sm font-semibold text-blue-700">Your plan</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleConfirmJoinPreview}
+                  className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
+                  style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                >
+                  {t('plans.yesImIn', "Yes, I'm in! 🎉")}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setPlanPreview(null)}
