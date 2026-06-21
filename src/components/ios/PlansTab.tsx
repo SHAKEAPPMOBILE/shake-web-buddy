@@ -1061,6 +1061,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           note: selectedPlan.note,
           created_at: selectedPlan.scheduled_for,
           updated_at: selectedPlan.scheduled_for,
+          promo_video_url: selectedPlan.promo_video_url ?? null,
         }}
         onBack={handleBackFromChat}
       />
@@ -1389,7 +1390,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         <div className="flex items-center gap-1 mt-1">
                           <Users className="w-3 h-3 text-gray-400" />
                           <span className="text-xs text-gray-500">
-                            {plan.participant_count ?? 0}/{MAX_GROUP_CAPACITY} {t('common.joined').toLowerCase()}
+                            {plan.participant_count ?? 0}{plan.is_auto_generated ? `/${MAX_GROUP_CAPACITY}` : ""} {t('common.joined').toLowerCase()}
                           </span>
                         </div>
                       </div>

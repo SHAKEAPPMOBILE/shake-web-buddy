@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Trash2, Images, MoreVertical, LogOut, Camera } from "lucide-react";
+import { Send, User, Trash2, Images, MoreVertical, LogOut, Camera, ChevronLeft } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -49,6 +49,7 @@ interface Activity {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  promo_video_url?: string | null;
 }
 
 interface PlanGroupChatViewProps {
@@ -96,6 +97,7 @@ export function PlanGroupChatView({
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [videoFullscreen, setVideoFullscreen] = useState(false);
 
   // Curtain drag state
   const [snapState, setSnapState] = useState<SnapState>('partial');
@@ -515,9 +517,22 @@ export function PlanGroupChatView({
 
           {/* Content column — normal flow, top to bottom, no overlap */}
           <div className="flex flex-col items-center px-4 pb-4" style={{ paddingTop: 64 }}>
-            {/* 1. Creator avatar / emoji */}
-            <div className="w-16 h-16 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center shadow-sm">
-              {creatorProfile?.avatar_url ? (
+            {/* 1. Creator video / avatar / emoji */}
+            <button
+              type="button"
+              onClick={() => { if (activity.promo_video_url) setVideoFullscreen(true); }}
+              className="w-16 h-16 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center shadow-sm focus:outline-none"
+            >
+              {activity.promo_video_url ? (
+                <video
+                  src={activity.promo_video_url}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              ) : creatorProfile?.avatar_url ? (
                 <Avatar className="w-full h-full rounded-full">
                   <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
                   <AvatarFallback className="bg-white/20 flex items-center justify-center">
@@ -527,7 +542,7 @@ export function PlanGroupChatView({
               ) : (
                 <span className="text-4xl">{planEmoji}</span>
               )}
-            </div>
+            </button>
 
             {/* 2. Plan title */}
             <h1 className="text-base font-bold text-white text-center leading-tight mt-2">{planTitle}</h1>
@@ -855,6 +870,32 @@ export function PlanGroupChatView({
       />
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+      {/* Fullscreen video overlay */}
+      {videoFullscreen && activity.promo_video_url && (
+        <div
+          className="fixed inset-0 z-[60] bg-black flex items-center justify-center"
+          onClick={() => setVideoFullscreen(false)}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setVideoFullscreen(false); }}
+            className="absolute left-4 flex items-center justify-center w-10 h-10 rounded-full bg-white/20 text-white"
+            style={{ top: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <video
+            src={activity.promo_video_url}
+            autoPlay
+            loop
+            playsInline
+            controls
+            onClick={(e) => e.stopPropagation()}
+            className="w-full h-full object-contain"
+          />
+        </div>
+      )}
     </div>
   );
 }
