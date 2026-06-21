@@ -918,8 +918,9 @@ export default function ProposePlanPage() {
                 {priceError && (
                   <p className="text-sm text-destructive px-1">{priceError}</p>
                 )}
-                <div className="flex items-center gap-3">
-                  {/* Native <select> — predictable flex sizing, no portal overlay */}
+                {/* min-w-0 on the row lets flex children shrink; send button is shrink-0 last */}
+                <div className="flex items-center gap-2 min-w-0">
+                  {/* Currency select — fixed width, never shrinks */}
                   <select
                     value={priceCurrency}
                     onChange={(e) => setPriceCurrency(e.target.value)}
@@ -931,6 +932,7 @@ export default function ProposePlanPage() {
                       </option>
                     ))}
                   </select>
+                  {/* Price input — compact base, grows with content up to a cap, never pushes icon off */}
                   <input
                     ref={priceInputRef}
                     autoFocus
@@ -943,11 +945,12 @@ export default function ProposePlanPage() {
                     }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePriceSubmit(); } }}
                     placeholder={t("createPlan.amountPlaceholder")}
-                    className="flex-1 h-14 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
+                    className="min-w-0 w-24 max-w-[8rem] h-14 rounded-2xl border border-border bg-muted/60 px-4 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
                   />
+                  {/* Send — fixed size, always visible, always last */}
                   <button
                     onClick={handlePriceSubmit}
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90"
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 ml-auto"
                     style={{ background: "#60a5fa" }}
                   >
                     <Send className="w-5 h-5" />
