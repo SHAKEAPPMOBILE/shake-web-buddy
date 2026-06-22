@@ -220,7 +220,9 @@ export function CityProvider({ children }: { children: ReactNode }) {
           if (best) return best;
         }
 
-        if (inCountry.length > 0) return inCountry[0];
+        // Multiple cities in the country but no city name to disambiguate — return null
+        // so the caller falls back to fallbackToDefault() rather than arbitrarily picking
+        // the first city in the array (which would always be Bogotá for Colombia, etc.).
       }
 
       return null;

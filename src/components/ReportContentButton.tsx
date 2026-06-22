@@ -60,7 +60,7 @@ export const ReportContentButton = ({ contentId, contentType, iconOnly = false }
             <SelectTrigger>
               <SelectValue placeholder="Select a reason" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[10002]">
               {REPORT_REASONS.map((r) => (
                 <SelectItem key={r} value={r}>{r}</SelectItem>
               ))}
