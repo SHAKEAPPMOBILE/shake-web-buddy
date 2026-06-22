@@ -15,7 +15,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, MessageCircle, DollarSign } from "lucide-react";
+import { ChevronLeft, MessageCircle, DollarSign, Volume2, VolumeX } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue } from "@/lib/utils";
@@ -89,6 +89,7 @@ interface FeedCardProps {
 function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile }: FeedCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const [muted, setMuted] = useState(true);
   const [joinedLocally, setJoinedLocally] = useState(false);
   const [joining, setJoining] = useState(false);
 
@@ -96,7 +97,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
   const isPaid = priceValue > 0;
   const isJoined = plan.isJoined || joinedLocally;
 
-  /* IntersectionObserver: play when ≥60 % visible, pause+reset when not */
+  /* IntersectionObserver: play muted when ≥60 % visible; pause+reset mute when not */
   useEffect(() => {
     const el = cardRef.current;
     const vid = videoRef.current;
@@ -106,10 +107,13 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
       ([entry]) => {
         if (entry.intersectionRatio >= 0.6) {
           vid.muted = true;
+          setMuted(true);
           vid.play().catch(() => {});
         } else {
           vid.pause();
           vid.currentTime = 0;
+          vid.muted = true;
+          setMuted(true);
         }
       },
       { threshold: 0.6 }
@@ -117,6 +121,11 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
     observer.observe(el);
     return () => observer.disconnect();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* Sync muted state → video DOM (handles tap-toggle path) */
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = muted;
+  }, [muted]);
 
   const handleJoin = async () => {
     if (joining) return;
@@ -165,14 +174,23 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
       {plan.promo_video_url ? (
         /* ── Video card ── */
         <>
-          <video
-            ref={videoRef}
-            src={plan.promo_video_url}
-            playsInline
-            muted
-            loop
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          {/* Tap to toggle mute — onClick only fires on taps, not swipes */}
+          <button
+            type="button"
+            onClick={() => setMuted((m) => !m)}
+            className="absolute inset-0 w-full h-full cursor-pointer bg-transparent border-0 p-0"
+            style={{ zIndex: 1 }}
+            aria-label={muted ? "Unmute video" : "Mute video"}
+          >
+            <video
+              ref={videoRef}
+              src={plan.promo_video_url}
+              playsInline
+              muted
+              loop
+              className="w-full h-full object-cover"
+            />
+          </button>
 
           {/* Gradient scrim */}
           <div
@@ -180,9 +198,25 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
             style={{
               background:
                 "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 45%, transparent 100%)",
+              zIndex: 2,
             }}
           />
 
+          {/* Speaker indicator — subtle, top-right */}
+          <div
+            className="absolute top-14 right-4 w-8 h-8 rounded-full flex items-center justify-center pointer-events-none"
+            style={{
+              background: "rgba(0,0,0,0.35)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+              zIndex: 3,
+            }}
+          >
+            {muted
+              ? <VolumeX className="w-3.5 h-3.5 text-white/70" />
+              : <Volume2 className="w-3.5 h-3.5 text-white" />
+            }
+          </div>
         </>
       ) : (
         /* ── No-video card ──
