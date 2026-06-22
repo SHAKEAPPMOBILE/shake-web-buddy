@@ -203,6 +203,7 @@ export function ChatTab({
           .select("*")
           .eq("user_id", user.id)
           .eq("is_active", true)
+          .neq("is_auto_generated", true)
           .gte("scheduled_for", todayIso),
         supabase
           .from("event_chat_members")
