@@ -15,7 +15,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, Volume2, VolumeX, MessageCircle, DollarSign } from "lucide-react";
+import { ChevronLeft, MessageCircle, DollarSign } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue } from "@/lib/utils";
@@ -89,7 +89,6 @@ interface FeedCardProps {
 function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile }: FeedCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const [muted, setMuted] = useState(true);
   const [joinedLocally, setJoinedLocally] = useState(false);
   const [joining, setJoining] = useState(false);
 
@@ -106,8 +105,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.intersectionRatio >= 0.6) {
-          // iOS WKWebView: set muted imperatively — JSX prop alone isn't enough
-          vid.muted = muted;
+          vid.muted = true;
           vid.play().catch(() => {});
         } else {
           vid.pause();
@@ -119,13 +117,6 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
     observer.observe(el);
     return () => observer.disconnect();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* Keep the DOM muted attribute in sync when user toggles */
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = muted;
-    }
-  }, [muted]);
 
   const handleJoin = async () => {
     if (joining) return;
@@ -169,7 +160,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
     <div
       ref={cardRef}
       className="relative w-full flex-shrink-0 bg-black"
-      style={{ height: "100dvh", scrollSnapAlign: "start" }}
+      style={{ height: "100dvh", scrollSnapAlign: "start", scrollSnapStop: "always" }}
     >
       {plan.promo_video_url ? (
         /* ── Video card ── */
@@ -178,7 +169,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
             ref={videoRef}
             src={plan.promo_video_url}
             playsInline
-            muted={muted}
+            muted
             loop
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -192,15 +183,6 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
             }}
           />
 
-          {/* Mute toggle — top-right */}
-          <button
-            type="button"
-            onClick={() => setMuted((m) => !m)}
-            className="absolute top-14 right-4 w-9 h-9 rounded-full bg-black/40 flex items-center justify-center text-white z-10"
-            style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
-          >
-            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
         </>
       ) : (
         /* ── No-video card ──
