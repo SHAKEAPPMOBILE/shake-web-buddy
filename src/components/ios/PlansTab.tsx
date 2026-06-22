@@ -1198,7 +1198,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         "px-4 py-3 gap-2 shrink-0",
         viewMode === 'list'
           ? "flex flex-col border-b border-neutral-200 bg-white dark:bg-white dark:border-neutral-200"
-          : "absolute top-0 left-0 right-0 z-30 flex flex-col bg-gradient-to-b from-black/60 to-transparent"
+          : "flex flex-col shrink-0 bg-black border-b border-white/10"
       )}>
         {/* View-mode toggle — centered */}
         <div className="flex justify-center">
@@ -1302,10 +1302,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
       {/* Plans List / Inline Feed */}
       {viewMode === 'feed' ? (
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0">
           <PlanSwipeFeed
             inline
-            plans={cityPlans}
+            plans={[...activities, ...cityPlans.filter(p => !activities.some(a => a.id === p.id))]}
             startIndex={0}
             myCity={selectedCity}
             onClose={() => setViewMode('list')}

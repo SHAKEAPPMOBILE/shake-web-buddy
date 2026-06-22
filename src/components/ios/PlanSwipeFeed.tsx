@@ -19,6 +19,7 @@ import { ChevronLeft, Volume2, VolumeX, MessageCircle, DollarSign } from "lucide
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue } from "@/lib/utils";
+import { getActivityIcon } from "@/data/activityTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
@@ -37,6 +38,7 @@ export interface FeedPlan {
   participant_count?: number;
   isJoined?: boolean;
   price_amount?: string | null;
+  is_auto_generated?: boolean | null;
 }
 
 interface PlanSwipeFeedProps {
@@ -53,6 +55,8 @@ interface PlanSwipeFeedProps {
   onEnterChat: (plan: FeedPlan) => void;
   /** Called when tapping the creator avatar */
   onViewProfile: (userId: string, name: string | null, avatar: string | null) => void;
+  /** When true the feed renders inline (no fixed overlay); back button hidden */
+  inline?: boolean;
 }
 
 /* ── Sort helper: my-city first, soonest-scheduled first within each group ── */
@@ -75,13 +79,14 @@ function sortFeedPlans(plans: FeedPlan[], myCity: string | null): FeedPlan[] {
 interface FeedCardProps {
   plan: FeedPlan;
   isOwn: boolean;
+  inline?: boolean;
   onJoinInPlace: () => Promise<{ success: boolean }>;
   onPayForPlan: () => void;
   onEnterChat: () => void;
   onViewProfile: () => void;
 }
 
-function FeedCard({ plan, isOwn, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile }: FeedCardProps) {
+function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile }: FeedCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
@@ -198,38 +203,58 @@ function FeedCard({ plan, isOwn, onJoinInPlace, onPayForPlan, onEnterChat, onVie
           </button>
         </>
       ) : (
-        /* ── No-video card: gradient bg with avatar centred ── */
+        /* ── No-video card ──
+             Fallback chain:
+             1. is_auto_generated → activity-type image (never a face)
+             2. creator_avatar    → full-bleed creator photo
+             3. getActivityIcon   → activity-type image
+             4. last resort       → purple gradient + name initial
+        ── */
         <>
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)",
-            }}
-          />
-          {/* Large creator avatar centred */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/30 shadow-xl flex items-center justify-center bg-white/10">
-              {plan.creator_avatar ? (
-                <img
-                  src={plan.creator_avatar}
-                  alt={plan.creator_name || ""}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-5xl font-bold text-white">
-                  {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                </span>
-              )}
-            </div>
-          </div>
+          {plan.is_auto_generated ? (
+            /* Auto-generated plan: show the activity-type image */
+            <img
+              src={getActivityIcon(plan.activity_type) ?? ""}
+              alt={plan.activity_type}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : plan.creator_avatar ? (
+            /* User-created with avatar: full-bleed creator photo */
+            <img
+              src={plan.creator_avatar}
+              alt={plan.creator_name || ""}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : getActivityIcon(plan.activity_type) ? (
+            /* User-created, no avatar: fall back to activity-type image */
+            <img
+              src={getActivityIcon(plan.activity_type)!}
+              alt={plan.activity_type}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            /* Last resort: purple gradient + name initial */
+            <>
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)",
+                }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/30 shadow-xl flex items-center justify-center bg-white/10">
+                  <span className="text-5xl font-bold text-white">
+                    {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
           {/* Gradient scrim for bottom overlay */}
           <div
             className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%)",
-            }}
+            style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%)" }}
           />
         </>
       )}
@@ -297,11 +322,10 @@ function FeedCard({ plan, isOwn, onJoinInPlace, onPayForPlan, onEnterChat, onVie
       </div>
 
       {/* ── Bottom overlay: avatar + title + meta ──
-           paddingBottom = 64px (tab bar) + safe-area-inset-bottom + 16px breathing room
-           The video stays full-bleed (100dvh); only the overlay content is inset. */}
+           paddingBottom = 64px (tab bar) + safe-area-inset-bottom + 36px breathing room */}
       <div
         className="absolute bottom-0 left-0 right-0 px-4 pointer-events-none"
-        style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 16px)" }}
+        style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 36px)" }}
       >
         <div className="flex items-end gap-3">
           {/* Creator avatar — tappable */}
@@ -354,6 +378,7 @@ export function PlanSwipeFeed({
   onPayForPlan,
   onEnterChat,
   onViewProfile,
+  inline = false,
 }: PlanSwipeFeedProps) {
   const { user } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -399,10 +424,10 @@ export function PlanSwipeFeed({
 
   return (
     <>
-      {/* Full-screen overlay */}
-      <div className="fixed inset-0 z-50 bg-black">
-        {/* Back arrow — native only */}
-        {Capacitor.isNativePlatform() && (
+      {/* Full-screen overlay (or inline fill when inline=true) */}
+      <div className={inline ? "relative w-full h-full bg-black" : "fixed inset-0 z-50 bg-black"}>
+        {/* Back arrow — native full-screen mode only */}
+        {!inline && Capacitor.isNativePlatform() && (
           <button
             type="button"
             onClick={onClose}
@@ -428,6 +453,7 @@ export function PlanSwipeFeed({
               key={plan.id}
               plan={plan}
               isOwn={plan.user_id === user?.id}
+              inline={inline}
               onJoinInPlace={() => onJoinInPlace(plan)}
               onPayForPlan={() => onPayForPlan(plan)}
               onEnterChat={() => onEnterChat(plan)}
