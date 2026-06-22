@@ -15,7 +15,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, Volume2, VolumeX, MessageCircle, DollarSign } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue } from "@/lib/utils";
@@ -234,6 +234,68 @@ function FeedCard({ plan, isOwn, onJoinInPlace, onPayForPlan, onEnterChat, onVie
         </>
       )}
 
+      {/* ── Circular action button: floated right, lower-middle, right-thumb reachable ── */}
+      <div
+        className="absolute right-4 z-10"
+        style={{ top: "58%", transform: "translateY(-50%)", pointerEvents: "auto" }}
+      >
+        <button
+          type="button"
+          onClick={actionButton.handler}
+          disabled={actionButton.disabled}
+          aria-label={actionButton.label}
+          className="flex flex-col items-center gap-1.5 transition-all hover:opacity-90 disabled:opacity-60"
+        >
+          {/* Circle */}
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
+            style={{
+              background:
+                isPaid && !(isOwn || isJoined)
+                  ? "linear-gradient(to bottom, #f59e0b, #d97706)"
+                  : "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))",
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+            }}
+          >
+            {(isOwn || isJoined) ? (
+              <MessageCircle className="w-6 h-6 text-white" />
+            ) : isPaid ? (
+              <DollarSign className="w-6 h-6 text-white" />
+            ) : joining ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <span className="text-white text-sm font-bold tracking-wide">JOIN</span>
+            )}
+          </div>
+          {/* Label beneath circle — shown for all states except free JOIN */}
+          {(isOwn || isJoined) && (
+            <span
+              className="text-white text-[11px] font-semibold leading-none"
+              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
+            >
+              Chat
+            </span>
+          )}
+          {isPaid && !(isOwn || isJoined) && (
+            <span
+              className="text-white text-[11px] font-semibold leading-none"
+              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
+            >
+              ${priceValue.toFixed(0)}
+            </span>
+          )}
+          {joining && (
+            <span
+              className="text-white text-[11px] font-semibold leading-none"
+              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
+            >
+              Joining…
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* ── Bottom overlay: avatar + title + meta ──
            paddingBottom = 64px (tab bar) + safe-area-inset-bottom + 16px breathing room
            The video stays full-bleed (100dvh); only the overlay content is inset. */}
@@ -241,7 +303,7 @@ function FeedCard({ plan, isOwn, onJoinInPlace, onPayForPlan, onEnterChat, onVie
         className="absolute bottom-0 left-0 right-0 px-4 pointer-events-none"
         style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 16px)" }}
       >
-        <div className="flex items-end gap-3 mb-4">
+        <div className="flex items-end gap-3">
           {/* Creator avatar — tappable */}
           <button
             type="button"
@@ -277,20 +339,6 @@ function FeedCard({ plan, isOwn, onJoinInPlace, onPayForPlan, onEnterChat, onVie
           </div>
         </div>
 
-        {/* Action button */}
-        <div style={{ pointerEvents: "auto" }}>
-          <button
-            type="button"
-            onClick={actionButton.handler}
-            disabled={actionButton.disabled}
-            className="w-full py-3.5 rounded-full font-semibold text-base text-white transition-all hover:opacity-90 disabled:opacity-60"
-            style={{
-              background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))",
-            }}
-          >
-            {actionButton.label}
-          </button>
-        </div>
       </div>
     </div>
   );
