@@ -29,6 +29,7 @@ import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { getNationalityFlag } from "@/data/countryCodes";
 import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
+import { getPriceValue } from "@/lib/utils";
 
 interface PlanMessage {
   id: string;
@@ -50,6 +51,7 @@ interface Activity {
   created_at: string;
   updated_at: string;
   promo_video_url?: string | null;
+  price_amount?: string | null;
 }
 
 interface PlanGroupChatViewProps {
@@ -97,6 +99,7 @@ export function PlanGroupChatView({
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [videoFullscreen, setVideoFullscreen] = useState(false);
 
   // Curtain drag state
@@ -427,8 +430,13 @@ export function PlanGroupChatView({
     else { toast.success("Left the plan"); onBack(); }
   };
 
-  const handleDeletePlan = async () => {
+  const handleInitiateDelete = () => {
     setShowMenu(false);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeletePlan = async () => {
+    setShowDeleteConfirm(false);
     const { error } = await supabase.from("user_activities").delete()
       .eq("id", activity.id).eq("user_id", user!.id);
     if (error) { toast.error("Failed to delete plan"); }
@@ -501,7 +509,7 @@ export function PlanGroupChatView({
                   <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
                   <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
                     {isCreator ? (
-                      <button onClick={handleDeletePlan} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                      <button onClick={handleInitiateDelete} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
                         <Trash2 className="w-4 h-4" /> Delete plan
                       </button>
                     ) : (
@@ -870,6 +878,38 @@ export function PlanGroupChatView({
       />
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+      {/* ── Delete-plan confirmation dialog ── */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-6">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="font-semibold text-gray-900 text-base mb-2">Delete plan?</h3>
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+              {otherParticipants.length === 0
+                ? "Delete this plan? This can't be undone."
+                : getPriceValue(activity.price_amount) > 0
+                ? `${otherParticipants.length} ${otherParticipants.length === 1 ? "person has" : "people have"} paid to join. Deleting removes the plan for everyone — you'll need to refund them. Continue?`
+                : `This will delete the plan and remove it for ${otherParticipants.length} ${otherParticipants.length === 1 ? "person" : "people"} who joined. This can't be undone.`}
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-2.5 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeletePlan}
+                className="flex-1 py-2.5 rounded-full bg-red-500 text-sm font-medium text-white hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen video overlay */}
       {videoFullscreen && activity.promo_video_url && (
