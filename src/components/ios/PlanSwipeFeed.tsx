@@ -15,7 +15,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, MessageCircle, DollarSign, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, DollarSign, Volume2, VolumeX } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue } from "@/lib/utils";
@@ -300,7 +300,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
             }}
           >
             {(isOwn || isJoined) ? (
-              <MessageCircle className="w-6 h-6 text-white" />
+              <span className="text-white text-sm font-bold tracking-wide">CHAT</span>
             ) : isPaid ? (
               <DollarSign className="w-6 h-6 text-white" />
             ) : joining ? (
@@ -309,15 +309,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
               <span className="text-white text-sm font-bold tracking-wide">JOIN</span>
             )}
           </div>
-          {/* Label beneath circle — shown for all states except free JOIN */}
-          {(isOwn || isJoined) && (
-            <span
-              className="text-white text-[11px] font-semibold leading-none"
-              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
-            >
-              Chat
-            </span>
-          )}
+          {/* Label beneath circle — shown for paid and joining states */}
           {isPaid && !(isOwn || isJoined) && (
             <span
               className="text-white text-[11px] font-semibold leading-none"
