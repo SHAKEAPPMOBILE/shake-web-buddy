@@ -510,7 +510,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [planPreviewVideoFullscreen, setPlanPreviewVideoFullscreen] = useState(false);
 
   // View-mode toggle: 'list' (default) | 'feed' (inline swipe feed)
-  const [viewMode, setViewMode] = useState<'list' | 'feed'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'feed'>('feed');
 
   // Swipe feed (full-screen, opened by tapping a city card)
   const [feedOpen, setFeedOpen] = useState(false);
@@ -1302,18 +1302,24 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
       {/* Plans List / Inline Feed */}
       {viewMode === 'feed' ? (
-        <div className="flex-1 min-h-0">
-          <PlanSwipeFeed
-            inline
-            plans={[...activities, ...cityPlans.filter(p => !activities.some(a => a.id === p.id))]}
-            startIndex={0}
-            myCity={selectedCity}
-            onClose={() => setViewMode('list')}
-            onJoinInPlace={(plan) => handleFeedJoin(plan as PlanActivity)}
-            onPayForPlan={(plan) => { setViewMode('list'); setPaidActivityDetail(plan as PlanActivity); }}
-            onEnterChat={(plan) => { setViewMode('list'); setSelectedPlan(plan as PlanActivity); setShowChatView(true); }}
-            onViewProfile={(userId, userName, avatarUrl) => { setSelectedUserProfile({ userId, userName, avatarUrl }); }}
-          />
+        <div className="flex-1 min-h-0 flex flex-col">
+          {[...activities, ...cityPlans.filter(p => !activities.some(a => a.id === p.id))].length === 0 ? (
+            <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 bg-white dark:bg-white">
+              <PlansEmptyState onJoinActivity={onJoinActivity ?? (() => {})} />
+            </div>
+          ) : (
+            <PlanSwipeFeed
+              inline
+              plans={[...activities, ...cityPlans.filter(p => !activities.some(a => a.id === p.id))]}
+              startIndex={0}
+              myCity={selectedCity}
+              onClose={() => setViewMode('list')}
+              onJoinInPlace={(plan) => handleFeedJoin(plan as PlanActivity)}
+              onPayForPlan={(plan) => { setViewMode('list'); setPaidActivityDetail(plan as PlanActivity); }}
+              onEnterChat={(plan) => { setViewMode('list'); setSelectedPlan(plan as PlanActivity); setShowChatView(true); }}
+              onViewProfile={(userId, userName, avatarUrl) => { setSelectedUserProfile({ userId, userName, avatarUrl }); }}
+            />
+          )}
         </div>
       ) : (
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 space-y-3 bg-white dark:bg-white min-h-0">
