@@ -509,9 +509,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [planPreviewAttendees, setPlanPreviewAttendees] = useState<{ avatar_url: string | null; name: string | null }[]>([]);
   const [planPreviewVideoFullscreen, setPlanPreviewVideoFullscreen] = useState(false);
 
-  // View-mode toggle: 'list' (default) | 'feed' (inline swipe feed)
-  const [viewMode, setViewMode] = useState<'list' | 'feed'>('list');
-
   // Swipe feed (full-screen, opened by tapping a city card)
   const [feedOpen, setFeedOpen] = useState(false);
   const [feedStartIndex, setFeedStartIndex] = useState(0);
@@ -1191,54 +1188,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   }
 
   return (
-    <div className={cn("flex flex-col h-full relative", viewMode === 'list' ? "bg-white dark:bg-white" : "bg-black")}>
+    <div className="flex flex-col h-full relative bg-white dark:bg-white">
       {/* ── Header ────────────────────────────────────────────────────────── */}
       {/* In list mode: normal flow with border. In feed mode: absolute overlay with gradient. */}
-      <div className={cn(
-        "px-4 py-3 gap-2 shrink-0",
-        viewMode === 'list'
-          ? "flex flex-col border-b border-neutral-200 bg-white dark:bg-white dark:border-neutral-200"
-          : "flex flex-col shrink-0 bg-black border-b border-white/10"
-      )}>
-        {/* View-mode toggle — centered */}
-        <div className="flex justify-center">
-          <div className={cn(
-            "flex rounded-full p-0.5 gap-0.5",
-            viewMode === 'list' ? "bg-gray-100" : "bg-black/40 backdrop-blur-sm"
-          )}>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={cn(
-                "px-5 py-1.5 rounded-full text-sm font-semibold transition-all",
-                viewMode === 'list'
-                  ? "bg-white shadow-sm text-gray-900"
-                  : "text-white/70 hover:text-white"
-              )}
-            >
-              List
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('feed')}
-              className={cn(
-                "px-5 py-1.5 rounded-full text-sm font-semibold transition-all",
-                viewMode === 'feed'
-                  ? "bg-white/20 text-white"
-                  : "text-gray-500 hover:text-gray-700"
-              )}
-            >
-              View
-            </button>
-          </div>
-        </div>
-
+      <div className="flex flex-col px-4 py-3 gap-2 shrink-0 border-b border-neutral-200 bg-white dark:bg-white dark:border-neutral-200">
         {/* Title */}
         <div className="flex items-center justify-between">
-          <h2 className={cn(
-            "text-lg font-display font-bold",
-            viewMode === 'feed' ? "text-white" : "text-gray-900 dark:text-gray-900"
-          )}>
+          <h2 className="text-lg font-display font-bold text-gray-900 dark:text-gray-900">
             {t('plans.myPlans')}
           </h2>
         </div>
@@ -1250,13 +1206,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             onClick={() => setShowAllCities(false)}
             className={cn(
               "px-3 py-1 rounded-full text-xs font-semibold transition-all border",
-              viewMode === 'feed'
-                ? !showAllCities
-                  ? "bg-white/30 text-white border-white/40"
-                  : "bg-transparent text-white/70 border-white/30 hover:border-white/50"
-                : !showAllCities
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
+              !showAllCities
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
             )}
           >
             My City
@@ -1266,13 +1218,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             onClick={() => setShowAllCities(true)}
             className={cn(
               "px-3 py-1 rounded-full text-xs font-semibold transition-all border",
-              viewMode === 'feed'
-                ? showAllCities
-                  ? "bg-white/30 text-white border-white/40"
-                  : "bg-transparent text-white/70 border-white/30 hover:border-white/50"
-                : showAllCities
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
+              showAllCities
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
             )}
           >
             🌍 All Cities
@@ -1300,28 +1248,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         />
       </CityPickerModal>
 
-      {/* Plans List / Inline Feed */}
-      {viewMode === 'feed' ? (
-        <div className="flex-1 min-h-0 flex flex-col">
-          {[...activities, ...cityPlans.filter(p => !activities.some(a => a.id === p.id))].length === 0 ? (
-            <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 bg-white dark:bg-white">
-              <PlansEmptyState onJoinActivity={onJoinActivity ?? (() => {})} />
-            </div>
-          ) : (
-            <PlanSwipeFeed
-              inline
-              plans={[...activities, ...cityPlans.filter(p => !activities.some(a => a.id === p.id))]}
-              startIndex={0}
-              myCity={selectedCity}
-              onClose={() => setViewMode('list')}
-              onJoinInPlace={(plan) => handleFeedJoin(plan as PlanActivity)}
-              onPayForPlan={(plan) => { setViewMode('list'); setPaidActivityDetail(plan as PlanActivity); }}
-              onEnterChat={(plan) => { setViewMode('list'); setSelectedPlan(plan as PlanActivity); setShowChatView(true); }}
-              onViewProfile={(userId, userName, avatarUrl) => { setSelectedUserProfile({ userId, userName, avatarUrl }); }}
-            />
-          )}
-        </div>
-      ) : (
+      {/* Plans List */}
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 space-y-3 bg-white dark:bg-white min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
@@ -1600,7 +1527,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           </>
         )}
       </div>
-      )}
       {/* Leave Confirmation Dialog */}
       <AlertDialog open={!!planToLeave} onOpenChange={(open) => !open && setPlanToLeave(null)}>
         <AlertDialogContent className="border-2 border-destructive/40">
