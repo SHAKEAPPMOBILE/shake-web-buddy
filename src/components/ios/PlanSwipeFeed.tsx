@@ -13,7 +13,7 @@
  *   2. Other-city plans soonest first.
  */
 
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ChevronLeft, DollarSign, Volume2, VolumeX } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
@@ -396,14 +396,15 @@ export function PlanSwipeFeed({
     avatarUrl: string | null;
   } | null>(null);
 
-  /* Sort once on mount (plans prop is already filtered/loaded by caller) */
-  const sorted = useRef<FeedPlan[]>(sortFeedPlans(plans, myCity));
+  /* Re-sort whenever plans or myCity changes so enriched data (e.g. promo_video_url)
+     is reflected without remounting the feed. */
+  const sorted = useMemo(() => sortFeedPlans(plans, myCity), [plans, myCity]);
 
   /* Find where the tapped plan lands in the sorted array */
   const resolvedStart = (() => {
     const tappedId = plans[startIndex]?.id;
     if (!tappedId) return 0;
-    const idx = sorted.current.findIndex((p) => p.id === tappedId);
+    const idx = sorted.findIndex((p) => p.id === tappedId);
     return idx >= 0 ? idx : 0;
   })();
 
@@ -456,7 +457,7 @@ export function PlanSwipeFeed({
           className="w-full h-full overflow-y-scroll"
           style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch" }}
         >
-          {sorted.current.map((plan) => (
+          {sorted.map((plan) => (
             <FeedCard
               key={plan.id}
               plan={plan}
