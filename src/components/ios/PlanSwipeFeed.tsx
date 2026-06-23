@@ -169,7 +169,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
     <div
       ref={cardRef}
       className={cn("relative w-full flex-shrink-0", plan.is_auto_generated ? "bg-white" : "bg-black")}
-      style={{ height: inline ? "100%" : "100dvh", scrollSnapAlign: "start", scrollSnapStop: "always" }}
+      style={{ height: inline ? "calc(100dvh - 208px - env(safe-area-inset-bottom, 0px))" : "100dvh", scrollSnapAlign: "start", scrollSnapStop: "always" }}
     >
       {plan.promo_video_url ? (
         /* ── Video card ── */
