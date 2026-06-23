@@ -510,7 +510,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [planPreviewVideoFullscreen, setPlanPreviewVideoFullscreen] = useState(false);
 
   // View-mode toggle: 'list' (default) | 'feed' (inline swipe feed)
-  const [viewMode, setViewMode] = useState<'list' | 'feed'>('feed');
+  const [viewMode, setViewMode] = useState<'list' | 'feed'>('list');
 
   // Swipe feed (full-screen, opened by tapping a city card)
   const [feedOpen, setFeedOpen] = useState(false);
