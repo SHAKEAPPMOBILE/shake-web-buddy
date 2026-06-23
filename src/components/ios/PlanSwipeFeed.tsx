@@ -18,7 +18,7 @@ import { format, isToday, isTomorrow } from "date-fns";
 import { ChevronLeft, DollarSign, Volume2, VolumeX } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
-import { getPriceValue } from "@/lib/utils";
+import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji } from "@/data/activityTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
@@ -168,8 +168,8 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
   return (
     <div
       ref={cardRef}
-      className="relative w-full flex-shrink-0 bg-black"
-      style={{ height: "100dvh", scrollSnapAlign: "start", scrollSnapStop: "always" }}
+      className={cn("relative w-full flex-shrink-0", plan.is_auto_generated ? "bg-white" : "bg-black")}
+      style={{ height: inline ? "100%" : "100dvh", scrollSnapAlign: "start", scrollSnapStop: "always" }}
     >
       {plan.promo_video_url ? (
         /* ── Video card ── */
@@ -464,7 +464,7 @@ export function PlanSwipeFeed({
         <div
           ref={scrollRef}
           className="w-full h-full overflow-y-scroll"
-          style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch" }}
+          style={{ scrollSnapType: "y mandatory" }}
         >
           {sorted.map((plan) => (
             <FeedCard
