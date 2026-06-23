@@ -19,7 +19,7 @@ import { ChevronLeft, DollarSign, Volume2, VolumeX } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue } from "@/lib/utils";
-import { getActivityIcon } from "@/data/activityTypes";
+import { getActivityIcon, getActivityEmoji } from "@/data/activityTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
@@ -228,12 +228,21 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
         ── */
         <>
           {plan.is_auto_generated ? (
-            /* Auto-generated plan: show the activity-type image */
-            <img
-              src={getActivityIcon(plan.activity_type) ?? ""}
-              alt={plan.activity_type}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
+            /* Auto-generated plan: carousel-style circle, not full-bleed */
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-32 h-32 rounded-full bg-card overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-2xl">
+                {getActivityIcon(plan.activity_type) ? (
+                  <div
+                    className="w-full h-full rounded-full bg-cover bg-center bg-no-repeat"
+                    style={{ backgroundImage: `url(${getActivityIcon(plan.activity_type)})` }}
+                  />
+                ) : (
+                  <span className="text-5xl flex items-center justify-center w-full h-full">
+                    {getActivityEmoji(plan.activity_type)}
+                  </span>
+                )}
+              </div>
+            </div>
           ) : plan.creator_avatar ? (
             /* User-created with avatar: full-bleed creator photo */
             <img
