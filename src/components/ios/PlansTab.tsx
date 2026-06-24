@@ -30,6 +30,7 @@ import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { PlanSwipeFeed } from "./PlanSwipeFeed";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
 import { ActivityDetailDialog } from "@/components/ActivityDetailDialog";
+import { ActivityDetailsCard } from "./ActivityDetailsCard";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 import {
   AlertDialog,
@@ -512,6 +513,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   // Swipe feed (full-screen, opened by tapping a city card)
   const [feedOpen, setFeedOpen] = useState(false);
   const [feedStartIndex, setFeedStartIndex] = useState(0);
+  const [autoGenCardPlan, setAutoGenCardPlan] = useState<PlanActivity | null>(null);
   
 
   // Notify parent when entering/leaving chat view
@@ -805,7 +807,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   const handleCityPlanClick = (plan: PlanActivity) => {
     if (!user) return;
-    // All plans (own, joined, free, paid) open the swipe feed.
+    if (plan.is_auto_generated) {
+      setAutoGenCardPlan(plan);
+      return;
+    }
+    // Non-auto plans (own, joined, free, paid) open the swipe feed.
     // Paid-unjoined cards show a "PAY" button inside the feed that calls onPayForPlan.
     const idx = cityPlans.findIndex((p) => p.id === plan.id);
     setFeedStartIndex(idx >= 0 ? idx : 0);
@@ -1457,22 +1463,24 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                           {!showAllCities && <span className="text-xs font-medium text-primary">{plan.city}</span>}
                           {!showAllCities && <span className="text-xs text-gray-400">·</span>}
-                          <span className="text-xs text-gray-500">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedUserProfile({
-                                  userId: plan.user_id,
-                                  userName: plan.creator_name || null,
-                                  avatarUrl: plan.creator_avatar || null,
-                                });
-                              }}
-                              className="underline hover:text-gray-700 transition-colors"
-                            >
-                              {plan.creator_name || "Anonymous"}
-                            </button>
-                          </span>
+                          {!plan.is_auto_generated && (
+                            <span className="text-xs text-gray-500">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedUserProfile({
+                                    userId: plan.user_id,
+                                    userName: plan.creator_name || null,
+                                    avatarUrl: plan.creator_avatar || null,
+                                  });
+                                }}
+                                className="underline hover:text-gray-700 transition-colors"
+                              >
+                                {plan.creator_name || "Anonymous"}
+                              </button>
+                            </span>
+                          )}
                         </div>
 
                         {/* Date + time */}
@@ -1898,6 +1906,59 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           }}
         />
       )}
+
+      {/* ── Auto-generated activity details overlay ───────────────────── */}
+      {autoGenCardPlan && (() => {
+        const alreadyJoined = activities.some(
+          a => a.activity_type === autoGenCardPlan.activity_type
+            && normalizeCity(a.city) === normalizeCity(autoGenCardPlan.city)
+            && a.isJoined
+        );
+        const matchingActivity = activities.find(
+          a => a.activity_type === autoGenCardPlan.activity_type
+            && normalizeCity(a.city) === normalizeCity(autoGenCardPlan.city)
+            && a.isJoined
+        ) ?? autoGenCardPlan;
+        const activityObj = ALL_ACTIVITY_TYPES.find(a => a.id === autoGenCardPlan.activity_type);
+        const dayName = autoGenCardPlan.scheduled_for
+          ? format(parseDbDate(autoGenCardPlan.scheduled_for), 'EEEE')
+          : getActivityDay(autoGenCardPlan.activity_type) ?? "";
+        const time = autoGenCardPlan.activity_type === 'dinner' ? '7:00 PM'
+          : autoGenCardPlan.activity_type === 'drinks' ? '8:00 PM'
+          : null;
+        return (
+          <div className="fixed inset-0 z-50 bg-black/40" onClick={() => setAutoGenCardPlan(null)}>
+            <ActivityDetailsCard
+              show={true}
+              activity={activityObj ? {
+                id: activityObj.id,
+                label: getActivityLabel(autoGenCardPlan.activity_type),
+                emoji: getActivityEmoji(autoGenCardPlan.activity_type),
+                icon: getActivityIcon(autoGenCardPlan.activity_type) ?? undefined,
+                isProposePlan: false,
+              } : null}
+              dayName={dayName}
+              time={time}
+              joinCity={autoGenCardPlan.city}
+              carouselJoinCount={autoGenCardPlan.participant_count ?? 0}
+              maxGroupSize={MAX_GROUP_CAPACITY}
+              hasNoVenue={false}
+              showDifferentCity={false}
+              confirmLabel={alreadyJoined ? t('plans.joinGroupChat', 'Join group chat') : undefined}
+              onConfirm={() => {
+                setAutoGenCardPlan(null);
+                if (alreadyJoined) {
+                  setSelectedPlan(matchingActivity);
+                  setShowChatView(true);
+                } else {
+                  handleDirectCityJoin(autoGenCardPlan);
+                }
+              }}
+              onClose={() => setAutoGenCardPlan(null)}
+            />
+          </div>
+        );
+      })()}
 
     </div>
   );
