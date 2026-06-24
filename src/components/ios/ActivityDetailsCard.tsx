@@ -23,13 +23,17 @@ export interface ActivityDetailsCardProps {
   carouselJoinCount: number;
   maxGroupSize: number;
   hasNoVenue: boolean;
-  showCityChoices: boolean;
-  groupedCities: Record<string, City[]>;
-  isPremium: boolean;
+  /** Label for the primary confirm button. Defaults to "Yes!" */
+  confirmLabel?: string;
+  showCityChoices?: boolean;
+  groupedCities?: Record<string, City[]>;
+  isPremium?: boolean;
+  /** Whether to show the "Join in a different city" link. Defaults to true. */
+  showDifferentCity?: boolean;
   onConfirm: () => void;
   onClose: () => void;
-  onToggleCityChoices: () => void;
-  onSelectCity: (cityName: string) => void;
+  onToggleCityChoices?: () => void;
+  onSelectCity?: (cityName: string) => void;
   onUpgradeClick?: () => void;
 }
 
@@ -42,9 +46,11 @@ export function ActivityDetailsCard({
   carouselJoinCount,
   maxGroupSize,
   hasNoVenue,
-  showCityChoices,
-  groupedCities,
-  isPremium,
+  confirmLabel,
+  showCityChoices = false,
+  groupedCities = {},
+  isPremium = false,
+  showDifferentCity = true,
   onConfirm,
   onClose,
   onToggleCityChoices,
@@ -52,6 +58,7 @@ export function ActivityDetailsCard({
   onUpgradeClick,
 }: ActivityDetailsCardProps) {
   const { t } = useTranslation();
+  const primaryLabel = confirmLabel ?? t('home.yesBtn', 'Yes!');
 
   return (
     <div
@@ -103,7 +110,7 @@ export function ActivityDetailsCard({
                 onClick={onConfirm}
                 className="w-full rounded-full px-4 py-2.5 text-white font-semibold bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] transition-colors"
               >
-                {t('home.yesBtn', 'Yes!')}
+                {primaryLabel}
               </button>
             )}
             <button
@@ -113,19 +120,21 @@ export function ActivityDetailsCard({
             >
               {t('home.humBtn', 'Hum!')}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (!isPremium) {
-                  onUpgradeClick?.();
-                  return;
-                }
-                onToggleCityChoices();
-              }}
-              className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-            >
-              {t('activityDialog.joinDifferentCity', 'Join in a different city')}
-            </button>
+            {showDifferentCity && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isPremium) {
+                    onUpgradeClick?.();
+                    return;
+                  }
+                  onToggleCityChoices?.();
+                }}
+                className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+              >
+                {t('activityDialog.joinDifferentCity', 'Join in a different city')}
+              </button>
+            )}
           </>
         </div>
 
@@ -140,7 +149,7 @@ export function ActivityDetailsCard({
                       <button
                         key={city.name}
                         type="button"
-                        onClick={() => onSelectCity(city.name)}
+                        onClick={() => onSelectCity?.(city.name)}
                         className="w-full rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted transition-colors"
                       >
                         {city.name}, {city.country}
