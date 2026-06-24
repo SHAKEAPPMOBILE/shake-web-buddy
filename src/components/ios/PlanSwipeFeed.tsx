@@ -339,10 +339,11 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
       </div>
 
       {/* ── Bottom overlay: avatar + title + meta ──
-           paddingBottom = 64px (tab bar) + safe-area-inset-bottom + 36px breathing room */}
+           paddingBottom = 64px (tab bar) + safe-area-inset-bottom + 36px breathing room
+           zIndex: 5 — must sit above the video mute-button (z:1), scrim (z:2), speaker (z:3) */}
       <div
         className="absolute bottom-0 left-0 right-0 px-4 pointer-events-none"
-        style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 36px)" }}
+        style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 36px)", zIndex: 5 }}
       >
         <div className="flex items-end gap-3">
           {/* Creator avatar — tappable */}
@@ -369,6 +370,11 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
             <p className="font-bold text-white text-base leading-tight truncate">
               {plan.note || plan.activity_type}
             </p>
+            {plan.creator_name && (
+              <p className="text-white/80 text-sm mt-0.5 truncate">
+                {plan.creator_name}
+              </p>
+            )}
             <p className="text-white/80 text-sm mt-0.5 truncate">
               {plan.city}{dateLabel ? ` · ${dateLabel}` : ""}
             </p>
