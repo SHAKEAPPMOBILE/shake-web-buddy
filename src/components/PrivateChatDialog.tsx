@@ -346,10 +346,10 @@ export function PrivateChatDialog({
 
   return (
     <>
-    <div className="fixed inset-0 z-[9999] flex flex-col" style={{ background: "#0d0d1a" }}>
+    <div className="fixed inset-0 z-[9999] flex flex-col" style={{ background: "hsl(50,40%,92%)" }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pb-3 border-b shrink-0" style={{ background: "#0d0d1a", borderColor: "rgba(255,255,255,0.08)", paddingTop: 'env(safe-area-inset-top)' }}>
-        <MinimalBackButton onClick={onClose} className="text-white/70 border-white/20" />
+      <div className="flex items-center gap-3 px-4 pb-3 border-b shrink-0" style={{ background: "hsl(50,40%,92%)", borderColor: "rgba(0,0,0,0.08)", paddingTop: 'env(safe-area-inset-top)' }}>
+        <MinimalBackButton onClick={onClose} className="text-gray-600 border-gray-300" />
 
         {/* Avatar → fullscreen photo. Name → opens profile. */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -361,7 +361,7 @@ export function PrivateChatDialog({
               if (url) setShowFullPhoto(true);
             }}
             className="w-9 h-9 rounded-full overflow-hidden border shrink-0 flex items-center justify-center"
-            style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)" }}
+            style={{ borderColor: "rgba(0,0,0,0.12)", background: "rgba(0,0,0,0.05)" }}
             aria-label="View photo"
           >
             {avatarUrl ? (
@@ -381,7 +381,7 @@ export function PrivateChatDialog({
             className="flex-1 min-w-0 text-left"
             aria-label="View profile"
           >
-            <h2 className="font-display text-lg text-white truncate">
+            <h2 className="font-display text-lg text-gray-900 truncate">
               {displayName || "Shaker"}
             </h2>
           </button>
@@ -391,22 +391,22 @@ export function PrivateChatDialog({
           <button
             type="button"
             onClick={() => setShowMenu(v => !v)}
-            className="p-2 rounded-full transition-colors hover:bg-white/10"
+            className="p-2 rounded-full transition-colors hover:bg-black/10"
             aria-label="More options"
           >
-            <MoreVertical className="w-5 h-5 text-white/60" />
+            <MoreVertical className="w-5 h-5 text-gray-500" />
           </button>
           {showMenu && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 w-52 rounded-xl shadow-xl z-50 overflow-hidden border" style={{ background: "#1a1a2e", borderColor: "rgba(255,255,255,0.12)" }}>
+              <div className="absolute right-0 top-full mt-1 w-52 rounded-xl shadow-xl z-50 overflow-hidden border" style={{ background: "white", borderColor: "rgba(0,0,0,0.10)" }}>
                 <button
                   type="button"
                   onClick={handleLeaveConversation}
-                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-white/80 hover:bg-white/10 transition-colors border-b"
-                  style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-b"
+                  style={{ borderColor: "rgba(0,0,0,0.08)" }}
                 >
-                  <LogOut className="w-4 h-4 text-white/50" /> Leave conversation
+                  <LogOut className="w-4 h-4 text-gray-400" /> Leave conversation
                 </button>
                 <button
                   type="button"
@@ -429,8 +429,8 @@ export function PrivateChatDialog({
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-sm text-white/50">{t('chat.noMessages', 'No messages yet.')}</p>
-            <p className="text-xs mt-1 text-white/35">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
+            <p className="text-sm text-gray-500">{t('chat.noMessages', 'No messages yet.')}</p>
+            <p className="text-xs mt-1 text-gray-400">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
           </div>
         ) : (
           <div className="space-y-3 px-4">
@@ -444,14 +444,12 @@ export function PrivateChatDialog({
               const msgReactions = reactions[msg.id] || [];
 
               const incomingBubble: React.CSSProperties = {
-                background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                background: "white",
+                border: "1px solid rgba(0,0,0,0.08)",
               };
               const outgoingBubble: React.CSSProperties = {
-                background: "rgba(0,198,182,0.18)",
-                border: "1px solid rgba(0,198,182,0.25)",
+                background: "#00C6B6",
+                border: "1px solid rgba(0,198,182,0.4)",
               };
 
               return (
@@ -482,22 +480,22 @@ export function PrivateChatDialog({
                     {isGif ? (
                       <>
                         <InlineChatGif src={msg.message} variant="dark" onLoad={scrollMessagesToBottom} />
-                        <p className="text-[10px] mt-1 text-white/40">{format(new Date(msg.created_at), "HH:mm")}</p>
+                        <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>
                       </>
                     ) : isImage ? (
                       <>
                         <img src={msg.message} alt="shared image" className="rounded-2xl max-w-[260px] w-full object-cover" onLoad={scrollMessagesToBottom} />
-                        <p className="text-[10px] mt-1 text-white/40">{format(new Date(msg.created_at), "HH:mm")}</p>
+                        <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>
                       </>
                     ) : isVideo ? (
                       <>
                         <video src={msg.message} controls playsInline preload="metadata" className="rounded-2xl max-w-[260px] w-full bg-black/30" onLoadedMetadata={scrollMessagesToBottom} />
-                        <p className="text-[10px] mt-1 text-white/40">{format(new Date(msg.created_at), "HH:mm")}</p>
+                        <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm break-words text-white">{msg.message}</p>
-                        <p className="text-[10px] mt-1 text-white/50">{format(new Date(msg.created_at), "HH:mm")}</p>
+                        <p className={`text-sm break-words ${isMe ? "text-white" : "text-gray-900"}`}>{msg.message}</p>
+                        <p className={`text-[10px] mt-1 ${isMe ? "text-white/70" : "text-gray-400"}`}>{format(new Date(msg.created_at), "HH:mm")}</p>
                       </>
                     )}
                   </div>
@@ -513,8 +511,8 @@ export function PrivateChatDialog({
                           className="flex items-center gap-0.5 text-xs px-2 py-0.5 rounded-full border transition-colors"
                           style={
                             user && userIds.includes(user.id)
-                              ? { background: "rgba(0,198,182,0.2)", borderColor: "rgba(0,198,182,0.5)", color: "white" }
-                              : { background: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.7)" }
+                              ? { background: "rgba(0,198,182,0.2)", borderColor: "rgba(0,198,182,0.5)", color: "#0d9488" }
+                              : { background: "rgba(0,0,0,0.05)", borderColor: "rgba(0,0,0,0.12)", color: "#374151" }
                           }
                         >
                           <span>{emoji}</span>
@@ -541,9 +539,9 @@ export function PrivateChatDialog({
                 onClick={() => setNewMessage(suggestion)}
                 className="text-xs px-3 py-1.5 rounded-full transition-colors whitespace-nowrap shrink-0"
                 style={{
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  color: "rgba(255,255,255,0.7)",
+                  background: "rgba(0,0,0,0.05)",
+                  border: "1px solid rgba(0,0,0,0.10)",
+                  color: "#374151",
                 }}
               >
                 {suggestion}
@@ -563,13 +561,13 @@ export function PrivateChatDialog({
       />
 
       {/* Input */}
-      <form onSubmit={handleSend} className="px-4 pb-safe-bottom pb-4 pt-2 border-t shrink-0" style={{ background: "#0d0d1a", borderColor: "rgba(255,255,255,0.08)" }}>
+      <form onSubmit={handleSend} className="px-4 pb-safe-bottom pb-4 pt-2 border-t shrink-0" style={{ background: "hsl(50,40%,92%)", borderColor: "rgba(0,0,0,0.08)" }}>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="shrink-0 h-9 w-9 hover:bg-white/10 text-white/60 hover:text-white"
+            className="shrink-0 h-9 w-9 hover:bg-black/10 text-gray-500 hover:text-gray-900"
             onClick={() => setGiphyPickerOpen(true)}
             disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
             aria-label="GIFs"
@@ -581,7 +579,7 @@ export function PrivateChatDialog({
             type="button"
             variant="ghost"
             size="icon"
-            className="shrink-0 h-9 w-9 hover:bg-white/10 text-white/60 hover:text-white"
+            className="shrink-0 h-9 w-9 hover:bg-black/10 text-gray-500 hover:text-gray-900"
             onClick={() => mediaFileInputRef.current?.click()}
             disabled={!user || isSending || isUploadingMedia || giphyPickerOpen}
             aria-label="Attach photo or video"
@@ -593,8 +591,8 @@ export function PrivateChatDialog({
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
-            className="flex-1 bg-white/8 border-white/15 text-white placeholder:text-white/35 focus-visible:ring-white/20"
-            style={{ background: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.15)", color: "white" }}
+            className="flex-1 text-gray-900 placeholder:text-gray-400 focus-visible:ring-gray-300"
+            style={{ background: "white", borderColor: "rgba(0,0,0,0.15)", color: "#111827" }}
             disabled={isSending || isUploadingMedia || (!isPremium && !canSendText) || giphyPickerOpen}
           />
           <Button
@@ -620,7 +618,7 @@ export function PrivateChatDialog({
           {/* Emoji picker row */}
           <div
             className="flex items-center gap-1 px-3 py-2.5 rounded-2xl shadow-2xl"
-            style={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.14)" }}
+            style={{ background: "white", border: "1px solid rgba(0,0,0,0.10)" }}
           >
             {REACTION_EMOJIS.map((emoji) => {
               const reacted = user && (reactions[activeMsg.id] || [])
