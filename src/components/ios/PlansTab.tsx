@@ -386,16 +386,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
         // City discovery real plans
         Promise.all(cityPublicPlans.map(async (activity: any) => {
-          const [{ data: profile }, { count }] = await Promise.all([
+          const [{ data: profile }, { count }, { count: myJoinCount }] = await Promise.all([
             supabase.from("profiles").select("name, avatar_url").eq("user_id", activity.user_id).maybeSingle(),
             supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id),
+            supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id).eq("user_id", user!.id),
           ]);
           return {
             ...activity,
             creator_name: profile?.name || "Anonymous",
             creator_avatar: profile?.avatar_url,
             participant_count: count || 0,
-            isJoined: false,
+            isJoined: (myJoinCount ?? 0) > 0,
           } as PlanActivity;
         })),
 
@@ -957,6 +958,65 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       }
     }
 
+    // User-created plans join their own plan.id directly.
+    // Overflow grouping (findOrCreateOpenGroup) is only for auto-generated capacity-capped
+    // activities. Routing a user-created plan through it can redirect the join to a different
+    // activity_id, causing an RLS mismatch when the user later tries to send a message.
+    if (!plan.is_auto_generated) {
+      const existingJoin = await checkExistingJoin(plan.activity_type);
+      if (existingJoin) {
+        if (normalizeCity(existingJoin.city) === normalizeCity(plan.city)) {
+          toast.info("You've already joined this plan!");
+          return { success: true };
+        } else {
+          setDuplicateActivityBlock({ activityType: plan.activity_type, oldCity: existingJoin.city, newCity: plan.city });
+          return { success: false };
+        }
+      }
+
+      const { error } = await supabase.from("activity_joins").insert({
+        user_id: user.id,
+        activity_id: plan.id,
+        activity_type: plan.activity_type,
+        city: plan.city,
+      });
+
+      if (error) {
+        console.error("[JOIN:handleFeedJoin] insert failed (user-created)", error);
+        toast.error(`Failed to join: ${error.message}`);
+        return { success: false };
+      }
+
+      if (plan.user_id && plan.user_id !== user.id) {
+        void (async () => {
+          const { data: joinerProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
+          const joinerName = joinerProfile?.name || "Someone";
+          await supabase.functions.invoke("send-push-notification", {
+            body: {
+              to_user_id: plan.user_id,
+              title: "New shaker joined! 🎉",
+              body: `${joinerName} just joined ${getActivityLabel(plan.activity_type)} in ${plan.city}`,
+            },
+          });
+        })();
+      }
+
+      const joinedPlan = { ...plan, isJoined: true };
+      setActivities(prev => prev.find(a => a.id === plan.id) ? prev : [joinedPlan, ...prev]);
+      setCityPlans(prev => prev.filter(p => p.id !== plan.id));
+
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+      });
+
+      return { success: true };
+    }
+
+    // Auto-generated plans: use overflow grouping so users are clustered into
+    // capacity-capped slots across multiple groups of the same activity type.
     const targetGroup = await findOrCreateOpenGroup(plan.activity_type, plan.city, user.id);
     if (!targetGroup) {
       toast.error("Group is full — couldn't start a new one");
