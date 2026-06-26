@@ -963,15 +963,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // activities. Routing a user-created plan through it can redirect the join to a different
     // activity_id, causing an RLS mismatch when the user later tries to send a message.
     if (!plan.is_auto_generated) {
-      const existingJoin = await checkExistingJoin(plan.activity_type);
-      if (existingJoin) {
-        if (normalizeCity(existingJoin.city) === normalizeCity(plan.city)) {
-          toast.info("You've already joined this plan!");
-          return { success: true };
-        } else {
-          setDuplicateActivityBlock({ activityType: plan.activity_type, oldCity: existingJoin.city, newCity: plan.city });
-          return { success: false };
-        }
+      // For user-created plans, check membership scoped to THIS plan.id only.
+      // A type-scoped check would wrongly block joining a second different plan
+      // of the same activity_type in the same city.
+      const { count: alreadyJoinedCount } = await supabase
+        .from("activity_joins")
+        .select("*", { count: "exact", head: true })
+        .eq("activity_id", plan.id)
+        .eq("user_id", user.id);
+
+      if ((alreadyJoinedCount ?? 0) > 0) {
+        toast.info("You've already joined this plan!");
+        return { success: true };
       }
 
       const { error } = await supabase.from("activity_joins").insert({
