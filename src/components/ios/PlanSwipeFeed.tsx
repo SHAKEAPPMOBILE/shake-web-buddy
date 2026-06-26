@@ -308,9 +308,11 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
             className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
             style={{
               background:
-                isPaid && !(isOwn || isJoined)
-                  ? "linear-gradient(to bottom, #f59e0b, #d97706)"
-                  : "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))",
+                (isOwn || isJoined)
+                  ? "rgba(0,0,0,0.9)"
+                  : isPaid
+                    ? "linear-gradient(to bottom, #f59e0b, #d97706)"
+                    : "#ffffff",
               backdropFilter: "blur(4px)",
               WebkitBackdropFilter: "blur(4px)",
             }}
@@ -320,9 +322,9 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
             ) : isPaid ? (
               <DollarSign className="w-6 h-6 text-white" />
             ) : joining ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-black/40 border-t-transparent rounded-full animate-spin" />
             ) : (
-              <span className="text-white text-sm font-bold tracking-wide">JOIN</span>
+              <span className="text-sm font-bold tracking-wide" style={{ color: "#FACC15" }}>JOIN</span>
             )}
           </div>
           {/* Label beneath circle — shown for paid and joining states */}
