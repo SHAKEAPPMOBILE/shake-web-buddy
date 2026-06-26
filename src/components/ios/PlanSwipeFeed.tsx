@@ -92,6 +92,12 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
   const [muted, setMuted] = useState(true);
   const [joinedLocally, setJoinedLocally] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [lowRes, setLowRes] = useState(false);
+
+  const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const { videoWidth, videoHeight } = e.currentTarget;
+    setLowRes(Math.max(videoWidth, videoHeight) < 600);
+  }, []);
 
   const priceValue = getPriceValue(plan.price_amount);
   const isPaid = priceValue > 0;
@@ -188,7 +194,8 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
               playsInline
               muted
               loop
-              className="w-full h-full object-cover"
+              onLoadedMetadata={handleLoadedMetadata}
+              className={cn("w-full h-full", lowRes ? "object-contain" : "object-cover")}
             />
           </button>
 
