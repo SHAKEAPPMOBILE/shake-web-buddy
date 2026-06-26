@@ -985,7 +985,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       });
 
       if (error) {
-        console.error("[JOIN:handleFeedJoin] insert failed (user-created)", error);
+        console.error("[JOIN:handleFeedJoin] insert failed (user-created)", { code: error.code, message: error.message, details: error.details, hint: error.hint });
         toast.error(`Failed to join: ${error.message}`);
         return { success: false };
       }
