@@ -253,7 +253,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             </div>
           ) : plan.creator_avatar ? (
             /* User-created with avatar: full-bleed, or framed on gradient if small */
-            <div className={cn("absolute inset-0 flex items-center justify-center", smallImage && "animate-gradient-shift")}>
+            <div className={cn("absolute inset-0 flex items-center justify-center", smallImage && "bg-white")}>
               <img
                 src={plan.creator_avatar}
                 alt={plan.creator_name || ""}
@@ -263,7 +263,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 }}
                 className={cn(
                   smallImage
-                    ? "max-w-[80%] max-h-[80%] object-contain rounded-lg shadow-2xl"
+                    ? "max-w-[92%] max-h-[92%] object-contain rounded-lg shadow-2xl"
                     : "absolute inset-0 w-full h-full object-cover"
                 )}
               />
