@@ -305,11 +305,11 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         >
           {/* Circle */}
           <div
-            className={cn("w-14 h-14 rounded-full flex items-center justify-center shadow-xl", (isOwn || isJoined) && "animate-gradient-shift")}
+            className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
             style={{
               background:
                 (isOwn || isJoined)
-                  ? undefined
+                  ? "#ffffff"
                   : isPaid
                     ? "linear-gradient(to bottom, #f59e0b, #d97706)"
                     : "#ffffff",
@@ -318,7 +318,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             }}
           >
             {(isOwn || isJoined) ? (
-              <span className="text-white text-sm font-bold tracking-wide">CHAT</span>
+              <span className="text-sm font-bold tracking-wide animate-gradient-shift" style={{ backgroundClip: "text", WebkitTextFillColor: "transparent" }}>CHAT</span>
             ) : isPaid ? (
               <DollarSign className="w-6 h-6 text-white" />
             ) : joining ? (
