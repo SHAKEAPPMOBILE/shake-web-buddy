@@ -116,6 +116,10 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   // Ref so the devicemotion listener always calls the latest handler without re-registration.
   const handleShakeGestureRef = useRef<(() => void) | null>(null);
 
+  // One-time shake permission prompt — shown on first mount for logged-in users
+  // when permission has never been granted (and not already asked this session).
+  const [showShakePermissionPrompt, setShowShakePermissionPrompt] = useState(false);
+
   useEffect(() => {
     phraseIntervalRef.current = setInterval(() => {
       setCurrentPhraseIndex(prev => (prev + 1) % meetPhrases.length);
@@ -126,6 +130,15 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       }
     };
   }, [meetPhrases.length]);
+
+  // Show shake permission prompt once per session when permission has never been granted.
+  useEffect(() => {
+    if (!user) return;
+    if (localStorage.getItem("shake_motion_permission") === "granted") return;
+    if (sessionStorage.getItem("shake_permission_prompted") === "true") return;
+    const timer = setTimeout(() => setShowShakePermissionPrompt(true), 800);
+    return () => clearTimeout(timer);
+  }, [user]);
 
   useEffect(() => {
     ['/icons/activities/drinks-icon.jpg', '/icons/activities/dinner-icon.jpg', '/icons/activities/brunch-icon.jpg'].forEach(src => {
@@ -255,6 +268,29 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       });
     return () => { cancelled = true; };
   }, [CAROUSEL_ITEMS, currentActivityIndex, selectedCity]);
+
+  const handleRequestShakePermission = async () => {
+    try {
+      if (typeof (DeviceMotionEvent as any).requestPermission === "function") {
+        const result = await (DeviceMotionEvent as any).requestPermission();
+        if (result === "granted") {
+          localStorage.setItem("shake_motion_permission", "granted");
+        }
+      } else {
+        // Non-iOS: permission API not present, grant automatically
+        localStorage.setItem("shake_motion_permission", "granted");
+      }
+    } catch (err) {
+      console.warn("[Shake] permission request failed:", err);
+    }
+    sessionStorage.setItem("shake_permission_prompted", "true");
+    setShowShakePermissionPrompt(false);
+  };
+
+  const handleDismissShakePermission = () => {
+    sessionStorage.setItem("shake_permission_prompted", "true");
+    setShowShakePermissionPrompt(false);
+  };
 
   const handleHandshakeClick = () => {
     setShowTapInstruction(true);
@@ -755,6 +791,37 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             <button
               type="button"
               onClick={() => setShowShakeConfirm(false)}
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+            >
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Shake permission prompt ──────────────────────────────────────────── */}
+      {showShakePermissionPrompt && (
+        <div className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center pointer-events-auto">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={handleDismissShakePermission}
+          />
+          <div className="relative z-10 w-full max-w-sm mx-4 mb-6 sm:mb-0 px-6 py-8 flex flex-col gap-4 rounded-3xl bg-white shadow-2xl text-center pointer-events-auto">
+            <div className="text-5xl">📳</div>
+            <h2 className="text-xl font-bold text-gray-900">Enable Shake to Join</h2>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Shake your phone to instantly join the activity of the moment — dinner, brunch, and more. You can always turn this off in Profile settings.
+            </p>
+            <button
+              type="button"
+              onClick={handleRequestShakePermission}
+              className="w-full h-11 rounded-full font-semibold text-base text-white animate-gradient-shift"
+            >
+              Enable Shake
+            </button>
+            <button
+              type="button"
+              onClick={handleDismissShakePermission}
               className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
             >
               Not now
