@@ -1158,7 +1158,18 @@ export default function ProposePlanPage() {
         </div>
       ) : (
         <>
-          {/* Scrollable chat history */}
+          {/* Pinned question header — stays visible above the keyboard */}
+          <div
+            key={currentStep}
+            className="w-full max-w-sm mx-auto px-6 pt-4 shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
+            <BotBubble
+              message={BOT_QUESTIONS[currentStepName]}
+              showAvatar={currentStep === 0}
+            />
+          </div>
+
+          {/* Scrollable chat history — only Q&A history and camera capture scroll */}
           <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
             {/* spacer: centers the view on step 0; collapses as history grows */}
             <div className="min-h-[8vh]" />
@@ -1213,18 +1224,12 @@ export default function ProposePlanPage() {
               {/* Divider separating history from active step */}
               {currentStep > 0 && <div className="border-t border-border/20 mb-8" />}
 
-              {/* Active step */}
-              <div
-                key={currentStep}
-                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-              >
-                <BotBubble
-                  message={BOT_QUESTIONS[currentStepName]}
-                  showAvatar={currentStep === 0}
-                />
-                {/* Camera recorder lives here — no bot bubble, no keyboard */}
-                {currentStepName === "video" && renderCameraCapture()}
-              </div>
+              {/* Camera recorder — only step that needs inline scroll space */}
+              {currentStepName === "video" && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  {renderCameraCapture()}
+                </div>
+              )}
             </div>
           </div>
 
