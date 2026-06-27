@@ -703,6 +703,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
     
+    if (plan.isJoined) {
+      setSelectedPlan(plan);
+      setShowChatView(true);
+      return;
+    }
+
     setPlanPreview(plan);
   };
 
