@@ -127,10 +127,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
 
     setIsLoading(true);
-    // Clear stale data immediately so the previous filter mode's cards never flash
-    // while the new query is in flight (e.g. All Cities → My City transition).
-    setActivities([]);
-    setCityPlans([]);
     const effectiveCity = selectedCity;
     console.log("[PlansTab] fetchPlans →", { effectiveCity, showAllCities });
 
@@ -464,7 +460,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "activity_joins" },
-        () => fetchPlans()
+        (payload: { new?: { user_id?: string } }) => {
+          // Skip refetch when the change was caused by the current user's own join.
+          // handleFeedJoin already applies the local setActivities/setCityPlans update,
+          // so a redundant fetchPlans() here would clear+refill the feed, losing the
+          // user's scroll position and jumping to a different card.
+          // Other users' joins (different user_id) still trigger a refetch so
+          // participant counts stay current for everyone watching.
+          if (payload.new?.user_id === user?.id) return;
+          fetchPlans();
+        }
       )
       .subscribe();
 
