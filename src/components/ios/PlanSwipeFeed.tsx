@@ -324,7 +324,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
             ) : joining ? (
               <div className="w-5 h-5 border-2 border-black/40 border-t-transparent rounded-full animate-spin" />
             ) : (
-              <span className="text-sm font-bold tracking-wide" style={{ color: "#FACC15" }}>JOIN</span>
+              <span className="text-sm font-bold tracking-wide animate-gradient-shift" style={{ backgroundClip: "text", WebkitTextFillColor: "transparent" }}>JOIN</span>
             )}
           </div>
           {/* Label beneath circle — shown for paid and joining states */}
