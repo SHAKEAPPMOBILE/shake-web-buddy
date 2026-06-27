@@ -1775,7 +1775,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     {/* Text */}
                     <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
                       <p className="font-bold text-white truncate">
-                        {planPreview.note || t('plans.untitledPlan', 'Untitled Plan')}
+                        {planPreview.note || getActivityLabel(planPreview.activity_type) || t('plans.untitledPlan', 'Untitled Plan')}
                       </p>
                       <p className="text-xs text-white/80 mt-0.5 truncate">
                         {planPreview.city}
@@ -1833,7 +1833,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     )}
                   </div>
                   <h2 className="text-lg font-display font-bold text-gray-900">
-                    {planPreview.note || t('plans.untitledPlan', 'Untitled Plan')}
+                    {planPreview.note || getActivityLabel(planPreview.activity_type) || t('plans.untitledPlan', 'Untitled Plan')}
                   </h2>
                   <p className="text-sm text-gray-500 mt-0.5">
                     {planPreview.activity_type !== "general" && `${getActivityLabel(planPreview.activity_type)} · `}{planPreview.city}
