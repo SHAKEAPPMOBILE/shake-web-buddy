@@ -244,6 +244,20 @@ export function useActivityJoins(city: string) {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'activity_joins',
+          filter: `city=eq.${city}`,
+        },
+        () => {
+          // Refresh local cache so hasUserJoined() stays accurate after any leave,
+          // including leaves performed from PlansTab (a separate useActivityJoins instance).
+          fetchActiveJoins();
+        }
+      )
       .subscribe();
 
     return () => {
