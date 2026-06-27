@@ -528,7 +528,14 @@ export function PlanGroupChatView({
             {/* 1. Creator video / avatar / emoji */}
             <button
               type="button"
-              onClick={() => { if (activity.promo_video_url) setVideoFullscreen(true); }}
+              onClick={() => {
+                if (activity.promo_video_url) { setVideoFullscreen(true); return; }
+                setSelectedUserProfile({
+                  userId: activity.user_id,
+                  userName: creatorProfile?.name || null,
+                  avatarUrl: creatorProfile?.avatar_url || null,
+                });
+              }}
               className="w-16 h-16 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center shadow-sm focus:outline-none"
             >
               {activity.promo_video_url ? (
