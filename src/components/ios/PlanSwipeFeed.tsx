@@ -93,6 +93,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
   const [joinedLocally, setJoinedLocally] = useState(false);
   const [joining, setJoining] = useState(false);
   const [lowRes, setLowRes] = useState(false);
+  const [smallImage, setSmallImage] = useState(false);
 
   const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const { videoWidth, videoHeight } = e.currentTarget;
@@ -251,12 +252,22 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               </div>
             </div>
           ) : plan.creator_avatar ? (
-            /* User-created with avatar: full-bleed creator photo */
-            <img
-              src={plan.creator_avatar}
-              alt={plan.creator_name || ""}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
+            /* User-created with avatar: full-bleed, or framed on gradient if small */
+            <div className={cn("absolute inset-0 flex items-center justify-center", smallImage && "animate-gradient-shift")}>
+              <img
+                src={plan.creator_avatar}
+                alt={plan.creator_name || ""}
+                onLoad={(e) => {
+                  const { naturalWidth, naturalHeight } = e.currentTarget;
+                  setSmallImage(Math.max(naturalWidth, naturalHeight) < 600);
+                }}
+                className={cn(
+                  smallImage
+                    ? "max-w-[80%] max-h-[80%] object-contain rounded-lg shadow-2xl"
+                    : "absolute inset-0 w-full h-full object-cover"
+                )}
+              />
+            </div>
           ) : getActivityIcon(plan.activity_type) ? (
             /* User-created, no avatar: fall back to activity-type image */
             <img
