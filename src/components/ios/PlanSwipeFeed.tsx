@@ -96,6 +96,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
 
   const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const { videoWidth, videoHeight } = e.currentTarget;
+    console.log('[FeedCard video]', plan.note || plan.activity_type, { videoWidth, videoHeight });
     setLowRes(Math.max(videoWidth, videoHeight) < 600);
   }, []);
 
@@ -305,11 +306,11 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
         >
           {/* Circle */}
           <div
-            className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
+            className={cn("w-14 h-14 rounded-full flex items-center justify-center shadow-xl", (isOwn || isJoined) && "animate-gradient-shift")}
             style={{
               background:
                 (isOwn || isJoined)
-                  ? "rgba(0,0,0,0.9)"
+                  ? undefined
                   : isPaid
                     ? "linear-gradient(to bottom, #f59e0b, #d97706)"
                     : "#ffffff",
