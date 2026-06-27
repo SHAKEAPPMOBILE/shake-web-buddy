@@ -96,8 +96,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
 
   const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const { videoWidth, videoHeight } = e.currentTarget;
-    console.log('[FeedCard video]', plan.note || plan.activity_type, { videoWidth, videoHeight });
-    setLowRes(Math.max(videoWidth, videoHeight) < 600);
+setLowRes(Math.max(videoWidth, videoHeight) < 600);
   }, []);
 
   const priceValue = getPriceValue(plan.price_amount);
