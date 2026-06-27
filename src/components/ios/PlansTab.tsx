@@ -703,8 +703,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
     
-    setSelectedPlan(plan);
-    setShowChatView(true);
+    setPlanPreview(plan);
   };
 
   const handleBackFromChat = () => {
