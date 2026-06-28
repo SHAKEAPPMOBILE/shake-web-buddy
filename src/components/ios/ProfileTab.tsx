@@ -473,49 +473,56 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Plan & Rewards</p>
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* Subscription */}
-            {isPremium ? (
-              <>
+            {/* MONETIZATION BYPASS (2026-06): IAP removed; Stripe web billing coming.
+                Hide the Manage Subscription row (routes to iOS native subscription
+                screen that shows nothing) and the Upgrade row (paywall disabled).
+                Restore this block when Stripe gate is wired — just remove the
+                outer {false && ( ... )} wrapper. */}
+            {false && (
+              isPremium ? (
+                <>
+                  <button
+                    onClick={() => setShowSubscriptionDropdown(!showSubscriptionDropdown)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-shake-green/10 flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-shake-green" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-900">{t('profile.manageSubscription')}</span>
+                      <p className="text-xs text-gray-400">{t('profile.superHuman')} active</p>
+                    </div>
+                    <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showSubscriptionDropdown && "rotate-90")} />
+                  </button>
+                  {showSubscriptionDropdown && (
+                    <div className="px-4 py-4 bg-gray-50 animate-fade-in space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-shake-yellow">{t('profile.superHumanActive', 'Super-Human Active')}</span>
+                      </div>
+                      <button
+                        onClick={handleOpenManagePlan}
+                        className="w-full py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-2xl hover:bg-shake-green/10 transition-colors"
+                      >
+                        {t('profile.managePlan', 'Manage Plan')}
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
                 <button
-                  onClick={() => setShowSubscriptionDropdown(!showSubscriptionDropdown)}
+                  onClick={() => setShowPremiumDialog(true)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-shake-green/10 flex items-center justify-center">
-                    <CreditCard className="w-5 h-5 text-shake-green" />
+                  <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden">
+                    <img src={shakeCoin} alt="Premium" className="w-7 object-contain" />
                   </div>
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-gray-900">{t('profile.manageSubscription')}</span>
-                    <p className="text-xs text-gray-400">{t('profile.superHuman')} active</p>
+                    <span className="text-sm font-medium text-gray-900">{t('profile.upgradeToPremium', 'Upgrade to Premium')}</span>
+                    <p className="text-xs text-gray-400">{t('profile.unlimitedMessages', 'Unlimited messages & more')}</p>
                   </div>
-                  <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showSubscriptionDropdown && "rotate-90")} />
+                  <ChevronRight className="w-4 h-4 text-gray-300" />
                 </button>
-                {showSubscriptionDropdown && (
-                  <div className="px-4 py-4 bg-gray-50 animate-fade-in space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-shake-yellow">{t('profile.superHumanActive', 'Super-Human Active')}</span>
-                    </div>
-                    <button
-                      onClick={handleOpenManagePlan}
-                      className="w-full py-2 text-sm font-medium text-shake-green border border-shake-green/30 rounded-2xl hover:bg-shake-green/10 transition-colors"
-                    >
-                      {t('profile.managePlan', 'Manage Plan')}
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <button
-                onClick={() => setShowPremiumDialog(true)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-              >
-                <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden">
-                  <img src={shakeCoin} alt="Premium" className="w-7 object-contain" />
-                </div>
-                <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-900">{t('profile.upgradeToPremium', 'Upgrade to Premium')}</span>
-                  <p className="text-xs text-gray-400">{t('profile.unlimitedMessages', 'Unlimited messages & more')}</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-300" />
-              </button>
+              )
             )}
 
             {/* My Points */}
