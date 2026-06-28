@@ -39,7 +39,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPremium, setIsPremium] = useState(false);
+  // MONETIZATION BYPASS (2026-06): RevenueCat IAP removed; Stripe web billing coming.
+  // Default everyone to premium so no gate or paywall fires. Do NOT read this from
+  // the server while the bypass is active — the check-subscription edge function still
+  // reflects the old RevenueCat state.
+  const [isPremium, setIsPremium] = useState(true);
   const [isManualOverride, setIsManualOverride] = useState(false);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [didJustSignUp, setDidJustSignUp] = useState(false);
@@ -287,9 +291,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const checkSubscription = async (currentSession?: Session | null) => {
+    // MONETIZATION BYPASS (2026-06): skip RevenueCat / edge-function check entirely.
+    // Everyone is premium until Stripe web billing is wired up.
+    // Original implementation preserved below (commented) so it can be restored.
+    setIsPremium(true);
+    setIsManualOverride(false);
+    return;
+
+    /* --- original checkSubscription body (preserved for future restore) ---
     // Use passed session or fall back to state (for external calls)
     const activeSession = currentSession ?? session;
-    
+
     // Check if user is authenticated AND has valid access token
     if (!activeSession?.user?.id || !activeSession?.access_token) {
       setIsPremium(false);
@@ -350,6 +362,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsManualOverride(false);
       setSubscriptionEnd(null);
     }
+    --- end original checkSubscription body --- */
   };
 
   useEffect(() => {

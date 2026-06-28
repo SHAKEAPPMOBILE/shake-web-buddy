@@ -73,6 +73,11 @@ export const identifyRevenueCatUser = async (appUserId: string) => {
 export const isRevenueCatReady = () => _revenueCatReady;
 
 export const checkPremiumAccess = async (): Promise<boolean> => {
+  // MONETIZATION BYPASS (2026-06): always grant premium — no RevenueCat call.
+  // Original implementation preserved below for future restore.
+  return true;
+
+  /* --- original checkPremiumAccess body ---
   if (!isNativePlatform()) return false;
 
   try {
@@ -82,6 +87,7 @@ export const checkPremiumAccess = async (): Promise<boolean> => {
     console.error('Error checking premium:', error);
     return false;
   }
+  --- end original --- */
 };
 
 export const purchasePremium = async () => {
