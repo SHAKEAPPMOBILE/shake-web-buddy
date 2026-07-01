@@ -1373,7 +1373,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || getActivityLabel(plan.activity_type))}
                       </h3>
                       {plan.isJoined && (
-                        plan.user_id === user?.id ? (
+                        !plan.is_auto_generated && plan.user_id === user?.id ? (
                           <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">
                             Your plan
                           </span>
@@ -1516,7 +1516,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                               🔴 Soon
                             </span>
                           )}
-                          {plan.user_id === user?.id ? (
+                          {!plan.is_auto_generated && plan.user_id === user?.id ? (
                             /* Owner: never show Join or price CTA */
                             <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">
                               Your plan
