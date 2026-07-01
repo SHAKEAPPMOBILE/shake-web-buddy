@@ -1161,7 +1161,7 @@ export default function ProposePlanPage() {
           {/* Pinned question header — stays visible above the keyboard */}
           <div
             key={currentStep}
-            className="w-full max-w-sm mx-auto px-6 pt-4 shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-300"
+            className="w-full max-w-sm mx-auto px-6 pt-4 shrink-0"
           >
             <BotBubble
               message={BOT_QUESTIONS[currentStepName]}
