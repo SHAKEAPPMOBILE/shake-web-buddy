@@ -767,7 +767,7 @@ export default function ProposePlanPage() {
                   value={planText}
                   onChange={handleNameChange}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNameSubmit(); } }}
-                  placeholder="What's the plan?"
+                  placeholder="Type here..."
                   maxLength={MAX_CHARACTERS}
                   className="w-full h-16 rounded-2xl border border-border bg-muted/60 px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
                 />
