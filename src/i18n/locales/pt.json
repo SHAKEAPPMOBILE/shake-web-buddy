@@ -197,6 +197,7 @@
     "participants": "Participantes",
     "scheduledFor": "Agendado para",
     "searchCity": "Buscar cidade...",
+    "chooseYourCity": "Escolhe a tua cidade",
     "resetToMyCity": "Voltar para minha cidade",
     "backTo": "Voltar para {{city}}",
     "noCitiesFound": "Nenhuma cidade encontrada",

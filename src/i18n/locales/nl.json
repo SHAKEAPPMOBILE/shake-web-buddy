@@ -197,6 +197,7 @@
     "participants": "Deelnemers",
     "scheduledFor": "Gepland voor",
     "searchCity": "Zoek stad...",
+    "chooseYourCity": "Kies je stad",
     "resetToMyCity": "Terug naar mijn stad",
     "backTo": "Terug naar {{city}}",
     "noCitiesFound": "Geen steden gevonden",

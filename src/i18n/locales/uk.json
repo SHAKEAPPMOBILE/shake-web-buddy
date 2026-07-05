@@ -197,6 +197,7 @@
     "participants": "Учасники",
     "scheduledFor": "Заплановано на",
     "searchCity": "Пошук міста...",
+    "chooseYourCity": "Обери своє місто",
     "resetToMyCity": "Повернутися до мого міста",
     "backTo": "Повернутися до {{city}}",
     "noCitiesFound": "Міст не знайдено",
