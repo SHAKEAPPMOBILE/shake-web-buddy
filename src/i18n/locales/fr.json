@@ -172,7 +172,18 @@
     "eventBadge": "ÉVÉNEMENT",
     "twelveHourAccess": "Accès 12h",
     "eventChat": "Chat de l'événement",
-    "eventFallback": "Événement"
+    "eventFallback": "Événement",
+    "eventExpired": "Ce chat s'est terminé 12h après l'événement 🎤",
+    "eventError": "Une erreur s'est produite. Réessayez.",
+    "closesInMinutes": "Le chat se ferme dans {{minutes}}m",
+    "loadingMessages": "Chargement des messages…",
+    "eventMessagesHere": "Les messages de cet événement apparaîtront ici.",
+    "eventPosterLabel": "Affiche de l'événement",
+    "videoSent": "Vidéo envoyée !",
+    "failedToSendVideo": "Échec de l'envoi de la vidéo",
+    "expandEventPoster": "Agrandir l'affiche de l'événement",
+    "leaveChat": "Quitter le chat",
+    "fatalError": "Une erreur s'est produite lors du chargement de ce chat. Veuillez réessayer plus tard."
   },
   "plans": {
     "title": "Plans",

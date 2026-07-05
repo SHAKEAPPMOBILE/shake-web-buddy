@@ -172,7 +172,18 @@
     "eventBadge": "EVENT",
     "twelveHourAccess": "12h access",
     "eventChat": "Event Chat",
-    "eventFallback": "Event"
+    "eventFallback": "Event",
+    "eventExpired": "This chat ended 12h after the event 🎤",
+    "eventError": "Something went wrong. Try again.",
+    "closesInMinutes": "Chat closes in {{minutes}}m",
+    "loadingMessages": "Loading messages…",
+    "eventMessagesHere": "Messages from this event will appear here.",
+    "eventPosterLabel": "Event poster",
+    "videoSent": "Video sent!",
+    "failedToSendVideo": "Failed to send video",
+    "expandEventPoster": "Expand event poster",
+    "leaveChat": "Leave chat",
+    "fatalError": "Something went wrong loading this chat. Please try again later."
   },
   "plans": {
     "title": "Plans",

@@ -172,7 +172,18 @@
     "eventBadge": "EVENTO",
     "twelveHourAccess": "Accesso 12h",
     "eventChat": "Chat dell'evento",
-    "eventFallback": "Evento"
+    "eventFallback": "Evento",
+    "eventExpired": "Questa chat è terminata 12h dopo l'evento 🎤",
+    "eventError": "Qualcosa è andato storto. Riprova.",
+    "closesInMinutes": "La chat chiude in {{minutes}}m",
+    "loadingMessages": "Caricamento messaggi…",
+    "eventMessagesHere": "I messaggi di questo evento appariranno qui.",
+    "eventPosterLabel": "Locandina evento",
+    "videoSent": "Video inviato!",
+    "failedToSendVideo": "Invio video non riuscito",
+    "expandEventPoster": "Espandi locandina evento",
+    "leaveChat": "Lascia la chat",
+    "fatalError": "Qualcosa è andato storto nel caricamento di questa chat. Riprova più tardi."
   },
   "plans": {
     "title": "Piani",

@@ -171,7 +171,18 @@
     "eventBadge": "活动",
     "twelveHourAccess": "12小时访问",
     "eventChat": "活动聊天",
-    "eventFallback": "活动"
+    "eventFallback": "活动",
+    "eventExpired": "此聊天在活动结束12小时后已关闭 🎤",
+    "eventError": "出了些问题。请重试。",
+    "closesInMinutes": "聊天将在{{minutes}}分钟后关闭",
+    "loadingMessages": "正在加载消息…",
+    "eventMessagesHere": "此活动的消息将显示在这里。",
+    "eventPosterLabel": "活动海报",
+    "videoSent": "视频已发送！",
+    "failedToSendVideo": "发送视频失败",
+    "expandEventPoster": "展开活动海报",
+    "leaveChat": "离开聊天",
+    "fatalError": "加载此聊天时出了些问题。请稍后再试。"
   },
   "plans": {
     "title": "计划",

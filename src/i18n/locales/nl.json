@@ -172,7 +172,18 @@
     "eventBadge": "EVENT",
     "twelveHourAccess": "12u toegang",
     "eventChat": "Event chat",
-    "eventFallback": "Evenement"
+    "eventFallback": "Evenement",
+    "eventExpired": "Deze chat eindigde 12u na het evenement 🎤",
+    "eventError": "Er is iets misgegaan. Probeer opnieuw.",
+    "closesInMinutes": "Chat sluit in {{minutes}}m",
+    "loadingMessages": "Berichten laden…",
+    "eventMessagesHere": "Berichten van dit evenement verschijnen hier.",
+    "eventPosterLabel": "Evenementposter",
+    "videoSent": "Video verzonden!",
+    "failedToSendVideo": "Video verzenden mislukt",
+    "expandEventPoster": "Evenementposter vergroten",
+    "leaveChat": "Chat verlaten",
+    "fatalError": "Er is iets misgegaan bij het laden van deze chat. Probeer het later opnieuw."
   },
   "plans": {
     "title": "Plannen",

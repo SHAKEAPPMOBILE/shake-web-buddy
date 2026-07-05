@@ -172,7 +172,18 @@
     "eventBadge": "EVENTO",
     "twelveHourAccess": "Acceso 12h",
     "eventChat": "Chat del evento",
-    "eventFallback": "Evento"
+    "eventFallback": "Evento",
+    "eventExpired": "Este chat terminó 12h después del evento 🎤",
+    "eventError": "Algo salió mal. Inténtalo de nuevo.",
+    "closesInMinutes": "El chat cierra en {{minutes}}m",
+    "loadingMessages": "Cargando mensajes…",
+    "eventMessagesHere": "Los mensajes de este evento aparecerán aquí.",
+    "eventPosterLabel": "Cartel del evento",
+    "videoSent": "¡Video enviado!",
+    "failedToSendVideo": "Error al enviar el video",
+    "expandEventPoster": "Ampliar cartel del evento",
+    "leaveChat": "Abandonar chat",
+    "fatalError": "Algo salió mal al cargar este chat. Inténtalo de nuevo más tarde."
   },
   "plans": {
     "title": "Planes",

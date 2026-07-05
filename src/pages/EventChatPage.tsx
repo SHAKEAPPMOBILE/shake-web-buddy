@@ -31,12 +31,14 @@ import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { aggregateReactionsByMessage, sortedReactionEntries } from "@/lib/eventChatReactions";
 import { markEventChatViewedNow } from "@/lib/eventChatLastSeen";
 import { removePendingEventChat } from "@/lib/pendingEventChat";
+import { useTranslation } from "react-i18next";
 
 interface EventChatPageParams {
   eventId?: string;
 }
 
 export default function EventChatPage() {
+  const { t } = useTranslation();
   const { eventId } = useParams<EventChatPageParams>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,7 +64,7 @@ export default function EventChatPage() {
       : null;
 
   const { user, isPremium, isLoading: authLoading } = useAuth();
-  const [eventName, setEventName] = useState<string>(() => prefetch?.name?.trim() || "Event chat");
+  const [eventName, setEventName] = useState<string>(() => prefetch?.name?.trim() || t('chat.eventChat', 'Event Chat'));
   const [eventStartsAt, setEventStartsAt] = useState<string | null>(
     () => prefetchStart ?? null
   );
@@ -215,9 +217,9 @@ export default function EventChatPage() {
   const dateLine = (location.state as any)?.dateLine ?? null;
   // Split header date into day / date / time for separate lines
   const { headerDay: evtHeaderDay, headerDateOnly: evtHeaderDate, headerTime: evtHeaderTime } = useMemo(() => {
-    if (status === "expired") return { headerDay: "This chat ended 12h after the event 🎤", headerDateOnly: null, headerTime: null };
+    if (status === "expired") return { headerDay: t('chat.eventExpired', 'This chat ended 12h after the event 🎤'), headerDateOnly: null, headerTime: null };
     if (dateLine) return { headerDay: dateLine as string, headerDateOnly: null, headerTime: null };
-    if (status === "error") return { headerDay: "Something went wrong. Try again.", headerDateOnly: null, headerTime: null };
+    if (status === "error") return { headerDay: t('chat.eventError', 'Something went wrong. Try again.'), headerDateOnly: null, headerTime: null };
     if (eventStartsAt) {
       const d = new Date(eventStartsAt);
       if (!Number.isNaN(d.getTime())) {
@@ -225,18 +227,18 @@ export default function EventChatPage() {
         const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
         const isToday = d.toDateString() === today.toDateString();
         const isTomorrow = d.toDateString() === tomorrow.toDateString();
-        const day = isToday ? "Today" : isTomorrow ? "Tomorrow" : d.toLocaleDateString('en-US', { weekday: 'long' });
+        const day = isToday ? t('common.today', 'Today') : isTomorrow ? t('common.tomorrow', 'Tomorrow') : d.toLocaleDateString('en-US', { weekday: 'long' });
         const date = (isToday || isTomorrow) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
         return { headerDay: day, headerDateOnly: date, headerTime: time };
       }
     }
     if (minutesLeft !== null && (status === "active" || status === "loading")) {
-      return { headerDay: `Chat closes in ${minutesLeft}m`, headerDateOnly: null, headerTime: null };
+      return { headerDay: t('chat.closesInMinutes', 'Chat closes in {{minutes}}m', { minutes: minutesLeft }), headerDateOnly: null, headerTime: null };
     }
-    if (status === "loading") return { headerDay: "Loading messages…", headerDateOnly: null, headerTime: null };
-    return { headerDay: "Messages from this event will appear here.", headerDateOnly: null, headerTime: null };
-  }, [minutesLeft, status, eventStartsAt, dateLine]);
+    if (status === "loading") return { headerDay: t('chat.loadingMessages', 'Loading messages…'), headerDateOnly: null, headerTime: null };
+    return { headerDay: t('chat.eventMessagesHere', 'Messages from this event will appear here.'), headerDateOnly: null, headerTime: null };
+  }, [minutesLeft, status, eventStartsAt, dateLine, t]);
 
   if (!eventId) return null;
 
@@ -248,7 +250,7 @@ export default function EventChatPage() {
           onClick={() => setPolaroidExpanded(false)}
           role="dialog"
           aria-modal="true"
-          aria-label="Event poster"
+          aria-label={t('chat.eventPosterLabel', 'Event poster')}
         >
           <img
             src={eventImageUrl}
@@ -266,9 +268,9 @@ export default function EventChatPage() {
           title="Video"
           maxDurationSeconds={EVENT_CHAT_VIDEO_MAX_SECONDS}
           floatingSendUsesChatPurple
-          primaryButtonLabel="Send"
-          uploadSuccessToast="Video sent!"
-          uploadErrorToast="Failed to send video"
+          primaryButtonLabel={t('chat.send', 'Send')}
+          uploadSuccessToast={t('chat.videoSent', 'Video sent!')}
+          uploadErrorToast={t('chat.failedToSendVideo', 'Failed to send video')}
           onUploadFile={async (file, onProgress) => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.access_token) return false;
@@ -316,7 +318,7 @@ export default function EventChatPage() {
             <MinimalBackButton
               onClick={navigateBackFromEventChat}
               className="shrink-0 text-white/80 hover:text-white"
-              aria-label="Back"
+              aria-label={t('common.back', 'Back')}
               iconClassName="w-6 h-6"
             />
             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -332,7 +334,7 @@ export default function EventChatPage() {
                     transform: "rotate(-2deg)",
                     width: "46px",
                   }}
-                  aria-label="Expand event poster"
+                  aria-label={t('chat.expandEventPoster', 'Expand event poster')}
                   onClick={() => setPolaroidExpanded(true)}
                 >
                   <img
@@ -389,7 +391,7 @@ export default function EventChatPage() {
                 size="icon"
                 onClick={() => setIsMuted((prev) => !prev)}
                 className="shrink-0 text-white/60 hover:text-white hover:bg-white/5 h-8 w-8"
-                title={isMuted ? "Unmute" : "Mute"}
+                title={isMuted ? t('chat.unmute', 'Unmute') : t('chat.mute', 'Mute')}
               >
                 {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
               </Button>
@@ -409,7 +411,7 @@ export default function EventChatPage() {
                   navigateBackFromEventChat();
                 }}
                 className="shrink-0 text-white/50 hover:text-red-400 hover:bg-white/5 h-8 w-8"
-                title="Leave chat"
+                title={t('chat.leaveChat', 'Leave chat')}
               >
                 <LogOut className="w-4 h-4" />
               </Button>
@@ -427,15 +429,15 @@ export default function EventChatPage() {
             {status === "active" && messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-white/40">
                 <p className="text-center text-sm">
-                  Start the conversation!<br />
-                  <span className="text-xs">Messages from this event will appear here.</span>
+                  {t('chat.startTheConversation', 'Start the conversation!')}<br />
+                  <span className="text-xs">{t('chat.eventMessagesHere', 'Messages from this event will appear here.')}</span>
                 </p>
               </div>
             )}
 
             {messages.map((m) => {
               const profile = senderMap[m.user_id];
-              const displayName = profile?.name || "Shaker";
+              const displayName = profile?.name || t('chat.shaker', 'Shaker');
               const avatarUrl = profile?.avatar_url;
               const isOwn = user?.id === m.user_id;
               const isVideo = m.message_type === "video" && /^https?:\/\//i.test(m.content);
@@ -468,7 +470,7 @@ export default function EventChatPage() {
                       onPointerLeave={onMessagePointerEnd}
                       header={
                         <div className={`flex items-baseline gap-2 flex-wrap ${isOwn ? "justify-end" : "justify-start"}`}>
-                          <span className="font-semibold text-sm text-white">{isOwn ? "You" : displayName}</span>
+                          <span className="font-semibold text-sm text-white">{isOwn ? t('chat.you', 'You') : displayName}</span>
                           <span className="text-xs text-white/35">
                             {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </span>
@@ -509,7 +511,7 @@ export default function EventChatPage() {
 
             {hasFatalError && (
               <p className="text-xs text-red-400 text-center mt-4">
-                Something went wrong loading this chat. Please try again later.
+                {t('chat.fatalError', 'Something went wrong loading this chat. Please try again later.')}
               </p>
             )}
 
@@ -556,7 +558,7 @@ export default function EventChatPage() {
                 <Camera className="w-5 h-5" />
               </Button>
               <Input
-                placeholder="Type a message..."
+                placeholder={t('chat.typeMessage', 'Type a message...')}
                 value={inputValue}
                 onChange={(e) => { bumpInteraction(); setInputValue(e.target.value); }}
                 onKeyDown={(e) => {

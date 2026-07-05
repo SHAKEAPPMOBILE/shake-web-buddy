@@ -171,7 +171,18 @@
     "eventBadge": "イベント",
     "twelveHourAccess": "12時間アクセス",
     "eventChat": "イベントチャット",
-    "eventFallback": "イベント"
+    "eventFallback": "イベント",
+    "eventExpired": "このチャットはイベント終了12時間後に終了しました 🎤",
+    "eventError": "エラーが発生しました。もう一度お試しください。",
+    "closesInMinutes": "チャットは{{minutes}}分後に終了します",
+    "loadingMessages": "メッセージを読み込んでいます…",
+    "eventMessagesHere": "このイベントのメッセージはここに表示されます。",
+    "eventPosterLabel": "イベントポスター",
+    "videoSent": "動画を送信しました！",
+    "failedToSendVideo": "動画の送信に失敗しました",
+    "expandEventPoster": "イベントポスターを拡大",
+    "leaveChat": "チャットを離れる",
+    "fatalError": "このチャットの読み込みに問題が発生しました。後でもう一度お試しください。"
   },
   "plans": {
     "title": "プラン",

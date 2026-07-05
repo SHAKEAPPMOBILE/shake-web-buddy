@@ -171,7 +171,18 @@
     "eventBadge": "WYDARZENIE",
     "twelveHourAccess": "Dostęp 12h",
     "eventChat": "Czat wydarzenia",
-    "eventFallback": "Wydarzenie"
+    "eventFallback": "Wydarzenie",
+    "eventExpired": "Ten czat zakończył się 12h po wydarzeniu 🎤",
+    "eventError": "Coś poszło nie tak. Spróbuj ponownie.",
+    "closesInMinutes": "Czat zamknie się za {{minutes}}m",
+    "loadingMessages": "Ładowanie wiadomości…",
+    "eventMessagesHere": "Wiadomości z tego wydarzenia pojawią się tutaj.",
+    "eventPosterLabel": "Plakat wydarzenia",
+    "videoSent": "Film wysłany!",
+    "failedToSendVideo": "Nie udało się wysłać filmu",
+    "expandEventPoster": "Rozwiń plakat wydarzenia",
+    "leaveChat": "Opuść czat",
+    "fatalError": "Coś poszło nie tak podczas ładowania tego czatu. Spróbuj ponownie później."
   },
   "plans": {
     "title": "Plany",

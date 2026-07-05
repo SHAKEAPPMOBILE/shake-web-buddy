@@ -172,7 +172,18 @@
     "eventBadge": "ПОДІЯ",
     "twelveHourAccess": "Доступ 12г",
     "eventChat": "Чат події",
-    "eventFallback": "Подія"
+    "eventFallback": "Подія",
+    "eventExpired": "Цей чат завершився через 12 годин після події 🎤",
+    "eventError": "Щось пішло не так. Спробуйте ще раз.",
+    "closesInMinutes": "Чат закривається через {{minutes}}хв",
+    "loadingMessages": "Завантаження повідомлень…",
+    "eventMessagesHere": "Повідомлення з цієї події з'являться тут.",
+    "eventPosterLabel": "Афіша події",
+    "videoSent": "Відео надіслано!",
+    "failedToSendVideo": "Не вдалося надіслати відео",
+    "expandEventPoster": "Розгорнути афішу події",
+    "leaveChat": "Покинути чат",
+    "fatalError": "Під час завантаження цього чату щось пішло не так. Будь ласка, спробуйте пізніше."
   },
   "plans": {
     "title": "Плани",
