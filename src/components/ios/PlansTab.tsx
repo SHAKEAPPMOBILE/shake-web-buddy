@@ -673,13 +673,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const link = getReferralLink(referralCode);
     if (Capacitor.isNativePlatform()) {
       try { await Share.share({ title: "Join SHAKE!", text: "Join me on SHAKE to find fun activities and meet new people!", url: link, dialogTitle: "Invite a Friend" }); }
-      catch (err) { if ((err as any).errorMessage !== 'Share canceled') { try { await navigator.clipboard.writeText(link); toast.success("Link copied!"); } catch {} } }
+      catch (err) { if ((err as any).errorMessage !== 'Share canceled') { try { await navigator.clipboard.writeText(link); toast.success(t('plans.linkCopied')); } catch {} } }
     } else if (navigator.share) {
       try { await navigator.share({ title: "Join SHAKE!", text: "Join me on SHAKE to find fun activities and meet new people!", url: link }); }
-      catch (err) { if ((err as Error).name !== "AbortError") { try { await navigator.clipboard.writeText(link); toast.success("Link copied!"); } catch {} } }
+      catch (err) { if ((err as Error).name !== "AbortError") { try { await navigator.clipboard.writeText(link); toast.success(t('plans.linkCopied')); } catch {} } }
     } else {
-      try { await navigator.clipboard.writeText(link); toast.success("Link copied!", { description: "Share it with friends to earn points." }); }
-      catch { toast.error("Failed to copy link"); }
+      try { await navigator.clipboard.writeText(link); toast.success(t('plans.linkCopied'), { description: t('plans.shareEarnPoints') }); }
+      catch { toast.error(t('plans.failedToCopyLink')); }
     }
   };
 
@@ -753,10 +753,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       if (error) throw error;
       setActivities(prev => prev.filter(a => a.id !== planToLeave.id));
       setPlanToLeave(null);
-      toast.success("Left activity");
+      toast.success(t('plans.leftActivity'));
     } catch (err) {
       console.error("Error leaving plan:", err);
-      toast.error("Failed to leave");
+      toast.error(t('plans.failedToLeave'));
     }
   };
 
@@ -798,13 +798,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     if (Capacitor.isNativePlatform()) {
       try { await Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: shareTitle }); }
-      catch (err) { if ((err as any).errorMessage !== 'Share canceled') toast.error("Failed to share"); }
+      catch (err) { if ((err as any).errorMessage !== 'Share canceled') toast.error(t('plans.failedToShare')); }
     } else if (navigator.share) {
       try { await navigator.share({ title: shareTitle, text: shareText, url: shareUrl }); }
-      catch (err) { if ((err as Error).name !== "AbortError") toast.error("Failed to share"); }
+      catch (err) { if ((err as Error).name !== "AbortError") toast.error(t('plans.failedToShare')); }
     } else {
-      try { await navigator.clipboard.writeText(shareUrl); toast.success("Link copied!", { description: "Share it with your friends." }); }
-      catch { toast.error("Failed to copy link"); }
+      try { await navigator.clipboard.writeText(shareUrl); toast.success(t('plans.linkCopied'), { description: t('plans.shareFriends') }); }
+      catch { toast.error(t('plans.failedToCopyLink')); }
     }
   };
 
@@ -836,7 +836,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     // Safety guard: never free-insert a paid plan.
     if (getPriceValue(plan.price_amount) > 0 && !plan.isJoined && plan.user_id !== user.id) {
-      toast.error("This plan requires payment — tap Pay to continue.");
+      toast.error(t('plans.requiresPayment'));
       return;
     }
 
@@ -846,21 +846,21 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const scheduledDate = parseDbDate(plan.scheduled_for);
       const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
       if (!isSameDay && scheduledDate < new Date()) {
-        toast.error("This event already started");
+        toast.error(t('plans.eventAlreadyStarted'));
         return;
       }
     }
 
     const targetGroup = await findOrCreateOpenGroup(plan.activity_type, plan.city, user.id);
     if (!targetGroup) {
-      toast.error("Group is full — couldn't start a new one");
+      toast.error(t('plans.groupFull'));
       return;
     }
     if (targetGroup.id !== plan.id) {
       if ((targetGroup.group_number ?? 1) > (plan.group_number ?? 1)) {
-        toast.info("This group is full · a new group has been created for you!");
+        toast.info(t('plans.groupFullNewCreated'));
       } else {
-        toast.info("This group is full · joining another group");
+        toast.info(t('plans.groupFullJoiningAnother'));
       }
     }
     const targetPlan: PlanActivity = targetGroup.id === plan.id
@@ -955,7 +955,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // The feed button should already call onPayForPlan for paid plans, but if
     // display logic misfires this is the definitive block.
     if (getPriceValue(plan.price_amount) > 0 && !plan.isJoined && plan.user_id !== user.id) {
-      toast.error("This plan requires payment — tap Pay to continue.");
+      toast.error(t('plans.requiresPayment'));
       return { success: false };
     }
 
@@ -963,7 +963,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const scheduledDate = parseDbDate(plan.scheduled_for);
       const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
       if (!isSameDay && scheduledDate < new Date()) {
-        toast.error("This event already started");
+        toast.error(t('plans.eventAlreadyStarted'));
         return { success: false };
       }
     }
@@ -983,7 +983,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         .eq("user_id", user.id);
 
       if ((alreadyJoinedCount ?? 0) > 0) {
-        toast.info("You've already joined this plan!");
+        toast.info(t('plans.alreadyJoined'));
         return { success: true };
       }
 
@@ -1032,7 +1032,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // capacity-capped slots across multiple groups of the same activity type.
     const targetGroup = await findOrCreateOpenGroup(plan.activity_type, plan.city, user.id);
     if (!targetGroup) {
-      toast.error("Group is full — couldn't start a new one");
+      toast.error(t('plans.groupFull'));
       return { success: false };
     }
 
@@ -1056,7 +1056,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const existingJoin = await checkExistingJoin(targetPlan.activity_type);
     if (existingJoin) {
       if (normalizeCity(existingJoin.city) === normalizeCity(targetPlan.city)) {
-        toast.info("You've already joined this plan!");
+        toast.info(t('plans.alreadyJoined'));
         return { success: true }; // already joined — treat as success so button flips
       } else {
         setDuplicateActivityBlock({ activityType: targetPlan.activity_type, oldCity: existingJoin.city, newCity: targetPlan.city });
@@ -1115,7 +1115,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     // Safety guard: never free-insert a paid plan.
     if (getPriceValue(plan.price_amount) > 0 && !plan.isJoined && plan.user_id !== user.id) {
-      toast.error("This plan requires payment — tap Pay to continue.");
+      toast.error(t('plans.requiresPayment'));
       return;
     }
 
@@ -1125,21 +1125,21 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const scheduledDate = parseDbDate(plan.scheduled_for);
       const isSameDay = scheduledDate.toDateString() === new Date().toDateString();
       if (!isSameDay && scheduledDate < new Date()) {
-        toast.error("This event already started");
+        toast.error(t('plans.eventAlreadyStarted'));
         return;
       }
     }
 
     const targetGroup = await findOrCreateOpenGroup(plan.activity_type, plan.city, user.id);
     if (!targetGroup) {
-      toast.error("Group is full — couldn't start a new one");
+      toast.error(t('plans.groupFull'));
       return;
     }
     if (targetGroup.id !== plan.id) {
       if ((targetGroup.group_number ?? 1) > (plan.group_number ?? 1)) {
-        toast.info("This group is full · a new group has been created for you!");
+        toast.info(t('plans.groupFullNewCreated'));
       } else {
-        toast.info("This group is full · joining another group");
+        toast.info(t('plans.groupFullJoiningAnother'));
       }
     }
     const targetPlan: PlanActivity = targetGroup.id === plan.id
@@ -1290,7 +1290,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
             )}
           >
-            My City
+            {t('plans.myCity')}
           </button>
           <button
             type="button"
@@ -1302,7 +1302,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
             )}
           >
-            🌍 All Cities
+            🌍 {t('common.allCities')}
           </button>
         </div>
       </div>
@@ -1318,7 +1318,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           className="w-full mb-3 rounded-xl px-3 py-2 text-left text-sm text-white font-medium transition-colors hover:opacity-90"
           style={plansSettlingGradientStyle}
         >
-          {t("plans.allCities", "All cities")}
+          {t("common.allCities")}
         </button>
         <CitySelector
           variant="picker"
@@ -1375,7 +1375,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       {plan.isJoined && (
                         !plan.is_auto_generated && plan.user_id === user?.id ? (
                           <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">
-                            Your plan
+                            {t('plans.yourPlan')}
                           </span>
                         ) : (
                           <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-1.5 py-0.5 rounded-full">
@@ -1385,7 +1385,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       )}
                       {isSoon(plan.scheduled_for) && (
                         <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
-                          🔴 Soon
+                          🔴 {t('plans.soon')}
                         </span>
                       )}
                       {/* Price badge for paid activities */}
@@ -1449,11 +1449,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       type="button"
                       onClick={(e) => handleSharePlan(plan, e)}
                       className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-all border border-gray-200"
-                      title="Invite a friend"
-                      aria-label="Invite a friend"
+                      title={t('plans.inviteFriend')}
+                      aria-label={t('plans.inviteFriend')}
                     >
                       <Send className="w-4 h-4 text-gray-500" />
-                      <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">Invite a Friend</span>
+                      <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">{t('plans.inviteFriend')}</span>
                     </button>
                   </div>
                 </div>
@@ -1472,7 +1472,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               <>
                 {showAllCities && activities.length > 0 && (
                   <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-2 pb-0.5">
-                    🌍 Live feed — all cities
+                    🌍 {t('plans.liveFeedAllCities')}
                   </div>
                 )}
                 {cityPlans.filter(p => !activities.some(a => a.id === p.id)).map((plan) => (
@@ -1513,13 +1513,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           </h3>
                           {isSoon(plan.scheduled_for) && (
                             <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
-                              🔴 Soon
+                              🔴 {t('plans.soon')}
                             </span>
                           )}
                           {!plan.is_auto_generated && plan.user_id === user?.id ? (
                             /* Owner: never show Join or price CTA */
                             <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">
-                              Your plan
+                              {t('plans.yourPlan')}
                             </span>
                           ) : plan.price_amount ? (
                             <span className="text-xs bg-green-50 text-green-700 border border-green-200 font-semibold px-2 py-0.5 rounded-full">
@@ -1593,11 +1593,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           type="button"
                           onClick={(e) => handleSharePlan(plan, e)}
                           className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-all border border-gray-200"
-                          title="Invite a friend"
-                          aria-label="Invite a friend"
+                          title={t('plans.inviteFriend')}
+                          aria-label={t('plans.inviteFriend')}
                         >
                           <Send className="w-4 h-4 text-gray-500" />
-                          <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">Invite a Friend</span>
+                          <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">{t('plans.inviteFriend')}</span>
                         </button>
                       </div>
                     </div>
@@ -1612,15 +1612,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       <AlertDialog open={!!planToLeave} onOpenChange={(open) => !open && setPlanToLeave(null)}>
         <AlertDialogContent className="border-2 border-destructive/40">
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave {planToLeave ? getActivityLabel(planToLeave.activity_type) : ""}?</AlertDialogTitle>
+            <AlertDialogTitle>{t('plans.leavePlanTitle', { activity: planToLeave ? getActivityLabel(planToLeave.activity_type) : "" })}</AlertDialogTitle>
             <AlertDialogDescription>
-              You'll be removed from this activity and the group chat.
+              {t('plans.leavePlanDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleLeavePlan} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Leave
+              {t('plans.leaveBtn')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1646,12 +1646,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             }}
           >
             <div className="text-center space-y-2">
-              <p className="text-xl font-bold text-gray-900">Hold on Tiger! 🐯</p>
+              <p className="text-xl font-bold text-gray-900">{t('plans.holdOnTitle')}</p>
               <p className="text-sm text-gray-600 leading-relaxed">
-                You're already joined for{" "}
-                <span className="font-semibold">{getActivityLabel(duplicateActivityBlock.activityType)}</span>{" "}
-                in <span className="font-semibold">{duplicateActivityBlock.oldCity}</span>. Leave that one first before joining in{" "}
-                <span className="font-semibold">{duplicateActivityBlock.newCity}</span>.
+                {t('plans.duplicateActivityDesc', {
+                  activity: getActivityLabel(duplicateActivityBlock.activityType),
+                  oldCity: duplicateActivityBlock.oldCity,
+                  newCity: duplicateActivityBlock.newCity,
+                })}
               </p>
             </div>
             <button
@@ -1664,7 +1665,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               }}
               className="w-full h-11 rounded-full font-semibold text-base text-white transition-all hover:opacity-90 active:scale-95 bg-blue-600"
             >
-              See my {getActivityLabel(duplicateActivityBlock.activityType)} plan
+              {t('plans.seeMyPlan', { activity: getActivityLabel(duplicateActivityBlock.activityType) })}
             </button>
             <button
               type="button"
@@ -1676,7 +1677,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 color: "#1a1a1a",
               }}
             >
-              Got it
+              {t('plans.gotIt')}
             </button>
           </div>
         </div>
@@ -1775,7 +1776,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     {/* Text */}
                     <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
                       <p className="font-bold text-white truncate">
-                        {planPreview.note || getActivityLabel(planPreview.activity_type) || t('plans.untitledPlan', 'Untitled Plan')}
+                        {planPreview.note || getActivityLabel(planPreview.activity_type) || t('plans.untitledPlan')}
                       </p>
                       <p className="text-xs text-white/80 mt-0.5 truncate">
                         {planPreview.city}
@@ -1800,7 +1801,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
                   style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
                 >
-                  Enter chat
+                  {t('plans.enterChat')}
                 </button>
               ) : (
                 <button
@@ -1809,7 +1810,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
                   style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
                 >
-                  JOIN
+                  {t('plans.joinBtn')}
                 </button>
               )}
             </div>
@@ -1833,7 +1834,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     )}
                   </div>
                   <h2 className="text-lg font-display font-bold text-gray-900">
-                    {planPreview.note || getActivityLabel(planPreview.activity_type) || t('plans.untitledPlan', 'Untitled Plan')}
+                    {planPreview.note || getActivityLabel(planPreview.activity_type) || t('plans.untitledPlan')}
                   </h2>
                   <p className="text-sm text-gray-500 mt-0.5">
                     {planPreview.activity_type !== "general" && `${getActivityLabel(planPreview.activity_type)} · `}{planPreview.city}
@@ -1870,9 +1871,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       ))}
                     </div>
                     <span className="text-sm text-gray-500 font-medium">
-                      {(planPreview.participant_count ?? 0) > 4
-                        ? `+${planPreview.participant_count} going`
-                        : `${planPreview.participant_count} going`}
+                      {(planPreview.participant_count ?? 0) > 4 ? '+' : ''}{t('plans.going', { count: planPreview.participant_count ?? 0 })}
                     </span>
                   </div>
                 )}
@@ -1887,7 +1886,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
                     style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
                   >
-                    Enter chat
+                    {t('plans.enterChat')}
                   </button>
                 ) : (
                   <button
@@ -1896,7 +1895,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
                     style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
                   >
-                    {t('plans.yesImIn', "Yes, I'm in! 🎉")}
+                    {t('plans.yesImIn')}
                   </button>
                 )}
                 <button
@@ -2017,7 +2016,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               maxGroupSize={MAX_GROUP_CAPACITY}
               hasNoVenue={false}
               showDifferentCity={false}
-              confirmLabel={alreadyJoined ? t('plans.joinGroupChat', 'Join group chat') : undefined}
+              confirmLabel={alreadyJoined ? t('plans.joinGroupChat') : undefined}
               onConfirm={() => {
                 setAutoGenCardPlan(null);
                 if (alreadyJoined) {
