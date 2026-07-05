@@ -769,7 +769,7 @@ export default function ProposePlanPage() {
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNameSubmit(); } }}
                   placeholder="Type here..."
                   maxLength={MAX_CHARACTERS}
-                  className="w-full h-16 rounded-2xl border border-border bg-muted/60 px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
+                  className="w-full h-16 rounded-2xl border border-border bg-muted/60 px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20 placeholder:text-muted-foreground"
                 />
                 <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                   {planText.length}/{MAX_CHARACTERS}
@@ -778,8 +778,7 @@ export default function ProposePlanPage() {
               <button
                 onClick={handleNameSubmit}
                 disabled={!planText.trim() || hasProfanity}
-                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
-                style={{ background: "#60a5fa" }}
+                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
               >
                 <Send className="w-5 h-5" />
               </button>
@@ -796,13 +795,12 @@ export default function ProposePlanPage() {
               onChange={(e) => setCityInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCitySubmit(); } }}
               placeholder="e.g. Paris, New York, São Paulo…"
-              className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
+              className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20 placeholder:text-muted-foreground"
             />
             <button
               onClick={handleCitySubmit}
               disabled={!cityInput.trim()}
-              className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
-              style={{ background: "#60a5fa" }}
+              className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
             >
               <Send className="w-5 h-5" />
             </button>
@@ -896,14 +894,13 @@ export default function ProposePlanPage() {
                 value={selectedTime}
                 onChange={(e) => { setSelectedTime(e.target.value); setPastTimeError(false); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleTimeSubmit(); }}
-                className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20"
                 style={{ colorScheme: "light" }}
               />
               <button
                 onClick={handleTimeSubmit}
                 disabled={!selectedTime}
-                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90"
-                style={{ background: "#60a5fa" }}
+                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
               >
                 <Send className="w-5 h-5" />
               </button>
@@ -942,7 +939,7 @@ export default function ProposePlanPage() {
                   <select
                     value={priceCurrency}
                     onChange={(e) => setPriceCurrency(e.target.value)}
-                    className="w-20 h-14 shrink-0 rounded-full border border-border bg-muted/60 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="w-20 h-14 shrink-0 rounded-full border border-border bg-muted/60 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-black/20"
                   >
                     {CURRENCIES.map((currency) => (
                       <option key={currency.code} value={currency.code}>
@@ -964,13 +961,12 @@ export default function ProposePlanPage() {
                     }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePriceSubmit(); } }}
                     placeholder={t("createPlan.amountPlaceholder")}
-                    className="w-24 min-w-0 max-w-[7rem] h-14 rounded-2xl border border-border bg-muted/60 px-4 text-base focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 placeholder:text-muted-foreground"
+                    className="w-24 min-w-0 max-w-[7rem] h-14 rounded-2xl border border-border bg-muted/60 px-4 text-base focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20 placeholder:text-muted-foreground"
                   />
                   {/* Send — w-12 h-12 shrink-0: fixed size, always rightmost, never clipped */}
                   <button
                     onClick={handlePriceSubmit}
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90"
-                    style={{ background: "#60a5fa" }}
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                   >
                     <Send className="w-5 h-5" />
                   </button>
