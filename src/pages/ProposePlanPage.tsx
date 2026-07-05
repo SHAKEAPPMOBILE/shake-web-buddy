@@ -60,7 +60,7 @@ const BOT_QUESTIONS: Record<StepName, string> = {
 function BotBubble({ message, showAvatar = false }: { message: string; showAvatar?: boolean }) {
   if (!message) return null;
   return (
-    <div className="flex flex-col items-center gap-3 mb-8">
+    <div className="flex flex-row items-end gap-3 mb-8">
       {showAvatar && (
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
@@ -69,7 +69,7 @@ function BotBubble({ message, showAvatar = false }: { message: string; showAvata
           😎
         </div>
       )}
-      <div className="bg-muted rounded-2xl rounded-tl-none px-5 py-4 w-full">
+      <div className="bg-muted rounded-2xl rounded-tl-none px-5 py-4 flex-1">
         <p className="text-xl font-semibold text-foreground leading-snug">{message}</p>
       </div>
     </div>
