@@ -5,6 +5,9 @@ const config: CapacitorConfig = {
   appName: 'SHAKE',
   webDir: 'dist',
   plugins: {
+    Keyboard: {
+      resize: 'native',
+    },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],
     },
