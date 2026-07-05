@@ -451,9 +451,9 @@ export function PlanGroupChatView({
     const today = new Date();
     const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
     const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-    if (d.toDateString() === today.toDateString()) return "Today";
-    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-    if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+    if (d.toDateString() === today.toDateString()) return t('common.today', 'Today');
+    if (d.toDateString() === yesterday.toDateString()) return t('common.yesterday', 'Yesterday');
+    if (d.toDateString() === tomorrow.toDateString()) return t('common.tomorrow', 'Tomorrow');
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   })();
 
@@ -494,7 +494,7 @@ export function PlanGroupChatView({
             <MinimalBackButton
               onClick={onBack}
               className="shrink-0 text-white/80 hover:text-white"
-              aria-label="Back"
+              aria-label={t('common.back', 'Back')}
               iconClassName="w-6 h-6"
             />
             <div className="relative">
@@ -510,11 +510,11 @@ export function PlanGroupChatView({
                   <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
                     {isCreator ? (
                       <button onClick={handleInitiateDelete} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                        <Trash2 className="w-4 h-4" /> Delete plan
+                        <Trash2 className="w-4 h-4" /> {t('plans.deletePlanItem', 'Delete plan')}
                       </button>
                     ) : (
                       <button onClick={handleLeavePlan} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                        <LogOut className="w-4 h-4" /> Leave plan
+                        <LogOut className="w-4 h-4" /> {t('plans.leavePlanItem', 'Leave plan')}
                       </button>
                     )}
                   </div>
@@ -579,7 +579,7 @@ export function PlanGroupChatView({
                 >
                   {otherParticipants.map((p) => (
                     <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-white/30 bg-white/20 shrink-0">
-                      <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || "Shaker"} className="object-cover" />
+                      <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || t('chat.shaker', 'Shaker')} className="object-cover" />
                       <AvatarFallback className="bg-white/20 flex items-center justify-center">
                         <User className="w-3.5 h-3.5 text-white/70" />
                       </AvatarFallback>
@@ -665,7 +665,7 @@ export function PlanGroupChatView({
           messages.map((msg) => {
             const isOwnMessage = msg.user_id === user?.id;
             const profile = profiles[msg.user_id];
-            const displayName = isOwnMessage ? "You" : profile?.name || "Shaker";
+            const displayName = isOwnMessage ? t('chat.you', 'You') : profile?.name || t('chat.shaker', 'Shaker');
             const avatarUrl = profile?.avatar_url;
             const msgReactions = reactionsByMessage[msg.id];
             const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
