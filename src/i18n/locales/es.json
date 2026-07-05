@@ -275,7 +275,20 @@
     "faceIdRemovedTitle": "Face ID eliminado",
     "faceIdRemovedDesc": "El inicio de sesión facial ha sido desactivado.",
     "faceIdRemoveFailedTitle": "Error al eliminar Face ID",
-    "userFallback": "Usuario"
+    "userFallback": "Usuario",
+    "payoutInfoMissing": "Información de pago pendiente",
+    "payoutInfoMissingDesc": "Aún no has completado tu información de pago — configúrala para recibir dinero de tus planes de pago.",
+    "sectionAccount": "Cuenta",
+    "sectionPlanRewards": "Plan y Recompensas",
+    "sectionSocial": "Social",
+    "followInstagram": "Síguenos en Instagram",
+    "shareShake": "Compartir Shake",
+    "shareApp": "Compartir App",
+    "sectionSettings": "Configuración",
+    "sectionAccountActions": "Acciones de Cuenta",
+    "deleteAccountTitle": "¿Eliminar Cuenta?",
+    "deleteAccountDesc": "Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.",
+    "deleteAccountError": "No se pudo eliminar la cuenta. Por favor contacta al soporte."
   },
   "points": {
     "title": "Mis Puntos",

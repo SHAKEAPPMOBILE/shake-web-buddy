@@ -275,7 +275,20 @@
     "faceIdRemovedTitle": "Face ID entfernt",
     "faceIdRemovedDesc": "Die Gesichtsanmeldung wurde deaktiviert.",
     "faceIdRemoveFailedTitle": "Face ID konnte nicht entfernt werden",
-    "userFallback": "Benutzer"
+    "userFallback": "Benutzer",
+    "payoutInfoMissing": "Auszahlungsinformationen fehlen",
+    "payoutInfoMissingDesc": "Du hast deine Auszahlungsinformationen noch nicht ausgefüllt — richte sie ein, um Geld aus deinen bezahlten Plänen zu erhalten.",
+    "sectionAccount": "Konto",
+    "sectionPlanRewards": "Plan & Belohnungen",
+    "sectionSocial": "Social",
+    "followInstagram": "Folge uns auf Instagram",
+    "shareShake": "Shake teilen",
+    "shareApp": "App teilen",
+    "sectionSettings": "Einstellungen",
+    "sectionAccountActions": "Kontoaktionen",
+    "deleteAccountTitle": "Konto löschen?",
+    "deleteAccountDesc": "Dadurch werden dein Konto und alle deine Daten dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "deleteAccountError": "Konto konnte nicht gelöscht werden. Bitte wende dich an den Support."
   },
   "points": {
     "title": "Meine Punkte",

@@ -275,7 +275,20 @@
     "faceIdRemovedTitle": "Face ID rimosso",
     "faceIdRemovedDesc": "L'accesso con il viso è stato disabilitato.",
     "faceIdRemoveFailedTitle": "Impossibile rimuovere Face ID",
-    "userFallback": "Utente"
+    "userFallback": "Utente",
+    "payoutInfoMissing": "Informazioni di pagamento mancanti",
+    "payoutInfoMissingDesc": "Non hai ancora completato le tue informazioni di pagamento — configurale per ricevere denaro dai tuoi piani a pagamento.",
+    "sectionAccount": "Account",
+    "sectionPlanRewards": "Piano e Premi",
+    "sectionSocial": "Social",
+    "followInstagram": "Seguici su Instagram",
+    "shareShake": "Condividi Shake",
+    "shareApp": "Condividi App",
+    "sectionSettings": "Impostazioni",
+    "sectionAccountActions": "Azioni Account",
+    "deleteAccountTitle": "Eliminare l'Account?",
+    "deleteAccountDesc": "Questo eliminerà definitivamente il tuo account e tutti i tuoi dati. Questa azione non può essere annullata.",
+    "deleteAccountError": "Impossibile eliminare l'account. Contatta il supporto."
   },
   "points": {
     "title": "I Miei Punti",

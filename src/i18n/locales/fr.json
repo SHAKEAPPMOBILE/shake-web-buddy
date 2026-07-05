@@ -275,7 +275,20 @@
     "faceIdRemovedTitle": "Face ID supprimé",
     "faceIdRemovedDesc": "La connexion par visage a été désactivée.",
     "faceIdRemoveFailedTitle": "Échec de la suppression de Face ID",
-    "userFallback": "Utilisateur"
+    "userFallback": "Utilisateur",
+    "payoutInfoMissing": "Informations de paiement manquantes",
+    "payoutInfoMissingDesc": "Vous n'avez pas encore complété vos informations de paiement — configurez-les pour recevoir de l'argent de vos plans payants.",
+    "sectionAccount": "Compte",
+    "sectionPlanRewards": "Plan et Récompenses",
+    "sectionSocial": "Social",
+    "followInstagram": "Suivez-nous sur Instagram",
+    "shareShake": "Partager Shake",
+    "shareApp": "Partager l'App",
+    "sectionSettings": "Paramètres",
+    "sectionAccountActions": "Actions du Compte",
+    "deleteAccountTitle": "Supprimer le Compte ?",
+    "deleteAccountDesc": "Cela supprimera définitivement votre compte et toutes vos données. Cette action est irréversible.",
+    "deleteAccountError": "Échec de la suppression du compte. Veuillez contacter le support."
   },
   "points": {
     "title": "Mes Points",

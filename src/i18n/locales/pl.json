@@ -274,7 +274,20 @@
     "faceIdRemovedTitle": "Face ID usunięte",
     "faceIdRemovedDesc": "Logowanie twarzą zostało wyłączone.",
     "faceIdRemoveFailedTitle": "Nie udało się usunąć Face ID",
-    "userFallback": "Użytkownik"
+    "userFallback": "Użytkownik",
+    "payoutInfoMissing": "Brakujące dane wypłaty",
+    "payoutInfoMissingDesc": "Nie uzupełniłeś jeszcze danych wypłaty — skonfiguruj je, aby otrzymywać pieniądze z płatnych planów.",
+    "sectionAccount": "Konto",
+    "sectionPlanRewards": "Plan i Nagrody",
+    "sectionSocial": "Social",
+    "followInstagram": "Obserwuj nas na Instagramie",
+    "shareShake": "Udostępnij Shake",
+    "shareApp": "Udostępnij App",
+    "sectionSettings": "Ustawienia",
+    "sectionAccountActions": "Akcje Konta",
+    "deleteAccountTitle": "Usunąć konto?",
+    "deleteAccountDesc": "Spowoduje to trwałe usunięcie konta i wszystkich danych. Tej czynności nie można cofnąć.",
+    "deleteAccountError": "Nie udało się usunąć konta. Skontaktuj się z pomocą techniczną."
   },
   "points": {
     "title": "Moje punkty",

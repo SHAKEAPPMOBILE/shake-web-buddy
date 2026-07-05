@@ -276,7 +276,20 @@
     "faceIdRemovedTitle": "Face ID removed",
     "faceIdRemovedDesc": "Face login has been disabled.",
     "faceIdRemoveFailedTitle": "Failed to remove Face ID",
-    "userFallback": "User"
+    "userFallback": "User",
+    "payoutInfoMissing": "Payout info missing",
+    "payoutInfoMissingDesc": "You haven't completed your payout info yet — set it up to receive money from your paid plans.",
+    "sectionAccount": "Account",
+    "sectionPlanRewards": "Plan & Rewards",
+    "sectionSocial": "Social",
+    "followInstagram": "Follow us on Instagram",
+    "shareShake": "Share Shake",
+    "shareApp": "Share App",
+    "sectionSettings": "Settings",
+    "sectionAccountActions": "Account Actions",
+    "deleteAccountTitle": "Delete Account?",
+    "deleteAccountDesc": "This will permanently delete your account and all your data. This cannot be undone.",
+    "deleteAccountError": "Failed to delete account. Please contact support."
   },
   "points": {
     "title": "My Points",

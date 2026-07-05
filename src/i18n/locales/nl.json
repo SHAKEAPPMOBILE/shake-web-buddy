@@ -275,7 +275,20 @@
     "faceIdRemovedTitle": "Face ID verwijderd",
     "faceIdRemovedDesc": "Gezichtsherkenning is uitgeschakeld.",
     "faceIdRemoveFailedTitle": "Kan Face ID niet verwijderen",
-    "userFallback": "Gebruiker"
+    "userFallback": "Gebruiker",
+    "payoutInfoMissing": "Uitbetalingsinformatie ontbreekt",
+    "payoutInfoMissingDesc": "Je hebt je uitbetalingsinformatie nog niet ingevuld — stel het in om geld te ontvangen van je betaalde plannen.",
+    "sectionAccount": "Account",
+    "sectionPlanRewards": "Plan & Beloningen",
+    "sectionSocial": "Social",
+    "followInstagram": "Volg ons op Instagram",
+    "shareShake": "Shake Delen",
+    "shareApp": "App Delen",
+    "sectionSettings": "Instellingen",
+    "sectionAccountActions": "Accountacties",
+    "deleteAccountTitle": "Account Verwijderen?",
+    "deleteAccountDesc": "Dit verwijdert je account en al je gegevens permanent. Deze actie kan niet ongedaan worden gemaakt.",
+    "deleteAccountError": "Verwijderen van account mislukt. Neem contact op met support."
   },
   "points": {
     "title": "Mijn Punten",

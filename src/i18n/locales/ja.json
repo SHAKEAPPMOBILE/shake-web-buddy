@@ -274,7 +274,20 @@
     "faceIdRemovedTitle": "Face IDが削除されました",
     "faceIdRemovedDesc": "顔ログインが無効になりました。",
     "faceIdRemoveFailedTitle": "Face IDの削除に失敗しました",
-    "userFallback": "ユーザー"
+    "userFallback": "ユーザー",
+    "payoutInfoMissing": "支払い情報が未入力",
+    "payoutInfoMissingDesc": "支払い情報がまだ入力されていません — 有料プランから収益を受け取るために設定してください。",
+    "sectionAccount": "アカウント",
+    "sectionPlanRewards": "プラン＆報酬",
+    "sectionSocial": "ソーシャル",
+    "followInstagram": "Instagramでフォロー",
+    "shareShake": "Shakeをシェア",
+    "shareApp": "アプリをシェア",
+    "sectionSettings": "設定",
+    "sectionAccountActions": "アカウント操作",
+    "deleteAccountTitle": "アカウントを削除しますか？",
+    "deleteAccountDesc": "アカウントとすべてのデータが完全に削除されます。この操作は元に戻せません。",
+    "deleteAccountError": "アカウントの削除に失敗しました。サポートにお問い合わせください。"
   },
   "points": {
     "title": "マイポイント",

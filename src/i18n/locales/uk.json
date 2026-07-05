@@ -275,7 +275,20 @@
     "faceIdRemovedTitle": "Face ID видалено",
     "faceIdRemovedDesc": "Вхід за обличчям вимкнено.",
     "faceIdRemoveFailedTitle": "Не вдалося видалити Face ID",
-    "userFallback": "Користувач"
+    "userFallback": "Користувач",
+    "payoutInfoMissing": "Відсутня інформація про виплати",
+    "payoutInfoMissingDesc": "Ви ще не заповнили інформацію про виплати — налаштуйте її, щоб отримувати гроші з ваших платних планів.",
+    "sectionAccount": "Акаунт",
+    "sectionPlanRewards": "План та Нагороди",
+    "sectionSocial": "Соціальне",
+    "followInstagram": "Слідкуйте за нами в Instagram",
+    "shareShake": "Поділитися Shake",
+    "shareApp": "Поділитися App",
+    "sectionSettings": "Налаштування",
+    "sectionAccountActions": "Дії з акаунтом",
+    "deleteAccountTitle": "Видалити акаунт?",
+    "deleteAccountDesc": "Це назавжди видалить ваш акаунт і всі ваші дані. Цю дію неможливо скасувати.",
+    "deleteAccountError": "Не вдалося видалити акаунт. Зверніться до служби підтримки."
   },
   "points": {
     "title": "Мої бали",

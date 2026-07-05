@@ -247,7 +247,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       console.error('Delete account error:', err);
       toast({
         title: t('profile.errorTitle', 'Error'),
-        description: 'Failed to delete account. Please contact support.',
+        description: t('profile.deleteAccountError'),
         variant: 'destructive',
       });
       return;
@@ -430,9 +430,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         >
           <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-amber-800">Payout info missing</p>
+            <p className="text-sm font-semibold text-amber-800">{t('profile.payoutInfoMissing')}</p>
             <p className="text-xs text-amber-700 mt-0.5">
-              You haven't completed your payout info yet — set it up to receive money from your paid plans.
+              {t('profile.payoutInfoMissingDesc')}
             </p>
           </div>
           <ChevronRight className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
@@ -444,7 +444,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
         {/* ── ACCOUNT ── */}
         <div>
-          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Account</p>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">{t('profile.sectionAccount')}</p>
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* Edit Profile */}
             <button
@@ -470,7 +470,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
         {/* ── PLAN & REWARDS ── */}
         <div>
-          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Plan & Rewards</p>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">{t('profile.sectionPlanRewards')}</p>
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* Subscription */}
             {/* MONETIZATION BYPASS (2026-06): IAP removed; Stripe web billing coming.
@@ -535,7 +535,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               </div>
               <div className="flex-1">
                 <span className="text-sm font-medium text-gray-900">{t('profile.myPoints')}</span>
-                <p className="text-xs text-gray-400">{points.toLocaleString()} {t('profile.points')} earned</p>
+                <p className="text-xs text-gray-400">{t('profile.pointsEarned', { count: points.toLocaleString() })}</p>
               </div>
               <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showPointsDialog && "rotate-90")} />
             </button>
@@ -832,7 +832,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
         {/* ── SOCIAL ── */}
         <div>
-          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Social</p>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">{t('profile.sectionSocial')}</p>
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* Follow on Instagram */}
             <button
@@ -843,7 +843,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <Instagram className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
-                <span className="text-sm font-medium text-gray-900">Follow us on Instagram</span>
+                <span className="text-sm font-medium text-gray-900">{t('profile.followInstagram')}</span>
                 <p className="text-xs text-gray-400">@shakeapp.inc</p>
               </div>
               <ExternalLink className="w-4 h-4 text-gray-300" />
@@ -857,7 +857,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <Share2 className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
-                <span className="text-sm font-medium text-gray-900">Share Shake</span>
+                <span className="text-sm font-medium text-gray-900">{t('profile.shareShake')}</span>
                 <p className="text-xs text-gray-400">{t('profile.earnPoints', 'Earn +5 points per signup')}</p>
               </div>
               <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showReferralLink && "rotate-90")} />
@@ -882,7 +882,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   className="w-full py-2 text-sm font-medium text-primary border border-primary/30 rounded-2xl hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
                 >
                   <Share2 className="w-4 h-4" />
-                  Share App
+                  {t('profile.shareApp')}
                 </button>
                 {/* Referral link */}
                 {referralCode && (
@@ -914,7 +914,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
         {/* ── SETTINGS ── */}
         <div>
-          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Settings</p>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">{t('profile.sectionSettings')}</p>
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* Appearance */}
             <div className="flex items-center gap-3 px-4 py-3">
@@ -980,7 +980,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
         {/* ── SUPPORT ── */}
         <div>
-          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Support</p>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">{t('profile.support')}</p>
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* Contact Us */}
             <div className="flex items-center gap-3 px-4 py-3">
@@ -1031,7 +1031,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
         {/* ── ACCOUNT ACTIONS ── */}
         <div>
-          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">Account Actions</p>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">{t('profile.sectionAccountActions')}</p>
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* Sign Out */}
             <button
@@ -1051,7 +1051,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-red-500" />
               </div>
-              <span className="flex-1 text-sm font-medium text-red-500">Delete Account</span>
+              <span className="flex-1 text-sm font-medium text-red-500">{t('profile.deleteAccount')}</span>
             </button>
           </div>
         </div>
@@ -1068,7 +1068,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       <Dialog open={showParanormal} onOpenChange={setShowParanormal}>
         <DialogContent className="max-w-md [&>button:last-child]:hidden">
           <DialogHeader>
-            <DialogTitle>👻 Paranormal Activity</DialogTitle>
+            <DialogTitle>{t('profile.paranormalDialogTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">{t('profile.paranormalDialogDesc', "Blocked users won't appear in your feed or chats.")}</p>
@@ -1152,18 +1152,18 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Account?</AlertDialogTitle>
+            <AlertDialogTitle>{t('profile.deleteAccountTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete your account and all your data. This cannot be undone.
+              {t('profile.deleteAccountDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAccount}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

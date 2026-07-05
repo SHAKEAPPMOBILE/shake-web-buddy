@@ -274,7 +274,20 @@
     "faceIdRemovedTitle": "Face ID已移除",
     "faceIdRemovedDesc": "面容登录已禁用。",
     "faceIdRemoveFailedTitle": "移除Face ID失败",
-    "userFallback": "用户"
+    "userFallback": "用户",
+    "payoutInfoMissing": "缺少收款信息",
+    "payoutInfoMissingDesc": "您尚未完善收款信息 — 设置后即可从付费计划中收款。",
+    "sectionAccount": "账户",
+    "sectionPlanRewards": "计划与奖励",
+    "sectionSocial": "社交",
+    "followInstagram": "在Instagram上关注我们",
+    "shareShake": "分享Shake",
+    "shareApp": "分享App",
+    "sectionSettings": "设置",
+    "sectionAccountActions": "账户操作",
+    "deleteAccountTitle": "删除账户？",
+    "deleteAccountDesc": "这将永久删除您的账户和所有数据。此操作无法撤销。",
+    "deleteAccountError": "删除账户失败。请联系客服。"
   },
   "points": {
     "title": "我的积分",
