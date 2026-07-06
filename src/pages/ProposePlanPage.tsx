@@ -367,6 +367,16 @@ export default function ProposePlanPage() {
     if (currentStep > 0) jumpToStep(currentStep - 1);
   };
 
+  const handleExitFlow = useCallback(() => {
+    stopAllTracks();
+    if (recordedObjectUrl) URL.revokeObjectURL(recordedObjectUrl);
+    setRecordedObjectUrl(null);
+    setRecordedBlob(null);
+    setPromoVideoUrl(null);
+    setCameraMode("idle");
+    navigate(-1);
+  }, [stopAllTracks, recordedObjectUrl, navigate]);
+
   const handleNameSubmit = () => {
     if (!planText.trim() || hasProfanity) return;
     advanceStep();
@@ -1044,6 +1054,14 @@ export default function ProposePlanPage() {
 
       case "preview":
         return (
+          <div>
+            {/* Back button — returns to price step */}
+            <div className="pb-3 flex items-center">
+              <MinimalBackButton
+                onClick={handleBack}
+                className="text-foreground/80 hover:text-foreground"
+              />
+            </div>
           <div className="space-y-5">
             {/* Preview card */}
             {promoVideoUrl ? (
@@ -1160,6 +1178,7 @@ export default function ProposePlanPage() {
             >
               {t("createPlan.editAnswers")}
             </button>
+          </div>
           </div>
         );
 
@@ -1353,6 +1372,14 @@ export default function ProposePlanPage() {
               {/* Camera recorder — only step that needs inline scroll space */}
               {currentStepName === "video" && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  {/* Exit button — top-left, discards any recorded video and returns to landing page */}
+                  <div className="pb-4 flex items-center">
+                    <MinimalBackButton
+                      onClick={handleExitFlow}
+                      className="text-foreground/80 hover:text-foreground"
+                      aria-label="Exit"
+                    />
+                  </div>
                   {renderCameraCapture()}
                 </div>
               )}
