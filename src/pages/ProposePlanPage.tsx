@@ -77,7 +77,7 @@ export default function ProposePlanPage() {
     city: t("createPlan.botCity"),
     date: t("createPlan.botDate"),
     time: t("createPlan.botTime"),
-    price: "",
+    price: t("createPlan.botPrice"),
     video: t("createPlan.botVideo"),
     preview: "",
   }), [t]);
@@ -1244,9 +1244,20 @@ export default function ProposePlanPage() {
                             {BOT_QUESTIONS[step]}
                           </p>
                         )}
-                        <p className={cn("font-semibold text-foreground leading-tight", answerSize)}>
-                          {getUserAnswer(step)}
-                        </p>
+                        {step === "video" && promoVideoUrl ? (
+                          <video
+                            src={promoVideoUrl}
+                            muted
+                            loop
+                            playsInline
+                            autoPlay
+                            className="w-16 h-20 rounded-xl object-cover"
+                          />
+                        ) : (
+                          <p className={cn("font-semibold text-foreground leading-tight", answerSize)}>
+                            {getUserAnswer(step)}
+                          </p>
+                        )}
                       </button>
                     );
                   })}
