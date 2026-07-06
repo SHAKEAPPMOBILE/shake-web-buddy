@@ -325,7 +325,7 @@ export default function EventChatPage() {
               {eventImageUrl ? (
                 <button
                   type="button"
-                  className="shrink-0 flex flex-col items-center text-left border-0 p-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7c5cfc]/70 rounded-sm"
+                  className="shrink-0 flex flex-col items-center text-left border-0 p-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20 rounded-sm"
                   style={{
                     background: "white",
                     padding: "3px 3px 8px 3px",
@@ -577,7 +577,7 @@ export default function EventChatPage() {
                     })();
                   }
                 }}
-                className="flex-1 bg-white/5 border-white/10 focus-visible:ring-[#7c5cfc]/50 text-white placeholder:text-white/40 min-h-9"
+                className="flex-1 bg-white/5 border-white/10 focus-visible:ring-black/20 text-white placeholder:text-white/40 min-h-9"
                 disabled={isSending || status !== "active" || videoModalOpen || giphyPickerOpen}
               />
               <Button
@@ -594,7 +594,7 @@ export default function EventChatPage() {
                   }
                 }}
                 disabled={isSending || status !== "active" || !inputValue.trim() || videoModalOpen || giphyPickerOpen}
-                className="shrink-0 h-9 w-9 bg-[#7c5cfc] hover:bg-[#8b6dfc] text-white border-0"
+                className="shrink-0 h-9 w-9 bg-black hover:bg-black/80 text-white border-0"
               >
                 {isSending ? <LoadingSpinner size="sm" /> : <span className="text-xs font-semibold">➤</span>}
               </Button>
