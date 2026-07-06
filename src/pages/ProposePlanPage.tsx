@@ -47,17 +47,8 @@ const MAX_CHARACTERS = 50;
 type StepName = "name" | "city" | "date" | "time" | "price" | "video" | "preview";
 type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
-const BOT_QUESTIONS: Record<StepName, string> = {
-  name: "What's the plan? ✨",
-  city: "Which city are you in? 📍",
-  date: "When? 📅",
-  time: "What time? ⏰",
-  price: "",
-  video: "",
-  preview: "",
-};
 
-function BotBubble({ message, showAvatar = false }: { message: string; showAvatar?: boolean }) {
+function BotBubble({ message, showAvatar = false, subtext }: { message: string; showAvatar?: boolean; subtext?: string }) {
   if (!message) return null;
   return (
     <div className="flex flex-row items-end gap-3 mb-8">
@@ -71,6 +62,7 @@ function BotBubble({ message, showAvatar = false }: { message: string; showAvata
       )}
       <div className="bg-muted rounded-2xl rounded-tl-none px-5 py-4 flex-1">
         <p className="text-xl font-semibold text-foreground leading-snug">{message}</p>
+        {subtext && <p className="text-sm text-muted-foreground mt-1">{subtext}</p>}
       </div>
     </div>
   );
@@ -79,6 +71,17 @@ function BotBubble({ message, showAvatar = false }: { message: string; showAvata
 export default function ProposePlanPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const BOT_QUESTIONS = useMemo((): Record<StepName, string> => ({
+    name: t("createPlan.botName"),
+    city: t("createPlan.botCity"),
+    date: t("createPlan.botDate"),
+    time: t("createPlan.botTime"),
+    price: "",
+    video: t("createPlan.botVideo"),
+    preview: "",
+  }), [t]);
+
   const { user, isPremium } = useAuth();
   const { selectedCity } = useCity();
   const city = selectedCity ?? "";
@@ -185,9 +188,9 @@ export default function ProposePlanPage() {
 
   // Ordered steps — insert "city" only when context provides no city
   const steps: StepName[] = useMemo(() => {
-    const s: StepName[] = ["name"];
+    const s: StepName[] = ["video", "name"];
     if (!city) s.push("city");
-    s.push("date", "time", "price", "video", "preview");
+    s.push("date", "time", "price", "preview");
     return s;
   }, [city]);
 
@@ -281,13 +284,15 @@ export default function ProposePlanPage() {
       if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
       return;
     }
+    // A video was already captured — show the review UI without restarting the camera
+    if (promoVideoUrl) return;
     startCamera();
     return () => {
       stopAllTracks();
       if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
       if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
     };
-  }, [currentStepName, startCamera, stopAllTracks]);
+  }, [currentStepName, promoVideoUrl, startCamera, stopAllTracks]);
 
   // Attach live stream / auto-start playback when cameraMode changes
   useEffect(() => {
@@ -324,16 +329,16 @@ export default function ProposePlanPage() {
       case "city": return cityInput || city;
       case "date":
         return isToday(selectedDate)
-          ? "Today"
+          ? t("common.today")
           : isTomorrow(selectedDate)
-          ? "Tomorrow"
+          ? t("common.tomorrow")
           : format(selectedDate, "EEE, MMM d");
       case "time": return format(previewDateTime, "h:mm a");
       case "price":
         return priceAmount.trim()
           ? `${selectedCurrencySymbol}${priceAmount} ${priceCurrency}`
-          : "Free 🎉";
-      case "video": return promoVideoUrl ? "🎬 Video added" : "Skipped";
+          : t("createPlan.free");
+      case "video": return promoVideoUrl ? t("createPlan.videoAdded") : t("createPlan.skipped");
       default: return "";
     }
   };
@@ -566,13 +571,13 @@ export default function ProposePlanPage() {
     const satDate = getWeekendDate(6);
     const sunDate = getWeekendDate(0);
     return [
-      { label: "Today", date: today },
-      { label: "Tomorrow", date: tomorrow },
-      ...(friDate ? [{ label: "This Friday", date: friDate }] : []),
-      ...(satDate ? [{ label: "This Saturday", date: satDate }] : []),
-      ...(sunDate ? [{ label: "This Sunday", date: sunDate }] : []),
+      { label: t("common.today"), date: today },
+      { label: t("common.tomorrow"), date: tomorrow },
+      ...(friDate ? [{ label: t("createPlan.thisFriday"), date: friDate }] : []),
+      ...(satDate ? [{ label: t("createPlan.thisSaturday"), date: satDate }] : []),
+      ...(sunDate ? [{ label: t("createPlan.thisSunday"), date: sunDate }] : []),
     ];
-  }, [today]);
+  }, [today, t]);
 
   // Inline calendar helpers
   const calYear = today.getFullYear();
@@ -582,6 +587,54 @@ export default function ProposePlanPage() {
 
   const renderCameraCapture = () => {
     const circumference = 2 * Math.PI * 28;
+
+    // ── Already captured — review state ─────────────────────────────────────
+    if (promoVideoUrl) {
+      return (
+        <div className="space-y-4">
+          {/* Inline thumbnail — tap opens the existing fullscreen modal */}
+          <button
+            type="button"
+            onClick={() => setVideoFullscreen(true)}
+            className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
+            aria-label="Preview promo video fullscreen"
+          >
+            <video
+              src={promoVideoUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Play icon */}
+            <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center pointer-events-none">
+              <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
+            </div>
+
+          </button>
+
+          {/* Retake / Keep this */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => { setPromoVideoUrl(null); handleRetake(); }}
+              className="flex-1 py-3 rounded-full text-sm font-semibold bg-muted text-foreground"
+            >
+              {t("createPlan.retake")}
+            </button>
+            <button
+              type="button"
+              onClick={advanceStep}
+              className="flex-1 py-3 rounded-full text-sm font-semibold bg-black text-white"
+            >
+              {t("createPlan.keepThis")}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-4">
         {/* Camera / playback box — portrait ~3:4 */}
@@ -661,7 +714,7 @@ export default function ProposePlanPage() {
           {cameraMode === "recording" && (
             <div className="absolute top-3 left-0 right-0 flex justify-center pointer-events-none">
               <span className="bg-red-500/90 px-3 py-1 rounded-full text-white text-xs font-semibold tracking-wide">
-                ● REC
+                {t("createPlan.recording")}
               </span>
             </div>
           )}
@@ -675,7 +728,7 @@ export default function ProposePlanPage() {
               className="absolute top-3 right-3 px-3 py-1.5 rounded-full text-sm font-medium text-white disabled:opacity-50 z-10"
               style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
             >
-              Skip
+              {t("createPlan.skipVideo")}
             </button>
           )}
 
@@ -728,7 +781,7 @@ export default function ProposePlanPage() {
                 disabled={videoUploading}
                 className="flex-1 py-3 rounded-full text-sm font-semibold bg-black/60 text-white backdrop-blur-sm disabled:opacity-50"
               >
-                Retake
+                {t("createPlan.retake")}
               </button>
               <button
                 type="button"
@@ -737,7 +790,7 @@ export default function ProposePlanPage() {
                 className="flex-1 py-3 rounded-full text-sm font-semibold bg-white text-black flex items-center justify-center gap-2 disabled:opacity-70"
               >
                 {videoUploading && <LoadingSpinner size="sm" />}
-                {videoUploading ? "Uploading…" : "Use this video"}
+                {videoUploading ? t("createPlan.videoUploading") : t("createPlan.useThisVideo")}
               </button>
             </div>
           )}
@@ -918,14 +971,14 @@ export default function ProposePlanPage() {
                   onClick={handleSkipPrice}
                   className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
                 >
-                  Free
+                  {t("createPlan.freeOption")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowPriceInput(true)}
                   className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
                 >
-                  Priced
+                  {t("createPlan.pricedOption")}
                 </button>
               </div>
             ) : (
@@ -985,39 +1038,34 @@ export default function ProposePlanPage() {
           <div className="space-y-5">
             {/* Preview card */}
             {promoVideoUrl ? (
-              /* ── Video card: full-bleed portrait background ── */
-              <button
-                type="button"
-                onClick={() => setVideoFullscreen(true)}
-                className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
-                aria-label="Preview promo video fullscreen"
-              >
-                {/* Background video */}
-                <video
-                  src={promoVideoUrl}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+              /* ── Video card: standalone portrait, no text overlay ── */
+              <>
+                <button
+                  type="button"
+                  onClick={() => setVideoFullscreen(true)}
+                  className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
+                  aria-label="Preview promo video fullscreen"
+                >
+                  {/* Background video */}
+                  <video
+                    src={promoVideoUrl}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
 
-                {/* Gradient scrim — darker at bottom for text legibility */}
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.18) 45%, transparent 100%)" }}
-                />
+                  {/* Play icon — top-right corner */}
+                  <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center pointer-events-none">
+                    <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
+                  </div>
+                </button>
 
-                {/* Expand icon — top-right corner */}
-                <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center pointer-events-none">
-                  <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
-                </div>
-
-                {/* Overlay text — pinned to bottom, non-interactive */}
-                <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pointer-events-none">
-                  <div className="flex items-end gap-3">
-                    {/* Avatar */}
-                    <div className="w-10 h-10 rounded-full bg-white/20 border border-white/40 overflow-hidden shrink-0 flex items-center justify-center">
+                {/* Text card below video — same style as no-video branch */}
+                <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
                       {userAvatarUrl ? (
                         <img
                           src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
@@ -1025,16 +1073,15 @@ export default function ProposePlanPage() {
                           className="w-full h-full object-cover rounded-full"
                         />
                       ) : (
-                        <User className="w-5 h-5 text-white/80" />
+                        <User className="w-7 h-7 text-muted-foreground" />
                       )}
                     </div>
-                    {/* Text */}
-                    <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
-                      <p className="font-bold text-white truncate">"{planText.trim()}"</p>
-                      <p className="text-xs text-white/80 mt-0.5 truncate">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
                         {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
                         {priceAmount.trim() && (
-                          <span className="text-green-300 font-medium ml-1">
+                          <span className="text-green-500 font-medium ml-1">
                             · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
                           </span>
                         )}
@@ -1042,7 +1089,7 @@ export default function ProposePlanPage() {
                     </div>
                   </div>
                 </div>
-              </button>
+              </>
             ) : (
               /* ── No-video card: existing design, untouched ── */
               <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
@@ -1074,7 +1121,7 @@ export default function ProposePlanPage() {
             )}
 
             {dayLimitError && (
-              <p className="text-sm text-destructive text-center">Slow down tiger, one plan a day keeps the chaos away! 🐯</p>
+              <p className="text-sm text-destructive text-center">{t("createPlan.dayLimitError")}</p>
             )}
 
             {/* Create Plan */}
@@ -1087,12 +1134,12 @@ export default function ProposePlanPage() {
               {isLoading || connectLoading ? (
                 <>
                   <LoadingSpinner size="sm" />
-                  <span style={{ color: "#60a5fa" }}>
+                  <span className="text-white">
                     {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
                   </span>
                 </>
               ) : (
-                <span className="text-lg font-semibold tracking-wide" style={{ color: "#60a5fa" }}>ADD PLAN</span>
+                <span className="text-lg font-semibold tracking-wide text-white">{t("createPlan.addPlan")}</span>
               )}
             </button>
 
@@ -1102,7 +1149,7 @@ export default function ProposePlanPage() {
               onClick={() => jumpToStep(steps.length - 2)}
               className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-center"
             >
-              Edit answers
+              {t("createPlan.editAnswers")}
             </button>
           </div>
         );
@@ -1154,21 +1201,10 @@ export default function ProposePlanPage() {
         </div>
       ) : (
         <>
-          {/* Pinned question header — stays visible above the keyboard */}
-          <div
-            key={currentStep}
-            className="w-full max-w-sm mx-auto px-6 pt-4 shrink-0"
-          >
-            <BotBubble
-              message={BOT_QUESTIONS[currentStepName]}
-              showAvatar={currentStep === 0}
-            />
-          </div>
-
-          {/* Scrollable chat history — only Q&A history and camera capture scroll */}
+          {/* Scrollable chat history + inline current question */}
           <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
-            {/* spacer: centers the view on step 0; collapses as history grows */}
-            <div className="min-h-[8vh]" />
+            {/* spacer: 8vh on step 0 for centering; collapses to 16px once history exists */}
+            <div className={currentStep === 0 ? "min-h-[8vh]" : "min-h-4"} />
             <div
               className="w-full max-w-sm mx-auto px-6 pt-4"
               style={{ paddingBottom: composerHeight + keyboardOffset + 32 }}
@@ -1203,7 +1239,7 @@ export default function ProposePlanPage() {
                           opacity
                         )}
                       >
-                        {BOT_QUESTIONS[step] && (
+                        {BOT_QUESTIONS[step] && step !== "video" && (
                           <p className={cn("text-muted-foreground leading-tight", labelSize)}>
                             {BOT_QUESTIONS[step]}
                           </p>
@@ -1219,6 +1255,17 @@ export default function ProposePlanPage() {
 
               {/* Divider separating history from active step */}
               {currentStep > 0 && <div className="border-t border-border/20 mb-8" />}
+
+              {/* Current question — inline after history */}
+              {BOT_QUESTIONS[currentStepName] && currentStepName !== "video" && (
+                <div key={currentStep} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <BotBubble
+                    message={BOT_QUESTIONS[currentStepName]}
+                    showAvatar={currentStepName === "name"}
+                    subtext={currentStepName === "name" ? t("createPlan.soOthersCanJoin") : undefined}
+                  />
+                </div>
+              )}
 
               {/* Camera recorder — only step that needs inline scroll space */}
               {currentStepName === "video" && (
