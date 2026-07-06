@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import confetti from 'canvas-confetti';
@@ -117,9 +117,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   // "My City" (false) is the default; "All Cities" (true) is opt-in
   const [showAllCities, setShowAllCities] = useState(false);
 
+  useEffect(() => {
+    console.log("[PlansTab] showAllCities changed →", showAllCities);
+    // Trigger a fresh fetch when the tab switches — fetchPlansRef may not be
+    // set yet on first render, so guard with a check.
+    fetchPlansRef.current?.();
+  }, [showAllCities]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Fetch all plans — single source of truth via get_my_active_plans RPC
   const fetchPlans = useCallback(async () => {
     if (!user) {
+      console.log("[SET:fetchPlans:no-user] setActivities → [] | setCityPlans → []");
+      console.trace("[SET:fetchPlans:no-user]");
       setActivities([]);
       setCityPlans([]);
       setIsLoading(false);
@@ -127,8 +136,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
 
     setIsLoading(true);
+    // Read showAllCities from the ref, not the closure — the ref is updated
+    // synchronously during each render so this always reflects the active tab,
+    // even when fetchPlansRef.current holds an older function instance.
+    const showAllCities = allPlansRef.current.showAllCities;
     const effectiveCity = selectedCity;
-    console.log("[PlansTab] fetchPlans →", { effectiveCity, showAllCities });
+    const fetchId = Date.now();
+    console.log(`[PlansTab] fetchPlans START #${fetchId}`, { effectiveCity, showAllCities, caller: new Error().stack?.split('\n')[2]?.trim() });
 
     const loadingTimeout = setTimeout(() => setIsLoading(false), 5000);
 
@@ -178,6 +192,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         console.error("[PlansTab] get_my_active_plans error:", myPlansResult.error);
       }
       const myPlans: MyActivePlan[] = myPlansResult.data ?? [];
+      console.log(`[PlansTab] RPC get_my_active_plans → ${myPlans.length} rows`, myPlans.map(p => ({ activity_type: p.activity_type, city: p.city, is_carousel: p.is_carousel, plan_id: p.plan_id })));
+
+      const _carouselFilter = showAllCities
+        ? effectiveCity ? `city != "${effectiveCity}"` : "all cities (no effectiveCity)"
+        : effectiveCity ? `city = "${effectiveCity}" AND activity_id IS NULL` : "empty (no effectiveCity)";
+      console.log(`[PlansTab] carousel query [${showAllCities ? "Todas las ciudades" : "Mi Ciudad"}] filter: ${_carouselFilter} → ${cityCarouselResult.data?.length ?? 0} rows`, cityCarouselResult.error ?? cityCarouselResult.data);
 
       // Split into real-plan joins and carousel joins.
       const realJoins     = myPlans.filter(p => !p.is_carousel);
@@ -234,7 +254,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 .order("scheduled_for", { ascending: true, nullsFirst: false })
                 .limit(20)
       );
-      console.log("[PlansTab] my-city query →", { effectiveCity, count: cityPlansDataResult.data?.length, error: cityPlansDataResult.error });
+      const _tab = showAllCities ? "Todas las ciudades" : "Mi Ciudad";
+      const _realFilter = !effectiveCity ? "empty (no effectiveCity)"
+        : showAllCities ? `city != "${effectiveCity}", is_active=true, LIMIT 30`
+        : `city = "${effectiveCity}", is_active=true, is_auto_generated!=true, LIMIT 20`;
+      console.log(`[PlansTab] real-plans query [${_tab}] filter: ${_realFilter} → ${cityPlansDataResult.data?.length ?? 0} rows`, cityPlansDataResult.error ?? cityPlansDataResult.data?.map((a: any) => ({ id: a.id, activity_type: a.activity_type, city: a.city, scheduled_for: a.scheduled_for })));
 
       // Discovery real plans: active plans in the city that I haven't joined.
       // isActivityVisible uses a 24h-back window (for joined plans), so we add a
@@ -322,7 +346,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       }));
 
       if (quickReal.length > 0 || quickCarousel.length > 0) {
-        setActivities(sortByDate([...quickReal, ...quickCarousel]));
+        const _quickNext = sortByDate([...quickReal, ...quickCarousel]);
+        console.log(`[SET:fetchPlans:quick-render] setActivities → ${_quickNext.length} items`, _quickNext.map(a => ({ id: a.id, activity_type: a.activity_type, city: a.city, isJoined: a.isJoined })));
+        console.trace("[SET:fetchPlans:quick-render]");
+        setActivities(_quickNext);
         clearTimeout(loadingTimeout);
         setIsLoading(false);
       }
@@ -435,27 +462,57 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       ]);
 
       console.log("[PlansTab] myPlans →", { total: myPlans.length, real: filteredRealJoins.length, carousel: filteredCarouselJoins.length });
-      console.log("[PlansTab] cityPlans →", { showAllCities, total: enrichedCity.length });
+      const actTotal = [...enrichedReal, ...enrichedCarousel, ...enrichedDiscovery].length;
+      console.log(`[PlansTab] fetchPlans END #${fetchId} — setActivities(${actTotal}) setCityPlans(${enrichedCity.length}) showAllCities=${showAllCities}`);
 
-      setActivities(sortByDate([...enrichedReal, ...enrichedCarousel, ...enrichedDiscovery]));
-      setCityPlans(sortByDate(enrichedCity));
+      const _finalActivities = sortByDate([...enrichedReal, ...enrichedCarousel, ...enrichedDiscovery]);
+      const _finalCity = sortByDate(enrichedCity);
+      console.log(`[SET:fetchPlans:final] setActivities → ${_finalActivities.length} items`, _finalActivities.map(a => ({ id: a.id, activity_type: a.activity_type, city: a.city, isJoined: a.isJoined })));
+      console.log(`[SET:fetchPlans:final] setCityPlans → ${_finalCity.length} items`, _finalCity.map(a => ({ id: a.id, activity_type: a.activity_type, city: a.city })));
+      console.trace("[SET:fetchPlans:final]");
+      setActivities(_finalActivities);
+      setCityPlans(_finalCity);
 
     } finally {
       clearTimeout(loadingTimeout);
       setIsLoading(false);
     }
-  }, [selectedCity, user, joinedPlansCityFilter, showAllCities]);
+  }, [selectedCity, user, joinedPlansCityFilter]); // showAllCities intentionally omitted — read live from allPlansRef.current
 
-  // Initial fetch and realtime subscription
+  // Always-current ref so the realtime subscription callbacks never hold a stale
+  // fetchPlans closure — without this the subscription would reinstall every time
+  // showAllCities toggles, causing a brief window where the old stale closure fires.
+  const fetchPlansRef = useRef(fetchPlans);
+  useEffect(() => { fetchPlansRef.current = fetchPlans; }, [fetchPlans]);
+
+  // Always-current ref for values the subscription handler (and fetchPlans) need
+  // to read at call time without holding a stale closure snapshot.
+  //
+  // Assigned synchronously during render — NOT in a useEffect — so the value is
+  // already current by the time any effect in this render cycle fires.
+  // A useEffect([showAllCities]) would lose the ordering race: the showAllCities
+  // effect (line ~120) is declared earlier and fires before a later useEffect
+  // could update the ref, meaning fetchPlansRef.current() would still see the
+  // old showAllCities snapshot.
+  const allPlansRef = useRef<{ userId: string | undefined; showAllCities: boolean }>({ userId: user?.id, showAllCities });
+  allPlansRef.current = { userId: user?.id, showAllCities };
+
+  // Initial fetch and realtime subscription — deps: selectedCity only.
+  // showAllCities is intentionally excluded: fetchPlansRef.current always points
+  // to the latest fetchPlans so the callbacks stay correct without reinstalling.
   useEffect(() => {
-    fetchPlans();
+    console.log("[PlansTab] subscription INSTALL", { selectedCity, showAllCities });
+    fetchPlansRef.current();
 
     const channel = supabase
       .channel(`plans-tab-${selectedCity ?? "none"}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "user_activities" },
-        () => fetchPlans()
+        () => {
+          console.log("[PlansTab] realtime user_activities fired → fetchPlans");
+          fetchPlansRef.current();
+        }
       )
       .on(
         "postgres_changes",
@@ -467,16 +524,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           // user's scroll position and jumping to a different card.
           // Other users' joins (different user_id) still trigger a refetch so
           // participant counts stay current for everyone watching.
-          if (payload.new?.user_id === user?.id) return;
-          fetchPlans();
+          if (payload.new?.user_id === allPlansRef.current.userId) return;
+          console.log("[PlansTab] realtime activity_joins fired (other user) → fetchPlans");
+          fetchPlansRef.current();
         }
       )
       .subscribe();
 
     return () => {
+      console.log("[PlansTab] subscription TEARDOWN", { selectedCity, showAllCities });
       supabase.removeChannel(channel);
     };
-  }, [fetchPlans, selectedCity]);
+  }, [selectedCity]); // fetchPlans intentionally omitted — fetchPlansRef.current() is always fresh
 
   // Only treat city changes as explicit plans-filter choices when the header picker is open.
   useEffect(() => {
@@ -751,6 +810,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           .eq("user_id", user.id));
       }
       if (error) throw error;
+      console.log("[SET:handleLeavePlan] setActivities ← remove plan", planToLeave.id);
+      console.trace("[SET:handleLeavePlan]");
       setActivities(prev => prev.filter(a => a.id !== planToLeave.id));
       setPlanToLeave(null);
       toast.success(t('plans.leftActivity'));
@@ -928,6 +989,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
 
     const joinedPlan = { ...targetPlan, isJoined: true };
+    console.log("[SET:handleDirectCityJoin] setActivities ← prepend joinedPlan if absent | setCityPlans ← remove plan", { planId: targetPlan.id, activity_type: targetPlan.activity_type, city: targetPlan.city });
+    console.trace("[SET:handleDirectCityJoin]");
     setActivities(prev => prev.find(a => a.id === targetPlan.id) ? prev : [joinedPlan, ...prev]);
     setCityPlans(prev => prev.filter(p => p.id !== targetPlan.id));
 
@@ -1015,6 +1078,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       }
 
       const joinedPlan = { ...plan, isJoined: true };
+      console.log("[SET:handleFeedJoin:user-created] setActivities ← prepend joinedPlan if absent | setCityPlans ← remove plan", { planId: plan.id, activity_type: plan.activity_type, city: plan.city });
+      console.trace("[SET:handleFeedJoin:user-created]");
       setActivities(prev => prev.find(a => a.id === plan.id) ? prev : [joinedPlan, ...prev]);
       setCityPlans(prev => prev.filter(p => p.id !== plan.id));
 
@@ -1093,6 +1158,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
 
     const joinedPlan = { ...targetPlan, isJoined: true };
+    console.log("[SET:handleFeedJoin:auto-generated] setActivities ← prepend joinedPlan if absent | setCityPlans ← remove plan", { planId: targetPlan.id, activity_type: targetPlan.activity_type, city: targetPlan.city });
+    console.trace("[SET:handleFeedJoin:auto-generated]");
     setActivities(prev => prev.find(a => a.id === targetPlan.id) ? prev : [joinedPlan, ...prev]);
     setCityPlans(prev => prev.filter(p => p.id !== targetPlan.id));
 
@@ -1207,6 +1274,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
 
     const joinedPlan = { ...targetPlan, isJoined: true };
+    console.log("[SET:handleConfirmJoinPreview] setActivities ← prepend joinedPlan if absent | setCityPlans ← remove plan", { planId: targetPlan.id, activity_type: targetPlan.activity_type, city: targetPlan.city });
+    console.trace("[SET:handleConfirmJoinPreview]");
     setActivities(prev => prev.find(a => a.id === targetPlan.id) ? prev : [joinedPlan, ...prev]);
     setCityPlans(prev => prev.filter(p => p.id !== targetPlan.id));
 
