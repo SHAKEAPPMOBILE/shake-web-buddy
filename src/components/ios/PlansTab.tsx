@@ -266,6 +266,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const nowDate = new Date();
       const cityPublicPlans: any[] = (cityPlansDataResult.data ?? [])
         .filter((a: { id: string }) => !myJoinedPlanIds.has(a.id))
+        .filter((a: { user_id: string }) => a.user_id !== user.id) // own plans never appear as joinable discovery cards
         .filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a))
         .filter((a: { scheduled_for: string | null }) =>
           // Past-dated plans must not appear as joinable discovery cards.
@@ -982,7 +983,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           body: {
             to_user_id: targetPlan.user_id,
             title: "New shaker joined! 🎉",
-            body: `${joinerName} just joined ${getActivityLabel(targetPlan.activity_type)} in ${targetPlan.city}`,
+            body: `${joinerName} just joined ${targetPlan.note?.trim() || "a plan"} in ${targetPlan.city}`,
           },
         });
       })();
@@ -1071,17 +1072,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             body: {
               to_user_id: plan.user_id,
               title: "New shaker joined! 🎉",
-              body: `${joinerName} just joined ${getActivityLabel(plan.activity_type)} in ${plan.city}`,
+              body: `${joinerName} just joined ${plan.note?.trim() || "a plan"} in ${plan.city}`,
             },
           });
         })();
       }
 
       const joinedPlan = { ...plan, isJoined: true };
-      console.log("[SET:handleFeedJoin:user-created] setActivities ← prepend joinedPlan if absent | setCityPlans ← remove plan", { planId: plan.id, activity_type: plan.activity_type, city: plan.city });
+      console.log("[SET:handleFeedJoin:user-created] setActivities ← prepend joinedPlan if absent | setCityPlans ← mark isJoined in-place", { planId: plan.id, activity_type: plan.activity_type, city: plan.city });
       console.trace("[SET:handleFeedJoin:user-created]");
       setActivities(prev => prev.find(a => a.id === plan.id) ? prev : [joinedPlan, ...prev]);
-      setCityPlans(prev => prev.filter(p => p.id !== plan.id));
+      setCityPlans(prev => prev.map(p => p.id === plan.id ? { ...p, isJoined: true } : p));
 
       confetti({
         particleCount: 100,
@@ -1151,17 +1152,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           body: {
             to_user_id: targetPlan.user_id,
             title: "New shaker joined! 🎉",
-            body: `${joinerName} just joined ${getActivityLabel(targetPlan.activity_type)} in ${targetPlan.city}`,
+            body: `${joinerName} just joined ${targetPlan.note?.trim() || "a plan"} in ${targetPlan.city}`,
           },
         });
       })();
     }
 
     const joinedPlan = { ...targetPlan, isJoined: true };
-    console.log("[SET:handleFeedJoin:auto-generated] setActivities ← prepend joinedPlan if absent | setCityPlans ← remove plan", { planId: targetPlan.id, activity_type: targetPlan.activity_type, city: targetPlan.city });
+    console.log("[SET:handleFeedJoin:auto-generated] setActivities ← prepend joinedPlan if absent | setCityPlans ← mark isJoined in-place", { planId: targetPlan.id, activity_type: targetPlan.activity_type, city: targetPlan.city });
     console.trace("[SET:handleFeedJoin:auto-generated]");
     setActivities(prev => prev.find(a => a.id === targetPlan.id) ? prev : [joinedPlan, ...prev]);
-    setCityPlans(prev => prev.filter(p => p.id !== targetPlan.id));
+    setCityPlans(prev => prev.map(p => p.id === targetPlan.id ? { ...p, isJoined: true } : p));
 
     confetti({
       particleCount: 100,
@@ -1267,7 +1268,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           body: {
             to_user_id: targetPlan.user_id,
             title: "New shaker joined! 🎉",
-            body: `${joinerName} just joined ${getActivityLabel(targetPlan.activity_type)} in ${targetPlan.city}`,
+            body: `${joinerName} just joined ${targetPlan.note?.trim() || "a plan"} in ${targetPlan.city}`,
           },
         });
       })();
@@ -1439,7 +1440,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900">
-                        {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || getActivityLabel(plan.activity_type))}
+                        {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note?.trim() || "a plan")}
                       </h3>
                       {plan.isJoined && (
                         !plan.is_auto_generated && plan.user_id === user?.id ? (
