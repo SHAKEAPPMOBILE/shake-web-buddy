@@ -48,14 +48,14 @@ type StepName = "name" | "city" | "date" | "time" | "price" | "video" | "preview
 type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
 
-function BotBubble({ message, showAvatar = false, subtext }: { message: string; showAvatar?: boolean; subtext?: string }) {
+function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subtext }: { message: string; showAvatar?: boolean; avatarColor?: string; subtext?: string }) {
   if (!message) return null;
   return (
     <div className="flex flex-row items-end gap-3 mb-8">
       {showAvatar && (
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
-          style={{ background: "#facc15" }}
+          style={{ background: avatarColor }}
         >
           😎
         </div>
@@ -82,6 +82,14 @@ export default function ProposePlanPage() {
     preview: "",
   }), [t]);
 
+  const STEP_AVATAR_COLORS: Partial<Record<StepName, string>> = {
+    name:  "#facc15", // yellow-400 — existing default
+    city:  "#facc15",
+    date:  "#bbf7d0", // green-200
+    time:  "#fed7aa", // orange-200
+    price: "#e9d5ff", // purple-200
+  };
+
   const { user, isPremium } = useAuth();
   const { selectedCity } = useCity();
   const city = selectedCity ?? "";
@@ -106,6 +114,7 @@ export default function ProposePlanPage() {
 
   // Chat flow
   const [currentStep, setCurrentStep] = useState(0);
+  const [isEditingAnswers, setIsEditingAnswers] = useState(false);
   const [showPriceInput, setShowPriceInput] = useState(false);
   const [promoVideoUrl, setPromoVideoUrl] = useState<string | null>(null);
   const [videoUploading, setVideoUploading] = useState(false);
@@ -948,7 +957,7 @@ export default function ProposePlanPage() {
                 onChange={(e) => { setSelectedTime(e.target.value); setPastTimeError(false); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleTimeSubmit(); }}
                 className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20"
-                style={{ colorScheme: "light" }}
+                style={{ colorScheme: "light", color: "#111" }}
               />
               <button
                 onClick={handleTimeSubmit}
@@ -1143,10 +1152,10 @@ export default function ProposePlanPage() {
               )}
             </button>
 
-            {/* Edit answers — jumps back to the last Q&A step */}
+            {/* Edit answers — opens recap view */}
             <button
               type="button"
-              onClick={() => jumpToStep(steps.length - 2)}
+              onClick={() => setIsEditingAnswers(true)}
               className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-center"
             >
               {t("createPlan.editAnswers")}
@@ -1199,6 +1208,65 @@ export default function ProposePlanPage() {
             </button>
           </div>
         </div>
+      ) : isEditingAnswers ? (
+        /* ── Edit-answers recap view ── */
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Non-scrolling back button — top-left, matches profile page pattern */}
+          <div className="px-6 pt-4 pb-2 flex items-center">
+            <MinimalBackButton
+              onClick={() => setIsEditingAnswers(false)}
+              className="text-foreground/80 hover:text-foreground"
+            />
+          </div>
+          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
+            <div
+              className="w-full max-w-sm mx-auto px-6 pb-6 space-y-6"
+              style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}
+            >
+              {/* Full-width portrait video — same size as final preview page */}
+              {promoVideoUrl && (
+                <button
+                  type="button"
+                  onClick={() => { jumpToStep(steps.indexOf("video")); setIsEditingAnswers(false); }}
+                  className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
+                  aria-label="Edit promo video"
+                >
+                  <video
+                    src={promoVideoUrl}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center pointer-events-none">
+                    <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
+                  </div>
+                </button>
+              )}
+
+              {/* All answered Q&As — uniform size, full opacity, no crescendo */}
+              {steps
+                .slice(0, steps.length - 1)
+                .filter(step => step !== "video")
+                .map(step => {
+                  const stepIndex = steps.indexOf(step);
+                  return (
+                    <button
+                      key={step}
+                      type="button"
+                      onClick={() => { jumpToStep(stepIndex); setIsEditingAnswers(false); }}
+                      className="w-full text-left space-y-0.5 hover:opacity-80 transition-opacity"
+                    >
+                      <p className="text-sm text-muted-foreground">{BOT_QUESTIONS[step]}</p>
+                      <p className="text-xl font-semibold text-foreground">{getUserAnswer(step)}</p>
+                    </button>
+                  );
+                })
+              }
+            </div>
+          </div>
+        </div>
       ) : (
         <>
           {/* Scrollable chat history + inline current question */}
@@ -1210,9 +1278,12 @@ export default function ProposePlanPage() {
               style={{ paddingBottom: composerHeight + keyboardOffset + 32 }}
             >
               {/* Past Q&A — oldest (top) faintest/smallest, most-recent (bottom) clearer */}
-              {currentStep > 0 && (
+              {currentStep > 0 && currentStepName !== "preview" && (
                 <div className="space-y-4 mb-6">
                   {steps.slice(0, currentStep).map((step, i) => {
+                    // Suppress video thumbnail on preview page — full-size video already shows there
+                    if (step === "video" && currentStepName === "preview") return null;
+
                     const stepsBack = currentStep - i; // 1 = most recent, higher = older
                     // Crescendo: most recent is largest and most opaque; older = smaller + more faded.
                     // Floor at opacity-60 so even the oldest answer stays clearly legible.
@@ -1265,14 +1336,15 @@ export default function ProposePlanPage() {
               )}
 
               {/* Divider separating history from active step */}
-              {currentStep > 0 && <div className="border-t border-border/20 mb-8" />}
+              {currentStep > 0 && currentStepName !== "preview" && <div className="border-t border-border/20 mb-8" />}
 
               {/* Current question — inline after history */}
               {BOT_QUESTIONS[currentStepName] && currentStepName !== "video" && (
                 <div key={currentStep} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <BotBubble
                     message={BOT_QUESTIONS[currentStepName]}
-                    showAvatar={currentStepName === "name"}
+                    showAvatar={true}
+                    avatarColor={STEP_AVATAR_COLORS[currentStepName]}
                     subtext={currentStepName === "name" ? t("createPlan.soOthersCanJoin") : undefined}
                   />
                 </div>
