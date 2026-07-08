@@ -1204,7 +1204,7 @@ export default function ProposePlanPage() {
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header — back arrow only on native (phone); hidden on web */}
-      {Capacitor.isNativePlatform() && (
+      {Capacitor.isNativePlatform() && !isEditingAnswers && (
         <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center">
           <MinimalBackButton
             onClick={() => currentStep > 0 ? handleBack() : navigate(-1)}
