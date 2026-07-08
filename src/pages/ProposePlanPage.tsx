@@ -93,6 +93,10 @@ export default function ProposePlanPage() {
   const { user, isPremium } = useAuth();
   const { selectedCity } = useCity();
   const city = selectedCity ?? "";
+  // Always-current ref: written synchronously on every render so handleCreate
+  // reads the freshest selectedCity even if the closure captured a stale "".
+  const selectedCityRef = useRef(selectedCity);
+  selectedCityRef.current = selectedCity;
 
   const { createActivity, isLoading, remainingActivities, fetchMyActivities } = useUserActivities(city);
 
@@ -552,11 +556,16 @@ export default function ProposePlanPage() {
     const endOfSelectedDay = new Date(selectedDate);
     endOfSelectedDay.setHours(23, 59, 59, 999);
 
+    // Read city from the ref, not the closure — guarantees we use the value
+    // CityContext has resolved to at the moment the user taps submit, not the
+    // value captured when the component last rendered before CityContext settled.
+    const freshCity = selectedCityRef.current || cityInput.trim() || undefined;
+
     const success = await createActivity(
       detectedActivity.type,
       activityDate,
       planText.trim(),
-      city || cityInput.trim() || undefined,
+      freshCity,
       formattedPrice,
       endOfSelectedDay,
       promoVideoUrl || undefined
@@ -881,34 +890,38 @@ export default function ProposePlanPage() {
 
       case "date":
         return (
-          <div className="space-y-3">
-            <div className="flex gap-2 flex-wrap items-center justify-center">
-              {datePills.map(({ label, date }) => {
-                const isSelected = format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => handleDateSelect(date)}
-                    className={cn(
-                      "px-6 py-3.5 rounded-full text-base font-medium border transition-all",
-                      isSelected
-                        ? "bg-[#60a5fa] text-white border-[#60a5fa] shadow-md"
-                        : "bg-muted/60 text-foreground border-border hover:border-primary/50"
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              {/* Date pills — inside a unified input-row container matching time/name steps */}
+              <div className="flex-1 flex gap-2 items-center overflow-x-auto h-16 rounded-2xl border border-border bg-muted/60 px-4 scrollbar-hide">
+                {datePills.map(({ label, date }) => {
+                  const isSelected = format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => handleDateSelect(date)}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-sm font-medium shrink-0 transition-all",
+                        isSelected
+                          ? "bg-black text-white"
+                          : "text-foreground hover:bg-muted"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Calendar icon — circular button, mirrors send button position on time step */}
               <button
                 type="button"
                 onClick={() => setShowCalendar((v) => !v)}
                 className={cn(
-                  "w-12 h-12 rounded-full border flex items-center justify-center transition-all shrink-0",
+                  "w-14 h-14 rounded-full flex items-center justify-center shrink-0 transition-all",
                   showCalendar
-                    ? "bg-primary border-primary text-primary-foreground"
-                    : "border-border text-foreground hover:border-primary/50"
+                    ? "bg-black text-white"
+                    : "bg-muted/60 border border-border text-foreground hover:border-primary/50"
                 )}
                 aria-label="Pick a date"
               >
@@ -917,7 +930,7 @@ export default function ProposePlanPage() {
             </div>
 
             {showCalendar && (
-              <div className="p-3 rounded-xl border border-border bg-background">
+              <div className="absolute bottom-full left-0 right-0 mb-2 z-10 p-3 rounded-xl border border-border bg-background shadow-lg">
                 <p className="text-xs font-medium text-center text-muted-foreground mb-2">
                   {format(new Date(calYear, calMonth, 1), "MMMM yyyy")}
                 </p>
@@ -1005,40 +1018,41 @@ export default function ProposePlanPage() {
                 {priceError && (
                   <p className="text-sm text-destructive px-1">{priceError}</p>
                 )}
-                {/* min-w-0 on row + input lets them shrink; send is shrink-0 and always on screen */}
-                <div className="flex items-center gap-2 min-w-0">
-                  {/* Currency select — fixed 5rem, never shrinks */}
-                  <select
-                    value={priceCurrency}
-                    onChange={(e) => setPriceCurrency(e.target.value)}
-                    className="w-20 h-14 shrink-0 rounded-full border border-border bg-muted/60 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-black/20"
-                  >
-                    {CURRENCIES.map((currency) => (
-                      <option key={currency.code} value={currency.code}>
-                        {currency.symbol} {currency.code}
-                      </option>
-                    ))}
-                  </select>
-                  {/* Compact fixed base — NOT flex-1. min-w-0 lets it shrink on tiny screens.
-                      Max caps growth so long values never push the send button off-screen. */}
-                  <input
-                    ref={priceInputRef}
-                    autoFocus
-                    type="text"
-                    inputMode="decimal"
-                    value={priceAmount}
-                    onChange={(e) => {
-                      setPriceAmount(e.target.value);
-                      setPriceError(null);
-                    }}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePriceSubmit(); } }}
-                    placeholder={t("createPlan.amountPlaceholder")}
-                    className="w-24 min-w-0 max-w-[7rem] h-14 rounded-2xl border border-border bg-muted/60 px-4 text-base focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20 placeholder:text-muted-foreground"
-                  />
-                  {/* Send — w-12 h-12 shrink-0: fixed size, always rightmost, never clipped */}
+                <div className="flex items-center gap-3">
+                  {/* Unified container — currency selector + amount input in one rounded box */}
+                  <div className="flex-1 flex items-center h-16 rounded-2xl border border-border bg-muted/60 overflow-hidden">
+                    {/* Currency select — fixed ~96px, divider on right */}
+                    <select
+                      value={priceCurrency}
+                      onChange={(e) => setPriceCurrency(e.target.value)}
+                      className="w-24 h-full shrink-0 bg-transparent border-r border-border px-3 text-sm focus:outline-none"
+                    >
+                      {CURRENCIES.map((currency) => (
+                        <option key={currency.code} value={currency.code}>
+                          {currency.symbol} {currency.code}
+                        </option>
+                      ))}
+                    </select>
+                    {/* Amount input — takes remaining space */}
+                    <input
+                      ref={priceInputRef}
+                      autoFocus
+                      type="text"
+                      inputMode="decimal"
+                      value={priceAmount}
+                      onChange={(e) => {
+                        setPriceAmount(e.target.value);
+                        setPriceError(null);
+                      }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePriceSubmit(); } }}
+                      placeholder={t("createPlan.amountPlaceholder")}
+                      className="flex-1 h-full min-w-0 bg-transparent px-4 text-base focus:outline-none placeholder:text-muted-foreground"
+                    />
+                  </div>
+                  {/* Send — matches time/date step circular button */}
                   <button
                     onClick={handlePriceSubmit}
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                   >
                     <Send className="w-5 h-5" />
                   </button>
@@ -1287,7 +1301,18 @@ export default function ProposePlanPage() {
           </div>
         </div>
       ) : (
-        <>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Back button — web only (native has sticky header); all steps except preview */}
+          {!Capacitor.isNativePlatform() && currentStepName !== "preview" && (
+            <div className="px-6 pt-4 pb-2 flex items-center">
+              <MinimalBackButton
+                onClick={() => currentStep > 0 ? handleBack() : handleExitFlow()}
+                className="text-foreground/80 hover:text-foreground"
+                aria-label="Back"
+              />
+            </div>
+          )}
+
           {/* Scrollable chat history + inline current question */}
           <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
             {/* spacer: 8vh on step 0 for centering; collapses to 16px once history exists */}
@@ -1372,14 +1397,6 @@ export default function ProposePlanPage() {
               {/* Camera recorder — only step that needs inline scroll space */}
               {currentStepName === "video" && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  {/* Exit button — top-left, discards any recorded video and returns to landing page */}
-                  <div className="pb-4 flex items-center">
-                    <MinimalBackButton
-                      onClick={handleExitFlow}
-                      className="text-foreground/80 hover:text-foreground"
-                      aria-label="Exit"
-                    />
-                  </div>
                   {renderCameraCapture()}
                 </div>
               )}
@@ -1399,7 +1416,7 @@ export default function ProposePlanPage() {
               {renderComposer()}
             </div>
           </div>
-        </>
+        </div>
       )}
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
