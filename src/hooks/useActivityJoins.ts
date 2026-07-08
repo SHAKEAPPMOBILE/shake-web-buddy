@@ -220,6 +220,8 @@ export function useActivityJoins(city: string) {
   useEffect(() => {
     if (!city) return;
 
+    console.log(`[useActivityJoins:INSTALL] subscription installing for city=${city}`);
+    console.trace("[useActivityJoins:INSTALL] call stack — if this fires repeatedly, city or user?.id is unstable");
     fetchActiveJoins();
 
     // Use a unique channel name per city to avoid cross-city notifications
@@ -239,8 +241,12 @@ export function useActivityJoins(city: string) {
           const newJoin = payload.new as ActivityJoin;
           // Double-check city match and exclude own joins
           if (newJoin.city === city && newJoin.user_id !== user?.id) {
+            console.log(`[useActivityJoins:HEARTBEAT] INSERT on activity_joins fired — city=${city}, activity_type=${newJoin.activity_type}, user=${newJoin.user_id} — calling fetchActiveJoins()`);
+            console.trace("[useActivityJoins:HEARTBEAT] INSERT call stack");
             toast.info(`Someone just joined ${newJoin.activity_type}! 🎉`);
             fetchActiveJoins();
+          } else {
+            console.log(`[useActivityJoins:HEARTBEAT] INSERT on activity_joins — skipped (own join or city mismatch)`, { city, newJoin });
           }
         }
       )
@@ -252,9 +258,11 @@ export function useActivityJoins(city: string) {
           table: 'activity_joins',
           filter: `city=eq.${city}`,
         },
-        () => {
+        (payload) => {
           // Refresh local cache so hasUserJoined() stays accurate after any leave,
           // including leaves performed from PlansTab (a separate useActivityJoins instance).
+          console.log(`[useActivityJoins:HEARTBEAT] DELETE on activity_joins fired — city=${city} — calling fetchActiveJoins()`, payload.old);
+          console.trace("[useActivityJoins:HEARTBEAT] DELETE call stack");
           fetchActiveJoins();
         }
       )

@@ -152,6 +152,8 @@ export function ChatTab({
 
   const fetchActivities = useCallback(async () => {
     if (!user?.id) {
+      console.warn("[ChatTab] fetchActivities — no user, clearing activities and stopping load");
+      console.trace("[ChatTab:NO-USER] setActivities([]) + setIsLoading(false) — this will flash empty state");
       setActivities([]);
       setIsLoading(false);
       return;
@@ -159,13 +161,15 @@ export function ChatTab({
 
     const fetchNonce = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     console.log("[ChatTab] fetchActivities start (fresh query)", { fetchNonce, userId: user.id });
+    console.trace("[ChatTab:FETCH-START] who triggered fetchActivities");
 
     setIsLoading(true);
 
     // 3-second soft timeout: stop showing skeleton so partial/cached state is visible
     // The fetch continues in background; setActivities() will still update when done.
     const softTimeout = setTimeout(() => {
-      console.warn('[ChatTab] 3s soft timeout — revealing list early, fetch still in progress');
+      console.warn('[ChatTab] 3s soft timeout — revealing list early, fetch still in progress — if activities=[] at this point, empty state will flash until data arrives');
+      console.trace("[ChatTab:SOFT-TIMEOUT] fired — isLoading going false before data ready");
       setIsLoading(false);
     }, 3000);
 
@@ -585,6 +589,7 @@ export function ChatTab({
       });
 
       console.log("[DEBUG] chatActivities assembled", chatActivities?.length, chatActivities);
+      console.log("[ChatTab:SET-ACTIVITIES]", { fetchNonce, count: chatActivities.length, wasLoadingAlreadyCleared: !isLoading });
       setActivities(chatActivities);
     } catch (error) {
       console.error("Error fetching chat activities:", error);
@@ -598,6 +603,8 @@ export function ChatTab({
   useEffect(() => {
     if (!user?.id) return;
     if (!isActiveTab) return;
+    console.log("[ChatTab:ACTIVE-TAB-FETCH] isActiveTab became true — triggering fetchActivities");
+    console.trace("[ChatTab:ACTIVE-TAB-FETCH] call stack");
     void fetchActivities();
   }, [user?.id, isActiveTab, fetchActivities]);
 

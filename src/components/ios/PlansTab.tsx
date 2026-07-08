@@ -119,6 +119,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   useEffect(() => {
     console.log("[PlansTab] showAllCities changed →", showAllCities);
+    console.trace("[PlansTab:FLICKER] showAllCities effect fired — this triggers a full re-fetch");
     // Trigger a fresh fetch when the tab switches — fetchPlansRef may not be
     // set yet on first render, so guard with a check.
     fetchPlansRef.current?.();
@@ -258,21 +259,28 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const _realFilter = !effectiveCity ? "empty (no effectiveCity)"
         : showAllCities ? `city != "${effectiveCity}", is_active=true, LIMIT 30`
         : `city = "${effectiveCity}", is_active=true, is_auto_generated!=true, LIMIT 20`;
-      console.log(`[PlansTab] real-plans query [${_tab}] filter: ${_realFilter} → ${cityPlansDataResult.data?.length ?? 0} rows`, cityPlansDataResult.error ?? cityPlansDataResult.data?.map((a: any) => ({ id: a.id, activity_type: a.activity_type, city: a.city, scheduled_for: a.scheduled_for })));
+      console.log(`[PlansTab] real-plans query [${_tab}] filter: ${_realFilter} → ${cityPlansDataResult.data?.length ?? 0} rows`, cityPlansDataResult.error ?? cityPlansDataResult.data?.map((a: any) => ({ id: a.id, title: a.title, activity_type: a.activity_type, city: a.city, is_active: a.is_active, scheduled_for: a.scheduled_for, user_id: a.user_id })));
 
       // Discovery real plans: active plans in the city that I haven't joined.
       // isActivityVisible uses a 24h-back window (for joined plans), so we add a
       // strict future-only guard here: discovery cards must never show past events.
       const nowDate = new Date();
-      const cityPublicPlans: any[] = (cityPlansDataResult.data ?? [])
-        .filter((a: { id: string }) => !myJoinedPlanIds.has(a.id))
-        .filter((a: { user_id: string }) => a.user_id !== user.id) // own plans never appear as joinable discovery cards
-        .filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a))
-        .filter((a: { scheduled_for: string | null }) =>
-          // Past-dated plans must not appear as joinable discovery cards.
-          // Nulls (no scheduled_for) pass through — they're open-ended invites.
-          a.scheduled_for == null || parseDbDate(a.scheduled_for) >= nowDate
-        );
+      const _rawRows = cityPlansDataResult.data ?? [];
+      const _afterJoinFilter = _rawRows.filter((a: { id: string }) => !myJoinedPlanIds.has(a.id));
+      const _afterOwnFilter  = _afterJoinFilter.filter((a: { user_id: string }) => a.user_id !== user.id);
+      const _afterVisibility = _afterOwnFilter.filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a));
+      const _afterFuture     = _afterVisibility.filter((a: { scheduled_for: string | null }) => a.scheduled_for == null || parseDbDate(a.scheduled_for) >= nowDate);
+      const _dropped = _rawRows.filter((a: any) => !_afterFuture.find((b: any) => b.id === a.id));
+      if (_dropped.length > 0) {
+        console.log(`[PlansTab:FILTER] ${_dropped.length} row(s) dropped from real-plans feed:`, _dropped.map((a: any) => ({
+          id: a.id, title: a.title, city: a.city, is_active: a.is_active, user_id: a.user_id, scheduled_for: a.scheduled_for,
+          reason: myJoinedPlanIds.has(a.id) ? "already-joined"
+            : a.user_id === user.id ? "own-plan"
+            : !isActivityVisible(a) ? "not-visible-24h-window"
+            : "past-dated",
+        })));
+      }
+      const cityPublicPlans: any[] = _afterFuture;
 
       // IDs of plans already in the real-plans feed — used below to deduplicate the
       // discovery carousel so auto-generated plans don't appear in both sections.

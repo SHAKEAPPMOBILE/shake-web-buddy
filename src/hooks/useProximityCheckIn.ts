@@ -104,13 +104,22 @@ export function useProximityCheckIn(currentCity: string, activeActivityTypes: st
   useEffect(() => {
     if (!user || activeActivityTypes.length === 0) return;
 
+    console.log(`[useProximityCheckIn:HEARTBEAT] effect (re)installing — activeActivityTypes=${JSON.stringify(activeActivityTypes)}`);
+    console.trace("[useProximityCheckIn:HEARTBEAT] call stack — if this fires repeatedly without activeActivityTypes changing, checkProximity callback is being recreated (unstable dep)");
+
     // Initial check
     checkProximity();
 
     // Periodic checks
-    const interval = setInterval(checkProximity, CHECK_INTERVAL_MS);
+    const interval = setInterval(() => {
+      console.log(`[useProximityCheckIn:HEARTBEAT] 30s tick fired — calling checkProximity`);
+      checkProximity();
+    }, CHECK_INTERVAL_MS);
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log(`[useProximityCheckIn:HEARTBEAT] interval cleared`);
+      clearInterval(interval);
+    };
   }, [checkProximity, user, activeActivityTypes]);
 
   const dismissProximity = useCallback(() => {
