@@ -165,14 +165,6 @@ export function ChatTab({
 
     setIsLoading(true);
 
-    // 3-second soft timeout: stop showing skeleton so partial/cached state is visible
-    // The fetch continues in background; setActivities() will still update when done.
-    const softTimeout = setTimeout(() => {
-      console.warn('[ChatTab] 3s soft timeout — revealing list early, fetch still in progress — if activities=[] at this point, empty state will flash until data arrives');
-      console.trace("[ChatTab:SOFT-TIMEOUT] fired — isLoading going false before data ready");
-      setIsLoading(false);
-    }, 3000);
-
     try {
       // Show plans scheduled in the last 7 days so chats stay visible well after the activity.
       // 24 h was too short — plans from yesterday evening disappeared from Chat the next morning.
@@ -594,7 +586,6 @@ export function ChatTab({
     } catch (error) {
       console.error("Error fetching chat activities:", error);
     } finally {
-      clearTimeout(softTimeout);
       setIsLoading(false);
     }
   }, [user]);
