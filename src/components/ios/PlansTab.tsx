@@ -1449,7 +1449,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900">
-                        {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note?.trim() || "a plan")}
+                        {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note?.trim() || getActivityLabel(plan.activity_type))}
                       </h3>
                       {plan.isJoined && (
                         !plan.is_auto_generated && plan.user_id === user?.id ? (
