@@ -267,15 +267,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const nowDate = new Date();
       const _rawRows = cityPlansDataResult.data ?? [];
       const _afterJoinFilter = _rawRows.filter((a: { id: string }) => !myJoinedPlanIds.has(a.id));
-      const _afterOwnFilter  = _afterJoinFilter.filter((a: { user_id: string }) => a.user_id !== user.id);
-      const _afterVisibility = _afterOwnFilter.filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a));
+      // Creators see their own plans here when Feed A (RPC) didn't return them
+      // (e.g. pre-fix plans with blank city in activity_joins). Plans already in
+      // Feed A are already excluded by _afterJoinFilter, so no duplicates.
+      const _afterVisibility = _afterJoinFilter.filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a));
       const _afterFuture     = _afterVisibility.filter((a: { scheduled_for: string | null }) => a.scheduled_for == null || parseDbDate(a.scheduled_for) >= nowDate);
       const _dropped = _rawRows.filter((a: any) => !_afterFuture.find((b: any) => b.id === a.id));
       if (_dropped.length > 0) {
         console.log(`[PlansTab:FILTER] ${_dropped.length} row(s) dropped from real-plans feed:`, _dropped.map((a: any) => ({
           id: a.id, title: a.title, city: a.city, is_active: a.is_active, user_id: a.user_id, scheduled_for: a.scheduled_for,
           reason: myJoinedPlanIds.has(a.id) ? "already-joined"
-            : a.user_id === user.id ? "own-plan"
             : !isActivityVisible(a) ? "not-visible-24h-window"
             : "past-dated",
         })));
