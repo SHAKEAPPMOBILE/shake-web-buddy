@@ -15,7 +15,7 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, DollarSign, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, DollarSign, Volume2, VolumeX, User } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
@@ -23,6 +23,12 @@ import { getActivityIcon, getActivityEmoji } from "@/data/activityTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
+import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
+import type { UserActivity } from "@/hooks/useUserActivities";
 
 /* ── Types (mirror PlansTab's PlanActivity) ───────────────────────────────── */
 export interface FeedPlan {
@@ -84,9 +90,10 @@ interface FeedCardProps {
   onPayForPlan: () => void;
   onEnterChat: () => void;
   onViewProfile: () => void;
+  onViewParticipantProfile: (userId: string, userName: string | null, avatarUrl: string | null) => void;
 }
 
-function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile }: FeedCardProps) {
+function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile, onViewParticipantProfile }: FeedCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
@@ -94,6 +101,8 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
   const [joining, setJoining] = useState(false);
   const [lowRes, setLowRes] = useState(false);
   const [smallImage, setSmallImage] = useState(false);
+  const [previewAvatars, setPreviewAvatars] = useState<{ avatar_url: string | null }[]>([]);
+  const [participantsOpen, setParticipantsOpen] = useState(false);
 
   const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const { videoWidth, videoHeight } = e.currentTarget;
@@ -133,6 +142,43 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
   useEffect(() => {
     if (videoRef.current) videoRef.current.muted = muted;
   }, [muted]);
+
+  /* Fetch up to 3 participant avatars for the stack preview */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let userIds: string[] = [];
+      if (plan.is_auto_generated) {
+        // Carousel group: all joiners for this activity_type + city
+        const { data: joins } = await supabase
+          .from("activity_joins")
+          .select("user_id")
+          .eq("activity_type", plan.activity_type)
+          .eq("city", plan.city)
+          .gt("expires_at", new Date().toISOString())
+          .limit(3);
+        userIds = joins?.map((j: { user_id: string }) => j.user_id) ?? [];
+      } else {
+        // User-created plan: joiners for this specific activity_id
+        const { data: joins } = await supabase
+          .from("activity_joins")
+          .select("user_id")
+          .eq("activity_id", plan.id)
+          .limit(3);
+        userIds = joins?.map((j: { user_id: string }) => j.user_id) ?? [];
+      }
+      if (cancelled || !userIds.length) return;
+      const profiles = await Promise.all(
+        userIds.map((uid) =>
+          supabase.from("profiles").select("avatar_url").eq("user_id", uid).maybeSingle()
+        )
+      );
+      if (!cancelled) {
+        setPreviewAvatars(profiles.map((r) => ({ avatar_url: r.data?.avatar_url ?? null })));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [plan.id, plan.activity_type, plan.city, plan.is_auto_generated]);
 
   const handleJoin = async () => {
     if (joining) return;
@@ -302,11 +348,40 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         </>
       )}
 
-      {/* ── Circular action button: floated right, lower-middle, right-thumb reachable ── */}
+      {/* ── Right-side action column: avatar stack + CHAT/JOIN button ── */}
       <div
-        className="absolute right-4 z-10"
-        style={{ top: "58%", transform: "translateY(-50%)", pointerEvents: "auto" }}
+        className="absolute right-4 z-10 flex flex-col items-center gap-4"
+        style={{ top: "50%", transform: "translateY(-50%)", pointerEvents: "auto" }}
       >
+        {/* Avatar stack — tappable, opens participant list */}
+        {previewAvatars.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setParticipantsOpen(true)}
+            className="flex flex-col items-center gap-1 transition-opacity hover:opacity-80"
+          >
+            <div className="flex flex-col items-center -space-y-2">
+              {previewAvatars.slice(0, 3).map((a, i) => (
+                <Avatar key={i} className="w-8 h-8 border-2 border-white/60 shadow-md">
+                  <AvatarImage src={getDisplayAvatarUrl(a.avatar_url)} />
+                  <AvatarFallback className="bg-white/20 text-white">
+                    <User className="w-3 h-3" />
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+            {(plan.participant_count ?? 0) > 3 && (
+              <span
+                className="text-white text-[11px] font-semibold mt-1 leading-none"
+                style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
+              >
+                +{(plan.participant_count ?? 0) - 3}
+              </span>
+            )}
+          </button>
+        )}
+
+        {/* CHAT / JOIN button */}
         <button
           type="button"
           onClick={actionButton.handler}
@@ -407,6 +482,38 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         </div>
 
       </div>
+
+      {/* Participants dialog — portal-rendered, not constrained by scroll container */}
+      {plan.is_auto_generated ? (
+        <ParticipantsListDialog
+          open={participantsOpen}
+          onOpenChange={setParticipantsOpen}
+          activityType={plan.activity_type}
+          city={plan.city}
+          onViewProfile={onViewParticipantProfile}
+        />
+      ) : (
+        <PlanParticipantsDialog
+          open={participantsOpen}
+          onOpenChange={setParticipantsOpen}
+          activity={{
+            id: plan.id,
+            user_id: plan.user_id,
+            activity_type: plan.activity_type,
+            city: plan.city,
+            scheduled_for: plan.scheduled_for || '',
+            created_at: '',
+            updated_at: '',
+            is_active: true,
+            note: plan.note,
+            price_amount: plan.price_amount,
+            creator_name: plan.creator_name,
+            creator_avatar: plan.creator_avatar,
+            participant_count: plan.participant_count,
+          } as UserActivity}
+          onViewProfile={onViewParticipantProfile}
+        />
+      )}
     </div>
   );
 }
@@ -502,6 +609,10 @@ export function PlanSwipeFeed({
               onPayForPlan={() => onPayForPlan(plan)}
               onEnterChat={() => onEnterChat(plan)}
               onViewProfile={() => handleViewProfile(plan)}
+              onViewParticipantProfile={(userId, userName, avatarUrl) => {
+                setProfileTarget({ userId, userName, avatarUrl });
+                onViewProfile(userId, userName, avatarUrl);
+              }}
             />
           ))}
         </div>
