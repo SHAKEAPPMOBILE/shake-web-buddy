@@ -618,7 +618,7 @@ export function IOSAppLayout() {
   }
 
   return (
-    <div className={cn("min-h-screen bg-background flex flex-col", showEvents && "bg-white")}>
+    <div className={cn("h-[100dvh] overflow-hidden bg-background flex flex-col", showEvents && "bg-white")}>
       {/* Main content area - fixed height, no scroll */}
       <main
         className={cn(

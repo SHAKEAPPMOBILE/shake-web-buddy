@@ -729,7 +729,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     arts: "arts",
   };
 
-  const getActivityLabel = (type: string) => {
+  const getActivityLabel = (type: string | null | undefined): string => {
+    if (!type) return t('plans.untitledPlan', 'Untitled Plan');
     const key = activityKeyMap[type];
     if (key) {
       return t(`activities.${key}`, type);
