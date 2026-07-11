@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2 } from "lucide-react";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { ChatInviteDialog } from "@/components/ChatInviteDialog";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -54,6 +55,11 @@ export function PrivateChatDialog({
   const [showProfile, setShowProfile] = useState(false);
   const [showFullPhoto, setShowFullPhoto] = useState(false);
 
+  // ── First-time chat invite gate ──────────────────────────────────────────
+  // "pending" = other person messaged first and I haven't accepted/declined yet.
+  // While pending we show ChatInviteDialog instead of the message thread.
+  const [inviteGate, setInviteGate] = useState<"checking" | "pending" | "clear">("checking");
+
   // Reactions
   const [reactions, setReactions] = useState<ReactionsMap>({});
   const [activeMsg, setActiveMsg] = useState<{ id: string; isMe: boolean; pickerY: number } | null>(null);
@@ -85,10 +91,112 @@ export function PrivateChatDialog({
     bottomRef.current?.scrollIntoView({ behavior: 'instant' });
   }, [messages]);
 
-  // Mark messages as read on mount
+  // Mark messages as read on mount — only once the invite gate (if any) has been cleared.
   useEffect(() => {
+    if (inviteGate !== "clear") return;
     markAsRead();
-  }, [markAsRead]);
+  }, [markAsRead, inviteGate]);
+
+  // ── Determine whether to show the invite gate ────────────────────────────
+  // Gate applies when: they've messaged me, I've never replied, and I haven't
+  // already accepted this invite. If I started the conversation, or I've ever
+  // sent a message here, or I already accepted — skip straight to the chat.
+  useEffect(() => {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!user || !UUID_RE.test(otherUserId)) {
+      setInviteGate("clear");
+      return;
+    }
+    let cancelled = false;
+    setInviteGate("checking");
+
+    (async () => {
+      const [{ count: sentCount }, { count: receivedCount }, { data: invite }] = await Promise.all([
+        supabase
+          .from("private_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("sender_id", user.id)
+          .eq("receiver_id", otherUserId),
+        supabase
+          .from("private_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("sender_id", otherUserId)
+          .eq("receiver_id", user.id),
+        supabase
+          .from("private_chat_invites")
+          .select("status")
+          .eq("user_id", user.id)
+          .eq("other_user_id", otherUserId)
+          .maybeSingle(),
+      ]);
+
+      if (cancelled) return;
+
+      const iHaveReplied = (sentCount || 0) > 0;
+      const theyMessagedFirst = (receivedCount || 0) > 0;
+      const alreadyAccepted = invite?.status === "accepted";
+
+      const needsGate = !iHaveReplied && theyMessagedFirst && !alreadyAccepted;
+      setInviteGate(needsGate ? "pending" : "clear");
+    })().catch(() => {
+      if (!cancelled) setInviteGate("clear"); // fail open — never block the chat on an error
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, otherUserId]);
+
+  // Fire-and-forget push telling the original sender how their chat request was answered.
+  const notifyInviteResponse = useCallback(async (accepted: boolean) => {
+    if (!user) return;
+    try {
+      const { data: myProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
+      const myName = myProfile?.name || "Someone";
+      await supabase.functions.invoke("send-push-notification", {
+        body: {
+          to_user_id: otherUserId,
+          title: accepted ? `${myName} accepted your chat request 🎉` : "Chat request update",
+          body: accepted
+            ? `You can chat with ${myName} now.`
+            : `${myName} isn't available to chat right now.`,
+          data: { tab: "chat", other_user_id: user.id },
+        },
+      });
+    } catch {
+      // Non-critical — never block the accept/decline flow on a push failure.
+    }
+  }, [user, otherUserId]);
+
+  const handleAcceptInvite = useCallback(async () => {
+    if (!user) return;
+    setInviteGate("clear");
+    await supabase
+      .from("private_chat_invites")
+      .upsert(
+        { user_id: user.id, other_user_id: otherUserId, status: "accepted", responded_at: new Date().toISOString() },
+        { onConflict: "user_id,other_user_id" }
+      );
+    void notifyInviteResponse(true);
+  }, [user, otherUserId, notifyInviteResponse]);
+
+  const handleDeclineInvite = useCallback(async () => {
+    if (!user) return;
+    await Promise.all([
+      supabase
+        .from("private_chat_invites")
+        .upsert(
+          { user_id: user.id, other_user_id: otherUserId, status: "declined", responded_at: new Date().toISOString() },
+          { onConflict: "user_id,other_user_id" }
+        ),
+      supabase
+        .from("private_conversation_hidden")
+        .upsert({ user_id: user.id, other_user_id: otherUserId }, { onConflict: "user_id,other_user_id" }),
+    ]);
+    void notifyInviteResponse(false);
+    toast.success(t("chatInvite.declinedToast", "Request removed"));
+    onClose();
+  }, [user, otherUserId, onClose, t, notifyInviteResponse]);
 
   // Fetch other user's profile if name/avatar not provided
   useEffect(() => {
@@ -343,6 +451,30 @@ export function PrivateChatDialog({
   const avatarUrl = avatarError ? null : (getDisplayAvatarUrl(rawAvatarUrl) ?? rawAvatarUrl);
   const photoUrl = otherUserAvatar || fetchedAvatar || avatarUrl;
   const initial = (displayName || "S").charAt(0).toUpperCase();
+
+  // Still checking whether this is a first-time unanswered chat — avoid a flash of the thread.
+  if (inviteGate === "checking") {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: "hsl(50,40%,92%)" }}>
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // First time opening a chat someone else started — show the invite card instead of the thread.
+  if (inviteGate === "pending") {
+    return (
+      <div className="fixed inset-0 z-[9999]" style={{ background: "hsl(50,40%,92%)" }}>
+        <ChatInviteDialog
+          userName={displayName}
+          avatarUrl={avatarUrl ?? null}
+          onDismiss={onClose}
+          onAccept={handleAcceptInvite}
+          onDecline={handleDeclineInvite}
+        />
+      </div>
+    );
+  }
 
   return (
     <>

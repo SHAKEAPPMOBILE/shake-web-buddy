@@ -75,12 +75,26 @@ export function usePrivateMessages(otherUserId: string | null) {
 
         // Fire-and-forget push to recipient
         void (async () => {
-          const { data: senderProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle();
+          const [{ data: senderProfile }, { count: threadCount }] = await Promise.all([
+            supabase.from("profiles").select("name").eq("user_id", user.id).maybeSingle(),
+            supabase
+              .from("private_messages")
+              .select("*", { count: "exact", head: true })
+              .or(
+                `and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`
+              ),
+          ]);
           const senderName = senderProfile?.name || "Someone";
+          // Only one message in the whole thread (the one we just sent) → this is a brand-new
+          // conversation, so frame the push as a chat invite rather than a generic message.
+          const isFirstEverMessage = (threadCount ?? 0) <= 1;
+          const title = isFirstEverMessage
+            ? `${senderName} wants to chat with you 💬`
+            : `${senderName} sent you a message 💬`;
           await supabase.functions.invoke("send-push-notification", {
             body: {
               to_user_id: otherUserId,
-              title: `${senderName} sent you a message 💬`,
+              title,
               body: trimmed.slice(0, 80),
               data: { tab: "chat", other_user_id: user.id },
             },

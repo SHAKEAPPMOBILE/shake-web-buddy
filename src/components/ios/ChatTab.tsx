@@ -207,7 +207,7 @@ export function ChatTab({
           .eq("user_id", user.id),
         supabase.from("greetings").select("to_user_id").eq("from_user_id", user.id),
         supabase.from("greetings").select("from_user_id, created_at").eq("to_user_id", user.id),
-        supabase.from("private_conversation_hidden").select("other_user_id").eq("user_id", user.id),
+        supabase.from("private_conversation_hidden").select("other_user_id, hidden_at").eq("user_id", user.id),
         supabase.from("user_blocks").select("blocked_id").eq("blocker_id", user.id),
         supabase
           .from("private_messages")
@@ -265,7 +265,37 @@ export function ChatTab({
 
       const sentToIds = new Set((sentGreetings || []).map(g => g.to_user_id).filter(isValidUuid));
       const receivedFromIds = new Set((receivedGreetings || []).map(g => g.from_user_id).filter(isValidUuid));
-      const hiddenIds = new Set((hiddenConvos || []).map(h => h.other_user_id));
+
+      // A hidden (declined / left) conversation reappears once the other person messages again —
+      // check each hidden partner for a message sent after we hid it, and auto-unhide those.
+      const hiddenList = hiddenConvos || [];
+      let staleHiddenIds: string[] = [];
+      if (hiddenList.length > 0) {
+        const staleChecks = await Promise.all(
+          hiddenList.map(async (h) => {
+            const { count } = await supabase
+              .from("private_messages")
+              .select("*", { count: "exact", head: true })
+              .eq("sender_id", h.other_user_id)
+              .eq("receiver_id", user.id)
+              .gt("created_at", h.hidden_at);
+            return (count || 0) > 0 ? h.other_user_id : null;
+          })
+        );
+        staleHiddenIds = staleChecks.filter((id): id is string => !!id);
+        if (staleHiddenIds.length > 0) {
+          // Fire-and-forget: drop the stale hide so it stays gone next fetch too.
+          supabase
+            .from("private_conversation_hidden")
+            .delete()
+            .eq("user_id", user.id)
+            .in("other_user_id", staleHiddenIds)
+            .then(() => {});
+        }
+      }
+      const hiddenIds = new Set(
+        hiddenList.map(h => h.other_user_id).filter(id => !staleHiddenIds.includes(id))
+      );
       const blockedIds = new Set((blockedUsers || []).map(b => b.blocked_id));
       const matchedUserIds = [...sentToIds].filter(
         id => receivedFromIds.has(id) && !hiddenIds.has(id) && !blockedIds.has(id)

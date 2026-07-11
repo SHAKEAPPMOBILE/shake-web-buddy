@@ -543,6 +543,16 @@
     "noRecentActivity": "No recent activity",
     "reportUser": "Report User"
   },
+  "chatInvite": {
+    "title": "User Profile",
+    "invitingYouToChat": "{{name}} is inviting you to chat",
+    "accept": "Accept",
+    "decline": "Decline",
+    "confirmDecline": "Are you sure?",
+    "yes": "Yes",
+    "hum": "Hum",
+    "declinedToast": "Request removed"
+  },
   "report": {
     "title": "Report User",
     "description": "Report {{name}} for violating our community guidelines.",
