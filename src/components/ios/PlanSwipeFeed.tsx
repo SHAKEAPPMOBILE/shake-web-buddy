@@ -103,6 +103,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
   const [smallImage, setSmallImage] = useState(false);
   const [previewAvatars, setPreviewAvatars] = useState<{ avatar_url: string | null }[]>([]);
   const [participantsOpen, setParticipantsOpen] = useState(false);
+  const [joinCount, setJoinCount] = useState<number | null>(null);
 
   const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const { videoWidth, videoHeight } = e.currentTarget;
@@ -150,22 +151,24 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
       let userIds: string[] = [];
       if (plan.is_auto_generated) {
         // Carousel group: all joiners for this activity_type + city
-        const { data: joins } = await supabase
+        const { data: joins, count } = await supabase
           .from("activity_joins")
-          .select("user_id")
+          .select("user_id", { count: "exact" })
           .eq("activity_type", plan.activity_type)
           .eq("city", plan.city)
           .gt("expires_at", new Date().toISOString())
           .limit(3);
         userIds = joins?.map((j: { user_id: string }) => j.user_id) ?? [];
+        if (!cancelled) setJoinCount(count ?? 0);
       } else {
         // User-created plan: joiners for this specific activity_id
-        const { data: joins } = await supabase
+        const { data: joins, count } = await supabase
           .from("activity_joins")
-          .select("user_id")
+          .select("user_id", { count: "exact" })
           .eq("activity_id", plan.id)
           .limit(3);
         userIds = joins?.map((j: { user_id: string }) => j.user_id) ?? [];
+        if (!cancelled) setJoinCount(count ?? 0);
       }
       if (cancelled || !userIds.length) return;
       const profiles = await Promise.all(
@@ -187,6 +190,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
       const result = await onJoinInPlace();
       if (result.success) {
         setJoinedLocally(true);
+        setJoinCount(prev => (prev ?? 0) + 1);
       }
     } finally {
       setJoining(false);
@@ -370,12 +374,12 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 </Avatar>
               ))}
             </div>
-            {(plan.participant_count ?? 0) > 3 && (
+            {((joinCount ?? plan.participant_count ?? 0) > 3) && (
               <span
                 className="text-white text-[11px] font-semibold mt-1 leading-none"
                 style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
               >
-                +{(plan.participant_count ?? 0) - 3}
+                +{(joinCount ?? plan.participant_count ?? 0) - 3}
               </span>
             )}
           </button>

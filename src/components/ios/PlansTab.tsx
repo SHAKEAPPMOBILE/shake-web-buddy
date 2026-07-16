@@ -782,12 +782,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
     
-    if (plan.isJoined) {
-      setSelectedPlan(plan);
-      setShowChatView(true);
-      return;
-    }
-
     setPlanPreview(plan);
   };
 
@@ -1882,8 +1876,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 </div>
               </button>
 
-              {/* Enter chat (owner) / JOIN (others) */}
-              {planPreview.user_id === user?.id ? (
+              {/* Enter chat (owner or joined) / JOIN (others) */}
+              {(planPreview.user_id === user?.id || planPreview.isJoined) ? (
                 <button
                   type="button"
                   onClick={() => { setPlanPreview(null); setSelectedPlan(planPreview); setShowChatView(true); }}
@@ -1968,7 +1962,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
               {/* Actions */}
               <div className="px-6 pb-6 space-y-2">
-                {planPreview.user_id === user?.id ? (
+                {(planPreview.user_id === user?.id || planPreview.isJoined) ? (
                   <button
                     type="button"
                     onClick={() => { setPlanPreview(null); setSelectedPlan(planPreview); setShowChatView(true); }}
