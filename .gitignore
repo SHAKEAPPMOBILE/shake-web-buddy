@@ -16,8 +16,9 @@ dist-ssr
 .env.*.local
 .env.save
 
-# Android signing keystores (never commit)
+# Android signing keystores and release build outputs (never commit)
 *.jks
+android/app/release/
 
 # Editor directories and files
 .vscode/*

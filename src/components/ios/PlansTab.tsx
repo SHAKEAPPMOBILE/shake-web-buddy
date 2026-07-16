@@ -233,8 +233,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       });
 
       // ── Phase 2: discovery real plans ─────────────────────────────────────
-      // My City  → non-auto plans in effectiveCity (unchanged).
-      // All Cities → non-auto plans in cities OTHER than effectiveCity.
+      // My City  → non-hidden, non-auto plans in effectiveCity, future-dated.
+      // All Cities → non-hidden plans in cities OTHER than effectiveCity, future-dated.
+      //
+      // The future-date filter (scheduled_for >= now OR null) is applied at the DB
+      // level so that LIMIT is never consumed by past plans. Without it, Medellín's
+      // 16+ past-dated rows fill LIMIT 20 before newer plans (e.g. July 29) are
+      // reached, causing them to silently vanish from the feed.
+      const nowDate = new Date(nowMs);
+      const nowIso = nowDate.toISOString();
       const cityPlansDataResult = await (
         !effectiveCity
           ? Promise.resolve({ data: [] as any[], error: null })
@@ -244,6 +251,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 .select("*")
                 .neq("city", effectiveCity)
                 .eq("is_active", true)
+                .eq("is_hidden", false)
+                .or(`scheduled_for.gte.${nowIso},scheduled_for.is.null`)
                 .order("scheduled_for", { ascending: true, nullsFirst: false })
                 .limit(30)
             : supabase
@@ -251,20 +260,20 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 .select("*")
                 .eq("city", effectiveCity)
                 .eq("is_active", true)
+                .eq("is_hidden", false)
                 .neq("is_auto_generated", true)
+                .or(`scheduled_for.gte.${nowIso},scheduled_for.is.null`)
                 .order("scheduled_for", { ascending: true, nullsFirst: false })
                 .limit(20)
       );
       const _tab = showAllCities ? "Todas las ciudades" : "Mi Ciudad";
       const _realFilter = !effectiveCity ? "empty (no effectiveCity)"
-        : showAllCities ? `city != "${effectiveCity}", is_active=true, LIMIT 30`
-        : `city = "${effectiveCity}", is_active=true, is_auto_generated!=true, LIMIT 20`;
+        : showAllCities ? `city != "${effectiveCity}", is_active=true, is_hidden=false, scheduled_for>=${nowIso} OR null, LIMIT 30`
+        : `city = "${effectiveCity}", is_active=true, is_hidden=false, is_auto_generated!=true, scheduled_for>=${nowIso} OR null, LIMIT 20`;
       console.log(`[PlansTab] real-plans query [${_tab}] filter: ${_realFilter} → ${cityPlansDataResult.data?.length ?? 0} rows`, cityPlansDataResult.error ?? cityPlansDataResult.data?.map((a: any) => ({ id: a.id, title: a.title, activity_type: a.activity_type, city: a.city, is_active: a.is_active, scheduled_for: a.scheduled_for, user_id: a.user_id })));
 
       // Discovery real plans: active plans in the city that I haven't joined.
-      // isActivityVisible uses a 24h-back window (for joined plans), so we add a
-      // strict future-only guard here: discovery cards must never show past events.
-      const nowDate = new Date();
+      // DB already gates on future dates; the frontend filters below are a safety net.
       const _rawRows = cityPlansDataResult.data ?? [];
       const _afterJoinFilter = _rawRows.filter((a: { id: string }) => !myJoinedPlanIds.has(a.id));
       // Creators see their own plans here when Feed A (RPC) didn't return them
