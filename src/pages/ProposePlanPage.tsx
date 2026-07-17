@@ -46,7 +46,7 @@ const CURRENCIES = [
 const MAX_CHARACTERS = 50;
 
 type StepName = "name" | "city" | "date" | "time" | "price" | "video" | "preview";
-type CameraMode = "idle" | "live" | "recording" | "playback" | "error" | "trim";
+type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
 const MAX_CLIP_SECONDS = 10;
 
@@ -133,16 +133,9 @@ export default function ProposePlanPage() {
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [videoFullscreen, setVideoFullscreen] = useState(false);
-  // Upload + trim — lets a user pick an existing video instead of recording live.
-  // Clips over MAX_CLIP_SECONDS drop into a trim step where they pick a 10s window.
-  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
-  const [uploadedVideoDuration, setUploadedVideoDuration] = useState(0);
-  const [trimStart, setTrimStart] = useState(0);
-  const [isTrimming, setIsTrimming] = useState(false);
-  const [trimError, setTrimError] = useState<string | null>(null);
+  // Upload — lets a user pick an existing video instead of recording live.
+  // Anything over MAX_CLIP_SECONDS is rejected with an error (no trim editor).
   const uploadInputRef = useRef<HTMLInputElement>(null);
-  const trimVideoRef = useRef<HTMLVideoElement>(null);
-  const trimRecorderRef = useRef<MediaRecorder | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
@@ -538,17 +531,17 @@ export default function ProposePlanPage() {
       return;
     }
     setVideoError(null);
-    setTrimError(null);
     const url = URL.createObjectURL(file);
 
-    // Probe duration with a throwaway video element before deciding whether this
-    // needs trimming — MAX_CLIP_SECONDS or under goes straight to review.
-    // Appended off-screen (not just detached) and explicitly .load()ed: some
-    // browsers only reliably fire loadedmetadata for elements that are actually
-    // in the document and have had load() called, and silently never fire
-    // loadedmetadata OR error for certain codecs (e.g. HEVC .mov from iPhones on
-    // some desktop Chrome builds) — which previously left the user stuck staring
-    // at the live camera view with no feedback at all.
+    // Probe duration with a throwaway video element before accepting the file —
+    // anything over MAX_CLIP_SECONDS is rejected outright (no trim editor; keep
+    // upload dead simple and predictable). Appended off-screen (not just
+    // detached) and explicitly .load()ed: some browsers only reliably fire
+    // loadedmetadata for elements that are actually in the document and have
+    // had load() called, and silently never fire loadedmetadata OR error for
+    // certain codecs (e.g. HEVC .mov from iPhones on some desktop Chrome
+    // builds) — which previously left the user stuck staring at the live
+    // camera view with no feedback at all.
     const probe = document.createElement("video");
     probe.preload = "metadata";
     probe.muted = true;
@@ -575,21 +568,19 @@ export default function ProposePlanPage() {
       settled = true;
       clearTimeout(safetyTimeout);
       cleanupProbe();
-      stopAllTracks();
       if (!isFinite(duration) || duration <= 0) {
         setVideoError("Couldn't read that video's length. Please try another file.");
         return;
       }
-      if (duration <= MAX_CLIP_SECONDS + 0.25) {
-        setRecordedBlob(file);
-        setRecordedObjectUrl(url);
-        setCameraMode("playback");
-      } else {
-        setUploadedVideoUrl(url);
-        setUploadedVideoDuration(duration);
-        setTrimStart(0);
-        setCameraMode("trim");
+      if (duration > MAX_CLIP_SECONDS + 0.25) {
+        URL.revokeObjectURL(url);
+        setVideoError("Hold on Tiger, try uploading a 10sec video max");
+        return;
       }
+      stopAllTracks();
+      setRecordedBlob(file);
+      setRecordedObjectUrl(url);
+      setCameraMode("playback");
     };
 
     probe.onloadedmetadata = () => {
@@ -614,69 +605,6 @@ export default function ProposePlanPage() {
 
     probe.src = url;
     probe.load();
-  };
-
-  const handleCancelTrim = () => {
-    if (uploadedVideoUrl) URL.revokeObjectURL(uploadedVideoUrl);
-    setUploadedVideoUrl(null);
-    setUploadedVideoDuration(0);
-    setTrimStart(0);
-    setTrimError(null);
-    startCamera();
-  };
-
-  // Extracts exactly MAX_CLIP_SECONDS starting at trimStart by playing the
-  // source video through a captureStream() + MediaRecorder, which re-encodes
-  // just that window into a fresh Blob — no server round-trip needed.
-  const handleConfirmTrim = async () => {
-    const vid = trimVideoRef.current;
-    if (!vid) return;
-    setIsTrimming(true);
-    setTrimError(null);
-    try {
-      // @ts-ignore — captureStream is standard in modern WebKit/Chromium but
-      // missing from the older lib.dom.d.ts shipped with some TS versions.
-      const stream: MediaStream | undefined = vid.captureStream ? vid.captureStream() : (vid as any).mozCaptureStream?.();
-      if (!stream) throw new Error("captureStream unsupported");
-
-      await new Promise<void>((resolve, reject) => {
-        const onSeeked = () => { vid.removeEventListener("seeked", onSeeked); resolve(); };
-        vid.addEventListener("seeked", onSeeked);
-        vid.currentTime = trimStart;
-        setTimeout(() => { vid.removeEventListener("seeked", onSeeked); resolve(); }, 1500);
-        void reject; // seek can silently no-op on some platforms — the timeout covers it
-      });
-
-      const mimeType =
-        MediaRecorder.isTypeSupported("video/mp4") ? "video/mp4" :
-        MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" :
-        "video/webm";
-      const recorder = new MediaRecorder(stream, { mimeType });
-      const chunks: Blob[] = [];
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-
-      const done = new Promise<Blob>((resolve) => {
-        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
-      });
-
-      trimRecorderRef.current = recorder;
-      recorder.start();
-      await vid.play();
-      await new Promise((r) => setTimeout(r, MAX_CLIP_SECONDS * 1000));
-      recorder.stop();
-      vid.pause();
-
-      const blob = await done;
-      if (uploadedVideoUrl) URL.revokeObjectURL(uploadedVideoUrl);
-      setUploadedVideoUrl(null);
-      setRecordedBlob(blob);
-      setRecordedObjectUrl(URL.createObjectURL(blob));
-      setCameraMode("playback");
-    } catch {
-      setTrimError("Trimming isn't supported on this device — try recording live instead, or pick a clip under 10s.");
-    } finally {
-      setIsTrimming(false);
-    }
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -844,75 +772,7 @@ export default function ProposePlanPage() {
           className="hidden"
         />
 
-        {/* Trim step — video longer than MAX_CLIP_SECONDS: pick a 10s window */}
-        {cameraMode === "trim" && uploadedVideoUrl && (
-          <div className="space-y-4">
-            <div
-              className="relative w-full rounded-2xl overflow-hidden bg-black"
-              style={{ aspectRatio: "3/4", maxHeight: "58vh" }}
-            >
-              <video
-                ref={trimVideoRef}
-                src={uploadedVideoUrl}
-                playsInline
-                muted={false}
-                className="absolute inset-0 w-full h-full object-contain"
-                onLoadedMetadata={(e) => { e.currentTarget.currentTime = trimStart; }}
-              />
-              {isTrimming && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <LoadingSpinner size="sm" />
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2 px-1">
-              <p className="text-sm font-medium text-foreground text-center">
-                {Math.round(trimStart)}s – {Math.round(trimStart + MAX_CLIP_SECONDS)}s of {Math.round(uploadedVideoDuration)}s
-              </p>
-              <input
-                type="range"
-                min={0}
-                max={Math.max(0, uploadedVideoDuration - MAX_CLIP_SECONDS)}
-                step={0.1}
-                value={trimStart}
-                disabled={isTrimming}
-                onChange={(e) => {
-                  const next = parseFloat(e.target.value);
-                  setTrimStart(next);
-                  if (trimVideoRef.current) trimVideoRef.current.currentTime = next;
-                }}
-                className="w-full"
-              />
-              <p className="text-xs text-muted-foreground text-center">Drag to pick which 10 seconds to use</p>
-            </div>
-
-            {trimError && <p className="text-sm text-destructive text-center">{trimError}</p>}
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleCancelTrim}
-                disabled={isTrimming}
-                className="flex-1 py-3 rounded-full text-sm font-semibold bg-muted text-foreground disabled:opacity-50"
-              >
-                {t("createPlan.retake")}
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmTrim}
-                disabled={isTrimming}
-                className="flex-1 py-3 rounded-full text-sm font-semibold bg-black text-white flex items-center justify-center gap-2 disabled:opacity-70"
-              >
-                {isTrimming && <LoadingSpinner size="sm" />}
-                {t("createPlan.useThisVideo")}
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Camera / playback box — portrait ~3:4 */}
-        {cameraMode !== "trim" && (
         <div
           ref={cameraBoxRef}
           className="relative w-full rounded-2xl overflow-hidden bg-black"
@@ -1081,7 +941,6 @@ export default function ProposePlanPage() {
             </div>
           )}
         </div>
-        )}
 
         {/* Upload error (outside the camera box) */}
         {videoError && cameraMode !== "error" && (
