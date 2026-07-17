@@ -874,6 +874,29 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     onPendingNewPlanHandled?.();
   }, [pendingNewPlanId, combinedPlansList, onPendingNewPlanHandled]);
 
+  // Keep an already-open swipe feed's cards patched with fresh data as background
+  // enrichment (creator name/avatar, promo_video_url, join counts) streams in.
+  // feedSourceList is a snapshot taken at click time — without this, a card tapped
+  // during the brief "quick render" window (placeholder creator_name "...", no
+  // video yet, before Phase 4 of fetchPlans finishes) stays stuck showing that
+  // broken-looking placeholder (purple circle + "." for the rest of the viewing
+  // session, even after the real data has loaded elsewhere in the app.
+  // Merges by id in place — same order, same length — so the currently-scrolled
+  // position never jumps or reshuffles, each card just quietly fills in.
+  useEffect(() => {
+    if (!feedOpen) return;
+    setFeedSourceList((prev) => {
+      const freshById = new Map(combinedPlansList.map((p) => [p.id, p]));
+      let changed = false;
+      const merged = prev.map((p) => {
+        const fresh = freshById.get(p.id);
+        if (fresh && fresh !== p) { changed = true; return fresh; }
+        return p;
+      });
+      return changed ? merged : prev;
+    });
+  }, [combinedPlansList, feedOpen]);
+
   const handlePlanClick = async (plan: PlanActivity) => {
     // If it's a paid plan and user hasn't joined and is not the creator, show detail dialog
     if (plan.price_amount && !plan.isJoined && plan.user_id !== user?.id) {

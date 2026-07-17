@@ -634,12 +634,24 @@ export function PlanSwipeFeed({
   /* Wraparound: once scrolling settles on a clone card (the loop-head clone at
      index 0, or the loop-tail clone at the very end), silently jump to the
      matching real card at the opposite end of the list — same index arithmetic,
-     no animation, so it reads as a seamless loop instead of a visible reset. */
+     no animation, so it reads as a seamless loop instead of a visible reset.
+     Each jump gets the same WKWebView "wake up" nudge as the initial mount
+     scroll: a raw JS scrollTop assignment (not a native scroll/snap gesture)
+     can leave the touch-scroll engine frozen right after — the card lands in
+     the right spot, but the next swipe doesn't register at all. Without this,
+     looping worked once (visually landing back on the first card) and then
+     went dead, which is exactly what going all the way around back to the
+     first card and getting stuck there looked like. */
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !isLooping) return;
     let settleTimer: ReturnType<typeof setTimeout>;
     const lastIndex = looped.length - 1;
+    const wake = () => {
+      const prev = el.scrollTop;
+      el.scrollTop = prev + 1;
+      el.scrollTop = prev;
+    };
     const handleScroll = () => {
       clearTimeout(settleTimer);
       settleTimer = setTimeout(() => {
@@ -649,9 +661,11 @@ export function PlanSwipeFeed({
         if (currentIndex === 0) {
           // Landed on the loop-head clone (visually = last plan) — jump to the real last plan.
           el.scrollTop = (lastIndex - 1) * clientHeight;
+          requestAnimationFrame(wake);
         } else if (currentIndex === lastIndex) {
           // Landed on the loop-tail clone (visually = first plan) — jump to the real first plan.
           el.scrollTop = 1 * clientHeight;
+          requestAnimationFrame(wake);
         }
       }, 120); // let scroll-snap settle before checking
     };
