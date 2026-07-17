@@ -183,7 +183,19 @@
     "failedToSendVideo": "動画の送信に失敗しました",
     "expandEventPoster": "イベントポスターを拡大",
     "leaveChat": "チャットを離れる",
-    "fatalError": "このチャットの読み込みに問題が発生しました。後でもう一度お試しください。"
+    "fatalError": "このチャットの読み込みに問題が発生しました。後でもう一度お試しください。",
+    "signInToSendMessages": "メッセージを送信するにはログインしてください",
+    "characterLimitToast": "10万文字の上限に達しました。無制限のメッセージ送信にはSuper-Humanにアップグレードしてください！",
+    "failedToSendMessage": "メッセージの送信に失敗しました",
+    "failedToSendGif": "GIFの送信に失敗しました",
+    "failedToDeleteMessage": "メッセージの削除に失敗しました",
+    "messageDeleted": "メッセージを削除しました",
+    "signInToSuggestVenues": "場所を提案するにはログインしてください",
+    "failedToSuggestVenue": "場所の提案に失敗しました",
+    "failedToSendMedia": "メディアの送信に失敗しました",
+    "failedToLeaveConversation": "会話から退出できませんでした",
+    "conversationHidden": "会話を非表示にしました",
+    "userBlocked": "ユーザーをブロックしました"
   },
   "plans": {
     "title": "プラン",
@@ -334,7 +346,45 @@
     "sectionAccountActions": "アカウント操作",
     "deleteAccountTitle": "アカウントを削除しますか？",
     "deleteAccountDesc": "アカウントとすべてのデータが完全に削除されます。この操作は元に戻せません。",
-    "deleteAccountError": "アカウントの削除に失敗しました。サポートにお問い合わせください。"
+    "deleteAccountError": "アカウントの削除に失敗しました。サポートにお問い合わせください。",
+    "emailAddress": "メールアドレス",
+    "emailUsageNote": "請求およびお知らせの送付に使用されます。",
+    "interests": "興味",
+    "usernameOrUrlPlaceholder": "@ユーザー名または完全なURL",
+    "pushNotifications": "プッシュ通知",
+    "pushNotificationsDesc": "新着メッセージの通知を受け取る",
+    "security": "セキュリティ",
+    "changePasswordBtn": "パスワードを変更",
+    "newPasswordLabel": "新しいパスワード",
+    "newPasswordPlaceholder": "新しいパスワードを入力",
+    "confirmPasswordLabel": "パスワードを確認",
+    "confirmPasswordPlaceholder": "新しいパスワードを再入力",
+    "updatePasswordBtn": "パスワードを更新",
+    "updatingPassword": "更新中...",
+    "passwordMinLength": "パスワードは6文字以上で入力してください",
+    "darkMode": "ダークモード",
+    "deleteAccountConfirmTitle": "アカウントを削除しますか？ 😢",
+    "deleteAccountConfirmDesc": "この操作は元に戻せません。アカウント、プロフィール、メッセージ、アクティビティ、関連するすべてのデータがサーバーから完全に削除されます。",
+    "deletingBtn": "削除中...",
+    "unsavedChangesTitle": "🐯 保存されていない変更があります",
+    "unsavedChangesDesc": "変更はまだ保存されていません。このまま移動しますか？",
+    "stayBtn": "とどまる",
+    "leaveAnywayBtn": "移動する",
+    "chooseAvatarTitle": "アバターを選択",
+    "madeWithLove": "社交的な人々のために❤️を込めて",
+    "avatarSaveFailed": "アバターの保存に失敗しました",
+    "avatarUpdated": "アバターを更新しました！",
+    "selectImageFile": "画像ファイルを選択してください",
+    "imageTooLarge": "画像は5MB未満にしてください",
+    "avatarPhotoUpdated": "プロフィール写真を更新しました！",
+    "avatarUploadFailed": "プロフィール写真のアップロードに失敗しました",
+    "profileSaved": "プロフィールを保存しました！",
+    "profileSaveFailed": "プロフィールの保存に失敗しました",
+    "fillBothPasswordFields": "両方のパスワード欄を入力してください",
+    "passwordsDontMatch": "パスワードが一致しません",
+    "passwordUpdatedSuccess": "パスワードを更新しました！",
+    "accountDeletedGoodbye": "アカウントを削除しました。さようなら！👋",
+    "deleteAccountFailed": "アカウントの削除に失敗しました。もう一度お試しください。"
   },
   "points": {
     "title": "マイポイント",
@@ -373,7 +423,18 @@
     "googleBtn": "Google",
     "appleBtn": "Apple",
     "createAccount": "Create Account",
-    "loginWithEmail": "Login with email"
+    "loginWithEmail": "Login with email",
+    "interestsQuestion": "あなたの興味は何ですか？ ✨",
+    "interestsSubtext": "トピックをタップしてオプションを表示",
+    "interestsPlaceholder": "上のトピックをタップ ↑",
+    "socialsQuestion": "あなたのSNSは？ 📱",
+    "socialsSubtext": "任意 — 他の人があなたを知る手助けになります",
+    "pasteInstagram": "Instagramのリンクをここに貼り付け",
+    "pasteLinkedIn": "LinkedInのリンクをここに貼り付け",
+    "pasteX": "Xのリンクをここに貼り付け",
+    "socialsPlaceholder": "上のアイコンをタップ ↑",
+    "skipForNow": "今はスキップ",
+    "done": "完了"
   },
   "languageSelector": {
     "swipeToSelect": "スワイプして言語を選択",
@@ -470,7 +531,12 @@
     "accessCities": "世界中100以上の都市へのアクセス",
     "joinAnyCity": "どの都市のアクティビティにも参加",
     "seeProfiles": "他のユーザーのプロフィールを無制限に閲覧",
-    "unlimitedMessages": "無制限のテキストメッセージ"
+    "unlimitedMessages": "無制限のテキストメッセージ",
+    "welcomeSuperHumanToast": "Super-Humanへようこそ！",
+    "manageInAppStore": "App Storeの設定でサブスクリプションを管理してください",
+    "restoreTimedOut": "復元がタイムアウトしました。もう一度お試しください。",
+    "purchasesRestored": "購入を正常に復元しました！",
+    "restoreFailed": "購入の復元に失敗しました"
   },
   "welcome": {
     "settingUp": "準備中…",
@@ -542,7 +608,8 @@
     "editAnswers": "回答を編集",
     "freeOption": "無料",
     "pricedOption": "有料",
-    "addPlan": "プランを追加"
+    "addPlan": "プランを追加",
+    "uploadVideo": "アップロード"
   },
   "userProfile": {
     "title": "ユーザープロフィール",
@@ -645,5 +712,21 @@
     "joined": "参加済み",
     "join": "参加",
     "pay": "支払い {{amount}}"
+  },
+  "chatInvite": {
+    "title": "ユーザープロフィール",
+    "invitingYouToChat": "{{name}}さんがチャットに招待しています",
+    "accept": "承認",
+    "decline": "拒否",
+    "confirmDecline": "本当によろしいですか?",
+    "yes": "はい",
+    "hum": "うーん",
+    "declinedToast": "リクエストを削除しました"
+  },
+  "mandatoryPhoto": {
+    "uploadFailed": "写真のアップロードに失敗しました",
+    "selectPhoto": "写真を選択してください",
+    "photoSaved": "写真を保存しました！",
+    "saveFailed": "写真の保存に失敗しました"
   }
 }

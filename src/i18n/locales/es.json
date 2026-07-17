@@ -183,7 +183,19 @@
     "failedToSendVideo": "Error al enviar el video",
     "expandEventPoster": "Ampliar cartel del evento",
     "leaveChat": "Abandonar chat",
-    "fatalError": "Algo salió mal al cargar este chat. Inténtalo de nuevo más tarde."
+    "fatalError": "Algo salió mal al cargar este chat. Inténtalo de nuevo más tarde.",
+    "signInToSendMessages": "Inicia sesión para enviar mensajes",
+    "characterLimitToast": "Has alcanzado el límite de 100.000 caracteres. Hazte Super-Human para mensajes ilimitados.",
+    "failedToSendMessage": "Error al enviar el mensaje",
+    "failedToSendGif": "Error al enviar el GIF",
+    "failedToDeleteMessage": "Error al eliminar el mensaje",
+    "messageDeleted": "Mensaje eliminado",
+    "signInToSuggestVenues": "Inicia sesión para sugerir lugares",
+    "failedToSuggestVenue": "Error al sugerir el lugar",
+    "failedToSendMedia": "Error al enviar el archivo",
+    "failedToLeaveConversation": "Error al salir de la conversación",
+    "conversationHidden": "Conversación oculta",
+    "userBlocked": "Usuario bloqueado"
   },
   "plans": {
     "title": "Planes",
@@ -334,7 +346,45 @@
     "sectionAccountActions": "Acciones de Cuenta",
     "deleteAccountTitle": "¿Eliminar Cuenta?",
     "deleteAccountDesc": "Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.",
-    "deleteAccountError": "No se pudo eliminar la cuenta. Por favor contacta al soporte."
+    "deleteAccountError": "No se pudo eliminar la cuenta. Por favor contacta al soporte.",
+    "emailAddress": "Correo electrónico",
+    "emailUsageNote": "Se usa para facturación y para recibir novedades nuestras.",
+    "interests": "Intereses",
+    "usernameOrUrlPlaceholder": "@usuario o URL completa",
+    "pushNotifications": "Notificaciones push",
+    "pushNotificationsDesc": "Recibe una notificación cuando tengas mensajes nuevos",
+    "security": "Seguridad",
+    "changePasswordBtn": "Cambiar contraseña",
+    "newPasswordLabel": "Nueva contraseña",
+    "newPasswordPlaceholder": "Introduce la nueva contraseña",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "confirmPasswordPlaceholder": "Confirma la nueva contraseña",
+    "updatePasswordBtn": "Actualizar contraseña",
+    "updatingPassword": "Actualizando...",
+    "passwordMinLength": "La contraseña debe tener al menos 6 caracteres",
+    "darkMode": "Modo oscuro",
+    "deleteAccountConfirmTitle": "¿Eliminar tu cuenta? 😢",
+    "deleteAccountConfirmDesc": "Esta acción no se puede deshacer. Se eliminarán permanentemente tu cuenta, perfil, mensajes, actividades y todos los datos asociados de nuestros servidores.",
+    "deletingBtn": "Eliminando...",
+    "unsavedChangesTitle": "🐯 Tienes cambios sin guardar",
+    "unsavedChangesDesc": "Tus cambios aún no se han guardado. ¿Salir de todos modos?",
+    "stayBtn": "Quedarme",
+    "leaveAnywayBtn": "Salir de todos modos",
+    "chooseAvatarTitle": "Elige tu avatar",
+    "madeWithLove": "Hecho con ❤️ para mariposas sociales",
+    "avatarSaveFailed": "Error al guardar el avatar",
+    "avatarUpdated": "¡Avatar actualizado!",
+    "selectImageFile": "Selecciona un archivo de imagen",
+    "imageTooLarge": "La imagen debe pesar menos de 5 MB",
+    "avatarPhotoUpdated": "¡Foto de perfil actualizada!",
+    "avatarUploadFailed": "Error al subir la foto de perfil",
+    "profileSaved": "¡Perfil guardado!",
+    "profileSaveFailed": "Error al guardar el perfil",
+    "fillBothPasswordFields": "Completa ambos campos de contraseña",
+    "passwordsDontMatch": "Las contraseñas no coinciden",
+    "passwordUpdatedSuccess": "¡Contraseña actualizada correctamente!",
+    "accountDeletedGoodbye": "Cuenta eliminada. ¡Adiós! 👋",
+    "deleteAccountFailed": "Error al eliminar la cuenta. Inténtalo de nuevo."
   },
   "points": {
     "title": "Mis Puntos",
@@ -481,7 +531,12 @@
     "accessCities": "Acceso a más de 100 ciudades en todo el mundo",
     "joinAnyCity": "Únete a actividades en cualquier ciudad",
     "seeProfiles": "Ve perfiles de otros usuarios sin límite",
-    "unlimitedMessages": "Mensajes de texto ilimitados"
+    "unlimitedMessages": "Mensajes de texto ilimitados",
+    "welcomeSuperHumanToast": "¡Bienvenido a Super-Human!",
+    "manageInAppStore": "Gestiona tu suscripción desde los ajustes de App Store",
+    "restoreTimedOut": "La restauración ha tardado demasiado. Inténtalo de nuevo.",
+    "purchasesRestored": "¡Compras restauradas correctamente!",
+    "restoreFailed": "Error al restaurar las compras"
   },
   "welcome": {
     "settingUp": "Preparando todo…",
@@ -553,7 +608,8 @@
     "editAnswers": "Editar respuestas",
     "freeOption": "Gratis",
     "pricedOption": "De pago",
-    "addPlan": "AÑADIR PLAN"
+    "addPlan": "AÑADIR PLAN",
+    "uploadVideo": "Subir"
   },
   "userProfile": {
     "title": "Perfil de Usuario",
@@ -656,5 +712,21 @@
     "joined": "Unido",
     "join": "Unirse",
     "pay": "Pagar {{amount}}"
+  },
+  "chatInvite": {
+    "title": "Perfil de usuario",
+    "invitingYouToChat": "{{name}} te invita a chatear",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "confirmDecline": "¿Estás seguro?",
+    "yes": "Sí",
+    "hum": "Eh",
+    "declinedToast": "Solicitud eliminada"
+  },
+  "mandatoryPhoto": {
+    "uploadFailed": "Error al subir la foto",
+    "selectPhoto": "Selecciona una foto",
+    "photoSaved": "¡Foto guardada!",
+    "saveFailed": "Error al guardar la foto"
   }
 }

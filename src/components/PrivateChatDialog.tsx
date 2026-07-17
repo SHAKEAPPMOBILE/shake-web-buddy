@@ -360,7 +360,7 @@ export function PrivateChatDialog({
   const handleDeleteMessage = async (messageId: string) => {
     setActiveMsg(null);
     const { error } = await deleteMessage(messageId);
-    if (error) toast.error("Failed to delete message");
+    if (error) toast.error(t('chat.failedToDeleteMessage'));
   };
 
   // ── Send / media handlers ─────────────────────────────────────────────────
@@ -370,7 +370,7 @@ export function PrivateChatDialog({
     if (!newMessage.trim() || isSending) return;
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
-      toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
+      toast.error(t('chat.characterLimitToast'));
       return;
     }
     setIsSending(true);
@@ -386,13 +386,13 @@ export function PrivateChatDialog({
     if (isSending) return;
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
-      toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
+      toast.error(t('chat.characterLimitToast'));
       throw new Error("Character limit reached");
     }
     setIsSending(true);
     const { error } = await sendMessage(url, "gif");
     setIsSending(false);
-    if (error) { toast.error("Failed to send GIF"); throw error; }
+    if (error) { toast.error(t('chat.failedToSendGif')); throw error; }
   };
 
   const handleMediaFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -411,7 +411,7 @@ export function PrivateChatDialog({
       if (error) throw error;
     } catch (err) {
       console.error("Error uploading media:", err);
-      toast.error("Failed to send media");
+      toast.error(t('chat.failedToSendMedia'));
     } finally {
       setIsUploadingMedia(false);
     }
@@ -424,9 +424,9 @@ export function PrivateChatDialog({
       .from("private_conversation_hidden")
       .upsert({ user_id: user.id, other_user_id: otherUserId }, { onConflict: "user_id,other_user_id" });
     if (error) {
-      toast.error("Failed to leave conversation");
+      toast.error(t('chat.failedToLeaveConversation'));
     } else {
-      toast.success("Conversation hidden");
+      toast.success(t('chat.conversationHidden'));
       onClose();
     }
   }, [user, otherUserId, onClose]);
@@ -442,7 +442,7 @@ export function PrivateChatDialog({
       { user_id: user.id, other_user_id: otherUserId },
       { onConflict: "user_id,other_user_id" }
     );
-    toast.success("User blocked");
+    toast.success(t('chat.userBlocked'));
     onClose();
   }, [user, otherUserId, onClose]);
 

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +12,7 @@ interface MandatoryPhotoScreenProps {
 }
 
 export function MandatoryPhotoScreen({ userId, onComplete }: MandatoryPhotoScreenProps) {
+  const { t } = useTranslation();
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -28,11 +30,11 @@ export function MandatoryPhotoScreen({ userId, onComplete }: MandatoryPhotoScree
     e.target.value = "";
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
+      toast.error(t('profile.selectImageFile'));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be less than 5MB");
+      toast.error(t('profile.imageTooLarge'));
       return;
     }
 
@@ -52,7 +54,7 @@ export function MandatoryPhotoScreen({ userId, onComplete }: MandatoryPhotoScree
       setSelectedAvatar("custom");
     } catch (err) {
       console.error("Avatar upload error:", err);
-      toast.error("Failed to upload photo");
+      toast.error(t('mandatoryPhoto.uploadFailed'));
     }
   };
 
@@ -68,7 +70,7 @@ export function MandatoryPhotoScreen({ userId, onComplete }: MandatoryPhotoScree
       } else {
         const preset = avatarOptions.find((a) => a.id === selectedAvatar);
         if (!preset) {
-          toast.error("Please select a photo");
+          toast.error(t('mandatoryPhoto.selectPhoto'));
           return;
         }
         avatarUrl = preset.src;
@@ -108,11 +110,11 @@ export function MandatoryPhotoScreen({ userId, onComplete }: MandatoryPhotoScree
         throw new Error("Avatar save could not be verified");
       }
 
-      toast.success("Photo saved!");
+      toast.success(t('mandatoryPhoto.photoSaved'));
       await onComplete(data.avatar_url);
     } catch (err) {
       console.error("Error saving avatar:", err);
-      toast.error("Failed to save photo");
+      toast.error(t('mandatoryPhoto.saveFailed'));
     } finally {
       setIsSaving(false);
     }

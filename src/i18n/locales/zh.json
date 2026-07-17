@@ -183,7 +183,19 @@
     "failedToSendVideo": "发送视频失败",
     "expandEventPoster": "展开活动海报",
     "leaveChat": "离开聊天",
-    "fatalError": "加载此聊天时出了些问题。请稍后再试。"
+    "fatalError": "加载此聊天时出了些问题。请稍后再试。",
+    "signInToSendMessages": "请登录后发送消息",
+    "characterLimitToast": "你已达到10万字符上限。升级为 Super-Human 即可无限聊天！",
+    "failedToSendMessage": "消息发送失败",
+    "failedToSendGif": "GIF发送失败",
+    "failedToDeleteMessage": "消息删除失败",
+    "messageDeleted": "消息已删除",
+    "signInToSuggestVenues": "请登录后推荐地点",
+    "failedToSuggestVenue": "地点推荐失败",
+    "failedToSendMedia": "媒体发送失败",
+    "failedToLeaveConversation": "退出对话失败",
+    "conversationHidden": "对话已隐藏",
+    "userBlocked": "已屏蔽用户"
   },
   "plans": {
     "title": "计划",
@@ -334,7 +346,45 @@
     "sectionAccountActions": "账户操作",
     "deleteAccountTitle": "删除账户？",
     "deleteAccountDesc": "这将永久删除您的账户和所有数据。此操作无法撤销。",
-    "deleteAccountError": "删除账户失败。请联系客服。"
+    "deleteAccountError": "删除账户失败。请联系客服。",
+    "emailAddress": "电子邮箱",
+    "emailUsageNote": "用于账单和向你发送更新。",
+    "interests": "兴趣",
+    "usernameOrUrlPlaceholder": "@用户名或完整链接",
+    "pushNotifications": "推送通知",
+    "pushNotificationsDesc": "收到新消息时通知我",
+    "security": "安全",
+    "changePasswordBtn": "修改密码",
+    "newPasswordLabel": "新密码",
+    "newPasswordPlaceholder": "输入新密码",
+    "confirmPasswordLabel": "确认密码",
+    "confirmPasswordPlaceholder": "确认新密码",
+    "updatePasswordBtn": "更新密码",
+    "updatingPassword": "更新中...",
+    "passwordMinLength": "密码至少需要6个字符",
+    "darkMode": "深色模式",
+    "deleteAccountConfirmTitle": "删除你的账户？😢",
+    "deleteAccountConfirmDesc": "此操作无法撤销。你的账户、资料、消息、活动及所有相关数据将从我们的服务器中永久删除。",
+    "deletingBtn": "删除中...",
+    "unsavedChangesTitle": "🐯 你有未保存的更改",
+    "unsavedChangesDesc": "你的更改尚未保存。仍要离开吗？",
+    "stayBtn": "留下",
+    "leaveAnywayBtn": "仍要离开",
+    "chooseAvatarTitle": "选择你的头像",
+    "madeWithLove": "用❤️为社交达人打造",
+    "avatarSaveFailed": "头像保存失败",
+    "avatarUpdated": "头像已更新！",
+    "selectImageFile": "请选择一个图片文件",
+    "imageTooLarge": "图片必须小于5MB",
+    "avatarPhotoUpdated": "个人头像已更新！",
+    "avatarUploadFailed": "个人头像上传失败",
+    "profileSaved": "资料已保存！",
+    "profileSaveFailed": "资料保存失败",
+    "fillBothPasswordFields": "请填写两个密码字段",
+    "passwordsDontMatch": "两次输入的密码不一致",
+    "passwordUpdatedSuccess": "密码更新成功！",
+    "accountDeletedGoodbye": "账户已删除。再见！👋",
+    "deleteAccountFailed": "账户删除失败，请重试。"
   },
   "points": {
     "title": "我的积分",
@@ -373,7 +423,18 @@
     "googleBtn": "Google",
     "appleBtn": "Apple",
     "createAccount": "Create Account",
-    "loginWithEmail": "Login with email"
+    "loginWithEmail": "Login with email",
+    "interestsQuestion": "你作为一个人的兴趣是什么？✨",
+    "interestsSubtext": "点击话题查看选项",
+    "interestsPlaceholder": "点击上方话题 ↑",
+    "socialsQuestion": "你的社交媒体是？📱",
+    "socialsSubtext": "可选 — 帮助他人更了解你",
+    "pasteInstagram": "在此粘贴你的 Instagram 链接",
+    "pasteLinkedIn": "在此粘贴你的 LinkedIn 链接",
+    "pasteX": "在此粘贴你的 X 链接",
+    "socialsPlaceholder": "点击上方图标 ↑",
+    "skipForNow": "暂时跳过",
+    "done": "完成"
   },
   "languageSelector": {
     "swipeToSelect": "滑动选择你的语言",
@@ -470,7 +531,12 @@
     "accessCities": "访问全球100多个城市",
     "joinAnyCity": "加入任何城市的活动",
     "seeProfiles": "无限制查看其他用户的资料",
-    "unlimitedMessages": "无限制文字消息"
+    "unlimitedMessages": "无限制文字消息",
+    "welcomeSuperHumanToast": "欢迎加入 Super-Human！",
+    "manageInAppStore": "请在App Store设置中管理你的订阅",
+    "restoreTimedOut": "恢复购买超时，请重试。",
+    "purchasesRestored": "购买已成功恢复！",
+    "restoreFailed": "购买恢复失败"
   },
   "welcome": {
     "settingUp": "正在设置…",
@@ -542,7 +608,8 @@
     "editAnswers": "编辑答案",
     "freeOption": "免费",
     "pricedOption": "付费",
-    "addPlan": "发布计划"
+    "addPlan": "发布计划",
+    "uploadVideo": "上传"
   },
   "userProfile": {
     "title": "用户资料",
@@ -645,5 +712,21 @@
     "joined": "已加入",
     "join": "加入",
     "pay": "支付 {{amount}}"
+  },
+  "chatInvite": {
+    "title": "用户资料",
+    "invitingYouToChat": "{{name}} 邀请你聊天",
+    "accept": "接受",
+    "decline": "拒绝",
+    "confirmDecline": "确定吗？",
+    "yes": "是",
+    "hum": "嗯",
+    "declinedToast": "请求已移除"
+  },
+  "mandatoryPhoto": {
+    "uploadFailed": "照片上传失败",
+    "selectPhoto": "请选择一张照片",
+    "photoSaved": "照片已保存！",
+    "saveFailed": "照片保存失败"
   }
 }

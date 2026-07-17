@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Users, User, Trash2, Calendar, Smile, X, Images } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -83,6 +84,7 @@ export function PlanGroupChatDialog({
   onBack,
   attendeeCount = 0,
 }: PlanGroupChatDialogProps) {
+  const { t } = useTranslation();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<PlanMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -200,7 +202,7 @@ export function PlanGroupChatDialog({
     if (!text.trim() || !user || isSending) return false;
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
-      toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
+      toast.error(t('chat.characterLimitToast'));
       return false;
     }
     setIsSending(true);
@@ -215,7 +217,7 @@ export function PlanGroupChatDialog({
       if (messageType === "text") addCharacters(text.trim().length);
       return true;
     } catch {
-      toast.error("Failed to send message");
+      toast.error(t('chat.failedToSendMessage'));
       return false;
     } finally {
       setIsSending(false);
@@ -242,7 +244,7 @@ export function PlanGroupChatDialog({
 
   const handleDeleteMessage = async (messageId: string) => {
     const { error } = await supabase.from("plan_messages").delete().eq("id", messageId);
-    if (error) toast.error("Failed to delete message");
+    if (error) toast.error(t('chat.failedToDeleteMessage'));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

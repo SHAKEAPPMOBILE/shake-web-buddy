@@ -183,7 +183,19 @@
     "failedToSendVideo": "Échec de l'envoi de la vidéo",
     "expandEventPoster": "Agrandir l'affiche de l'événement",
     "leaveChat": "Quitter le chat",
-    "fatalError": "Une erreur s'est produite lors du chargement de ce chat. Veuillez réessayer plus tard."
+    "fatalError": "Une erreur s'est produite lors du chargement de ce chat. Veuillez réessayer plus tard.",
+    "signInToSendMessages": "Connecte-toi pour envoyer des messages",
+    "characterLimitToast": "Tu as atteint la limite de 100 000 caractères. Passe à Super-Human pour une messagerie illimitée !",
+    "failedToSendMessage": "Échec de l'envoi du message",
+    "failedToSendGif": "Échec de l'envoi du GIF",
+    "failedToDeleteMessage": "Échec de la suppression du message",
+    "messageDeleted": "Message supprimé",
+    "signInToSuggestVenues": "Connecte-toi pour suggérer des lieux",
+    "failedToSuggestVenue": "Échec de la suggestion du lieu",
+    "failedToSendMedia": "Échec de l'envoi du média",
+    "failedToLeaveConversation": "Échec de la sortie de la conversation",
+    "conversationHidden": "Conversation masquée",
+    "userBlocked": "Utilisateur bloqué"
   },
   "plans": {
     "title": "Plans",
@@ -334,7 +346,45 @@
     "sectionAccountActions": "Actions du Compte",
     "deleteAccountTitle": "Supprimer le Compte ?",
     "deleteAccountDesc": "Cela supprimera définitivement votre compte et toutes vos données. Cette action est irréversible.",
-    "deleteAccountError": "Échec de la suppression du compte. Veuillez contacter le support."
+    "deleteAccountError": "Échec de la suppression du compte. Veuillez contacter le support.",
+    "emailAddress": "Adresse e-mail",
+    "emailUsageNote": "Utilisée pour la facturation et pour recevoir nos actualités.",
+    "interests": "Centres d'intérêt",
+    "usernameOrUrlPlaceholder": "@nomdutilisateur ou URL complète",
+    "pushNotifications": "Notifications push",
+    "pushNotificationsDesc": "Sois averti(e) quand tu reçois de nouveaux messages",
+    "security": "Sécurité",
+    "changePasswordBtn": "Changer le mot de passe",
+    "newPasswordLabel": "Nouveau mot de passe",
+    "newPasswordPlaceholder": "Saisis le nouveau mot de passe",
+    "confirmPasswordLabel": "Confirmer le mot de passe",
+    "confirmPasswordPlaceholder": "Confirme le nouveau mot de passe",
+    "updatePasswordBtn": "Mettre à jour le mot de passe",
+    "updatingPassword": "Mise à jour...",
+    "passwordMinLength": "Le mot de passe doit contenir au moins 6 caractères",
+    "darkMode": "Mode sombre",
+    "deleteAccountConfirmTitle": "Supprimer ton compte ? 😢",
+    "deleteAccountConfirmDesc": "Cette action est irréversible. Ton compte, profil, messages, activités et toutes les données associées seront définitivement supprimés de nos serveurs.",
+    "deletingBtn": "Suppression...",
+    "unsavedChangesTitle": "🐯 Tu as des modifications non enregistrées",
+    "unsavedChangesDesc": "Tes modifications n'ont pas encore été enregistrées. Quitter quand même ?",
+    "stayBtn": "Rester",
+    "leaveAnywayBtn": "Quitter quand même",
+    "chooseAvatarTitle": "Choisis ton avatar",
+    "madeWithLove": "Fait avec ❤️ pour les papillons sociaux",
+    "avatarSaveFailed": "Échec de l'enregistrement de l'avatar",
+    "avatarUpdated": "Avatar mis à jour !",
+    "selectImageFile": "Sélectionne un fichier image",
+    "imageTooLarge": "L'image doit faire moins de 5 Mo",
+    "avatarPhotoUpdated": "Photo de profil mise à jour !",
+    "avatarUploadFailed": "Échec de l'envoi de la photo de profil",
+    "profileSaved": "Profil enregistré !",
+    "profileSaveFailed": "Échec de l'enregistrement du profil",
+    "fillBothPasswordFields": "Remplis les deux champs de mot de passe",
+    "passwordsDontMatch": "Les mots de passe ne correspondent pas",
+    "passwordUpdatedSuccess": "Mot de passe mis à jour avec succès !",
+    "accountDeletedGoodbye": "Compte supprimé. Au revoir ! 👋",
+    "deleteAccountFailed": "Échec de la suppression du compte. Réessaie."
   },
   "points": {
     "title": "Mes Points",
@@ -373,7 +423,18 @@
     "googleBtn": "Google",
     "appleBtn": "Apple",
     "createAccount": "Create Account",
-    "loginWithEmail": "Login with email"
+    "loginWithEmail": "Login with email",
+    "interestsQuestion": "Quels sont tes centres d'intérêt ? ✨",
+    "interestsSubtext": "Touche un sujet pour voir les options",
+    "interestsPlaceholder": "Touche un sujet ci-dessus ↑",
+    "socialsQuestion": "Quels sont tes réseaux sociaux ? 📱",
+    "socialsSubtext": "Facultatif — aide les autres à te connaître",
+    "pasteInstagram": "Colle ton lien Instagram ici",
+    "pasteLinkedIn": "Colle ton lien LinkedIn ici",
+    "pasteX": "Colle ton lien X ici",
+    "socialsPlaceholder": "Touche une icône ci-dessus ↑",
+    "skipForNow": "Passer pour l'instant",
+    "done": "Terminé"
   },
   "languageSelector": {
     "swipeToSelect": "Glissez pour sélectionner votre langue",
@@ -470,7 +531,12 @@
     "accessCities": "Accès à plus de 100 villes dans le monde",
     "joinAnyCity": "Rejoignez des activités dans n'importe quelle ville",
     "seeProfiles": "Voyez les profils des autres utilisateurs sans limite",
-    "unlimitedMessages": "Messages texte illimités"
+    "unlimitedMessages": "Messages texte illimités",
+    "welcomeSuperHumanToast": "Bienvenue chez Super-Human !",
+    "manageInAppStore": "Gère ton abonnement dans les réglages de l'App Store",
+    "restoreTimedOut": "La restauration a expiré. Réessaie.",
+    "purchasesRestored": "Achats restaurés avec succès !",
+    "restoreFailed": "Échec de la restauration des achats"
   },
   "welcome": {
     "settingUp": "Mise en place…",
@@ -542,7 +608,8 @@
     "editAnswers": "Modifier les réponses",
     "freeOption": "Gratuit",
     "pricedOption": "Payant",
-    "addPlan": "AJOUTER LE PLAN"
+    "addPlan": "AJOUTER LE PLAN",
+    "uploadVideo": "Importer"
   },
   "userProfile": {
     "title": "Profil Utilisateur",
@@ -645,5 +712,21 @@
     "joined": "Rejoint",
     "join": "Rejoindre",
     "pay": "Payer {{amount}}"
+  },
+  "chatInvite": {
+    "title": "Profil utilisateur",
+    "invitingYouToChat": "{{name}} t'invite à discuter",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "confirmDecline": "Es-tu sûr(e) ?",
+    "yes": "Oui",
+    "hum": "Hum",
+    "declinedToast": "Demande supprimée"
+  },
+  "mandatoryPhoto": {
+    "uploadFailed": "Échec de l'envoi de la photo",
+    "selectPhoto": "Sélectionne une photo",
+    "photoSaved": "Photo enregistrée !",
+    "saveFailed": "Échec de l'enregistrement de la photo"
   }
 }

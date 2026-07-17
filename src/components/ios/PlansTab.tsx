@@ -596,9 +596,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [planPreviewAttendees, setPlanPreviewAttendees] = useState<{ avatar_url: string | null; name: string | null }[]>([]);
   const [planPreviewVideoFullscreen, setPlanPreviewVideoFullscreen] = useState(false);
 
-  // Swipe feed (full-screen, opened by tapping a city card)
+  // Swipe feed (full-screen, opened by tapping a city card OR a plan in "My Plans").
+  // feedSourceList holds whichever list was tapped from, so the feed loops through
+  // that same set of plans instead of always defaulting to the city carousel list.
   const [feedOpen, setFeedOpen] = useState(false);
   const [feedStartIndex, setFeedStartIndex] = useState(0);
+  const [feedSourceList, setFeedSourceList] = useState<PlanActivity[]>([]);
   const [autoGenCardPlan, setAutoGenCardPlan] = useState<PlanActivity | null>(null);
   
 
@@ -777,8 +780,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       setPaidActivityDetail(plan);
       return;
     }
-    
-    setPlanPreview(plan);
+
+    // Open the same full-page swipeable feed used for the city carousel, seeded
+    // to this plan and looping through the rest of "My Plans" — matching the
+    // video-detail experience everywhere else in the app instead of a small
+    // popup modal.
+    const idx = activities.findIndex((p) => p.id === plan.id);
+    setFeedSourceList(activities);
+    setFeedStartIndex(idx >= 0 ? idx : 0);
+    setFeedOpen(true);
   };
 
   const handleBackFromChat = () => {
@@ -896,6 +906,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // Non-auto plans (own, joined, free, paid) open the swipe feed.
     // Paid-unjoined cards show a "PAY" button inside the feed that calls onPayForPlan.
     const idx = cityPlans.findIndex((p) => p.id === plan.id);
+    setFeedSourceList(cityPlans);
     setFeedStartIndex(idx >= 0 ? idx : 0);
     setFeedOpen(true);
   };
@@ -2072,7 +2083,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       {/* ── Swipe feed ─────────────────────────────────────────────────── */}
       {feedOpen && (
         <PlanSwipeFeed
-          plans={cityPlans}
+          plans={feedSourceList}
           startIndex={feedStartIndex}
           myCity={selectedCity}
           onClose={() => setFeedOpen(false)}
@@ -2083,8 +2094,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           }}
           onEnterChat={(plan) => {
             setFeedOpen(false);
-            setSelectedPlan(plan as PlanActivity);
-            setShowChatView(true);
+            const p = plan as PlanActivity;
+            // Carousel-joined plans (dinner/drinks/brunch with no real activity_id)
+            // use their own chat view, same as everywhere else in the app.
+            if (p.isCarouselJoin) {
+              setSelectedCarouselActivity(p);
+              setShowCarouselChatView(true);
+            } else {
+              setSelectedPlan(p);
+              setShowChatView(true);
+            }
           }}
           onViewProfile={(userId, userName, avatarUrl) => {
             setSelectedUserProfile({ userId, userName, avatarUrl });

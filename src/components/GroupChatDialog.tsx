@@ -327,7 +327,7 @@ export function GroupChatDialog({
     // Handle text message
     if (!message.trim() || !user) {
       if (!user) {
-        toast.error("Please sign in to send messages");
+        toast.error(t('chat.signInToSendMessages'));
       }
       return;
     }
@@ -335,7 +335,7 @@ export function GroupChatDialog({
     // Check text character limit for free users
     if (!isPremium && !canSendText) {
       setShowPremiumDialog(true);
-      toast.error("You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!");
+      toast.error(t('chat.characterLimitToast'));
       return;
     }
 
@@ -352,7 +352,7 @@ export function GroupChatDialog({
 
     if (error) {
       console.error("Error sending message:", error);
-      toast.error("Failed to send message");
+      toast.error(t('chat.failedToSendMessage'));
     } else {
       addCharacters(message.trim().length);
       setMessage("");
@@ -386,7 +386,7 @@ export function GroupChatDialog({
       if (error) throw error;
     } catch (error) {
       console.error("Error sending GIF:", error);
-      toast.error("Failed to send GIF");
+      toast.error(t('chat.failedToSendGif'));
       throw error;
     } finally {
       setIsSending(false);
@@ -401,9 +401,9 @@ export function GroupChatDialog({
 
     if (error) {
       console.error("Error deleting message:", error);
-      toast.error("Failed to delete message");
+      toast.error(t('chat.failedToDeleteMessage'));
     } else {
-      toast.success("Message deleted");
+      toast.success(t('chat.messageDeleted'));
     }
   };
 
@@ -431,7 +431,7 @@ export function GroupChatDialog({
 
   const handleSuggestVenue = async (venue: DbVenue) => {
     if (!user) {
-      toast.error("Please sign in to suggest venues");
+      toast.error(t('chat.signInToSuggestVenues'));
       return;
     }
 
@@ -450,7 +450,7 @@ export function GroupChatDialog({
 
     if (error) {
       console.error("Error sending venue suggestion:", error);
-      toast.error("Failed to suggest venue");
+      toast.error(t('chat.failedToSuggestVenue'));
     } else {
       addCharacters(suggestionMessage.length);
       setShowVenueSuggestions(false);

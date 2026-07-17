@@ -183,7 +183,19 @@
     "failedToSendVideo": "Не вдалося надіслати відео",
     "expandEventPoster": "Розгорнути афішу події",
     "leaveChat": "Покинути чат",
-    "fatalError": "Під час завантаження цього чату щось пішло не так. Будь ласка, спробуйте пізніше."
+    "fatalError": "Під час завантаження цього чату щось пішло не так. Будь ласка, спробуйте пізніше.",
+    "signInToSendMessages": "Увійди, щоб надсилати повідомлення",
+    "characterLimitToast": "Ти досяг(ла) ліміту 100 000 символів. Отримай Super-Human для необмеженого спілкування!",
+    "failedToSendMessage": "Не вдалося надіслати повідомлення",
+    "failedToSendGif": "Не вдалося надіслати GIF",
+    "failedToDeleteMessage": "Не вдалося видалити повідомлення",
+    "messageDeleted": "Повідомлення видалено",
+    "signInToSuggestVenues": "Увійди, щоб запропонувати місце",
+    "failedToSuggestVenue": "Не вдалося запропонувати місце",
+    "failedToSendMedia": "Не вдалося надіслати медіафайл",
+    "failedToLeaveConversation": "Не вдалося покинути розмову",
+    "conversationHidden": "Розмову приховано",
+    "userBlocked": "Користувача заблоковано"
   },
   "plans": {
     "title": "Плани",
@@ -334,7 +346,45 @@
     "sectionAccountActions": "Дії з акаунтом",
     "deleteAccountTitle": "Видалити акаунт?",
     "deleteAccountDesc": "Це назавжди видалить ваш акаунт і всі ваші дані. Цю дію неможливо скасувати.",
-    "deleteAccountError": "Не вдалося видалити акаунт. Зверніться до служби підтримки."
+    "deleteAccountError": "Не вдалося видалити акаунт. Зверніться до служби підтримки.",
+    "emailAddress": "Електронна пошта",
+    "emailUsageNote": "Використовується для виставлення рахунків та надсилання новин.",
+    "interests": "Інтереси",
+    "usernameOrUrlPlaceholder": "@імʼякористувача або повне посилання",
+    "pushNotifications": "Push-сповіщення",
+    "pushNotificationsDesc": "Отримуй сповіщення про нові повідомлення",
+    "security": "Безпека",
+    "changePasswordBtn": "Змінити пароль",
+    "newPasswordLabel": "Новий пароль",
+    "newPasswordPlaceholder": "Введи новий пароль",
+    "confirmPasswordLabel": "Підтвердити пароль",
+    "confirmPasswordPlaceholder": "Підтвердь новий пароль",
+    "updatePasswordBtn": "Оновити пароль",
+    "updatingPassword": "Оновлення...",
+    "passwordMinLength": "Пароль має містити щонайменше 6 символів",
+    "darkMode": "Темний режим",
+    "deleteAccountConfirmTitle": "Видалити акаунт? 😢",
+    "deleteAccountConfirmDesc": "Цю дію неможливо скасувати. Твій акаунт, профіль, повідомлення, активності та всі повʼязані дані будуть остаточно видалені з наших серверів.",
+    "deletingBtn": "Видалення...",
+    "unsavedChangesTitle": "🐯 У тебе є незбережені зміни",
+    "unsavedChangesDesc": "Твої зміни ще не збережено. Все одно вийти?",
+    "stayBtn": "Залишитися",
+    "leaveAnywayBtn": "Все одно вийти",
+    "chooseAvatarTitle": "Обери свій аватар",
+    "madeWithLove": "Зроблено з ❤️ для товариських метеликів",
+    "avatarSaveFailed": "Не вдалося зберегти аватар",
+    "avatarUpdated": "Аватар оновлено!",
+    "selectImageFile": "Будь ласка, обери файл зображення",
+    "imageTooLarge": "Зображення має бути менше 5 МБ",
+    "avatarPhotoUpdated": "Фото профілю оновлено!",
+    "avatarUploadFailed": "Не вдалося завантажити фото профілю",
+    "profileSaved": "Профіль збережено!",
+    "profileSaveFailed": "Не вдалося зберегти профіль",
+    "fillBothPasswordFields": "Заповни обидва поля паролю",
+    "passwordsDontMatch": "Паролі не збігаються",
+    "passwordUpdatedSuccess": "Пароль успішно оновлено!",
+    "accountDeletedGoodbye": "Акаунт видалено. Прощавай! 👋",
+    "deleteAccountFailed": "Не вдалося видалити акаунт. Спробуй ще раз."
   },
   "points": {
     "title": "Мої бали",
@@ -373,7 +423,18 @@
     "googleBtn": "Google",
     "appleBtn": "Apple",
     "createAccount": "Create Account",
-    "loginWithEmail": "Login with email"
+    "loginWithEmail": "Login with email",
+    "interestsQuestion": "Які твої інтереси? ✨",
+    "interestsSubtext": "Торкнися теми, щоб побачити варіанти",
+    "interestsPlaceholder": "Торкнися теми вище ↑",
+    "socialsQuestion": "Які твої соцмережі? 📱",
+    "socialsSubtext": "Необов'язково — допомагає іншим дізнатися про тебе",
+    "pasteInstagram": "Встав тут посилання на Instagram",
+    "pasteLinkedIn": "Встав тут посилання на LinkedIn",
+    "pasteX": "Встав тут посилання на X",
+    "socialsPlaceholder": "Торкнися іконки вище ↑",
+    "skipForNow": "Пропустити поки що",
+    "done": "Готово"
   },
   "languageSelector": {
     "swipeToSelect": "Проведіть, щоб обрати мову",
@@ -470,7 +531,12 @@
     "accessCities": "Доступ до понад 100 міст по всьому світу",
     "joinAnyCity": "Приєднуйтесь до активностей у будь-якому місті",
     "seeProfiles": "Переглядайте профілі інших користувачів без обмежень",
-    "unlimitedMessages": "Необмежені текстові повідомлення"
+    "unlimitedMessages": "Необмежені текстові повідомлення",
+    "welcomeSuperHumanToast": "Ласкаво просимо до Super-Human!",
+    "manageInAppStore": "Керуй підпискою в налаштуваннях App Store",
+    "restoreTimedOut": "Відновлення тривало занадто довго. Спробуй ще раз.",
+    "purchasesRestored": "Покупки успішно відновлено!",
+    "restoreFailed": "Не вдалося відновити покупки"
   },
   "welcome": {
     "settingUp": "Налаштування…",
@@ -542,7 +608,8 @@
     "editAnswers": "Редагувати відповіді",
     "freeOption": "Безкоштовно",
     "pricedOption": "Платно",
-    "addPlan": "ДОДАТИ ПЛАН"
+    "addPlan": "ДОДАТИ ПЛАН",
+    "uploadVideo": "Завантажити"
   },
   "userProfile": {
     "title": "Профіль користувача",
@@ -645,5 +712,21 @@
     "joined": "Приєднано",
     "join": "Приєднатися",
     "pay": "Оплатити {{amount}}"
+  },
+  "chatInvite": {
+    "title": "Профіль користувача",
+    "invitingYouToChat": "{{name}} запрошує тебе в чат",
+    "accept": "Прийняти",
+    "decline": "Відхилити",
+    "confirmDecline": "Ви впевнені?",
+    "yes": "Так",
+    "hum": "Хм",
+    "declinedToast": "Запит видалено"
+  },
+  "mandatoryPhoto": {
+    "uploadFailed": "Не вдалося завантажити фото",
+    "selectPhoto": "Будь ласка, вибери фото",
+    "photoSaved": "Фото збережено!",
+    "saveFailed": "Не вдалося зберегти фото"
   }
 }

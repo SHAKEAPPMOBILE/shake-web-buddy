@@ -183,7 +183,19 @@
     "failedToSendVideo": "Nie udało się wysłać filmu",
     "expandEventPoster": "Rozwiń plakat wydarzenia",
     "leaveChat": "Opuść czat",
-    "fatalError": "Coś poszło nie tak podczas ładowania tego czatu. Spróbuj ponownie później."
+    "fatalError": "Coś poszło nie tak podczas ładowania tego czatu. Spróbuj ponownie później.",
+    "signInToSendMessages": "Zaloguj się, aby wysyłać wiadomości",
+    "characterLimitToast": "Osiągnięto limit 100 000 znaków. Przejdź na Super-Human, aby pisać bez ograniczeń!",
+    "failedToSendMessage": "Nie udało się wysłać wiadomości",
+    "failedToSendGif": "Nie udało się wysłać GIF-a",
+    "failedToDeleteMessage": "Nie udało się usunąć wiadomości",
+    "messageDeleted": "Wiadomość usunięta",
+    "signInToSuggestVenues": "Zaloguj się, aby zaproponować miejsce",
+    "failedToSuggestVenue": "Nie udało się zaproponować miejsca",
+    "failedToSendMedia": "Nie udało się wysłać pliku",
+    "failedToLeaveConversation": "Nie udało się opuścić rozmowy",
+    "conversationHidden": "Rozmowa ukryta",
+    "userBlocked": "Użytkownik zablokowany"
   },
   "plans": {
     "title": "Plany",
@@ -334,7 +346,45 @@
     "sectionAccountActions": "Akcje Konta",
     "deleteAccountTitle": "Usunąć konto?",
     "deleteAccountDesc": "Spowoduje to trwałe usunięcie konta i wszystkich danych. Tej czynności nie można cofnąć.",
-    "deleteAccountError": "Nie udało się usunąć konta. Skontaktuj się z pomocą techniczną."
+    "deleteAccountError": "Nie udało się usunąć konta. Skontaktuj się z pomocą techniczną.",
+    "emailAddress": "Adres e-mail",
+    "emailUsageNote": "Używany do rozliczeń i wysyłania aktualizacji.",
+    "interests": "Zainteresowania",
+    "usernameOrUrlPlaceholder": "@nazwa użytkownika lub pełny URL",
+    "pushNotifications": "Powiadomienia push",
+    "pushNotificationsDesc": "Otrzymuj powiadomienia o nowych wiadomościach",
+    "security": "Bezpieczeństwo",
+    "changePasswordBtn": "Zmień hasło",
+    "newPasswordLabel": "Nowe hasło",
+    "newPasswordPlaceholder": "Wprowadź nowe hasło",
+    "confirmPasswordLabel": "Potwierdź hasło",
+    "confirmPasswordPlaceholder": "Potwierdź nowe hasło",
+    "updatePasswordBtn": "Zaktualizuj hasło",
+    "updatingPassword": "Aktualizowanie...",
+    "passwordMinLength": "Hasło musi mieć co najmniej 6 znaków",
+    "darkMode": "Tryb ciemny",
+    "deleteAccountConfirmTitle": "Usunąć konto? 😢",
+    "deleteAccountConfirmDesc": "Tej czynności nie można cofnąć. Twoje konto, profil, wiadomości, aktywności i wszystkie powiązane dane zostaną trwale usunięte z naszych serwerów.",
+    "deletingBtn": "Usuwanie...",
+    "unsavedChangesTitle": "🐯 Masz niezapisane zmiany",
+    "unsavedChangesDesc": "Twoje zmiany nie zostały jeszcze zapisane. Mimo to wyjść?",
+    "stayBtn": "Zostań",
+    "leaveAnywayBtn": "Wyjdź mimo to",
+    "chooseAvatarTitle": "Wybierz swój awatar",
+    "madeWithLove": "Stworzone z ❤️ dla towarzyskich motyli",
+    "avatarSaveFailed": "Nie udało się zapisać awatara",
+    "avatarUpdated": "Awatar zaktualizowany!",
+    "selectImageFile": "Wybierz plik obrazu",
+    "imageTooLarge": "Obraz musi mieć mniej niż 5 MB",
+    "avatarPhotoUpdated": "Zdjęcie profilowe zaktualizowane!",
+    "avatarUploadFailed": "Nie udało się przesłać zdjęcia profilowego",
+    "profileSaved": "Profil zapisany!",
+    "profileSaveFailed": "Nie udało się zapisać profilu",
+    "fillBothPasswordFields": "Wypełnij oba pola hasła",
+    "passwordsDontMatch": "Hasła nie są zgodne",
+    "passwordUpdatedSuccess": "Hasło zaktualizowane pomyślnie!",
+    "accountDeletedGoodbye": "Konto usunięte. Żegnaj! 👋",
+    "deleteAccountFailed": "Nie udało się usunąć konta. Spróbuj ponownie."
   },
   "points": {
     "title": "Moje punkty",
@@ -373,7 +423,18 @@
     "googleBtn": "Google",
     "appleBtn": "Apple",
     "createAccount": "Create Account",
-    "loginWithEmail": "Login with email"
+    "loginWithEmail": "Login with email",
+    "interestsQuestion": "Jakie są Twoje zainteresowania? ✨",
+    "interestsSubtext": "Dotknij temat, aby zobaczyć opcje",
+    "interestsPlaceholder": "Dotknij temat powyżej ↑",
+    "socialsQuestion": "Jakie masz media społecznościowe? 📱",
+    "socialsSubtext": "Opcjonalne — pomaga innym cię poznać",
+    "pasteInstagram": "Wklej tutaj link do Instagrama",
+    "pasteLinkedIn": "Wklej tutaj link do LinkedIn",
+    "pasteX": "Wklej tutaj link do X",
+    "socialsPlaceholder": "Dotknij ikonę powyżej ↑",
+    "skipForNow": "Pomiń na razie",
+    "done": "Gotowe"
   },
   "languageSelector": {
     "swipeToSelect": "Przesuń, aby wybrać język",
@@ -470,7 +531,12 @@
     "accessCities": "Dostęp do ponad 100 miast na świecie",
     "joinAnyCity": "Dołączaj do aktywności w każdym mieście",
     "seeProfiles": "Przeglądaj profile innych użytkowników bez limitu",
-    "unlimitedMessages": "Nieograniczone wiadomości tekstowe"
+    "unlimitedMessages": "Nieograniczone wiadomości tekstowe",
+    "welcomeSuperHumanToast": "Witamy w Super-Human!",
+    "manageInAppStore": "Zarządzaj subskrypcją w ustawieniach App Store",
+    "restoreTimedOut": "Przywracanie trwało zbyt długo. Spróbuj ponownie.",
+    "purchasesRestored": "Zakupy przywrócone pomyślnie!",
+    "restoreFailed": "Nie udało się przywrócić zakupów"
   },
   "welcome": {
     "settingUp": "Przygotowywanie…",
@@ -542,7 +608,8 @@
     "editAnswers": "Edytuj odpowiedzi",
     "freeOption": "Bezpłatny",
     "pricedOption": "Płatny",
-    "addPlan": "DODAJ PLAN"
+    "addPlan": "DODAJ PLAN",
+    "uploadVideo": "Prześlij"
   },
   "userProfile": {
     "title": "Profil Użytkownika",
@@ -645,5 +712,21 @@
     "joined": "Dołączono",
     "join": "Dołącz",
     "pay": "Zapłać {{amount}}"
+  },
+  "chatInvite": {
+    "title": "Profil użytkownika",
+    "invitingYouToChat": "{{name}} zaprasza cię na czat",
+    "accept": "Akceptuj",
+    "decline": "Odrzuć",
+    "confirmDecline": "Na pewno?",
+    "yes": "Tak",
+    "hum": "Hmm",
+    "declinedToast": "Prośba usunięta"
+  },
+  "mandatoryPhoto": {
+    "uploadFailed": "Nie udało się przesłać zdjęcia",
+    "selectPhoto": "Wybierz zdjęcie",
+    "photoSaved": "Zdjęcie zapisane!",
+    "saveFailed": "Nie udało się zapisać zdjęcia"
   }
 }

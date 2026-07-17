@@ -199,8 +199,18 @@ export default function Auth() {
   // swap for a real asset later by replacing this with new Audio('/sound.mp3').play()).
   // Respects the user's system mute via AudioContext — if audio is blocked/muted
   // by the browser the catch silently swallows the error.
+  // Guarded so it can NEVER play once the person is actually logged in (only the
+  // pre-login method-selection screen should ever trigger it), and only once per
+  // browser session even if this screen gets remounted (e.g. a redirect flicker).
   useEffect(() => {
     if (step !== "method") return;
+    if (user) return;
+    try {
+      if (sessionStorage.getItem("shake_auth_chime_played") === "1") return;
+      sessionStorage.setItem("shake_auth_chime_played", "1");
+    } catch {
+      /* sessionStorage unavailable — fall through and play anyway */
+    }
     let ctx: AudioContext | null = null;
     const timer = setTimeout(() => {
       try {
@@ -1540,7 +1550,7 @@ export default function Auth() {
               const err = validateOccupation(occupation);
               setOccupationError(err);
               if (err) return;
-              setStep('avatar');
+              setStep('interests');
             }} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="occupation">Occupation</Label>
@@ -1580,7 +1590,7 @@ export default function Auth() {
                   variant="outline"
                   className="flex-1"
                   size="lg"
-                  onClick={() => setStep('avatar')}
+                  onClick={() => setStep('interests')}
                 >
                   Skip
                 </Button>
@@ -1595,18 +1605,43 @@ export default function Auth() {
             </form>
           )}
 
-          {/* Avatar Picker Form — profile picture comes before interests/socials,
-              so by the time those chat-style steps show, the person already has
-              a face on their profile. */}
+          {/* Interests Step — chat-flow style, same visual language as the
+              "What's the plan?" plan-creation composer. Comes right after the
+              basics (name/nationality/occupation), before the profile picture. */}
+          {step === 'interests' && (
+            <OnboardingInterestsStep
+              selected={selectedInterests}
+              onToggle={(interest) => {
+                if (selectedInterests.includes(interest)) {
+                  setSelectedInterests((prev) => prev.filter((i) => i !== interest));
+                } else {
+                  setSelectedInterests((prev) => [...prev, interest]);
+                }
+              }}
+              onContinue={() => setStep('social')}
+              onSkip={() => setStep('social')}
+            />
+          )}
+
+          {/* Social Links Step — chat-flow style. */}
+          {step === 'social' && (
+            <OnboardingSocialStep
+              instagramUrl={instagramUrl}
+              linkedinUrl={linkedinUrl}
+              twitterUrl={twitterUrl}
+              onChangeInstagram={setInstagramUrl}
+              onChangeLinkedin={setLinkedinUrl}
+              onChangeTwitter={setTwitterUrl}
+              onDone={() => setStep('avatar')}
+              onSkip={() => setStep('avatar')}
+              isSaving={isLoading}
+            />
+          )}
+
+          {/* Avatar Picker Form — final step. Profile picture comes last, after
+              interests/socials, then completes the whole signup. */}
           {step === 'avatar' && (
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              if (!selectedAvatar) {
-                toast.error("Please choose a profile picture or avatar");
-                return;
-              }
-              setStep('interests');
-            }} className="space-y-6">
+            <form onSubmit={handleSaveProfile} className="space-y-6">
               <div className="space-y-2">
                 <input
                   ref={fileInputRef}
@@ -1636,43 +1671,11 @@ export default function Auth() {
                 type="submit"
                 className="w-full bg-shake-green text-background hover:bg-shake-green/90"
                 size="lg"
+                disabled={isLoading}
               >
-                Continue
+                {isLoading ? "Saving..." : "Complete Setup"}
               </Button>
             </form>
-          )}
-
-          {/* Interests Step — chat-flow style, same visual language as the
-              "What's the plan?" plan-creation composer. */}
-          {step === 'interests' && (
-            <OnboardingInterestsStep
-              selected={selectedInterests}
-              onToggle={(interest) => {
-                if (selectedInterests.includes(interest)) {
-                  setSelectedInterests((prev) => prev.filter((i) => i !== interest));
-                } else {
-                  setSelectedInterests((prev) => [...prev, interest]);
-                }
-              }}
-              onContinue={() => setStep('social')}
-              onSkip={() => setStep('social')}
-            />
-          )}
-
-          {/* Social Links Step — chat-flow style; last step, finishes the
-              signup by saving the whole profile. */}
-          {step === 'social' && (
-            <OnboardingSocialStep
-              instagramUrl={instagramUrl}
-              linkedinUrl={linkedinUrl}
-              twitterUrl={twitterUrl}
-              onChangeInstagram={setInstagramUrl}
-              onChangeLinkedin={setLinkedinUrl}
-              onChangeTwitter={setTwitterUrl}
-              onDone={() => handleSaveProfile()}
-              onSkip={() => handleSaveProfile()}
-              isSaving={isLoading}
-            />
           )}
         </div>
       </div>

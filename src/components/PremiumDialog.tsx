@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Check, User, MessageSquare, Sparkles, Settings } from "lucide-react";
 import {
@@ -48,6 +49,7 @@ function periodFromIdentifier(id: string | null | undefined): string | null {
 }
 
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
   const [productPrice, setProductPrice] = useState<string | null>(null);
@@ -210,7 +212,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       }
 
       // UI unblocked — toast and close happen before any background I/O
-      toast.success("Welcome to Super-Human!");
+      toast.success(t('premium.welcomeSuperHumanToast'));
       onOpenChange(false);
 
       // Sync Supabase profile record in the background; UI is already updated above
@@ -316,7 +318,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       await CapacitorPurchases.presentCodeRedemptionSheet();
     } catch (error) {
       console.error("Error opening subscription management:", error);
-      toast.error("Please manage your subscription in App Store settings");
+      toast.error(t('premium.manageInAppStore'));
     } finally {
       setIsManageLoading(false);
     }
@@ -332,7 +334,7 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
     const restoreResetTimer = setTimeout(() => {
       console.warn('[Subscribe] Restore safety timeout fired after 15s');
       setIsLoading(false);
-      toast.error("Restore timed out. Please try again.");
+      toast.error(t('premium.restoreTimedOut'));
     }, 15000);
     try {
       // Identify first so the restore (and the webhook it triggers) is attributed
@@ -346,14 +348,14 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
       const customerInfo = (restoreResult as any).customerInfo ?? restoreResult;
       console.log('[Subscribe] restore customerInfo entitlements:', Object.keys((customerInfo as any)?.entitlements?.active ?? {}));
       if (hasPremiumEntitlement(customerInfo)) {
-        toast.success("Purchases restored successfully!");
+        toast.success(t('premium.purchasesRestored'));
         window.location.reload();
       } else {
         toast.info("No active subscription found to restore");
       }
     } catch (error) {
       console.error('[Subscribe] Restore error:', error);
-      toast.error("Failed to restore purchases");
+      toast.error(t('premium.restoreFailed'));
     } finally {
       clearTimeout(restoreResetTimer);
       setIsLoading(false);

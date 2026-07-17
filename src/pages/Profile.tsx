@@ -204,12 +204,12 @@ export default function Profile() {
     if (!file || !user) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
+      toast.error(t('profile.selectImageFile'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be less than 5MB");
+      toast.error(t('profile.imageTooLarge'));
       return;
     }
 
@@ -239,11 +239,11 @@ export default function Profile() {
       if (updateError) throw updateError;
 
       setAvatarUrl(newAvatarUrl);
-      toast.success("Profile picture updated!");
+      toast.success(t('profile.avatarPhotoUpdated'));
       triggerConfettiWaterfall();
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      toast.error("Failed to upload profile picture");
+      toast.error(t('profile.avatarUploadFailed'));
     } finally {
       setIsUploading(false);
     }
@@ -298,7 +298,7 @@ export default function Profile() {
         pushNotificationsEnabled,
       });
 
-      toast.success("Profile saved!");
+      toast.success(t('profile.profileSaved'));
       triggerConfettiWaterfall();
 
       // If user was routed here to add their email for subscription,
@@ -308,7 +308,7 @@ export default function Profile() {
       }
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error("Failed to save profile");
+      toast.error(t('profile.profileSaveFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -316,17 +316,17 @@ export default function Profile() {
 
   const handleChangePassword = async () => {
     if (!newPassword || !confirmPassword) {
-      toast.error("Please fill in both password fields");
+      toast.error(t('profile.fillBothPasswordFields'));
       return;
     }
 
     if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+      toast.error(t('profile.passwordMinLength'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error(t('profile.passwordsDontMatch'));
       return;
     }
 
@@ -336,7 +336,7 @@ export default function Profile() {
       
       if (error) throw error;
       
-      toast.success("Password updated successfully!");
+      toast.success(t('profile.passwordUpdatedSuccess'));
       setNewPassword("");
       setConfirmPassword("");
       setShowChangePassword(false);
@@ -356,12 +356,12 @@ export default function Profile() {
       
       if (error) throw error;
       
-      toast.success("Account deleted. Goodbye! 👋");
+      toast.success(t('profile.accountDeletedGoodbye'));
       await signOut();
       navigate("/");
     } catch (error) {
       console.error("Error deleting account:", error);
-      toast.error("Failed to delete account. Please try again.");
+      toast.error(t('profile.deleteAccountFailed'));
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -505,7 +505,7 @@ export default function Profile() {
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                Email Address
+                {t('profile.emailAddress')}
               </Label>
               <Input
                 id="email"
@@ -518,7 +518,7 @@ export default function Profile() {
                 className={highlightBillingEmail ? "ring-2 ring-shake-yellow/50 border-shake-yellow/50 bg-gray-50 cursor-default text-gray-900" : "bg-gray-50 cursor-default text-gray-900"}
               />
               <p className="text-xs text-muted-foreground">
-                Used for billing and to receive updates from us.
+                {t('profile.emailUsageNote')}
               </p>
             </div>
 
@@ -553,7 +553,7 @@ export default function Profile() {
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <span className="text-lg">✨</span>
-                Interests
+                {t('profile.interests')}
                 {interests.length > 0 && (
                   <span className="text-xs text-muted-foreground font-normal">({interests.length})</span>
                 )}
@@ -586,7 +586,7 @@ export default function Profile() {
                   id="instagram"
                   value={instagramUrl}
                   onChange={(e) => setInstagramUrl(e.target.value)}
-                  placeholder="@username or full URL"
+                  placeholder={t('profile.usernameOrUrlPlaceholder')}
                 />
               </div>
 
@@ -614,23 +614,23 @@ export default function Profile() {
                   id="twitter"
                   value={twitterUrl}
                   onChange={(e) => setTwitterUrl(e.target.value)}
-                  placeholder="@username or full URL"
+                  placeholder={t('profile.usernameOrUrlPlaceholder')}
                 />
               </div>
             </div>
 
             {/* Notifications Section */}
             <div className="pt-4 border-t border-border">
-              <h3 className="text-sm font-medium mb-4">Notifications</h3>
-              
+              <h3 className="text-sm font-medium mb-4">{t('profile.notifications')}</h3>
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <Bell className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium text-sm">Push Notifications</p>
-                    <p className="text-xs text-muted-foreground">Get notified when you receive new messages</p>
+                    <p className="font-medium text-sm">{t('profile.pushNotifications')}</p>
+                    <p className="text-xs text-muted-foreground">{t('profile.pushNotificationsDesc')}</p>
                   </div>
                 </div>
                 <Switch
@@ -642,8 +642,8 @@ export default function Profile() {
 
             {/* Change Password Section */}
             <div className="pt-4 border-t border-border">
-              <h3 className="text-sm font-medium mb-4">Security</h3>
-              
+              <h3 className="text-sm font-medium mb-4">{t('profile.security')}</h3>
+
               <button
                 onClick={() => setShowChangePassword(!showChangePassword)}
                 className="w-full flex items-center justify-between p-3 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors"
@@ -652,7 +652,7 @@ export default function Profile() {
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <Lock className="w-5 h-5 text-primary" />
                   </div>
-                  <span className="font-medium text-sm">Change Password</span>
+                  <span className="font-medium text-sm">{t('profile.changePasswordBtn')}</span>
                 </div>
                 <ChevronLeft className={`w-5 h-5 text-muted-foreground transition-transform ${showChangePassword ? 'rotate-[-90deg]' : 'rotate-180'}`} />
               </button>
@@ -660,14 +660,14 @@ export default function Profile() {
               {showChangePassword && (
                 <div className="mt-4 space-y-4 p-4 bg-card border border-border rounded-xl animate-fade-in">
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
+                    <Label htmlFor="newPassword">{t('profile.newPasswordLabel')}</Label>
                     <div className="relative">
                       <Input
                         id="newPassword"
                         type={showNewPassword ? "text" : "password"}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password"
+                        placeholder={t('profile.newPasswordPlaceholder')}
                         className="pr-10"
                       />
                       <button
@@ -681,14 +681,14 @@ export default function Profile() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Label htmlFor="confirmPassword">{t('profile.confirmPasswordLabel')}</Label>
                     <div className="relative">
                       <Input
                         id="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm new password"
+                        placeholder={t('profile.confirmPasswordPlaceholder')}
                         className="pr-10"
                       />
                       <button
@@ -709,15 +709,15 @@ export default function Profile() {
                     {isChangingPassword ? (
                       <>
                         <LoadingSpinner size="sm" />
-                        Updating...
+                        {t('profile.updatingPassword')}
                       </>
                     ) : (
-                      "Update Password"
+                      t('profile.updatePasswordBtn')
                     )}
                   </Button>
 
                   <p className="text-xs text-muted-foreground text-center">
-                    Password must be at least 6 characters
+                    {t('profile.passwordMinLength')}
                   </p>
                 </div>
               )}
@@ -726,9 +726,9 @@ export default function Profile() {
 
           {/* Appearance Section */}
           <div className="px-4 pb-2">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Appearance</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t('profile.appearance')}</h2>
             <div className="bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between">
-              <span className="text-sm font-medium">Dark Mode</span>
+              <span className="text-sm font-medium">{t('profile.darkMode')}</span>
               <ThemeToggle />
             </div>
           </div>
@@ -755,7 +755,7 @@ export default function Profile() {
       {/* Footer */}
       <footer className="pb-8 px-4 safe-area-bottom">
         <p className="text-center text-sm text-muted-foreground">
-          Made with ❤️ for social butterflies
+          {t('profile.madeWithLove')}
         </p>
       </footer>
 
@@ -763,20 +763,19 @@ export default function Profile() {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete your account? 😢</AlertDialogTitle>
+            <AlertDialogTitle>{t('profile.deleteAccountConfirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your account, 
-              profile, messages, activities, and all associated data from our servers.
+              {t('profile.deleteAccountConfirmDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteAccount} 
+            <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Deleting..." : "Delete Account"}
+              {isDeleting ? t('profile.deletingBtn') : t('profile.deleteAccount')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -786,17 +785,17 @@ export default function Profile() {
       <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>🐯 You have unsaved changes</AlertDialogTitle>
+            <AlertDialogTitle>{t('profile.unsavedChangesTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Your changes haven't been saved yet. Leave anyway?
+              {t('profile.unsavedChangesDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
-              Stay
+              {t('profile.stayBtn')}
             </AlertDialogCancel>
             <AlertDialogAction onClick={() => navigate("/")}>
-              Leave anyway
+              {t('profile.leaveAnywayBtn')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -806,7 +805,7 @@ export default function Profile() {
       <Dialog open={showAvatarPicker} onOpenChange={setShowAvatarPicker}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center">Choose your avatar</DialogTitle>
+            <DialogTitle className="text-center">{t('profile.chooseAvatarTitle')}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <AvatarPicker
@@ -825,9 +824,9 @@ export default function Profile() {
                     .eq("user_id", user.id);
                   if (error) {
                     console.error("Failed to save preset avatar:", error);
-                    toast.error("Failed to save avatar");
+                    toast.error(t('profile.avatarSaveFailed'));
                   } else {
-                    toast.success("Avatar updated!");
+                    toast.success(t('profile.avatarUpdated'));
                   }
                 }
               }}

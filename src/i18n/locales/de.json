@@ -183,7 +183,19 @@
     "failedToSendVideo": "Video konnte nicht gesendet werden",
     "expandEventPoster": "Event-Plakat vergrößern",
     "leaveChat": "Chat verlassen",
-    "fatalError": "Beim Laden dieses Chats ist etwas schiefgelaufen. Bitte später erneut versuchen."
+    "fatalError": "Beim Laden dieses Chats ist etwas schiefgelaufen. Bitte später erneut versuchen.",
+    "signInToSendMessages": "Melde dich an, um Nachrichten zu senden",
+    "characterLimitToast": "Du hast das Limit von 100.000 Zeichen erreicht. Werde Super-Human für unbegrenztes Messaging!",
+    "failedToSendMessage": "Nachricht konnte nicht gesendet werden",
+    "failedToSendGif": "GIF konnte nicht gesendet werden",
+    "failedToDeleteMessage": "Nachricht konnte nicht gelöscht werden",
+    "messageDeleted": "Nachricht gelöscht",
+    "signInToSuggestVenues": "Melde dich an, um Orte vorzuschlagen",
+    "failedToSuggestVenue": "Ort konnte nicht vorgeschlagen werden",
+    "failedToSendMedia": "Medien konnten nicht gesendet werden",
+    "failedToLeaveConversation": "Unterhaltung konnte nicht verlassen werden",
+    "conversationHidden": "Unterhaltung ausgeblendet",
+    "userBlocked": "Nutzer blockiert"
   },
   "plans": {
     "title": "Pläne",
@@ -334,7 +346,45 @@
     "sectionAccountActions": "Kontoaktionen",
     "deleteAccountTitle": "Konto löschen?",
     "deleteAccountDesc": "Dadurch werden dein Konto und alle deine Daten dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
-    "deleteAccountError": "Konto konnte nicht gelöscht werden. Bitte wende dich an den Support."
+    "deleteAccountError": "Konto konnte nicht gelöscht werden. Bitte wende dich an den Support.",
+    "emailAddress": "E-Mail-Adresse",
+    "emailUsageNote": "Wird für die Abrechnung und um dir Neuigkeiten zu senden verwendet.",
+    "interests": "Interessen",
+    "usernameOrUrlPlaceholder": "@Benutzername oder vollständige URL",
+    "pushNotifications": "Push-Benachrichtigungen",
+    "pushNotificationsDesc": "Erhalte eine Benachrichtigung bei neuen Nachrichten",
+    "security": "Sicherheit",
+    "changePasswordBtn": "Passwort ändern",
+    "newPasswordLabel": "Neues Passwort",
+    "newPasswordPlaceholder": "Neues Passwort eingeben",
+    "confirmPasswordLabel": "Passwort bestätigen",
+    "confirmPasswordPlaceholder": "Neues Passwort bestätigen",
+    "updatePasswordBtn": "Passwort aktualisieren",
+    "updatingPassword": "Wird aktualisiert...",
+    "passwordMinLength": "Das Passwort muss mindestens 6 Zeichen lang sein",
+    "darkMode": "Dunkler Modus",
+    "deleteAccountConfirmTitle": "Konto löschen? 😢",
+    "deleteAccountConfirmDesc": "Diese Aktion kann nicht rückgängig gemacht werden. Dein Konto, Profil, Nachrichten, Aktivitäten und alle zugehörigen Daten werden dauerhaft von unseren Servern gelöscht.",
+    "deletingBtn": "Wird gelöscht...",
+    "unsavedChangesTitle": "🐯 Du hast ungespeicherte Änderungen",
+    "unsavedChangesDesc": "Deine Änderungen wurden noch nicht gespeichert. Trotzdem verlassen?",
+    "stayBtn": "Bleiben",
+    "leaveAnywayBtn": "Trotzdem verlassen",
+    "chooseAvatarTitle": "Wähle deinen Avatar",
+    "madeWithLove": "Mit ❤️ gemacht für gesellige Schmetterlinge",
+    "avatarSaveFailed": "Avatar konnte nicht gespeichert werden",
+    "avatarUpdated": "Avatar aktualisiert!",
+    "selectImageFile": "Bitte wähle eine Bilddatei aus",
+    "imageTooLarge": "Das Bild muss kleiner als 5 MB sein",
+    "avatarPhotoUpdated": "Profilbild aktualisiert!",
+    "avatarUploadFailed": "Profilbild konnte nicht hochgeladen werden",
+    "profileSaved": "Profil gespeichert!",
+    "profileSaveFailed": "Profil konnte nicht gespeichert werden",
+    "fillBothPasswordFields": "Bitte fülle beide Passwortfelder aus",
+    "passwordsDontMatch": "Die Passwörter stimmen nicht überein",
+    "passwordUpdatedSuccess": "Passwort erfolgreich aktualisiert!",
+    "accountDeletedGoodbye": "Konto gelöscht. Auf Wiedersehen! 👋",
+    "deleteAccountFailed": "Konto konnte nicht gelöscht werden. Bitte versuche es erneut."
   },
   "points": {
     "title": "Meine Punkte",
@@ -373,7 +423,18 @@
     "googleBtn": "Google",
     "appleBtn": "Apple",
     "createAccount": "Create Account",
-    "loginWithEmail": "Login with email"
+    "loginWithEmail": "Login with email",
+    "interestsQuestion": "Was sind deine Interessen als Mensch? ✨",
+    "interestsSubtext": "Tippe auf ein Thema, um Optionen zu sehen",
+    "interestsPlaceholder": "Tippe oben auf ein Thema ↑",
+    "socialsQuestion": "Wie sind deine sozialen Netzwerke? 📱",
+    "socialsSubtext": "Optional — hilft anderen, dich kennenzulernen",
+    "pasteInstagram": "Füge hier deinen Instagram-Link ein",
+    "pasteLinkedIn": "Füge hier deinen LinkedIn-Link ein",
+    "pasteX": "Füge hier deinen X-Link ein",
+    "socialsPlaceholder": "Tippe oben auf ein Symbol ↑",
+    "skipForNow": "Vorerst überspringen",
+    "done": "Fertig"
   },
   "languageSelector": {
     "swipeToSelect": "Wische, um deine Sprache auszuwählen",
@@ -470,7 +531,12 @@
     "accessCities": "Zugang zu über 100 Städten weltweit",
     "joinAnyCity": "Tritt Aktivitäten in jeder Stadt bei",
     "seeProfiles": "Sieh unbegrenzt Profile anderer Nutzer",
-    "unlimitedMessages": "Unbegrenzte Textnachrichten"
+    "unlimitedMessages": "Unbegrenzte Textnachrichten",
+    "welcomeSuperHumanToast": "Willkommen bei Super-Human!",
+    "manageInAppStore": "Verwalte dein Abo in den App-Store-Einstellungen",
+    "restoreTimedOut": "Wiederherstellung hat zu lange gedauert. Bitte versuche es erneut.",
+    "purchasesRestored": "Käufe erfolgreich wiederhergestellt!",
+    "restoreFailed": "Käufe konnten nicht wiederhergestellt werden"
   },
   "welcome": {
     "settingUp": "Wird eingerichtet…",
@@ -542,7 +608,8 @@
     "editAnswers": "Antworten bearbeiten",
     "freeOption": "Kostenlos",
     "pricedOption": "Kostenpflichtig",
-    "addPlan": "PLAN HINZUFÜGEN"
+    "addPlan": "PLAN HINZUFÜGEN",
+    "uploadVideo": "Hochladen"
   },
   "userProfile": {
     "title": "Benutzerprofil",
@@ -645,5 +712,21 @@
     "joined": "Beigetreten",
     "join": "Beitreten",
     "pay": "Bezahlen {{amount}}"
+  },
+  "chatInvite": {
+    "title": "Nutzerprofil",
+    "invitingYouToChat": "{{name}} lädt dich zum Chat ein",
+    "accept": "Annehmen",
+    "decline": "Ablehnen",
+    "confirmDecline": "Bist du sicher?",
+    "yes": "Ja",
+    "hum": "Hm",
+    "declinedToast": "Anfrage entfernt"
+  },
+  "mandatoryPhoto": {
+    "uploadFailed": "Foto konnte nicht hochgeladen werden",
+    "selectPhoto": "Bitte wähle ein Foto aus",
+    "photoSaved": "Foto gespeichert!",
+    "saveFailed": "Foto konnte nicht gespeichert werden"
   }
 }

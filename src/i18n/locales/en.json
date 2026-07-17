@@ -183,7 +183,19 @@
     "failedToSendVideo": "Failed to send video",
     "expandEventPoster": "Expand event poster",
     "leaveChat": "Leave chat",
-    "fatalError": "Something went wrong loading this chat. Please try again later."
+    "fatalError": "Something went wrong loading this chat. Please try again later.",
+    "signInToSendMessages": "Please sign in to send messages",
+    "characterLimitToast": "You've reached the 100K character limit. Upgrade to Super-Human for unlimited messaging!",
+    "failedToSendMessage": "Failed to send message",
+    "failedToSendGif": "Failed to send GIF",
+    "failedToDeleteMessage": "Failed to delete message",
+    "messageDeleted": "Message deleted",
+    "signInToSuggestVenues": "Please sign in to suggest venues",
+    "failedToSuggestVenue": "Failed to suggest venue",
+    "failedToSendMedia": "Failed to send media",
+    "failedToLeaveConversation": "Failed to leave conversation",
+    "conversationHidden": "Conversation hidden",
+    "userBlocked": "User blocked"
   },
   "plans": {
     "title": "Plans",
@@ -334,7 +346,45 @@
     "sectionAccountActions": "Account Actions",
     "deleteAccountTitle": "Delete Account?",
     "deleteAccountDesc": "This will permanently delete your account and all your data. This cannot be undone.",
-    "deleteAccountError": "Failed to delete account. Please contact support."
+    "deleteAccountError": "Failed to delete account. Please contact support.",
+    "emailAddress": "Email Address",
+    "emailUsageNote": "Used for billing and to receive updates from us.",
+    "interests": "Interests",
+    "usernameOrUrlPlaceholder": "@username or full URL",
+    "pushNotifications": "Push Notifications",
+    "pushNotificationsDesc": "Get notified when you receive new messages",
+    "security": "Security",
+    "changePasswordBtn": "Change Password",
+    "newPasswordLabel": "New Password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPasswordLabel": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm new password",
+    "updatePasswordBtn": "Update Password",
+    "updatingPassword": "Updating...",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "darkMode": "Dark Mode",
+    "deleteAccountConfirmTitle": "Delete your account? 😢",
+    "deleteAccountConfirmDesc": "This action cannot be undone. This will permanently delete your account, profile, messages, activities, and all associated data from our servers.",
+    "deletingBtn": "Deleting...",
+    "unsavedChangesTitle": "🐯 You have unsaved changes",
+    "unsavedChangesDesc": "Your changes haven't been saved yet. Leave anyway?",
+    "stayBtn": "Stay",
+    "leaveAnywayBtn": "Leave anyway",
+    "chooseAvatarTitle": "Choose your avatar",
+    "madeWithLove": "Made with ❤️ for social butterflies",
+    "avatarSaveFailed": "Failed to save avatar",
+    "avatarUpdated": "Avatar updated!",
+    "selectImageFile": "Please select an image file",
+    "imageTooLarge": "Image must be less than 5MB",
+    "avatarPhotoUpdated": "Profile picture updated!",
+    "avatarUploadFailed": "Failed to upload profile picture",
+    "profileSaved": "Profile saved!",
+    "profileSaveFailed": "Failed to save profile",
+    "fillBothPasswordFields": "Please fill in both password fields",
+    "passwordsDontMatch": "Passwords do not match",
+    "passwordUpdatedSuccess": "Password updated successfully!",
+    "accountDeletedGoodbye": "Account deleted. Goodbye! 👋",
+    "deleteAccountFailed": "Failed to delete account. Please try again."
   },
   "points": {
     "title": "My Points",
@@ -481,7 +531,12 @@
     "accessCities": "Access to 100+ cities worldwide",
     "joinAnyCity": "Join activities in any city",
     "seeProfiles": "See other users' profiles unlimited",
-    "unlimitedMessages": "Unlimited text messages"
+    "unlimitedMessages": "Unlimited text messages",
+    "welcomeSuperHumanToast": "Welcome to Super-Human!",
+    "manageInAppStore": "Please manage your subscription in App Store settings",
+    "restoreTimedOut": "Restore timed out. Please try again.",
+    "purchasesRestored": "Purchases restored successfully!",
+    "restoreFailed": "Failed to restore purchases"
   },
   "welcome": {
     "settingUp": "Setting things up…",
@@ -553,7 +608,8 @@
     "editAnswers": "Edit answers",
     "freeOption": "Free",
     "pricedOption": "Priced",
-    "addPlan": "ADD PLAN"
+    "addPlan": "ADD PLAN",
+    "uploadVideo": "Upload"
   },
   "userProfile": {
     "title": "User Profile",
@@ -666,5 +722,11 @@
     "joined": "Joined",
     "join": "Join",
     "pay": "Pay {{amount}}"
+  },
+  "mandatoryPhoto": {
+    "uploadFailed": "Failed to upload photo",
+    "selectPhoto": "Please select a photo",
+    "photoSaved": "Photo saved!",
+    "saveFailed": "Failed to save photo"
   }
 }

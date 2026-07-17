@@ -183,7 +183,19 @@
     "failedToSendVideo": "Invio video non riuscito",
     "expandEventPoster": "Espandi locandina evento",
     "leaveChat": "Lascia la chat",
-    "fatalError": "Qualcosa è andato storto nel caricamento di questa chat. Riprova più tardi."
+    "fatalError": "Qualcosa è andato storto nel caricamento di questa chat. Riprova più tardi.",
+    "signInToSendMessages": "Accedi per inviare messaggi",
+    "characterLimitToast": "Hai raggiunto il limite di 100.000 caratteri. Passa a Super-Human per messaggi illimitati!",
+    "failedToSendMessage": "Impossibile inviare il messaggio",
+    "failedToSendGif": "Impossibile inviare la GIF",
+    "failedToDeleteMessage": "Impossibile eliminare il messaggio",
+    "messageDeleted": "Messaggio eliminato",
+    "signInToSuggestVenues": "Accedi per suggerire un luogo",
+    "failedToSuggestVenue": "Impossibile suggerire il luogo",
+    "failedToSendMedia": "Impossibile inviare il file multimediale",
+    "failedToLeaveConversation": "Impossibile uscire dalla conversazione",
+    "conversationHidden": "Conversazione nascosta",
+    "userBlocked": "Utente bloccato"
   },
   "plans": {
     "title": "Piani",
@@ -334,7 +346,45 @@
     "sectionAccountActions": "Azioni Account",
     "deleteAccountTitle": "Eliminare l'Account?",
     "deleteAccountDesc": "Questo eliminerà definitivamente il tuo account e tutti i tuoi dati. Questa azione non può essere annullata.",
-    "deleteAccountError": "Impossibile eliminare l'account. Contatta il supporto."
+    "deleteAccountError": "Impossibile eliminare l'account. Contatta il supporto.",
+    "emailAddress": "Indirizzo e-mail",
+    "emailUsageNote": "Usata per la fatturazione e per ricevere aggiornamenti da noi.",
+    "interests": "Interessi",
+    "usernameOrUrlPlaceholder": "@nomeutente o URL completo",
+    "pushNotifications": "Notifiche push",
+    "pushNotificationsDesc": "Ricevi una notifica quando arrivano nuovi messaggi",
+    "security": "Sicurezza",
+    "changePasswordBtn": "Cambia password",
+    "newPasswordLabel": "Nuova password",
+    "newPasswordPlaceholder": "Inserisci la nuova password",
+    "confirmPasswordLabel": "Conferma password",
+    "confirmPasswordPlaceholder": "Conferma la nuova password",
+    "updatePasswordBtn": "Aggiorna password",
+    "updatingPassword": "Aggiornamento...",
+    "passwordMinLength": "La password deve contenere almeno 6 caratteri",
+    "darkMode": "Modalità scura",
+    "deleteAccountConfirmTitle": "Eliminare il tuo account? 😢",
+    "deleteAccountConfirmDesc": "Questa azione non può essere annullata. Il tuo account, profilo, messaggi, attività e tutti i dati associati verranno eliminati definitivamente dai nostri server.",
+    "deletingBtn": "Eliminazione...",
+    "unsavedChangesTitle": "🐯 Hai modifiche non salvate",
+    "unsavedChangesDesc": "Le tue modifiche non sono ancora state salvate. Uscire comunque?",
+    "stayBtn": "Resta",
+    "leaveAnywayBtn": "Esci comunque",
+    "chooseAvatarTitle": "Scegli il tuo avatar",
+    "madeWithLove": "Fatto con ❤️ per le farfalle sociali",
+    "avatarSaveFailed": "Impossibile salvare l'avatar",
+    "avatarUpdated": "Avatar aggiornato!",
+    "selectImageFile": "Seleziona un file immagine",
+    "imageTooLarge": "L'immagine deve essere inferiore a 5 MB",
+    "avatarPhotoUpdated": "Foto profilo aggiornata!",
+    "avatarUploadFailed": "Impossibile caricare la foto profilo",
+    "profileSaved": "Profilo salvato!",
+    "profileSaveFailed": "Impossibile salvare il profilo",
+    "fillBothPasswordFields": "Compila entrambi i campi password",
+    "passwordsDontMatch": "Le password non corrispondono",
+    "passwordUpdatedSuccess": "Password aggiornata con successo!",
+    "accountDeletedGoodbye": "Account eliminato. Ciao! 👋",
+    "deleteAccountFailed": "Impossibile eliminare l'account. Riprova."
   },
   "points": {
     "title": "I Miei Punti",
@@ -373,7 +423,18 @@
     "googleBtn": "Google",
     "appleBtn": "Apple",
     "createAccount": "Create Account",
-    "loginWithEmail": "Login with email"
+    "loginWithEmail": "Login with email",
+    "interestsQuestion": "Quali sono i tuoi interessi come persona? ✨",
+    "interestsSubtext": "Tocca un argomento per vedere le opzioni",
+    "interestsPlaceholder": "Tocca un argomento sopra ↑",
+    "socialsQuestion": "Quali sono i tuoi social? 📱",
+    "socialsSubtext": "Facoltativo — aiuta gli altri a conoscerti",
+    "pasteInstagram": "Incolla qui il tuo link Instagram",
+    "pasteLinkedIn": "Incolla qui il tuo link LinkedIn",
+    "pasteX": "Incolla qui il tuo link X",
+    "socialsPlaceholder": "Tocca un'icona sopra ↑",
+    "skipForNow": "Salta per ora",
+    "done": "Fatto"
   },
   "languageSelector": {
     "swipeToSelect": "Scorri per selezionare la tua lingua",
@@ -470,7 +531,12 @@
     "accessCities": "Accesso a oltre 100 città in tutto il mondo",
     "joinAnyCity": "Unisciti ad attività in qualsiasi città",
     "seeProfiles": "Vedi i profili degli altri utenti senza limiti",
-    "unlimitedMessages": "Messaggi di testo illimitati"
+    "unlimitedMessages": "Messaggi di testo illimitati",
+    "welcomeSuperHumanToast": "Benvenuto/a in Super-Human!",
+    "manageInAppStore": "Gestisci il tuo abbonamento nelle impostazioni dell'App Store",
+    "restoreTimedOut": "Il ripristino ha impiegato troppo tempo. Riprova.",
+    "purchasesRestored": "Acquisti ripristinati con successo!",
+    "restoreFailed": "Impossibile ripristinare gli acquisti"
   },
   "welcome": {
     "settingUp": "Preparazione…",
@@ -542,7 +608,8 @@
     "editAnswers": "Modifica risposte",
     "freeOption": "Gratuito",
     "pricedOption": "A pagamento",
-    "addPlan": "AGGIUNGI PIANO"
+    "addPlan": "AGGIUNGI PIANO",
+    "uploadVideo": "Carica"
   },
   "userProfile": {
     "title": "Profilo Utente",
@@ -645,5 +712,21 @@
     "joined": "Unito",
     "join": "Unisciti",
     "pay": "Paga {{amount}}"
+  },
+  "chatInvite": {
+    "title": "Profilo utente",
+    "invitingYouToChat": "{{name}} ti invita a chattare",
+    "accept": "Accetta",
+    "decline": "Rifiuta",
+    "confirmDecline": "Sei sicuro/a?",
+    "yes": "Sì",
+    "hum": "Mmh",
+    "declinedToast": "Richiesta rimossa"
+  },
+  "mandatoryPhoto": {
+    "uploadFailed": "Impossibile caricare la foto",
+    "selectPhoto": "Seleziona una foto",
+    "photoSaved": "Foto salvata!",
+    "saveFailed": "Impossibile salvare la foto"
   }
 }
