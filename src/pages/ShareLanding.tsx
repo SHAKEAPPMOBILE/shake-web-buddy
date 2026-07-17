@@ -254,7 +254,7 @@ export default function ShareLanding() {
                     {activity.creator_name}
                   </span>{" "}
                   invited you for{" "}
-                  <span className="text-white font-semibold">A Plan</span>
+                  <span className="text-white font-semibold">{activity.note?.trim() || activityLabel}</span>
                 </p>
               </div>
             </>

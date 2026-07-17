@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -140,6 +141,7 @@ async function signInWithOAuth(provider: 'google' | 'apple') {
 }
 
 export default function Auth() {
+  const { t } = useTranslation();
   const [step, setStep] = useState<
     | "method"
     | "login"
@@ -191,6 +193,43 @@ export default function Auth() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const emailLoginFormRef = useRef<HTMLFormElement>(null);
+
+  // Play a gentle welcome chime when the method screen first mounts.
+  // Uses the Web Audio API so no audio file is needed (placeholder — Leonel can
+  // swap for a real asset later by replacing this with new Audio('/sound.mp3').play()).
+  // Respects the user's system mute via AudioContext — if audio is blocked/muted
+  // by the browser the catch silently swallows the error.
+  useEffect(() => {
+    if (step !== "method") return;
+    let ctx: AudioContext | null = null;
+    const timer = setTimeout(() => {
+      try {
+        ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const playNote = (freq: number, startAt: number, duration: number, gain: number) => {
+          const osc = ctx!.createOscillator();
+          const gainNode = ctx!.createGain();
+          osc.connect(gainNode);
+          gainNode.connect(ctx!.destination);
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, ctx!.currentTime + startAt);
+          gainNode.gain.setValueAtTime(0, ctx!.currentTime + startAt);
+          gainNode.gain.linearRampToValueAtTime(gain, ctx!.currentTime + startAt + 0.02);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, ctx!.currentTime + startAt + duration);
+          osc.start(ctx!.currentTime + startAt);
+          osc.stop(ctx!.currentTime + startAt + duration);
+        };
+        // Simple ascending two-note chime: C5 → E5
+        playNote(523.25, 0,    0.5, 0.18);
+        playNote(659.25, 0.18, 0.6, 0.14);
+      } catch {
+        // Audio blocked or unsupported — silently skip
+      }
+    }, 300); // slight delay so the screen has rendered
+    return () => {
+      clearTimeout(timer);
+      try { ctx?.close(); } catch { /* ignore */ }
+    };
+  }, []); // run once on mount — step starts as "method"
 
   useEffect(() => {
     if (step !== "method" || !showEmailLogin) return;
@@ -1008,8 +1047,8 @@ export default function Auth() {
             <div className="space-y-4">
               <div className="space-y-2 text-center">
                 <img src={logoShake} alt="SHAKE" className="h-20 w-20 mx-auto mb-8" />
-                <h1 className="text-2xl font-bold text-black">Welcome to SHAKE</h1>
-                <p className="text-muted-foreground">Log In or create your account</p>
+                <h1 className="text-2xl font-bold text-black">{t('auth.welcomeTitle', 'Welcome to SHAKE')}</h1>
+                <p className="text-muted-foreground">{t('auth.loginOrCreate', 'Log In or create your account')}</p>
               </div>
 
               <div className="space-y-3">
@@ -1029,7 +1068,7 @@ export default function Auth() {
                           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                         </g>
                       </svg>
-                      Google
+                      {t('auth.googleBtn', 'Google')}
                     </Button>
 
                     <Button
@@ -1041,7 +1080,7 @@ export default function Auth() {
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" className="mr-2">
                         <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
                       </svg>
-                      Apple
+                      {t('auth.appleBtn', 'Apple')}
                     </Button>
                   </>
                 )}
@@ -1055,7 +1094,7 @@ export default function Auth() {
                     size="lg"
                   >
                     <Mail className="w-4 h-4 mr-2 text-white" />
-                    Create Account
+                    {t('auth.createAccount', 'Create Account')}
                   </Button>
                 )}
 
@@ -1066,7 +1105,7 @@ export default function Auth() {
                       onClick={() => setShowEmailLogin(true)}
                       className="text-sm text-gray-900 hover:text-gray-500"
                     >
-                      Login with email
+                      {t('auth.loginWithEmail', 'Login with email')}
                     </button>
                   </div>
                 ) : (

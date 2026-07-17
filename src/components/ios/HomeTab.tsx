@@ -153,13 +153,17 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   // which picks the right activity and shows the quick-confirm sheet.
   // The listener is registered once; the ref keeps it current without re-registering.
   useEffect(() => {
-    if (localStorage.getItem("shake_motion_permission") !== "granted") return;
-
+    // Register the listener unconditionally so it activates immediately after
+    // the user grants permission mid-session (localStorage write doesn't trigger
+    // a React re-render, so we can't gate registration on permission state).
     let lastShakeAt = 0;
     const THRESHOLD = 15;   // m/s² — clear shake, not walking vibration
     const DEBOUNCE_MS = 3000;
 
     const handleMotion = (e: DeviceMotionEvent) => {
+      // Check permission here (not at registration time) so granting it mid-session
+      // takes effect immediately without re-registering the listener.
+      if (localStorage.getItem("shake_motion_permission") !== "granted") return;
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
       const magnitude = Math.max(

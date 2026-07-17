@@ -36,6 +36,7 @@ interface ActivityJoin {
   activity_type: string;
   city: string;
   joined_at: string;
+  note?: string | null;
 }
 
 interface SocialLinks {
@@ -91,10 +92,10 @@ export function UserProfileDialog({
     const fetchUserData = async () => {
       setIsLoading(true);
       try {
-        // Fetch activity history
+        // Fetch activity history, including note via FK join with user_activities
         const { data: activityData, error: activityError } = await supabase
           .from("activity_joins")
-          .select("id, activity_type, city, joined_at")
+          .select("id, activity_type, city, joined_at, user_activities!activity_id(note)")
           .eq("user_id", userId)
           .order("joined_at", { ascending: false })
           .limit(10);
@@ -102,7 +103,15 @@ export function UserProfileDialog({
         if (activityError) {
           console.error("Error fetching activity history:", activityError);
         } else {
-          setActivityHistory(activityData || []);
+          // Flatten the joined user_activities note into the ActivityJoin object
+          const flat = (activityData || []).map((row: any) => ({
+            id: row.id,
+            activity_type: row.activity_type,
+            city: row.city,
+            joined_at: row.joined_at,
+            note: (row.user_activities as any)?.note ?? null,
+          }));
+          setActivityHistory(flat);
         }
 
         // Resolve last known city: try activity_joins first, fall back to user_activities
@@ -335,8 +344,8 @@ export function UserProfileDialog({
                     className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 border border-purple-200/60"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 capitalize">
-                        {t(`activities.${activity.activity_type}`, activity.activity_type)}
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {activity.note?.trim() || t(`activities.${activity.activity_type}`, activity.activity_type)}
                       </p>
                       <p className="text-xs text-gray-500">{activity.city}</p>
                     </div>

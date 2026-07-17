@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ChevronLeft, DollarSign, Volume2, VolumeX, User } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
@@ -94,6 +95,7 @@ interface FeedCardProps {
 }
 
 function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile, onViewParticipantProfile }: FeedCardProps) {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
@@ -200,23 +202,23 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
   const dateLabel = (() => {
     if (!plan.scheduled_for) return null;
     const d = parseDbDate(plan.scheduled_for);
-    const day = isToday(d) ? "Today" : isTomorrow(d) ? "Tomorrow" : format(d, "EEE, d MMM");
+    const day = isToday(d) ? t('common.today', 'Today') : isTomorrow(d) ? t('common.tomorrow', 'Tomorrow') : format(d, "EEE, d MMM");
     return `${day} · ${format(d, "h:mm a")}`;
   })();
 
   /* ── Derive action button props ── */
   const actionButton = (() => {
     if (isOwn) {
-      return { label: "Enter chat", handler: onEnterChat, disabled: false };
+      return { label: t('plans.enterChat', 'Enter chat'), handler: onEnterChat, disabled: false };
     }
     if (isJoined) {
-      return { label: "Enter chat", handler: onEnterChat, disabled: false };
+      return { label: t('plans.enterChat', 'Enter chat'), handler: onEnterChat, disabled: false };
     }
     if (isPaid) {
       return { label: `Pay $${priceValue.toFixed(0)}`, handler: onPayForPlan, disabled: false };
     }
     return {
-      label: joining ? "Joining…" : "JOIN",
+      label: joining ? t('plans.joiningBtn', 'Joining…') : t('plans.joinBtn', 'JOIN'),
       handler: handleJoin,
       disabled: joining,
     };

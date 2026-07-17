@@ -244,7 +244,8 @@
     "shareEarnPoints": "友達にシェアしてポイントを獲得しましょう。",
     "shareFriends": "友達にシェアしましょう。",
     "failedToShare": "シェアできませんでした",
-    "failedToCopyLink": "リンクをコピーできませんでした"
+    "failedToCopyLink": "リンクをコピーできませんでした",
+    "joiningBtn": "Joining…"
   },
   "profile": {
     "title": "プロフィール",
@@ -366,7 +367,13 @@
     "resendCode": "コードを再送信",
     "continueWithPhone": "電話番号で続ける",
     "termsAgreement": "続けることで、利用規約とプライバシーポリシーに同意したことになります",
-    "byContinuing": "続けることで、以下に同意したことになります"
+    "byContinuing": "続けることで、以下に同意したことになります",
+    "welcomeTitle": "Welcome to SHAKE",
+    "loginOrCreate": "Log In or create your account",
+    "googleBtn": "Google",
+    "appleBtn": "Apple",
+    "createAccount": "Create Account",
+    "loginWithEmail": "Login with email"
   },
   "languageSelector": {
     "swipeToSelect": "スワイプして言語を選択",

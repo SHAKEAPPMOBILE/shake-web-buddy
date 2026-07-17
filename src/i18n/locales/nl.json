@@ -244,7 +244,8 @@
     "shareEarnPoints": "Deel het met vrienden om punten te verdienen.",
     "shareFriends": "Deel het met je vrienden.",
     "failedToShare": "Delen mislukt",
-    "failedToCopyLink": "Link kopiëren mislukt"
+    "failedToCopyLink": "Link kopiëren mislukt",
+    "joiningBtn": "Joining…"
   },
   "profile": {
     "title": "Profiel",
@@ -366,7 +367,13 @@
     "resendCode": "Code opnieuw verzenden",
     "continueWithPhone": "Doorgaan met telefoon",
     "termsAgreement": "Door verder te gaan, ga je akkoord met onze Servicevoorwaarden en Privacybeleid",
-    "byContinuing": "Door verder te gaan, ga je akkoord met onze"
+    "byContinuing": "Door verder te gaan, ga je akkoord met onze",
+    "welcomeTitle": "Welcome to SHAKE",
+    "loginOrCreate": "Log In or create your account",
+    "googleBtn": "Google",
+    "appleBtn": "Apple",
+    "createAccount": "Create Account",
+    "loginWithEmail": "Login with email"
   },
   "languageSelector": {
     "swipeToSelect": "Veeg om je taal te selecteren",

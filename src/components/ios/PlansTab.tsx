@@ -42,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useVenueContext } from "@/contexts/VenueContext";
 
 interface PlanActivity {
   id: string;
@@ -105,6 +106,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const { selectedCity, detectedCity, revertToDetectedLocation } = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { getVenueForActivity } = useVenueContext();
   const { referralCode } = useReferralCode(user?.id);
   const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
   const isMobile = useIsMobile();
@@ -770,12 +772,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   };
 
   const handlePlanClick = async (plan: PlanActivity) => {
-    if (plan.isCarouselJoin) {
-      setSelectedCarouselActivity(plan);
-      setShowCarouselChatView(true);
-      return;
-    }
-    
     // If it's a paid plan and user hasn't joined and is not the creator, show detail dialog
     if (plan.price_amount && !plan.isJoined && plan.user_id !== user?.id) {
       setPaidActivityDetail(plan);
@@ -1871,6 +1867,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                             : format(parseDbDate(planPreview.scheduled_for), "EEE, d MMM")
                         } · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`}
                       </p>
+                      {(() => {
+                        const venue = getVenueForActivity(planPreview.city, planPreview.activity_type);
+                        if (!venue) return null;
+                        return (
+                          <p className="text-xs text-white/70 mt-0.5 truncate">📍 {venue.name}</p>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -1880,7 +1883,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               {(planPreview.user_id === user?.id || planPreview.isJoined) ? (
                 <button
                   type="button"
-                  onClick={() => { setPlanPreview(null); setSelectedPlan(planPreview); setShowChatView(true); }}
+                  onClick={() => {
+                    if (planPreview.isCarouselJoin) {
+                      setPlanPreview(null); setSelectedCarouselActivity(planPreview); setShowCarouselChatView(true);
+                    } else {
+                      setPlanPreview(null); setSelectedPlan(planPreview); setShowChatView(true);
+                    }
+                  }}
                   className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
                   style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
                 >
@@ -1958,6 +1967,21 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     </span>
                   </div>
                 )}
+
+                {/* Venue info (dinner/brunch/drinks only) */}
+                {(() => {
+                  const venue = getVenueForActivity(planPreview.city, planPreview.activity_type);
+                  if (!venue) return null;
+                  return (
+                    <div className="flex items-start gap-2 px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100">
+                      <span className="text-base mt-0.5">📍</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{venue.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{venue.address}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Actions */}
@@ -1965,7 +1989,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 {(planPreview.user_id === user?.id || planPreview.isJoined) ? (
                   <button
                     type="button"
-                    onClick={() => { setPlanPreview(null); setSelectedPlan(planPreview); setShowChatView(true); }}
+                    onClick={() => {
+                      if (planPreview.isCarouselJoin) {
+                        setPlanPreview(null); setSelectedCarouselActivity(planPreview); setShowCarouselChatView(true);
+                      } else {
+                        setPlanPreview(null); setSelectedPlan(planPreview); setShowChatView(true);
+                      }
+                    }}
                     className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
                     style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
                   >

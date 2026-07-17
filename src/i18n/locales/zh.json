@@ -244,7 +244,8 @@
     "shareEarnPoints": "分享给朋友以赚取积分。",
     "shareFriends": "分享给您的朋友。",
     "failedToShare": "分享失败",
-    "failedToCopyLink": "复制链接失败"
+    "failedToCopyLink": "复制链接失败",
+    "joiningBtn": "Joining…"
   },
   "profile": {
     "title": "个人资料",
@@ -366,7 +367,13 @@
     "resendCode": "重新发送验证码",
     "continueWithPhone": "使用电话继续",
     "termsAgreement": "继续即表示你同意我们的服务条款和隐私政策",
-    "byContinuing": "继续即表示你同意我们的"
+    "byContinuing": "继续即表示你同意我们的",
+    "welcomeTitle": "Welcome to SHAKE",
+    "loginOrCreate": "Log In or create your account",
+    "googleBtn": "Google",
+    "appleBtn": "Apple",
+    "createAccount": "Create Account",
+    "loginWithEmail": "Login with email"
   },
   "languageSelector": {
     "swipeToSelect": "滑动选择你的语言",

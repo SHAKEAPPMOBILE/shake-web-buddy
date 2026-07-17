@@ -244,7 +244,8 @@
     "shareEarnPoints": "Partagez-le avec des amis pour gagner des points.",
     "shareFriends": "Partagez-le avec vos amis.",
     "failedToShare": "Échec du partage",
-    "failedToCopyLink": "Échec de la copie du lien"
+    "failedToCopyLink": "Échec de la copie du lien",
+    "joiningBtn": "Joining…"
   },
   "profile": {
     "title": "Profil",
@@ -366,7 +367,13 @@
     "resendCode": "Renvoyer le code",
     "continueWithPhone": "Continuer avec le téléphone",
     "termsAgreement": "En continuant, vous acceptez nos Conditions d'Utilisation et Politique de Confidentialité",
-    "byContinuing": "En continuant, vous acceptez nos"
+    "byContinuing": "En continuant, vous acceptez nos",
+    "welcomeTitle": "Welcome to SHAKE",
+    "loginOrCreate": "Log In or create your account",
+    "googleBtn": "Google",
+    "appleBtn": "Apple",
+    "createAccount": "Create Account",
+    "loginWithEmail": "Login with email"
   },
   "languageSelector": {
     "swipeToSelect": "Glissez pour sélectionner votre langue",

@@ -1,8 +1,25 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Browser } from "@capacitor/browser";
+import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import logoShake from "@/assets/shake-logo-new.png";
+
+/**
+ * Close the Capacitor Browser (Chrome Custom Tab on Android / SFSafariViewController on iOS)
+ * after OAuth completes. Without this the browser tab stays visible on top of the app and
+ * tapping its X button can navigate the Android back-stack in unexpected ways.
+ * Safe to call on web — isNativePlatform() gates the call.
+ */
+async function closeBrowserIfNative(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    await Browser.close();
+  } catch {
+    // Browser may already be closed — ignore
+  }
+}
 
 const STORAGE_SIGNUP_EMAIL = "shake_signup_magic_link_sent";
 const STORAGE_NEED_PASSWORD = "shake_post_signup_set_password";
@@ -150,6 +167,7 @@ export default function OAuthCallback() {
             userId: earlySession.user?.id,
             timestamp: new Date().toISOString(),
           });
+          await closeBrowserIfNative();
           navigate(resolveDestinationAfterAuth(earlySession), { replace: true });
           return;
         }
@@ -191,6 +209,7 @@ export default function OAuthCallback() {
             timestamp: new Date().toISOString(),
           });
           toast.error(message);
+          await closeBrowserIfNative();
           navigate("/auth", { replace: true });
           return;
         }
@@ -234,6 +253,7 @@ export default function OAuthCallback() {
               userId: lateSession.user?.id,
               timestamp: new Date().toISOString(),
             });
+            await closeBrowserIfNative();
             navigate(resolveDestinationAfterAuth(lateSession), { replace: true });
             return;
           }
@@ -241,6 +261,7 @@ export default function OAuthCallback() {
             reason: "Neither code, token_hash, nor token pair found",
             timestamp: new Date().toISOString(),
           });
+          await closeBrowserIfNative();
           navigate("/auth", { replace: true });
           return;
         }
@@ -254,7 +275,10 @@ export default function OAuthCallback() {
               userId: preExchangeSession.user?.id,
               timestamp: new Date().toISOString(),
             });
-            if (!cancelled) navigate(resolveDestinationAfterAuth(preExchangeSession), { replace: true });
+            if (!cancelled) {
+              await closeBrowserIfNative();
+              navigate(resolveDestinationAfterAuth(preExchangeSession), { replace: true });
+            }
             return;
           }
 
@@ -294,6 +318,7 @@ export default function OAuthCallback() {
               try { await supabase.auth.signOut(); } catch { /* best-effort clear */ }
               if (!cancelled) {
                 toast.error("Session issue detected. Please sign in again.");
+                await closeBrowserIfNative();
                 navigate("/auth", { replace: true });
               }
               return;
@@ -359,6 +384,7 @@ export default function OAuthCallback() {
           timestamp: new Date().toISOString(),
         });
 
+        await closeBrowserIfNative();
         navigate(session ? resolveDestinationAfterAuth(session) : "/auth", { replace: true });
       } catch (e: unknown) {
         const callbackDuration = performance.now() - callbackStartTime;
@@ -376,6 +402,7 @@ export default function OAuthCallback() {
           timestamp: new Date().toISOString(),
         });
         toast.error("Sign-in failed. Please try again.");
+        await closeBrowserIfNative();
         navigate("/auth", { replace: true });
       }
     };
