@@ -845,6 +845,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     navigate("/propose-plan");
   };
 
+  // The full visual list — "My Plans" (activities) followed by the discovery
+  // plans not already in that section (cityPlans, deduped) — exactly matching
+  // what's rendered on screen. Both handlePlanClick and handleCityPlanClick use
+  // this as the swipe-feed source so opening the feed from ANY card lets the
+  // user keep swiping through every plan visible in the list, not just the
+  // section the tapped card happened to live in.
+  const combinedPlansList = useMemo(() => {
+    const cityOnly = cityPlans.filter((p) => !activities.some((a) => a.id === p.id));
+    return [...activities, ...cityOnly];
+  }, [activities, cityPlans]);
+
   const handlePlanClick = async (plan: PlanActivity) => {
     // If it's a paid plan and user hasn't joined and is not the creator, show detail dialog
     if (plan.price_amount && !plan.isJoined && plan.user_id !== user?.id) {
@@ -853,11 +864,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
 
     // Open the same full-page swipeable feed used for the city carousel, seeded
-    // to this plan and looping through the rest of "My Plans" — matching the
-    // video-detail experience everywhere else in the app instead of a small
-    // popup modal.
-    const idx = activities.findIndex((p) => p.id === plan.id);
-    setFeedSourceList(activities);
+    // to this plan and looping through every plan in the list (My Plans +
+    // discovery) — matching the video-detail experience everywhere else in the
+    // app instead of a small popup modal, and letting the user swipe past their
+    // own joined plans into the rest of the feed instead of getting stuck.
+    const idx = combinedPlansList.findIndex((p) => p.id === plan.id);
+    setFeedSourceList(combinedPlansList);
     setFeedStartIndex(idx >= 0 ? idx : 0);
     setFeedOpen(true);
   };
@@ -974,10 +986,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       setAutoGenCardPlan(plan);
       return;
     }
-    // Non-auto plans (own, joined, free, paid) open the swipe feed.
+    // Non-auto plans (own, joined, free, paid) open the swipe feed, seeded with
+    // the same combined "My Plans" + discovery list as handlePlanClick so the
+    // user can keep swiping through the whole visible list either way.
     // Paid-unjoined cards show a "PAY" button inside the feed that calls onPayForPlan.
-    const idx = cityPlans.findIndex((p) => p.id === plan.id);
-    setFeedSourceList(cityPlans);
+    const idx = combinedPlansList.findIndex((p) => p.id === plan.id);
+    setFeedSourceList(combinedPlansList);
     setFeedStartIndex(idx >= 0 ? idx : 0);
     setFeedOpen(true);
   };

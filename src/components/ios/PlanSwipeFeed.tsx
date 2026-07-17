@@ -20,7 +20,7 @@ import { ChevronLeft, DollarSign, Volume2, VolumeX, User } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
-import { getActivityIcon, getActivityEmoji } from "@/data/activityTypes";
+import { getActivityIcon, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
@@ -81,6 +81,23 @@ function sortFeedPlans(plans: FeedPlan[], myCity: string | null): FeedPlan[] {
     return getTime(a) - getTime(b);
   });
 }
+
+/* Mirrors PlansTab's activityKeyMap so standard activity types render their
+   translated, capitalized label ("Dinner") instead of the raw DB value
+   ("dinner") in the feed's title. */
+const ACTIVITY_TRANSLATION_KEYS: Record<string, string> = {
+  dinner: "dinner",
+  drinks: "drinks",
+  brunch: "brunch",
+  surf: "surf",
+  run: "run",
+  "co-working": "coWorking",
+  basketball: "basketball",
+  "tennis-padel": "tennisPadel",
+  football: "football",
+  shopping: "shopping",
+  arts: "arts",
+};
 
 /* ── Single card ──────────────────────────────────────────────────────────── */
 interface FeedCardProps {
@@ -447,31 +464,41 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 36px)", zIndex: 5 }}
       >
         <div className="flex items-end gap-3">
-          {/* Creator avatar — tappable */}
-          <button
-            type="button"
-            onClick={onViewProfile}
-            className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/50 shadow-lg shrink-0 flex items-center justify-center bg-white/10"
-            style={{ pointerEvents: "auto" }}
-          >
-            {plan.creator_avatar ? (
-              <img
-                src={plan.creator_avatar}
-                alt={plan.creator_name || ""}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-lg font-bold text-white">
-                {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
-              </span>
-            )}
-          </button>
+          {/* Creator avatar — tappable. Auto-generated open groups (e.g. the standard
+              Dinner/Brunch overflow slots) don't have a meaningful single "creator" —
+              the user_id on the row is just whoever's join happened to spin up that
+              slot, not an owner. Hide it here the same way the plans list already does
+              (see the "!plan.is_auto_generated" check there) instead of misleadingly
+              crediting/linking to that person. */}
+          {!plan.is_auto_generated && (
+            <button
+              type="button"
+              onClick={onViewProfile}
+              className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/50 shadow-lg shrink-0 flex items-center justify-center bg-white/10"
+              style={{ pointerEvents: "auto" }}
+            >
+              {plan.creator_avatar ? (
+                <img
+                  src={plan.creator_avatar}
+                  alt={plan.creator_name || ""}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-lg font-bold text-white">
+                  {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                </span>
+              )}
+            </button>
+          )}
 
           <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>
             <p className="font-bold text-white text-base leading-tight truncate">
-              {plan.note || plan.activity_type}
+              {plan.note || t(
+                `activities.${ACTIVITY_TRANSLATION_KEYS[plan.activity_type] ?? ""}`,
+                getActivityLabel(plan.activity_type)
+              )}
             </p>
-            {plan.creator_name && (
+            {!plan.is_auto_generated && plan.creator_name && (
               <p className="text-white/80 text-sm mt-0.5 truncate">
                 {plan.creator_name}
               </p>
