@@ -366,6 +366,37 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         isCarouselJoin: true,
       }));
 
+      // ── Phase 3b: quick render for the city-discovery list too ─────────────
+      // Previously only "activities" (My Plans) got a quick pass — cityPlans stayed
+      // blank until every profile/count query in Phase 4 finished, which is the main
+      // reason the plans list felt slow to populate. Render placeholder cards for the
+      // city list immediately using data we already have, then patch in real
+      // creator/count info once Phase 4 resolves.
+      const quickCityPlans: PlanActivity[] = cityPublicPlans.map((activity: any) => ({
+        ...activity,
+        creator_name: "...",
+        creator_avatar: undefined,
+        participant_count: 0,
+        isJoined: false,
+      } as PlanActivity));
+
+      const quickDiscovery: PlanActivity[] = discoveryCarouselEntries.map((c) => {
+        const dayLabel = getActivityDay(c.activity_type);
+        return {
+          id: `carousel-${c.activity_type}-${c.city}-${c.activityId ?? c.userIds[0]}`,
+          user_id: c.userIds[0],
+          activity_type: c.activity_type,
+          city: c.city,
+          scheduled_for: getNextOccurrenceDate(c.activity_type).toISOString(),
+          is_active: true,
+          note: dayLabel ? `This ${dayLabel}` : null,
+          creator_name: "...",
+          participant_count: c.userIds.length,
+          isJoined: false,
+          isCarouselJoin: true,
+        } as PlanActivity;
+      });
+
       if (quickReal.length > 0 || quickCarousel.length > 0) {
         const _quickNext = sortByDate([...quickReal, ...quickCarousel]);
         console.log(`[SET:fetchPlans:quick-render] setActivities → ${_quickNext.length} items`, _quickNext.map(a => ({ id: a.id, activity_type: a.activity_type, city: a.city, isJoined: a.isJoined })));
@@ -374,36 +405,53 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         clearTimeout(loadingTimeout);
         setIsLoading(false);
       }
+      if (quickCityPlans.length > 0 || quickDiscovery.length > 0) {
+        const _quickCity = sortByDate([...quickCityPlans, ...quickDiscovery]);
+        console.log(`[SET:fetchPlans:quick-render-city] setCityPlans → ${_quickCity.length} items`);
+        setCityPlans(_quickCity);
+      }
 
       // ── Phase 4: enrich with profiles + live counts ────────────────────────
+      // Batched via .in() instead of one Promise.all-per-plan round trip each —
+      // with 20+ plans the old per-plan approach fired 60-90 individual requests.
       const [enrichedReal, enrichedCarousel, enrichedCity, enrichedDiscovery] = await Promise.all([
-        // My real plan joins
-        Promise.all(filteredRealJoins.map(async p => {
-          const [{ data: profile }, { count }, { data: activityRow }] = await Promise.all([
-            supabase.from("profiles").select("name, avatar_url").eq("user_id", p.plan_user_id!).maybeSingle(),
-            supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", p.plan_id!),
-            supabase.from("user_activities").select("promo_video_url").eq("id", p.plan_id!).maybeSingle(),
+        // My real plan joins — batch profiles, join counts, and video URLs in one query each.
+        (async () => {
+          const realUserIds = Array.from(new Set(filteredRealJoins.map(p => p.plan_user_id!).filter(Boolean)));
+          const realPlanIds = filteredRealJoins.map(p => p.plan_id!).filter(Boolean);
+          const [profilesRes, joinsRes, videosRes] = await Promise.all([
+            realUserIds.length ? supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", realUserIds) : Promise.resolve({ data: [] as any[] }),
+            realPlanIds.length ? supabase.from("activity_joins").select("activity_id").in("activity_id", realPlanIds) : Promise.resolve({ data: [] as any[] }),
+            realPlanIds.length ? supabase.from("user_activities").select("id, promo_video_url").in("id", realPlanIds) : Promise.resolve({ data: [] as any[] }),
           ]);
-          return {
-            id: p.plan_id!,
-            user_id: p.plan_user_id!,
-            activity_type: p.activity_type,
-            city: p.city,
-            scheduled_for: p.scheduled_for,
-            is_active: true,
-            note: p.note,
-            price_amount: p.price_amount,
-            promo_video_url: (activityRow as any)?.promo_video_url ?? null,
-            group_number: p.group_number,
-            is_auto_generated: p.is_auto_generated,
-            created_at: p.created_at ?? undefined,
-            creator_name: profile?.name || "Anonymous",
-            creator_avatar: profile?.avatar_url ?? undefined,
-            participant_count: count || 0,
-            isJoined: true,
-            isCarouselJoin: false,
-          } as PlanActivity;
-        })),
+          const profileMap = new Map((profilesRes.data ?? []).map((p: any) => [p.user_id, p]));
+          const countMap = new Map<string, number>();
+          (joinsRes.data ?? []).forEach((j: any) => countMap.set(j.activity_id, (countMap.get(j.activity_id) ?? 0) + 1));
+          const videoMap = new Map((videosRes.data ?? []).map((a: any) => [a.id, a.promo_video_url]));
+
+          return filteredRealJoins.map(p => {
+            const profile = profileMap.get(p.plan_user_id!);
+            return {
+              id: p.plan_id!,
+              user_id: p.plan_user_id!,
+              activity_type: p.activity_type,
+              city: p.city,
+              scheduled_for: p.scheduled_for,
+              is_active: true,
+              note: p.note,
+              price_amount: p.price_amount,
+              promo_video_url: videoMap.get(p.plan_id!) ?? null,
+              group_number: p.group_number,
+              is_auto_generated: p.is_auto_generated,
+              created_at: p.created_at ?? undefined,
+              creator_name: profile?.name || "Anonymous",
+              creator_avatar: profile?.avatar_url ?? undefined,
+              participant_count: countMap.get(p.plan_id!) ?? 0,
+              isJoined: true,
+              isCarouselJoin: false,
+            } as PlanActivity;
+          });
+        })(),
 
         // My carousel joins — synthetic card, always shown regardless of group size
         Promise.all(filteredCarouselJoins.map(async p => {
@@ -428,58 +476,81 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           } as PlanActivity;
         })),
 
-        // City discovery real plans
-        Promise.all(cityPublicPlans.map(async (activity: any) => {
-          const [{ data: profile }, { count }, { count: myJoinCount }] = await Promise.all([
-            supabase.from("profiles").select("name, avatar_url").eq("user_id", activity.user_id).maybeSingle(),
-            supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id),
-            supabase.from("activity_joins").select("*", { count: "exact", head: true }).eq("activity_id", activity.id).eq("user_id", user!.id),
+        // City discovery real plans — batch profiles + join counts in one query each.
+        // No per-plan "am I joined" query needed: cityPublicPlans is already filtered
+        // to exclude every plan in myJoinedPlanIds, so isJoined is always false here.
+        (async () => {
+          const cityUserIds = Array.from(new Set(cityPublicPlans.map((a: any) => a.user_id).filter(Boolean)));
+          const cityActivityIds = cityPublicPlans.map((a: any) => a.id);
+          const [profilesRes, joinsRes] = await Promise.all([
+            cityUserIds.length ? supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", cityUserIds) : Promise.resolve({ data: [] as any[] }),
+            cityActivityIds.length ? supabase.from("activity_joins").select("activity_id").in("activity_id", cityActivityIds) : Promise.resolve({ data: [] as any[] }),
           ]);
-          return {
-            ...activity,
-            creator_name: profile?.name || "Anonymous",
-            creator_avatar: profile?.avatar_url,
-            participant_count: count || 0,
-            isJoined: (myJoinCount ?? 0) > 0,
-          } as PlanActivity;
-        })),
+          const profileMap = new Map((profilesRes.data ?? []).map((p: any) => [p.user_id, p]));
+          const countMap = new Map<string, number>();
+          (joinsRes.data ?? []).forEach((j: any) => countMap.set(j.activity_id, (countMap.get(j.activity_id) ?? 0) + 1));
 
-        // Discovery carousel groups (>=3 others, not my active type)
-        Promise.all(discoveryCarouselEntries.map(async (carouselActivity) => {
-          const firstUserId = carouselActivity.userIds[0];
-          const [{ data: profile }, { data: realActivity }, { count: liveCount }] = await Promise.all([
-            supabase.from("profiles").select("name, avatar_url").eq("user_id", firstUserId).maybeSingle(),
-            carouselActivity.activityId
-              ? supabase.from("user_activities").select("id").eq("id", carouselActivity.activityId).maybeSingle()
-              : supabase.from("user_activities").select("id")
+          return cityPublicPlans.map((activity: any) => {
+            const profile = profileMap.get(activity.user_id);
+            return {
+              ...activity,
+              creator_name: profile?.name || "Anonymous",
+              creator_avatar: profile?.avatar_url,
+              participant_count: countMap.get(activity.id) ?? 0,
+              isJoined: false,
+            } as PlanActivity;
+          });
+        })(),
+
+        // Discovery carousel groups (>=3 others, not my active type) — batch profiles
+        // and join counts; the per-entry "latest real activity" lookup (only needed for
+        // activityId-less carousel entries) stays per-entry since it's a distinct filter
+        // per activity_type+city combo, but this list is small (bounded by distinct types).
+        (async () => {
+          const discoveryUserIds = Array.from(new Set(discoveryCarouselEntries.map(c => c.userIds[0])));
+          const discoveryActivityIds = discoveryCarouselEntries.map(c => c.activityId).filter((id): id is string => !!id);
+          const [profilesRes, joinsRes] = await Promise.all([
+            discoveryUserIds.length ? supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", discoveryUserIds) : Promise.resolve({ data: [] as any[] }),
+            discoveryActivityIds.length ? supabase.from("activity_joins").select("activity_id").in("activity_id", discoveryActivityIds) : Promise.resolve({ data: [] as any[] }),
+          ]);
+          const profileMap = new Map((profilesRes.data ?? []).map((p: any) => [p.user_id, p]));
+          const countMap = new Map<string, number>();
+          (joinsRes.data ?? []).forEach((j: any) => countMap.set(j.activity_id, (countMap.get(j.activity_id) ?? 0) + 1));
+
+          return Promise.all(discoveryCarouselEntries.map(async (carouselActivity) => {
+            const firstUserId = carouselActivity.userIds[0];
+            const profile = profileMap.get(firstUserId);
+            const realActivity = carouselActivity.activityId
+              ? { id: carouselActivity.activityId }
+              : (await supabase.from("user_activities").select("id")
                   .eq("activity_type", carouselActivity.activity_type)
                   .eq("city", carouselActivity.city)
                   .eq("is_active", true)
                   .order("scheduled_for", { ascending: false })
                   .limit(1)
-                  .maybeSingle(),
-            carouselActivity.activityId
-              ? supabase.from("activity_joins").select("user_id", { count: "exact", head: true }).eq("activity_id", carouselActivity.activityId)
-              : Promise.resolve({ count: carouselActivity.userIds.length }),
-          ]);
-          const dayLabel      = getActivityDay(carouselActivity.activity_type);
-          const nextOccurrence = getNextOccurrenceDate(carouselActivity.activity_type);
-          return {
-            id: `carousel-${carouselActivity.activity_type}-${carouselActivity.city}-${carouselActivity.activityId ?? firstUserId}`,
-            realActivityId: realActivity?.id ?? null,
-            user_id: firstUserId,
-            activity_type: carouselActivity.activity_type,
-            city: carouselActivity.city,
-            scheduled_for: nextOccurrence.toISOString(),
-            is_active: true,
-            note: dayLabel ? `This ${dayLabel}` : null,
-            creator_name: profile?.name || "Anonymous",
-            creator_avatar: profile?.avatar_url,
-            participant_count: liveCount ?? carouselActivity.userIds.length,
-            isJoined: false,
-            isCarouselJoin: true,
-          } as PlanActivity;
-        })),
+                  .maybeSingle()).data;
+            const liveCount = carouselActivity.activityId
+              ? countMap.get(carouselActivity.activityId) ?? 0
+              : carouselActivity.userIds.length;
+            const dayLabel      = getActivityDay(carouselActivity.activity_type);
+            const nextOccurrence = getNextOccurrenceDate(carouselActivity.activity_type);
+            return {
+              id: `carousel-${carouselActivity.activity_type}-${carouselActivity.city}-${carouselActivity.activityId ?? firstUserId}`,
+              realActivityId: realActivity?.id ?? null,
+              user_id: firstUserId,
+              activity_type: carouselActivity.activity_type,
+              city: carouselActivity.city,
+              scheduled_for: nextOccurrence.toISOString(),
+              is_active: true,
+              note: dayLabel ? `This ${dayLabel}` : null,
+              creator_name: profile?.name || "Anonymous",
+              creator_avatar: profile?.avatar_url,
+              participant_count: liveCount ?? carouselActivity.userIds.length,
+              isJoined: false,
+              isCarouselJoin: true,
+            } as PlanActivity;
+          }));
+        })(),
       ]);
 
       console.log("[PlansTab] myPlans →", { total: myPlans.length, real: filteredRealJoins.length, carousel: filteredCarouselJoins.length });
@@ -1441,14 +1512,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               >
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0 flex items-center justify-center">
-                    {isStandardActivity(plan.activity_type) ? (
+                    {plan.promo_video_url ? (
+                      <video src={plan.promo_video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
+                    ) : isStandardActivity(plan.activity_type) ? (
                       getActivityIcon(plan.activity_type) ? (
                         <img src={getActivityIcon(plan.activity_type)!} alt={plan.activity_type} className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-xl">{getActivityEmoji(plan.activity_type)}</span>
                       )
-                    ) : plan.promo_video_url ? (
-                      <video src={plan.promo_video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
                     ) : plan.creator_avatar ? (
                       <img src={plan.creator_avatar} alt={plan.creator_name || "Creator"} className="w-full h-full object-cover" />
                     ) : (
@@ -1577,14 +1648,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     <div className="flex items-start gap-3">
                       {/* Activity icon for standard types, creator avatar for custom plans */}
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0 flex items-center justify-center">
-                        {isStandardActivity(plan.activity_type) ? (
+                        {plan.promo_video_url ? (
+                          <video src={plan.promo_video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
+                        ) : isStandardActivity(plan.activity_type) ? (
                           getActivityIcon(plan.activity_type) ? (
                             <img src={getActivityIcon(plan.activity_type)!} alt={plan.activity_type} className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-xl">{getActivityEmoji(plan.activity_type)}</span>
                           )
-                        ) : plan.promo_video_url ? (
-                          <video src={plan.promo_video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
                         ) : plan.creator_avatar ? (
                           <img src={plan.creator_avatar} alt={plan.creator_name || "Creator"} className="w-full h-full object-cover" />
                         ) : (
