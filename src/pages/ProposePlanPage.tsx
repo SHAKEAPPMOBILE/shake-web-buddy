@@ -102,7 +102,7 @@ export default function ProposePlanPage() {
   const selectedCityRef = useRef(selectedCity);
   selectedCityRef.current = selectedCity;
 
-  const { createActivity, isLoading, remainingActivities, fetchMyActivities } = useUserActivities(city);
+  const { createActivity, isLoading, remainingActivities, fetchMyActivities, lastCreatedActivityIdRef } = useUserActivities(city);
 
   const [planText, setPlanText] = useState("");
   const [priceAmount, setPriceAmount] = useState("");
@@ -675,7 +675,12 @@ export default function ProposePlanPage() {
       return;
     }
     triggerConfettiWaterfall();
-    navigate(-1);
+    // Land on the Plans tab with the swipe feed already open on the plan the
+    // user just created (see IOSAppLayout's location.state handling), instead
+    // of just popping back to wherever they came from (often the Shake home
+    // dashboard) — they should see their own new plan on the scrollable feed
+    // and be able to swipe to others or jump straight into its chat.
+    navigate("/", { state: { activeTab: "plans", pendingNewPlanId: lastCreatedActivityIdRef.current } });
   };
 
   // Date chip data

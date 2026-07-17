@@ -69,6 +69,9 @@ interface PlansTabProps {
   onChatViewChange?: (isInChat: boolean) => void;
   pendingPaidActivityId?: string | null;
   onPendingPaidActivityHandled?: () => void;
+  /** ID of a plan the user just created — opens the swipe feed on it once loaded. */
+  pendingNewPlanId?: string | null;
+  onPendingNewPlanHandled?: () => void;
   onOpenEvents?: () => void;
   onJoinActivity?: () => void;
 }
@@ -99,7 +102,7 @@ interface MyActivePlan {
  *  from hiding a card the user is actually in. */
 const normalizeCity = (city: string): string => city.trim().toLowerCase();
 
-export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, onOpenEvents, onJoinActivity }: PlansTabProps = {}) {
+export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, pendingNewPlanId, onPendingNewPlanHandled, onOpenEvents, onJoinActivity }: PlansTabProps = {}) {
   const { t, i18n } = useTranslation();
   const { style: plansSettlingGradientStyle } = useSettlingGradient("plans");
   const { selectedLanguage } = useLanguage();
@@ -855,6 +858,21 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const cityOnly = cityPlans.filter((p) => !activities.some((a) => a.id === p.id));
     return [...activities, ...cityOnly];
   }, [activities, cityPlans]);
+
+  // Open the swipe feed on a plan the user just created (see PlansTabProps.pendingNewPlanId,
+  // set by ProposePlanPage's navigate("/", { state: { pendingNewPlanId } }) on success).
+  // Waits for it to actually show up in combinedPlansList — fetchPlans' initial load /
+  // realtime subscription is what surfaces the fresh insert — rather than assuming
+  // it's already there the instant this component mounts.
+  useEffect(() => {
+    if (!pendingNewPlanId) return;
+    const idx = combinedPlansList.findIndex((p) => p.id === pendingNewPlanId);
+    if (idx < 0) return;
+    setFeedSourceList(combinedPlansList);
+    setFeedStartIndex(idx);
+    setFeedOpen(true);
+    onPendingNewPlanHandled?.();
+  }, [pendingNewPlanId, combinedPlansList, onPendingNewPlanHandled]);
 
   const handlePlanClick = async (plan: PlanActivity) => {
     // If it's a paid plan and user hasn't joined and is not the creator, show detail dialog

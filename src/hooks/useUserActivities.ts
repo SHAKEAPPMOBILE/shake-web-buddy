@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
@@ -31,6 +31,12 @@ export function useUserActivities(city: string) {
   const [myActivities, setMyActivities] = useState<UserActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activitiesThisMonth, setActivitiesThisMonth] = useState(0);
+  // Set right after a successful createActivity() insert so callers (e.g.
+  // ProposePlanPage) can route straight to the new plan without changing
+  // createActivity's existing boolean return contract used elsewhere. A ref
+  // (not state) so it's readable synchronously right after the `await
+  // createActivity(...)` resolves, instead of lagging a render behind.
+  const lastCreatedActivityIdRef = useRef<string | null>(null);
   const [maxActivitiesLimit, setMaxActivitiesLimit] = useState(DEFAULT_REGULAR_LIMIT);
   const [hasFetched, setHasFetched] = useState(false);
 
@@ -262,6 +268,7 @@ export function useUserActivities(city: string) {
       }
     });
 
+    lastCreatedActivityIdRef.current = newActivity.id;
     await Promise.all([fetchActivities(), fetchMyActivities(), fetchMonthlyCount()]);
     setIsLoading(false);
     return true;
@@ -529,6 +536,7 @@ export function useUserActivities(city: string) {
     activitiesThisMonth,
     remainingActivities: isPremium ? Infinity : Math.max(0, maxActivitiesLimit - activitiesThisMonth),
     maxActivitiesLimit,
+    lastCreatedActivityIdRef,
     createActivity,
     updateActivity,
     deleteActivity,

@@ -58,6 +58,10 @@ export function IOSAppLayout() {
   
   // State for pending paid activity to open after verification
   const [pendingPaidActivityId, setPendingPaidActivityId] = useState<string | null>(null);
+  // Set right after creating a plan (see ProposePlanPage's navigate("/", { state })
+  // call) so the Plans tab opens the swipe feed directly on the plan the user just
+  // created, instead of landing back on whatever tab they created it from.
+  const [pendingNewPlanId, setPendingNewPlanId] = useState<string | null>(null);
   const [duplicateActivityBlock, setDuplicateActivityBlock] = useState<{
     activityType: string;
     oldCity: string;
@@ -181,6 +185,7 @@ export function IOSAppLayout() {
       activeTab?: string;
       activityId?: string;
       other_user_id?: string;
+      pendingNewPlanId?: string;
     } | null;
     if (!state) return;
 
@@ -192,6 +197,10 @@ export function IOSAppLayout() {
     }
     if (state.activeTab === "plans") {
       setActiveTab("plans");
+      shouldClear = true;
+    }
+    if (state.pendingNewPlanId) {
+      setPendingNewPlanId(state.pendingNewPlanId);
       shouldClear = true;
     }
     if (state.activeTab === "home") {
@@ -526,6 +535,8 @@ export function IOSAppLayout() {
             onChatViewChange={handleChatViewChange}
             pendingPaidActivityId={pendingPaidActivityId}
             onPendingPaidActivityHandled={() => setPendingPaidActivityId(null)}
+            pendingNewPlanId={pendingNewPlanId}
+            onPendingNewPlanHandled={() => setPendingNewPlanId(null)}
             onOpenEvents={() => openNearYou("plans")}
             onJoinActivity={handleOpenActivities}
           />
