@@ -575,6 +575,28 @@ export function PlanSwipeFeed({
      is reflected without remounting the feed. */
   const sorted = useMemo(() => sortFeedPlans(plans, myCity), [plans, myCity]);
 
+  /* Infinite loop: prepend a duplicate render of the last plan and append a
+     duplicate render of the first plan (same underlying plan object — only the
+     React key differs, so participant counts/join state/actions all stay
+     correct even while a duplicate is on screen). Reaching either duplicate
+     snaps the *real* card into view a moment later (see the scroll-settle
+     effect below), so swiping past the last plan lands on the first one and
+     vice versa instead of dead-ending. Real indices in `looped` are offset by
+     +1 because of the leading duplicate. Skipped when there's only one plan —
+     looping a single card to itself is meaningless. */
+  const looped = useMemo(() => {
+    if (sorted.length <= 1) return sorted.map((plan) => ({ key: plan.id, plan }));
+    const head = sorted[sorted.length - 1];
+    const tail = sorted[0];
+    return [
+      { key: `${head.id}__loop-head`, plan: head },
+      ...sorted.map((plan) => ({ key: plan.id, plan })),
+      { key: `${tail.id}__loop-tail`, plan: tail },
+    ];
+  }, [sorted]);
+  const isLooping = looped.length > sorted.length;
+  const realOffset = isLooping ? 1 : 0;
+
   /* Find where the tapped plan lands in the sorted array */
   const resolvedStart = (() => {
     const tappedId = plans[startIndex]?.id;
@@ -596,10 +618,11 @@ export function PlanSwipeFeed({
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+    const startTarget = resolvedStart + realOffset;
     // Use requestAnimationFrame so the DOM is fully painted before we scroll
     const id = requestAnimationFrame(() => {
-      if (resolvedStart !== 0) {
-        el.scrollTop = resolvedStart * el.clientHeight;
+      if (startTarget !== 0) {
+        el.scrollTop = startTarget * el.clientHeight;
       }
       const prev = el.scrollTop;
       el.scrollTop = prev + 1;
@@ -607,6 +630,37 @@ export function PlanSwipeFeed({
     });
     return () => cancelAnimationFrame(id);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* Wraparound: once scrolling settles on a clone card (the loop-head clone at
+     index 0, or the loop-tail clone at the very end), silently jump to the
+     matching real card at the opposite end of the list — same index arithmetic,
+     no animation, so it reads as a seamless loop instead of a visible reset. */
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !isLooping) return;
+    let settleTimer: ReturnType<typeof setTimeout>;
+    const lastIndex = looped.length - 1;
+    const handleScroll = () => {
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        const clientHeight = el.clientHeight;
+        if (!clientHeight) return;
+        const currentIndex = Math.round(el.scrollTop / clientHeight);
+        if (currentIndex === 0) {
+          // Landed on the loop-head clone (visually = last plan) — jump to the real last plan.
+          el.scrollTop = (lastIndex - 1) * clientHeight;
+        } else if (currentIndex === lastIndex) {
+          // Landed on the loop-tail clone (visually = first plan) — jump to the real first plan.
+          el.scrollTop = 1 * clientHeight;
+        }
+      }, 120); // let scroll-snap settle before checking
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", handleScroll);
+      clearTimeout(settleTimer);
+    };
+  }, [isLooping, looped.length]);
 
   const handleViewProfile = useCallback(
     (plan: FeedPlan) => {
@@ -646,9 +700,9 @@ export function PlanSwipeFeed({
           className="w-full h-full overflow-y-scroll"
           style={{ scrollSnapType: "y mandatory" }}
         >
-          {sorted.map((plan) => (
+          {looped.map(({ key, plan }) => (
             <FeedCard
-              key={plan.id}
+              key={key}
               plan={plan}
               isOwn={plan.user_id === user?.id}
               inline={inline}
