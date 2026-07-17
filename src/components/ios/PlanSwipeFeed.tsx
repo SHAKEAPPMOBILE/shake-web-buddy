@@ -556,13 +556,27 @@ export function PlanSwipeFeed({
     return idx >= 0 ? idx : 0;
   })();
 
-  /* Scroll to the starting card on mount (instant, no animation) */
+  /* Scroll to the starting card on mount (instant, no animation), then apply a
+     touch-scroll "wake up" nudge — the same WKWebView fix used elsewhere in the
+     app (useScrollNudge). Jumping scrollTop via JS on a freshly-mounted overflow
+     container can leave WKWebView's momentum-scroll engine in a state where the
+     card renders in the right place but subsequent touch/swipe gestures don't
+     register until the OS "catches up" on its own — which is exactly why opening
+     the feed on any card other than the first (e.g. a plan sorted to the bottom
+     of the list) used to make the feed feel stuck on that single card. A
+     synchronous 1px scroll-and-back right after the jump forces it to recognize
+     scrollability immediately, regardless of where we start. */
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el || resolvedStart === 0) return;
+    if (!el) return;
     // Use requestAnimationFrame so the DOM is fully painted before we scroll
     const id = requestAnimationFrame(() => {
-      el.scrollTop = resolvedStart * el.clientHeight;
+      if (resolvedStart !== 0) {
+        el.scrollTop = resolvedStart * el.clientHeight;
+      }
+      const prev = el.scrollTop;
+      el.scrollTop = prev + 1;
+      el.scrollTop = prev;
     });
     return () => cancelAnimationFrame(id);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
