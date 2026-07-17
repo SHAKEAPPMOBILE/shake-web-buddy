@@ -22,6 +22,7 @@ import { PointsDisplay } from "@/components/PointsDisplay";
 import { useTranslation } from "react-i18next";
 import {} from "@/lib/interests";
 import { InterestsAccordion } from "@/components/InterestsAccordion";
+import { useScrollNudge } from "@/hooks/useScrollNudge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,7 +41,9 @@ export default function Profile() {
   const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
-  
+  const mainScrollRef = useRef<HTMLElement>(null);
+  useScrollNudge(mainScrollRef);
+
   const [name, setName] = useState("");
   const [nationality, setNationality] = useState("");
   const [occupation, setOccupation] = useState("");
@@ -428,7 +431,10 @@ export default function Profile() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 min-h-0 px-4 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]">
+      <main
+        ref={mainScrollRef}
+        className="flex-1 min-h-0 px-4 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]"
+      >
         <div className="max-w-md mx-auto space-y-6">
           {/* Profile Header */}
           <div className="flex flex-col items-center py-6">

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow } from "date-fns";
-import { Plus, User, Calendar, Send, ChevronLeft, Play } from "lucide-react";
+import { Plus, User, Calendar, ArrowUp, ChevronLeft, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,7 @@ import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useTranslation } from "react-i18next";
 import { Capacitor } from "@capacitor/core";
+import { useScrollNudge } from "@/hooks/useScrollNudge";
 
 // Set to true to re-enable ID verification gate on the paid-plan create path.
 const ID_VERIFICATION_ENABLED = false;
@@ -146,6 +147,8 @@ export default function ProposePlanPage() {
   const cameraBoxRef = useRef<HTMLDivElement>(null);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [composerHeight, setComposerHeight] = useState(96);
+
+  useScrollNudge(scrollAreaRef);
 
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
   const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
@@ -861,7 +864,7 @@ export default function ProposePlanPage() {
                 disabled={!planText.trim() || hasProfanity}
                 className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
               >
-                <Send className="w-5 h-5" />
+                <ArrowUp className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -883,7 +886,7 @@ export default function ProposePlanPage() {
               disabled={!cityInput.trim()}
               className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
             >
-              <Send className="w-5 h-5" />
+              <ArrowUp className="w-5 h-5" />
             </button>
           </div>
         );
@@ -987,7 +990,7 @@ export default function ProposePlanPage() {
                 disabled={!selectedTime}
                 className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
               >
-                <Send className="w-5 h-5" />
+                <ArrowUp className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -1049,12 +1052,12 @@ export default function ProposePlanPage() {
                       className="flex-1 h-full min-w-0 bg-transparent px-4 text-base focus:outline-none placeholder:text-muted-foreground"
                     />
                   </div>
-                  {/* Send — matches time/date step circular button */}
+                  {/* Continue — matches time/date step circular button */}
                   <button
                     onClick={handlePriceSubmit}
                     className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                   >
-                    <Send className="w-5 h-5" />
+                    <ArrowUp className="w-5 h-5" />
                   </button>
                 </div>
               </div>

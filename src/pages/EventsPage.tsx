@@ -28,6 +28,7 @@ import { useCity } from "@/contexts/CityContext";
 import { addGroupChatAccess, hasGroupChatAccess } from "@/lib/groupChatAccess";
 import { buildEventChatNavigateState } from "@/lib/eventChatNavigation";
 import { eventChatMembershipGrantsAccess } from "@/lib/eventChatMembership";
+import { useScrollNudge } from "@/hooks/useScrollNudge";
 import { enqueuePendingEventChat } from "@/lib/pendingEventChat";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
@@ -387,6 +388,8 @@ function EventDetail({
   const [hasStoredAccess, setHasStoredAccess] = useState(false);
   const [membershipLoading, setMembershipLoading] = useState(true);
   const eventStartsAt = event.eventStartAt ?? DEFAULT_EVENT_STARTS_AT;
+  const detailScrollRef = useRef<HTMLDivElement>(null);
+  useScrollNudge(detailScrollRef);
 
   const hasPaidAccess = hasActiveMembership || hasStoredAccess;
 
@@ -671,7 +674,7 @@ function EventDetail({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-white overflow-y-auto">
+    <div ref={detailScrollRef} className="fixed inset-0 z-40 flex flex-col bg-white overflow-y-auto">
       {/* Hero */}
       <div className="relative w-full h-48 sm:h-56 bg-black overflow-hidden shrink-0">
         {event.imageUrl ? (
@@ -792,6 +795,8 @@ export default function EventsPage({
   const joiningEventChatRef = useRef(false);
   const paymentReturnHandledRef = useRef<string | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  useScrollNudge(listScrollRef);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [cat, setCat] = useState("Music");
@@ -1184,7 +1189,7 @@ export default function EventsPage({
         </div>
       </div>
 
-      <div className="flex-1 px-4 pt-4 pb-8 flex flex-col gap-5 overflow-y-auto" style={{ background: 'white', backgroundColor: 'white' }}>
+      <div ref={listScrollRef} className="flex-1 px-4 pt-4 pb-8 flex flex-col gap-5 overflow-y-auto" style={{ background: 'white', backgroundColor: 'white' }}>
         {/* Fixed-height scrollable events container — shows ~4 rows, search results replace list when active */}
         <div
           style={{ overflowY: "auto", scrollbarWidth: "thin", height: 280, minHeight: 280, flexShrink: 0 }}

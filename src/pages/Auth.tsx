@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import logoShake from "@/assets/shake-logo-new.png";
-import { User, Instagram, Linkedin, Twitter, Lock, Eye, EyeOff, Mail } from "lucide-react";
+import { User, Lock, Eye, EyeOff, Mail } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { BirthdayPicker } from "@/components/BirthdayPicker";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
@@ -33,8 +33,8 @@ import { hasValidAvatarUrl } from "@/lib/avatar";
 import { FaceCaptureModal } from "@/components/FaceCaptureModal";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
-import {} from "@/lib/interests";
-import { InterestsAccordion } from "@/components/InterestsAccordion";
+import { OnboardingInterestsStep } from "@/components/auth/OnboardingInterestsStep";
+import { OnboardingSocialStep } from "@/components/auth/OnboardingSocialStep";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
 const FACE_ID_FEATURE_ENABLED = false;
@@ -718,8 +718,8 @@ export default function Auth() {
     );
   }
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveProfile = async (e?: React.FormEvent) => {
+    e?.preventDefault();
 
     if (!selectedAvatar) {
       toast.error("Please choose a profile picture or avatar");
@@ -1540,7 +1540,7 @@ export default function Auth() {
               const err = validateOccupation(occupation);
               setOccupationError(err);
               if (err) return;
-              setStep('interests');
+              setStep('avatar');
             }} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="occupation">Occupation</Label>
@@ -1580,109 +1580,6 @@ export default function Auth() {
                   variant="outline"
                   className="flex-1"
                   size="lg"
-                  onClick={() => setStep('interests')}
-                >
-                  Skip
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 bg-shake-green text-background hover:bg-shake-green/90"
-                  size="lg"
-                >
-                  Continue
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {/* Interests Step */}
-          {step === 'interests' && (
-            <div className="space-y-6">
-              <div className="space-y-1 text-center">
-                <h2 className="text-xl font-bold">What are you into?</h2>
-                <p className="text-sm text-muted-foreground">Pick your interests</p>
-              </div>
-
-              <InterestsAccordion
-                selected={selectedInterests}
-                onToggle={(interest) => {
-                  if (selectedInterests.includes(interest)) {
-                    setSelectedInterests((prev) => prev.filter((i) => i !== interest));
-                  } else {
-                    setSelectedInterests((prev) => [...prev, interest]);
-                  }
-                }}
-                shaking={interestsShaking}
-                onShakingEnd={() => setInterestsShaking(false)}
-              />
-
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  size="lg"
-                  onClick={() => setStep('social')}
-                >
-                  Skip
-                </Button>
-                <Button
-                  type="button"
-                  className="flex-1 bg-shake-green text-background hover:bg-shake-green/90"
-                  size="lg"
-                  onClick={() => setStep('social')}
-                >
-                  Continue
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Social Links Form */}
-          {step === 'social' && (
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              setStep('avatar');
-            }} className="space-y-6">
-              <div className="space-y-4">
-                <div className="relative">
-                  <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="url"
-                    placeholder="Instagram URL"
-                    value={instagramUrl}
-                    onChange={(e) => setInstagramUrl(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="relative">
-                  <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="url"
-                    placeholder="LinkedIn URL"
-                    value={linkedinUrl}
-                    onChange={(e) => setLinkedinUrl(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="relative">
-                  <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="url"
-                    placeholder="X (Twitter) URL"
-                    value={twitterUrl}
-                    onChange={(e) => setTwitterUrl(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  size="lg"
                   onClick={() => setStep('avatar')}
                 >
                   Skip
@@ -1698,9 +1595,18 @@ export default function Auth() {
             </form>
           )}
 
-          {/* Avatar Picker Form */}
+          {/* Avatar Picker Form — profile picture comes before interests/socials,
+              so by the time those chat-style steps show, the person already has
+              a face on their profile. */}
           {step === 'avatar' && (
-            <form onSubmit={handleSaveProfile} className="space-y-6">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!selectedAvatar) {
+                toast.error("Please choose a profile picture or avatar");
+                return;
+              }
+              setStep('interests');
+            }} className="space-y-6">
               <div className="space-y-2">
                 <input
                   ref={fileInputRef}
@@ -1730,11 +1636,43 @@ export default function Auth() {
                 type="submit"
                 className="w-full bg-shake-green text-background hover:bg-shake-green/90"
                 size="lg"
-                disabled={isLoading}
               >
-                {isLoading ? "Saving..." : "Complete Setup"}
+                Continue
               </Button>
             </form>
+          )}
+
+          {/* Interests Step — chat-flow style, same visual language as the
+              "What's the plan?" plan-creation composer. */}
+          {step === 'interests' && (
+            <OnboardingInterestsStep
+              selected={selectedInterests}
+              onToggle={(interest) => {
+                if (selectedInterests.includes(interest)) {
+                  setSelectedInterests((prev) => prev.filter((i) => i !== interest));
+                } else {
+                  setSelectedInterests((prev) => [...prev, interest]);
+                }
+              }}
+              onContinue={() => setStep('social')}
+              onSkip={() => setStep('social')}
+            />
+          )}
+
+          {/* Social Links Step — chat-flow style; last step, finishes the
+              signup by saving the whole profile. */}
+          {step === 'social' && (
+            <OnboardingSocialStep
+              instagramUrl={instagramUrl}
+              linkedinUrl={linkedinUrl}
+              twitterUrl={twitterUrl}
+              onChangeInstagram={setInstagramUrl}
+              onChangeLinkedin={setLinkedinUrl}
+              onChangeTwitter={setTwitterUrl}
+              onDone={() => handleSaveProfile()}
+              onSkip={() => handleSaveProfile()}
+              isSaving={isLoading}
+            />
           )}
         </div>
       </div>

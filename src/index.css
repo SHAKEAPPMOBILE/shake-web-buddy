@@ -339,3 +339,18 @@ html.capacitor-native body {
   width: 100%;
   height: 100%;
 }
+
+/* Every scrollable content pane inside the app needs WKWebView's native
+   momentum-scroll compositor path enabled explicitly. Without this, a
+   freshly-mounted overflow-y-auto container (e.g. a page reached via
+   client-side navigation, not a fresh page load) can take several seconds
+   before iOS recognizes it as scrollable — touches land but nothing moves
+   until the OS "catches up". This is the fix for that freeze, applied
+   globally so every page benefits automatically, not just the ones we've
+   touched by hand. */
+.overflow-y-auto,
+.overflow-y-scroll,
+.overflow-auto,
+.overflow-scroll {
+  -webkit-overflow-scrolling: touch;
+}

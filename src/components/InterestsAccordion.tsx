@@ -33,8 +33,12 @@ export function InterestsAccordion({
       className={cn("space-y-3", shaking && "animate-shake-x")}
       onAnimationEnd={onShakingEnd}
     >
-      {/* Category pills */}
-      <div className="flex flex-wrap gap-2">
+      {/* Category pills — relative + z-30 so they always sit above the
+          tap-outside overlay below (which is position:fixed with z-10 and
+          would otherwise paint on top of these non-positioned buttons,
+          intercepting the first click when switching categories and
+          requiring a second click to actually open the new one). */}
+      <div className="relative z-30 flex flex-wrap gap-2">
         {INTEREST_CATEGORIES.map((category) => {
           const isActive = category.name === activeCategory;
           const countInCategory = category.interests.filter((i) => selected.includes(i)).length;

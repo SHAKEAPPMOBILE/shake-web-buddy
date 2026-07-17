@@ -1,12 +1,16 @@
 import { useNavigate } from "react-router-dom";
+import { useRef } from "react";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
+import { useScrollNudge } from "@/hooks/useScrollNudge";
 
 export default function TermsOfService() {
   const navigate = useNavigate();
+  const scrollRef = useRef<HTMLElement>(null);
+  useScrollNudge(scrollRef);
 
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden safe-area-top safe-area-bottom">
-      <main className="flex-1 min-h-0 overflow-y-auto pt-16 pb-[calc(env(safe-area-inset-bottom,0px)+4rem)]">
+      <main ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto pt-16 pb-[calc(env(safe-area-inset-bottom,0px)+4rem)]">
         <div className="container mx-auto px-4 max-w-3xl">
           <MinimalBackButton
             onClick={() => navigate(-1)}

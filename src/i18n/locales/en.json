@@ -373,7 +373,18 @@
     "googleBtn": "Google",
     "appleBtn": "Apple",
     "createAccount": "Create Account",
-    "loginWithEmail": "Login with email"
+    "loginWithEmail": "Login with email",
+    "interestsQuestion": "What are your interests as a human? ✨",
+    "interestsSubtext": "Tap a topic to see options",
+    "interestsPlaceholder": "Tap a topic above ↑",
+    "socialsQuestion": "What is your socials? 📱",
+    "socialsSubtext": "Optional — helps others get to know you",
+    "pasteInstagram": "Paste your Instagram link here",
+    "pasteLinkedIn": "Paste your LinkedIn link here",
+    "pasteX": "Paste your X link here",
+    "socialsPlaceholder": "Tap an icon above ↑",
+    "skipForNow": "Skip for now",
+    "done": "Done"
   },
   "languageSelector": {
     "swipeToSelect": "Swipe to select your language",

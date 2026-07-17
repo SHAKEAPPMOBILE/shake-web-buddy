@@ -8,7 +8,10 @@ export interface InterestCategory {
 export const INTEREST_CATEGORIES: InterestCategory[] = [
   {
     name: "Music",
-    interests: ["Music", "Rock", "Hip-Hop", "Electronic", "Jazz", "Latin", "Pop", "Indie", "Classical", "Live Music"],
+    // Note: the category's own name ("Music") is intentionally NOT repeated
+    // here as a sub-option — it's the mother label, shown above this list,
+    // not a selectable interest in its own right.
+    interests: ["Rock", "Hip-Hop", "Electronic", "Jazz", "Latin", "Pop", "Indie", "Classical", "Live Music"],
   },
   {
     name: "Activities",
@@ -28,7 +31,8 @@ export const INTEREST_CATEGORIES: InterestCategory[] = [
   },
   {
     name: "Nightlife",
-    interests: ["Nightlife", "Parties", "Bars", "Beach", "Adventure"],
+    // Same as Music above — "Nightlife" itself is the mother label, not a sub-option.
+    interests: ["Parties", "Bars", "Beach", "Adventure"],
   },
   {
     name: "Health & Wellness",
