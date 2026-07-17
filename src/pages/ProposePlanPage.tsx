@@ -540,15 +540,47 @@ export default function ProposePlanPage() {
     setVideoError(null);
     setTrimError(null);
     const url = URL.createObjectURL(file);
-    // Probe duration with a throwaway video element before deciding whether
-    // this needs trimming — MAX_CLIP_SECONDS or under goes straight to review.
+
+    // Probe duration with a throwaway video element before deciding whether this
+    // needs trimming — MAX_CLIP_SECONDS or under goes straight to review.
+    // Appended off-screen (not just detached) and explicitly .load()ed: some
+    // browsers only reliably fire loadedmetadata for elements that are actually
+    // in the document and have had load() called, and silently never fire
+    // loadedmetadata OR error for certain codecs (e.g. HEVC .mov from iPhones on
+    // some desktop Chrome builds) — which previously left the user stuck staring
+    // at the live camera view with no feedback at all.
     const probe = document.createElement("video");
     probe.preload = "metadata";
-    probe.src = url;
-    probe.onloadedmetadata = () => {
-      const duration = probe.duration;
+    probe.muted = true;
+    probe.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;";
+    document.body.appendChild(probe);
+
+    let settled = false;
+    const cleanupProbe = () => {
+      probe.onloadedmetadata = null;
+      probe.onerror = null;
+      probe.onseeked = null;
+      probe.remove();
+    };
+    const safetyTimeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanupProbe();
+      URL.revokeObjectURL(url);
+      setVideoError("Couldn't read that video (unsupported format). Please try another file.");
+    }, 8000);
+
+    const proceedWithDuration = (duration: number) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(safetyTimeout);
+      cleanupProbe();
       stopAllTracks();
-      if (!isFinite(duration) || duration <= MAX_CLIP_SECONDS + 0.25) {
+      if (!isFinite(duration) || duration <= 0) {
+        setVideoError("Couldn't read that video's length. Please try another file.");
+        return;
+      }
+      if (duration <= MAX_CLIP_SECONDS + 0.25) {
         setRecordedBlob(file);
         setRecordedObjectUrl(url);
         setCameraMode("playback");
@@ -559,9 +591,29 @@ export default function ProposePlanPage() {
         setCameraMode("trim");
       }
     };
+
+    probe.onloadedmetadata = () => {
+      // Some encodings (notably MediaRecorder-produced webm, occasionally other
+      // containers) report duration as Infinity until a seek forces the browser
+      // to resolve the real length.
+      if (isFinite(probe.duration)) {
+        proceedWithDuration(probe.duration);
+        return;
+      }
+      probe.onseeked = () => proceedWithDuration(isFinite(probe.duration) ? probe.duration : probe.currentTime);
+      probe.currentTime = 1e9;
+    };
     probe.onerror = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(safetyTimeout);
+      cleanupProbe();
+      URL.revokeObjectURL(url);
       setVideoError("Couldn't read that video. Please try another file.");
     };
+
+    probe.src = url;
+    probe.load();
   };
 
   const handleCancelTrim = () => {
