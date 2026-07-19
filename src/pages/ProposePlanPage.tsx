@@ -51,7 +51,7 @@ type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 const MAX_CLIP_SECONDS = 10;
 
 
-function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subtext }: { message: string; showAvatar?: boolean; avatarColor?: string; subtext?: string }) {
+function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subtext, handwritten = false }: { message: string; showAvatar?: boolean; avatarColor?: string; subtext?: string; handwritten?: boolean }) {
   if (!message) return null;
   return (
     <div className="flex flex-row items-end gap-3 mb-8">
@@ -64,7 +64,9 @@ function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subte
         </div>
       )}
       <div className="bg-muted rounded-2xl rounded-tl-none px-5 py-4 flex-1">
-        <p className="text-xl font-semibold text-foreground leading-snug">{message}</p>
+        <p className={cn("text-xl leading-snug text-foreground", handwritten ? "font-handwritten text-2xl" : "font-semibold")}>
+          {message}
+        </p>
         {subtext && <p className="text-sm text-muted-foreground mt-1">{subtext}</p>}
       </div>
     </div>
@@ -1552,6 +1554,7 @@ export default function ProposePlanPage() {
                     showAvatar={true}
                     avatarColor={STEP_AVATAR_COLORS[currentStepName] ?? "#93c5fd"}
                     subtext={currentStepName === "name" ? t("createPlan.soOthersCanJoin") : undefined}
+                    handwritten={currentStepName === "video"}
                   />
                 </div>
               )}
