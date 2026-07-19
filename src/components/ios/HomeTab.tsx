@@ -309,6 +309,15 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     const activityToSelect = tappedActivityRef.current ?? CAROUSEL_ITEMS[currentActivityIndex];
 
     if (activityToSelect) {
+      // "Propose a plan" isn't a real activity to confirm/join — skip the
+      // Yes!/Hum! confirmation card entirely and go straight to the creation
+      // flow, same as tapping the "+" tab bar button.
+      if (activityToSelect.isProposePlan) {
+        onCloseActivities?.();
+        navigate("/propose-plan");
+        tappedActivityRef.current = null;
+        return;
+      }
       setShowActivityDetails(true);
     }
 

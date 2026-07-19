@@ -1199,7 +1199,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // Overflow grouping (findOrCreateOpenGroup) is only for auto-generated capacity-capped
     // activities. Routing a user-created plan through it can redirect the join to a different
     // activity_id, causing an RLS mismatch when the user later tries to send a message.
-    if (!plan.is_auto_generated) {
+    // Discovery-carousel cards (isCarouselJoin) are ALSO synthetic — their id is a
+    // fake string like "carousel-drinks-Doha-xyz", not a real activity_id UUID —
+    // so they must be excluded here too, or the insert below fails silently with
+    // an invalid-UUID error and the join button appears to do nothing.
+    if (!plan.is_auto_generated && !plan.isCarouselJoin) {
       // For user-created plans, check membership scoped to THIS plan.id only.
       // A type-scoped check would wrongly block joining a second different plan
       // of the same activity_type in the same city.
@@ -1716,14 +1720,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               </SwipeableCard>
             ))}
 
-            {/* City discovery plans — other users' plans in selectedCity */}
+            {/* City discovery plans — other users' plans in selectedCity.
+                No section header here anymore: it used to repeat "Todas las
+                ciudades", which the toggle above already says. */}
             {cityPlans.length > 0 && (
               <>
-                {showAllCities && activities.length > 0 && (
-                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-2 pb-0.5">
-                    🌍 {t('plans.liveFeedAllCities')}
-                  </div>
-                )}
                 {cityPlans.filter(p => !activities.some(a => a.id === p.id)).map((plan) => (
                   <SwipeableCard
                     key={plan.id}

@@ -46,6 +46,7 @@ export interface FeedPlan {
   isJoined?: boolean;
   price_amount?: string | null;
   is_auto_generated?: boolean | null;
+  isCarouselJoin?: boolean;
 }
 
 interface PlanSwipeFeedProps {
@@ -493,10 +494,18 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
 
           <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>
             <p className="font-bold text-white text-base leading-tight truncate">
-              {plan.note || t(
-                `activities.${ACTIVITY_TRANSLATION_KEYS[plan.activity_type] ?? ""}`,
-                getActivityLabel(plan.activity_type)
-              )}
+              {/* Discovery-carousel entries (other cities' open groups) store a day
+                  hint like "This Saturday" in `note` — never a real title — so
+                  always show the activity type label for those. Same gate the
+                  Plans list already uses (isCarouselJoin), not is_auto_generated:
+                  a user's OWN joined auto-generated slot has no note at all, but a
+                  discovery-carousel card's note is a day hint, not a title. */}
+              {!plan.isCarouselJoin && plan.note
+                ? plan.note
+                : t(
+                    `activities.${ACTIVITY_TRANSLATION_KEYS[plan.activity_type] ?? ""}`,
+                    getActivityLabel(plan.activity_type)
+                  )}
             </p>
             {!plan.is_auto_generated && plan.creator_name && (
               <p className="text-white/80 text-sm mt-0.5 truncate">
