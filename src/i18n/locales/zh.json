@@ -268,6 +268,13 @@
     "settings": "设置",
     "name": "姓名",
     "occupation": "职业",
+    "gender": "性别",
+    "gender_woman": "女性",
+    "gender_man": "男性",
+    "gender_other": "其他",
+    "genderSaveFailed": "保存失败,请重试。",
+    "genderInfoMissing": "添加你的性别",
+    "genderInfoMissingDesc": "这样“仅限女性”的计划才能对你生效——无论是创建还是加入。",
     "nationality": "国籍",
     "birthday": "生日",
     "phone": "电话",
@@ -609,7 +616,10 @@
     "freeOption": "免费",
     "pricedOption": "付费",
     "addPlan": "发布计划",
-    "uploadVideo": "上传"
+    "uploadVideo": "上传",
+    "botAudience": "这个计划是给谁的？💃",
+    "everyone": "所有人",
+    "womenOnly": "仅限女性"
   },
   "userProfile": {
     "title": "用户资料",

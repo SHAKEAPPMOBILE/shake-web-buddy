@@ -268,6 +268,13 @@
     "settings": "設定",
     "name": "名前",
     "occupation": "職業",
+    "gender": "性別",
+    "gender_woman": "女性",
+    "gender_man": "男性",
+    "gender_other": "その他",
+    "genderSaveFailed": "保存できませんでした。もう一度お試しください。",
+    "genderInfoMissing": "性別を追加してください",
+    "genderInfoMissingDesc": "女性限定プランを作成・参加できるようにするためです。",
     "nationality": "国籍",
     "birthday": "誕生日",
     "phone": "電話番号",
@@ -609,7 +616,10 @@
     "freeOption": "無料",
     "pricedOption": "有料",
     "addPlan": "プランを追加",
-    "uploadVideo": "アップロード"
+    "uploadVideo": "アップロード",
+    "botAudience": "このプランは誰のため？💃",
+    "everyone": "誰でも",
+    "womenOnly": "女性限定"
   },
   "userProfile": {
     "title": "ユーザープロフィール",

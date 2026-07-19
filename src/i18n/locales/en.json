@@ -268,6 +268,13 @@
     "settings": "Settings",
     "name": "Name",
     "occupation": "Occupation",
+    "gender": "Gender",
+    "gender_woman": "Woman",
+    "gender_man": "Man",
+    "gender_other": "Other",
+    "genderSaveFailed": "Couldn't save — please try again.",
+    "genderInfoMissing": "Add your gender",
+    "genderInfoMissingDesc": "So women-only plans can work for you — both creating them and joining them.",
     "nationality": "Nationality",
     "birthday": "Birthday",
     "phone": "Phone",
@@ -609,7 +616,10 @@
     "freeOption": "Free",
     "pricedOption": "Priced",
     "addPlan": "ADD PLAN",
-    "uploadVideo": "Upload"
+    "uploadVideo": "Upload",
+    "botAudience": "Who's this plan for? 💃",
+    "everyone": "Everyone",
+    "womenOnly": "Women only"
   },
   "userProfile": {
     "title": "User Profile",

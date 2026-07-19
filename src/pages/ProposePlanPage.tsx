@@ -45,7 +45,7 @@ const CURRENCIES = [
 
 const MAX_CHARACTERS = 50;
 
-type StepName = "name" | "city" | "date" | "time" | "price" | "video" | "preview";
+type StepName = "name" | "city" | "date" | "time" | "price" | "video" | "audience" | "preview";
 type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
 const MAX_CLIP_SECONDS = 10;
@@ -82,6 +82,7 @@ export default function ProposePlanPage() {
     time: t("createPlan.botTime"),
     price: t("createPlan.botPrice"),
     video: t("createPlan.botVideo"),
+    audience: t("createPlan.botAudience"),
     preview: "",
   }), [t]);
 
@@ -92,6 +93,7 @@ export default function ProposePlanPage() {
     time:  "#fed7aa", // orange-200
     price: "#e9d5ff", // purple-200
     video: "#93c5fd", // blue-300
+    audience: "#fbcfe8", // pink-200
   };
 
   const { user, isPremium } = useAuth();
@@ -110,6 +112,7 @@ export default function ProposePlanPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()));
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [audience, setAudience] = useState<"everyone" | "women_only">("everyone");
   const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
   const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showIDVerification, setShowIDVerification] = useState(false);
@@ -208,11 +211,14 @@ export default function ProposePlanPage() {
 
   const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
 
-  // Ordered steps — insert "city" only when context provides no city
+  // Ordered steps — insert "city" only when context provides no city.
+  // "audience" (who's this plan for) is asked of every creator regardless of
+  // their own gender — a man can create a women-only plan just as easily as
+  // a woman can, the question isn't gated on who's asking.
   const steps: StepName[] = useMemo(() => {
     const s: StepName[] = ["video", "name"];
     if (!city) s.push("city");
-    s.push("date", "time", "price", "preview");
+    s.push("date", "time", "price", "audience", "preview");
     return s;
   }, [city]);
 
@@ -361,6 +367,7 @@ export default function ProposePlanPage() {
           ? `${selectedCurrencySymbol}${priceAmount} ${priceCurrency}`
           : t("createPlan.free");
       case "video": return promoVideoUrl ? t("createPlan.videoAdded") : t("createPlan.skipped");
+      case "audience": return audience === "women_only" ? t("createPlan.womenOnly") : t("createPlan.everyone");
       default: return "";
     }
   };
@@ -667,7 +674,8 @@ export default function ProposePlanPage() {
       freshCity,
       formattedPrice,
       endOfSelectedDay,
-      promoVideoUrl || undefined
+      promoVideoUrl || undefined,
+      audience
     );
 
     if (!success) {
@@ -1189,6 +1197,26 @@ export default function ProposePlanPage() {
         // Camera UI is rendered inline in the scrollable area via renderCameraCapture()
         return null;
 
+      case "audience":
+        return (
+          <div className="flex gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => { setAudience("everyone"); advanceStep(); }}
+              className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
+            >
+              {t("createPlan.everyone")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAudience("women_only"); advanceStep(); }}
+              className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
+            >
+              {t("createPlan.womenOnly")}
+            </button>
+          </div>
+        );
+
       case "preview":
         return (
           <div>
@@ -1448,9 +1476,6 @@ export default function ProposePlanPage() {
               {currentStep > 0 && currentStepName !== "preview" && (
                 <div className="space-y-4 mb-6">
                   {steps.slice(0, currentStep).map((step, i) => {
-                    // Suppress video thumbnail on preview page — full-size video already shows there
-                    if (step === "video" && currentStepName === "preview") return null;
-
                     const stepsBack = currentStep - i; // 1 = most recent, higher = older
                     // Crescendo: most recent is largest and most opaque; older = smaller + more faded.
                     // Floor at opacity-60 so even the oldest answer stays clearly legible.

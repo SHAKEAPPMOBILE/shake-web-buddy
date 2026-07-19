@@ -108,6 +108,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [blockedUsers, setBlockedUsers] = useState<{ user_id: string; name: string; avatar_url: string | null }[]>([]);
   const [isLoadingParanormal, setIsLoadingParanormal] = useState(false);
   const [faceAuthEnabled, setFaceAuthEnabled] = useState(false);
+  const [gender, setGender] = useState<string | null>(null);
   const [showFaceCapture, setShowFaceCapture] = useState(false);
   const [isUpdatingFaceAuth, setIsUpdatingFaceAuth] = useState(false);
   const [showRemoveFaceConfirm, setShowRemoveFaceConfirm] = useState(false);
@@ -262,7 +263,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     const [publicProfile, privateProfile] = await Promise.all([
       supabase
         .from("profiles")
-        .select("avatar_url, name, face_auth_enabled, payout_paypal, payout_venmo, payout_cashapp")
+        .select("avatar_url, name, face_auth_enabled, payout_paypal, payout_venmo, payout_cashapp, gender")
         .eq("user_id", user.id)
         .maybeSingle(),
       supabase
@@ -275,6 +276,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setAvatarUrl(publicProfile.data.avatar_url);
       setUserName(publicProfile.data.name);
       setFaceAuthEnabled(Boolean(publicProfile.data.face_auth_enabled));
+      setGender((publicProfile.data as any).gender ?? null);
       const pp = publicProfile.data.payout_paypal ?? "";
       setSavedPaypal(pp); setEditingPaypal(!pp);
       const vm = publicProfile.data.payout_venmo ?? "";
@@ -433,6 +435,28 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             <p className="text-sm font-semibold text-amber-800">{t('profile.payoutInfoMissing')}</p>
             <p className="text-xs text-amber-700 mt-0.5">
               {t('profile.payoutInfoMissingDesc')}
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        </button>
+      )}
+
+      {/* ── Gender warning banner ────────────────────────────────────────────
+           Shows when gender hasn't been set yet. Needed so "women only" plan
+           filters (creating them, and being let into ones other women made)
+           actually work for this person. Tapping jumps straight to the gender
+           picker inside Edit Profile. */}
+      {gender === null && (
+        <button
+          type="button"
+          onClick={() => navigate("/profile", { state: { focusGender: true } })}
+          className="w-full flex items-start gap-3 px-4 py-3 bg-amber-50 border-b border-amber-200 text-left"
+        >
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800">{t('profile.genderInfoMissing')}</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              {t('profile.genderInfoMissingDesc')}
             </p>
           </div>
           <ChevronRight className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />

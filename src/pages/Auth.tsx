@@ -151,6 +151,7 @@ export default function Auth() {
     | "forgotPassword"
     | "resetPassword"
     | "name"
+    | "gender"
     | "nationality"
     | "occupation"
     | "interests"
@@ -164,6 +165,7 @@ export default function Auth() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [name, setName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState<string>("");
   const [nationality, setNationality] = useState("");
   const [nationalityInteracted, setNationalityInteracted] = useState(false);
   const [nationalityError, setNationalityError] = useState<string | null>(null);
@@ -749,7 +751,7 @@ export default function Auth() {
         await Promise.all([
           supabase
             .from("profiles")
-            .select("name, avatar_url, nationality, occupation, interests")
+            .select("name, avatar_url, gender, nationality, occupation, interests")
             .eq("user_id", currentUser.id)
             .maybeSingle(),
           supabase
@@ -827,6 +829,7 @@ export default function Auth() {
           user_id: currentUser.id,
           name: resolvedName.trim(),
           avatar_url: avatarUrl,
+          gender: gender || existingProfile?.gender || null,
           nationality: nationality || existingProfile?.nationality || null,
           occupation: occupation || existingProfile?.occupation || null,
           interests: selectedInterests.length > 0 ? selectedInterests : (existingProfile?.interests ?? null),
@@ -1456,7 +1459,7 @@ export default function Auth() {
                 toast.error("You must be 18 or older to use Shake");
                 return;
               }
-              setStep('nationality');
+              setStep('gender');
             }} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
@@ -1489,6 +1492,57 @@ export default function Auth() {
                 type="submit"
                 className="w-full bg-shake-green text-background hover:bg-shake-green/90"
                 size="lg"
+              >
+                Continue
+              </Button>
+            </form>
+          )}
+
+          {/* Gender Step — used later to unlock the "women only" plan option
+              when creating a plan, and to gate joining women-only plans. */}
+          {step === 'gender' && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!gender) {
+                toast.error("Please select an option");
+                return;
+              }
+              setStep('nationality');
+            }} className="space-y-6">
+              <div className="space-y-2">
+                <Label>
+                  How do you identify? <span className="text-destructive">*</span>
+                </Label>
+                <div className="flex flex-col gap-3">
+                  {([
+                    { value: "woman", label: "Woman" },
+                    { value: "man", label: "Man" },
+                    { value: "other", label: "Other" },
+                  ] as const).map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setGender(option.value)}
+                      className={`w-full py-3.5 rounded-xl text-base font-medium border transition-all ${
+                        gender === option.value
+                          ? "bg-shake-green text-background border-shake-green"
+                          : "bg-muted/60 text-foreground border-border hover:border-shake-green/50"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This lets women create plans just for women, and keeps that safe.
+                </p>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-shake-green text-background hover:bg-shake-green/90"
+                size="lg"
+                disabled={!gender}
               >
                 Continue
               </Button>

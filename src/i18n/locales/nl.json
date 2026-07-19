@@ -268,6 +268,13 @@
     "settings": "Instellingen",
     "name": "Naam",
     "occupation": "Beroep",
+    "gender": "Geslacht",
+    "gender_woman": "Vrouw",
+    "gender_man": "Man",
+    "gender_other": "Anders",
+    "genderSaveFailed": "Opslaan mislukt. Probeer het opnieuw.",
+    "genderInfoMissing": "Voeg je geslacht toe",
+    "genderInfoMissingDesc": "Zodat alleen-vrouwen-plannen voor jou werken — zowel bij het maken als deelnemen.",
     "nationality": "Nationaliteit",
     "birthday": "Verjaardag",
     "phone": "Telefoon",
@@ -609,7 +616,10 @@
     "freeOption": "Gratis",
     "pricedOption": "Betaald",
     "addPlan": "PLAN TOEVOEGEN",
-    "uploadVideo": "Uploaden"
+    "uploadVideo": "Uploaden",
+    "botAudience": "Voor wie is dit plan? 💃",
+    "everyone": "Iedereen",
+    "womenOnly": "Alleen vrouwen"
   },
   "userProfile": {
     "title": "Gebruikersprofiel",

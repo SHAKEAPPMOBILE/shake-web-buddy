@@ -39,4 +39,7 @@ marketingsite/
 
 # Supabase CLI local cache (version pins); regenerated locally
 supabase/.temp/
-.claude/worktrees/
+.claude/
+
+# Stray Vite config timestamp files left behind if a dev/build process is killed mid-run
+vite.config.ts.timestamp-*.mjs

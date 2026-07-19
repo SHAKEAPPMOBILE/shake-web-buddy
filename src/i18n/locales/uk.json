@@ -268,6 +268,13 @@
     "settings": "Налаштування",
     "name": "Ім'я",
     "occupation": "Професія",
+    "gender": "Стать",
+    "gender_woman": "Жінка",
+    "gender_man": "Чоловік",
+    "gender_other": "Інше",
+    "genderSaveFailed": "Не вдалося зберегти. Спробуйте ще раз.",
+    "genderInfoMissing": "Додайте свою стать",
+    "genderInfoMissingDesc": "Щоб плани лише для жінок працювали для вас — і при створенні, і при приєднанні.",
     "nationality": "Національність",
     "birthday": "День народження",
     "phone": "Телефон",
@@ -609,7 +616,10 @@
     "freeOption": "Безкоштовно",
     "pricedOption": "Платно",
     "addPlan": "ДОДАТИ ПЛАН",
-    "uploadVideo": "Завантажити"
+    "uploadVideo": "Завантажити",
+    "botAudience": "Для кого цей план? 💃",
+    "everyone": "Усі",
+    "womenOnly": "Тільки жінки"
   },
   "userProfile": {
     "title": "Профіль користувача",

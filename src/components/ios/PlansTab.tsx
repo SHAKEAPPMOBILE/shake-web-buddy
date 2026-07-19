@@ -21,6 +21,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { findOrCreateOpenGroup, MAX_GROUP_CAPACITY } from "@/lib/activityGroups";
+import { checkWomenOnlyGate } from "@/lib/planAudience";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
@@ -63,6 +64,7 @@ interface PlanActivity {
   isCarouselJoin?: boolean;
   realActivityId?: string | null;
   is_auto_generated?: boolean | null;
+  audience?: string | null;
 }
 
 interface PlansTabProps {
@@ -95,6 +97,7 @@ interface MyActivePlan {
   is_auto_generated: boolean | null;
   created_at: string | null;
   is_carousel: boolean;
+  audience: string | null;
 }
 
 /** Normalise a city string for comparison: trim whitespace and lower-case.
@@ -349,6 +352,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         price_amount: p.price_amount,
         group_number: p.group_number,
         is_auto_generated: p.is_auto_generated,
+        audience: p.audience,
         created_at: p.created_at ?? undefined,
         creator_name: "...",
         participant_count: 0,
@@ -446,6 +450,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               promo_video_url: videoMap.get(p.plan_id!) ?? null,
               group_number: p.group_number,
               is_auto_generated: p.is_auto_generated,
+              audience: p.audience,
               created_at: p.created_at ?? undefined,
               creator_name: profile?.name || "Anonymous",
               creator_avatar: profile?.avatar_url ?? undefined,
@@ -1042,6 +1047,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       return;
     }
 
+    if (!plan.isJoined && plan.user_id !== user.id && !(await checkWomenOnlyGate(plan.audience, user.id))) {
+      return;
+    }
+
     // Safety guard: never free-insert a paid plan.
     if (getPriceValue(plan.price_amount) > 0 && !plan.isJoined && plan.user_id !== user.id) {
       toast.error(t('plans.requiresPayment'));
@@ -1116,7 +1125,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     if (error) {
       console.error("[JOIN:handleDirectCityJoin] insert failed", { code: error.code, message: error.message, details: error.details, hint: (error as any).hint });
-      toast.error(`Failed to join: ${error.message}`);
+      if (error.message?.includes("WOMEN_ONLY_PLAN")) {
+        toast.error("Hold on Tiger, this plan is only for women");
+      } else {
+        toast.error(`Failed to join: ${error.message}`);
+      }
       return;
     }
 
@@ -1160,6 +1173,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
    */
   const handleFeedJoin = async (plan: PlanActivity): Promise<{ success: boolean }> => {
     if (!user) return { success: false };
+
+    if (!plan.isJoined && plan.user_id !== user.id && !(await checkWomenOnlyGate(plan.audience, user.id))) {
+      return { success: false };
+    }
 
     // Safety guard: never free-insert a paid plan.
     // The feed button should already call onPayForPlan for paid plans, but if
@@ -1206,7 +1223,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
       if (error) {
         console.error("[JOIN:handleFeedJoin] insert failed (user-created)", { code: error.code, message: error.message, details: error.details, hint: error.hint });
-        toast.error(`Failed to join: ${error.message}`);
+        if (error.message?.includes("WOMEN_ONLY_PLAN")) {
+          toast.error("Hold on Tiger, this plan is only for women");
+        } else {
+          toast.error(`Failed to join: ${error.message}`);
+        }
         return { success: false };
       }
 
@@ -1285,7 +1306,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     if (error) {
       console.error("[JOIN:handleFeedJoin] insert failed", error);
-      toast.error(`Failed to join: ${error.message}`);
+      if (error.message?.includes("WOMEN_ONLY_PLAN")) {
+        toast.error("Hold on Tiger, this plan is only for women");
+      } else {
+        toast.error(`Failed to join: ${error.message}`);
+      }
       return { success: false };
     }
 
@@ -1326,6 +1351,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     }
     const plan = planPreview;
     setPlanPreview(null);
+
+    if (!plan.isJoined && plan.user_id !== user.id && !(await checkWomenOnlyGate(plan.audience, user.id))) {
+      return;
+    }
 
     // Safety guard: never free-insert a paid plan.
     if (getPriceValue(plan.price_amount) > 0 && !plan.isJoined && plan.user_id !== user.id) {
@@ -1401,7 +1430,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
     if (error) {
       console.error("[JOIN:handleConfirmJoinPreview] insert failed", { code: error.code, message: error.message, details: error.details, hint: (error as any).hint });
-      toast.error(`Failed to join: ${error.message}`);
+      if (error.message?.includes("WOMEN_ONLY_PLAN")) {
+        toast.error("Hold on Tiger, this plan is only for women");
+      } else {
+        toast.error(`Failed to join: ${error.message}`);
+      }
       return;
     }
 

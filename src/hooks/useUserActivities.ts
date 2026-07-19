@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
+import { checkWomenOnlyGate } from "@/lib/planAudience";
 
 export interface UserActivity {
   id: string;
@@ -18,6 +19,7 @@ export interface UserActivity {
   creator_name?: string;
   creator_avatar?: string;
   participant_count?: number;
+  audience?: string;
 }
 
 // Dynamic limits - set by database function based on signup date
@@ -174,7 +176,8 @@ export function useUserActivities(city: string) {
     cityOverride?: string,
     priceAmount?: string,
     expiresAt?: Date,
-    promoVideoUrl?: string
+    promoVideoUrl?: string,
+    audience?: "everyone" | "women_only"
   ): Promise<boolean> => {
     const targetCity = cityOverride || city;
     if (!user) {
@@ -230,6 +233,7 @@ export function useUserActivities(city: string) {
       note: note?.trim() || null,
       price_amount: priceAmount || null,
       promo_video_url: promoVideoUrl || null,
+      audience: audience || "everyone",
     }).select().maybeSingle();
     if (error || !newActivity) {
       console.error("Error creating activity:", error);
@@ -368,6 +372,10 @@ export function useUserActivities(city: string) {
       return { success: false };
     }
 
+    if (!(await checkWomenOnlyGate((activity as any).audience, user.id))) {
+      return { success: false };
+    }
+
     // Block join if user already has any join for the same activity_type in a different city
     const { data: crossCityJoin } = await supabase
       .from("activity_joins")
@@ -418,7 +426,11 @@ export function useUserActivities(city: string) {
 
     if (error) {
       console.error("Error joining activity:", error);
-      toast.error("Failed to join activity");
+      if (error.message?.includes("WOMEN_ONLY_PLAN")) {
+        toast.error("Hold on Tiger, this plan is only for women");
+      } else {
+        toast.error("Failed to join activity");
+      }
       return { success: false };
     }
 

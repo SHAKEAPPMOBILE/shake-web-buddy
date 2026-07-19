@@ -268,6 +268,13 @@
     "settings": "Paramètres",
     "name": "Nom",
     "occupation": "Profession",
+    "gender": "Genre",
+    "gender_woman": "Femme",
+    "gender_man": "Homme",
+    "gender_other": "Autre",
+    "genderSaveFailed": "Échec de l'enregistrement. Veuillez réessayer.",
+    "genderInfoMissing": "Ajoutez votre genre",
+    "genderInfoMissingDesc": "Pour que les plans réservés aux femmes fonctionnent pour vous — que ce soit pour en créer ou en rejoindre.",
     "nationality": "Nationalité",
     "birthday": "Anniversaire",
     "phone": "Téléphone",
@@ -609,7 +616,10 @@
     "freeOption": "Gratuit",
     "pricedOption": "Payant",
     "addPlan": "AJOUTER LE PLAN",
-    "uploadVideo": "Importer"
+    "uploadVideo": "Importer",
+    "botAudience": "Pour qui est ce plan ? 💃",
+    "everyone": "Tout le monde",
+    "womenOnly": "Femmes uniquement"
   },
   "userProfile": {
     "title": "Profil Utilisateur",

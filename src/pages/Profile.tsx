@@ -47,6 +47,8 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [nationality, setNationality] = useState("");
   const [occupation, setOccupation] = useState("");
+  const [gender, setGender] = useState<string | null>(null);
+  const [isSavingGender, setIsSavingGender] = useState(false);
   const [interests, setInterests] = useState<string[]>([]);
   const [interestsShaking, setInterestsShaking] = useState(false);
   const [instagramUrl, setInstagramUrl] = useState("");
@@ -86,8 +88,11 @@ export default function Profile() {
   } | null>(null);
 
   const focusBillingEmail = Boolean((location.state as any)?.focusBillingEmail);
+  const focusGender = Boolean((location.state as any)?.focusGender);
   const returnTo = (location.state as any)?.returnTo as string | undefined;
   const [highlightBillingEmail, setHighlightBillingEmail] = useState(false);
+  const [highlightGender, setHighlightGender] = useState(false);
+  const genderSectionRef = useRef<HTMLDivElement>(null);
 
   // Warn on browser tab close / page refresh when there are unsaved changes
   useEffect(() => {
@@ -114,7 +119,7 @@ export default function Profile() {
       // Fetch public profile
       const { data: publicProfile, error: publicError } = await supabase
         .from("profiles")
-        .select("name, avatar_url, nationality, occupation, interests, instagram_url, linkedin_url, twitter_url")
+        .select("name, avatar_url, nationality, occupation, interests, instagram_url, linkedin_url, twitter_url, gender")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -133,6 +138,7 @@ export default function Profile() {
         setAvatarUrl(publicProfile.avatar_url || metaAvatar);
         setNationality(publicProfile.nationality || "");
         setOccupation(publicProfile.occupation || "");
+        setGender((publicProfile as any).gender || null);
         setInterests(publicProfile.interests || []);
         setInstagramUrl(publicProfile.instagram_url || "");
         setLinkedinUrl(publicProfile.linkedin_url || "");
@@ -199,6 +205,24 @@ export default function Profile() {
     return () => clearTimeout(t);
   }, [focusBillingEmail, isLoading]);
 
+  // When coming from the "add your gender" nudge on the Profile tab, scroll to
+  // and highlight the gender picker so it's obvious what to fill in.
+  useEffect(() => {
+    if (!focusGender) return;
+    if (isLoading) return;
+
+    setHighlightGender(true);
+    setTimeout(() => {
+      genderSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
+
+    const t = setTimeout(() => {
+      setHighlightGender(false);
+    }, 4000);
+
+    return () => clearTimeout(t);
+  }, [focusGender, isLoading]);
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -246,6 +270,26 @@ export default function Profile() {
       toast.error(t('profile.avatarUploadFailed'));
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleGenderSelect = async (value: "woman" | "man" | "other") => {
+    if (!user) return;
+    const previous = gender;
+    setGender(value);
+    setIsSavingGender(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ gender: value })
+        .eq("user_id", user.id);
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error saving gender:", error);
+      setGender(previous);
+      toast.error(t('profile.genderSaveFailed'));
+    } finally {
+      setIsSavingGender(false);
     }
   };
 
@@ -520,6 +564,36 @@ export default function Profile() {
               <p className="text-xs text-muted-foreground">
                 {t('profile.emailUsageNote')}
               </p>
+            </div>
+
+            {/* Gender — used to unlock the "women only" plan option when creating a plan */}
+            <div
+              ref={genderSectionRef}
+              className={`space-y-2 rounded-xl transition-all ${
+                highlightGender ? "ring-2 ring-shake-yellow/50 bg-shake-yellow/5 p-3 -m-3" : ""
+              }`}
+            >
+              <Label className="flex items-center gap-2">
+                <span className="text-lg">🧑</span>
+                {t('profile.gender')}
+              </Label>
+              <div className="flex gap-2">
+                {(["woman", "man", "other"] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    disabled={isSavingGender}
+                    onClick={() => handleGenderSelect(option)}
+                    className={`flex-1 py-2.5 rounded-full text-sm font-medium border transition-all disabled:opacity-50 ${
+                      gender === option
+                        ? "bg-black text-white border-black"
+                        : "bg-muted/60 text-foreground border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {t(`profile.gender_${option}`)}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Nationality */}
