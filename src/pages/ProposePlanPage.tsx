@@ -271,7 +271,10 @@ export default function ProposePlanPage() {
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+    // Re-attach whenever the composer div itself mounts/unmounts (it's hidden on
+    // the preview step now), otherwise this would keep watching a stale, detached
+    // node after leaving and returning from preview.
+  }, [currentStepName !== "preview"]);
 
   // ── Camera hooks ──────────────────────────────────────────────────────────
   const stopAllTracks = useCallback(() => {
@@ -1218,7 +1221,19 @@ export default function ProposePlanPage() {
         );
 
       case "preview":
-        return (
+        // Rendered inline in the scrollable area via renderPreviewCard() instead of
+        // here — this step's content (card + big button + link) is too tall for the
+        // fixed bottom composer bar; it was getting squashed against the bottom of
+        // the screen with a huge empty gap above it. See renderPreviewCard() below.
+        return null;
+
+      default:
+        return null;
+    }
+  };
+
+  const renderPreviewCard = () => {
+    return (
           <div>
             {/* Back button — returns to price step */}
             <div className="pb-3 flex items-center">
@@ -1345,11 +1360,7 @@ export default function ProposePlanPage() {
             </button>
           </div>
           </div>
-        );
-
-      default:
-        return null;
-    }
+    );
   };
 
   return (
@@ -1551,22 +1562,33 @@ export default function ProposePlanPage() {
                   {renderCameraCapture()}
                 </div>
               )}
+
+              {/* Preview card — rendered in-flow (not the fixed composer) since its
+                  content (card + button + link) is too tall to live in a bottom bar. */}
+              {currentStepName === "preview" && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  {renderPreviewCard()}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Composer — fixed above the keyboard */}
-          <div
-            ref={composerRef}
-            className="fixed left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border/40 px-4 pt-3"
-            style={{
-              bottom: keyboardOffset,
-              paddingBottom: `max(env(safe-area-inset-bottom, 0px), 0.75rem)`,
-            }}
-          >
-            <div className="w-full max-w-sm mx-auto">
-              {renderComposer()}
+          {/* Composer — fixed above the keyboard. Hidden on the preview step, since
+              its content now renders in-flow via renderPreviewCard() above instead. */}
+          {currentStepName !== "preview" && (
+            <div
+              ref={composerRef}
+              className="fixed left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border/40 px-4 pt-3"
+              style={{
+                bottom: keyboardOffset,
+                paddingBottom: `max(env(safe-area-inset-bottom, 0px), 0.75rem)`,
+              }}
+            >
+              <div className="w-full max-w-sm mx-auto">
+                {renderComposer()}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
