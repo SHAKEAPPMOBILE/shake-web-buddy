@@ -26,7 +26,9 @@ export function CityPickerModal({ open, onOpenChange, title = "Choose your city"
           hideClose
           overlayClassName="bg-black/50 backdrop-blur-md"
           className={cn(
-            "flex max-h-[75vh] flex-col gap-0 overflow-hidden rounded-xl-[20px] border border-gray-200 bg-white p-0 pb-[env(safe-area-inset-bottom)] shadow-2xl",
+            // h-[75vh] (not just max-h) — without a real height the sheet shrinks
+            // to fit however few rows are visible instead of filling the screen.
+            "flex h-[75vh] max-h-[75vh] flex-col gap-0 overflow-hidden rounded-xl-[20px] border border-gray-200 bg-white p-0 pb-[env(safe-area-inset-bottom)] shadow-2xl",
           )}
         >
           {/* Drag handle */}
@@ -61,7 +63,7 @@ export function CityPickerModal({ open, onOpenChange, title = "Choose your city"
       <DialogContent
         overlayClassName="bg-black/55 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
         className={cn(
-          "flex max-h-[min(600px,90vh)] w-[min(100vw-1.5rem,480px)] flex-col gap-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-0 shadow-2xl",
+          "flex h-[min(600px,90vh)] max-h-[min(600px,90vh)] w-[min(100vw-1.5rem,480px)] flex-col gap-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-0 shadow-2xl",
           "[&>button.dialog-close]:hidden",
         )}
       >
