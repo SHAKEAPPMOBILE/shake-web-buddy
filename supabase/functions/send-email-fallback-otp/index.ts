@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { sendEmail } from "../_shared/postmark-email-service.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,7 +39,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const postmarkToken = Deno.env.get("POSTMARK_SERVER_TOKEN");
     const fromEmail =
       Deno.env.get("SHAKE_OTP_EMAIL_FROM")?.trim() || "SHAKE <noreply@shakeapp.today>";
 
@@ -59,8 +59,8 @@ serve(async (req) => {
       return json(400, { error: "Invalid purpose" });
     }
 
-    if (!resendApiKey) {
-      console.error("send-email-fallback-otp: RESEND_API_KEY not configured");
+    if (!postmarkToken) {
+      console.error("send-email-fallback-otp: POSTMARK_SERVER_TOKEN not configured");
       return json(500, { error: "Email verification is not available right now. Please use SMS or try again later." });
     }
 
@@ -95,8 +95,7 @@ serve(async (req) => {
       return json(500, { error: "Failed to send verification code" });
     }
 
-    const resend = new Resend(resendApiKey);
-    const { error: emailError } = await resend.emails.send({
+    const { success: emailSent, error: emailError } = await sendEmail({
       from: fromEmail,
       to: [email],
       subject: "Your Shake verification code",
@@ -110,8 +109,8 @@ serve(async (req) => {
       text: `Your Shake verification code is: ${code}. Valid for 10 minutes.`,
     });
 
-    if (emailError) {
-      console.error("Resend error:", emailError);
+    if (!emailSent) {
+      console.error("Postmark error:", emailError);
       await admin.from("otp_verifications").delete().eq("id", verificationId);
       return json(502, { error: "Failed to send verification email. Please try again." });
     }

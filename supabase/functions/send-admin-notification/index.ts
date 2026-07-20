@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { sendEmail } from "../_shared/postmark-email-service.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,8 +49,8 @@ serve(async (req) => {
       timeStyle: "short",
     });
 
-    const { error: emailError } = await resend.emails.send({
-      from: "SHAKE Admin <onboarding@resend.dev>",
+    const { success: emailSent, error: emailError } = await sendEmail({
+      from: "SHAKE Admin <noreply@shakeapp.today>",
       to: ["contact@shakeapp.today"],
       subject,
       html: `
@@ -84,8 +82,8 @@ serve(async (req) => {
       `,
     });
 
-    if (emailError) {
-      console.error("[send-admin-notification] Resend error:", emailError);
+    if (!emailSent) {
+      console.error("[send-admin-notification] Postmark error:", emailError);
       return new Response(
         JSON.stringify({ error: "Failed to send email" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

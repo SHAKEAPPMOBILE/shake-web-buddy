@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { Resend } from "https://esm.sh/resend@4.0.0";
+import { sendEmail } from "../_shared/postmark-email-service.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -26,8 +26,8 @@ serve(async (req) => {
 
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     if (!webhookSecret) throw new Error("STRIPE_WEBHOOK_SECRET is not set");
-    // Resend is only used for subscription-cancellation emails — do not require it for checkout webhooks
-    // or every Stripe event would 500 when RESEND_API_KEY is missing from Edge Function secrets.
+    // Postmark is only used for subscription-cancellation emails — do not require it for checkout webhooks
+    // or every Stripe event would 500 when POSTMARK_SERVER_TOKEN is missing from Edge Function secrets.
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
@@ -419,21 +419,20 @@ serve(async (req) => {
         });
       }
 
-      const resendApiKey = Deno.env.get("RESEND_API_KEY");
-      if (!resendApiKey) {
-        logStep("RESEND_API_KEY not set; skipping cancellation email (webhook still OK)", {
+      const postmarkToken = Deno.env.get("POSTMARK_SERVER_TOKEN");
+      if (!postmarkToken) {
+        logStep("POSTMARK_SERVER_TOKEN not set; skipping cancellation email (webhook still OK)", {
           customerEmail,
         });
       } else {
-        const resend = new Resend(resendApiKey);
-        const { error: emailError } = await resend.emails.send({
+        const { success: emailSent, error: emailError } = await sendEmail({
           from: "SHAKE <noreply@shakeapp.today>",
           to: [customerEmail],
           subject: subject,
           html: htmlContent,
         });
 
-        if (emailError) {
+        if (!emailSent) {
           logStep("Failed to send cancellation email", { error: emailError });
         } else {
           logStep("Cancellation email sent successfully", { email: customerEmail });

@@ -37,6 +37,19 @@
 
                 <data android:scheme="com.shakebyleo.app" android:host="auth" android:pathPrefix="/callback" />
             </intent-filter>
+
+            <!-- Android App Links: lets the real https:// magic-link/reset-password emails open
+                 straight into the app instead of the browser. Requires assetlinks.json to be
+                 hosted at https://app.shakeapp.today/.well-known/assetlinks.json with the correct
+                 SHA-256 signing cert fingerprint for autoVerify to actually take effect. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" android:host="app.shakeapp.today" android:pathPrefix="/auth/callback" />
+            </intent-filter>
         </activity>
 
         <provider

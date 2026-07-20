@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { sendEmail } from "../_shared/postmark-email-service.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -60,19 +60,17 @@ serve(async (req) => {
       // Store OTP
       otpStore.set(normalizedEmail, { code, expiresAt });
 
-      // Send OTP via Resend
-      const resendApiKey = Deno.env.get("RESEND_API_KEY");
-      if (!resendApiKey) {
-        console.error("[ADMIN-OTP] RESEND_API_KEY not configured");
+      // Send OTP via Postmark
+      const postmarkToken = Deno.env.get("POSTMARK_SERVER_TOKEN");
+      if (!postmarkToken) {
+        console.error("[ADMIN-OTP] POSTMARK_SERVER_TOKEN not configured");
         return new Response(
           JSON.stringify({ error: "Email service not configured" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const resend = new Resend(resendApiKey);
-
-      const { error: emailError } = await resend.emails.send({
+      const { success: emailSent, error: emailError } = await sendEmail({
         from: "SHAKE Admin <noreply@shakeapp.today>",
         to: [normalizedEmail],
         subject: "🔐 SHAKE Admin - Your Recovery Code",
@@ -100,7 +98,7 @@ serve(async (req) => {
         `,
       });
 
-      if (emailError) {
+      if (!emailSent) {
         console.error("[ADMIN-OTP] Failed to send email:", emailError);
         return new Response(
           JSON.stringify({ error: "Failed to send verification email" }),

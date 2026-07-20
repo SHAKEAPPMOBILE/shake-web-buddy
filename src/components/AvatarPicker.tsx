@@ -1,4 +1,3 @@
-import { Check } from "lucide-react";
 import cameraIcon from "@/assets/camera-icon.png";
 import { cn } from "@/lib/utils";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
@@ -80,14 +79,7 @@ export function AvatarPicker({
           title="Upload a photo"
         >
           {topPreviewUrl ? (
-            <>
-              <img src={topPreviewUrl} alt="Selected avatar" className="w-full h-full object-cover" />
-              {isShowingSelected && (
-                <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
-                  <Check className="w-5 h-5 text-shake-green" />
-                </div>
-              )}
-            </>
+            <img src={topPreviewUrl} alt="Selected avatar" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-muted rounded-full flex items-center justify-center p-2">
               <img src={cameraIcon} alt="Upload photo" className="w-full h-full object-contain" />
@@ -111,11 +103,6 @@ export function AvatarPicker({
             )}
           >
             <img src={getDisplayAvatarUrl(avatar.src) ?? avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
-            {selectedAvatar === avatar.id && (
-              <div className="absolute inset-0 bg-shake-green/20 flex items-center justify-center animate-scale-in">
-                <Check className="w-4 h-4 text-shake-green" />
-              </div>
-            )}
           </button>
         ))}
       </div>
