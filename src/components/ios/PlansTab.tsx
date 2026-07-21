@@ -1028,14 +1028,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
   const handleCityPlanClick = (plan: PlanActivity) => {
     if (!user) return;
-    if (plan.is_auto_generated) {
-      setAutoGenCardPlan(plan);
-      return;
-    }
-    // Non-auto plans (own, joined, free, paid) open the swipe feed, seeded with
-    // the same combined "My Plans" + discovery list as handlePlanClick so the
-    // user can keep swiping through the whole visible list either way.
-    // Paid-unjoined cards show a "PAY" button inside the feed that calls onPayForPlan.
+    // Open the same full-screen swipe feed as "My City" — auto-generated plans
+    // included. Previously auto-generated plans opened a small ActivityDetailsCard
+    // modal here, which was inconsistent with the My City tab behaviour.
     const idx = combinedPlansList.findIndex((p) => p.id === plan.id);
     setFeedSourceList(combinedPlansList);
     setFeedStartIndex(idx >= 0 ? idx : 0);

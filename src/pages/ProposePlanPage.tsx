@@ -51,10 +51,10 @@ type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 const MAX_CLIP_SECONDS = 10;
 
 
-function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subtext, handwritten = false }: { message: string; showAvatar?: boolean; avatarColor?: string; subtext?: string; handwritten?: boolean }) {
+function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subtext, handwritten = false, wrapperClassName }: { message: string; showAvatar?: boolean; avatarColor?: string; subtext?: string; handwritten?: boolean; wrapperClassName?: string }) {
   if (!message) return null;
   return (
-    <div className="flex flex-row items-end gap-3 mb-8">
+    <div className={cn("flex flex-row items-end gap-3 mb-8", wrapperClassName)}>
       {showAvatar && (
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
@@ -794,7 +794,7 @@ export default function ProposePlanPage() {
         <div
           ref={cameraBoxRef}
           className="relative w-full rounded-2xl overflow-hidden bg-black"
-          style={{ aspectRatio: "3/4", maxHeight: "58vh" }}
+          style={{ aspectRatio: "3/4", maxHeight: "68vh" }}
         >
           {/* Live preview (front camera, mirrored so it feels natural) */}
           {(cameraMode === "live" || cameraMode === "recording") && (
@@ -1479,8 +1479,8 @@ export default function ProposePlanPage() {
 
           {/* Scrollable chat history + inline current question */}
           <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
-            {/* spacer: 8vh on step 0 for centering; collapses to 16px once history exists */}
-            <div className={currentStep === 0 ? "min-h-[8vh]" : "min-h-4"} />
+            {/* spacer: 8vh on step 0 for centering; video step skips it (camera fills the space) */}
+            <div className={currentStep === 0 && currentStepName !== "video" ? "min-h-[8vh]" : "min-h-1"} />
             <div
               className="w-full max-w-sm mx-auto px-6 pt-4"
               style={{ paddingBottom: composerHeight + keyboardOffset + 32 }}
@@ -1555,6 +1555,7 @@ export default function ProposePlanPage() {
                     avatarColor={STEP_AVATAR_COLORS[currentStepName] ?? "#93c5fd"}
                     subtext={currentStepName === "name" ? t("createPlan.soOthersCanJoin") : undefined}
                     handwritten={currentStepName === "video"}
+                    wrapperClassName={currentStepName === "video" ? "mb-3" : undefined}
                   />
                 </div>
               )}
