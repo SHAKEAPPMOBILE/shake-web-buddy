@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, User, Trash2, Images, MoreVertical, LogOut, Camera, ChevronLeft } from "lucide-react";
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
 import { MessageBubbleReactions } from "@/components/chat/MessageBubbleReactions";
@@ -30,6 +30,7 @@ import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { getNationalityFlag } from "@/data/countryCodes";
 import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
 import { getPriceValue } from "@/lib/utils";
+import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 
 interface PlanMessage {
   id: string;
@@ -253,10 +254,18 @@ export function PlanGroupChatView({
     fetchParticipants();
   }, [activity.id, activity.user_id]);
 
-  // Scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Scroll to bottom when new messages arrive.
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, []);
+
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(scrollToBottom);
+    return () => cancelAnimationFrame(id);
+  }, [messages, scrollToBottom]);
+
+  // Re-scroll after the on-screen keyboard finishes animating open/closed.
+  useChatKeyboardScroll(scrollToBottom);
 
   // ── Curtain drag handlers ──────────────────────────────────────────────────
 
@@ -692,7 +701,7 @@ export function PlanGroupChatView({
                     </AvatarFallback>
                   </Avatar>
                 </button>
-                <div className={`min-w-0 max-w-[70%] ${isGif || isImage || isVideo ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}>
+                <div className={`w-fit min-w-0 max-w-[70%] ${isGif || isImage || isVideo ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}>
                   <MessageBubbleReactions
                     variant="light"
                     isOwn={isOwnMessage}

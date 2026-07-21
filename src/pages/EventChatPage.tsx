@@ -32,6 +32,7 @@ import { aggregateReactionsByMessage, sortedReactionEntries } from "@/lib/eventC
 import { markEventChatViewedNow } from "@/lib/eventChatLastSeen";
 import { removePendingEventChat } from "@/lib/pendingEventChat";
 import { useTranslation } from "react-i18next";
+import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 
 interface EventChatPageParams {
   eventId?: string;
@@ -212,6 +213,9 @@ export default function EventChatPage() {
     const id = requestAnimationFrame(() => scrollMessagesToBottom("smooth"));
     return () => cancelAnimationFrame(id);
   }, [messages, scrollMessagesToBottom]);
+
+  // Re-scroll after the on-screen keyboard finishes animating open/closed.
+  useChatKeyboardScroll(useCallback(() => scrollMessagesToBottom("smooth"), [scrollMessagesToBottom]));
 
 
   const dateLine = (location.state as any)?.dateLine ?? null;

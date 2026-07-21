@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2 } from "lucide-react";
@@ -18,6 +18,7 @@ import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
+import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢"];
 
@@ -86,10 +87,23 @@ export function PrivateChatDialog({
     t('chat.suggestions.seeYouSoon', 'See you soon! 😊'),
   ], [t]);
 
-  // Scroll to bottom on initial load and new messages (instant — no top-to-bottom animation)
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'instant' });
-  }, [messages]);
+  // Scroll to bottom on initial load and new messages.
+  // useLayoutEffect + rAF ensures we scroll AFTER the DOM has updated but
+  // timed with the browser's paint cycle (matches EventChatPage pattern).
+  const scrollMessagesToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(scrollMessagesToBottom);
+    return () => cancelAnimationFrame(id);
+  }, [messages, scrollMessagesToBottom]);
+
+  // Re-scroll when the on-screen keyboard opens/closes — the keyboard
+  // animation takes ~250 ms and we need to scroll AFTER it settles.
+  useChatKeyboardScroll(scrollMessagesToBottom);
 
   // Mark messages as read on mount — only once the invite gate (if any) has been cleared.
   useEffect(() => {
@@ -274,12 +288,6 @@ export function PrivateChatDialog({
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user?.id, otherUserId]);
-
-  const scrollMessagesToBottom = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  };
 
   // ── Long press / double tap handlers ─────────────────────────────────────
 
@@ -602,7 +610,7 @@ export function PrivateChatDialog({
                     </button>
                   )}
                   <div
-                    className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "min-w-[100px] px-3 py-2 rounded-2xl"}`}
+                    className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
                     style={isMedia ? undefined : isMe ? outgoingBubble : incomingBubble}
                     onTouchStart={(e) => startLongPress(msg.id, isMe, e.touches[0].clientY)}
                     onTouchMove={cancelLongPress}

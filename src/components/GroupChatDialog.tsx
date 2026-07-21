@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Users, User, BellOff, Bell, LogOut, Globe, Trash2, Plane, Images } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,6 +29,7 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { DbVenue } from "@/hooks/useDatabaseVenues";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
+import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 interface GroupChatDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -314,10 +315,17 @@ export function GroupChatDialog({
     };
   }, [open, activityType, city, isMuted]);
 
-  // Scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Scroll to bottom when new messages arrive.
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, []);
+
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(scrollToBottom);
+    return () => cancelAnimationFrame(id);
+  }, [messages, scrollToBottom]);
+
+  useChatKeyboardScroll(scrollToBottom);
 
   useEffect(() => {
     if (!open) setGiphyPickerOpen(false);
@@ -665,7 +673,7 @@ export function GroupChatDialog({
                           <User className="w-4 h-4 text-white/40" />
                         </AvatarFallback>
                       </Avatar>
-                      <div className={`flex-1 max-w-[70%] ${isGif ? 'shrink-0 overflow-visible' : ''} ${isOwnMessage ? 'text-right' : ''}`}>
+                      <div className={`w-fit min-w-0 max-w-[70%] ${isGif ? 'shrink-0 overflow-visible' : ''} ${isOwnMessage ? 'text-right' : ''}`}>
                         <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : ''}`}>
                           <button 
                             className={`font-semibold text-sm text-white ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, BellOff, Bell, LogOut, Trash2, Plane, Images } from "lucide-react";
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
 import { MessageBubbleReactions } from "@/components/chat/MessageBubbleReactions";
@@ -29,6 +29,7 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { getNationalityFlag } from "@/data/countryCodes";
+import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 
 interface GroupChatViewProps {
   activityType: string;
@@ -433,10 +434,19 @@ export function GroupChatView({
     };
   }, [activityType, city, user?.id, isMuted]);
 
-  // Scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Scroll to bottom when new messages arrive.
+  // useLayoutEffect + rAF fires after DOM update, timed with the paint cycle.
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, []);
+
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(scrollToBottom);
+    return () => cancelAnimationFrame(id);
+  }, [messages, scrollToBottom]);
+
+  // Re-scroll after the on-screen keyboard finishes animating open/closed.
+  useChatKeyboardScroll(scrollToBottom);
 
   // Update read status
   useEffect(() => {
@@ -982,7 +992,7 @@ export function GroupChatView({
                     className="w-8 h-8"
                   />
                   <div
-                    className={`min-w-0 max-w-[70%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
+                    className={`w-fit min-w-0 max-w-[70%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
                   >
                     <MessageBubbleReactions
                       variant="dark"

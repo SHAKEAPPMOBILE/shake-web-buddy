@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Users, User, Trash2, Calendar, Smile, X, Images } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
+import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 
 interface PlanMessage {
   id: string;
@@ -186,9 +187,16 @@ export function PlanGroupChatDialog({
     return () => { supabase.removeChannel(channel); };
   }, [open, activity.id, user?.id]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, []);
+
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(scrollToBottom);
+    return () => cancelAnimationFrame(id);
+  }, [messages, scrollToBottom]);
+
+  useChatKeyboardScroll(scrollToBottom);
 
   useEffect(() => {
     if (!open) {
@@ -372,7 +380,7 @@ export function PlanGroupChatDialog({
                   </button>
                 )}
 
-                <div className={`flex-1 max-w-[75%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwn ? "text-right" : ""} ${stickerMsg ? "max-w-full" : ""}`}>
+                <div className={`w-fit min-w-0 max-w-[75%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwn ? "text-right" : ""} ${stickerMsg ? "max-w-full w-full" : ""}`}>
                   {!stickerMsg && (
                     <div className={`flex items-baseline gap-2 mb-0.5 ${isOwn ? "justify-end" : ""}`}>
                       <button
