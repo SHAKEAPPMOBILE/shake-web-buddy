@@ -111,17 +111,27 @@ export default function Profile() {
     }
   }, [user, authLoading, navigate]);
 
-  // Fetch profile data
+  // Fetch profile data — both queries fire in parallel so we don't pay
+  // sequential round-trip cost (was the primary cause of the 10s load freeze).
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
-      
-      // Fetch public profile
-      const { data: publicProfile, error: publicError } = await supabase
-        .from("profiles")
-        .select("name, avatar_url, nationality, occupation, interests, instagram_url, linkedin_url, twitter_url, gender")
-        .eq("user_id", user.id)
-        .maybeSingle();
+
+      const [publicResult, privateResult] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("name, avatar_url, nationality, occupation, interests, instagram_url, linkedin_url, twitter_url, gender")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("profiles_private")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+
+      const { data: publicProfile, error: publicError } = publicResult;
+      const { data: privateProfile, error: privateError } = privateResult;
 
       // Always seed avatar from OAuth metadata so it shows even if there is no DB row yet.
       const metaAvatar =
@@ -144,13 +154,6 @@ export default function Profile() {
         setLinkedinUrl(publicProfile.linkedin_url || "");
         setTwitterUrl(publicProfile.twitter_url || "");
       }
-
-      // Fetch private profile for billing email and push notifications
-      const { data: privateProfile, error: privateError } = await supabase
-        .from("profiles_private")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
 
       if (privateError) {
         logPostgrestError("Profile.tsx profiles_private select", privateError);
@@ -437,7 +440,7 @@ export default function Profile() {
     }
   };
 
-  if (authLoading || isLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -458,7 +461,7 @@ export default function Profile() {
           />
           <button
             onClick={handleSaveProfile}
-            disabled={isSaving}
+            disabled={isSaving || isLoading}
             className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all disabled:opacity-50"
             style={{
               background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
@@ -480,6 +483,33 @@ export default function Profile() {
         className="flex-1 min-h-0 px-4 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]"
       >
         <div className="max-w-md mx-auto space-y-6">
+          {isLoading ? (
+            /* Skeleton loading state — shown while Supabase queries resolve */
+            <div className="space-y-6 animate-pulse">
+              {/* Avatar skeleton */}
+              <div className="flex flex-col items-center py-6 gap-3">
+                <div className="w-24 h-24 rounded-full bg-muted" />
+                <div className="h-4 w-24 rounded bg-muted" />
+              </div>
+              {/* Form field skeletons */}
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-3 w-20 rounded bg-muted" />
+                  <div className="h-10 w-full rounded-lg bg-muted" />
+                </div>
+              ))}
+              {/* Interests skeleton */}
+              <div className="space-y-2">
+                <div className="h-3 w-20 rounded bg-muted" />
+                <div className="flex flex-wrap gap-2">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="h-8 rounded-full bg-muted" style={{ width: `${60 + (i % 3) * 20}px` }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+          <>
           {/* Profile Header */}
           <div className="flex flex-col items-center py-6">
             {/* Avatar with camera button */}
@@ -823,6 +853,8 @@ export default function Profile() {
               Permanently delete your account and all data
             </p>
           </div>
+          </>
+          )}
         </div>
       </main>
 

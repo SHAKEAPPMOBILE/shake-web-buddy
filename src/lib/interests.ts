@@ -19,7 +19,7 @@ export const INTEREST_CATEGORIES: InterestCategory[] = [
   },
   {
     name: "Food & Drink",
-    interests: ["Food", "Cooking", "Wine", "Coffee", "Brunch", "Cocktails"],
+    interests: ["Food", "Cooking", "Wine", "Coffee", "Brunch", "Cocktails", "Vegan", "Street Food", "Fine Dining", "Sushi", "BBQ", "Baking"],
   },
   {
     name: "Creativity",
@@ -27,12 +27,12 @@ export const INTEREST_CATEGORIES: InterestCategory[] = [
   },
   {
     name: "Tech & Topics",
-    interests: ["Tech", "Podcasts", "Sustainability", "Gaming", "Science"],
+    interests: ["Tech", "Podcasts", "Sustainability", "Gaming", "Science", "AI", "Startups", "Crypto", "Finance", "Reading"],
   },
   {
     name: "Nightlife",
     // Same as Music above — "Nightlife" itself is the mother label, not a sub-option.
-    interests: ["Parties", "Bars", "Beach", "Adventure"],
+    interests: ["Parties", "Bars", "Beach", "Adventure", "Clubbing", "Karaoke", "Rooftop"],
   },
   {
     name: "Health & Wellness",
