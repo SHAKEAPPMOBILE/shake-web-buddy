@@ -417,13 +417,14 @@ export default function Auth() {
         let resolvedProfile = profile;
 
         if (!resolvedProfile) {
-          const fallbackName = getFallbackProfileName(authUser) || null;
+          // Bootstrap an empty profile row. Do NOT pre-populate `name` here —
+          // a truthy name would make hasName=true and skip the onboarding wizard.
+          // The wizard pre-fills the name field from getFallbackProfileName itself.
           const { data: bootstrappedProfile, error: bootstrapError } = await supabase
             .from("profiles")
             .upsert(
               {
                 user_id: authUser.id,
-                name: fallbackName,
               },
               { onConflict: "user_id" }
             )
@@ -1719,7 +1720,8 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-shake-green text-background hover:bg-shake-green/90"
+                className="w-full text-white"
+                style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
                 size="lg"
                 disabled={isLoading}
               >
@@ -1827,7 +1829,8 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-shake-green text-background hover:bg-shake-green/90"
+                className="w-full text-white"
+                style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
                 size="lg"
                 disabled={isLoading}
               >
