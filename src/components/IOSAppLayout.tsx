@@ -112,19 +112,13 @@ export function IOSAppLayout() {
     }
 
     if (!profileError && !resolvedProfile) {
-      const fallbackName = String(
-        user.user_metadata?.name ??
-        user.user_metadata?.full_name ??
-        user.email?.split("@")[0] ??
-        ""
-      ).trim() || null;
-
+      // Bootstrap an empty row — do NOT write name here. A truthy name would
+      // make nameMissing=false and bypass the onboarding wizard in Auth.tsx.
       const { data: bootstrappedProfile, error: bootstrapError } = await supabase
         .from("profiles")
         .upsert(
           {
             user_id: user.id,
-            name: fallbackName,
           },
           { onConflict: "user_id" }
         )
@@ -151,14 +145,17 @@ export function IOSAppLayout() {
   }, [user]);
 
   const applyProfileCompletionStatus = useCallback((status: { avatarMissing: boolean; needsProfile: boolean; nameMissing: boolean }) => {
-    setShowMandatoryPhoto(status.avatarMissing);
+    // Never block with the avatar screen if we're about to redirect to onboarding —
+    // Auth.tsx wizard collects avatar as its final step.
+    setShowMandatoryPhoto(!status.nameMissing && status.avatarMissing);
 
-    // Only redirect to /auth when the user is entirely new (both name AND avatar
-    // are absent). A user who has an avatar — e.g. assigned by the DB trigger
-    // after Apple OAuth — should never be kicked back to registration just
-    // because name is transiently null.
+    // If name is absent the user hasn't completed onboarding. Send them to
+    // Auth.tsx which runs the 8-step wizard and collects name + avatar together.
+    // The old guard (nameMissing && avatarMissing) was too narrow: the DB trigger
+    // now sets a preset avatar_url for email signups, so avatarMissing was always
+    // false for new users — they were never redirected and the wizard was bypassed.
     // Never redirect while the user is on a share landing page.
-    if (status.nameMissing && status.avatarMissing && !location.pathname.startsWith('/invite/')) {
+    if (status.nameMissing && !location.pathname.startsWith('/invite/')) {
       navigate("/auth");
     }
   }, [navigate, location.pathname]);

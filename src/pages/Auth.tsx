@@ -408,6 +408,13 @@ export default function Auth() {
         .eq("user_id", authUser.id)
         .maybeSingle();
 
+      // DEBUG — remove once wizard routing is confirmed working
+      console.log("[Auth][getProfileCompletionState] attempt", attempt, {
+        userId: authUser.id,
+        profileRow: profile,
+        profileErr: profileErr?.message ?? null,
+      });
+
       if (profileErr) {
         sawReadError = true;
         logPostgrestError("Auth.tsx profiles select (completion check)", profileErr);
@@ -440,6 +447,15 @@ export default function Auth() {
         }
 
         const hasName = !!resolvedProfile?.name?.trim();
+
+        // DEBUG — remove once wizard routing is confirmed working
+        console.log("[Auth][getProfileCompletionState] result", {
+          resolvedProfileName: resolvedProfile?.name ?? null,
+          resolvedProfileAvatar: resolvedProfile?.avatar_url ?? null,
+          hasName,
+          isComplete: hasName,
+          isIncomplete: !hasName,
+        });
 
         // Avatar completeness is enforced separately by MandatoryPhotoScreen
         // in IOSAppLayout. Auth.tsx only gates on name so that a user who has
