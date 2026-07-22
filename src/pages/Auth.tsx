@@ -10,7 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import logoShake from "@/assets/shake-logo-new.png";
-import { User, Lock, Eye, EyeOff, Mail } from "lucide-react";
+import { User, Lock, Eye, EyeOff, Mail, ArrowUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { BirthdayPicker } from "@/components/BirthdayPicker";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
@@ -45,6 +46,8 @@ const STORAGE_NEED_PASSWORD = "shake_post_signup_set_password";
 /** Steps where we must not reset to "name" or navigate away — avoids races when `user` refreshes mid-wizard. */
 const AUTH_WIZARD_STEPS = new Set([
   "name",
+  "phone",
+  "gender",
   "nationality",
   "occupation",
   "interests",
@@ -57,6 +60,56 @@ const AUTH_WIZARD_STEPS = new Set([
   "resetPassword",
   "setPassword",
 ]);
+
+// ── Conversational profile-setup helpers ────────────────────────────────────
+
+function BotBubble({ message, subtext }: { message: string; subtext?: string }) {
+  if (!message) return null;
+  return (
+    <div className="flex flex-row items-end gap-3 mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div
+        className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0"
+        style={{ background: "#e9d5ff" }}
+      >
+        😎
+      </div>
+      <div className="bg-muted rounded-2xl rounded-tl-none px-5 py-4 flex-1">
+        <p className="text-xl font-semibold leading-snug text-foreground">{message}</p>
+        {subtext && <p className="text-sm text-muted-foreground mt-1">{subtext}</p>}
+      </div>
+    </div>
+  );
+}
+
+const PROFILE_STEPS = [
+  "name",
+  "phone",
+  "gender",
+  "nationality",
+  "occupation",
+  "interests",
+  "social",
+  "avatar",
+] as const;
+type ProfileStepName = (typeof PROFILE_STEPS)[number];
+
+const PROFILE_BOT_QUESTIONS: Record<ProfileStepName, string> = {
+  name: "What's your name? 👋",
+  phone: "What's your phone number? 📱",
+  gender: "How do you identify?",
+  nationality: "Where are you from? 🌍",
+  occupation: "What do you do? 💼",
+  interests: "What are you into? ✨",
+  social: "Drop your socials 📸",
+  avatar: "Last step — pick your photo! 🎭",
+};
+
+const PROFILE_BOT_SUBTEXTS: Partial<Record<ProfileStepName, string>> = {
+  name: "You must be 18 or older to join",
+  phone: "Optional — tap Skip to continue",
+  occupation: "Optional",
+  social: "Optional — Instagram, LinkedIn, or X",
+};
 
 // Show user-friendly messages instead of technical errors
 function toFriendlyAuthMessage(raw: string, context: "login" | "signup" | "email" | "general"): string {
@@ -151,6 +204,7 @@ export default function Auth() {
     | "forgotPassword"
     | "resetPassword"
     | "name"
+    | "phone"
     | "gender"
     | "nationality"
     | "occupation"
@@ -169,6 +223,7 @@ export default function Auth() {
   const [nationality, setNationality] = useState("");
   const [nationalityInteracted, setNationalityInteracted] = useState(false);
   const [nationalityError, setNationalityError] = useState<string | null>(null);
+  const [phone, setPhone] = useState("");
   const [occupation, setOccupation] = useState("");
   const [occupationTouched, setOccupationTouched] = useState(false);
   const [occupationError, setOccupationError] = useState<string | null>(null);
@@ -195,6 +250,7 @@ export default function Auth() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const emailLoginFormRef = useRef<HTMLFormElement>(null);
+  const profileScrollRef = useRef<HTMLDivElement>(null);
 
   // Play a gentle welcome chime when the method screen first mounts.
   // Uses the Web Audio API so no audio file is needed (placeholder — Leonel can
@@ -515,6 +571,78 @@ export default function Auth() {
     }
     navigate("/", { replace });
   };
+
+  // ── Profile wizard helpers ─────────────────────────────────────────────────
+
+  const isProfileStep = (PROFILE_STEPS as readonly string[]).includes(step);
+  const profileStepIndex = PROFILE_STEPS.indexOf(step as ProfileStepName);
+
+  const advanceProfileStep = () => {
+    const next = PROFILE_STEPS[profileStepIndex + 1];
+    if (next) setStep(next);
+  };
+
+  const goBackProfileStep = () => {
+    const prev = PROFILE_STEPS[profileStepIndex - 1];
+    if (prev) setStep(prev);
+    else setStep("method"); // back to login screen from first profile step
+  };
+
+  const getProfileStepAnswer = (s: ProfileStepName): string => {
+    switch (s) {
+      case "name": return name || "—";
+      case "phone": return phone.trim() || "Skipped";
+      case "gender": return gender
+        ? { woman: "Woman", man: "Man", other: "Other" }[gender] ?? gender
+        : "—";
+      case "nationality": return nationality || "—";
+      case "occupation": return occupation.trim() || "Skipped";
+      case "interests": return selectedInterests.length > 0 ? selectedInterests.join(", ") : "Skipped";
+      case "social": {
+        const links = [instagramUrl, linkedinUrl, twitterUrl].filter(Boolean);
+        return links.length > 0 ? links.join(", ") : "Skipped";
+      }
+      case "avatar": return selectedAvatar ? "Photo selected" : "—";
+    }
+  };
+
+  // Scroll to bottom whenever the step advances
+  useEffect(() => {
+    if (isProfileStep && profileScrollRef.current) {
+      setTimeout(() => {
+        profileScrollRef.current?.scrollTo({ top: profileScrollRef.current.scrollHeight, behavior: "smooth" });
+      }, 100);
+    }
+  }, [step, isProfileStep]);
+
+  const handleNameContinue = () => {
+    if (!name.trim()) { toast.error("Please enter your name"); return; }
+    if (!dateOfBirth) { toast.error("Please enter your date of birth"); return; }
+    if (calculateAge(dateOfBirth) < 18) { toast.error("You must be 18 or older to use Shake"); return; }
+    advanceProfileStep();
+  };
+
+  const handleGenderContinue = () => {
+    if (!gender) { toast.error("Please select an option"); return; }
+    advanceProfileStep();
+  };
+
+  const handleNationalityContinue = () => {
+    const err = validateNationality(nationality, nationalityInteracted);
+    setNationalityError(err);
+    if (err) return;
+    advanceProfileStep();
+  };
+
+  const handleOccupationContinue = () => {
+    setOccupationTouched(true);
+    const err = validateOccupation(occupation);
+    setOccupationError(err);
+    if (err) return;
+    advanceProfileStep();
+  };
+
+  // ── End profile wizard helpers ─────────────────────────────────────────────
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -851,11 +979,14 @@ export default function Auth() {
         return;
       }
 
+      const privatePayload: Record<string, unknown> = {
+        user_id: currentUser.id,
+        date_of_birth: resolvedDateOfBirth,
+      };
+      if (phone.trim()) privatePayload.phone_number = phone.trim();
+
       const { data: savedPrivate, error: privateError } = await supabase.from("profiles_private").upsert(
-        {
-          user_id: currentUser.id,
-          date_of_birth: resolvedDateOfBirth,
-        },
+        privatePayload,
         { onConflict: "user_id" }
       ).select("user_id, date_of_birth").single();
 
@@ -983,6 +1114,299 @@ export default function Auth() {
       setIsFaceCaptureOpen(false);
     }
   };
+
+  // ── Full-screen conversational profile setup ───────────────────────────────
+  if (isProfileStep) {
+    const currentProfileStep = PROFILE_STEPS[profileStepIndex];
+    const hasFixedComposer = !["interests", "social", "avatar"].includes(currentProfileStep);
+
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+        {/* Header */}
+        <div
+          className="flex items-center gap-3 px-4 border-b border-border/40 shrink-0"
+          style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 16px)", paddingBottom: "12px" }}
+        >
+          <button
+            type="button"
+            onClick={goBackProfileStep}
+            className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Back"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <div className="flex-1 flex justify-center">
+            <img src={logoShake} alt="SHAKE" className="h-8 w-8" />
+          </div>
+          {/* Step progress dots */}
+          <div className="flex gap-1 items-center">
+            {PROFILE_STEPS.map((_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "h-1.5 rounded-full transition-all duration-300",
+                  i < profileStepIndex
+                    ? "w-4 bg-violet-500"
+                    : i === profileStepIndex
+                    ? "w-5 bg-violet-700"
+                    : "w-1.5 bg-gray-200"
+                )}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Scrollable chat history + current step */}
+        <div
+          ref={profileScrollRef}
+          className="flex-1 overflow-y-auto px-4 py-6"
+          style={{ paddingBottom: hasFixedComposer ? "16px" : "max(env(safe-area-inset-bottom, 0px), 24px)" }}
+        >
+          {/* Completed steps shown as history */}
+          {PROFILE_STEPS.slice(0, profileStepIndex).map((s) => (
+            <div key={s}>
+              <BotBubble message={PROFILE_BOT_QUESTIONS[s]} />
+              <div className="flex justify-end mb-6">
+                <div className="bg-violet-600 text-white rounded-2xl rounded-br-none px-4 py-2.5 max-w-[75%] text-sm font-medium">
+                  {getProfileStepAnswer(s)}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Current step bot bubble */}
+          <BotBubble
+            message={PROFILE_BOT_QUESTIONS[currentProfileStep]}
+            subtext={PROFILE_BOT_SUBTEXTS[currentProfileStep]}
+          />
+
+          {/* Step-specific input UI */}
+
+          {currentProfileStep === "name" && (
+            <div className="space-y-4 mb-4">
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleNameContinue()}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-muted/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  autoFocus
+                />
+              </div>
+              <BirthdayPicker value={dateOfBirth} onChange={setDateOfBirth} maxDate={getMaxDate()} />
+              <button
+                type="button"
+                onClick={handleNameContinue}
+                className="w-full h-12 rounded-full text-sm font-semibold text-white"
+                style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
+              >
+                Continue
+              </button>
+            </div>
+          )}
+
+          {currentProfileStep === "phone" && (
+            <div className="space-y-3 mb-4">
+              <div className="flex gap-2">
+                <input
+                  type="tel"
+                  placeholder="+1 (555) 000-0000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && advanceProfileStep()}
+                  className="flex-1 pl-4 pr-4 py-3 rounded-xl border border-border bg-muted/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={advanceProfileStep}
+                  className="w-12 h-12 rounded-full bg-violet-600 text-white flex items-center justify-center shrink-0"
+                  aria-label="Continue"
+                >
+                  <ArrowUp className="w-5 h-5" />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={advanceProfileStep}
+                className="text-sm text-muted-foreground underline underline-offset-2 w-full text-center"
+              >
+                Skip
+              </button>
+            </div>
+          )}
+
+          {currentProfileStep === "gender" && (
+            <div className="space-y-3 mb-4">
+              {([
+                { value: "woman", label: "Woman" },
+                { value: "man", label: "Man" },
+                { value: "other", label: "Other" },
+              ] as const).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setGender(option.value);
+                    // Brief visual confirmation before advancing
+                    setTimeout(() => {
+                      setGender(option.value);
+                      advanceProfileStep();
+                    }, 180);
+                  }}
+                  className={cn(
+                    "w-full py-3.5 rounded-xl text-base font-medium border transition-all",
+                    gender === option.value
+                      ? "bg-violet-600 text-white border-violet-600"
+                      : "bg-muted/60 text-foreground border-border hover:border-violet-400"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+              <p className="text-xs text-muted-foreground pt-1">
+                This lets women create plans just for women, and keeps that safe.
+              </p>
+            </div>
+          )}
+
+          {currentProfileStep === "nationality" && (
+            <div className="space-y-3 mb-4">
+              <NationalitySelector
+                value={nationality}
+                onChange={(value) => {
+                  setNationality(value);
+                  setNationalityInteracted(true);
+                  setNationalityError(validateNationality(value, true));
+                }}
+                placeholder="Select your nationality"
+                onOpenChange={(open) => {
+                  if (open) {
+                    setNationalityInteracted(true);
+                    setNationalityError(validateNationality(nationality, true));
+                  }
+                }}
+                onSearchChange={() => {
+                  if (!nationalityInteracted) setNationalityInteracted(true);
+                }}
+              />
+              {nationalityError && <p className="text-xs text-destructive">{nationalityError}</p>}
+              <button
+                type="button"
+                onClick={handleNationalityContinue}
+                disabled={!nationality.trim()}
+                className="w-full h-12 rounded-full text-sm font-semibold text-white disabled:opacity-40"
+                style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
+              >
+                Continue
+              </button>
+            </div>
+          )}
+
+          {currentProfileStep === "occupation" && (
+            <div className="space-y-3 mb-4">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg">💼</span>
+                <input
+                  type="text"
+                  placeholder="e.g. Software Engineer, Designer, Student"
+                  value={occupation}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setOccupation(next);
+                    if (occupationTouched) setOccupationError(validateOccupation(next));
+                  }}
+                  onBlur={() => {
+                    setOccupationTouched(true);
+                    setOccupationError(validateOccupation(occupation));
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleOccupationContinue()}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-muted/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  autoFocus
+                />
+              </div>
+              {occupationError && <p className="text-xs text-destructive">{occupationError}</p>}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setOccupation(""); advanceProfileStep(); }}
+                  className="flex-1 h-12 rounded-full text-sm font-semibold border border-border text-foreground"
+                >
+                  Skip
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOccupationContinue}
+                  className="flex-1 h-12 rounded-full text-sm font-semibold text-white"
+                  style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          {currentProfileStep === "interests" && (
+            <OnboardingInterestsStep
+              selected={selectedInterests}
+              onToggle={(interest) => {
+                if (selectedInterests.includes(interest)) {
+                  setSelectedInterests((prev) => prev.filter((i) => i !== interest));
+                } else {
+                  setSelectedInterests((prev) => [...prev, interest]);
+                }
+              }}
+              onContinue={advanceProfileStep}
+              onSkip={advanceProfileStep}
+            />
+          )}
+
+          {currentProfileStep === "social" && (
+            <OnboardingSocialStep
+              instagramUrl={instagramUrl}
+              linkedinUrl={linkedinUrl}
+              twitterUrl={twitterUrl}
+              onChangeInstagram={setInstagramUrl}
+              onChangeLinkedin={setLinkedinUrl}
+              onChangeTwitter={setTwitterUrl}
+              onDone={advanceProfileStep}
+              onSkip={advanceProfileStep}
+              isSaving={isLoading}
+            />
+          )}
+
+          {currentProfileStep === "avatar" && (
+            <div className="space-y-5 mb-4">
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="user" onChange={handleFileChange} className="hidden" />
+              <AvatarPicker
+                selectedAvatar={selectedAvatar}
+                onSelectAvatar={setSelectedAvatar}
+                onUploadClick={() => fileInputRef.current?.click()}
+                onCameraClick={() => cameraInputRef.current?.click()}
+                customAvatarPreview={customAvatarPreview}
+              />
+              <button
+                type="button"
+                onClick={() => handleSaveProfile()}
+                disabled={isLoading || !selectedAvatar}
+                className="w-full h-12 rounded-full text-sm font-semibold text-white disabled:opacity-40"
+                style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
+              >
+                {isLoading ? "Saving…" : "Complete Setup"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+  // ── End profile setup ──────────────────────────────────────────────────────
 
   return (
     <div className="relative min-h-screen w-full flex flex-col bg-white overflow-hidden">
@@ -1442,295 +1866,6 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Name Form - Step 1 of profile */}
-          {step === 'name' && (
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              if (!name.trim()) {
-                toast.error("Please enter your name");
-                return;
-              }
-              if (!dateOfBirth) {
-                toast.error("Please enter your date of birth");
-                return;
-              }
-              const age = calculateAge(dateOfBirth);
-              if (age < 18) {
-                toast.error("You must be 18 or older to use Shake");
-                return;
-              }
-              setStep('gender');
-            }} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Date of Birth */}
-              <div className="space-y-2">
-                <Label>Date of Birth <span className="text-destructive">*</span></Label>
-                <BirthdayPicker
-                  value={dateOfBirth}
-                  onChange={setDateOfBirth}
-                  maxDate={getMaxDate()}
-                />
-                <p className="text-xs text-muted-foreground">You must be 18 or older to join</p>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-shake-green text-background hover:bg-shake-green/90"
-                size="lg"
-              >
-                Continue
-              </Button>
-            </form>
-          )}
-
-          {/* Gender Step — used later to unlock the "women only" plan option
-              when creating a plan, and to gate joining women-only plans. */}
-          {step === 'gender' && (
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              if (!gender) {
-                toast.error("Please select an option");
-                return;
-              }
-              setStep('nationality');
-            }} className="space-y-6">
-              <div className="space-y-2">
-                <Label>
-                  How do you identify? <span className="text-destructive">*</span>
-                </Label>
-                <div className="flex flex-col gap-3">
-                  {([
-                    { value: "woman", label: "Woman" },
-                    { value: "man", label: "Man" },
-                    { value: "other", label: "Other" },
-                  ] as const).map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setGender(option.value)}
-                      className={`w-full py-3.5 rounded-xl text-base font-medium border transition-all ${
-                        gender === option.value
-                          ? "bg-shake-green text-background border-shake-green"
-                          : "bg-muted/60 text-foreground border-border hover:border-shake-green/50"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  This lets women create plans just for women, and keeps that safe.
-                </p>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-shake-green text-background hover:bg-shake-green/90"
-                size="lg"
-                disabled={!gender}
-              >
-                Continue
-              </Button>
-            </form>
-          )}
-
-          {/* Nationality Form */}
-          {step === 'nationality' && (
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const err = validateNationality(nationality, nationalityInteracted);
-              setNationalityError(err);
-              if (err) return;
-              setStep('occupation');
-            }} className="space-y-6">
-              <div className="space-y-2">
-                <Label>
-                  Nationality <span className="text-destructive">*</span>
-                </Label>
-                <NationalitySelector
-                  value={nationality}
-                  onChange={(value) => {
-                    setNationality(value);
-                    setNationalityInteracted(true);
-                    setNationalityError(validateNationality(value, true));
-                  }}
-                  placeholder="Select your nationality"
-                  onOpenChange={(open) => {
-                    if (open) {
-                      setNationalityInteracted(true);
-                      setNationalityError(validateNationality(nationality, true));
-                    }
-                  }}
-                  onSearchChange={() => {
-                    if (!nationalityInteracted) setNationalityInteracted(true);
-                  }}
-                />
-                {nationalityError ? (
-                  <p className="text-xs text-destructive">{nationalityError}</p>
-                ) : null}
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-shake-green text-background hover:bg-shake-green/90"
-                size="lg"
-                disabled={!nationality.trim()}
-              >
-                Continue
-              </Button>
-            </form>
-          )}
-
-          {/* Occupation Form */}
-          {step === 'occupation' && (
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              setOccupationTouched(true);
-              const err = validateOccupation(occupation);
-              setOccupationError(err);
-              if (err) return;
-              setStep('interests');
-            }} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="occupation">Occupation</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg">💼</span>
-                  <Input
-                    id="occupation"
-                    type="text"
-                    placeholder="e.g. Software Engineer, Designer, Student"
-                    value={occupation}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setOccupation(next);
-                      if (occupationTouched) {
-                        setOccupationError(validateOccupation(next));
-                      }
-                    }}
-                    onBlur={() => {
-                      setOccupationTouched(true);
-                      setOccupationError(validateOccupation(occupation));
-                    }}
-                    aria-invalid={!!occupationError}
-                    aria-describedby={occupationError ? "occupation-error" : undefined}
-                    className="pl-10"
-                  />
-                </div>
-                {occupationError ? (
-                  <p id="occupation-error" className="text-xs text-destructive">
-                    {occupationError}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  size="lg"
-                  onClick={() => setStep('interests')}
-                >
-                  Skip
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 bg-shake-green text-background hover:bg-shake-green/90"
-                  size="lg"
-                >
-                  Continue
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {/* Interests Step — chat-flow style, same visual language as the
-              "What's the plan?" plan-creation composer. Comes right after the
-              basics (name/nationality/occupation), before the profile picture. */}
-          {step === 'interests' && (
-            <OnboardingInterestsStep
-              selected={selectedInterests}
-              onToggle={(interest) => {
-                if (selectedInterests.includes(interest)) {
-                  setSelectedInterests((prev) => prev.filter((i) => i !== interest));
-                } else {
-                  setSelectedInterests((prev) => [...prev, interest]);
-                }
-              }}
-              onContinue={() => setStep('social')}
-              onSkip={() => setStep('social')}
-            />
-          )}
-
-          {/* Social Links Step — chat-flow style. */}
-          {step === 'social' && (
-            <OnboardingSocialStep
-              instagramUrl={instagramUrl}
-              linkedinUrl={linkedinUrl}
-              twitterUrl={twitterUrl}
-              onChangeInstagram={setInstagramUrl}
-              onChangeLinkedin={setLinkedinUrl}
-              onChangeTwitter={setTwitterUrl}
-              onDone={() => setStep('avatar')}
-              onSkip={() => setStep('avatar')}
-              isSaving={isLoading}
-            />
-          )}
-
-          {/* Avatar Picker Form — final step. Profile picture comes last, after
-              interests/socials, then completes the whole signup. */}
-          {step === 'avatar' && (
-            <form onSubmit={handleSaveProfile} className="space-y-6">
-              <div className="space-y-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="user"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <AvatarPicker
-                  selectedAvatar={selectedAvatar}
-                  onSelectAvatar={setSelectedAvatar}
-                  onUploadClick={() => fileInputRef.current?.click()}
-                  onCameraClick={() => cameraInputRef.current?.click()}
-                  customAvatarPreview={customAvatarPreview}
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-shake-green text-background hover:bg-shake-green/90"
-                size="lg"
-                disabled={isLoading}
-              >
-                {isLoading ? "Saving..." : "Complete Setup"}
-              </Button>
-            </form>
-          )}
         </div>
       </div>
 
