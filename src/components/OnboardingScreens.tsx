@@ -1,138 +1,137 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { ChevronRight, Users, MessageSquare, Sparkles } from "lucide-react";
+import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
+import screen1 from "@/assets/onboarding/screen_1cat.png";
+import screen2 from "@/assets/onboarding/screen_2god.png";
+import screen3 from "@/assets/onboarding/screen_3man.png";
 
 interface OnboardingScreensProps {
   onComplete: () => void | Promise<void>;
 }
 
-export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
-  const { t } = useTranslation();
-  const [currentScreen, setCurrentScreen] = useState(0);
+const SCREENS = [
+  {
+    image: screen1,
+    headline: "Discover plans near you",
+    subtext:
+      "Browse dinners, brunches, and video-proposed plans happening in your city — or anywhere in the world.",
+  },
+  {
+    image: screen2,
+    headline: "Chat, then meet",
+    subtext:
+      "Reply to specific messages, coordinate the details, and lock in the plan — all in one thread.",
+  },
+  {
+    image: screen3,
+    headline: "Enjoy your hang-out!",
+    subtext:
+      "See who's joining, what's planned, and where — then go!",
+  },
+];
 
-  const screens = [
-    {
-      emoji: "🎉",
-      title: t("onboarding.welcomeTitle"),
-      description: t("onboarding.welcomeDescription"),
-      icon: Sparkles,
-      color: "from-primary/20 to-primary/5",
-    },
-    {
-      emoji: "🍽️",
-      title: t("onboarding.joinActivitiesTitle"),
-      description: t("onboarding.joinActivitiesDescription"),
-      icon: Users,
-      color: "from-yellow-500/20 to-yellow-500/5",
-    },
-    {
-      emoji: "💬",
-      title: t("onboarding.chatConnectTitle"),
-      description: t("onboarding.chatConnectDescription"),
-      icon: MessageSquare,
-      color: "from-blue-500/20 to-blue-500/5",
-    },
-    {
-      emoji: "📍",
-      title: t("onboarding.meetInPersonTitle"),
-      description: t("onboarding.meetInPersonDescription"),
-      color: "from-green-500/20 to-green-500/5",
-    },
-  ];
+/** Minimum horizontal drag (px) to register as a swipe. */
+const SWIPE_THRESHOLD = 40;
+
+export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
+  const [current, setCurrent] = useState(0);
+  const pointerStartX = useRef<number | null>(null);
+  const isLast = current === SCREENS.length - 1;
+
+  const goTo = (index: number) => {
+    if (index >= 0 && index < SCREENS.length) setCurrent(index);
+  };
 
   const handleNext = async () => {
-    if (currentScreen < screens.length - 1) {
-      setCurrentScreen(currentScreen + 1);
+    if (!isLast) {
+      setCurrent((c) => c + 1);
     } else {
       await onComplete();
     }
   };
 
-  const handleSkip = async () => {
-    await onComplete();
+  // Pointer-based swipe (works for both touch and mouse)
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerStartX.current = e.clientX;
+  };
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (pointerStartX.current === null) return;
+    const delta = e.clientX - pointerStartX.current;
+    pointerStartX.current = null;
+    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
+    if (delta < 0) goTo(current + 1); // swipe left  → next
+    else goTo(current - 1);           // swipe right → prev
   };
 
-  const screen = screens[currentScreen];
-  const isLastScreen = currentScreen === screens.length - 1;
-
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col safe-area-top safe-area-bottom">
-      {/* Skip button */}
-      <div className="flex justify-end p-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleSkip}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          {t("onboarding.skip")}
-        </Button>
+    <div
+      className="fixed inset-0 z-50 flex flex-col select-none"
+      style={{ background: "#EFEDE7" }}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+    >
+      {/* Illustration area — top ~55 % of the screen.
+          object-cover + object-top crops into the illustration and hides the
+          text / dots / button that are baked into the lower half of the mockup
+          image, so those elements don't double up with the live ones below. */}
+      <div className="relative overflow-hidden" style={{ height: "55vh" }}>
+        {SCREENS.map((s, i) => (
+          <img
+            key={i}
+            src={s.image}
+            alt=""
+            draggable={false}
+            className={cn(
+              "absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500",
+              i === current ? "opacity-100" : "opacity-0"
+            )}
+          />
+        ))}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8">
-        {/* Animated background gradient */}
-        <div
-          className={cn(
-            "absolute inset-0 bg-gradient-to-b opacity-50 transition-all duration-500",
-            screen.color
-          )}
-        />
-
-        {/* Icon/Emoji container */}
-        <div className="relative z-10 mb-8">
-          <div className="w-32 h-32 rounded-full bg-card border border-border flex items-center justify-center shadow-lg">
-            <span className="text-6xl">{screen.emoji}</span>
-          </div>
-        </div>
-
-        {/* Text content */}
-        <div className="relative z-10 text-center max-w-sm">
-          <h1 className="text-2xl font-display font-bold text-foreground mb-3">
-            {screen.title}
+      {/* Text + controls — sits on the same warm background as the illustration */}
+      <div
+        className="flex-1 flex flex-col px-8 pt-6"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 2rem)" }}
+      >
+        {/* Headline + subtext — fixed min-height so dots/button don't jump */}
+        <div className="flex-1">
+          <h1
+            key={`h-${current}`}
+            className="text-[1.75rem] font-bold leading-tight text-gray-900 mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
+            {SCREENS[current].headline}
           </h1>
-          <p className="text-base text-muted-foreground leading-relaxed">
-            {screen.description}
+          <p
+            key={`p-${current}`}
+            className="text-base text-gray-500 leading-relaxed animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
+            {SCREENS[current].subtext}
           </p>
         </div>
-      </div>
 
-      {/* Bottom section */}
-      <div className="relative z-10 px-8 pb-8">
         {/* Progress dots */}
-        <div className="flex justify-center gap-2 mb-6">
-          {screens.map((_, index) => (
+        <div className="flex justify-center gap-2 mb-5">
+          {SCREENS.map((_, i) => (
             <button
-              key={index}
-              onClick={() => setCurrentScreen(index)}
+              key={i}
+              onClick={() => goTo(i)}
+              aria-label={`Go to screen ${i + 1}`}
               className={cn(
-                "w-2 h-2 rounded-full transition-all duration-300",
-                index === currentScreen
-                  ? "w-6 bg-primary"
-                  : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                "h-2 rounded-full transition-all duration-300",
+                i === current ? "w-6 bg-gray-900" : "w-2 bg-gray-900/25"
               )}
-              aria-label={`Go to screen ${index + 1}`}
             />
           ))}
         </div>
 
-        {/* Next/Get Started button */}
-        <Button
+        {/* CTA button — purple to match the mockup */}
+        <button
           onClick={handleNext}
-          className="w-full h-12 text-base font-medium"
-          size="lg"
+          className="w-full h-14 rounded-full text-base font-semibold text-white transition-opacity hover:opacity-90 active:opacity-80"
+          style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
         >
-          {isLastScreen ? (
-            t("onboarding.getStarted")
-          ) : (
-            <>
-              {t("onboarding.next")}
-              <ChevronRight className="w-5 h-5 ml-1" />
-            </>
-          )}
-        </Button>
+          {isLast ? "Get Started" : "Continue"}
+        </button>
       </div>
     </div>
   );
