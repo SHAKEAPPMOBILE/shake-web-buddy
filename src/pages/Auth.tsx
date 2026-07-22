@@ -753,9 +753,13 @@ export default function Auth() {
 
     setIsLoading(true);
     try {
-      const { error } = await sendPasswordResetEmail(email);
+      const { error, status } = await sendPasswordResetEmail(email);
       if (error) {
-        toast.error(toFriendlyAuthMessage(error.message, "email"));
+        if (status === 429 || error.message === "rate_limited") {
+          toast.error("Too many requests — please try again in an hour.");
+        } else {
+          toast.error("Unable to send password reset email. Please check your connection and try again.");
+        }
         return;
       }
 

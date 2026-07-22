@@ -23,7 +23,7 @@ interface AuthContextType {
   subscriptionEnd: string | null;
   didJustSignUp: boolean;
   sendEmailOtp: (email: string, purpose?: "signup", attemptNumber?: number) => Promise<OtpResult>;
-  sendPasswordResetEmail: (email: string) => Promise<{ error: Error | null }>;
+  sendPasswordResetEmail: (email: string) => Promise<{ error: Error | null; status?: number }>;
   verifyEmailOtp: (email: string, token: string, purpose?: string) => Promise<{ error: Error | null; data?: any }>;
   signUpWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -63,12 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logPostgrestError("AuthContext ensureProfilesExist profiles select", publicErr);
       }
 
-      // Resolve the best available name from OAuth metadata, falling back to
-      // the email prefix so the profile is never stored with name = null.
+      // Resolve the best available name from OAuth metadata only. Do NOT fall
+      // back to the email prefix — a truthy name here makes hasName=true in
+      // Auth.tsx's getProfileCompletionState and silently skips the onboarding
+      // wizard for email/magic-link signups, who haven't chosen a name yet.
       const resolvedName =
         (currentUser.user_metadata?.name as string | undefined)?.trim() ||
         (currentUser.user_metadata?.full_name as string | undefined)?.trim() ||
-        currentUser.email?.split("@")[0]?.trim() ||
         null;
 
       const resolvedAvatarUrl =
@@ -742,17 +743,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const sendPasswordResetEmail = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
-      redirectTo: `${authCallbackBaseUrl}?intent=reset`,
-    });
-    if (error) {
-      const friendly = toUserFriendlyAuthError(
-        error.message,
-        "Unable to send password reset email. Please check your connection and try again."
-      );
-      return { error: new Error(friendly) };
+    // Use raw fetch so we get the true HTTP status. supabase-js v2 swallows 429
+    // responses from /auth/v1/recover and returns {error:null}, which would cause
+    // the success confirmation screen to show even when the request failed.
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+    // redirect_to must be a query param, not a body field — GoTrue's /recover
+    // endpoint only reads it off the URL (see auth-js lib/fetch.js _request()).
+    const redirectTo = `${authCallbackBaseUrl}?intent=reset`;
+    let res: Response;
+    try {
+      res = await fetch(`${supabaseUrl}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: supabaseAnonKey,
+        },
+        body: JSON.stringify({
+          email: email.toLowerCase().trim(),
+          gotrue_meta_security: {},
+        }),
+      });
+    } catch {
+      return {
+        error: new Error("Unable to send password reset email. Please check your connection and try again."),
+        status: 0,
+      };
     }
-    return { error: null };
+    if (!res.ok) {
+      return { error: new Error(res.status === 429 ? "rate_limited" : "request_failed"), status: res.status };
+    }
+    return { error: null, status: res.status };
   };
 
   /** Sets password on the current session (e.g. after email magic-link signup). Merges `password_set_at` into user_metadata. */

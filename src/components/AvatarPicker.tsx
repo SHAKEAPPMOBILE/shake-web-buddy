@@ -35,6 +35,22 @@ const localAvatarOptions = [
 // Export avatar options (local only)
 export const avatarOptions = [...localAvatarOptions];
 
+// Radial layout constants
+// Inner ring: first 8 avatars at radius 78px
+// Outer ring: remaining 18 avatars at radius 145px
+// Container: 340px square — fits on 390px mobile with px-6 (24px) padding on each side
+const INNER_RING_COUNT = 8;
+const INNER_RADIUS = 78;
+const OUTER_RADIUS = 145;
+
+function radialPos(i: number, count: number, radius: number) {
+  const angle = (2 * Math.PI * i) / count;
+  return {
+    x: Math.round(radius * Math.sin(angle)),
+    y: Math.round(-radius * Math.cos(angle)),
+  };
+}
+
 interface AvatarPickerProps {
   selectedAvatar: string | null;
   onSelectAvatar: (avatarId: string) => void;
@@ -63,48 +79,113 @@ export function AvatarPicker({
 
   const isShowingSelected = Boolean(topPreviewUrl);
 
+  const innerRing = localAvatarOptions.slice(0, INNER_RING_COUNT);
+  const outerRing = localAvatarOptions.slice(INNER_RING_COUNT);
+
   return (
-    <div className="space-y-4">
-      {/* Camera/Upload button */}
-      <div className="flex justify-center">
+    // Outer wrapper provides scroll context if needed on very small screens
+    <div className="w-full overflow-x-hidden">
+      {/* Radial container — square, centered */}
+      <div
+        className="relative mx-auto"
+        style={{ width: "340px", height: "340px", maxWidth: "100%" }}
+      >
+        {/* Inner ring — 8 avatars */}
+        {innerRing.map((avatar, i) => {
+          const { x, y } = radialPos(i, innerRing.length, INNER_RADIUS);
+          const isSelected = selectedAvatar === avatar.id;
+          return (
+            <button
+              key={avatar.id}
+              type="button"
+              onClick={() => onSelectAvatar(avatar.id)}
+              aria-label={`Select avatar ${i + 1}`}
+              className={cn(
+                "absolute w-11 h-11 rounded-full border-2 transition-all duration-200 overflow-hidden",
+                isSelected
+                  ? "border-shake-green ring-2 ring-shake-green/20 scale-110 z-10"
+                  : "border-border hover:border-primary/50 hover:scale-105 active:scale-95"
+              )}
+              style={{
+                left: "50%",
+                top: "50%",
+                transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+              }}
+            >
+              <img
+                src={getDisplayAvatarUrl(avatar.src) ?? avatar.src}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </button>
+          );
+        })}
+
+        {/* Outer ring — 18 avatars */}
+        {outerRing.map((avatar, i) => {
+          const { x, y } = radialPos(i, outerRing.length, OUTER_RADIUS);
+          const isSelected = selectedAvatar === avatar.id;
+          return (
+            <button
+              key={avatar.id}
+              type="button"
+              onClick={() => onSelectAvatar(avatar.id)}
+              aria-label={`Select avatar ${INNER_RING_COUNT + i + 1}`}
+              className={cn(
+                "absolute w-10 h-10 rounded-full border-2 transition-all duration-200 overflow-hidden",
+                isSelected
+                  ? "border-shake-green ring-2 ring-shake-green/20 scale-110 z-10"
+                  : "border-border hover:border-primary/50 hover:scale-105 active:scale-95"
+              )}
+              style={{
+                left: "50%",
+                top: "50%",
+                transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+              }}
+            >
+              <img
+                src={getDisplayAvatarUrl(avatar.src) ?? avatar.src}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </button>
+          );
+        })}
+
+        {/* Center — camera / upload button (larger than avatar options) */}
         <button
           type="button"
-          onClick={onUploadClick}
-          className={cn(
-            "relative w-16 h-16 rounded-full border-2 transition-all duration-200 overflow-hidden hover:scale-110 active:scale-95",
-            isShowingSelected
-              ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
-              : "border-border hover:border-primary/50"
-          )}
+          onClick={onUploadClick ?? onCameraClick}
+          aria-label="Upload a photo"
           title="Upload a photo"
+          className={cn(
+            "absolute w-16 h-16 rounded-full border-2 transition-all duration-200 overflow-hidden z-20",
+            isShowingSelected
+              ? "border-shake-green ring-4 ring-shake-green/20 shadow-lg scale-110"
+              : "border-border bg-muted shadow-md hover:border-primary/50 hover:scale-105 active:scale-95"
+          )}
+          style={{
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
         >
           {topPreviewUrl ? (
-            <img src={topPreviewUrl} alt="Selected avatar" className="w-full h-full object-cover" />
+            <img
+              src={topPreviewUrl}
+              alt="Selected avatar"
+              className="w-full h-full object-cover"
+            />
           ) : (
-            <div className="w-full h-full bg-muted rounded-full flex items-center justify-center p-2">
-              <img src={cameraIcon} alt="Upload photo" className="w-full h-full object-contain" />
+            <div className="w-full h-full rounded-full flex items-center justify-center p-2">
+              <img
+                src={cameraIcon}
+                alt="Upload photo"
+                className="w-full h-full object-contain"
+              />
             </div>
           )}
         </button>
-      </div>
-
-      {/* Local avatars grid */}
-      <div className="grid grid-cols-6 gap-2 max-w-sm mx-auto">
-        {localAvatarOptions.map((avatar) => (
-          <button
-            key={avatar.id}
-            type="button"
-            onClick={() => onSelectAvatar(avatar.id)}
-            className={cn(
-              "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 hover:scale-110 active:scale-95",
-              selectedAvatar === avatar.id
-                ? "border-shake-green ring-2 ring-shake-green/20 scale-110"
-                : "border-border hover:border-primary/50"
-            )}
-          >
-            <img src={getDisplayAvatarUrl(avatar.src) ?? avatar.src} alt="Avatar option" className="w-full h-full object-cover" />
-          </button>
-        ))}
       </div>
     </div>
   );
