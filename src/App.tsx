@@ -28,6 +28,7 @@ import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import NotFound from "./pages/NotFound";
 import Welcome from "./pages/Welcome";
 import Admin from "./pages/Admin";
+import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 import ProposePlanPage from "./pages/ProposePlanPage";
 import EventChatPage from "./pages/EventChatPage";
 import ShareLanding from "./pages/ShareLanding";
@@ -186,6 +187,7 @@ const App = () => {
             <CityProvider>
               <VenueProvider>
                 <TooltipProvider>
+                  <NotificationProvider>
                   <Toaster />
                 <BrowserRouter>
                   <ReferralTracker />
@@ -206,6 +208,7 @@ const App = () => {
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>
+                  </NotificationProvider>
               </TooltipProvider>
             </VenueProvider>
           </CityProvider>

@@ -1646,6 +1646,7 @@ export default function Auth() {
           {step === "email" && (
             <form onSubmit={handleSendMagicLink} className="space-y-4">
               <div className="space-y-2 text-center">
+                <div className="text-4xl inline-block">🐱</div>
                 <h2 className="text-xl font-bold text-black">Verify your email</h2>
               </div>
 
@@ -1863,7 +1864,7 @@ export default function Auth() {
           {step === 'confirmation' && (
             <div className="space-y-6 text-center">
               <div className="space-y-3 text-center">
-                <div className="text-4xl animate-shake-x inline-block">📬</div>
+                <div className="text-4xl animate-shake-x inline-block">🐶</div>
                 <h2 className="text-xl font-bold text-black">Check your email</h2>
                 <p className="text-sm text-muted-foreground">
                   {confirmationKind === "reset"
