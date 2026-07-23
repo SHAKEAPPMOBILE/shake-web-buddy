@@ -48,6 +48,7 @@ const STORAGE_NEED_PASSWORD = "shake_post_signup_set_password";
 /** Steps where we must not reset to "name" or navigate away — avoids races when `user` refreshes mid-wizard. */
 const AUTH_WIZARD_STEPS = new Set([
   "name",
+  "birthday",
   "phone",
   "gender",
   "nationality",
