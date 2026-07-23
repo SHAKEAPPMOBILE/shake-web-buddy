@@ -12,6 +12,7 @@ import { toast } from "@/lib/app-toast";
 import logoShake from "@/assets/shake-logo-new.png";
 import catHead from "@/assets/onboarding/cat-head.png";
 import dogHead from "@/assets/onboarding/dog-head.png";
+import manHead from "@/assets/onboarding/man-head.png";
 import { User, Lock, Eye, EyeOff, Mail, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -1732,6 +1733,7 @@ export default function Auth() {
           {step === "setPassword" && (
             <form onSubmit={handleCompleteSignupPassword} className="space-y-4">
               <div className="space-y-2 text-center">
+                <img src={manHead} alt="" className="w-16 h-16 mx-auto object-contain" />
                 <h2 className="text-xl font-bold text-black">Set your password</h2>
                 <p className="text-sm text-white/80">
                   Choose a password for <span className="font-medium">{user?.email ?? email}</span>. You&apos;ll use it
