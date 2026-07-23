@@ -62,8 +62,8 @@ export function OnboardingInterestsStep({
               className={cn(
                 "px-4 py-2 rounded-full text-sm font-medium border transition-colors",
                 isActive
-                  ? "bg-black text-white border-black"
-                  : "bg-background text-foreground border-border hover:border-black/40"
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-background text-foreground border-border hover:border-blue-400"
               )}
             >
               {category.name}
@@ -71,7 +71,7 @@ export function OnboardingInterestsStep({
                 <span
                   className={cn(
                     "ml-1.5 text-xs rounded-full px-1.5 leading-none",
-                    isActive ? "bg-white/25 text-white" : "bg-black/10 text-foreground"
+                    isActive ? "bg-white/25 text-white" : "bg-blue-600/10 text-foreground"
                   )}
                 >
                   {countInCategory}
@@ -97,7 +97,7 @@ export function OnboardingInterestsStep({
                   className={cn(
                     "px-4 py-2 rounded-full text-sm font-medium shrink-0 transition-all",
                     isSelected
-                      ? "bg-black text-white"
+                      ? "bg-blue-600 text-white"
                       : "text-foreground hover:bg-muted"
                   )}
                 >

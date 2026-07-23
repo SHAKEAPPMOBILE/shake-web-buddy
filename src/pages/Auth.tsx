@@ -67,13 +67,13 @@ const AUTH_WIZARD_STEPS = new Set([
 
 // ── Conversational profile-setup helpers ────────────────────────────────────
 
-function BotBubble({ message, subtext }: { message: string; subtext?: string }) {
+function BotBubble({ message, subtext, avatarColor = "#e9d5ff" }: { message: string; subtext?: string; avatarColor?: string }) {
   if (!message) return null;
   return (
     <div className="flex flex-row items-end gap-3 mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div
         className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0"
-        style={{ background: "#e9d5ff" }}
+        style={{ background: avatarColor }}
       >
         😎
       </div>
@@ -115,6 +115,18 @@ const PROFILE_BOT_SUBTEXTS: Partial<Record<ProfileStepName, string>> = {
   phone: "Optional — tap Skip to continue",
   occupation: "Optional",
   social: "Optional — Instagram, LinkedIn, or X",
+};
+
+// Same palette ProposePlanPage cycles through per step.
+const STEP_AVATAR_COLORS: Partial<Record<ProfileStepName, string>> = {
+  name: "#facc15",       // yellow-400
+  birthday: "#bbf7d0",   // green-200
+  phone: "#fed7aa",      // orange-200
+  gender: "#fbcfe8",     // pink-200
+  nationality: "#93c5fd", // blue-300
+  occupation: "#e9d5ff", // purple-200
+  interests: "#fef08a",  // yellow-200
+  social: "#a5f3fc",     // cyan-200
 };
 
 // Steps whose input UI is simple enough to live in the fixed bottom composer
@@ -564,10 +576,6 @@ export default function Auth() {
 
         if (completion.isIncomplete) {
           setStep("name");
-          setName((prev) =>
-            prev ||
-            getFallbackProfileName(user)
-          );
           resolveSessionRouteDone();
           return;
         }
@@ -760,7 +768,6 @@ export default function Auth() {
     const completion = await getProfileCompletionState(u);
     if (completion.isIncomplete) {
       setStep("name");
-      setName((prev) => prev || getFallbackProfileName(u));
     } else {
       await navigateHome(true);
     }
@@ -968,12 +975,16 @@ export default function Auth() {
 
       let avatarUrl: string | null = null;
       if (selectedAvatar === "custom" && customAvatarPreview) {
-        const fileName = `${currentUser.id}-${Date.now()}`;
         try {
           const avatarBlob = await (await fetch(customAvatarPreview)).blob();
+          // Storage/CDN content-type sniffing can behave inconsistently for
+          // extension-less keys — derive a real extension from the blob's
+          // MIME type instead of relying on that.
+          const ext = (avatarBlob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
+          const fileName = `${currentUser.id}-${Date.now()}.${ext}`;
           const { error } = await supabase.storage
             .from("avatars")
-            .upload(fileName, avatarBlob, { upsert: true });
+            .upload(fileName, avatarBlob, { upsert: true, contentType: avatarBlob.type || "image/jpeg" });
 
           if (error) {
             throw error;
@@ -1165,6 +1176,71 @@ export default function Auth() {
     const currentProfileStep = PROFILE_STEPS[profileStepIndex];
     const hasFixedComposer = COMPOSER_STEPS.includes(currentProfileStep);
 
+    // Photo picker is its own full-page step — no chat history, matches the
+    // "alone in a full page" request. Back still works to edit earlier answers.
+    if (currentProfileStep === "avatar") {
+      return (
+        <div className="fixed inset-0 z-50 flex flex-col bg-background">
+          <div
+            className="flex items-center gap-3 px-4 border-b border-border/40 shrink-0"
+            style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 16px)", paddingBottom: "12px" }}
+          >
+            <button
+              type="button"
+              onClick={goBackProfileStep}
+              className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Back"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <div className="flex-1 flex justify-center">
+              <img src={logoShake} alt="SHAKE" className="h-8 w-auto object-contain" />
+            </div>
+            <div className="flex gap-1 items-center">
+              {PROFILE_STEPS.map((_, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-300",
+                    i < profileStepIndex ? "w-4 bg-violet-500" : i === profileStepIndex ? "w-5 bg-violet-700" : "w-1.5 bg-gray-200"
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col items-center justify-center px-4 gap-2">
+            <h2 className="text-xl font-bold text-foreground mb-2">{PROFILE_BOT_QUESTIONS.avatar}</h2>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="user" onChange={handleFileChange} className="hidden" />
+            <AvatarPicker
+              selectedAvatar={selectedAvatar}
+              onSelectAvatar={setSelectedAvatar}
+              onUploadClick={() => fileInputRef.current?.click()}
+              onCameraClick={() => cameraInputRef.current?.click()}
+              customAvatarPreview={customAvatarPreview}
+            />
+          </div>
+
+          <div
+            className="px-4 pt-3 shrink-0"
+            style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 16px)" }}
+          >
+            <button
+              type="button"
+              onClick={() => handleSaveProfile()}
+              disabled={isLoading || !selectedAvatar}
+              className="w-full h-14 rounded-full text-base font-semibold text-white disabled:opacity-40 animate-gradient-shift"
+            >
+              {isLoading ? "Saving…" : "Complete Setup"}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-background">
         {/* Header */}
@@ -1183,7 +1259,7 @@ export default function Auth() {
             </svg>
           </button>
           <div className="flex-1 flex justify-center">
-            <img src={logoShake} alt="SHAKE" className="h-8 w-8" />
+            <img src={logoShake} alt="SHAKE" className="h-8 w-auto object-contain" />
           </div>
           {/* Step progress dots */}
           <div className="flex gap-1 items-center">
@@ -1209,22 +1285,37 @@ export default function Auth() {
           className="flex-1 overflow-y-auto px-4 py-6"
           style={{ paddingBottom: hasFixedComposer ? "104px" : "max(env(safe-area-inset-bottom, 0px), 24px)" }}
         >
-          {/* Completed steps shown as history */}
-          {PROFILE_STEPS.slice(0, profileStepIndex).map((s) => (
-            <div key={s}>
-              <BotBubble message={PROFILE_BOT_QUESTIONS[s]} />
-              <div className="flex justify-end mb-6">
-                <div className="bg-violet-600 text-white rounded-2xl rounded-br-none px-4 py-2.5 max-w-[75%] text-sm font-medium">
-                  {getProfileStepAnswer(s)}
-                </div>
-              </div>
+          {/* Completed steps shown as history — same crescendo pattern as
+              ProposePlanPage: most-recent largest/clearest, older entries
+              smaller and fainter. Tap any past answer to jump back and edit it. */}
+          {profileStepIndex > 0 && (
+            <div className="space-y-4 mb-6">
+              {PROFILE_STEPS.slice(0, profileStepIndex).map((s, i) => {
+                const stepsBack = profileStepIndex - i;
+                const opacity = stepsBack === 1 ? "opacity-80" : stepsBack === 2 ? "opacity-70" : "opacity-60";
+                const labelSize = stepsBack === 1 ? "text-sm" : stepsBack === 2 ? "text-xs" : "text-[11px]";
+                const answerSize =
+                  stepsBack === 1 ? "text-xl" : stepsBack === 2 ? "text-base" : stepsBack === 3 ? "text-sm" : "text-xs";
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStep(s)}
+                    className={cn("w-full text-left space-y-0.5 transition-all hover:opacity-90 active:opacity-100", opacity)}
+                  >
+                    <p className={cn("text-muted-foreground leading-tight", labelSize)}>{PROFILE_BOT_QUESTIONS[s]}</p>
+                    <p className={cn("font-semibold text-foreground leading-tight", answerSize)}>{getProfileStepAnswer(s)}</p>
+                  </button>
+                );
+              })}
             </div>
-          ))}
+          )}
 
           {/* Current step bot bubble */}
           <BotBubble
             message={PROFILE_BOT_QUESTIONS[currentProfileStep]}
             subtext={PROFILE_BOT_SUBTEXTS[currentProfileStep]}
+            avatarColor={STEP_AVATAR_COLORS[currentProfileStep]}
           />
 
           {/* Step-specific input UI — only for steps with taller custom UI.
@@ -1258,29 +1349,6 @@ export default function Auth() {
               isSaving={isLoading}
             />
           )}
-
-          {currentProfileStep === "avatar" && (
-            <div className="space-y-5 mb-4">
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-              <input ref={cameraInputRef} type="file" accept="image/*" capture="user" onChange={handleFileChange} className="hidden" />
-              <AvatarPicker
-                selectedAvatar={selectedAvatar}
-                onSelectAvatar={setSelectedAvatar}
-                onUploadClick={() => fileInputRef.current?.click()}
-                onCameraClick={() => cameraInputRef.current?.click()}
-                customAvatarPreview={customAvatarPreview}
-              />
-              <button
-                type="button"
-                onClick={() => handleSaveProfile()}
-                disabled={isLoading || !selectedAvatar}
-                className="w-full h-12 rounded-full text-sm font-semibold text-white disabled:opacity-40"
-                style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
-              >
-                {isLoading ? "Saving…" : "Complete Setup"}
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Fixed bottom composer — chat-style input for simple single-answer
@@ -1309,7 +1377,7 @@ export default function Auth() {
                   type="button"
                   onClick={handleNameContinue}
                   disabled={!name.trim()}
-                  className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-violet-600"
+                  className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                   aria-label="Continue"
                 >
                   <ArrowUp className="w-5 h-5" />
@@ -1326,7 +1394,7 @@ export default function Auth() {
                   type="button"
                   onClick={handleBirthdayContinue}
                   disabled={!dateOfBirth}
-                  className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-violet-600"
+                  className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                   aria-label="Continue"
                 >
                   <ArrowUp className="w-5 h-5" />
@@ -1349,7 +1417,7 @@ export default function Auth() {
                   <button
                     type="button"
                     onClick={advanceProfileStep}
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-violet-600"
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                     aria-label="Continue"
                   >
                     <ArrowUp className="w-5 h-5" />
@@ -1386,8 +1454,8 @@ export default function Auth() {
                     className={cn(
                       "px-5 py-3.5 rounded-full text-base font-medium border transition-all",
                       gender === option.value
-                        ? "bg-violet-600 text-white border-violet-600"
-                        : "bg-muted/60 text-foreground border-border hover:border-violet-400"
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-muted/60 text-foreground border-border hover:border-blue-400"
                     )}
                   >
                     {option.label}
@@ -1423,7 +1491,7 @@ export default function Auth() {
                     type="button"
                     onClick={handleNationalityContinue}
                     disabled={!nationality.trim()}
-                    className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-violet-600"
+                    className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                     aria-label="Continue"
                   >
                     <ArrowUp className="w-5 h-5" />
@@ -1459,7 +1527,7 @@ export default function Auth() {
                   <button
                     type="button"
                     onClick={handleOccupationContinue}
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-violet-600"
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                     aria-label="Continue"
                   >
                     <ArrowUp className="w-5 h-5" />
