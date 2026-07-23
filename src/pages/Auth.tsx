@@ -981,10 +981,14 @@ export default function Auth() {
           // extension-less keys — derive a real extension from the blob's
           // MIME type instead of relying on that.
           const ext = (avatarBlob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
-          const fileName = `${currentUser.id}-${Date.now()}.${ext}`;
+          // Storage RLS requires the first path segment to be the uploader's
+          // user id (see storage.foldername policy) — a flat "id-timestamp"
+          // key fails that check silently and falls through to the catch
+          // block below, which is why this used to always "fail".
+          const filePath = `${currentUser.id}/avatar-${Date.now()}.${ext}`;
           const { error } = await supabase.storage
             .from("avatars")
-            .upload(fileName, avatarBlob, { upsert: true, contentType: avatarBlob.type || "image/jpeg" });
+            .upload(filePath, avatarBlob, { upsert: true, contentType: avatarBlob.type || "image/jpeg" });
 
           if (error) {
             throw error;
@@ -992,7 +996,7 @@ export default function Auth() {
 
           const { data: publicUrlData } = supabase.storage
             .from("avatars")
-            .getPublicUrl(fileName);
+            .getPublicUrl(filePath);
           avatarUrl = publicUrlData.publicUrl;
         } catch (avatarError) {
           console.error("Avatar upload error:", avatarError);

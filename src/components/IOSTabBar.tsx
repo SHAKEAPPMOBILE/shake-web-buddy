@@ -150,11 +150,11 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
             >
               <div className={cn(
                 "relative p-2 rounded-xl transition-all",
-                isActive && "bg-primary/10"
+                isActive && "bg-gray-200"
               )}>
                 <Icon className={cn(
                   "w-6 h-6 transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? "text-gray-900" : "text-muted-foreground"
                 )} />
                 {hasNotification && (
                   <span
@@ -165,7 +165,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
               </div>
               <span className={cn(
                 "text-[10px] font-medium transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground"
+                isActive ? "text-gray-900" : "text-muted-foreground"
               )}>
                 {tab.label}
               </span>

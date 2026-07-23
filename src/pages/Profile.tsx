@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
-import { Camera, ChevronLeft, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff, Globe } from "lucide-react";
+import { Camera, ChevronLeft, ChevronDown, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff, Globe } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -92,6 +92,7 @@ export default function Profile() {
   const returnTo = (location.state as any)?.returnTo as string | undefined;
   const [highlightBillingEmail, setHighlightBillingEmail] = useState(false);
   const [highlightGender, setHighlightGender] = useState(false);
+  const [isGenderExpanded, setIsGenderExpanded] = useState(false);
   const genderSectionRef = useRef<HTMLDivElement>(null);
 
   // Warn on browser tab close / page refresh when there are unsaved changes
@@ -215,6 +216,7 @@ export default function Profile() {
     if (isLoading) return;
 
     setHighlightGender(true);
+    setIsGenderExpanded(true);
     setTimeout(() => {
       genderSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 0);
@@ -603,27 +605,43 @@ export default function Profile() {
                 highlightGender ? "ring-2 ring-shake-yellow/50 bg-shake-yellow/5 p-3 -m-3" : ""
               }`}
             >
-              <Label className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsGenderExpanded((prev) => !prev)}
+                className="flex items-center gap-2 w-full text-left"
+              >
                 <span className="text-lg">🧑</span>
-                {t('profile.gender')}
-              </Label>
-              <div className="flex gap-2">
-                {(["woman", "man", "other"] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    disabled={isSavingGender}
-                    onClick={() => handleGenderSelect(option)}
-                    className={`flex-1 py-2.5 rounded-full text-sm font-medium border transition-all disabled:opacity-50 ${
-                      gender === option
-                        ? "bg-black text-white border-black"
-                        : "bg-muted/60 text-foreground border-border hover:border-primary/50"
-                    }`}
-                  >
-                    {t(`profile.gender_${option}`)}
-                  </button>
-                ))}
-              </div>
+                <Label className="cursor-pointer">{t('profile.gender')}</Label>
+                {gender && (
+                  <span className="text-sm text-muted-foreground">
+                    — {t(`profile.gender_${gender}`)}
+                  </span>
+                )}
+                <ChevronDown
+                  className={`w-4 h-4 text-muted-foreground ml-auto transition-transform ${
+                    isGenderExpanded ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {isGenderExpanded && (
+                <div className="flex gap-2">
+                  {(["woman", "man", "other"] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      disabled={isSavingGender}
+                      onClick={() => handleGenderSelect(option)}
+                      className={`flex-1 py-2.5 rounded-full text-sm font-medium border transition-all disabled:opacity-50 ${
+                        gender === option
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-muted/60 text-foreground border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {t(`profile.gender_${option}`)}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Nationality */}
