@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { INTEREST_CATEGORIES } from "@/lib/interests";
@@ -24,7 +23,6 @@ export function OnboardingInterestsStep({
   onContinue,
   onSkip,
 }: OnboardingInterestsStepProps) {
-  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const currentCategory = activeCategory
@@ -33,22 +31,6 @@ export function OnboardingInterestsStep({
 
   return (
     <div className="space-y-6">
-      {/* Bot bubble */}
-      <div className="flex flex-row items-end gap-3">
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
-          style={{ background: "#e9d5ff" }}
-        >
-          ✨
-        </div>
-        <div className="bg-muted rounded-2xl rounded-tl-none px-5 py-4 flex-1">
-          <p className="text-xl font-semibold text-foreground leading-snug">
-            {t("auth.interestsQuestion")}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">{t("auth.interestsSubtext")}</p>
-        </div>
-      </div>
-
       {/* Mother category chips */}
       <div className="flex flex-wrap gap-2">
         {INTEREST_CATEGORIES.map((category) => {
@@ -106,7 +88,7 @@ export function OnboardingInterestsStep({
               );
             })
           ) : (
-            <span className="text-sm text-muted-foreground">{t("auth.interestsPlaceholder")}</span>
+            <span className="text-sm text-muted-foreground">Tap a topic above ↑</span>
           )}
         </div>
         <button
@@ -124,7 +106,7 @@ export function OnboardingInterestsStep({
         onClick={onSkip}
         className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-center"
       >
-        {t("auth.skipForNow")}
+        Skip for now
       </button>
     </div>
   );

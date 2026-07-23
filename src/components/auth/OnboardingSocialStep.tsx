@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import { Instagram, Linkedin, Twitter, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,16 +33,15 @@ export function OnboardingSocialStep({
   onSkip,
   isSaving = false,
 }: OnboardingSocialStepProps) {
-  const { t } = useTranslation();
   const [activePlatform, setActivePlatform] = useState<SocialPlatform | null>(null);
 
   const platforms: { id: SocialPlatform; icon: typeof Instagram; label: string; value: string; placeholder: string }[] = useMemo(
     () => [
-      { id: "instagram", icon: Instagram, label: "Instagram", value: instagramUrl, placeholder: t("auth.pasteInstagram") },
-      { id: "twitter", icon: Twitter, label: "X", value: twitterUrl, placeholder: t("auth.pasteX") },
-      { id: "linkedin", icon: Linkedin, label: "LinkedIn", value: linkedinUrl, placeholder: t("auth.pasteLinkedIn") },
+      { id: "instagram", icon: Instagram, label: "Instagram", value: instagramUrl, placeholder: "Paste your Instagram link here" },
+      { id: "twitter", icon: Twitter, label: "X", value: twitterUrl, placeholder: "Paste your X link here" },
+      { id: "linkedin", icon: Linkedin, label: "LinkedIn", value: linkedinUrl, placeholder: "Paste your LinkedIn link here" },
     ],
-    [instagramUrl, twitterUrl, linkedinUrl, t]
+    [instagramUrl, twitterUrl, linkedinUrl]
   );
 
   const activeValue =
@@ -52,10 +50,10 @@ export function OnboardingSocialStep({
     activePlatform === "twitter" ? twitterUrl : "";
 
   const activePlaceholder =
-    activePlatform === "instagram" ? t("auth.pasteInstagram") :
-    activePlatform === "linkedin" ? t("auth.pasteLinkedIn") :
-    activePlatform === "twitter" ? t("auth.pasteX") :
-    t("auth.socialsPlaceholder");
+    activePlatform === "instagram" ? "Paste your Instagram link here" :
+    activePlatform === "linkedin" ? "Paste your LinkedIn link here" :
+    activePlatform === "twitter" ? "Paste your X link here" :
+    "Tap an icon above ↑";
 
   const handleActiveChange = (value: string) => {
     if (activePlatform === "instagram") onChangeInstagram(value);
@@ -65,22 +63,6 @@ export function OnboardingSocialStep({
 
   return (
     <div className="space-y-6">
-      {/* Bot bubble */}
-      <div className="flex flex-row items-end gap-3">
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
-          style={{ background: "#bbf7d0" }}
-        >
-          📱
-        </div>
-        <div className="bg-muted rounded-2xl rounded-tl-none px-5 py-4 flex-1">
-          <p className="text-xl font-semibold text-foreground leading-snug">
-            {t("auth.socialsQuestion")}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">{t("auth.socialsSubtext")}</p>
-        </div>
-      </div>
-
       {/* Platform icons */}
       <div className="flex gap-3">
         {platforms.map(({ id, icon: Icon, label, value }) => {
@@ -123,7 +105,7 @@ export function OnboardingSocialStep({
           onClick={onDone}
           disabled={isSaving}
           className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black disabled:opacity-50"
-          aria-label={t("auth.done")}
+          aria-label="Done"
         >
           <ArrowUp className="w-5 h-5" />
         </button>
@@ -135,7 +117,7 @@ export function OnboardingSocialStep({
         disabled={isSaving}
         className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-center disabled:opacity-50"
       >
-        {t("auth.skipForNow")}
+        Skip for now
       </button>
     </div>
   );
