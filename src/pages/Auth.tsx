@@ -107,7 +107,7 @@ const PROFILE_BOT_QUESTIONS: Record<ProfileStepName, string> = {
   occupation: "What do you do? 💼",
   interests: "What are you into? ✨",
   social: "Drop your socials 📸",
-  avatar: "Last step — pick your photo! 🎭",
+  avatar: "Last step — pick an avatar or a photo!",
 };
 
 const PROFILE_BOT_SUBTEXTS: Partial<Record<ProfileStepName, string>> = {
