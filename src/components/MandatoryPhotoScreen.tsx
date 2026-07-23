@@ -76,29 +76,17 @@ export function MandatoryPhotoScreen({ userId, onComplete }: MandatoryPhotoScree
         avatarUrl = preset.src;
       }
 
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("name")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      const fallbackName = existingProfile?.name?.trim()
-        || String(
-          currentUser?.user_metadata?.name
-          ?? currentUser?.user_metadata?.full_name
-          ?? currentUser?.email?.split("@")[0]
-          ?? ""
-        ).trim()
-        || null;
-
+      // Only ever write avatar_url here — never fall back to the email prefix
+      // for name. A truthy name would make hasName=true in Auth.tsx's
+      // getProfileCompletionState and IOSAppLayout's completeness check,
+      // silently skipping the onboarding wizard for users who haven't
+      // actually entered their name yet.
       const { data, error } = await supabase
         .from("profiles")
         .upsert(
           {
             user_id: userId,
             avatar_url: avatarUrl,
-            name: fallbackName,
           },
           { onConflict: "user_id" }
         )
@@ -106,7 +94,7 @@ export function MandatoryPhotoScreen({ userId, onComplete }: MandatoryPhotoScree
         .single();
 
       if (error) throw error;
-      if (!hasValidAvatarUrl(data?.avatar_url) || !data?.name?.trim()) {
+      if (!hasValidAvatarUrl(data?.avatar_url)) {
         throw new Error("Avatar save could not be verified");
       }
 
