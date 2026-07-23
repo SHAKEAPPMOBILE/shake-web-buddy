@@ -23,8 +23,15 @@ export function useOnboarding(userId: string | undefined, didJustSignUp: boolean
     }
 
     let cancelled = false;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    const checkOnboardingStatus = async () => {
+    // Right after signup, profiles_private is inserted asynchronously by the
+    // handle_new_user DB trigger. If this check runs before that row lands,
+    // retry with backoff instead of giving up and permanently skipping
+    // onboarding for the session.
+    const checkOnboardingStatus = async (attempt = 0) => {
+      const maxAttempts = 6;
+      let scheduledRetry = false;
       try {
         const { data, error } = await supabase
           .from("profiles_private")
@@ -43,15 +50,18 @@ export function useOnboarding(userId: string | undefined, didJustSignUp: boolean
           } else {
             setShowOnboarding(false);
           }
+        } else if (attempt < maxAttempts) {
+          scheduledRetry = true;
+          retryTimeout = setTimeout(() => checkOnboardingStatus(attempt + 1), 400 * (attempt + 1));
         } else {
-          // No profile yet - don't show onboarding (profile will be created during signup)
+          // Row still doesn't exist after retrying - don't show onboarding
           setShowOnboarding(false);
         }
       } catch (err) {
         console.error("Failed to check onboarding:", err);
-        setShowOnboarding(false);
+        if (!cancelled) setShowOnboarding(false);
       } finally {
-        if (!cancelled) {
+        if (!cancelled && !scheduledRetry) {
           setIsChecking(false);
         }
       }
@@ -61,6 +71,7 @@ export function useOnboarding(userId: string | undefined, didJustSignUp: boolean
 
     return () => {
       cancelled = true;
+      if (retryTimeout) clearTimeout(retryTimeout);
     };
   }, [userId, didJustSignUp]);
 

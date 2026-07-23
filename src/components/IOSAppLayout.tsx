@@ -285,16 +285,17 @@ export function IOSAppLayout() {
     const maxRetries = 6;
 
     const checkProfileCompletion = async () => {
+      let scheduledRetry = false;
       try {
         const status = await fetchProfileCompletionStatus();
         if (cancelled) return;
         if (!status) {
-          setIsCheckingAvatar(false);
           return;
         }
 
         if (status.shouldRetry && retryCount < maxRetries) {
           retryCount++;
+          scheduledRetry = true;
           pendingProfileCheckTimeoutRef.current = window.setTimeout(checkProfileCompletion, 500 * retryCount);
           return;
         }
@@ -317,6 +318,7 @@ export function IOSAppLayout() {
           const inGracePeriod = justSavedTs > 0 && Date.now() - justSavedTs < 20000;
           if (inGracePeriod && retryCount < maxRetries) {
             retryCount++;
+            scheduledRetry = true;
             pendingProfileCheckTimeoutRef.current = window.setTimeout(checkProfileCompletion, 450 * Math.min(retryCount, 8));
             return;
           }
@@ -326,7 +328,13 @@ export function IOSAppLayout() {
       } catch (error) {
         console.log("Profile check failed:", error);
       } finally {
-        if (!cancelled) setIsCheckingAvatar(false);
+        // Do NOT clear the blocking spinner while a retry is pending — that
+        // was the bug: it unblocked the home page render after the first
+        // attempt even though the real completeness check (and the
+        // nameMissing -> /auth redirect) was still running in the
+        // background, letting users reach the app before the mandatory
+        // profile wizard actually finished.
+        if (!cancelled && !scheduledRetry) setIsCheckingAvatar(false);
       }
     };
 
@@ -342,13 +350,18 @@ export function IOSAppLayout() {
     };
   }, [user, isLoading, fetchProfileCompletionStatus, applyProfileCompletionStatus]);
 
-  // Global fail-safe: never keep main app blocked by the avatar/profile check spinner for > 3s.
+  // Global fail-safe: never keep main app blocked indefinitely if the profile
+  // completeness check hangs. Set well above the retry chain's worst case
+  // (~10.5s) so it only fires for a genuinely stuck check, not normal
+  // retry backoff — this used to be 3s, which fired before retries for a
+  // fresh signup could finish, letting users into the app before the
+  // mandatory profile wizard redirect had a chance to run.
   useEffect(() => {
     if (!user || !isCheckingAvatar) return;
 
     const timeoutId = window.setTimeout(() => {
       setIsCheckingAvatar(false);
-    }, 3000);
+    }, 15000);
 
     return () => {
       window.clearTimeout(timeoutId);

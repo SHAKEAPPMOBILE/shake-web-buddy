@@ -10,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import logoShake from "@/assets/shake-logo-new.png";
+import catHead from "@/assets/onboarding/cat-head.png";
+import dogHead from "@/assets/onboarding/dog-head.png";
 import { User, Lock, Eye, EyeOff, Mail, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -83,6 +85,7 @@ function BotBubble({ message, subtext }: { message: string; subtext?: string }) 
 
 const PROFILE_STEPS = [
   "name",
+  "birthday",
   "phone",
   "gender",
   "nationality",
@@ -95,6 +98,7 @@ type ProfileStepName = (typeof PROFILE_STEPS)[number];
 
 const PROFILE_BOT_QUESTIONS: Record<ProfileStepName, string> = {
   name: "What's your name? 👋",
+  birthday: "When's your birthday? 🎂",
   phone: "What's your phone number? 📱",
   gender: "How do you identify?",
   nationality: "Where are you from? 🌍",
@@ -105,11 +109,24 @@ const PROFILE_BOT_QUESTIONS: Record<ProfileStepName, string> = {
 };
 
 const PROFILE_BOT_SUBTEXTS: Partial<Record<ProfileStepName, string>> = {
-  name: "You must be 18 or older to join",
+  birthday: "You must be 18 or older to join",
   phone: "Optional — tap Skip to continue",
   occupation: "Optional",
   social: "Optional — Instagram, LinkedIn, or X",
 };
+
+// Steps whose input UI is simple enough to live in the fixed bottom composer
+// (matches ProposePlanPage's chat pattern). Steps with taller custom UI
+// (interests grid, social links form, avatar picker) render inline instead —
+// same rule ProposePlanPage uses for its own "preview" step.
+const COMPOSER_STEPS: readonly ProfileStepName[] = [
+  "name",
+  "birthday",
+  "phone",
+  "gender",
+  "nationality",
+  "occupation",
+];
 
 // Show user-friendly messages instead of technical errors
 function toFriendlyAuthMessage(raw: string, context: "login" | "signup" | "email" | "general"): string {
@@ -608,6 +625,7 @@ export default function Auth() {
   const getProfileStepAnswer = (s: ProfileStepName): string => {
     switch (s) {
       case "name": return name || "—";
+      case "birthday": return dateOfBirth || "—";
       case "phone": return phone.trim() || "Skipped";
       case "gender": return gender
         ? { woman: "Woman", man: "Man", other: "Other" }[gender] ?? gender
@@ -634,6 +652,10 @@ export default function Auth() {
 
   const handleNameContinue = () => {
     if (!name.trim()) { toast.error("Please enter your name"); return; }
+    advanceProfileStep();
+  };
+
+  const handleBirthdayContinue = () => {
     if (!dateOfBirth) { toast.error("Please enter your date of birth"); return; }
     if (calculateAge(dateOfBirth) < 18) { toast.error("You must be 18 or older to use Shake"); return; }
     advanceProfileStep();
@@ -1139,7 +1161,7 @@ export default function Auth() {
   // ── Full-screen conversational profile setup ───────────────────────────────
   if (isProfileStep) {
     const currentProfileStep = PROFILE_STEPS[profileStepIndex];
-    const hasFixedComposer = !["interests", "social", "avatar"].includes(currentProfileStep);
+    const hasFixedComposer = COMPOSER_STEPS.includes(currentProfileStep);
 
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-background">
@@ -1183,7 +1205,7 @@ export default function Auth() {
         <div
           ref={profileScrollRef}
           className="flex-1 overflow-y-auto px-4 py-6"
-          style={{ paddingBottom: hasFixedComposer ? "16px" : "max(env(safe-area-inset-bottom, 0px), 24px)" }}
+          style={{ paddingBottom: hasFixedComposer ? "104px" : "max(env(safe-area-inset-bottom, 0px), 24px)" }}
         >
           {/* Completed steps shown as history */}
           {PROFILE_STEPS.slice(0, profileStepIndex).map((s) => (
@@ -1203,174 +1225,8 @@ export default function Auth() {
             subtext={PROFILE_BOT_SUBTEXTS[currentProfileStep]}
           />
 
-          {/* Step-specific input UI */}
-
-          {currentProfileStep === "name" && (
-            <div className="space-y-4 mb-4">
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleNameContinue()}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-muted/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  autoFocus
-                />
-              </div>
-              <BirthdayPicker value={dateOfBirth} onChange={setDateOfBirth} maxDate={getMaxDate()} />
-              <button
-                type="button"
-                onClick={handleNameContinue}
-                className="w-full h-12 rounded-full text-sm font-semibold text-white"
-                style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
-              >
-                Continue
-              </button>
-            </div>
-          )}
-
-          {currentProfileStep === "phone" && (
-            <div className="space-y-3 mb-4">
-              <div className="flex gap-2">
-                <input
-                  type="tel"
-                  placeholder="+1 (555) 000-0000"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && advanceProfileStep()}
-                  className="flex-1 pl-4 pr-4 py-3 rounded-xl border border-border bg-muted/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={advanceProfileStep}
-                  className="w-12 h-12 rounded-full bg-violet-600 text-white flex items-center justify-center shrink-0"
-                  aria-label="Continue"
-                >
-                  <ArrowUp className="w-5 h-5" />
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={advanceProfileStep}
-                className="text-sm text-muted-foreground underline underline-offset-2 w-full text-center"
-              >
-                Skip
-              </button>
-            </div>
-          )}
-
-          {currentProfileStep === "gender" && (
-            <div className="space-y-3 mb-4">
-              {([
-                { value: "woman", label: "Woman" },
-                { value: "man", label: "Man" },
-                { value: "other", label: "Other" },
-              ] as const).map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    setGender(option.value);
-                    // Brief visual confirmation before advancing
-                    setTimeout(() => {
-                      setGender(option.value);
-                      advanceProfileStep();
-                    }, 180);
-                  }}
-                  className={cn(
-                    "w-full py-3.5 rounded-xl text-base font-medium border transition-all",
-                    gender === option.value
-                      ? "bg-violet-600 text-white border-violet-600"
-                      : "bg-muted/60 text-foreground border-border hover:border-violet-400"
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-              <p className="text-xs text-muted-foreground pt-1">
-                This lets women create plans just for women, and keeps that safe.
-              </p>
-            </div>
-          )}
-
-          {currentProfileStep === "nationality" && (
-            <div className="space-y-3 mb-4">
-              <NationalitySelector
-                value={nationality}
-                onChange={(value) => {
-                  setNationality(value);
-                  setNationalityInteracted(true);
-                  setNationalityError(validateNationality(value, true));
-                }}
-                placeholder="Select your nationality"
-                onOpenChange={(open) => {
-                  if (open) {
-                    setNationalityInteracted(true);
-                    setNationalityError(validateNationality(nationality, true));
-                  }
-                }}
-                onSearchChange={() => {
-                  if (!nationalityInteracted) setNationalityInteracted(true);
-                }}
-              />
-              {nationalityError && <p className="text-xs text-destructive">{nationalityError}</p>}
-              <button
-                type="button"
-                onClick={handleNationalityContinue}
-                disabled={!nationality.trim()}
-                className="w-full h-12 rounded-full text-sm font-semibold text-white disabled:opacity-40"
-                style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
-              >
-                Continue
-              </button>
-            </div>
-          )}
-
-          {currentProfileStep === "occupation" && (
-            <div className="space-y-3 mb-4">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg">💼</span>
-                <input
-                  type="text"
-                  placeholder="e.g. Software Engineer, Designer, Student"
-                  value={occupation}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    setOccupation(next);
-                    if (occupationTouched) setOccupationError(validateOccupation(next));
-                  }}
-                  onBlur={() => {
-                    setOccupationTouched(true);
-                    setOccupationError(validateOccupation(occupation));
-                  }}
-                  onKeyDown={(e) => e.key === "Enter" && handleOccupationContinue()}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-muted/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  autoFocus
-                />
-              </div>
-              {occupationError && <p className="text-xs text-destructive">{occupationError}</p>}
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => { setOccupation(""); advanceProfileStep(); }}
-                  className="flex-1 h-12 rounded-full text-sm font-semibold border border-border text-foreground"
-                >
-                  Skip
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOccupationContinue}
-                  className="flex-1 h-12 rounded-full text-sm font-semibold text-white"
-                  style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Step-specific input UI — only for steps with taller custom UI.
+              Simple single-input steps render in the fixed bottom composer below. */}
 
           {currentProfileStep === "interests" && (
             <OnboardingInterestsStep
@@ -1424,6 +1280,201 @@ export default function Auth() {
             </div>
           )}
         </div>
+
+        {/* Fixed bottom composer — chat-style input for simple single-answer
+            steps, matching ProposePlanPage. Always the same "up arrow" submit
+            affordance; only the question and input type change per step. */}
+        {hasFixedComposer && (
+          <div
+            className="fixed left-0 right-0 bottom-0 z-20 bg-background/95 backdrop-blur border-t border-border/40 px-4 pt-3"
+            style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 12px)" }}
+          >
+            {currentProfileStep === "name" && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleNameContinue()}
+                    className="w-full h-14 pl-10 pr-4 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+                    autoFocus
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleNameContinue}
+                  disabled={!name.trim()}
+                  className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-violet-600"
+                  aria-label="Continue"
+                >
+                  <ArrowUp className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+
+            {currentProfileStep === "birthday" && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <BirthdayPicker value={dateOfBirth} onChange={setDateOfBirth} maxDate={getMaxDate()} />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleBirthdayContinue}
+                  disabled={!dateOfBirth}
+                  className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-violet-600"
+                  aria-label="Continue"
+                >
+                  <ArrowUp className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+
+            {currentProfileStep === "phone" && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && advanceProfileStep()}
+                    className="flex-1 h-14 px-5 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={advanceProfileStep}
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-violet-600"
+                    aria-label="Continue"
+                  >
+                    <ArrowUp className="w-5 h-5" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={advanceProfileStep}
+                  className="text-sm text-muted-foreground underline underline-offset-2 w-full text-center"
+                >
+                  Skip
+                </button>
+              </div>
+            )}
+
+            {currentProfileStep === "gender" && (
+              <div className="flex gap-3 justify-center pb-1">
+                {([
+                  { value: "woman", label: "Woman" },
+                  { value: "man", label: "Man" },
+                  { value: "other", label: "Other" },
+                ] as const).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      setGender(option.value);
+                      // Brief visual confirmation before advancing
+                      setTimeout(() => {
+                        setGender(option.value);
+                        advanceProfileStep();
+                      }, 180);
+                    }}
+                    className={cn(
+                      "px-5 py-3.5 rounded-full text-base font-medium border transition-all",
+                      gender === option.value
+                        ? "bg-violet-600 text-white border-violet-600"
+                        : "bg-muted/60 text-foreground border-border hover:border-violet-400"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {currentProfileStep === "nationality" && (
+              <div className="space-y-2 pb-1">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <NationalitySelector
+                      value={nationality}
+                      onChange={(value) => {
+                        setNationality(value);
+                        setNationalityInteracted(true);
+                        setNationalityError(validateNationality(value, true));
+                      }}
+                      placeholder="Select your nationality"
+                      onOpenChange={(open) => {
+                        if (open) {
+                          setNationalityInteracted(true);
+                          setNationalityError(validateNationality(nationality, true));
+                        }
+                      }}
+                      onSearchChange={() => {
+                        if (!nationalityInteracted) setNationalityInteracted(true);
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleNationalityContinue}
+                    disabled={!nationality.trim()}
+                    className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-violet-600"
+                    aria-label="Continue"
+                  >
+                    <ArrowUp className="w-5 h-5" />
+                  </button>
+                </div>
+                {nationalityError && <p className="text-xs text-destructive">{nationalityError}</p>}
+              </div>
+            )}
+
+            {currentProfileStep === "occupation" && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">💼</span>
+                    <input
+                      type="text"
+                      placeholder="e.g. Software Engineer, Designer, Student"
+                      value={occupation}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setOccupation(next);
+                        if (occupationTouched) setOccupationError(validateOccupation(next));
+                      }}
+                      onBlur={() => {
+                        setOccupationTouched(true);
+                        setOccupationError(validateOccupation(occupation));
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && handleOccupationContinue()}
+                      className="w-full h-14 pl-10 pr-4 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOccupationContinue}
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-violet-600"
+                    aria-label="Continue"
+                  >
+                    <ArrowUp className="w-5 h-5" />
+                  </button>
+                </div>
+                {occupationError && <p className="text-xs text-destructive">{occupationError}</p>}
+                <button
+                  type="button"
+                  onClick={() => { setOccupation(""); advanceProfileStep(); }}
+                  className="text-sm text-muted-foreground underline underline-offset-2 w-full text-center"
+                >
+                  Skip
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -1646,7 +1697,7 @@ export default function Auth() {
           {step === "email" && (
             <form onSubmit={handleSendMagicLink} className="space-y-4">
               <div className="space-y-2 text-center">
-                <div className="text-4xl inline-block">🐱</div>
+                <img src={catHead} alt="" className="w-16 h-16 mx-auto object-contain" />
                 <h2 className="text-xl font-bold text-black">Verify your email</h2>
               </div>
 
@@ -1864,7 +1915,7 @@ export default function Auth() {
           {step === 'confirmation' && (
             <div className="space-y-6 text-center">
               <div className="space-y-3 text-center">
-                <div className="text-4xl animate-shake-x inline-block">🐶</div>
+                <img src={dogHead} alt="" className="w-16 h-16 mx-auto object-contain animate-shake-x" />
                 <h2 className="text-xl font-bold text-black">Check your email</h2>
                 <p className="text-sm text-muted-foreground">
                   {confirmationKind === "reset"
