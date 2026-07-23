@@ -455,9 +455,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-amber-800">{t('profile.genderInfoMissing')}</p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              {t('profile.genderInfoMissingDesc')}
-            </p>
           </div>
           <ChevronRight className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
         </button>
