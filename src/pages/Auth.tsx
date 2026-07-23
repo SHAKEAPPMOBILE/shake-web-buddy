@@ -1771,7 +1771,7 @@ export default function Auth() {
           {step === "email" && (
             <form onSubmit={handleSendMagicLink} className="space-y-4">
               <div className="space-y-2 text-center">
-                <img src={catHead} alt="" className="w-16 h-16 mx-auto object-contain" />
+                <img src={catHead} alt="" className="w-20 h-20 mx-auto object-contain" />
                 <h2 className="text-xl font-bold text-black">Verify your email</h2>
               </div>
 
@@ -1805,7 +1805,7 @@ export default function Auth() {
           {step === "setPassword" && (
             <form onSubmit={handleCompleteSignupPassword} className="space-y-4">
               <div className="space-y-2 text-center">
-                <img src={manHead} alt="" className="w-16 h-16 mx-auto object-contain" />
+                <img src={manHead} alt="" className="w-20 h-20 mx-auto object-contain" />
                 <h2 className="text-xl font-bold text-black">Set your password</h2>
                 <p className="text-sm text-white/80">
                   Choose a password for <span className="font-medium">{user?.email ?? email}</span>. You&apos;ll use it
@@ -1867,8 +1867,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full text-white"
-                style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
+                className="w-full text-white animate-gradient-shift hover:opacity-95"
                 size="lg"
                 disabled={isLoading}
               >
@@ -1990,7 +1989,7 @@ export default function Auth() {
           {step === 'confirmation' && (
             <div className="space-y-6 text-center">
               <div className="space-y-3 text-center">
-                <img src={dogHead} alt="" className="w-16 h-16 mx-auto object-contain animate-shake-x" />
+                <img src={dogHead} alt="" className="w-20 h-20 mx-auto object-contain animate-shake-x" />
                 <h2 className="text-xl font-bold text-black">Check your email</h2>
                 <p className="text-sm text-muted-foreground">
                   {confirmationKind === "reset"
@@ -2007,8 +2006,7 @@ export default function Auth() {
                   setPassword("");
                   setConfirmPassword("");
                 }}
-                variant="outline"
-                className="w-full border-2 text-gray-900"
+                className="w-full text-white animate-gradient-shift hover:opacity-95"
                 size="lg"
               >
                 Back to Log In
