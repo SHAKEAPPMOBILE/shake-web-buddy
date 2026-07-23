@@ -104,7 +104,7 @@ export function BirthdayPicker({ value, onChange, maxDate }: BirthdayPickerProps
           <SelectTrigger className="w-full bg-background">
             <SelectValue placeholder="Month" />
           </SelectTrigger>
-          <SelectContent className="bg-background z-50 max-h-[200px]">
+          <SelectContent className="bg-background z-50" position="popper" sideOffset={4}>
             {months.map((month) => (
               <SelectItem key={month.value} value={month.value}>
                 {month.label}
@@ -124,7 +124,7 @@ export function BirthdayPicker({ value, onChange, maxDate }: BirthdayPickerProps
           <SelectTrigger className="w-full bg-background">
             <SelectValue placeholder="Day" />
           </SelectTrigger>
-          <SelectContent className="bg-background z-50 max-h-[200px]">
+          <SelectContent className="bg-background z-50" position="popper" sideOffset={4}>
             {days.map((day) => (
               <SelectItem key={day} value={day}>
                 {parseInt(day)}
@@ -144,7 +144,7 @@ export function BirthdayPicker({ value, onChange, maxDate }: BirthdayPickerProps
           <SelectTrigger className="w-full bg-background">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
-          <SelectContent className="bg-background z-50 max-h-[200px]">
+          <SelectContent className="bg-background z-50" position="popper" sideOffset={4}>
             {years.map((year) => (
               <SelectItem key={year} value={year}>
                 {year}
