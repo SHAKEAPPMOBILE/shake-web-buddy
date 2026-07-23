@@ -1534,7 +1534,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             className={cn(
               "px-3 py-1 rounded-full text-xs font-semibold transition-all border",
               !showAllCities
-                ? "bg-primary text-primary-foreground border-primary"
+                ? "bg-gray-200 text-gray-900 border-gray-300"
                 : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
             )}
           >
@@ -1546,7 +1546,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             className={cn(
               "px-3 py-1 rounded-full text-xs font-semibold transition-all border",
               showAllCities
-                ? "bg-primary text-primary-foreground border-primary"
+                ? "bg-gray-200 text-gray-900 border-gray-300"
                 : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
             )}
           >
@@ -1676,7 +1676,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           {t('common.today')}
                         </span>
                       ) : isTomorrow(parseDbDate(plan.scheduled_for)) ? (
-                        <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-2 py-0.5 rounded-full">
+                        <span className="text-xs bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-0.5 rounded-full">
                           {t('common.tomorrow')}
                         </span>
                       ) : (
@@ -1815,7 +1815,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                             </span>
                           )}
                           {plan.scheduled_for && isTomorrow(parseDbDate(plan.scheduled_for)) && (
-                            <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold px-1.5 py-0.5 rounded-full">
+                            <span className="text-xs bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-1.5 py-0.5 rounded-full">
                               {t('common.tomorrow')}
                             </span>
                           )}
