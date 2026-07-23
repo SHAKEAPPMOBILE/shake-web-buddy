@@ -84,6 +84,7 @@ export function useAllVenues() {
         .order('city', { ascending: true })
         .order('venue_type', { ascending: true })
         .order('sort_order', { ascending: true })
+        .order('name', { ascending: true }) // stable tiebreaker for equal sort_order, so rotation order doesn't shuffle between fetches
         .limit(5000); // Prevent PostgREST default max_rows (1000) from silently truncating
       
       if (error) {
@@ -109,7 +110,8 @@ export function useVenuesByCity(city: string) {
         .eq('city', city)
         .eq('is_active', true)
         .order('venue_type', { ascending: true })
-        .order('sort_order', { ascending: true });
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
       
       if (error) throw error;
       return data as DbVenue[];
@@ -137,7 +139,8 @@ export function useVenuesForActivity(city: string, activityType: string) {
         .select('*')
         .eq('venue_type', venueType)
         .eq('is_active', true)
-        .order('sort_order', { ascending: true });
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
 
       if (error) throw error;
       const allRows = (data ?? []) as DbVenue[];

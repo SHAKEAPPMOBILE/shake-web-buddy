@@ -2285,6 +2285,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         const time = autoGenCardPlan.activity_type === 'dinner' ? '7:00 PM'
           : autoGenCardPlan.activity_type === 'drinks' ? '8:00 PM'
           : null;
+        const venue = getVenueForActivity(autoGenCardPlan.city, autoGenCardPlan.activity_type);
         return (
           <div className="fixed inset-0 z-50 bg-black/40" onClick={() => setAutoGenCardPlan(null)}>
             <ActivityDetailsCard
@@ -2299,6 +2300,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               dayName={dayName}
               time={time}
               joinCity={autoGenCardPlan.city}
+              venueName={venue?.name}
               carouselJoinCount={autoGenCardPlan.participant_count ?? 0}
               maxGroupSize={MAX_GROUP_CAPACITY}
               hasNoVenue={false}

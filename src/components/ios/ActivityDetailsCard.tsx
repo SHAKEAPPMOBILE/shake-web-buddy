@@ -20,6 +20,7 @@ export interface ActivityDetailsCardProps {
   dayName: string;
   time: string | null;
   joinCity: string;
+  venueName?: string | null;
   carouselJoinCount: number;
   maxGroupSize: number;
   hasNoVenue: boolean;
@@ -43,6 +44,7 @@ export function ActivityDetailsCard({
   dayName,
   time,
   joinCity,
+  venueName,
   carouselJoinCount,
   maxGroupSize,
   hasNoVenue,
@@ -80,6 +82,7 @@ export function ActivityDetailsCard({
         <p className="text-2xl font-display font-bold text-foreground">{activity?.label}</p>
         {!!dayName && <p className="text-xl font-semibold text-primary">{dayName}</p>}
         {!!time && <p className="text-lg font-semibold text-primary">{time}</p>}
+        {!!venueName && <p className="text-base font-semibold text-foreground">{venueName}</p>}
         <p className="text-base text-muted-foreground">
           {t('activityDialog.inCity', 'in {{city}}', { city: joinCity })}
         </p>

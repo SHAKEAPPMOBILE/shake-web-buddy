@@ -402,11 +402,15 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const joinCity = selectedJoinCity || selectedCity || "";
   const VENUE_ACTIVITY_IDS = ['dinner', 'drinks', 'brunch', 'lunch'];
   const currentActivityNeedsVenue = VENUE_ACTIVITY_IDS.includes(currentActivity?.id || '');
+  const currentVenue =
+    currentActivityNeedsVenue && !!joinCity
+      ? getVenueForActivity(joinCity, currentActivity?.id || '')
+      : null;
   const hasNoVenue =
     currentActivityNeedsVenue &&
     !venuesLoading &&
     !!joinCity &&
-    !getVenueForActivity(joinCity, currentActivity?.id || '');
+    !currentVenue;
   const groupedCities = useMemo(
     () =>
       REGIONS.reduce((acc, region) => {
@@ -645,6 +649,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                 dayName={currentDayName}
                 time={currentTime}
                 joinCity={joinCity}
+                venueName={currentVenue?.name}
                 carouselJoinCount={carouselJoinCount}
                 maxGroupSize={MAX_GROUP_SIZE}
                 hasNoVenue={hasNoVenue}
