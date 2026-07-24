@@ -22,6 +22,7 @@ interface AuthContextType {
   isManualOverride: boolean;
   subscriptionEnd: string | null;
   didJustSignUp: boolean;
+  markJustSignedUp: () => void;
   sendEmailOtp: (email: string, purpose?: "signup", attemptNumber?: number) => Promise<OtpResult>;
   sendPasswordResetEmail: (email: string) => Promise<{ error: Error | null; status?: number }>;
   verifyEmailOtp: (email: string, token: string, purpose?: string) => Promise<{ error: Error | null; data?: any }>;
@@ -803,6 +804,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSubscriptionEnd(null);
   };
 
+  // Called once, right when the signup wizard's "Complete Setup" succeeds, so
+  // useOnboarding knows to show the post-signup app-tour screens. Without this
+  // being set, didJustSignUp stays false forever and the tour never shows.
+  const markJustSignedUp = () => {
+    setDidJustSignUp(true);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -813,6 +821,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isManualOverride,
         subscriptionEnd,
         didJustSignUp,
+        markJustSignedUp,
         sendEmailOtp,
         sendPasswordResetEmail,
         verifyEmailOtp,

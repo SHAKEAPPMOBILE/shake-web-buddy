@@ -276,7 +276,7 @@ export default function Auth() {
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [confirmationKind, setConfirmationKind] = useState<"signup" | "reset">("signup");
   
-  const { user, isLoading: isAuthLoading, sendEmailOtp, sendPasswordResetEmail, signInWithPassword, updatePassword } = useAuth();
+  const { user, isLoading: isAuthLoading, sendEmailOtp, sendPasswordResetEmail, signInWithPassword, updatePassword, markJustSignedUp } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1082,6 +1082,7 @@ export default function Auth() {
 
       toast.success("Profile complete!");
       triggerConfettiWaterfall();
+      markJustSignedUp();
       await navigateHome(true);
     } catch (error) {
       console.error("Profile save error:", error);
