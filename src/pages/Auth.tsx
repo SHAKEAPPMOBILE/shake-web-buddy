@@ -365,6 +365,19 @@ export default function Auth() {
     []
   );
 
+  // BirthdayPicker emits a placeholder-padded value (e.g. "1997-03-00") while
+  // the user is still mid-selection. That string is truthy and JS's lenient
+  // Date parsing (day "00" silently rolls back to the prior month) can even
+  // pass the 18+ check, so a genuinely incomplete date could slip through
+  // and fail Postgres's stricter validation at final save. Require all
+  // three real components before treating the date as usable.
+  const isCompleteDateOfBirth = (value: string): boolean => {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return false;
+    const [, year, month, day] = match;
+    return year !== "0000" && month !== "00" && day !== "00";
+  };
+
   const calculateAge = (birthDate: string): number => {
     const today = new Date();
     const birth = new Date(birthDate);
@@ -674,7 +687,7 @@ export default function Auth() {
   };
 
   const handleBirthdayContinue = () => {
-    if (!dateOfBirth) { toast.error("Please enter your date of birth"); return; }
+    if (!isCompleteDateOfBirth(dateOfBirth)) { toast.error("Please enter your date of birth"); return; }
     if (calculateAge(dateOfBirth) < 18) { toast.error("You must be 18 or older to use Shake"); return; }
     advanceProfileStep();
   };
@@ -963,7 +976,9 @@ export default function Auth() {
         currentUser.email?.split("@")[0]?.trim() ||
         "Shake User";
 
-      const resolvedDateOfBirth = dateOfBirth || existingPrivate?.date_of_birth || null;
+      const resolvedDateOfBirth = isCompleteDateOfBirth(dateOfBirth)
+        ? dateOfBirth
+        : existingPrivate?.date_of_birth || null;
 
       if (!resolvedDateOfBirth) {
         toast.error("Please enter your date of birth");
@@ -1411,7 +1426,7 @@ export default function Auth() {
                 <button
                   type="button"
                   onClick={handleBirthdayContinue}
-                  disabled={!dateOfBirth}
+                  disabled={!isCompleteDateOfBirth(dateOfBirth)}
                   className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                   aria-label="Continue"
                 >
