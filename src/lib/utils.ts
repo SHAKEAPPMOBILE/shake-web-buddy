@@ -30,7 +30,9 @@ const MAX_SHARE_LABEL_WORD_LENGTH = 12;
 export function getShareLabel(note: string | null | undefined, fallbackLabel: string): string {
   const trimmed = note?.trim();
   if (!trimmed) return fallbackLabel;
-  const firstWord = trimmed.split(/\s+/)[0];
+  // Strip trailing punctuation (e.g. the comma in "Yoga, surf, dinner") so
+  // it doesn't leak into "Join Yoga, in New York City!".
+  const firstWord = trimmed.split(/\s+/)[0]?.replace(/[.,!?;:]+$/, "");
   if (!firstWord) return fallbackLabel;
   return firstWord.length > MAX_SHARE_LABEL_WORD_LENGTH
     ? firstWord.slice(0, MAX_SHARE_LABEL_WORD_LENGTH)

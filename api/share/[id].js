@@ -37,7 +37,9 @@ const MAX_LABEL_WORD_LENGTH = 12;
 
 function getFirstWordTruncated(text) {
   if (!text) return null;
-  const firstWord = text.trim().split(/\s+/)[0];
+  // Strip trailing punctuation (e.g. the comma in "Yoga, surf, dinner") so
+  // it doesn't leak into "Join Yoga, in New York City!".
+  const firstWord = text.trim().split(/\s+/)[0]?.replace(/[.,!?;:]+$/, "");
   if (!firstWord) return null;
   return firstWord.length > MAX_LABEL_WORD_LENGTH ? firstWord.slice(0, MAX_LABEL_WORD_LENGTH) : firstWord;
 }

@@ -11,12 +11,12 @@
   ],
   "rewrites": [
     {
-      "source": "/invite/:id*",
+      "source": "/invite/(.*)",
       "has": [{"type": "header", "key": "user-agent", "value": "(?i).*(whatsapp|facebookexternalhit|twitterbot|linkedinbot|telegrambot|slackbot).*"}],
-      "destination": "/api/share/:id*"
+      "destination": "/api/share/$1"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
