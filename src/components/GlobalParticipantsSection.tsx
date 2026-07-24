@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
-import { Eye, User, Sparkles } from "lucide-react";
+import { Eye, User, Sparkles, Search, X } from "lucide-react";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SuperHumanIcon } from "./SuperHumanIcon";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { toast } from "@/lib/app-toast";
@@ -18,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { cn } from "@/lib/utils";
 
 interface Participant {
   user_id: string;
@@ -33,6 +35,8 @@ export function GlobalParticipantsSection() {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showListDialog, setShowListDialog] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{
@@ -211,8 +215,14 @@ export function GlobalParticipantsSection() {
     setShowPremiumDialog(true);
   };
 
-  const visibleParticipants = participants.slice(0, FREE_VISIBLE_COUNT);
-  const blurredParticipants = participants.slice(FREE_VISIBLE_COUNT);
+  const filteredParticipants = searchQuery.trim()
+    ? participants.filter((p) =>
+        (p.name || "").toLowerCase().includes(searchQuery.trim().toLowerCase())
+      )
+    : participants;
+
+  const visibleParticipants = filteredParticipants.slice(0, FREE_VISIBLE_COUNT);
+  const blurredParticipants = filteredParticipants.slice(FREE_VISIBLE_COUNT);
   const hasMoreParticipants = blurredParticipants.length > 0;
 
   // Preview avatars for the badge - show at least 7 users (with photos first, then placeholders)
@@ -265,10 +275,67 @@ export function GlobalParticipantsSection() {
       </button>
 
       {/* Participants List Dialog */}
-      <Dialog open={showListDialog} onOpenChange={setShowListDialog}>
+      <Dialog
+        open={showListDialog}
+        onOpenChange={(open) => {
+          setShowListDialog(open);
+          if (!open) {
+            setIsSearchActive(false);
+            setSearchQuery("");
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md bg-white border border-purple-200/60">
           <DialogHeader>
-            <DialogTitle className="font-display text-gray-900">Shakers nearby</DialogTitle>
+            <div className="flex items-center gap-2">
+              {/* DialogTitle stays in the DOM (visually hidden while searching) so
+                  Radix's dialog a11y label requirement is always satisfied. */}
+              <DialogTitle
+                className={cn(
+                  "font-display text-gray-900",
+                  isSearchActive && "sr-only"
+                )}
+              >
+                Shakers nearby
+              </DialogTitle>
+
+              {isSearchActive ? (
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    autoFocus
+                    type="search"
+                    placeholder="Search by name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 border-gray-300 bg-white pl-9 pr-9 text-sm text-gray-900 shadow-sm focus-visible:bg-white focus-visible:ring-gray-400"
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSearchActive(false);
+                      setSearchQuery("");
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Close search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                participants.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsSearchActive(true)}
+                    className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Search Shakers"
+                  >
+                    <Search className="h-5 w-5" />
+                  </button>
+                )
+              )}
+            </div>
           </DialogHeader>
 
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -279,6 +346,10 @@ export function GlobalParticipantsSection() {
             ) : participants.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 No Shakers yet. Be the first!
+              </p>
+            ) : filteredParticipants.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No Shakers match "{searchQuery.trim()}".
               </p>
             ) : (
               <>
