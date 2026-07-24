@@ -1,11 +1,4 @@
 {
-  "routes": [
-    {
-      "src": "/invite/(.*)",
-      "has": [{"type": "header", "key": "user-agent", "value": "(?i).*(whatsapp|facebookexternalhit|twitterbot|linkedinbot|telegrambot|slackbot).*"}],
-      "dest": "/api/share/$1"
-    }
-  ],
   "headers": [
     {
       "source": "/.well-known/apple-app-site-association",
@@ -17,6 +10,11 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/invite/:id*",
+      "has": [{"type": "header", "key": "user-agent", "value": "(?i).*(whatsapp|facebookexternalhit|twitterbot|linkedinbot|telegrambot|slackbot).*"}],
+      "destination": "/api/share/:id*"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
