@@ -16,7 +16,7 @@ import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
 import { formatDateWithTranslation, parseDbDate } from "@/lib/date-utils";
-import { cn, getPriceValue } from "@/lib/utils";
+import { cn, getPriceValue, getShareLabel } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
@@ -992,7 +992,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     e.stopPropagation();
     e.preventDefault();
 
-    const activityLabel = getActivityLabel(plan.activity_type);
+    const activityLabel = getShareLabel(plan.note, getActivityLabel(plan.activity_type));
     const activityEmoji = getActivityEmoji(plan.activity_type);
     const dateStr = plan.scheduled_for
       ? format(parseDbDate(plan.scheduled_for), "EEE, d MMM")
