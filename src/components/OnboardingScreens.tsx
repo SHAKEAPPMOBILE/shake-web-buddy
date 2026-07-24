@@ -64,29 +64,38 @@ export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col select-none"
+      className="fixed inset-0 z-50 flex flex-col items-center select-none overflow-y-auto"
       style={{ background: "#EFEDE7" }}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >
-      {/* Illustration area — top ~55 % of the screen.
-          object-cover + object-top crops into the illustration and hides the
-          text / dots / button that are baked into the lower half of the mockup
-          image, so those elements don't double up with the live ones below. */}
-      <div className="relative overflow-hidden" style={{ height: "55vh" }}>
-        {SCREENS.map((s, i) => (
-          <img
-            key={i}
-            src={s.image}
-            alt=""
-            draggable={false}
-            className={cn(
-              "absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500",
-              i === current ? "opacity-100" : "opacity-0"
-            )}
-          />
-        ))}
-      </div>
+      {/* Centered mobile-width column — on a wide desktop viewport this keeps
+          the illustration at its natural proportions instead of stretching
+          full-bleed, which is what was over-zooming/cropping it. */}
+      <div className="w-full max-w-md flex flex-col flex-1">
+        {/* Illustration area. The source mockups are 900×1900 with the
+            illustration occupying the top 820px (~43%) and the rest baked-in
+            text/dots/button below it — aspect-ratio (not a fixed vh height)
+            is what makes object-cover crop exactly that boundary regardless
+            of viewport width, so it doesn't double up with the live text/
+            controls rendered below. */}
+        <div
+          className="relative overflow-hidden w-full shrink-0"
+          style={{ aspectRatio: "900 / 820" }}
+        >
+          {SCREENS.map((s, i) => (
+            <img
+              key={i}
+              src={s.image}
+              alt=""
+              draggable={false}
+              className={cn(
+                "absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500",
+                i === current ? "opacity-100" : "opacity-0"
+              )}
+            />
+          ))}
+        </div>
 
       {/* Text + controls — sits on the same warm background as the illustration */}
       <div
@@ -132,6 +141,7 @@ export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
         >
           {isLast ? "Get Started" : "Continue"}
         </button>
+      </div>
       </div>
     </div>
   );
