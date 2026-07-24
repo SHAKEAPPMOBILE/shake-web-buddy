@@ -405,14 +405,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         <h2 className="mt-4 text-xl font-display font-bold text-gray-900">{userName || t('profile.userFallback', 'User')}</h2>
-        {isPremium && (
-          <div
-            onClick={(e) => { e.stopPropagation(); setShowPremiumDialog(true); }}
-            className="flex items-center gap-1.5 mt-2 px-3 py-1 bg-shake-yellow/10 rounded-full cursor-pointer hover:bg-shake-yellow/20 transition-colors"
-          >
-            <span className="text-sm font-medium text-shake-yellow">{t('profile.superHuman')}</span>
-          </div>
-        )}
       </button>
 
       {/* ── Payout warning banner ──────────────────────────────────────────

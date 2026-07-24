@@ -6,6 +6,7 @@ import screen3 from "@/assets/onboarding/screen_3man.png";
 
 interface OnboardingScreensProps {
   onComplete: () => void | Promise<void>;
+  userName?: string | null;
 }
 
 const SCREENS = [
@@ -23,7 +24,7 @@ const SCREENS = [
   },
   {
     image: screen3,
-    headline: "Enjoy your hang-out!",
+    headline: "Enjoy your hang-out",
     subtext:
       "See who's joining, what's planned, and where — then go!",
   },
@@ -32,10 +33,11 @@ const SCREENS = [
 /** Minimum horizontal drag (px) to register as a swipe. */
 const SWIPE_THRESHOLD = 40;
 
-export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
+export function OnboardingScreens({ onComplete, userName }: OnboardingScreensProps) {
   const [current, setCurrent] = useState(0);
   const pointerStartX = useRef<number | null>(null);
   const isLast = current === SCREENS.length - 1;
+  const firstName = userName?.trim().split(/\s+/)[0] || null;
 
   const goTo = (index: number) => {
     if (index >= 0 && index < SCREENS.length) setCurrent(index);
@@ -112,7 +114,7 @@ export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
             key={`h-${current}`}
             className="text-[1.75rem] font-bold leading-tight text-gray-900 mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
-            {SCREENS[current].headline}
+            {firstName ? `${SCREENS[current].headline}, ${firstName}!` : SCREENS[current].headline}
           </h1>
           <p
             key={`p-${current}`}

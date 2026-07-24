@@ -73,6 +73,7 @@ export function IOSAppLayout() {
   const [openSubscriptionOnMount, setOpenSubscriptionOnMount] = useState(false);
   const [showMandatoryPhoto, setShowMandatoryPhoto] = useState(false);
   const [isCheckingAvatar, setIsCheckingAvatar] = useState(true);
+  const [onboardingUserName, setOnboardingUserName] = useState<string | null>(null);
   const pendingProfileCheckTimeoutRef = useRef<number | null>(null);
 
   const { user, isLoading, didJustSignUp } = useAuth();
@@ -149,13 +150,17 @@ export function IOSAppLayout() {
       nameMissing,
       needsProfile,
       shouldRetry: Boolean(profileError || !resolvedProfile),
+      name: resolvedProfile?.name ?? null,
     };
   }, [user]);
 
-  const applyProfileCompletionStatus = useCallback((status: { avatarMissing: boolean; needsProfile: boolean; nameMissing: boolean }) => {
+  const applyProfileCompletionStatus = useCallback((status: { avatarMissing: boolean; needsProfile: boolean; nameMissing: boolean; name?: string | null }) => {
     // Never block with the avatar screen if we're about to redirect to onboarding —
     // Auth.tsx wizard collects avatar as its final step.
     setShowMandatoryPhoto(!status.nameMissing && status.avatarMissing);
+    if (!status.nameMissing && status.name) {
+      setOnboardingUserName(status.name);
+    }
 
     // If name is absent the user hasn't completed onboarding. Send them to
     // Auth.tsx which runs the 8-step wizard and collects name + avatar together.
@@ -643,7 +648,7 @@ export function IOSAppLayout() {
 
   // Show onboarding for new users (after signup)
   if (showOnboarding && !isCheckingOnboarding && user) {
-    return <OnboardingScreens onComplete={completeOnboarding} />;
+    return <OnboardingScreens onComplete={completeOnboarding} userName={onboardingUserName} />;
   }
 
   return (
