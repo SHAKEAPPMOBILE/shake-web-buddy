@@ -65,7 +65,11 @@ export function OnboardingScreens({ onComplete }: OnboardingScreensProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col items-center select-none overflow-y-auto"
-      style={{ background: "#EFEDE7" }}
+      // Matches the mockups' own baked-in background (rgb(242,241,236),
+      // sampled directly from the source PNGs) exactly, so there's no
+      // visible seam where the transparent-edged illustration meets the
+      // page background.
+      style={{ background: "#F2F1EC" }}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >
