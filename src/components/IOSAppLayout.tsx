@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { hasValidAvatarUrl } from "@/lib/avatar";
+import { isEmailPrefixName } from "@/lib/profileName";
 import { getOrderedActivities, getNextOccurrenceDate, getActivityLabel } from "@/data/activityTypes";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
 import EventsPage from "@/pages/EventsPage";
@@ -101,7 +102,7 @@ export function IOSAppLayout() {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("name, avatar_url")
+      .select("name, avatar_url, onboarding_completed_at")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -122,7 +123,7 @@ export function IOSAppLayout() {
           },
           { onConflict: "user_id" }
         )
-        .select("name, avatar_url")
+        .select("name, avatar_url, onboarding_completed_at")
         .maybeSingle();
 
       if (bootstrapError) {
@@ -132,7 +133,14 @@ export function IOSAppLayout() {
       }
     }
 
-    const nameMissing = resolvedProfile !== null ? !resolvedProfile?.name?.trim() : false;
+    // Completeness is keyed off onboarding_completed_at (set exactly once by
+    // the wizard's own save in Auth.tsx) rather than inferred from name/avatar
+    // being present — see profiles migration 20260724000000 for why.
+    // isEmailPrefixName is a belt-and-suspenders guard for rows that predate
+    // this flag or that acquire a bad name through some other write path.
+    const nameMissing = resolvedProfile !== null
+      ? !resolvedProfile?.onboarding_completed_at || isEmailPrefixName(resolvedProfile.name, user.email)
+      : false;
     const avatarMissing = !hasValidAvatarUrl(resolvedProfile?.avatar_url);
     const needsProfile = nameMissing || avatarMissing;
 

@@ -15,6 +15,7 @@ import dogHead from "@/assets/onboarding/dog-head.png";
 import manHead from "@/assets/onboarding/man-head.png";
 import { User, Lock, Eye, EyeOff, Mail, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isEmailPrefixName } from "@/lib/profileName";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { BirthdayPicker } from "@/components/BirthdayPicker";
 import { AvatarPicker, avatarOptions } from "@/components/AvatarPicker";
@@ -435,7 +436,7 @@ export default function Auth() {
 
       const { data: profile, error: profileErr } = await supabase
         .from("profiles")
-        .select("name, avatar_url")
+        .select("name, avatar_url, onboarding_completed_at")
         .eq("user_id", authUser.id)
         .maybeSingle();
 
@@ -466,7 +467,7 @@ export default function Auth() {
               },
               { onConflict: "user_id" }
             )
-            .select("name, avatar_url")
+            .select("name, avatar_url, onboarding_completed_at")
             .maybeSingle();
 
           if (bootstrapError) {
@@ -477,7 +478,14 @@ export default function Auth() {
           }
         }
 
-        const hasName = !!resolvedProfile?.name?.trim();
+        // Completeness is keyed off onboarding_completed_at, set exactly once
+        // by the wizard's own save — not inferred from name/avatar being
+        // present, since other code paths can populate those independently
+        // of the user ever completing the wizard. isEmailPrefixName is a
+        // belt-and-suspenders guard for any row that predates this flag.
+        const hasName =
+          !!resolvedProfile?.onboarding_completed_at &&
+          !isEmailPrefixName(resolvedProfile.name, authUser.email);
 
         // DEBUG — remove once wizard routing is confirmed working
         console.log("[Auth][getProfileCompletionState] result", {
@@ -1024,9 +1032,14 @@ export default function Auth() {
           instagram_url: instagramUrl || null,
           linkedin_url: linkedinUrl || null,
           twitter_url: twitterUrl || null,
+          // Set exactly once, only here — the completeness checks key off this
+          // instead of inferring "done" from name/avatar being present, since
+          // other code paths (DB trigger defaults, backfills) can populate
+          // those columns without the user ever having seen the wizard.
+          onboarding_completed_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }
-      ).select("user_id, name, avatar_url").single();
+      ).select("user_id, name, avatar_url, onboarding_completed_at").single();
 
       if (profileError) {
         logPostgrestError("Auth.tsx profiles upsert", profileError);
