@@ -493,7 +493,17 @@
     "chatConnectTitle": "Czatuj i Łącz się",
     "chatConnectDescription": "Pisz do grupy, planuj i poznaj wszystkich przed spotkaniem",
     "meetInPersonTitle": "Spotkaj się Osobiście",
-    "meetInPersonDescription": "Przyjdź na miejsce, zamelduj się i ciesz się prawdziwymi połączeniami"
+    "meetInPersonDescription": "Przyjdź na miejsce, zamelduj się i ciesz się prawdziwymi połączeniami",
+    "tourDiscoverTitle": "Odkryj plany w pobliżu",
+    "tourDiscoverTitleNamed": "Odkryj plany w pobliżu, {{name}}!",
+    "tourDiscoverSubtitle": "Przeglądaj kolacje, brunche i plany proponowane w wideo w Twoim mieście lub gdziekolwiek na świecie.",
+    "tourChatTitle": "Czatuj, a potem się spotkaj",
+    "tourChatTitleNamed": "Czatuj, a potem się spotkaj, {{name}}!",
+    "tourChatSubtitle": "Odpowiadaj na konkretne wiadomości, ustalaj szczegóły i potwierdź plan, wszystko w jednym wątku.",
+    "tourHangoutTitle": "Ciesz się spotkaniem",
+    "tourHangoutTitleNamed": "Ciesz się spotkaniem, {{name}}!",
+    "tourHangoutSubtitle": "Zobacz, kto dołącza, co jest zaplanowane i gdzie, a potem ruszaj!",
+    "tourContinue": "Dalej"
   },
   "donation": {
     "kindHuman": "Życzliwy Człowiek",
@@ -738,5 +748,24 @@
     "selectPhoto": "Wybierz zdjęcie",
     "photoSaved": "Zdjęcie zapisane!",
     "saveFailed": "Nie udało się zapisać zdjęcia"
+  },
+  "birthdayPicker": {
+    "months": [
+      "Styczeń",
+      "Luty",
+      "Marzec",
+      "Kwiecień",
+      "Maj",
+      "Czerwiec",
+      "Lipiec",
+      "Sierpień",
+      "Wrzesień",
+      "Październik",
+      "Listopad",
+      "Grudzień"
+    ],
+    "yearPlaceholder": "Rok",
+    "monthPlaceholder": "Miesiąc",
+    "dayPlaceholder": "Dzień"
   }
 }

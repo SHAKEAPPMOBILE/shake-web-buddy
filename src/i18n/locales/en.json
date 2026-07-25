@@ -492,7 +492,17 @@
     "chatConnectTitle": "Chat & Connect",
     "chatConnectDescription": "Message your group, make plans, and get to know everyone before meeting up",
     "meetInPersonTitle": "Meet In Person",
-    "meetInPersonDescription": "Show up at the venue, check in, and enjoy real-life connections"
+    "meetInPersonDescription": "Show up at the venue, check in, and enjoy real-life connections",
+    "tourDiscoverTitle": "Discover plans near you",
+    "tourDiscoverTitleNamed": "Discover plans near you, {{name}}!",
+    "tourDiscoverSubtitle": "Browse dinners, brunches, and video-proposed plans happening in your city — or anywhere in the world.",
+    "tourChatTitle": "Chat, then meet",
+    "tourChatTitleNamed": "Chat, then meet, {{name}}!",
+    "tourChatSubtitle": "Reply to specific messages, coordinate the details, and lock in the plan — all in one thread.",
+    "tourHangoutTitle": "Enjoy your hang-out",
+    "tourHangoutTitleNamed": "Enjoy your hang-out, {{name}}!",
+    "tourHangoutSubtitle": "See who's joining, what's planned, and where — then go!",
+    "tourContinue": "Continue"
   },
   "donation": {
     "kindHuman": "Kind Human",
@@ -737,5 +747,24 @@
     "selectPhoto": "Please select a photo",
     "photoSaved": "Photo saved!",
     "saveFailed": "Failed to save photo"
+  },
+  "birthdayPicker": {
+    "months": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "yearPlaceholder": "Year",
+    "monthPlaceholder": "Month",
+    "dayPlaceholder": "Day"
   }
 }

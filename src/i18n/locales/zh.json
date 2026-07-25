@@ -493,7 +493,17 @@
     "chatConnectTitle": "聊天和连接",
     "chatConnectDescription": "给你的群组发消息，制定计划，在见面前认识大家",
     "meetInPersonTitle": "线下见面",
-    "meetInPersonDescription": "到达地点，签到，享受真实的连接"
+    "meetInPersonDescription": "到达地点，签到，享受真实的连接",
+    "tourDiscoverTitle": "发现附近的活动",
+    "tourDiscoverTitleNamed": "{{name}}，发现附近的活动！",
+    "tourDiscoverSubtitle": "浏览你所在城市或世界各地的晚餐、早午餐和视频提案活动。",
+    "tourChatTitle": "先聊天，再见面",
+    "tourChatTitleNamed": "{{name}}，先聊天，再见面！",
+    "tourChatSubtitle": "回复具体消息，协调细节，在同一个对话中敲定计划。",
+    "tourHangoutTitle": "享受你的聚会",
+    "tourHangoutTitleNamed": "{{name}}，享受你的聚会！",
+    "tourHangoutSubtitle": "查看谁会参加、计划内容和地点，然后出发！",
+    "tourContinue": "继续"
   },
   "donation": {
     "kindHuman": "善良的人",
@@ -738,5 +748,24 @@
     "selectPhoto": "请选择一张照片",
     "photoSaved": "照片已保存！",
     "saveFailed": "照片保存失败"
+  },
+  "birthdayPicker": {
+    "months": [
+      "1月",
+      "2月",
+      "3月",
+      "4月",
+      "5月",
+      "6月",
+      "7月",
+      "8月",
+      "9月",
+      "10月",
+      "11月",
+      "12月"
+    ],
+    "yearPlaceholder": "年",
+    "monthPlaceholder": "月",
+    "dayPlaceholder": "日"
   }
 }

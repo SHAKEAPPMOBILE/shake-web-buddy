@@ -493,7 +493,17 @@
     "chatConnectTitle": "Converse e Conecte",
     "chatConnectDescription": "Envie mensagens para seu grupo, faça planos e conheça todos antes de se encontrarem",
     "meetInPersonTitle": "Encontrem-se Pessoalmente",
-    "meetInPersonDescription": "Apareça no local, faça check-in e aproveite conexões na vida real"
+    "meetInPersonDescription": "Apareça no local, faça check-in e aproveite conexões na vida real",
+    "tourDiscoverTitle": "Descubra planos perto de você",
+    "tourDiscoverTitleNamed": "Descubra planos perto de você, {{name}}!",
+    "tourDiscoverSubtitle": "Explore jantares, brunches e planos propostos em vídeo na sua cidade, ou em qualquer lugar do mundo.",
+    "tourChatTitle": "Converse, depois se encontrem",
+    "tourChatTitleNamed": "Converse, depois se encontrem, {{name}}!",
+    "tourChatSubtitle": "Responda a mensagens específicas, combine os detalhes e confirme o plano, tudo em uma única conversa.",
+    "tourHangoutTitle": "Aproveite seu encontro",
+    "tourHangoutTitleNamed": "Aproveite seu encontro, {{name}}!",
+    "tourHangoutSubtitle": "Veja quem está participando, o que está planejado e onde, e vá!",
+    "tourContinue": "Continuar"
   },
   "donation": {
     "kindHuman": "Humano Gentil",
@@ -738,5 +748,24 @@
     "selectPhoto": "Seleciona uma foto",
     "photoSaved": "Foto guardada!",
     "saveFailed": "Falha ao guardar a foto"
+  },
+  "birthdayPicker": {
+    "months": [
+      "Janeiro",
+      "Fevereiro",
+      "Março",
+      "Abril",
+      "Maio",
+      "Junho",
+      "Julho",
+      "Agosto",
+      "Setembro",
+      "Outubro",
+      "Novembro",
+      "Dezembro"
+    ],
+    "yearPlaceholder": "Ano",
+    "monthPlaceholder": "Mês",
+    "dayPlaceholder": "Dia"
   }
 }

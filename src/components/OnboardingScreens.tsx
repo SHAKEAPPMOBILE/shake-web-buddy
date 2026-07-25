@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import screen1 from "@/assets/onboarding/screen_1cat.png";
 import screen2 from "@/assets/onboarding/screen_2god.png";
@@ -10,30 +11,16 @@ interface OnboardingScreensProps {
 }
 
 const SCREENS = [
-  {
-    image: screen1,
-    headline: "Discover plans near you",
-    subtext:
-      "Browse dinners, brunches, and video-proposed plans happening in your city — or anywhere in the world.",
-  },
-  {
-    image: screen2,
-    headline: "Chat, then meet",
-    subtext:
-      "Reply to specific messages, coordinate the details, and lock in the plan — all in one thread.",
-  },
-  {
-    image: screen3,
-    headline: "Enjoy your hang-out",
-    subtext:
-      "See who's joining, what's planned, and where — then go!",
-  },
+  { image: screen1, titleKey: "tourDiscoverTitle", titleNamedKey: "tourDiscoverTitleNamed", subtitleKey: "tourDiscoverSubtitle" },
+  { image: screen2, titleKey: "tourChatTitle", titleNamedKey: "tourChatTitleNamed", subtitleKey: "tourChatSubtitle" },
+  { image: screen3, titleKey: "tourHangoutTitle", titleNamedKey: "tourHangoutTitleNamed", subtitleKey: "tourHangoutSubtitle" },
 ];
 
 /** Minimum horizontal drag (px) to register as a swipe. */
 const SWIPE_THRESHOLD = 40;
 
 export function OnboardingScreens({ onComplete, userName }: OnboardingScreensProps) {
+  const { t } = useTranslation();
   const [current, setCurrent] = useState(0);
   const pointerStartX = useRef<number | null>(null);
   const isLast = current === SCREENS.length - 1;
@@ -114,13 +101,15 @@ export function OnboardingScreens({ onComplete, userName }: OnboardingScreensPro
             key={`h-${current}`}
             className="text-[1.75rem] font-bold leading-tight text-gray-900 mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
-            {firstName ? `${SCREENS[current].headline}, ${firstName}!` : SCREENS[current].headline}
+            {firstName
+              ? t(`onboarding.${SCREENS[current].titleNamedKey}`, { name: firstName })
+              : t(`onboarding.${SCREENS[current].titleKey}`)}
           </h1>
           <p
             key={`p-${current}`}
             className="text-base text-gray-500 leading-relaxed animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
-            {SCREENS[current].subtext}
+            {t(`onboarding.${SCREENS[current].subtitleKey}`)}
           </p>
         </div>
 
@@ -145,7 +134,7 @@ export function OnboardingScreens({ onComplete, userName }: OnboardingScreensPro
           className="w-full h-14 rounded-full text-base font-semibold text-white transition-opacity hover:opacity-90 active:opacity-80"
           style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
         >
-          {isLast ? "Get Started" : "Continue"}
+          {isLast ? t("onboarding.getStarted") : t("onboarding.tourContinue")}
         </button>
       </div>
       </div>

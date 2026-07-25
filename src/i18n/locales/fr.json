@@ -493,7 +493,17 @@
     "chatConnectTitle": "Discutez et Connectez",
     "chatConnectDescription": "Envoyez des messages à votre groupe, faites des plans et apprenez à connaître tout le monde avant de vous rencontrer",
     "meetInPersonTitle": "Rencontrez-vous en Personne",
-    "meetInPersonDescription": "Présentez-vous au lieu, enregistrez-vous et profitez de connexions dans la vraie vie"
+    "meetInPersonDescription": "Présentez-vous au lieu, enregistrez-vous et profitez de connexions dans la vraie vie",
+    "tourDiscoverTitle": "Découvrez des sorties près de vous",
+    "tourDiscoverTitleNamed": "Découvrez des sorties près de vous, {{name}} !",
+    "tourDiscoverSubtitle": "Parcourez dîners, brunchs et sorties proposées en vidéo près de chez vous, ou n'importe où dans le monde.",
+    "tourChatTitle": "Discutez, puis rencontrez-vous",
+    "tourChatTitleNamed": "Discutez, puis rencontrez-vous, {{name}} !",
+    "tourChatSubtitle": "Répondez à des messages précis, coordonnez les détails et validez le plan, le tout dans un seul fil.",
+    "tourHangoutTitle": "Profitez de votre sortie",
+    "tourHangoutTitleNamed": "Profitez de votre sortie, {{name}} !",
+    "tourHangoutSubtitle": "Voyez qui participe, ce qui est prévu et où, puis allez-y !",
+    "tourContinue": "Continuer"
   },
   "donation": {
     "kindHuman": "Humain Gentil",
@@ -738,5 +748,24 @@
     "selectPhoto": "Sélectionne une photo",
     "photoSaved": "Photo enregistrée !",
     "saveFailed": "Échec de l'enregistrement de la photo"
+  },
+  "birthdayPicker": {
+    "months": [
+      "Janvier",
+      "Février",
+      "Mars",
+      "Avril",
+      "Mai",
+      "Juin",
+      "Juillet",
+      "Août",
+      "Septembre",
+      "Octobre",
+      "Novembre",
+      "Décembre"
+    ],
+    "yearPlaceholder": "Année",
+    "monthPlaceholder": "Mois",
+    "dayPlaceholder": "Jour"
   }
 }

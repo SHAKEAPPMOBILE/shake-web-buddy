@@ -493,7 +493,17 @@
     "chatConnectTitle": "Chatten & Verbinden",
     "chatConnectDescription": "Schreibe deiner Gruppe, mache Pläne und lerne alle kennen bevor ihr euch trefft",
     "meetInPersonTitle": "Persönlich Treffen",
-    "meetInPersonDescription": "Erscheine am Ort, checke ein und genieße echte Verbindungen"
+    "meetInPersonDescription": "Erscheine am Ort, checke ein und genieße echte Verbindungen",
+    "tourDiscoverTitle": "Entdecke Pläne in deiner Nähe",
+    "tourDiscoverTitleNamed": "Entdecke Pläne in deiner Nähe, {{name}}!",
+    "tourDiscoverSubtitle": "Durchstöbere Abendessen, Brunches und per Video vorgeschlagene Pläne in deiner Stadt oder überall auf der Welt.",
+    "tourChatTitle": "Erst chatten, dann treffen",
+    "tourChatTitleNamed": "Erst chatten, dann treffen, {{name}}!",
+    "tourChatSubtitle": "Antworte auf bestimmte Nachrichten, kläre die Details und leg den Plan fest, alles in einem Thread.",
+    "tourHangoutTitle": "Genieße dein Treffen",
+    "tourHangoutTitleNamed": "Genieße dein Treffen, {{name}}!",
+    "tourHangoutSubtitle": "Sieh, wer dabei ist, was geplant ist und wo, dann los!",
+    "tourContinue": "Weiter"
   },
   "donation": {
     "kindHuman": "Freundlicher Mensch",
@@ -738,5 +748,24 @@
     "selectPhoto": "Bitte wähle ein Foto aus",
     "photoSaved": "Foto gespeichert!",
     "saveFailed": "Foto konnte nicht gespeichert werden"
+  },
+  "birthdayPicker": {
+    "months": [
+      "Januar",
+      "Februar",
+      "März",
+      "April",
+      "Mai",
+      "Juni",
+      "Juli",
+      "August",
+      "September",
+      "Oktober",
+      "November",
+      "Dezember"
+    ],
+    "yearPlaceholder": "Jahr",
+    "monthPlaceholder": "Monat",
+    "dayPlaceholder": "Tag"
   }
 }

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -14,20 +15,7 @@ interface BirthdayPickerProps {
   maxDate?: string;
 }
 
-const MONTHS = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
-];
+const MONTH_VALUES = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
 
 type Field = "year" | "month" | "day";
 
@@ -35,7 +23,6 @@ type Field = "year" | "month" | "day";
 // displayed afterwards in the more natural Month/Day/Year reading order.
 const ASK_ORDER: Field[] = ["year", "month", "day"];
 const DISPLAY_ORDER: Field[] = ["month", "day", "year"];
-const FIELD_PLACEHOLDER: Record<Field, string> = { year: "Year", month: "Month", day: "Day" };
 
 function parseValue(value: string): { year: string; month: string; day: string } {
   if (!value) return { year: "", month: "", day: "" };
@@ -51,6 +38,15 @@ function parseValue(value: string): { year: string; month: string; day: string }
  * matching the rest of the signup wizard's "tap a past answer to edit" flow.
  */
 export function BirthdayPicker({ value, onChange, maxDate }: BirthdayPickerProps) {
+  const { t } = useTranslation();
+  const monthLabels = t("birthdayPicker.months", { returnObjects: true }) as string[];
+  const MONTHS = MONTH_VALUES.map((value, i) => ({ value, label: monthLabels[i] }));
+  const FIELD_PLACEHOLDER: Record<Field, string> = {
+    year: t("birthdayPicker.yearPlaceholder"),
+    month: t("birthdayPicker.monthPlaceholder"),
+    day: t("birthdayPicker.dayPlaceholder"),
+  };
+
   const currentYear = new Date().getFullYear();
   const minYear = currentYear - 100;
   const maxYear = maxDate ? new Date(maxDate).getFullYear() : currentYear - 18;

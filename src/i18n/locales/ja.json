@@ -493,7 +493,17 @@
     "chatConnectTitle": "チャット＆つながり",
     "chatConnectDescription": "グループにメッセージを送り、計画を立て、会う前に皆と知り合いましょう",
     "meetInPersonTitle": "実際に会う",
-    "meetInPersonDescription": "会場に来て、チェックインして、リアルなつながりを楽しみましょう"
+    "meetInPersonDescription": "会場に来て、チェックインして、リアルなつながりを楽しみましょう",
+    "tourDiscoverTitle": "近くのプランを見つけよう",
+    "tourDiscoverTitleNamed": "{{name}}さん、近くのプランを見つけよう！",
+    "tourDiscoverSubtitle": "あなたの街や世界中で開催されるディナー、ブランチ、動画で提案されたプランをチェックしよう。",
+    "tourChatTitle": "チャットしてから会おう",
+    "tourChatTitleNamed": "{{name}}さん、チャットしてから会おう！",
+    "tourChatSubtitle": "メッセージに返信して詳細を調整し、1つのスレッドでプランを確定しよう。",
+    "tourHangoutTitle": "集まりを楽しもう",
+    "tourHangoutTitleNamed": "{{name}}さん、集まりを楽しもう！",
+    "tourHangoutSubtitle": "参加者、内容、場所を確認して、さあ出かけよう！",
+    "tourContinue": "次へ"
   },
   "donation": {
     "kindHuman": "優しい人",
@@ -738,5 +748,24 @@
     "selectPhoto": "写真を選択してください",
     "photoSaved": "写真を保存しました！",
     "saveFailed": "写真の保存に失敗しました"
+  },
+  "birthdayPicker": {
+    "months": [
+      "1月",
+      "2月",
+      "3月",
+      "4月",
+      "5月",
+      "6月",
+      "7月",
+      "8月",
+      "9月",
+      "10月",
+      "11月",
+      "12月"
+    ],
+    "yearPlaceholder": "年",
+    "monthPlaceholder": "月",
+    "dayPlaceholder": "日"
   }
 }

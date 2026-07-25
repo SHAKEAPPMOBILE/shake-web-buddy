@@ -493,7 +493,17 @@
     "chatConnectTitle": "Chatten & Verbinden",
     "chatConnectDescription": "Stuur berichten naar je groep, maak plannen en leer iedereen kennen voordat je elkaar ontmoet",
     "meetInPersonTitle": "Persoonlijk Ontmoeten",
-    "meetInPersonDescription": "Kom naar de locatie, check in en geniet van echte connecties"
+    "meetInPersonDescription": "Kom naar de locatie, check in en geniet van echte connecties",
+    "tourDiscoverTitle": "Ontdek plannen bij jou in de buurt",
+    "tourDiscoverTitleNamed": "Ontdek plannen bij jou in de buurt, {{name}}!",
+    "tourDiscoverSubtitle": "Blader door etentjes, brunches en via video voorgestelde plannen in jouw stad, of waar dan ook ter wereld.",
+    "tourChatTitle": "Chat, en spreek daarna af",
+    "tourChatTitleNamed": "Chat, en spreek daarna af, {{name}}!",
+    "tourChatSubtitle": "Reageer op specifieke berichten, stem de details af en leg het plan vast, allemaal in één gesprek.",
+    "tourHangoutTitle": "Geniet van je afspraak",
+    "tourHangoutTitleNamed": "Geniet van je afspraak, {{name}}!",
+    "tourHangoutSubtitle": "Bekijk wie er meedoet, wat er gepland is en waar, en ga ervoor!",
+    "tourContinue": "Doorgaan"
   },
   "donation": {
     "kindHuman": "Vriendelijk Mens",
@@ -738,5 +748,24 @@
     "selectPhoto": "Selecteer een foto",
     "photoSaved": "Foto opgeslagen!",
     "saveFailed": "Foto opslaan mislukt"
+  },
+  "birthdayPicker": {
+    "months": [
+      "Januari",
+      "Februari",
+      "Maart",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Augustus",
+      "September",
+      "Oktober",
+      "November",
+      "December"
+    ],
+    "yearPlaceholder": "Jaar",
+    "monthPlaceholder": "Maand",
+    "dayPlaceholder": "Dag"
   }
 }
