@@ -1800,7 +1800,7 @@ export default function Auth() {
           {step === "email" && (
             <form onSubmit={handleSendMagicLink} className="space-y-4">
               <div className="space-y-2 text-center">
-                <img src={catHead} alt="" className="w-20 h-20 mx-auto object-contain" />
+                <img src={catHead} alt="" className="w-28 h-28 mx-auto object-contain" />
                 <h2 className="text-xl font-bold text-black">Verify your email</h2>
               </div>
 
@@ -2018,7 +2018,7 @@ export default function Auth() {
           {step === 'confirmation' && (
             <div className="space-y-6 text-center">
               <div className="space-y-3 text-center">
-                <img src={dogHead} alt="" className="w-20 h-20 mx-auto object-contain animate-shake-x" />
+                <img src={dogHead} alt="" className="w-28 h-28 mx-auto object-contain animate-shake-x" />
                 <h2 className="text-xl font-bold text-black">Check your email</h2>
                 <p className="text-sm text-muted-foreground">
                   {confirmationKind === "reset"
