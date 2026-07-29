@@ -170,6 +170,17 @@ export function usePrivateMessages(otherUserId: string | null) {
           }
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "private_messages" },
+        (payload) => {
+          // Needed so read receipts (read_at) show up live for the sender
+          // while the recipient has the thread open — INSERT/DELETE alone
+          // never surface a read_at flip that happens on an existing row.
+          const updated = payload.new as PrivateMessage;
+          setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+        }
+      )
       .subscribe();
 
     return () => {

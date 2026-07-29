@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2 } from "lucide-react";
+import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2, ChevronDown } from "lucide-react";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ChatInviteDialog } from "@/components/ChatInviteDialog";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
@@ -19,6 +19,7 @@ import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/
 import { supabase } from "@/integrations/supabase/client";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
+import { onTypingKeyDown } from "@/lib/haptics";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢"];
 
@@ -730,6 +731,7 @@ export function PrivateChatDialog({
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={onTypingKeyDown}
             placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
             className="flex-1 text-gray-900 placeholder:text-gray-400 focus-visible:ring-gray-300"
             style={{ background: "white", borderColor: "rgba(0,0,0,0.15)", color: "#111827" }}

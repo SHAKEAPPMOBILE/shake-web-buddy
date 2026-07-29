@@ -30,6 +30,7 @@ import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphy
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { getNationalityFlag } from "@/data/countryCodes";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
+import { onTypingKeyDown } from "@/lib/haptics";
 
 interface GroupChatViewProps {
   activityType: string;
@@ -1113,6 +1114,7 @@ export function GroupChatView({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
+              onKeyDown={onTypingKeyDown}
               className="flex-1 bg-gray-50 border-gray-200 focus-visible:ring-primary/50 text-gray-900 placeholder:text-gray-400 min-h-9"
               disabled={isSending || (!isPremium && !canSendText) || giphyPickerOpen}
             />

@@ -40,6 +40,7 @@ import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
 import { OnboardingInterestsStep } from "@/components/auth/OnboardingInterestsStep";
 import { OnboardingSocialStep } from "@/components/auth/OnboardingSocialStep";
+import { onTypingKeyDown } from "@/lib/haptics";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
 const FACE_ID_FEATURE_ENABLED = false;
@@ -1401,7 +1402,7 @@ export default function Auth() {
                     placeholder="Your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleNameContinue()}
+                    onKeyDown={(e) => { onTypingKeyDown(e); if (e.key === "Enter") handleNameContinue(); }}
                     className="w-full h-14 pl-10 pr-4 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
                     autoFocus
                   />
@@ -1443,7 +1444,7 @@ export default function Auth() {
                     placeholder="+1 (555) 000-0000"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && advanceProfileStep()}
+                    onKeyDown={(e) => { onTypingKeyDown(e); if (e.key === "Enter") advanceProfileStep(); }}
                     className="flex-1 h-14 px-5 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
                     autoFocus
                   />
@@ -1552,7 +1553,7 @@ export default function Auth() {
                         setOccupationTouched(true);
                         setOccupationError(validateOccupation(occupation));
                       }}
-                      onKeyDown={(e) => e.key === "Enter" && handleOccupationContinue()}
+                      onKeyDown={(e) => { onTypingKeyDown(e); if (e.key === "Enter") handleOccupationContinue(); }}
                       className="w-full h-14 pl-10 pr-4 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
                       autoFocus
                     />
