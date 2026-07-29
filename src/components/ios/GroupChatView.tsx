@@ -654,8 +654,8 @@ export function GroupChatView({
       .maybeSingle();
 
     const shareUrl = realActivity?.id
-      ? `https://app.shakeapp.today/invite/${realActivity.id}`
-      : "https://app.shakeapp.today";
+      ? `https://www.shakeapp.today/invite/${realActivity.id}`
+      : "https://www.shakeapp.today";
 
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${city} on ${dateStr}! Let's SHAKE up our social life together.`;
 

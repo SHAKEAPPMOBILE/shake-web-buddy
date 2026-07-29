@@ -1002,7 +1002,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const shareId = plan.id.startsWith('carousel-')
       ? `${plan.activity_type}-${plan.city}-${user?.id ?? ''}`
       : plan.id;
-    const shareUrl = `https://app.shakeapp.today/invite/${encodeURIComponent(shareId)}`;
+    const shareUrl = `https://www.shakeapp.today/invite/${encodeURIComponent(shareId)}`;
     const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
     const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
 

@@ -495,7 +495,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ? "com.shakeapp.shakeapp://auth/callback"
       : import.meta.env.DEV
         ? "http://localhost:8080/auth/callback"
-        : "https://app.shakeapp.today/auth/callback";
+        : "https://www.shakeapp.today/auth/callback";
 
   // Signup magic link uses `?intent=signup` so OAuthCallback can route to set-password.
   // Add the full URL with query to Supabase Auth → Redirect URLs if your project requires exact matches.

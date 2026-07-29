@@ -150,7 +150,7 @@ const App = () => {
             if (parsed.pathname.startsWith('/invite/')) {
               console.log('[DeepLink] invite path detected, navigating to', parsed.pathname);
               await Browser.close().catch(() => {});
-              window.location.href = `https://app.shakeapp.today${parsed.pathname}`;
+              window.location.href = `https://www.shakeapp.today${parsed.pathname}`;
               return;
             }
           } catch {}

@@ -88,7 +88,7 @@ export default function ShareLanding() {
         // User-created plan: use a generic title so we don't expose category labels.
         const ogTitle = `Join a plan in ${actData.city} on SHAKE!`;
         const ogDesc = `"${actData.note}" — open SHAKE to see the details and join.`;
-        const ogImage = "https://app.shakeapp.today/shake-logo.png";
+        const ogImage = "https://www.shakeapp.today/shake-logo.png";
         document.querySelector('meta[property="og:title"]')?.setAttribute("content", ogTitle);
         document.querySelector('meta[property="og:description"]')?.setAttribute("content", ogDesc);
         document.querySelector('meta[property="og:image"]')?.setAttribute("content", ogImage);
@@ -100,14 +100,14 @@ export default function ShareLanding() {
         const label = actInfo?.label ?? actData.activity_type;
         const emoji = actInfo?.emoji ?? "🎉";
         const ogImageMap: Record<string, string> = {
-          dinner: "https://app.shakeapp.today/icons/activities/dinner-icon.jpg",
-          drinks: "https://app.shakeapp.today/icons/activities/drinks-icon.jpg",
-          brunch: "https://app.shakeapp.today/icons/activities/brunch-icon.jpg",
-          lunch: "https://app.shakeapp.today/icons/activities/lunch-icon.jpg",
-          hike: "https://app.shakeapp.today/icons/activities/hike-icon.jpg",
-          sports: "https://app.shakeapp.today/icons/activities/sports-icon.jpg",
+          dinner: "https://www.shakeapp.today/icons/activities/dinner-icon.jpg",
+          drinks: "https://www.shakeapp.today/icons/activities/drinks-icon.jpg",
+          brunch: "https://www.shakeapp.today/icons/activities/brunch-icon.jpg",
+          lunch: "https://www.shakeapp.today/icons/activities/lunch-icon.jpg",
+          hike: "https://www.shakeapp.today/icons/activities/hike-icon.jpg",
+          sports: "https://www.shakeapp.today/icons/activities/sports-icon.jpg",
         };
-        const ogImage = ogImageMap[actData.activity_type] ?? "https://app.shakeapp.today/shake-logo.png";
+        const ogImage = ogImageMap[actData.activity_type] ?? "https://www.shakeapp.today/shake-logo.png";
         const ogTitle = `${emoji} Join ${label} in ${actData.city}!`;
         const ogDesc = `Someone's organising ${label} in ${actData.city}. Join them on SHAKE!`;
         document.querySelector('meta[property="og:image"]')?.setAttribute("content", ogImage);
@@ -201,7 +201,7 @@ export default function ShareLanding() {
           <p className="text-white text-lg font-semibold">Activity not found</p>
           <p className="text-white/50 text-sm">This invite may have expired.</p>
           <a
-            href="https://app.shakeapp.today"
+            href="https://www.shakeapp.today"
             className="mt-4 px-6 py-3 rounded-full bg-white/10 text-white text-sm font-medium"
           >
             Go to SHAKE
@@ -318,7 +318,7 @@ export default function ShareLanding() {
 
           {/* CTA — plain link to the app, works in any browser / WhatsApp */}
           <a
-            href="https://app.shakeapp.today"
+            href="https://www.shakeapp.today"
             className="w-full py-4 rounded-full font-semibold text-white text-base text-center"
             style={{
               background: "linear-gradient(to right, #2563EB, #7c3aed)",
