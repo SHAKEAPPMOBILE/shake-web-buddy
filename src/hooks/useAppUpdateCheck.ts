@@ -40,10 +40,16 @@ export function useAppUpdateCheck(): UpdateCheckResult {
     const check = async () => {
       try {
         // Read minimum required version from Supabase — no redeploy needed to bump it.
+        // iOS (CFBundleShortVersionString) and Android (versionName) are tracked on
+        // completely different numeric scales, so each platform needs its own
+        // threshold — comparing both against one shared value would either force-update
+        // everyone on one platform or never trigger at all on the other.
+        const configKey =
+          Capacitor.getPlatform() === "android" ? "minimum_app_version_android" : "minimum_app_version_ios";
         const { data, error } = await supabase
           .from("app_config")
           .select("value")
-          .eq("key", "minimum_app_version")
+          .eq("key", configKey)
           .maybeSingle();
 
         if (error || !data?.value || cancelled) return;

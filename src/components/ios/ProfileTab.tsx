@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, type CSSProperties } from "react";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -79,6 +81,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
   const [showPointsDialog, setShowPointsDialog] = useState(false);
+  const [appVersionLabel, setAppVersionLabel] = useState<string | null>(null);
   const [showSubscriptionDropdown, setShowSubscriptionDropdown] = useState(false);
   const { statusVideo, hasActiveStatus, refetch: refetchStatus, deleteVideo: deleteStatusVideo } = useStatusVideo(user?.id);
   const { points } = useUserPoints(user?.id);
@@ -345,6 +348,13 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    App.getInfo()
+      .then((info) => setAppVersionLabel(`v${info.version} (${info.build})`))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (showParanormal) {
@@ -1070,6 +1080,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         {/* Copyright */}
+        {appVersionLabel && (
+          <p className="text-center text-[10px] text-gray-300">{appVersionLabel}</p>
+        )}
         <p className="text-center text-xs text-gray-400 pb-2">
           © {new Date().getFullYear()} SHAKEapp Inc.
         </p>
