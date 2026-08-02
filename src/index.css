@@ -192,6 +192,26 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   20%, 40%, 60%, 80% { transform: scale(1.05) rotate(5deg); }
 }
 
+/* Whole-UI feedback when a physical phone shake is detected — subtle,
+   settles back to rest, distinct from the sharper .animate-shake used
+   for error states. */
+@keyframes ui-shake-feedback {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  10% { transform: translate3d(-2px, 1px, 0) rotate(-0.4deg); }
+  20% { transform: translate3d(2px, -1px, 0) rotate(0.4deg); }
+  30% { transform: translate3d(-2px, 0, 0) rotate(-0.3deg); }
+  40% { transform: translate3d(2px, 1px, 0) rotate(0.3deg); }
+  50% { transform: translate3d(-1px, -1px, 0) rotate(-0.2deg); }
+  60% { transform: translate3d(1px, 1px, 0) rotate(0.2deg); }
+  70% { transform: translate3d(-1px, 0, 0) rotate(-0.1deg); }
+  80% { transform: translate3d(1px, 0, 0) rotate(0.1deg); }
+  90% { transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+
+.animate-ui-shake-feedback {
+  animation: ui-shake-feedback 4s ease-in-out;
+}
+
 @keyframes bounce-left {
   0%, 100% { transform: translateX(0); opacity: 1; }
   25% { transform: translateX(-8px); opacity: 1; }

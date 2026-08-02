@@ -219,6 +219,19 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   // Called by the devicemotion listener via handleShakeGestureRef.
   // Uses getSmartCarouselIndex() to find the right activity for right now.
   const handleShakeGesture = useCallback(() => {
+    // Visual feedback that the physical shake was detected — the whole UI
+    // wobbles briefly then settles back to rest. Toggled directly on <body>
+    // rather than component state so it doesn't depend on HomeTab's own
+    // render tree (works the same whether the carousel overlay is open or not).
+    document.body.classList.remove("animate-ui-shake-feedback");
+    // Force reflow so re-adding the class restarts the animation if a shake
+    // is detected again before the previous 4s run finished.
+    void document.body.offsetWidth;
+    document.body.classList.add("animate-ui-shake-feedback");
+    window.setTimeout(() => {
+      document.body.classList.remove("animate-ui-shake-feedback");
+    }, 4000);
+
     const smartIndex = getSmartCarouselIndex();
     const activity = CAROUSEL_ITEMS[smartIndex];
 
