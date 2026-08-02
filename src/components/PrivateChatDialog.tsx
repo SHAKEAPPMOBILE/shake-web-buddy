@@ -611,7 +611,7 @@ export function PrivateChatDialog({
                     </button>
                   )}
                   <div
-                    className={`max-w-[80%] ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
+                    className={`max-w-[80%] w-fit ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
                     style={isMedia ? undefined : isMe ? outgoingBubble : incomingBubble}
                     onTouchStart={(e) => startLongPress(msg.id, isMe, e.touches[0].clientY)}
                     onTouchMove={cancelLongPress}

@@ -203,7 +203,12 @@ export function useUserActivities(city: string) {
 
     setIsLoading(true);
 
-    // Check for ANY existing activity on the same day (one activity per day limit)
+    // Check for an existing CUSTOM plan on the same day (one custom plan per day limit).
+    // Excludes is_auto_generated rows — those are just the overflow-group bookkeeping
+    // row created under the joiner's user_id when they join a standard Brunch/Dinner
+    // slot (see findOrCreateOpenGroup in activityGroups.ts), not a plan the user
+    // actually created. Without this filter, joining Brunch or Dinner would silently
+    // block creating any other plan that same day.
     // Use local date components to avoid UTC timezone issues (e.g. UTC-6 users)
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -215,6 +220,7 @@ export function useUserActivities(city: string) {
       .select("id")
       .eq("user_id", user.id)
       .eq("is_active", true)
+      .not("is_auto_generated", "is", true)
       .gte("scheduled_for", startOfToday.toISOString())
       .gte("scheduled_for", startOfDay.toISOString())
       .lte("scheduled_for", endOfDay.toISOString())
