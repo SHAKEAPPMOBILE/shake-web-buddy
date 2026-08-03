@@ -38,6 +38,12 @@ type CarouselItem = {
 /**
  * Returns the carousel index to show on load based on the current day and time.
  * Indices are looked up dynamically so they stay correct if the order changes.
+ *
+ * Dinner is Thursday 7 PM; Brunch is Saturday. The default card stays on
+ * "Dinner" through Thursday night and all of Friday, switching to "Brunch"
+ * a fixed 30 hours after dinner starts — Thu 19:00 + 30h = Sat 01:00 — rather
+ * than at midnight, so the card doesn't flip while Thursday's dinner is
+ * still realistically in progress.
  */
 function getSmartCarouselIndex(): number {
   const now = new Date();
@@ -52,19 +58,20 @@ function getSmartCarouselIndex(): number {
   // Sunday → propose-plan slide (index 2)
   if (day === 0) return 2;
 
-  // Monday–Friday before 19:15 → dinner
-  if (day >= 1 && day <= 5 && !isLate) return dinnerIndex;
+  // Monday–Wednesday before 19:15 → dinner (anticipation); after → generic default
+  if (day >= 1 && day <= 3 && !isLate) return dinnerIndex;
 
-  // Friday 19:15 or later → brunch
-  if (day === 5 && isLate) return brunchIndex;
+  // Thursday (dinner day) and Friday → dinner all day, including evenings —
+  // still within the 30h window before the Brunch cutover.
+  if (day === 4 || day === 5) return dinnerIndex;
 
-  // Saturday before 11:50 → brunch; 11:50+ → dinner
+  // Saturday → dinner until 01:00 (tail end of the 30h window), then brunch
   if (day === 6) {
-    const beforeBrunchTime = hour < 11 || (hour === 11 && min < 50);
-    return beforeBrunchTime ? brunchIndex : dinnerIndex;
+    const stillDinnerWindow = hour < 1;
+    return stillDinnerWindow ? dinnerIndex : brunchIndex;
   }
 
-  return 0;
+  return dinnerIndex;
 }
 
 interface HomeTabProps {

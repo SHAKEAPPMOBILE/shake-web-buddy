@@ -1,7 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-type Day = "thursday" | "friday" | "saturday";
+// Only Dinner (Thursday) and Brunch (Saturday) are offered — Drinks is
+// hidden from the app's carousel and never actually joinable, so it gets
+// no reminder. "thursday" fires at 12:00 UTC, ~7h before the 7 PM dinner
+// (same lead time Friday's old dinner reminder used to give); "saturday"
+// fires the same-day morning-of Brunch reminder, unchanged.
+type Day = "thursday" | "saturday";
 
 interface RequestBody {
   day: Day;
@@ -18,21 +23,9 @@ const WEEKLY_CAP = 2;
 const SCHEDULE: Record<Day, ActivityConfig[]> = {
   thursday: [
     {
-      activity_type: "drinks",
-      message: (city) =>
-        `👀 It's almost Friday — Drinks in ${city} is filling up! Join on SHAKE`,
-    },
-    {
       activity_type: "dinner",
       message: (city) =>
         `🍽️ Dinner in ${city} tonight — the crew is waiting! Join on SHAKE`,
-    },
-  ],
-  friday: [
-    {
-      activity_type: "drinks",
-      message: (city) =>
-        `🍹 Tonight's the night — Drinks in ${city} is happening! Don't miss it`,
     },
   ],
   saturday: [
@@ -83,7 +76,7 @@ serve(async (req) => {
 
     if (!day || !SCHEDULE[day]) {
       return new Response(
-        JSON.stringify({ error: "Missing or invalid 'day'. Must be thursday | friday | saturday" }),
+        JSON.stringify({ error: "Missing or invalid 'day'. Must be thursday | saturday" }),
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
