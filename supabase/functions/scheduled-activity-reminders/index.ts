@@ -22,6 +22,11 @@ const SCHEDULE: Record<Day, ActivityConfig[]> = {
       message: (city) =>
         `👀 It's almost Friday — Drinks in ${city} is filling up! Join on SHAKE`,
     },
+    {
+      activity_type: "dinner",
+      message: (city) =>
+        `🍽️ Dinner in ${city} tonight — the crew is waiting! Join on SHAKE`,
+    },
   ],
   friday: [
     {
@@ -29,18 +34,8 @@ const SCHEDULE: Record<Day, ActivityConfig[]> = {
       message: (city) =>
         `🍹 Tonight's the night — Drinks in ${city} is happening! Don't miss it`,
     },
-    {
-      activity_type: "dinner",
-      message: (city) =>
-        `🍽️ Dinner in ${city} tonight — the crew is waiting! Join on SHAKE`,
-    },
   ],
   saturday: [
-    {
-      activity_type: "dinner",
-      message: (city) =>
-        `🍽️ Last chance for Dinner in ${city} this weekend — join on SHAKE`,
-    },
     {
       activity_type: "brunch",
       message: (city) =>

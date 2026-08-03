@@ -146,7 +146,7 @@ export const ACTIVITY_TYPES: ActivityType[] = [
     icon: "/icons/activities/dinner-icon.jpg",
     color: "bg-shake-purple/20 hover:bg-shake-purple/30",
     bgImage: bgBarManCook,
-    defaultDay: 5 // Friday
+    defaultDay: 4 // Thursday
   },
   {
     id: "drinks",
