@@ -29,6 +29,9 @@ import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { useTranslation } from "react-i18next";
 
+// Matches ID_VERIFICATION_ENABLED in ProposePlanPage.tsx — hidden for now.
+const ID_VERIFICATION_ENABLED = false;
+
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
   { code: "EUR", symbol: "€", name: "Euro" },
@@ -119,7 +122,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const isValid = planText.trim().length > 0 && !hasProfanity && (!isPaidActivity || selectedDate);
   const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
   const needsPayoutSetup = isPaidActivity && !hasPayoutMethod;
-  const needsIDVerification = isPaidActivity && !isVerified && !isVerificationPending;
+  const needsIDVerification = ID_VERIFICATION_ENABLED && isPaidActivity && !isVerified && !isVerificationPending;
 
   const handleStartOnboardingWithCountry = (countryCode: string) => {
     setShowStripeCountrySelector(false);
@@ -130,7 +133,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
     if (!isValid || !detectedActivity) return;
 
     // If setting a price, require ID verification first
-    if (isPaidActivity && !isVerified && !isVerificationPending) {
+    if (ID_VERIFICATION_ENABLED && isPaidActivity && !isVerified && !isVerificationPending) {
       setShowIDVerification(true);
       return;
     }
@@ -311,7 +314,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                 />
               </div>
               {/* ID Verification status */}
-              {priceAmount.trim() && (
+              {ID_VERIFICATION_ENABLED && priceAmount.trim() && (
                 <div className="space-y-2">
                   {isVerified ? (
                     <p className="text-xs text-green-600 flex items-center gap-1">

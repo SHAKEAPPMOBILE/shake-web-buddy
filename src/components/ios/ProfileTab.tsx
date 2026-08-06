@@ -632,7 +632,11 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   )}
                 </div>
 
-                {/* ID Verification */}
+                {/* ID Verification — hidden for now (paid-activity ID requirement is
+                    also disabled via ID_VERIFICATION_ENABLED in ProposePlanPage.tsx
+                    and CreateActivityDialog.tsx), so this status card has nothing
+                    left to gate and would just be confusing to show. */}
+                {false && (
                 <button
                   onClick={() => setShowIDVerificationDialog(true)}
                   className={cn(
@@ -681,6 +685,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                           : t('profile.idRequiredDesc', 'Required to create paid activities')}
                   </p>
                 </button>
+                )}
 
                 <p className="text-xs text-black mb-1">{t('profile.payoutNote', "Add at least one method so we can send your earnings.")}</p>
 
