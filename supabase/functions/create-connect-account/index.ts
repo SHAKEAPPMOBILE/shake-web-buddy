@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    logStep("Function started - Stripe Connect Standard OAuth");
+    logStep("Function started - Stripe Connect Standard via Account Links");
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -51,20 +51,9 @@ serve(async (req) => {
       // No body or invalid JSON, that's fine
     }
 
-    // Get Stripe Client ID for OAuth
-    const stripeClientId = Deno.env.get("STRIPE_CLIENT_ID");
-    if (!stripeClientId) {
-      throw new Error("STRIPE_CLIENT_ID is not configured");
-    }
-
-    // Validate Client ID format - should start with 'ca_'
-    if (!stripeClientId.startsWith("ca_")) {
-      logStep("Invalid STRIPE_CLIENT_ID format", { 
-        prefix: stripeClientId.substring(0, 10),
-        hint: "Client ID should start with 'ca_', not 'acct_'"
-      });
-      throw new Error("Invalid STRIPE_CLIENT_ID configuration. The Client ID should start with 'ca_'. Please check your Stripe Connect settings in the Stripe Dashboard under Connect > Settings > OAuth settings.");
-    }
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-08-27.basil",
+    });
 
     // Check if user already has a connected account
     const { data: privateProfile } = await supabaseClient
@@ -87,31 +76,24 @@ serve(async (req) => {
         .eq("user_id", user.id);
     } else if (privateProfile?.stripe_account_id) {
       // Check if this is an existing account
-      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-        apiVersion: "2025-08-27.basil",
-      });
-      
       try {
         const account = await stripe.accounts.retrieve(privateProfile.stripe_account_id);
-        
-        // Check if this is an Express account (old flow) vs Standard account (OAuth)
-        // Express accounts have type "express", Standard accounts have type "standard"
-        // If it's an Express account with pending requirements, clear it and start OAuth
+
         if (account.type === "express") {
-          logStep("Found old Express account, clearing for OAuth Standard", { 
+          logStep("Found old Express account, clearing to recreate as Standard", {
             accountId: privateProfile.stripe_account_id,
             type: account.type
           });
           await supabaseClient
             .from("profiles_private")
-            .update({ 
-              stripe_account_id: null, 
-              stripe_account_status: null 
+            .update({
+              stripe_account_id: null,
+              stripe_account_status: null
             })
             .eq("user_id", user.id);
-          // Continue to OAuth flow below
+          // Continue to account creation below
         } else if (account.type === "standard") {
-          // This is a Standard account from OAuth - check its status
+          // Already have a Standard account - check its status
           if (account.charges_enabled && account.payouts_enabled) {
             // Account is complete
             await supabaseClient
@@ -176,53 +158,52 @@ serve(async (req) => {
       }
     }
 
-    // Build Stripe OAuth authorization URL for Standard accounts
-    // Always use the web app origin for the callback redirect — Capacitor native
+    // Always use the web app origin for the return redirect — Capacitor native
     // sends origin: "capacitor://localhost" which can't receive the redirect.
     const rawOrigin = req.headers.get("origin") || "";
     const origin = (rawOrigin && !rawOrigin.includes("capacitor://") && !rawOrigin.includes("localhost"))
       ? rawOrigin
       : "https://shakeapp.today";
-    const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/stripe-connect-callback`;
 
-    logStep("Using origin for callback", { rawOrigin, origin });
+    logStep("Using origin for return links", { rawOrigin, origin });
 
-    // Create a state parameter to prevent CSRF and pass user info
-    const state = btoa(JSON.stringify({
-      userId: user.id,
-      origin: origin
-    }));
-
-    const oauthUrl = new URL("https://connect.stripe.com/oauth/authorize");
-    oauthUrl.searchParams.set("response_type", "code");
-    oauthUrl.searchParams.set("client_id", stripeClientId);
-    oauthUrl.searchParams.set("scope", "read_write");
-    oauthUrl.searchParams.set("redirect_uri", redirectUri);
-    oauthUrl.searchParams.set("state", state);
-
-    // Pre-fill user email and country if available
+    // Look up email to pre-fill on the new account
     const { data: profileData } = await supabaseClient
       .from("profiles_private")
       .select("billing_email")
       .eq("user_id", user.id)
       .maybeSingle();
+    const email = profileData?.billing_email || user.email || undefined;
 
-    if (profileData?.billing_email || user.email) {
-      oauthUrl.searchParams.set("stripe_user[email]", profileData?.billing_email || user.email || "");
-    }
-    if (country) {
-      oauthUrl.searchParams.set("stripe_user[country]", country);
-      logStep("Pre-filled country", { country });
-    }
-
-    logStep("Generated OAuth URL", {
-      clientIdPrefix: stripeClientId.substring(0, 6) + "...",
-      redirectUri,
-      country: country || "not set",
+    // Create a new Standard connected account directly via the API —
+    // no OAuth Client ID needed, just the platform's secret key.
+    const account = await stripe.accounts.create({
+      type: "standard",
+      country,
+      email,
     });
 
-    return new Response(JSON.stringify({ 
-      url: oauthUrl.toString(),
+    logStep("Created Standard account", { accountId: account.id, country: country || "not set" });
+
+    await supabaseClient
+      .from("profiles_private")
+      .update({
+        stripe_account_id: account.id,
+        stripe_account_status: "pending",
+      })
+      .eq("user_id", user.id);
+
+    const accountLink = await stripe.accountLinks.create({
+      account: account.id,
+      refresh_url: `${origin}/?connect_refresh=true`,
+      return_url: `${origin}/?connect_success=true`,
+      type: "account_onboarding",
+    });
+
+    logStep("Generated onboarding link", { accountId: account.id });
+
+    return new Response(JSON.stringify({
+      url: accountLink.url,
       status: "redirect"
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
