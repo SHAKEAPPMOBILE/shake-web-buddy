@@ -51,7 +51,7 @@ serve(async (req) => {
 
     const { success: emailSent, error: emailError } = await sendEmail({
       from: "SHAKE Admin <noreply@shakeapp.today>",
-      to: ["contact@shakeapp.today"],
+      to: ["contact@shakeapp.today", "leoneltelesmeneses@gmail.com"],
       subject,
       html: `
         <!DOCTYPE html>

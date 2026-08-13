@@ -118,9 +118,6 @@ export function ActivityConfirmationDialog({
               <h2 className="text-xl font-display font-bold">
                 {t('activityDialog.selectCityFor', 'Select a city for {{activity}}', { activity: activity.label })}
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t('activityDialog.superHumanWorldwide', 'As a Super-Human, you can join activities worldwide!')}
-              </p>
             </div>
           </div>
           

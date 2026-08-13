@@ -14,6 +14,7 @@ import { cn, getPriceValue } from "@/lib/utils";
 import { PointsDashboard } from "../PointsDashboard";
 import { useUserPoints } from "@/hooks/useUserPoints";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
+import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
 import supermanImg from "@/assets/superhuman-superman.png";
@@ -91,6 +92,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [showPayoutOptions, setShowPayoutOptions] = useState(false);
   const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
   const [showManagePlanDialog, setShowManagePlanDialog] = useState(false);
+  const { isConnected: stripeConnected, status: stripeStatus, isLoading: stripeLoading, startOnboarding: startStripeOnboarding } = useStripeConnect();
+
   // Saved = persisted DB value (drives checkmark + collapsed view)
   // Input = current text-field value while editing
   // Editing = whether the input is expanded
@@ -689,14 +692,18 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
                 <p className="text-xs text-black mb-1">{t('profile.payoutNote', "Add at least one method so we can send your earnings.")}</p>
 
-                {/* PayPal */}
+                {/* PayPal — hidden for now, moving toward Stripe as the primary payout method */}
+                {false && (
                 <div className={`border rounded-2xl p-3 space-y-2 ${savedPaypal ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-[#0070BA] rounded-xl flex items-center justify-center">
                         <span className="text-white text-[10px] font-bold">PP</span>
                       </div>
-                      <span className="text-sm font-medium">PayPal</span>
+                      <div>
+                        <span className="text-sm font-medium">PayPal</span>
+                        <p className="text-[10px] text-gray-400">~2.9% + $0.30 per payout</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {savedPaypal && <Check className="w-4 h-4 text-shake-green" />}
@@ -743,6 +750,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   )}
                 </div>
+                )}
 
                 {/* Venmo */}
                 <div className={`border rounded-2xl p-3 space-y-2 ${savedVenmo ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
@@ -751,7 +759,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       <div className="w-6 h-6 bg-[#3D95CE] rounded-xl flex items-center justify-center">
                         <span className="text-white text-[10px] font-bold">V</span>
                       </div>
-                      <span className="text-sm font-medium">Venmo</span>
+                      <div>
+                        <span className="text-sm font-medium">Venmo</span>
+                        <p className="text-[10px] text-gray-400">Free (standard) · 1.75% for instant transfer</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {savedVenmo && <Check className="w-4 h-4 text-shake-green" />}
@@ -783,6 +794,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                             setVenmoInput("");
                             setEditingVenmo(false);
                             toast({ title: t('profile.payoutSaved', 'Payout method saved') });
+                            const notifyName = userName || user.email || user.id;
+                            supabase.functions.invoke("send-admin-notification", {
+                              body: { subject: "SHAKE: Payout method connected", body: `${notifyName} set up Venmo as a payout method.` },
+                            }).catch(() => {});
                           } catch (err) {
                             toast({ title: t('profile.errorTitle', 'Error'), description: String(err), variant: "destructive" });
                           } finally {
@@ -799,58 +814,33 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   )}
                 </div>
 
-                {/* CashApp */}
-                <div className={`border rounded-2xl p-3 space-y-2 ${savedCashApp ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
+                {/* Stripe */}
+                <div className={`border rounded-2xl p-3 space-y-2 ${stripeConnected ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-[#00D632] rounded-xl flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold">$</span>
+                      <div className="w-6 h-6 bg-[#635BFF] rounded-xl flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold">S</span>
                       </div>
-                      <span className="text-sm font-medium">CashApp</span>
+                      <div>
+                        <span className="text-sm font-medium">Stripe</span>
+                        <p className="text-[10px] text-gray-400">~2.9% + $0.30 per transaction</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {savedCashApp && <Check className="w-4 h-4 text-shake-green" />}
-                      {savedCashApp && !editingCashApp && (
-                        <button onClick={() => { setCashAppInput(savedCashApp); setEditingCashApp(true); }}
-                                className="text-xs text-gray-500 underline">{t('profile.edit', 'Edit')}</button>
-                      )}
-                    </div>
+                    {stripeConnected && <Check className="w-4 h-4 text-shake-green" />}
                   </div>
-                  {savedCashApp && !editingCashApp ? (
-                    <p className="text-xs text-gray-600 px-1">{savedCashApp}</p>
+                  {stripeConnected ? (
+                    <p className="text-xs text-gray-600 px-1">
+                      {stripeStatus === "complete" ? t('profile.stripeConnected', 'Connected') : t('profile.stripePending', 'Verification pending')}
+                    </p>
                   ) : (
-                    <>
-                      <input
-                        type="text"
-                        value={cashAppInput}
-                        onChange={e => setCashAppInput(e.target.value)}
-                        placeholder="$cashtag"
-                        className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none focus:border-[#00D632]"
-                      />
-                      <button
-                        onClick={async () => {
-                          if (!user) return;
-                          setPayoutSaving("payout_cashapp");
-                          try {
-                            const { error } = await supabase.from("profiles").update({ payout_cashapp: cashAppInput.trim() || null }).eq("user_id", user.id);
-                            if (error) throw error;
-                            setSavedCashApp(cashAppInput.trim());
-                            setCashAppInput("");
-                            setEditingCashApp(false);
-                            toast({ title: t('profile.payoutSaved', 'Payout method saved') });
-                          } catch (err) {
-                            toast({ title: t('profile.errorTitle', 'Error'), description: String(err), variant: "destructive" });
-                          } finally {
-                            setPayoutSaving(null);
-                          }
-                        }}
-                        disabled={payoutSaving === "payout_cashapp"}
-                        className="w-full py-2 text-xs font-medium text-[#00D632] border border-[#00D632]/30 rounded-2xl hover:bg-[#00D632]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
-                      >
-                        {payoutSaving === "payout_cashapp" ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                        {t('profile.save', 'Save')}
-                      </button>
-                    </>
+                    <button
+                      onClick={() => startStripeOnboarding()}
+                      disabled={stripeLoading}
+                      className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-2xl hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                    >
+                      {stripeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                      {t('profile.connectStripe', 'Connect Stripe')}
+                    </button>
                   )}
                 </div>
               </div>

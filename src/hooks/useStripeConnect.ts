@@ -151,6 +151,10 @@ export function useStripeConnect() {
       
       if (urlParams.get("connect_success") === "true") {
         toast.success("Stripe account connected successfully!");
+        const notifyName = user?.email ?? user?.id ?? "A user";
+        supabase.functions.invoke("send-admin-notification", {
+          body: { subject: "SHAKE: Payout method connected", body: `${notifyName} connected Stripe as a payout method.` },
+        }).catch(() => {});
       }
     }
     
