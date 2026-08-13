@@ -1658,6 +1658,10 @@ export default function Auth() {
           {/* Method Selection */}
           {step === 'method' && (
             <div className="space-y-4">
+              <div className="flex justify-center">
+                <LanguageSelector />
+              </div>
+
               <div className="space-y-2 text-center">
                 <img src={logoShake} alt="SHAKE" className="h-20 w-20 mx-auto mb-8" />
                 <h1 className="text-2xl font-bold text-black">{t('auth.welcomeTitle', 'Welcome to SHAKE')}</h1>
@@ -1789,10 +1793,6 @@ export default function Auth() {
                     </div>
                   </form>
                 )}
-              </div>
-
-              <div className="pt-4 flex justify-center">
-                <LanguageSelector />
               </div>
             </div>
           )}

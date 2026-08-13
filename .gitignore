@@ -43,3 +43,5 @@ supabase/.temp/
 
 # Stray Vite config timestamp files left behind if a dev/build process is killed mid-run
 vite.config.ts.timestamp-*.mjs
+
+.env.cj
