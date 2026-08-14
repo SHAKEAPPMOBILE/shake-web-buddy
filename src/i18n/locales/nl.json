@@ -259,7 +259,9 @@
     "shareFriends": "Deel het met je vrienden.",
     "failedToShare": "Delen mislukt",
     "failedToCopyLink": "Link kopiëren mislukt",
-    "joiningBtn": "Joining…"
+    "joiningBtn": "Joining…",
+    "listView": "Lijstweergave",
+    "mapView": "Kaartweergave"
   },
   "profile": {
     "title": "Profiel",

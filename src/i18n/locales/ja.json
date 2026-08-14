@@ -259,7 +259,9 @@
     "shareFriends": "友達にシェアしましょう。",
     "failedToShare": "シェアできませんでした",
     "failedToCopyLink": "リンクをコピーできませんでした",
-    "joiningBtn": "Joining…"
+    "joiningBtn": "Joining…",
+    "listView": "リスト表示",
+    "mapView": "地図表示"
   },
   "profile": {
     "title": "プロフィール",

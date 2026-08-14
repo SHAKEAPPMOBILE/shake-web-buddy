@@ -259,7 +259,9 @@
     "shareFriends": "Compártelo con tus amigos.",
     "failedToShare": "Error al compartir",
     "failedToCopyLink": "Error al copiar el enlace",
-    "joiningBtn": "Uniéndose…"
+    "joiningBtn": "Uniéndose…",
+    "listView": "Vista de lista",
+    "mapView": "Vista de mapa"
   },
   "profile": {
     "title": "Perfil",

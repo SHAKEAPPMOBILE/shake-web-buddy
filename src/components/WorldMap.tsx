@@ -41,6 +41,15 @@ export interface WorldMapHandle {
   flyToCity: (cityName: string) => void;
 }
 
+// Popup content is built via .setHTML() with user-generated text (plan note,
+// creator name, city) interpolated in — escape it first so a plan note like
+// `<img src=x onerror=...>` can't execute in another shaker's browser.
+function escapeHtml(value: string): string {
+  const div = document.createElement("div");
+  div.textContent = value;
+  return div.innerHTML;
+}
+
 // Minimal shape the map actually needs — kept decoupled from any specific
 // activity/plan type so both the (unwired) PlansMapDialog's UserActivity[]
 // and the iOS PlansTab's PlanActivity[] can be passed in directly.
@@ -187,18 +196,18 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
         setHoveredActivity(null);
       });
 
-      const creatorName = activity.creator_name || "Someone";
-      const note = activity.note ? `<p class="text-xs italic mt-1">"${activity.note}"</p>` : "";
-      
+      const creatorName = escapeHtml(activity.creator_name || "Someone");
+      const note = activity.note ? `<p class="text-xs italic mt-1">"${escapeHtml(activity.note)}"</p>` : "";
+
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat([lng, lat])
         .setPopup(
           new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(`
             <div class="text-sm p-1">
-              <p class="font-semibold">${getActivityEmoji(activity.activity_type)} ${activity.activity_type}</p>
+              <p class="font-semibold">${getActivityEmoji(activity.activity_type)} ${escapeHtml(activity.activity_type)}</p>
               <p class="text-muted-foreground">by ${creatorName}</p>
               ${note}
-              <p class="text-xs text-muted-foreground mt-1">${activity.city}</p>
+              <p class="text-xs text-muted-foreground mt-1">${escapeHtml(activity.city)}</p>
             </div>
           `)
         )

@@ -259,7 +259,9 @@
     "shareFriends": "分享给您的朋友。",
     "failedToShare": "分享失败",
     "failedToCopyLink": "复制链接失败",
-    "joiningBtn": "Joining…"
+    "joiningBtn": "Joining…",
+    "listView": "列表视图",
+    "mapView": "地图视图"
   },
   "profile": {
     "title": "个人资料",

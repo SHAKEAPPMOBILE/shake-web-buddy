@@ -40,6 +40,9 @@ export function VenueSearchInput({
   const coordsRef = useRef<{ lat: number; lng: number } | null>(null);
   const debounceRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Guards against out-of-order responses: a slower earlier request landing
+  // after a newer one shouldn't overwrite the dropdown with stale results.
+  const requestIdRef = useRef(0);
 
   // Best-effort proximity bias — never blocks or errors visibly if denied.
   useEffect(() => {
@@ -68,6 +71,7 @@ export function VenueSearchInput({
       setSuggestions([]);
       return;
     }
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     try {
       const url = new URL("https://photon.komoot.io/api/");
@@ -82,6 +86,8 @@ export function VenueSearchInput({
       const res = await fetch(url.toString());
       if (!res.ok) throw new Error(`Photon geocoding failed: ${res.status}`);
       const data = await res.json();
+      if (requestId !== requestIdRef.current) return; // a newer request already landed
+
       const places: VenuePlace[] = (data.features || [])
         .map((f: any) => {
           const p = f.properties || {};
@@ -103,10 +109,11 @@ export function VenueSearchInput({
       setSuggestions(places);
       setIsOpen(places.length > 0);
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.warn("[VenueSearchInput] suggestion fetch failed", err);
       setSuggestions([]);
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) setIsLoading(false);
     }
   }, []);
 

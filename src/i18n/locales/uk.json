@@ -259,7 +259,9 @@
     "shareFriends": "Поділіться з вашими друзями.",
     "failedToShare": "Не вдалося поділитися",
     "failedToCopyLink": "Не вдалося скопіювати посилання",
-    "joiningBtn": "Joining…"
+    "joiningBtn": "Joining…",
+    "listView": "Список",
+    "mapView": "Карта"
   },
   "profile": {
     "title": "Профіль",

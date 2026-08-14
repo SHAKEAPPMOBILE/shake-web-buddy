@@ -1607,7 +1607,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         <div className="flex-1 min-h-0 px-4 pt-4 pb-4">
           <WorldMap
             activities={combinedPlansList}
-            onActivityClick={(a) => handlePlanClick(a as unknown as PlanActivity)}
+            onActivityClick={(a) => {
+              const plan = a as unknown as PlanActivity;
+              // Match exactly how the corresponding list row would route this
+              // plan: "My Plans" entries (joined/owned) go through the paid-gate
+              // check, city-discovery entries always open the swipe feed.
+              const isMyPlan = activities.some((p) => p.id === plan.id);
+              if (isMyPlan) {
+                handlePlanClick(plan);
+              } else {
+                handleCityPlanClick(plan);
+              }
+            }}
             initialCity={selectedCity ?? undefined}
           />
         </div>

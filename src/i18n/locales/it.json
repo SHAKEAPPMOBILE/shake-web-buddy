@@ -259,7 +259,9 @@
     "shareFriends": "Condividilo con i tuoi amici.",
     "failedToShare": "Condivisione non riuscita",
     "failedToCopyLink": "Impossibile copiare il link",
-    "joiningBtn": "Joining…"
+    "joiningBtn": "Joining…",
+    "listView": "Vista elenco",
+    "mapView": "Vista mappa"
   },
   "profile": {
     "title": "Profilo",
