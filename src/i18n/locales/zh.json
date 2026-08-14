@@ -391,7 +391,11 @@
     "passwordsDontMatch": "两次输入的密码不一致",
     "passwordUpdatedSuccess": "密码更新成功！",
     "accountDeletedGoodbye": "账户已删除。再见！👋",
-    "deleteAccountFailed": "账户删除失败，请重试。"
+    "deleteAccountFailed": "账户删除失败，请重试。",
+    "connectStripe": "连接 Stripe",
+    "finishStripeSetup": "完成设置",
+    "stripeConnected": "已连接",
+    "stripePending": "还差几项信息才能完成设置。"
   },
   "points": {
     "title": "我的积分",

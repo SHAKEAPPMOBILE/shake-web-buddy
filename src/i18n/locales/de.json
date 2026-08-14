@@ -391,7 +391,11 @@
     "passwordsDontMatch": "Die Passwörter stimmen nicht überein",
     "passwordUpdatedSuccess": "Passwort erfolgreich aktualisiert!",
     "accountDeletedGoodbye": "Konto gelöscht. Auf Wiedersehen! 👋",
-    "deleteAccountFailed": "Konto konnte nicht gelöscht werden. Bitte versuche es erneut."
+    "deleteAccountFailed": "Konto konnte nicht gelöscht werden. Bitte versuche es erneut.",
+    "connectStripe": "Stripe verbinden",
+    "finishStripeSetup": "Einrichtung abschließen",
+    "stripeConnected": "Verbunden",
+    "stripePending": "Es fehlen noch ein paar Angaben, um die Einrichtung abzuschließen."
   },
   "points": {
     "title": "Meine Punkte",

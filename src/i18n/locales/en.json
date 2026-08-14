@@ -390,7 +390,11 @@
     "passwordsDontMatch": "Passwords do not match",
     "passwordUpdatedSuccess": "Password updated successfully!",
     "accountDeletedGoodbye": "Account deleted. Goodbye! 👋",
-    "deleteAccountFailed": "Failed to delete account. Please try again."
+    "deleteAccountFailed": "Failed to delete account. Please try again.",
+    "connectStripe": "Connect Stripe",
+    "finishStripeSetup": "Finish Setup",
+    "stripeConnected": "Connected",
+    "stripePending": "A few details are still needed to finish setup."
   },
   "points": {
     "title": "My Points",

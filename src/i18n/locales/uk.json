@@ -391,7 +391,11 @@
     "passwordsDontMatch": "Паролі не збігаються",
     "passwordUpdatedSuccess": "Пароль успішно оновлено!",
     "accountDeletedGoodbye": "Акаунт видалено. Прощавай! 👋",
-    "deleteAccountFailed": "Не вдалося видалити акаунт. Спробуй ще раз."
+    "deleteAccountFailed": "Не вдалося видалити акаунт. Спробуй ще раз.",
+    "connectStripe": "Підключити Stripe",
+    "finishStripeSetup": "Завершити налаштування",
+    "stripeConnected": "Підключено",
+    "stripePending": "Щоб завершити налаштування, потрібно додати ще декілька даних."
   },
   "points": {
     "title": "Мої бали",

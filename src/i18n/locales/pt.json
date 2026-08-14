@@ -391,7 +391,11 @@
     "passwordsDontMatch": "As palavras-passe não coincidem",
     "passwordUpdatedSuccess": "Palavra-passe atualizada com sucesso!",
     "accountDeletedGoodbye": "Conta eliminada. Adeus! 👋",
-    "deleteAccountFailed": "Falha ao eliminar a conta. Tenta novamente."
+    "deleteAccountFailed": "Falha ao eliminar a conta. Tenta novamente.",
+    "connectStripe": "Conectar Stripe",
+    "finishStripeSetup": "Concluir configuração",
+    "stripeConnected": "Conectado",
+    "stripePending": "Ainda faltam alguns dados para concluir a configuração."
   },
   "points": {
     "title": "Meus Pontos",

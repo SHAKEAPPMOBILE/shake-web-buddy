@@ -391,7 +391,11 @@
     "passwordsDontMatch": "Les mots de passe ne correspondent pas",
     "passwordUpdatedSuccess": "Mot de passe mis à jour avec succès !",
     "accountDeletedGoodbye": "Compte supprimé. Au revoir ! 👋",
-    "deleteAccountFailed": "Échec de la suppression du compte. Réessaie."
+    "deleteAccountFailed": "Échec de la suppression du compte. Réessaie.",
+    "connectStripe": "Connecter Stripe",
+    "finishStripeSetup": "Terminer la configuration",
+    "stripeConnected": "Connecté",
+    "stripePending": "Quelques informations sont encore nécessaires pour terminer la configuration."
   },
   "points": {
     "title": "Mes Points",

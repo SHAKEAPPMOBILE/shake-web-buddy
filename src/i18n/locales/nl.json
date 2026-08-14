@@ -391,7 +391,11 @@
     "passwordsDontMatch": "Wachtwoorden komen niet overeen",
     "passwordUpdatedSuccess": "Wachtwoord succesvol bijgewerkt!",
     "accountDeletedGoodbye": "Account verwijderd. Tot ziens! 👋",
-    "deleteAccountFailed": "Account verwijderen mislukt. Probeer het opnieuw."
+    "deleteAccountFailed": "Account verwijderen mislukt. Probeer het opnieuw.",
+    "connectStripe": "Stripe koppelen",
+    "finishStripeSetup": "Instellingen afronden",
+    "stripeConnected": "Gekoppeld",
+    "stripePending": "Er zijn nog een paar gegevens nodig om de installatie af te ronden."
   },
   "points": {
     "title": "Mijn Punten",

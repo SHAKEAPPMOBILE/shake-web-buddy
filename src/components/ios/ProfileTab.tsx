@@ -831,21 +831,28 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                         <p className="text-[10px] text-gray-400">~2.9% + $0.30 per transaction</p>
                       </div>
                     </div>
-                    {stripeConnected && <Check className="w-4 h-4 text-shake-green" />}
+                    {stripeConnected && stripeStatus === "complete" && <Check className="w-4 h-4 text-shake-green" />}
                   </div>
-                  {stripeConnected ? (
+                  {stripeConnected && stripeStatus === "complete" ? (
                     <p className="text-xs text-gray-600 px-1">
-                      {stripeStatus === "complete" ? t('profile.stripeConnected', 'Connected') : t('profile.stripePending', 'Verification pending')}
+                      {t('profile.stripeConnected', 'Connected')}
                     </p>
                   ) : (
-                    <button
-                      onClick={() => startStripeOnboarding()}
-                      disabled={stripeLoading}
-                      className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-2xl hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
-                    >
-                      {stripeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                      {t('profile.connectStripe', 'Connect Stripe')}
-                    </button>
+                    <>
+                      {stripeConnected && (
+                        <p className="text-xs text-gray-600 px-1">
+                          {t('profile.stripePending', 'A few details are still needed to finish setup.')}
+                        </p>
+                      )}
+                      <button
+                        onClick={() => startStripeOnboarding()}
+                        disabled={stripeLoading}
+                        className="w-full py-2 text-xs font-medium text-[#635BFF] border border-[#635BFF]/30 rounded-2xl hover:bg-[#635BFF]/10 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                      >
+                        {stripeLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        {stripeConnected ? t('profile.finishStripeSetup', 'Finish Setup') : t('profile.connectStripe', 'Connect Stripe')}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

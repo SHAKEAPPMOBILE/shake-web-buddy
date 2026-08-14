@@ -391,7 +391,11 @@
     "passwordsDontMatch": "パスワードが一致しません",
     "passwordUpdatedSuccess": "パスワードを更新しました！",
     "accountDeletedGoodbye": "アカウントを削除しました。さようなら！👋",
-    "deleteAccountFailed": "アカウントの削除に失敗しました。もう一度お試しください。"
+    "deleteAccountFailed": "アカウントの削除に失敗しました。もう一度お試しください。",
+    "connectStripe": "Stripeを接続",
+    "finishStripeSetup": "設定を完了する",
+    "stripeConnected": "接続済み",
+    "stripePending": "設定を完了するには、あといくつか情報が必要です。"
   },
   "points": {
     "title": "マイポイント",
