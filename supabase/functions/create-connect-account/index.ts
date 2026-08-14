@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { sendEmail } from "../_shared/postmark-email-service.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -233,6 +234,45 @@ serve(async (req) => {
     });
 
     logStep("Generated onboarding link", { accountId });
+
+    // Best-effort email so the user has a record of what's needed even if
+    // they close the Stripe tab without finishing. Account Links expire
+    // within minutes, so this deliberately does NOT embed the raw link —
+    // it points back to the app, which always generates a fresh one.
+    if (email) {
+      sendEmail({
+        from: "SHAKE <noreply@shakeapp.today>",
+        to: [email],
+        subject: "Finish setting up your SHAKE payouts",
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+            <div style="background-color: #ffffff; border-radius: 12px; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <h1 style="color: #1a1a1a; font-size: 22px; margin-bottom: 20px;">Almost there 👋</h1>
+              <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                You started connecting Stripe so SHAKE can pay you directly for your activities, but a few details are still needed before Stripe can send you money:
+              </p>
+              <ul style="color: #4a4a4a; font-size: 16px; line-height: 1.8;">
+                <li>Bank account for payouts</li>
+                <li>A short business description</li>
+                <li>Confirming Stripe's terms of service</li>
+              </ul>
+              <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Open SHAKE, go to your Profile, and tap <strong>Finish Setup</strong> under Stripe to pick up right where you left off.
+              </p>
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <p style="color: #888; font-size: 14px;">— The SHAKE Team</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      }).then((result) => {
+        if (!result.success) logStep("WARN: reminder email failed", { error: result.error });
+      }).catch(() => { /* best-effort, never blocks the redirect */ });
+    }
 
     return new Response(JSON.stringify({
       url: accountLink.url,
