@@ -429,7 +429,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                  all empty — the same fields shown in the Creator Payouts section).
            Tapping opens the Creator Payouts section in-page. */}
       {!earningsLoading && activities.some(a => getPriceValue(a.priceAmount) > 0) &&
-       !savedPaypal && !savedVenmo && !savedCashApp && (
+       !stripeConnected && (
         <button
           type="button"
           onClick={() => setShowPayoutOptions(true)}
@@ -690,7 +690,11 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 </button>
                 )}
 
-                <p className="text-xs text-black mb-1">{t('profile.payoutNote', "Add at least one method so we can send your earnings.")}</p>
+                <p className="text-xs text-black mb-1">
+                  {stripeConnected
+                    ? t('profile.payoutNote', "Add at least one method so we can send your earnings.")
+                    : t('profile.payoutNoteStripeOnly', "Connect Stripe below — it's the only payout method for now. We'll add more (including crypto) soon.")}
+                </p>
 
                 {/* PayPal — hidden for now, moving toward Stripe as the primary payout method */}
                 {false && (
@@ -752,7 +756,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 </div>
                 )}
 
-                {/* Venmo */}
+                {/* Venmo — hidden for now, Stripe is the sole active payout method until crypto options are added */}
+                {false && (
                 <div className={`border rounded-2xl p-3 space-y-2 ${savedVenmo ? "border-shake-green bg-shake-green/5" : "border-border"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -813,6 +818,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     </>
                   )}
                 </div>
+                )}
 
                 {/* Stripe */}
                 <div className={`border rounded-2xl p-3 space-y-2 ${stripeConnected ? "border-shake-green bg-shake-green/5" : "border-border"}`}>

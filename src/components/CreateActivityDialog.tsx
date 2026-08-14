@@ -20,12 +20,10 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { detectActivityFromText } from "@/lib/activityDetection";
 import { checkProfanity } from "@/lib/profanity-filter";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
-import { usePayPalConnect } from "@/hooks/usePayPalConnect";
 import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { supabase } from "@/integrations/supabase/client";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
-import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { useTranslation } from "react-i18next";
 
@@ -63,11 +61,9 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
-  const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showIDVerification, setShowIDVerification] = useState(false);
   const [profanityError, setProfanityError] = useState<string | null>(null);
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
-  const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
   const { isVerified, isPending: isVerificationPending, isLoading: verificationLoading } = useCreatorVerification();
   const isMobile = useIsMobile();
   
@@ -120,7 +116,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   // For paid activities, we require a date to be selected
   const isPaidActivity = priceAmount.trim().length > 0;
   const isValid = planText.trim().length > 0 && !hasProfanity && (!isPaidActivity || selectedDate);
-  const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
+  const hasPayoutMethod = stripeConnected && connectStatus === "complete";
   const needsPayoutSetup = isPaidActivity && !hasPayoutMethod;
   const needsIDVerification = ID_VERIFICATION_ENABLED && isPaidActivity && !isVerified && !isVerificationPending;
 
@@ -343,28 +339,18 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
               {priceAmount.trim() && !hasPayoutMethod && (
                 <div className="text-xs text-amber-600 space-y-1">
                   <p>{t("createPlan.connectPayout")}</p>
-                  <div className="flex gap-2">
-                    <button 
-                      type="button"
-                      onClick={() => setShowStripeCountrySelector(true)}
-                      className="underline hover:text-amber-700 font-medium"
-                    >
-                      Stripe
-                    </button>
-                    <span>{t("common.or")}</span>
-                    <button 
-                      type="button"
-                      onClick={() => setShowPayPalDialog(true)}
-                      className="underline hover:text-amber-700 font-medium"
-                    >
-                      PayPal
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowStripeCountrySelector(true)}
+                    className="underline hover:text-amber-700 font-medium"
+                  >
+                    Connect Stripe
+                  </button>
                 </div>
               )}
               {priceAmount.trim() && hasPayoutMethod && (
                 <p className="text-xs text-green-600">
-                  {t("createPlan.payoutConnected", { method: paypalConnected ? "PayPal" : "Stripe" })}
+                  {t("createPlan.payoutConnected", { method: "Stripe" })}
                 </p>
               )}
               
@@ -473,14 +459,6 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
         onSelectCountry={handleStartOnboardingWithCountry}
         isLoading={connectLoading}
         isReset={false}
-      />
-
-      {/* PayPal connect dialog */}
-      <PayPalConnectDialog
-        open={showPayPalDialog}
-        onOpenChange={setShowPayPalDialog}
-        onConnect={connectPayPal}
-        isLoading={paypalLoading}
       />
 
       {/* ID Verification dialog */}

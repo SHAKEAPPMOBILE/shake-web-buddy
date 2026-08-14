@@ -13,12 +13,10 @@ import { triggerConfettiWaterfall } from "@/lib/confetti";
 import { detectActivityFromText } from "@/lib/activityDetection";
 import { checkProfanity } from "@/lib/profanity-filter";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
-import { usePayPalConnect } from "@/hooks/usePayPalConnect";
 import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { supabase } from "@/integrations/supabase/client";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
-import { PayPalConnectDialog } from "@/components/PayPalConnectDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useTranslation } from "react-i18next";
@@ -116,7 +114,6 @@ export default function ProposePlanPage() {
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [audience, setAudience] = useState<"everyone" | "women_only">("everyone");
   const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
-  const [showPayPalDialog, setShowPayPalDialog] = useState(false);
   const [showIDVerification, setShowIDVerification] = useState(false);
   const [profanityError, setProfanityError] = useState<string | null>(null);
   const [dayLimitError, setDayLimitError] = useState(false);
@@ -162,7 +159,6 @@ export default function ProposePlanPage() {
   useScrollNudge(scrollAreaRef);
 
   const { isConnected: stripeConnected, status: connectStatus, startOnboarding, isLoading: connectLoading } = useStripeConnect();
-  const { isConnected: paypalConnected, connectPayPal, isLoading: paypalLoading } = usePayPalConnect();
   const { isVerified, isPending: isVerificationPending } = useCreatorVerification();
 
   useEffect(() => {
@@ -211,7 +207,7 @@ export default function ProposePlanPage() {
     return d;
   }, [selectedDate, selectedTime]);
 
-  const hasPayoutMethod = (stripeConnected && connectStatus === "complete") || paypalConnected;
+  const hasPayoutMethod = stripeConnected && connectStatus === "complete";
 
   // Ordered steps — insert "city" only when context provides no city.
   // "audience" (who's this plan for) is asked of every creator regardless of
@@ -1604,13 +1600,6 @@ export default function ProposePlanPage() {
         onSelectCountry={handleStartOnboardingWithCountry}
         isLoading={connectLoading}
         isReset={false}
-      />
-
-      <PayPalConnectDialog
-        open={showPayPalDialog}
-        onOpenChange={setShowPayPalDialog}
-        onConnect={connectPayPal}
-        isLoading={paypalLoading}
       />
 
       <IDVerificationDialog
