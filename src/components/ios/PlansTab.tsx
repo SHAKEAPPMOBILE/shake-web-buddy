@@ -3,7 +3,8 @@ import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import confetti from 'canvas-confetti';
 import barManAndCook from "@/assets/bar-man-and-cook.png";
-import { Calendar, Users, Plus, Plane, Send, ChevronLeft, Play } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Send, ChevronLeft, Play, Map as MapIcon, List as ListIcon } from "lucide-react";
+import { WorldMap } from "@/components/WorldMap";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -125,6 +126,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [isLoading, setIsLoading] = useState(true);
   // "My City" (false) is the default; "All Cities" (true) is opt-in
   const [showAllCities, setShowAllCities] = useState(false);
+  // Fuzzed approximate-location map view of "My City" plans, alternative to the list.
+  const [tabView, setTabView] = useState<'list' | 'map'>('list');
 
   useEffect(() => {
     console.log("[PlansTab] showAllCities changed →", showAllCities);
@@ -1525,6 +1528,30 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           <h2 className="text-lg font-display font-bold text-gray-900 dark:text-gray-900">
             {t('plans.myPlans')}
           </h2>
+          <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5">
+            <button
+              type="button"
+              onClick={() => setTabView('list')}
+              aria-label={t('plans.listView', 'List view')}
+              className={cn(
+                "flex items-center justify-center w-7 h-7 rounded-full transition-all",
+                tabView === 'list' ? "bg-white shadow-sm text-gray-900" : "text-gray-400"
+              )}
+            >
+              <ListIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setTabView('map')}
+              aria-label={t('plans.mapView', 'Map view')}
+              className={cn(
+                "flex items-center justify-center w-7 h-7 rounded-full transition-all",
+                tabView === 'map' ? "bg-white shadow-sm text-gray-900" : "text-gray-400"
+              )}
+            >
+              <MapIcon className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* My City / All Cities filter chips */}
@@ -1576,7 +1603,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         />
       </CityPickerModal>
 
-      {/* Plans List */}
+      {tabView === 'map' ? (
+        <div className="flex-1 min-h-0 px-4 pt-4 pb-4">
+          <WorldMap
+            activities={combinedPlansList}
+            onActivityClick={(a) => handlePlanClick(a as unknown as PlanActivity)}
+            initialCity={selectedCity ?? undefined}
+          />
+        </div>
+      ) : (
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 space-y-3 bg-white dark:bg-white min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
@@ -1854,6 +1889,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           </>
         )}
       </div>
+      )}
       {/* Leave Confirmation Dialog */}
       <AlertDialog open={!!planToLeave} onOpenChange={(open) => !open && setPlanToLeave(null)}>
         <AlertDialogContent className="border-2 border-destructive/40">

@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MAPBOX_TOKEN } from "@/lib/mapboxToken";
 
 export interface VenuePlace {
   name: string;
@@ -22,9 +21,10 @@ interface VenueSearchInputProps {
 /**
  * Free-text venue input with live place suggestions. Biased toward the
  * user's current location (via browser geolocation, best-effort — silently
- * does without it if denied/unavailable) using the Mapbox Geocoding API and
- * the same public token already used by WorldMap. Users can always just
- * type a venue name and move on without picking a suggestion.
+ * does without it if denied/unavailable) using Photon (komoot's free,
+ * keyless geocoding API built on OpenStreetMap data — no billing account
+ * required). Users can always just type a venue name and move on without
+ * picking a suggestion.
  */
 export function VenueSearchInput({
   value,
@@ -70,25 +70,36 @@ export function VenueSearchInput({
     }
     setIsLoading(true);
     try {
-      const url = new URL(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`
-      );
-      url.searchParams.set("access_token", MAPBOX_TOKEN);
-      url.searchParams.set("autocomplete", "true");
+      const url = new URL("https://photon.komoot.io/api/");
+      url.searchParams.set("q", query);
       url.searchParams.set("limit", "5");
-      url.searchParams.set("types", "poi,address");
       const coords = coordsRef.current;
-      if (coords) url.searchParams.set("proximity", `${coords.lng},${coords.lat}`);
+      if (coords) {
+        url.searchParams.set("lat", String(coords.lat));
+        url.searchParams.set("lon", String(coords.lng));
+      }
 
       const res = await fetch(url.toString());
-      if (!res.ok) throw new Error(`Mapbox geocoding failed: ${res.status}`);
+      if (!res.ok) throw new Error(`Photon geocoding failed: ${res.status}`);
       const data = await res.json();
-      const places: VenuePlace[] = (data.features || []).map((f: any) => ({
-        name: f.text || f.place_name,
-        address: f.place_name,
-        lat: f.center?.[1],
-        lng: f.center?.[0],
-      }));
+      const places: VenuePlace[] = (data.features || [])
+        .map((f: any) => {
+          const p = f.properties || {};
+          const name: string = p.name || p.street || p.city || "";
+          const addressParts = [
+            p.housenumber && p.street ? `${p.housenumber} ${p.street}` : p.street,
+            p.city,
+            p.state,
+            p.country,
+          ].filter(Boolean);
+          return {
+            name,
+            address: addressParts.join(", ") || name,
+            lat: f.geometry?.coordinates?.[1],
+            lng: f.geometry?.coordinates?.[0],
+          };
+        })
+        .filter((p: VenuePlace) => p.name && typeof p.lat === "number" && typeof p.lng === "number");
       setSuggestions(places);
       setIsOpen(places.length > 0);
     } catch (err) {

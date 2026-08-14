@@ -1,21 +1,60 @@
 import * as React from "react";
 import { useRef, useEffect, useState, useMemo, useImperativeHandle, forwardRef } from "react";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import * as maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { SHAKE_CITIES, City } from "@/data/cities";
-import { UserActivity } from "@/hooks/useUserActivities";
 import { getActivityEmoji, getActivityColor } from "@/data/activityTypes";
 import { Button } from "@/components/ui/button";
 import { LocateFixed } from "lucide-react";
-import { MAPBOX_TOKEN } from "@/lib/mapboxToken";
+
+// Free raster basemap — CARTO's dark-matter tiles, no API key or billing
+// required (unlike Mapbox's hosted vector styles). Visually close to the
+// previous "mapbox://styles/mapbox/dark-v11" look.
+const FREE_DARK_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    "carto-dark": {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+      ],
+      tileSize: 256,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    },
+  },
+  layers: [
+    {
+      id: "carto-dark-layer",
+      type: "raster",
+      source: "carto-dark",
+      minzoom: 0,
+      maxzoom: 20,
+    },
+  ],
+};
 
 export interface WorldMapHandle {
   flyToCity: (cityName: string) => void;
 }
 
+// Minimal shape the map actually needs — kept decoupled from any specific
+// activity/plan type so both the (unwired) PlansMapDialog's UserActivity[]
+// and the iOS PlansTab's PlanActivity[] can be passed in directly.
+export interface WorldMapActivity {
+  id: string;
+  activity_type: string;
+  city: string;
+  note?: string | null;
+  creator_name?: string;
+}
+
 interface WorldMapProps {
-  activities: UserActivity[];
-  onActivityClick: (activity: UserActivity) => void;
+  activities: WorldMapActivity[];
+  onActivityClick: (activity: WorldMapActivity) => void;
   onCityClick?: (city: City) => void;
   selectedActivityId?: string | null;
   initialCity?: string;
@@ -29,8 +68,8 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
   initialCity 
 }, ref) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const map = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [hoveredActivity, setHoveredActivity] = useState<string | null>(null);
 
@@ -64,19 +103,12 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
         lng: city.lng + offsetLng,
         lat: city.lat + offsetLat,
       };
-    }).filter(Boolean) as { activity: UserActivity; lng: number; lat: number }[];
+    }).filter(Boolean) as { activity: WorldMapActivity; lng: number; lat: number }[];
   }, [activities]);
 
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
-
-    if (!MAPBOX_TOKEN) {
-      console.error("Mapbox token not found");
-      return;
-    }
-
-    mapboxgl.accessToken = MAPBOX_TOKEN;
 
     // Find initial center
     let initialCenter: [number, number] = [0, 20];
@@ -90,9 +122,9 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
       }
     }
 
-    map.current = new mapboxgl.Map({
+    map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: FREE_DARK_STYLE,
       center: initialCenter,
       zoom: initialZoom,
       pitch: 0,
@@ -101,7 +133,7 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
 
     // Add navigation controls
     map.current.addControl(
-      new mapboxgl.NavigationControl({
+      new maplibregl.NavigationControl({
         visualizePitch: false,
       }),
       "top-right"
@@ -158,10 +190,10 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
       const creatorName = activity.creator_name || "Someone";
       const note = activity.note ? `<p class="text-xs italic mt-1">"${activity.note}"</p>` : "";
       
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new maplibregl.Marker({ element: el })
         .setLngLat([lng, lat])
         .setPopup(
-          new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(`
+          new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(`
             <div class="text-sm p-1">
               <p class="font-semibold">${getActivityEmoji(activity.activity_type)} ${activity.activity_type}</p>
               <p class="text-muted-foreground">by ${creatorName}</p>
@@ -192,20 +224,6 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
       duration: 1500,
     });
   }, [selectedActivityId, activities, mapLoaded]);
-
-  // Show placeholder if no token
-  if (!MAPBOX_TOKEN) {
-    return (
-      <div className="relative w-full h-full min-h-[300px] flex items-center justify-center bg-muted/30 rounded-xl">
-        <div className="text-center p-4">
-          <p className="text-muted-foreground">Map requires configuration</p>
-          <p className="text-xs text-muted-foreground/70 mt-1">
-            Please add MAPBOX_PUBLIC_TOKEN to your environment
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const handleCenterOnCity = () => {
     if (!map.current || !initialCity) return;
