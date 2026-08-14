@@ -44,7 +44,9 @@
     "payToJoin": "付费参加",
     "processing": "处理中",
     "paymentGateInfo": "付款后，您将可以访问群聊并与其他参与者协调。",
-    "creatorPaymentNotSetup": "活动创建者尚未设置支付方式。请直接联系他们或稍后再试。"
+    "creatorPaymentNotSetup": "活动创建者尚未设置支付方式。请直接联系他们或稍后再试。",
+    "selectPriceOption": "请先选择一个价格选项。",
+    "choosePriceOption": "选择价格选项"
   },
   "days": {
     "sunday": "星期日",
@@ -637,7 +639,17 @@
     "uploadVideo": "上传",
     "botAudience": "这个计划是给谁的？💃",
     "everyone": "所有人",
-    "womenOnly": "仅限女性"
+    "womenOnly": "仅限女性",
+    "botVenue": "在哪里举行？📍",
+    "botCapacity": "限制参与人数？（可选）",
+    "venuePlaceholder": "搜索地点或输入地址",
+    "skip": "跳过",
+    "generalTierHint": "上面的价格将作为\"普通\"选项",
+    "tierLabelPlaceholder": "例如：女生、学生",
+    "addPriceOption": "添加另一个价格选项",
+    "venueLabel": "在哪里举行？（可选）",
+    "capacityLabel": "限制参与人数？（可选）",
+    "capacityPlaceholder": "无限制"
   },
   "userProfile": {
     "title": "用户资料",
@@ -739,7 +751,8 @@
     "yours": "你的",
     "joined": "已加入",
     "join": "加入",
-    "pay": "支付 {{amount}}"
+    "pay": "支付 {{amount}}",
+    "payFrom": "支付"
   },
   "chatInvite": {
     "title": "用户资料",

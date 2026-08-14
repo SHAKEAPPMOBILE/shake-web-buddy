@@ -7,7 +7,7 @@ export function useActivityPayment() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  const createPaymentSession = useCallback(async (activityId: string): Promise<string | null> => {
+  const createPaymentSession = useCallback(async (activityId: string, tierLabel?: string): Promise<string | null> => {
     if (!user) return null;
 
     setIsLoading(true);
@@ -19,7 +19,7 @@ export function useActivityPayment() {
         return null;
       }
       const { data, error } = await supabase.functions.invoke("create-activity-payment", {
-        body: { activityId },
+        body: { activityId, tierLabel },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
@@ -50,8 +50,8 @@ export function useActivityPayment() {
     }
   }, [user]);
 
-  const redirectToPayment = useCallback(async (activityId: string) => {
-    const url = await createPaymentSession(activityId);
+  const redirectToPayment = useCallback(async (activityId: string, tierLabel?: string) => {
+    const url = await createPaymentSession(activityId, tierLabel);
     if (url) {
       // Use location.href instead of window.open to avoid popup blockers on iOS/iPad
       window.location.href = url;

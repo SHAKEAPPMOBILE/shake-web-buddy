@@ -44,7 +44,9 @@
     "payToJoin": "Pay to Join",
     "processing": "Processing",
     "paymentGateInfo": "After payment, you'll have access to the group chat and can coordinate with other participants.",
-    "creatorPaymentNotSetup": "The activity creator hasn't set up payments yet. Please contact them directly or try again later."
+    "creatorPaymentNotSetup": "The activity creator hasn't set up payments yet. Please contact them directly or try again later.",
+    "selectPriceOption": "Please select a price option first.",
+    "choosePriceOption": "Choose a price option"
   },
   "days": {
     "sunday": "Sunday",
@@ -636,7 +638,17 @@
     "uploadVideo": "Upload",
     "botAudience": "Who's this plan for? 💃",
     "everyone": "Everyone",
-    "womenOnly": "Women only"
+    "womenOnly": "Women only",
+    "botVenue": "Where's it happening? 📍",
+    "botCapacity": "Limit how many can join? (optional)",
+    "venuePlaceholder": "Search a place or type an address",
+    "skip": "Skip",
+    "generalTierHint": "The price above applies as \"General\"",
+    "tierLabelPlaceholder": "e.g. Girls, Students",
+    "addPriceOption": "Add another price option",
+    "venueLabel": "Where's it happening? (optional)",
+    "capacityLabel": "Limit how many can join? (optional)",
+    "capacityPlaceholder": "No limit"
   },
   "userProfile": {
     "title": "User Profile",
@@ -748,7 +760,8 @@
     "yours": "Yours",
     "joined": "Joined",
     "join": "Join",
-    "pay": "Pay {{amount}}"
+    "pay": "Pay {{amount}}",
+    "payFrom": "Pay"
   },
   "mandatoryPhoto": {
     "uploadFailed": "Failed to upload photo",

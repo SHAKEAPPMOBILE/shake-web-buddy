@@ -56,18 +56,24 @@ serve(async (req) => {
     const results: Record<string, unknown>[] = [];
 
     for (const activity of activities || []) {
-      const { count: participants } = await supabase
+      const { data: activityJoins } = await supabase
         .from("activity_joins")
-        .select("*", { count: "exact", head: true })
+        .select("amount_paid_cents")
         .eq("activity_id", activity.id);
 
-      const paidParticipants = participants || 0;
+      const paidParticipants = activityJoins?.length || 0;
       if (paidParticipants === 0) {
         continue;
       }
 
+      // Sum actual amounts charged (from Stripe, per-join) when available —
+      // required once an activity can have participants paying different
+      // tiered prices. Joins that predate amount_paid_cents (older data)
+      // fall back to the flat base-price estimate.
       const unitAmount = parsePriceAmount(activity.price_amount || "");
-      const gross = unitAmount * paidParticipants;
+      const gross = (activityJoins || []).reduce((sum, join) => {
+        return sum + (typeof join.amount_paid_cents === "number" ? join.amount_paid_cents / 100 : unitAmount);
+      }, 0);
       const net = Math.round(gross * 0.85 * 100) / 100; // 85% after platform fee
 
       if (net <= 0) continue;

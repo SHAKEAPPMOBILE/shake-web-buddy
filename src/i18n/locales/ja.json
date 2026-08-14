@@ -44,7 +44,9 @@
     "payToJoin": "参加するには支払いが必要です",
     "processing": "処理中",
     "paymentGateInfo": "お支払い後、グループチャットにアクセスでき、他の参加者と調整できます。",
-    "creatorPaymentNotSetup": "アクティビティ作成者はまだ支払いを設定していません。直接連絡するか、後でもう一度お試しください。"
+    "creatorPaymentNotSetup": "アクティビティ作成者はまだ支払いを設定していません。直接連絡するか、後でもう一度お試しください。",
+    "selectPriceOption": "先に価格オプションを選択してください。",
+    "choosePriceOption": "価格オプションを選択"
   },
   "days": {
     "sunday": "日曜日",
@@ -637,7 +639,17 @@
     "uploadVideo": "アップロード",
     "botAudience": "このプランは誰のため？💃",
     "everyone": "誰でも",
-    "womenOnly": "女性限定"
+    "womenOnly": "女性限定",
+    "botVenue": "場所はどこですか？📍",
+    "botCapacity": "参加人数に上限を設けますか？（任意）",
+    "venuePlaceholder": "場所を検索するか住所を入力してください",
+    "skip": "スキップ",
+    "generalTierHint": "上記の価格は「一般」として適用されます",
+    "tierLabelPlaceholder": "例：女性、学生",
+    "addPriceOption": "価格オプションを追加",
+    "venueLabel": "場所はどこですか？（任意）",
+    "capacityLabel": "参加人数に上限を設けますか？（任意）",
+    "capacityPlaceholder": "上限なし"
   },
   "userProfile": {
     "title": "ユーザープロフィール",
@@ -739,7 +751,8 @@
     "yours": "あなたの",
     "joined": "参加済み",
     "join": "参加",
-    "pay": "支払い {{amount}}"
+    "pay": "支払い {{amount}}",
+    "payFrom": "支払う"
   },
   "chatInvite": {
     "title": "ユーザープロフィール",

@@ -26,6 +26,16 @@ import { useTranslation } from "react-i18next";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { SHAKE_CITIES } from "@/data/cities";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
+import { PriceTierPicker } from "@/components/PriceTierPicker";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PlansMapDialogProps {
   open: boolean;
@@ -56,6 +66,8 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
   const [searchQuery, setSearchQuery] = useState("");
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [processingActivityId, setProcessingActivityId] = useState<string | null>(null);
+  const [tierPickerActivity, setTierPickerActivity] = useState<UserActivity | null>(null);
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
 
   // Get city suggestions based on search query
   const citySuggestions = useMemo(() => {
@@ -158,6 +170,13 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
     
     // Handle paid activity - redirect to payment
     if (result.requiresPayment) {
+      // Multi-tier activity — show the price picker before checkout
+      if (activity.price_tiers && activity.price_tiers.length > 0) {
+        setSelectedTier(null);
+        setTierPickerActivity(activity);
+        return;
+      }
+
       setProcessingActivityId(activity.id);
       const success = await redirectToPayment(activity.id);
       setProcessingActivityId(null);
@@ -659,6 +678,8 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
                     >
                       {processingActivityId === selectedActivity.id ? (
                         "Processing..."
+                      ) : selectedActivity.price_tiers && selectedActivity.price_tiers.length > 0 ? (
+                        "Pay to Join"
                       ) : selectedActivity.price_amount ? (
                         `Pay ${selectedActivity.price_amount} to Join`
                       ) : (
@@ -703,6 +724,43 @@ export function PlansMapDialog({ open, onOpenChange, city, mapOnlyMode = false }
       )}
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+      {/* Price Tier Picker */}
+      <AlertDialog open={!!tierPickerActivity} onOpenChange={(isOpen) => !isOpen && setTierPickerActivity(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("common.choosePriceOption", "Choose a price option")}</AlertDialogTitle>
+          </AlertDialogHeader>
+          {tierPickerActivity && (
+            <PriceTierPicker
+              tiers={tierPickerActivity.price_tiers!}
+              selected={selectedTier}
+              onSelect={setSelectedTier}
+            />
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTierPickerActivity(null)}>
+              {t("common.cancel", "Cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!selectedTier}
+              onClick={async () => {
+                if (!tierPickerActivity || !selectedTier) return;
+                const activityId = tierPickerActivity.id;
+                setTierPickerActivity(null);
+                setProcessingActivityId(activityId);
+                const success = await redirectToPayment(activityId, selectedTier);
+                setProcessingActivityId(null);
+                if (!success) {
+                  toast.error("Could not start payment process");
+                }
+              }}
+            >
+              {t("common.payToJoin", "Pay to Join")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

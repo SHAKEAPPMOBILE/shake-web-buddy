@@ -55,6 +55,7 @@ interface PlanActivity {
   is_active: boolean;
   note?: string | null;
   price_amount?: string | null;
+  price_tiers?: { label: string; amount: number }[] | null;
   promo_video_url?: string | null;
   group_number?: number | null;
   creator_name?: string;

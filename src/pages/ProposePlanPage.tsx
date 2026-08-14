@@ -22,6 +22,8 @@ import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useTranslation } from "react-i18next";
 import { Capacitor } from "@capacitor/core";
 import { useScrollNudge } from "@/hooks/useScrollNudge";
+import { VenueSearchInput, VenuePlace } from "@/components/VenueSearchInput";
+import { Trash2 } from "lucide-react";
 
 // Set to true to re-enable ID verification gate on the paid-plan create path.
 const ID_VERIFICATION_ENABLED = false;
@@ -43,7 +45,7 @@ const CURRENCIES = [
 
 const MAX_CHARACTERS = 50;
 
-type StepName = "name" | "city" | "date" | "time" | "price" | "video" | "audience" | "preview";
+type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "preview";
 type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
 const MAX_CLIP_SECONDS = 10;
@@ -80,7 +82,9 @@ export default function ProposePlanPage() {
     city: t("createPlan.botCity"),
     date: t("createPlan.botDate"),
     time: t("createPlan.botTime"),
+    venue: t("createPlan.botVenue", "Where's it happening? 📍"),
     price: t("createPlan.botPrice"),
+    capacity: t("createPlan.botCapacity", "Limit how many can join? (optional)"),
     video: t("createPlan.botVideo"),
     audience: t("createPlan.botAudience"),
     preview: "",
@@ -91,7 +95,9 @@ export default function ProposePlanPage() {
     city:  "#facc15",
     date:  "#bbf7d0", // green-200
     time:  "#fed7aa", // orange-200
+    venue: "#a5f3fc", // cyan-200
     price: "#e9d5ff", // purple-200
+    capacity: "#fef08a", // yellow-200
     video: "#93c5fd", // blue-300
     audience: "#fbcfe8", // pink-200
   };
@@ -109,6 +115,12 @@ export default function ProposePlanPage() {
   const [planText, setPlanText] = useState("");
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
+  // Extra named price tiers beyond the base price/currency above, e.g.
+  // "Girls $10 / Boys $15" — base price acts as the first/default tier.
+  const [extraPriceTiers, setExtraPriceTiers] = useState<{ label: string; amount: string }[]>([]);
+  const [capacityInput, setCapacityInput] = useState("");
+  const [venueName, setVenueName] = useState("");
+  const [venuePlace, setVenuePlace] = useState<VenuePlace | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()));
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
@@ -216,7 +228,7 @@ export default function ProposePlanPage() {
   const steps: StepName[] = useMemo(() => {
     const s: StepName[] = ["video", "name"];
     if (!city) s.push("city");
-    s.push("date", "time", "price", "audience", "preview");
+    s.push("date", "time", "venue", "price", "capacity", "audience", "preview");
     return s;
   }, [city]);
 
@@ -363,10 +375,14 @@ export default function ProposePlanPage() {
           ? t("common.tomorrow")
           : format(selectedDate, "EEE, MMM d");
       case "time": return format(previewDateTime, "h:mm a");
-      case "price":
-        return priceAmount.trim()
-          ? `${selectedCurrencySymbol}${priceAmount} ${priceCurrency}`
-          : t("createPlan.free");
+      case "venue": return venuePlace?.name || venueName.trim() || t("createPlan.skipped");
+      case "price": {
+        if (!priceAmount.trim()) return t("createPlan.free");
+        const base = `${selectedCurrencySymbol}${priceAmount} ${priceCurrency}`;
+        const extras = extraPriceTiers.filter((tCur) => tCur.label.trim() && tCur.amount.trim());
+        return extras.length > 0 ? `${extras.length + 1} price options` : base;
+      }
+      case "capacity": return capacityInput.trim() ? `${capacityInput} max` : t("createPlan.skipped");
       case "video": return promoVideoUrl ? t("createPlan.videoAdded") : t("createPlan.skipped");
       case "audience": return audience === "women_only" ? t("createPlan.womenOnly") : t("createPlan.everyone");
       default: return "";
@@ -668,6 +684,20 @@ export default function ProposePlanPage() {
     // value captured when the component last rendered before CityContext settled.
     const freshCity = selectedCityRef.current || cityInput.trim() || undefined;
 
+    // Named price tiers: base price (if any) becomes "General" once other
+    // labeled tiers exist; otherwise price_tiers stays unset and the base
+    // price/currency alone (formattedPrice) is the single price as before.
+    const validExtraTiers = extraPriceTiers
+      .filter((tierRow) => tierRow.label.trim() && tierRow.amount.trim() && !isNaN(parseFloat(tierRow.amount)))
+      .map((tierRow) => ({ label: tierRow.label.trim(), amount: parseFloat(tierRow.amount) }));
+    const basePriceNum = priceAmount.trim() ? parseFloat(priceAmount.trim()) : NaN;
+    const priceTiersPayload = validExtraTiers.length > 0
+      ? [
+          ...(!isNaN(basePriceNum) ? [{ label: "General", amount: basePriceNum }] : []),
+          ...validExtraTiers,
+        ]
+      : undefined;
+
     const success = await createActivity(
       detectedActivity.type,
       activityDate,
@@ -676,7 +706,14 @@ export default function ProposePlanPage() {
       formattedPrice,
       endOfSelectedDay,
       promoVideoUrl || undefined,
-      audience
+      audience,
+      priceTiersPayload,
+      capacityInput.trim() ? parseInt(capacityInput.trim(), 10) : undefined,
+      venuePlace
+        ? { name: venuePlace.name, address: venuePlace.address, lat: venuePlace.lat, lng: venuePlace.lng }
+        : venueName.trim()
+        ? { name: venueName.trim() }
+        : undefined
     );
 
     if (!success) {
@@ -720,9 +757,13 @@ export default function ProposePlanPage() {
     ];
   }, [today, t]);
 
-  // Inline calendar helpers
-  const calYear = today.getFullYear();
-  const calMonth = today.getMonth();
+  // Inline calendar helpers — navigable so users can schedule into future
+  // months, not just the current one. Can't go earlier than the current
+  // month (past dates are meaningless for a new plan).
+  const [calMonthOffset, setCalMonthOffset] = useState(0);
+  const calCursor = new Date(today.getFullYear(), today.getMonth() + calMonthOffset, 1);
+  const calYear = calCursor.getFullYear();
+  const calMonth = calCursor.getMonth();
   const firstDayOffset = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
@@ -1063,9 +1104,29 @@ export default function ProposePlanPage() {
 
             {showCalendar && (
               <div className="absolute bottom-full left-0 right-0 mb-2 z-10 p-3 rounded-xl border border-border bg-background shadow-lg">
-                <p className="text-xs font-medium text-center text-muted-foreground mb-2">
-                  {format(new Date(calYear, calMonth, 1), "MMMM yyyy")}
-                </p>
+                <div className="flex items-center justify-between mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setCalMonthOffset((o) => Math.max(0, o - 1))}
+                    disabled={calMonthOffset === 0}
+                    className="p-1 rounded-full text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Previous month"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <p className="text-xs font-medium text-center text-muted-foreground">
+                    {format(new Date(calYear, calMonth, 1), "MMMM yyyy")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setCalMonthOffset((o) => Math.min(11, o + 1))}
+                    disabled={calMonthOffset === 11}
+                    className="p-1 rounded-full text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Next month"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                </div>
                 <div className="grid grid-cols-7 gap-0.5 text-center">
                   {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
                     <div key={d} className="text-muted-foreground font-medium py-1 text-[11px]">{d}</div>
@@ -1122,6 +1183,34 @@ export default function ProposePlanPage() {
                 <ArrowUp className="w-5 h-5" />
               </button>
             </div>
+          </div>
+        );
+
+      case "venue":
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <VenueSearchInput
+                className="flex-1"
+                value={venueName}
+                onChange={(text) => { setVenueName(text); setVenuePlace(null); }}
+                onSelectPlace={(place) => { setVenuePlace(place); setVenueName(place.name); }}
+                placeholder={t("createPlan.venuePlaceholder", "Search a place or type an address")}
+              />
+              <button
+                onClick={advanceStep}
+                className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
+              >
+                <ArrowUp className="w-5 h-5" />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setVenueName(""); setVenuePlace(null); advanceStep(); }}
+              className="text-sm text-muted-foreground underline underline-offset-2 w-full text-center"
+            >
+              {t("createPlan.skip", "Skip")}
+            </button>
           </div>
         );
 
@@ -1189,8 +1278,83 @@ export default function ProposePlanPage() {
                     <ArrowUp className="w-5 h-5" />
                   </button>
                 </div>
+
+                {/* Extra named price tiers — e.g. "Girls $10 / Boys $15". The
+                    base price above still applies as "General" once any of
+                    these are added. */}
+                {extraPriceTiers.length > 0 && (
+                  <p className="text-xs text-muted-foreground px-1 pt-1">
+                    {t("createPlan.generalTierHint", "The price above applies as \"General\"")}
+                  </p>
+                )}
+                {extraPriceTiers.map((tierRow, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={tierRow.label}
+                      onChange={(e) => {
+                        const next = [...extraPriceTiers];
+                        next[i] = { ...next[i], label: e.target.value };
+                        setExtraPriceTiers(next);
+                      }}
+                      placeholder={t("createPlan.tierLabelPlaceholder", "e.g. Girls, Students")}
+                      className="flex-1 h-12 rounded-xl border border-border bg-muted/60 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500/40"
+                    />
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={tierRow.amount}
+                      onChange={(e) => {
+                        const next = [...extraPriceTiers];
+                        next[i] = { ...next[i], amount: e.target.value };
+                        setExtraPriceTiers(next);
+                      }}
+                      placeholder={selectedCurrencySymbol}
+                      className="w-24 h-12 rounded-xl border border-border bg-muted/60 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500/40"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setExtraPriceTiers(extraPriceTiers.filter((_, idx) => idx !== i))}
+                      className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      aria-label="Remove price option"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setExtraPriceTiers([...extraPriceTiers, { label: "", amount: "" }])}
+                  className="flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 transition-colors px-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  {t("createPlan.addPriceOption", "Add another price option")}
+                </button>
               </div>
             )}
+          </div>
+        );
+
+      case "capacity":
+        return (
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              value={capacityInput}
+              onChange={(e) => setCapacityInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") advanceStep(); }}
+              placeholder={t("createPlan.capacityPlaceholder", "No limit")}
+              className="flex-1 h-14 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+              autoFocus
+            />
+            <button
+              onClick={advanceStep}
+              className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
+            >
+              <ArrowUp className="w-5 h-5" />
+            </button>
           </div>
         );
 

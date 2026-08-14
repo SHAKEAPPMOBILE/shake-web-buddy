@@ -539,17 +539,22 @@ Deno.serve(async (req) => {
       const activityIds = activities.map(a => a.id);
       const { data: joins } = await supabaseAdmin
         .from("activity_joins")
-        .select("activity_id, user_id, joined_at")
+        .select("activity_id, user_id, joined_at, amount_paid_cents, price_tier_label")
         .in("activity_id", activityIds);
 
       // Count participants per activity
       const participantCounts: Record<string, number> = {};
-      const joinDetails: Record<string, Array<{ user_id: string; joined_at: string }>> = {};
+      const joinDetails: Record<string, Array<{ user_id: string; joined_at: string; amount_paid_cents: number | null; price_tier_label: string | null }>> = {};
       (joins || []).forEach(join => {
         if (join.activity_id) {
           participantCounts[join.activity_id] = (participantCounts[join.activity_id] || 0) + 1;
           if (!joinDetails[join.activity_id]) joinDetails[join.activity_id] = [];
-          joinDetails[join.activity_id].push({ user_id: join.user_id, joined_at: join.joined_at });
+          joinDetails[join.activity_id].push({
+            user_id: join.user_id,
+            joined_at: join.joined_at,
+            amount_paid_cents: join.amount_paid_cents ?? null,
+            price_tier_label: join.price_tier_label ?? null,
+          });
         }
       });
 
@@ -621,7 +626,14 @@ Deno.serve(async (req) => {
       activities.forEach(activity => {
         const participants = participantCounts[activity.id] || 0;
         const { amount, currency } = parsePriceString(activity.price_amount || "");
-        const gross = amount * participants;
+        // Sum actual amounts charged (from Stripe, per-join) when available —
+        // required once an activity can have participants paying different
+        // tiered prices. Joins that predate amount_paid_cents (older data)
+        // fall back to the flat base-price estimate.
+        const activityJoins = joinDetails[activity.id] || [];
+        const gross = activityJoins.reduce((sum, join) => {
+          return sum + (typeof join.amount_paid_cents === "number" ? join.amount_paid_cents / 100 : amount);
+        }, 0);
         const net = gross * 0.85; // 85% after platform fee
 
         if (!creatorEarnings[activity.user_id]) {

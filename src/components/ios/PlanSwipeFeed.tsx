@@ -45,6 +45,7 @@ export interface FeedPlan {
   participant_count?: number;
   isJoined?: boolean;
   price_amount?: string | null;
+  price_tiers?: { label: string; amount: number }[] | null;
   is_auto_generated?: boolean | null;
   isCarouselJoin?: boolean;
 }
@@ -233,7 +234,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
       return { label: t('plans.enterChat', 'Enter chat'), handler: onEnterChat, disabled: false };
     }
     if (isPaid) {
-      return { label: `Pay $${priceValue.toFixed(0)}`, handler: onPayForPlan, disabled: false };
+      const hasTiers = Boolean(plan.price_tiers && plan.price_tiers.length > 0);
+      return { label: hasTiers ? "Pay to Join" : `Pay $${priceValue.toFixed(0)}`, handler: onPayForPlan, disabled: false };
     }
     return {
       label: joining ? t('plans.joiningBtn', 'Joining…') : t('plans.joinBtn', 'JOIN'),

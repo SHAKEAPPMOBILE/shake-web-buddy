@@ -87,6 +87,10 @@ serve(async (req) => {
           .maybeSingle();
 
         if (activity) {
+          // Record what was actually charged (from Stripe, not re-derived)
+          // so payout math can sum real amounts instead of assuming every
+          // participant paid the same flat price — needed once an activity
+          // can have multiple price tiers.
           const { error: joinError } = await supabaseClient
             .from("activity_joins")
             .insert({
@@ -94,6 +98,8 @@ serve(async (req) => {
               activity_id: activityId,
               activity_type: activity.activity_type,
               city: activity.city,
+              amount_paid_cents: session.amount_total ?? null,
+              price_tier_label: metadata.price_tier_label || null,
             });
 
           if (joinError) {

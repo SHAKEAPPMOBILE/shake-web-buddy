@@ -26,6 +26,7 @@ import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
+import { PriceTierPicker } from "./PriceTierPicker";
 
 interface ActivitiesListDialogProps {
   open: boolean;
@@ -50,6 +51,8 @@ export function ActivitiesListDialog({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [processingActivityId, setProcessingActivityId] = useState<string | null>(null);
+  const [tierPickerActivity, setTierPickerActivity] = useState<UserActivity | null>(null);
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const isMobile = useIsMobile();
   
   const swipeHandlers = useSwipeToClose({
@@ -86,6 +89,13 @@ export function ActivitiesListDialog({
         return next;
       });
     } else {
+      // Multi-tier activity — show the price picker before checkout
+      if (activity.price_tiers && activity.price_tiers.length > 0) {
+        setSelectedTier(null);
+        setTierPickerActivity(activity);
+        return;
+      }
+
       // If activity has a price, redirect to payment
       if (activity.price_amount) {
         setProcessingActivityId(activity.id);
@@ -94,7 +104,7 @@ export function ActivitiesListDialog({
         // Don't set as joined - that will happen after payment success webhook
         return;
       }
-      
+
       const result = await joinActivity(activity.id, isPremium);
       if (result.requiresPremium) {
         setShowPremiumDialog(true);
@@ -260,6 +270,8 @@ export function ActivitiesListDialog({
                                 <LoadingSpinner size="sm" />
                               ) : hasJoined ? (
                                 t('plansList.joined', 'Joined')
+                              ) : activity.price_tiers && activity.price_tiers.length > 0 ? (
+                                t('plansList.payFrom', 'Pay')
                               ) : activity.price_amount ? (
                                 t('plansList.pay', 'Pay {{amount}}', { amount: activity.price_amount })
                               ) : (
@@ -313,6 +325,40 @@ export function ActivitiesListDialog({
       </AlertDialog>
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+      {/* Price Tier Picker */}
+      <AlertDialog open={!!tierPickerActivity} onOpenChange={(isOpen) => !isOpen && setTierPickerActivity(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('common.choosePriceOption', 'Choose a price option')}</AlertDialogTitle>
+          </AlertDialogHeader>
+          {tierPickerActivity && (
+            <PriceTierPicker
+              tiers={tierPickerActivity.price_tiers!}
+              selected={selectedTier}
+              onSelect={setSelectedTier}
+            />
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTierPickerActivity(null)}>
+              {t('common.cancel', 'Cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!selectedTier}
+              onClick={async () => {
+                if (!tierPickerActivity || !selectedTier) return;
+                const activityId = tierPickerActivity.id;
+                setTierPickerActivity(null);
+                setProcessingActivityId(activityId);
+                await redirectToPayment(activityId, selectedTier);
+                setProcessingActivityId(null);
+              }}
+            >
+              {t('common.payToJoin', 'Pay to Join')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -44,7 +44,9 @@
     "payToJoin": "Bezahlen zum Beitreten",
     "processing": "Verarbeitung",
     "paymentGateInfo": "Nach der Zahlung haben Sie Zugang zum Gruppenchat und können sich mit anderen Teilnehmern abstimmen.",
-    "creatorPaymentNotSetup": "Der Aktivitätsersteller hat noch keine Zahlungen eingerichtet. Kontaktiere ihn direkt oder versuche es später erneut."
+    "creatorPaymentNotSetup": "Der Aktivitätsersteller hat noch keine Zahlungen eingerichtet. Kontaktiere ihn direkt oder versuche es später erneut.",
+    "selectPriceOption": "Bitte wähle zuerst eine Preisoption aus.",
+    "choosePriceOption": "Preisoption wählen"
   },
   "days": {
     "sunday": "Sonntag",
@@ -637,7 +639,17 @@
     "uploadVideo": "Hochladen",
     "botAudience": "Für wen ist dieser Plan? 💃",
     "everyone": "Alle",
-    "womenOnly": "Nur Frauen"
+    "womenOnly": "Nur Frauen",
+    "botVenue": "Wo findet es statt? 📍",
+    "botCapacity": "Teilnehmerzahl begrenzen? (optional)",
+    "venuePlaceholder": "Ort suchen oder Adresse eingeben",
+    "skip": "Überspringen",
+    "generalTierHint": "Der obige Preis gilt als \"Allgemein\"",
+    "tierLabelPlaceholder": "z. B. Mädchen, Studenten",
+    "addPriceOption": "Weitere Preisoption hinzufügen",
+    "venueLabel": "Wo findet es statt? (optional)",
+    "capacityLabel": "Teilnehmerzahl begrenzen? (optional)",
+    "capacityPlaceholder": "Kein Limit"
   },
   "userProfile": {
     "title": "Benutzerprofil",
@@ -739,7 +751,8 @@
     "yours": "Dein",
     "joined": "Beigetreten",
     "join": "Beitreten",
-    "pay": "Bezahlen {{amount}}"
+    "pay": "Bezahlen {{amount}}",
+    "payFrom": "Zahlen"
   },
   "chatInvite": {
     "title": "Nutzerprofil",

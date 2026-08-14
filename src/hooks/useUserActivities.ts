@@ -15,6 +15,12 @@ export interface UserActivity {
   is_active: boolean;
   note?: string | null;
   price_amount?: string | null;
+  price_tiers?: { label: string; amount: number }[] | null;
+  capacity?: number | null;
+  venue_name?: string | null;
+  venue_address?: string | null;
+  venue_lat?: number | null;
+  venue_lng?: number | null;
   promo_video_url?: string | null;
   creator_name?: string;
   creator_avatar?: string;
@@ -177,7 +183,10 @@ export function useUserActivities(city: string) {
     priceAmount?: string,
     expiresAt?: Date,
     promoVideoUrl?: string,
-    audience?: "everyone" | "women_only"
+    audience?: "everyone" | "women_only",
+    priceTiers?: { label: string; amount: number }[],
+    capacity?: number,
+    venue?: { name?: string; address?: string; lat?: number; lng?: number }
   ): Promise<boolean> => {
     const targetCity = cityOverride || city;
     if (!user) {
@@ -240,6 +249,12 @@ export function useUserActivities(city: string) {
       price_amount: priceAmount || null,
       promo_video_url: promoVideoUrl || null,
       audience: audience || "everyone",
+      price_tiers: priceTiers && priceTiers.length > 0 ? priceTiers : null,
+      capacity: capacity && capacity > 0 ? capacity : null,
+      venue_name: venue?.name?.trim() || null,
+      venue_address: venue?.address?.trim() || null,
+      venue_lat: venue?.lat ?? null,
+      venue_lng: venue?.lng ?? null,
     }).select().maybeSingle();
     if (error || !newActivity) {
       console.error("Error creating activity:", error);

@@ -9,6 +9,7 @@ import { ALL_ACTIVITY_TYPES } from "@/data/activityTypes";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { format } from "date-fns";
+import { PriceTierPicker } from "./PriceTierPicker";
 
 interface ActivityDetailDialogProps {
   open: boolean;
@@ -20,6 +21,7 @@ interface ActivityDetailDialogProps {
     city: string;
     note?: string | null;
     price_amount?: string | null;
+    price_tiers?: { label: string; amount: number }[] | null;
     scheduled_for?: string;
     creator_name?: string;
     creator_avatar?: string;
@@ -39,6 +41,9 @@ export function ActivityDetailDialog({
   const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+
+  const hasTiers = Boolean(activity.price_tiers && activity.price_tiers.length > 0);
 
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
@@ -52,9 +57,13 @@ export function ActivityDetailDialog({
   };
 
   const handlePayToJoin = async () => {
+    if (hasTiers && !selectedTier) {
+      setPaymentError(t("common.selectPriceOption", "Please select a price option first."));
+      return;
+    }
     setIsProcessing(true);
     setPaymentError(null);
-    const success = await redirectToPayment(activity.id);
+    const success = await redirectToPayment(activity.id, selectedTier || undefined);
     if (!success) {
       setIsProcessing(false);
       setPaymentError(t("common.creatorPaymentNotSetup", "The activity creator hasn't set up payments yet. Please contact them directly or try again later."));
@@ -152,7 +161,7 @@ export function ActivityDetailDialog({
           </div>
 
           {/* Price */}
-          {activity.price_amount && (
+          {activity.price_amount && !hasTiers && (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-green-600" />
@@ -161,6 +170,21 @@ export function ActivityDetailDialog({
                 <p className="text-sm text-muted-foreground">{t("common.entryFee")}</p>
                 <p className="font-medium text-green-600">{activity.price_amount}</p>
               </div>
+            </div>
+          )}
+
+          {/* Price tiers */}
+          {hasTiers && (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">{t("common.choosePriceOption", "Choose a price option")}</p>
+              <PriceTierPicker
+                tiers={activity.price_tiers!}
+                selected={selectedTier}
+                onSelect={(label) => {
+                  setSelectedTier(label);
+                  setPaymentError(null);
+                }}
+              />
             </div>
           )}
 
@@ -173,10 +197,10 @@ export function ActivityDetailDialog({
           )}
 
           {/* Pay to Join Button - Blue */}
-          {activity.price_amount && (
+          {(activity.price_amount || hasTiers) && (
             <button
               onClick={handlePayToJoin}
-              disabled={isProcessing || paymentLoading}
+              disabled={isProcessing || paymentLoading || (hasTiers && !selectedTier)}
               className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50 mt-4 bg-blue-500 hover:bg-blue-600"
             >
               {isProcessing || paymentLoading ? (
@@ -184,6 +208,10 @@ export function ActivityDetailDialog({
                   <LoadingSpinner size="sm" />
                   {t("common.processing")}...
                 </span>
+              ) : hasTiers ? (
+                selectedTier
+                  ? `${t("common.payToJoin")} - $${activity.price_tiers!.find((tr) => tr.label === selectedTier)?.amount}`
+                  : t("common.payToJoin")
               ) : (
                 <>
                   {t("common.payToJoin")} - {activity.price_amount}

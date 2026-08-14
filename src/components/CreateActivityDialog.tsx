@@ -7,7 +7,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState, useMemo, useEffect } from "react";
 import { startOfDay, format } from "date-fns";
-import { Plus, User, Shield, CalendarIcon } from "lucide-react";
+import { Plus, User, Shield, CalendarIcon, Trash2 } from "lucide-react";
+import { VenueSearchInput, VenuePlace } from "@/components/VenueSearchInput";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,6 +57,10 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
   const [planText, setPlanText] = useState("");
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
+  const [extraPriceTiers, setExtraPriceTiers] = useState<{ label: string; amount: string }[]>([]);
+  const [capacityInput, setCapacityInput] = useState("");
+  const [venueName, setVenueName] = useState("");
+  const [venuePlace, setVenuePlace] = useState<VenuePlace | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
@@ -150,18 +155,43 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
     // Use selected date for paid activities, today for free activities
     const activityDate = isPaidActivity && selectedDate ? selectedDate : today;
 
+    const validExtraTiers = extraPriceTiers
+      .filter((tierRow) => tierRow.label.trim() && tierRow.amount.trim() && !isNaN(parseFloat(tierRow.amount)))
+      .map((tierRow) => ({ label: tierRow.label.trim(), amount: parseFloat(tierRow.amount) }));
+    const basePriceNum = priceAmount.trim() ? parseFloat(priceAmount.trim()) : NaN;
+    const priceTiersPayload = validExtraTiers.length > 0
+      ? [
+          ...(!isNaN(basePriceNum) ? [{ label: "General", amount: basePriceNum }] : []),
+          ...validExtraTiers,
+        ]
+      : undefined;
+
     const success = await createActivity(
-      detectedActivity.type, 
-      activityDate, 
+      detectedActivity.type,
+      activityDate,
       planText.trim(),
       undefined,
-      formattedPrice
+      formattedPrice,
+      undefined,
+      undefined,
+      undefined,
+      priceTiersPayload,
+      capacityInput.trim() ? parseInt(capacityInput.trim(), 10) : undefined,
+      venuePlace
+        ? { name: venuePlace.name, address: venuePlace.address, lat: venuePlace.lat, lng: venuePlace.lng }
+        : venueName.trim()
+        ? { name: venueName.trim() }
+        : undefined
     );
     if (success) {
       triggerConfettiWaterfall();
       // Reset form
       setPlanText("");
       setPriceAmount("");
+      setExtraPriceTiers([]);
+      setCapacityInput("");
+      setVenueName("");
+      setVenuePlace(null);
       setPriceCurrency("USD");
       setSelectedDate(undefined);
       onOpenChange(false);
@@ -392,6 +422,88 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   </p>
                 </div>
               )}
+
+              {/* Extra named price tiers — e.g. "Girls $10 / Boys $15" */}
+              {priceAmount.trim() && (
+                <div className="space-y-2 pt-2">
+                  {extraPriceTiers.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("createPlan.generalTierHint", "The price above applies as \"General\"")}
+                    </p>
+                  )}
+                  {extraPriceTiers.map((tierRow, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Input
+                        value={tierRow.label}
+                        onChange={(e) => {
+                          const next = [...extraPriceTiers];
+                          next[i] = { ...next[i], label: e.target.value };
+                          setExtraPriceTiers(next);
+                        }}
+                        placeholder={t("createPlan.tierLabelPlaceholder", "e.g. Girls, Students")}
+                        className="flex-1"
+                      />
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={tierRow.amount}
+                        onChange={(e) => {
+                          const next = [...extraPriceTiers];
+                          next[i] = { ...next[i], amount: e.target.value };
+                          setExtraPriceTiers(next);
+                        }}
+                        placeholder={selectedCurrencySymbol}
+                        className="w-24"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setExtraPriceTiers(extraPriceTiers.filter((_, idx) => idx !== i))}
+                        className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        aria-label="Remove price option"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setExtraPriceTiers([...extraPriceTiers, { label: "", amount: "" }])}
+                    className="flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t("createPlan.addPriceOption", "Add another price option")}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Venue (optional) */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                {t("createPlan.venueLabel", "Where's it happening? (optional)")}
+              </label>
+              <VenueSearchInput
+                value={venueName}
+                onChange={(text) => { setVenueName(text); setVenuePlace(null); }}
+                onSelectPlace={(place) => { setVenuePlace(place); setVenueName(place.name); }}
+                placeholder={t("createPlan.venuePlaceholder", "Search a place or type an address")}
+                inputClassName="h-10"
+              />
+            </div>
+
+            {/* Capacity (optional) */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                {t("createPlan.capacityLabel", "Limit how many can join? (optional)")}
+              </label>
+              <Input
+                type="number"
+                min="1"
+                value={capacityInput}
+                onChange={(e) => setCapacityInput(e.target.value)}
+                placeholder={t("createPlan.capacityPlaceholder", "No limit")}
+              />
             </div>
 
             {/* Preview - always shows user avatar */}

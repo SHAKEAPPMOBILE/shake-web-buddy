@@ -44,7 +44,9 @@
     "payToJoin": "Betaal om deel te nemen",
     "processing": "Verwerken",
     "paymentGateInfo": "Na betaling krijg je toegang tot de groepschat en kun je coördineren met andere deelnemers.",
-    "creatorPaymentNotSetup": "De activiteitsmaker heeft nog geen betalingen ingesteld. Neem direct contact met hen op of probeer het later opnieuw."
+    "creatorPaymentNotSetup": "De activiteitsmaker heeft nog geen betalingen ingesteld. Neem direct contact met hen op of probeer het later opnieuw.",
+    "selectPriceOption": "Selecteer eerst een prijsoptie.",
+    "choosePriceOption": "Kies een prijsoptie"
   },
   "days": {
     "sunday": "Zondag",
@@ -637,7 +639,17 @@
     "uploadVideo": "Uploaden",
     "botAudience": "Voor wie is dit plan? 💃",
     "everyone": "Iedereen",
-    "womenOnly": "Alleen vrouwen"
+    "womenOnly": "Alleen vrouwen",
+    "botVenue": "Waar vindt het plaats? 📍",
+    "botCapacity": "Aantal deelnemers beperken? (optioneel)",
+    "venuePlaceholder": "Zoek een locatie of typ een adres",
+    "skip": "Overslaan",
+    "generalTierHint": "De prijs hierboven geldt als \"Algemeen\"",
+    "tierLabelPlaceholder": "bijv. Meisjes, Studenten",
+    "addPriceOption": "Nog een prijsoptie toevoegen",
+    "venueLabel": "Waar vindt het plaats? (optioneel)",
+    "capacityLabel": "Aantal deelnemers beperken? (optioneel)",
+    "capacityPlaceholder": "Geen limiet"
   },
   "userProfile": {
     "title": "Gebruikersprofiel",
@@ -739,7 +751,8 @@
     "yours": "Jouw",
     "joined": "Deelgenomen",
     "join": "Deelnemen",
-    "pay": "Betaal {{amount}}"
+    "pay": "Betaal {{amount}}",
+    "payFrom": "Betalen"
   },
   "chatInvite": {
     "title": "Gebruikersprofiel",

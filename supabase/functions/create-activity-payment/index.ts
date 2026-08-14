@@ -54,18 +54,18 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { activityId } = body;
+    const { activityId, tierLabel } = body;
 
     if (!activityId) {
       throw new Error("Activity ID is required");
     }
 
-    logStep("Processing payment request", { userId: user.id, activityId });
+    logStep("Processing payment request", { userId: user.id, activityId, tierLabel });
 
     // Get activity details
     const { data: activity, error: activityError } = await supabaseClient
       .from("user_activities")
-      .select("*, user_id, price_amount, note, activity_type, city")
+      .select("*, user_id, price_amount, price_tiers, note, activity_type, city")
       .eq("id", activityId)
       .eq("is_active", true)
       .maybeSingle();
@@ -74,20 +74,41 @@ serve(async (req) => {
       throw new Error("Activity not found");
     }
 
-    if (!activity.price_amount) {
+    if (!activity.price_amount && !activity.price_tiers) {
       throw new Error("This activity is free - no payment required");
     }
 
-    const priceInCents = parsePriceToCents(activity.price_amount);
+    let priceInCents: number | null = null;
+    let resolvedTierLabel: string | null = null;
+
+    const tiers = Array.isArray(activity.price_tiers) ? activity.price_tiers : null;
+    if (tiers && tiers.length > 0) {
+      // Multi-tier activity — the frontend must show a picker and send back
+      // which tier the payer chose; we look up ITS amount, never trust a
+      // client-supplied amount directly.
+      if (!tierLabel) {
+        throw new Error("This activity has multiple price options — please choose one");
+      }
+      const matchedTier = tiers.find((tierEntry: { label: string; amount: number }) => tierEntry.label === tierLabel);
+      if (!matchedTier || typeof matchedTier.amount !== "number" || matchedTier.amount <= 0) {
+        throw new Error("Invalid price option selected");
+      }
+      priceInCents = Math.round(matchedTier.amount * 100);
+      resolvedTierLabel = matchedTier.label;
+    } else {
+      priceInCents = parsePriceToCents(activity.price_amount);
+    }
+
     if (!priceInCents) {
       throw new Error("Invalid price format");
     }
 
-    logStep("Activity found", { 
-      activityId, 
-      creatorId: activity.user_id, 
+    logStep("Activity found", {
+      activityId,
+      creatorId: activity.user_id,
       price: activity.price_amount,
-      priceInCents 
+      tierLabel: resolvedTierLabel,
+      priceInCents
     });
 
     // Get payer's email for Stripe
@@ -107,6 +128,9 @@ serve(async (req) => {
     
     // Get activity description for checkout
     const activityDescription = activity.note || activity.activity_type;
+    const lineItemName = resolvedTierLabel
+      ? `Join: ${activityDescription} (${resolvedTierLabel})`
+      : `Join: ${activityDescription}`;
 
     // All payments go to SHAKE's main Stripe account
     // Manual payouts will be done to creators via admin panel
@@ -117,7 +141,7 @@ serve(async (req) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `Join: ${activityDescription}`,
+              name: lineItemName,
               description: `Activity in ${activity.city}`,
             },
             unit_amount: priceInCents,
@@ -133,6 +157,7 @@ serve(async (req) => {
         activity_id: activityId,
         payer_user_id: user.id,
         creator_user_id: activity.user_id,
+        ...(resolvedTierLabel ? { price_tier_label: resolvedTierLabel } : {}),
       },
     });
 
