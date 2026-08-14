@@ -440,11 +440,15 @@
     "pasteX": "Pega aquí tu enlace de X",
     "socialsPlaceholder": "Toca un ícono arriba ↑",
     "skipForNow": "Omitir por ahora",
-    "done": "Listo"
+    "done": "Listo",
+    "chooseLanguageTitle": "Elige tu idioma",
+    "chooseLanguageDesc": "Siempre puedes cambiarlo más tarde en tu perfil.",
+    "continueBtn": "Continuar"
   },
   "languageSelector": {
     "swipeToSelect": "Desliza para seleccionar tu idioma",
-    "detecting": "Detectando..."
+    "detecting": "Detectando...",
+    "done": "Listo"
   },
   "citySelector": {
     "selectCity": "Selecciona una ciudad",

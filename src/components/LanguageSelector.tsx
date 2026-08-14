@@ -11,12 +11,17 @@ const PADDING_ITEMS = Math.floor(VISIBLE_ITEMS / 2); // 2 rows above and below c
 interface LanguageSelectorProps {
   className?: string;
   showLabel?: boolean;
+  /** Renders the drum picker directly, always open, with no toggle button or
+   * fixed-position dropdown — for use as its own full-page step. */
+  inline?: boolean;
+  /** Called when the user taps Done. Only meaningful with `inline`. */
+  onDone?: () => void;
 }
 
-export function LanguageSelector({ className, showLabel = true }: LanguageSelectorProps) {
+export function LanguageSelector({ className, showLabel = true, inline = false, onDone }: LanguageSelectorProps) {
   const { t } = useTranslation();
   const { selectedLanguage, setSelectedLanguage, isDetecting } = useLanguage();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(inline);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -69,8 +74,9 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
     return () => el.removeEventListener('scrollend', pickCenteredItem);
   }, [isOpen, pickCenteredItem]);
 
-  // Click outside to close
+  // Click outside to close — not applicable to the always-open inline mode
   useEffect(() => {
+    if (inline) return;
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
@@ -111,28 +117,8 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
     );
   }
 
-  return (
-    <div ref={containerRef} className={cn("relative", className)}>
-      {/* Toggle button */}
-      <button
-        onClick={() => setIsOpen(v => !v)}
-        className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-full",
-          "bg-gray-100 border border-gray-100 transition-all duration-200",
-          isOpen && "ring-2 ring-primary/30"
-        )}
-      >
-        <span className="text-xl">{selectedLanguage.flag}</span>
-        {showLabel && (
-          <span className="text-sm font-medium text-gray-700">{selectedLanguage.nativeName}</span>
-        )}
-        <Globe className="h-4 w-4 text-gray-700" />
-      </button>
-
-      {/* Drum picker dropdown */}
-      {isOpen && (
-        <div className="fixed left-1/2 z-50" style={dropdownStyle}>
-          <div className="bg-card border border-border rounded-2xl shadow-xl p-3 w-[272px] animate-scale-in">
+  const pickerBody = (
+    <div className={cn("bg-card border border-border rounded-2xl shadow-xl p-3 w-[272px]", !inline && "animate-scale-in")}>
             <p className="text-xs text-muted-foreground text-center mb-2 select-none">
               {t('languageSelector.swipeToSelect', 'Scroll to choose language')}
             </p>
@@ -206,14 +192,42 @@ export function LanguageSelector({ className, showLabel = true }: LanguageSelect
               </div>
             </div>
 
-            {/* Done button */}
-            <button
-              onClick={() => setIsOpen(false)}
-              className="mt-3 w-full py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold transition-opacity hover:opacity-90 active:opacity-75"
-            >
-              {t('languageSelector.done', 'Done')}
-            </button>
-          </div>
+      {/* Done button */}
+      <button
+        onClick={() => { setIsOpen(false); onDone?.(); }}
+        className="mt-3 w-full py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold transition-opacity hover:opacity-90 active:opacity-75"
+      >
+        {t('languageSelector.done', 'Done')}
+      </button>
+    </div>
+  );
+
+  if (inline) {
+    return <div ref={containerRef} className={className}>{pickerBody}</div>;
+  }
+
+  return (
+    <div ref={containerRef} className={cn("relative", className)}>
+      {/* Toggle button */}
+      <button
+        onClick={() => setIsOpen(v => !v)}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-full",
+          "bg-gray-100 border border-gray-100 transition-all duration-200",
+          isOpen && "ring-2 ring-primary/30"
+        )}
+      >
+        <span className="text-xl">{selectedLanguage.flag}</span>
+        {showLabel && (
+          <span className="text-sm font-medium text-gray-700">{selectedLanguage.nativeName}</span>
+        )}
+        <Globe className="h-4 w-4 text-gray-700" />
+      </button>
+
+      {/* Drum picker dropdown */}
+      {isOpen && (
+        <div className="fixed left-1/2 z-50" style={dropdownStyle}>
+          {pickerBody}
         </div>
       )}
     </div>

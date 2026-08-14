@@ -441,11 +441,15 @@
     "pasteX": "Xのリンクをここに貼り付け",
     "socialsPlaceholder": "上のアイコンをタップ ↑",
     "skipForNow": "今はスキップ",
-    "done": "完了"
+    "done": "完了",
+    "chooseLanguageTitle": "言語を選択してください",
+    "chooseLanguageDesc": "これはあとでプロフィールからいつでも変更できます。",
+    "continueBtn": "続ける"
   },
   "languageSelector": {
     "swipeToSelect": "スワイプして言語を選択",
-    "detecting": "検出中..."
+    "detecting": "検出中...",
+    "done": "完了"
   },
   "citySelector": {
     "selectCity": "都市を選択",

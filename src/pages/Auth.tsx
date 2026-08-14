@@ -50,6 +50,8 @@ const STORAGE_NEED_PASSWORD = "shake_post_signup_set_password";
 
 /** Steps where we must not reset to "name" or navigate away — avoids races when `user` refreshes mid-wizard. */
 const AUTH_WIZARD_STEPS = new Set([
+  "language",
+  "welcome",
   "name",
   "birthday",
   "phone",
@@ -229,6 +231,8 @@ async function signInWithOAuth(provider: 'google' | 'apple') {
 export default function Auth() {
   const { t } = useTranslation();
   const [step, setStep] = useState<
+    | "language"
+    | "welcome"
     | "method"
     | "login"
     | "email"
@@ -244,7 +248,19 @@ export default function Auth() {
     | "interests"
     | "social"
     | "avatar"
-  >("method");
+  >(() => {
+    // Only truly first-time visitors (no saved language preference yet) go
+    // through the language → welcome intro. Returning users, and anyone
+    // arriving via a deep link (password reset, signup confirmation — those
+    // routes are resolved by a separate effect right after mount), skip
+    // straight to the normal method screen.
+    try {
+      if (localStorage.getItem("shake-language")) return "method";
+    } catch {
+      /* ignore */
+    }
+    return "language";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -1205,6 +1221,45 @@ export default function Auth() {
     }
   };
 
+  // ── Isolated language step — shown once, before anything else, to
+  // first-time visitors only (see the `step` initializer above). Its own
+  // full screen so it never collides with the logo on the method screen. ──
+  if (step === "language") {
+    return (
+      <div className="h-[100dvh] bg-white flex flex-col items-center px-6 py-10">
+        <img src={logoShake} alt="SHAKE" className="h-16 w-16 mb-8" />
+        <h1 className="text-xl font-bold text-black text-center mb-1">
+          {t('auth.chooseLanguageTitle', 'Choose your language')}
+        </h1>
+        <p className="text-sm text-muted-foreground text-center mb-8">
+          {t('auth.chooseLanguageDesc', "You can always change this later in your profile.")}
+        </p>
+        <div className="flex-1 flex items-start justify-center w-full max-w-sm">
+          <LanguageSelector inline className="w-full max-w-[272px]" onDone={() => setStep("welcome")} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Welcome step — shown once, right after language selection, fully in
+  // the language the user just picked. ──────────────────────────────────────
+  if (step === "welcome") {
+    return (
+      <div className="h-[100dvh] bg-white flex flex-col items-center justify-center px-6 py-10 text-center">
+        <img src={logoShake} alt="SHAKE" className="h-24 w-24 mb-8" />
+        <h1 className="text-3xl font-bold text-black mb-3">
+          {t('auth.welcomeTitle', 'Welcome to SHAKE')} 🎉
+        </h1>
+        <p className="text-muted-foreground mb-10 max-w-xs">
+          {t('auth.loginOrCreate', 'Log In or create your account')}
+        </p>
+        <Button onClick={() => setStep("method")} size="lg" className="w-full max-w-xs">
+          {t('auth.continueBtn', 'Continue')}
+        </Button>
+      </div>
+    );
+  }
+
   // ── Full-screen conversational profile setup ───────────────────────────────
   if (isProfileStep) {
     const currentProfileStep = PROFILE_STEPS[profileStepIndex];
@@ -1658,10 +1713,6 @@ export default function Auth() {
           {/* Method Selection */}
           {step === 'method' && (
             <div className="space-y-4">
-              <div className="flex justify-center">
-                <LanguageSelector />
-              </div>
-
               <div className="space-y-2 text-center">
                 <img src={logoShake} alt="SHAKE" className="h-20 w-20 mx-auto mb-8" />
                 <h1 className="text-2xl font-bold text-black">{t('auth.welcomeTitle', 'Welcome to SHAKE')}</h1>

@@ -441,11 +441,15 @@
     "pasteX": "Plak hier je X-link",
     "socialsPlaceholder": "Tik hierboven op een icoon ↑",
     "skipForNow": "Voorlopig overslaan",
-    "done": "Klaar"
+    "done": "Klaar",
+    "chooseLanguageTitle": "Kies je taal",
+    "chooseLanguageDesc": "Je kunt dit later altijd wijzigen in je profiel.",
+    "continueBtn": "Doorgaan"
   },
   "languageSelector": {
     "swipeToSelect": "Veeg om je taal te selecteren",
-    "detecting": "Detecteren..."
+    "detecting": "Detecteren...",
+    "done": "Klaar"
   },
   "citySelector": {
     "selectCity": "Selecteer een stad",

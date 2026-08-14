@@ -441,11 +441,15 @@
     "pasteX": "Wklej tutaj link do X",
     "socialsPlaceholder": "Dotknij ikonę powyżej ↑",
     "skipForNow": "Pomiń na razie",
-    "done": "Gotowe"
+    "done": "Gotowe",
+    "chooseLanguageTitle": "Wybierz swój język",
+    "chooseLanguageDesc": "Zawsze możesz to później zmienić w swoim profilu.",
+    "continueBtn": "Kontynuuj"
   },
   "languageSelector": {
     "swipeToSelect": "Przesuń, aby wybrać język",
-    "detecting": "Wykrywanie..."
+    "detecting": "Wykrywanie...",
+    "done": "Gotowe"
   },
   "citySelector": {
     "selectCity": "Wybierz miasto",

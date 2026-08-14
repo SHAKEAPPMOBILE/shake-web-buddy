@@ -441,11 +441,15 @@
     "pasteX": "Встав тут посилання на X",
     "socialsPlaceholder": "Торкнися іконки вище ↑",
     "skipForNow": "Пропустити поки що",
-    "done": "Готово"
+    "done": "Готово",
+    "chooseLanguageTitle": "Оберіть свою мову",
+    "chooseLanguageDesc": "Ви завжди можете змінити це пізніше у своєму профілі.",
+    "continueBtn": "Продовжити"
   },
   "languageSelector": {
     "swipeToSelect": "Проведіть, щоб обрати мову",
-    "detecting": "Визначення..."
+    "detecting": "Визначення...",
+    "done": "Готово"
   },
   "citySelector": {
     "selectCity": "Оберіть місто",

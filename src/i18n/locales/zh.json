@@ -441,11 +441,15 @@
     "pasteX": "在此粘贴你的 X 链接",
     "socialsPlaceholder": "点击上方图标 ↑",
     "skipForNow": "暂时跳过",
-    "done": "完成"
+    "done": "完成",
+    "chooseLanguageTitle": "选择你的语言",
+    "chooseLanguageDesc": "你随时可以在个人资料中更改此设置。",
+    "continueBtn": "继续"
   },
   "languageSelector": {
     "swipeToSelect": "滑动选择你的语言",
-    "detecting": "检测中..."
+    "detecting": "检测中...",
+    "done": "完成"
   },
   "citySelector": {
     "selectCity": "选择城市",

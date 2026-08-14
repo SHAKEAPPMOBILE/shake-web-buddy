@@ -28,7 +28,6 @@ import { IDVerificationDialog } from "../IDVerificationDialog";
 import { ContactSupport } from "../ContactSupport";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
-import { Capacitor } from "@capacitor/core";
 import {
   AlertDialog,
   AlertDialogAction,
