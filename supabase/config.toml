@@ -4,6 +4,9 @@ project_id = "mpgrjzubegorcijgfjri"
 # JWT expiry set to 7 days (604800 seconds)
 jwt_expiry = 604800
 
+[functions.auto-payout-creators]
+verify_jwt = false
+
 [functions.send-sms-notification]
 verify_jwt = true
 
