@@ -65,7 +65,7 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
     
     try {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=analytics`
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=analytics`
       );
       
       const result = await response.json();

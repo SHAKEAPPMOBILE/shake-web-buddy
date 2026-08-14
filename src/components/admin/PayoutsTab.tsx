@@ -80,7 +80,7 @@ export function PayoutsTab({ adminPassword }: { adminPassword: string }) {
     queryKey: ['admin-payouts'],
     queryFn: async () => {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=list-payouts`
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=list-payouts`
       );
       const result = await response.json();
       if (!result.success) {
@@ -141,7 +141,7 @@ export function PayoutsTab({ adminPassword }: { adminPassword: string }) {
       notes?: string;
     }) => {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=mark-paid`,
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=mark-paid`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

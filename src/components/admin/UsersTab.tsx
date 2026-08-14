@@ -54,7 +54,7 @@ function TestUserForm({ password, onUserCreated }: TestUserFormProps) {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${password}`,
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${password}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -217,7 +217,7 @@ export function UsersTab({ adminPassword }: { adminPassword: string }) {
     setIsBulkSeeding(true);
     try {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=bulk-seed-test-users`
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=bulk-seed-test-users`
       );
       const data = await response.json();
       if (data.success) {
@@ -236,7 +236,7 @@ export function UsersTab({ adminPassword }: { adminPassword: string }) {
     queryKey: ['admin-all-users'],
     queryFn: async () => {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=list-users`
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=list-users`
       );
       const data = await response.json();
       if (!data.success || !data.users) {
@@ -287,7 +287,7 @@ export function UsersTab({ adminPassword }: { adminPassword: string }) {
     if (!confirm(`Delete test user ${phone}?`)) return;
     try {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}`,
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${adminPassword}`,
         {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },

@@ -34,7 +34,7 @@ export default function Admin() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${password}`,
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${password}`,
         { method: "GET" }
       );
       
@@ -68,7 +68,7 @@ export default function Admin() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/admin-otp`,
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/admin-otp`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -99,7 +99,7 @@ export default function Admin() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/admin-otp`,
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/admin-otp`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

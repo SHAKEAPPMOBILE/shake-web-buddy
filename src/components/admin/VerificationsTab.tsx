@@ -50,7 +50,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
     try {
       // Fetch verifications using edge function with password in query params
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=list-verifications`
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=list-verifications`
       );
       
       if (!response.ok) throw new Error("Failed to fetch verifications");
@@ -78,7 +78,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
       
       // Get signed URL for the document using password in query params
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=get-verification-document`,
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=get-verification-document`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -110,7 +110,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
     setIsProcessing(true);
     try {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=update-verification`,
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=update-verification`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -143,7 +143,7 @@ export function VerificationsTab({ adminPassword }: VerificationsTabProps) {
     setIsProcessing(true);
     try {
       const response = await fetch(
-        `https://tgodytoqakzycabncfpo.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=update-verification`,
+        `https://mpgrjzubegorcijgfjri.supabase.co/functions/v1/seed-test-users?password=${adminPassword}&action=update-verification`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
