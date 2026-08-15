@@ -18,6 +18,8 @@ import { REGIONS, SHAKE_CITIES } from "@/data/cities";
 import { useVenueContext } from "@/contexts/VenueContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ActivityDetailsCard } from "./ActivityDetailsCard";
+import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { getDisplayAvatarUrl } from "@/lib/avatar";
 
 
 // Fixed carousel order mirrors the useMemo fixedOrder inside HomeTab.
@@ -114,6 +116,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const touchEndX = useRef<number>(0);
   const tappedActivityRef = useRef<CarouselItem | null>(null);
   const [carouselJoinCount, setCarouselJoinCount] = useState(0);
+  const [carouselJoinAvatars, setCarouselJoinAvatars] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
+  const [avatarProfileTarget, setAvatarProfileTarget] = useState<{ userId: string; name: string | null; avatarUrl: string | null } | null>(null);
   const [showAlreadyJoinedDialog, setShowAlreadyJoinedDialog] = useState(false);
   const MAX_GROUP_SIZE = 7;
 
@@ -278,6 +282,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     const activityId = CAROUSEL_ITEMS[currentActivityIndex]?.id;
     if (!activityId || activityId === 'propose-plan' || !selectedCity) {
       setCarouselJoinCount(0);
+      setCarouselJoinAvatars([]);
       return;
     }
     let cancelled = false;
@@ -290,6 +295,45 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       .then(({ count }) => {
         if (!cancelled) setCarouselJoinCount(count ?? 0);
       });
+    return () => { cancelled = true; };
+  }, [CAROUSEL_ITEMS, currentActivityIndex, selectedCity]);
+
+  // Fetch a few attendee avatars for the currently visible carousel activity —
+  // shown clustered on the activity circle so you can see (and tap into) who's
+  // already in before joining.
+  useEffect(() => {
+    const activityId = CAROUSEL_ITEMS[currentActivityIndex]?.id;
+    if (!activityId || activityId === 'propose-plan' || !selectedCity) {
+      setCarouselJoinAvatars([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data: joins } = await supabase
+        .from("activity_joins")
+        .select("user_id")
+        .eq("activity_type", activityId)
+        .eq("city", selectedCity)
+        .gt("expires_at", new Date().toISOString())
+        .limit(4);
+      const userIds = Array.from(new Set((joins ?? []).map((j) => j.user_id).filter(Boolean)));
+      if (!userIds.length) {
+        if (!cancelled) setCarouselJoinAvatars([]);
+        return;
+      }
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", userIds);
+      if (!cancelled) {
+        setCarouselJoinAvatars(
+          userIds.map((id) => {
+            const p = profiles?.find((pr) => pr.user_id === id);
+            return { user_id: id, name: p?.name ?? null, avatar_url: p?.avatar_url ?? null };
+          })
+        );
+      }
+    })();
     return () => { cancelled = true; };
   }, [CAROUSEL_ITEMS, currentActivityIndex, selectedCity]);
 
@@ -607,22 +651,53 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     <ChevronLeft className="w-6 h-6 text-foreground" />
                   </button>
 
-                  <div
-                    className="w-32 h-32 mx-6 rounded-full bg-card overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-2xl cursor-pointer transition-transform hover:scale-105 shrink-0 animate-float"
-                    onPointerDown={() => {
-                      tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
-                    }}
-                    onClick={handleActivitySelect}
-                  >
-                    {currentActivity?.icon ? (
-                      <div
-                        className="w-full h-full rounded-full bg-cover bg-center bg-no-repeat"
-                        style={{ backgroundImage: `url(${currentActivity.icon})` }}
-                      />
-                    ) : (
-                      <span className="text-5xl flex items-center justify-center w-full h-full">
-                        {currentActivity?.emoji}
-                      </span>
+                  <div className="relative mx-6 shrink-0">
+                    <div
+                      className="w-32 h-32 rounded-full bg-card overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-2xl cursor-pointer transition-transform hover:scale-105 animate-float"
+                      onPointerDown={() => {
+                        tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
+                      }}
+                      onClick={handleActivitySelect}
+                    >
+                      {currentActivity?.icon ? (
+                        <div
+                          className="w-full h-full rounded-full bg-cover bg-center bg-no-repeat"
+                          style={{ backgroundImage: `url(${currentActivity.icon})` }}
+                        />
+                      ) : (
+                        <span className="text-5xl flex items-center justify-center w-full h-full">
+                          {currentActivity?.emoji}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Attendee avatars — who's already joined this activity, tap to view their profile */}
+                    {!currentActivity?.isProposePlan && carouselJoinAvatars.length > 0 && (
+                      <div className="absolute -bottom-1 -right-2 flex">
+                        {carouselJoinAvatars.slice(0, 3).map((a, i) => (
+                          <button
+                            key={a.user_id}
+                            type="button"
+                            onClick={() => setAvatarProfileTarget({ userId: a.user_id, name: a.name, avatarUrl: a.avatar_url })}
+                            className="w-7 h-7 rounded-full border-2 border-background overflow-hidden flex items-center justify-center bg-muted text-[11px] font-semibold text-foreground shadow first:ml-0 -ml-2"
+                            style={{ zIndex: 10 - i }}
+                          >
+                            {getDisplayAvatarUrl(a.avatar_url) ? (
+                              <img src={getDisplayAvatarUrl(a.avatar_url)} alt={a.name || ""} className="w-full h-full object-cover" />
+                            ) : (
+                              a.name?.charAt(0)?.toUpperCase() || "?"
+                            )}
+                          </button>
+                        ))}
+                        {carouselJoinCount > 3 && (
+                          <div
+                            className="w-7 h-7 rounded-full border-2 border-background flex items-center justify-center bg-muted text-[10px] font-semibold text-muted-foreground shadow -ml-2"
+                            style={{ zIndex: 6 }}
+                          >
+                            +{carouselJoinCount - 3}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -685,6 +760,17 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             </div>
           </div>
         </div>
+      )}
+
+      {/* Profile dialog for tapping an attendee avatar on the activity circle */}
+      {avatarProfileTarget && (
+        <UserProfileDialog
+          open={!!avatarProfileTarget}
+          onOpenChange={(open) => { if (!open) setAvatarProfileTarget(null); }}
+          userId={avatarProfileTarget.userId}
+          userName={avatarProfileTarget.name}
+          avatarUrl={avatarProfileTarget.avatarUrl}
+        />
       )}
 
       {/* Main content - hidden when carousel is active */}
