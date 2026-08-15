@@ -17,7 +17,6 @@ import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ChevronLeft, DollarSign, Volume2, VolumeX, User } from "lucide-react";
-import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
@@ -703,8 +702,10 @@ export function PlanSwipeFeed({
     <>
       {/* Full-screen overlay (or inline fill when inline=true) */}
       <div className={inline ? "relative w-full h-full bg-black" : "fixed inset-0 z-50 bg-black"}>
-        {/* Back arrow — native full-screen mode only */}
-        {!inline && Capacitor.isNativePlatform() && (
+        {/* Back arrow — closes the feed, which reveals whatever was showing
+            underneath (list or map), since neither view's own state changes
+            while the feed is open. */}
+        {!inline && (
           <button
             type="button"
             onClick={onClose}

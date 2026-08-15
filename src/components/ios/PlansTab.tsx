@@ -57,6 +57,8 @@ interface PlanActivity {
   note?: string | null;
   price_amount?: string | null;
   price_tiers?: { label: string; amount: number }[] | null;
+  venue_lat?: number | null;
+  venue_lng?: number | null;
   promo_video_url?: string | null;
   group_number?: number | null;
   creator_name?: string;
@@ -100,6 +102,8 @@ interface MyActivePlan {
   created_at: string | null;
   is_carousel: boolean;
   audience: string | null;
+  venue_lat: number | null;
+  venue_lng: number | null;
 }
 
 /** Normalise a city string for comparison: trim whitespace and lower-case.
@@ -357,6 +361,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         group_number: p.group_number,
         is_auto_generated: p.is_auto_generated,
         audience: p.audience,
+        venue_lat: p.venue_lat,
+        venue_lng: p.venue_lng,
         created_at: p.created_at ?? undefined,
         creator_name: "...",
         participant_count: 0,
@@ -455,6 +461,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               group_number: p.group_number,
               is_auto_generated: p.is_auto_generated,
               audience: p.audience,
+              venue_lat: p.venue_lat,
+              venue_lng: p.venue_lng,
               created_at: p.created_at ?? undefined,
               creator_name: profile?.name || "Anonymous",
               creator_avatar: profile?.avatar_url ?? undefined,

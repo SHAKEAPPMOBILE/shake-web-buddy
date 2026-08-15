@@ -59,6 +59,12 @@ export interface WorldMapActivity {
   city: string;
   note?: string | null;
   creator_name?: string;
+  creator_avatar?: string | null;
+  // Exact place the plan is happening, if the creator tagged one via
+  // VenueSearchInput. When absent, the marker falls back to a random
+  // jittered position around the city center (see activitiesWithPositions).
+  venue_lat?: number | null;
+  venue_lng?: number | null;
 }
 
 interface WorldMapProps {
@@ -96,17 +102,24 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
     },
   }), [mapLoaded]);
 
-  // Create activities with random offsets for positioning
+  // Position each activity: exact venue coordinates when the creator tagged
+  // one, otherwise a random-but-consistent jitter around the city center so
+  // untagged plans still show "approximately here" rather than stacking on
+  // a single point.
   const activitiesWithPositions = useMemo(() => {
     return activities.map((activity, index) => {
+      if (typeof activity.venue_lat === "number" && typeof activity.venue_lng === "number") {
+        return { activity, lng: activity.venue_lng, lat: activity.venue_lat };
+      }
+
       const city = SHAKE_CITIES.find((c) => c.name === activity.city);
       if (!city) return null;
-      
+
       // Generate consistent random offset based on activity id
       const seed = activity.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       const offsetLng = ((seed % 100) - 50) * 0.001; // ~±0.05 degrees
       const offsetLat = (((seed * 7) % 100) - 50) * 0.001;
-      
+
       return {
         activity,
         lng: city.lng + offsetLng,
@@ -171,16 +184,52 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
     activitiesWithPositions.forEach(({ activity, lng, lat }) => {
       const isSelected = activity.id === selectedActivityId;
 
-      // Create custom marker element
+      // Create custom marker element — creator avatar with a small activity-emoji
+      // badge, falling back to a plain colored emoji circle when there's no
+      // avatar. Built via DOM APIs (not innerHTML string concatenation) since
+      // creator_avatar is a user-supplied URL.
       const el = document.createElement("div");
-      el.className = "activity-marker";
-      el.innerHTML = `
-        <div class="relative flex items-center justify-center rounded-full shadow-lg cursor-pointer transition-all duration-200 hover:scale-110 ${
-          isSelected ? "scale-125 ring-2 ring-primary ring-offset-2" : ""
-        } ${getActivityColor(activity.activity_type)}" style="width: 40px; height: 40px;">
-          <span class="text-lg">${getActivityEmoji(activity.activity_type)}</span>
-        </div>
-      `;
+      el.className = "activity-marker relative cursor-pointer transition-transform duration-200 hover:scale-110";
+      el.style.width = "44px";
+      el.style.height = "44px";
+
+      const circle = document.createElement("div");
+      circle.className = [
+        "w-11 h-11 rounded-full shadow-lg overflow-hidden flex items-center justify-center border-2 border-white",
+        isSelected ? "scale-125 ring-2 ring-primary ring-offset-2" : "",
+        activity.creator_avatar ? "bg-muted" : getActivityColor(activity.activity_type),
+      ].filter(Boolean).join(" ");
+
+      const renderEmojiFallback = () => {
+        circle.replaceChildren();
+        circle.className = [
+          "w-11 h-11 rounded-full shadow-lg overflow-hidden flex items-center justify-center border-2 border-white",
+          isSelected ? "scale-125 ring-2 ring-primary ring-offset-2" : "",
+          getActivityColor(activity.activity_type),
+        ].filter(Boolean).join(" ");
+        const span = document.createElement("span");
+        span.className = "text-lg";
+        span.textContent = getActivityEmoji(activity.activity_type);
+        circle.appendChild(span);
+      };
+
+      if (activity.creator_avatar) {
+        const img = document.createElement("img");
+        img.src = activity.creator_avatar;
+        img.alt = "";
+        img.className = "w-full h-full object-cover";
+        img.onerror = renderEmojiFallback;
+        circle.appendChild(img);
+
+        const badge = document.createElement("span");
+        badge.className = "absolute -bottom-1 -right-1 text-xs bg-white rounded-full w-5 h-5 flex items-center justify-center shadow";
+        badge.textContent = getActivityEmoji(activity.activity_type);
+        el.appendChild(circle);
+        el.appendChild(badge);
+      } else {
+        renderEmojiFallback();
+        el.appendChild(circle);
+      }
 
       // Add click handler
       el.addEventListener("click", (e) => {
