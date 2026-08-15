@@ -20,3 +20,24 @@ export function onTypingKeyDown(e: React.KeyboardEvent) {
   if (MODIFIER_KEYS.has(e.key) || e.ctrlKey || e.metaKey || e.altKey) return;
   typingHaptic();
 }
+
+/**
+ * Delegated tap haptic for buttons/icons — call once from a useEffect to wire
+ * up a capture-phase `pointerdown` listener on `document` for the lifetime of
+ * a screen, instead of adding a haptic call to every individual onClick.
+ * Fires on pointerdown (not click) to match native buttons, which trigger
+ * their haptic on touch-down rather than waiting for touch-up.
+ *
+ * Usage:
+ *   useEffect(() => attachActionHaptics(), []);
+ */
+export function attachActionHaptics(): () => void {
+  const handler = (e: PointerEvent) => {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('button, [role="button"]')) {
+      typingHaptic();
+    }
+  };
+  document.addEventListener("pointerdown", handler, true);
+  return () => document.removeEventListener("pointerdown", handler, true);
+}

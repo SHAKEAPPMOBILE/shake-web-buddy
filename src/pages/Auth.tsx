@@ -40,7 +40,7 @@ import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
 import { OnboardingInterestsStep } from "@/components/auth/OnboardingInterestsStep";
 import { OnboardingSocialStep } from "@/components/auth/OnboardingSocialStep";
-import { onTypingKeyDown } from "@/lib/haptics";
+import { onTypingKeyDown, attachActionHaptics } from "@/lib/haptics";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
 const FACE_ID_FEATURE_ENABLED = false;
@@ -309,6 +309,11 @@ export default function Auth() {
   // Guarded so it can NEVER play once the person is actually logged in (only the
   // pre-login method-selection screen should ever trigger it), and only once per
   // browser session even if this screen gets remounted (e.g. a redirect flicker).
+  // Haptic tap on every button/icon across the login/signup flow, not just
+  // typing — delegated to a single document-level listener since this screen
+  // has many buttons across many conditional steps/early-returns.
+  useEffect(() => attachActionHaptics(), []);
+
   useEffect(() => {
     if (step !== "method") return;
     if (user) return;
