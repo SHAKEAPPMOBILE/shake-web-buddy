@@ -2,7 +2,7 @@ import * as React from "react";
 import { useRef, useEffect, useState, useMemo, useCallback, useImperativeHandle, forwardRef } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import * as Supercluster from "supercluster";
+import Supercluster from "supercluster";
 import { SHAKE_CITIES, City } from "@/data/cities";
 import { getActivityEmoji, getActivityColor } from "@/data/activityTypes";
 import { Button } from "@/components/ui/button";
