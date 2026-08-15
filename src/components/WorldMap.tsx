@@ -151,7 +151,14 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
       zoom: initialZoom,
       pitch: 0,
       bearing: 0,
+      // OSM/CARTO's free tiles require attribution to stay visible — using
+      // the default control here so we can set compact:true instead of
+      // dropping it, which collapses it to a small "i" icon rather than
+      // removing it outright.
+      attributionControl: false,
     });
+
+    map.current.addControl(new maplibregl.AttributionControl({ compact: true }));
 
     // Add navigation controls
     map.current.addControl(
