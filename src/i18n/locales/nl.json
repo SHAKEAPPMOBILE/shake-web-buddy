@@ -261,7 +261,11 @@
     "failedToCopyLink": "Link kopiëren mislukt",
     "joiningBtn": "Joining…",
     "listView": "Lijstweergave",
-    "mapView": "Kaartweergave"
+    "mapView": "Kaartweergave",
+    "friends": "Vrienden",
+    "addFriends": "Vrienden toevoegen",
+    "noFriendsYet": "Je hebt nog geen vrienden toegevoegd.",
+    "noFriendPlans": "Geen van je vrienden heeft nu een aankomend plan."
   },
   "profile": {
     "title": "Profiel",
@@ -651,7 +655,8 @@
     "addPriceOption": "Nog een prijsoptie toevoegen",
     "venueLabel": "Waar vindt het plaats? (optioneel)",
     "capacityLabel": "Aantal deelnemers beperken? (optioneel)",
-    "capacityPlaceholder": "Geen limiet"
+    "capacityPlaceholder": "Geen limiet",
+    "friendsOnly": "Alleen vrienden"
   },
   "userProfile": {
     "title": "Gebruikersprofiel",
@@ -790,5 +795,20 @@
     "yearPlaceholder": "Jaar",
     "monthPlaceholder": "Maand",
     "dayPlaceholder": "Dag"
+  },
+  "friends": {
+    "importTitle": "Vind vrienden in je contacten",
+    "importExplainer": "We vergelijken je contacten met mensen die al op SHAKE zitten. Je contacten worden nooit geüpload of opgeslagen — er wordt alleen een privématch gecontroleerd.",
+    "checking": "Contacten controleren…",
+    "checkContacts": "Mijn contacten controleren",
+    "noMatches": "Geen van je contacten zit al op SHAKE.",
+    "foundCount": "{{count}} gevonden op SHAKE",
+    "selectAll": "Alles selecteren",
+    "someone": "Iemand",
+    "friends": "Vrienden",
+    "requested": "Aangevraagd",
+    "accept": "Accepteren",
+    "sending": "Verzenden…",
+    "sendRequests": "{{count}} vriendschapsverzoeken versturen"
   }
 }

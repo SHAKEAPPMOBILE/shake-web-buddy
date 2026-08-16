@@ -38,3 +38,32 @@ export async function checkWomenOnlyGate(
 
   return false;
 }
+
+/**
+ * Gate for joining a friends-only plan. Returns true if the join may proceed.
+ * The Postgres trigger `enforce_plan_audience` is the real backstop — this
+ * client-side check just avoids a failed insert round-trip and shows a
+ * clear message instead of a raw DB error.
+ */
+export async function checkFriendsOnlyGate(
+  planAudience: string | null | undefined,
+  creatorId: string,
+  userId: string
+): Promise<boolean> {
+  if (planAudience !== "friends_only") return true;
+  if (creatorId === userId) return true;
+
+  const { data } = await supabase
+    .from("friendships")
+    .select("id")
+    .eq("status", "accepted")
+    .or(`and(requester_id.eq.${creatorId},addressee_id.eq.${userId}),and(requester_id.eq.${userId},addressee_id.eq.${creatorId})`)
+    .maybeSingle();
+
+  if (data) return true;
+
+  toast.error("This plan is only for the creator's friends", {
+    description: "Add them as a friend from the Friends tab to join.",
+  });
+  return false;
+}

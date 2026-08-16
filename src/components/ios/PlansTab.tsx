@@ -22,7 +22,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { findOrCreateOpenGroup, MAX_GROUP_CAPACITY } from "@/lib/activityGroups";
-import { checkWomenOnlyGate } from "@/lib/planAudience";
+import { checkWomenOnlyGate, checkFriendsOnlyGate } from "@/lib/planAudience";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
@@ -34,6 +34,8 @@ import { useActivityPayment } from "@/hooks/useActivityPayment";
 import { ActivityDetailDialog } from "@/components/ActivityDetailDialog";
 import { ActivityDetailsCard } from "./ActivityDetailsCard";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
+import { useFriends } from "@/hooks/useFriends";
+import { FriendsImportDialog } from "@/components/FriendsImportDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -132,6 +134,67 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [showAllCities, setShowAllCities] = useState(false);
   // Fuzzed approximate-location map view of "My City" plans, alternative to the list.
   const [tabView, setTabView] = useState<'list' | 'map'>('list');
+  // "Friends" is a third, orthogonal filter — independent of My City/All Cities,
+  // with its own fetch (friend plans aren't city-scoped).
+  const [showFriendsOnly, setShowFriendsOnly] = useState(false);
+  const { friends } = useFriends();
+  const [friendPlans, setFriendPlans] = useState<PlanActivity[]>([]);
+  const [isFriendPlansLoading, setIsFriendPlansLoading] = useState(false);
+  const [showFriendsImportDialog, setShowFriendsImportDialog] = useState(false);
+
+  // Friend plans: any active, future-dated plan created by a mutual friend,
+  // in any city — not filtered by My City/All Cities like the rest of the tab.
+  useEffect(() => {
+    if (!showFriendsOnly || !user) return;
+    if (friends.length === 0) {
+      setFriendPlans([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setIsFriendPlansLoading(true);
+      const friendIds = friends.map((f) => f.user_id);
+      const nowIso = new Date().toISOString();
+      const { data } = await supabase
+        .from("user_activities")
+        .select("*")
+        .in("user_id", friendIds)
+        .eq("is_active", true)
+        .eq("is_hidden", false)
+        .or(`scheduled_for.gte.${nowIso},scheduled_for.is.null`)
+        .order("scheduled_for", { ascending: true, nullsFirst: false })
+        .limit(50);
+      if (cancelled) return;
+
+      const rows = data ?? [];
+      const activityIds = rows.map((a: any) => a.id);
+      const [{ data: joinsData }] = await Promise.all([
+        activityIds.length
+          ? supabase.from("activity_joins").select("activity_id").in("activity_id", activityIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const countMap = new Map<string, number>();
+      (joinsData ?? []).forEach((j: any) => countMap.set(j.activity_id, (countMap.get(j.activity_id) ?? 0) + 1));
+      const friendByUserId = new Map(friends.map((f) => [f.user_id, f]));
+
+      if (!cancelled) {
+        setFriendPlans(
+          rows.map((activity: any) => {
+            const friend = friendByUserId.get(activity.user_id);
+            return {
+              ...activity,
+              creator_name: friend?.name || "Friend",
+              creator_avatar: friend?.avatar_url,
+              participant_count: countMap.get(activity.id) ?? 0,
+              isJoined: false,
+            } as PlanActivity;
+          })
+        );
+        setIsFriendPlansLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [showFriendsOnly, friends, user]);
 
   useEffect(() => {
     console.log("[PlansTab] showAllCities changed →", showAllCities);
@@ -1049,12 +1112,23 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     setFeedOpen(true);
   };
 
+  const handleFriendPlanClick = (plan: PlanActivity) => {
+    if (!user) return;
+    const idx = friendPlans.findIndex((p) => p.id === plan.id);
+    setFeedSourceList(friendPlans);
+    setFeedStartIndex(idx >= 0 ? idx : 0);
+    setFeedOpen(true);
+  };
+
   const handleDirectCityJoin = async (plan: PlanActivity) => {
     if (!user) {
       return;
     }
 
     if (!plan.isJoined && plan.user_id !== user.id && !(await checkWomenOnlyGate(plan.audience, user.id))) {
+      return;
+    }
+    if (!plan.isJoined && plan.user_id !== user.id && !(await checkFriendsOnlyGate(plan.audience, plan.user_id, user.id))) {
       return;
     }
 
@@ -1134,6 +1208,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       console.error("[JOIN:handleDirectCityJoin] insert failed", { code: error.code, message: error.message, details: error.details, hint: (error as any).hint });
       if (error.message?.includes("WOMEN_ONLY_PLAN")) {
         toast.error("Hold on Tiger, this plan is only for women");
+      } else if (error.message?.includes("FRIENDS_ONLY_PLAN")) {
+        toast.error("This plan is only for the creator's friends");
       } else {
         toast.error(`Failed to join: ${error.message}`);
       }
@@ -1182,6 +1258,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     if (!user) return { success: false };
 
     if (!plan.isJoined && plan.user_id !== user.id && !(await checkWomenOnlyGate(plan.audience, user.id))) {
+      return { success: false };
+    }
+    if (!plan.isJoined && plan.user_id !== user.id && !(await checkFriendsOnlyGate(plan.audience, plan.user_id, user.id))) {
       return { success: false };
     }
 
@@ -1236,6 +1315,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         console.error("[JOIN:handleFeedJoin] insert failed (user-created)", { code: error.code, message: error.message, details: error.details, hint: error.hint });
         if (error.message?.includes("WOMEN_ONLY_PLAN")) {
           toast.error("Hold on Tiger, this plan is only for women");
+        } else if (error.message?.includes("FRIENDS_ONLY_PLAN")) {
+          toast.error("This plan is only for the creator's friends");
         } else {
           toast.error(`Failed to join: ${error.message}`);
         }
@@ -1319,6 +1400,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       console.error("[JOIN:handleFeedJoin] insert failed", error);
       if (error.message?.includes("WOMEN_ONLY_PLAN")) {
         toast.error("Hold on Tiger, this plan is only for women");
+      } else if (error.message?.includes("FRIENDS_ONLY_PLAN")) {
+        toast.error("This plan is only for the creator's friends");
       } else {
         toast.error(`Failed to join: ${error.message}`);
       }
@@ -1364,6 +1447,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     setPlanPreview(null);
 
     if (!plan.isJoined && plan.user_id !== user.id && !(await checkWomenOnlyGate(plan.audience, user.id))) {
+      return;
+    }
+    if (!plan.isJoined && plan.user_id !== user.id && !(await checkFriendsOnlyGate(plan.audience, plan.user_id, user.id))) {
       return;
     }
 
@@ -1443,6 +1529,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       console.error("[JOIN:handleConfirmJoinPreview] insert failed", { code: error.code, message: error.message, details: error.details, hint: (error as any).hint });
       if (error.message?.includes("WOMEN_ONLY_PLAN")) {
         toast.error("Hold on Tiger, this plan is only for women");
+      } else if (error.message?.includes("FRIENDS_ONLY_PLAN")) {
+        toast.error("This plan is only for the creator's friends");
       } else {
         toast.error(`Failed to join: ${error.message}`);
       }
@@ -1562,14 +1650,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           </div>
         </div>
 
-        {/* My City / All Cities filter chips */}
-        <div className="flex gap-2">
+        {/* My City / All Cities / Friends filter chips — horizontally scrollable
+            so it never visually breaks regardless of how long a locale's
+            translations run (e.g. Spanish "Todas las ciudades"). */}
+        <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap -mx-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
-            onClick={() => setShowAllCities(false)}
+            onClick={() => { setShowAllCities(false); setShowFriendsOnly(false); }}
             className={cn(
-              "px-3 py-1 rounded-full text-xs font-semibold transition-all border",
-              !showAllCities
+              "shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-all border",
+              !showAllCities && !showFriendsOnly
                 ? "bg-gray-200 text-gray-900 border-gray-300"
                 : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
             )}
@@ -1578,18 +1668,42 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           </button>
           <button
             type="button"
-            onClick={() => setShowAllCities(true)}
+            onClick={() => { setShowAllCities(true); setShowFriendsOnly(false); }}
             className={cn(
-              "px-3 py-1 rounded-full text-xs font-semibold transition-all border",
-              showAllCities
+              "shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-all border",
+              showAllCities && !showFriendsOnly
                 ? "bg-gray-200 text-gray-900 border-gray-300"
                 : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
             )}
           >
             🌍 {t('common.allCities')}
           </button>
+          <button
+            type="button"
+            onClick={() => setShowFriendsOnly(true)}
+            className={cn(
+              "shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-all border",
+              showFriendsOnly
+                ? "bg-gray-200 text-gray-900 border-gray-300"
+                : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
+            )}
+          >
+            {t('plans.friends', 'Friends')}
+          </button>
+          {showFriendsOnly && (
+            <button
+              type="button"
+              onClick={() => setShowFriendsImportDialog(true)}
+              className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-primary border border-primary/30 bg-primary/5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {t('plans.addFriends', 'Add friends')}
+            </button>
+          )}
         </div>
       </div>
+
+      <FriendsImportDialog open={showFriendsImportDialog} onOpenChange={setShowFriendsImportDialog} />
 
       <CityPickerModal
         open={isCitySheetOpen}
@@ -1611,7 +1725,83 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         />
       </CityPickerModal>
 
-      {tabView === 'map' ? (
+      {showFriendsOnly ? (
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 space-y-3 bg-white dark:bg-white min-h-0">
+          {isFriendPlansLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <LoadingSpinner size="lg" />
+            </div>
+          ) : friends.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-center gap-3 px-6">
+              <p className="text-sm text-gray-500">
+                {t('plans.noFriendsYet', "You haven't added any friends yet.")}
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowFriendsImportDialog(true)}
+                className="px-4 py-2 rounded-full text-sm font-semibold text-white"
+                style={plansSettlingGradientStyle}
+              >
+                {t('plans.addFriends', 'Add friends')}
+              </button>
+            </div>
+          ) : friendPlans.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-center px-6">
+              <p className="text-sm text-gray-500">
+                {t('plans.noFriendPlans', "None of your friends have an upcoming plan right now.")}
+              </p>
+            </div>
+          ) : (
+            friendPlans.map((plan) => (
+              <SwipeableCard
+                key={plan.id}
+                canDelete={false}
+                onDelete={() => {}}
+                onClick={() => handleFriendPlanClick(plan)}
+                className="w-full text-left p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 dark:bg-gray-50 dark:border-gray-200 dark:hover:bg-gray-100 cursor-pointer transition-colors"
+                style={{}}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0 flex items-center justify-center">
+                    {plan.creator_avatar ? (
+                      <img src={plan.creator_avatar} alt={plan.creator_name || "Friend"} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-base font-bold text-gray-500">
+                        {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="font-semibold text-gray-900 text-sm">
+                        {plan.note || getActivityLabel(plan.activity_type)}
+                      </h3>
+                      {plan.price_amount && (
+                        <span className="text-xs bg-green-50 text-green-700 border border-green-200 font-semibold px-2 py-0.5 rounded-full">
+                          {plan.price_amount}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                      <span className="text-xs font-medium text-primary">{plan.city}</span>
+                      <span className="text-xs text-gray-400">·</span>
+                      <span className="text-xs text-gray-500">{plan.creator_name || "Friend"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
+                      <span className="text-xs text-gray-500">
+                        {plan.scheduled_for
+                          ? format(parseDbDate(plan.scheduled_for), "EEE, d MMM · h:mm a")
+                          : t('common.today')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </SwipeableCard>
+            ))
+          )}
+        </div>
+      ) : tabView === 'map' ? (
         <div className="flex-1 min-h-0 px-4 pt-4 pb-4">
           <WorldMap
             activities={combinedPlansList}

@@ -261,7 +261,11 @@
     "failedToCopyLink": "复制链接失败",
     "joiningBtn": "Joining…",
     "listView": "列表视图",
-    "mapView": "地图视图"
+    "mapView": "地图视图",
+    "friends": "好友",
+    "addFriends": "添加好友",
+    "noFriendsYet": "你还没有添加任何好友。",
+    "noFriendPlans": "你的好友目前没有即将开始的计划。"
   },
   "profile": {
     "title": "个人资料",
@@ -651,7 +655,8 @@
     "addPriceOption": "添加另一个价格选项",
     "venueLabel": "在哪里举行？（可选）",
     "capacityLabel": "限制参与人数？（可选）",
-    "capacityPlaceholder": "无限制"
+    "capacityPlaceholder": "无限制",
+    "friendsOnly": "仅好友"
   },
   "userProfile": {
     "title": "用户资料",
@@ -790,5 +795,20 @@
     "yearPlaceholder": "年",
     "monthPlaceholder": "月",
     "dayPlaceholder": "日"
+  },
+  "friends": {
+    "importTitle": "从通讯录中查找好友",
+    "importExplainer": "我们会将你的通讯录与已注册SHAKE的用户进行比对。你的通讯录不会被上传或保存，只会进行私密匹配。",
+    "checking": "正在检查通讯录…",
+    "checkContacts": "检查我的通讯录",
+    "noMatches": "你的通讯录中还没有人使用SHAKE。",
+    "foundCount": "在SHAKE上找到{{count}}位",
+    "selectAll": "全选",
+    "someone": "某人",
+    "friends": "好友",
+    "requested": "已请求",
+    "accept": "接受",
+    "sending": "发送中…",
+    "sendRequests": "发送{{count}}个好友请求"
   }
 }

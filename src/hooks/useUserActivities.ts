@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
-import { checkWomenOnlyGate } from "@/lib/planAudience";
+import { checkWomenOnlyGate, checkFriendsOnlyGate } from "@/lib/planAudience";
 
 export interface UserActivity {
   id: string;
@@ -183,7 +183,7 @@ export function useUserActivities(city: string) {
     priceAmount?: string,
     expiresAt?: Date,
     promoVideoUrl?: string,
-    audience?: "everyone" | "women_only",
+    audience?: "everyone" | "women_only" | "friends_only",
     priceTiers?: { label: string; amount: number }[],
     capacity?: number,
     venue?: { name?: string; address?: string; lat?: number; lng?: number }
@@ -397,6 +397,10 @@ export function useUserActivities(city: string) {
       return { success: false };
     }
 
+    if (!(await checkFriendsOnlyGate((activity as any).audience, (activity as any).user_id, user.id))) {
+      return { success: false };
+    }
+
     // Block join if user already has any join for the same activity_type in a different city
     const { data: crossCityJoin } = await supabase
       .from("activity_joins")
@@ -449,6 +453,8 @@ export function useUserActivities(city: string) {
       console.error("Error joining activity:", error);
       if (error.message?.includes("WOMEN_ONLY_PLAN")) {
         toast.error("Hold on Tiger, this plan is only for women");
+      } else if (error.message?.includes("FRIENDS_ONLY_PLAN")) {
+        toast.error("This plan is only for the creator's friends");
       } else {
         toast.error("Failed to join activity");
       }

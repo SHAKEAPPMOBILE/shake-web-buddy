@@ -12,6 +12,7 @@
     "seed:venues": "node --env-file=.env scripts/seed-venues-from-venue-data.mjs"
   },
   "dependencies": {
+    "@capacitor-community/contacts": "^8.0.0",
     "@capacitor-community/in-app-review": "^8.0.0",
     "@capacitor/android": "^8.0.0",
     "@capacitor/app": "^8.0.0",

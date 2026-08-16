@@ -36,6 +36,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>SHAKE needs camera access to capture your profile photo and record videos.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>SHAKE can check your contacts against people already on SHAKE so you can add them as friends. Your contacts are never uploaded or stored — only a one-way match is checked.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>SHAKE uses your location to show events and plans happening near you.</string>
 	<key>NSMicrophoneUsageDescription</key>

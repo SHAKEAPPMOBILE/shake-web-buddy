@@ -261,7 +261,11 @@
     "failedToCopyLink": "Не вдалося скопіювати посилання",
     "joiningBtn": "Joining…",
     "listView": "Список",
-    "mapView": "Карта"
+    "mapView": "Карта",
+    "friends": "Друзі",
+    "addFriends": "Додати друзів",
+    "noFriendsYet": "Ви ще не додали друзів.",
+    "noFriendPlans": "Наразі у ваших друзів немає найближчих планів."
   },
   "profile": {
     "title": "Профіль",
@@ -651,7 +655,8 @@
     "addPriceOption": "Додати інший варіант ціни",
     "venueLabel": "Де це відбудеться? (необов'язково)",
     "capacityLabel": "Обмежити кількість учасників? (необов'язково)",
-    "capacityPlaceholder": "Без обмежень"
+    "capacityPlaceholder": "Без обмежень",
+    "friendsOnly": "Тільки друзі"
   },
   "userProfile": {
     "title": "Профіль користувача",
@@ -790,5 +795,20 @@
     "yearPlaceholder": "Рік",
     "monthPlaceholder": "Місяць",
     "dayPlaceholder": "День"
+  },
+  "friends": {
+    "importTitle": "Знайдіть друзів серед контактів",
+    "importExplainer": "Ми звіряємо ваші контакти з людьми, які вже є на SHAKE. Ваші контакти ніколи не завантажуються і не зберігаються — перевіряється лише приватний збіг.",
+    "checking": "Перевірка контактів…",
+    "checkContacts": "Перевірити мої контакти",
+    "noMatches": "Жоден з ваших контактів ще не на SHAKE.",
+    "foundCount": "Знайдено {{count}} на SHAKE",
+    "selectAll": "Вибрати всіх",
+    "someone": "Хтось",
+    "friends": "Друзі",
+    "requested": "Запрошено",
+    "accept": "Прийняти",
+    "sending": "Надсилання…",
+    "sendRequests": "Надіслати {{count}} запитів у друзі"
   }
 }

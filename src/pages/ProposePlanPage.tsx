@@ -124,7 +124,7 @@ export default function ProposePlanPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()));
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
-  const [audience, setAudience] = useState<"everyone" | "women_only">("everyone");
+  const [audience, setAudience] = useState<"everyone" | "women_only" | "friends_only">("everyone");
   const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
   const [showIDVerification, setShowIDVerification] = useState(false);
   const [profanityError, setProfanityError] = useState<string | null>(null);
@@ -384,7 +384,12 @@ export default function ProposePlanPage() {
       }
       case "capacity": return capacityInput.trim() ? `${capacityInput} max` : t("createPlan.skipped");
       case "video": return promoVideoUrl ? t("createPlan.videoAdded") : t("createPlan.skipped");
-      case "audience": return audience === "women_only" ? t("createPlan.womenOnly") : t("createPlan.everyone");
+      case "audience":
+        return audience === "women_only"
+          ? t("createPlan.womenOnly")
+          : audience === "friends_only"
+          ? t("createPlan.friendsOnly", "Only friends")
+          : t("createPlan.everyone");
       default: return "";
     }
   };
@@ -1364,7 +1369,7 @@ export default function ProposePlanPage() {
 
       case "audience":
         return (
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-wrap gap-3 justify-center">
             <button
               type="button"
               onClick={() => { setAudience("everyone"); advanceStep(); }}
@@ -1378,6 +1383,13 @@ export default function ProposePlanPage() {
               className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
             >
               {t("createPlan.womenOnly")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAudience("friends_only"); advanceStep(); }}
+              className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
+            >
+              {t("createPlan.friendsOnly", "Only friends")}
             </button>
           </div>
         );

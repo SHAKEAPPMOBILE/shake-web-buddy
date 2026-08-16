@@ -261,7 +261,11 @@
     "failedToCopyLink": "リンクをコピーできませんでした",
     "joiningBtn": "Joining…",
     "listView": "リスト表示",
-    "mapView": "地図表示"
+    "mapView": "地図表示",
+    "friends": "友達",
+    "addFriends": "友達を追加",
+    "noFriendsYet": "まだ友達を追加していません。",
+    "noFriendPlans": "友達に今後の予定はありません。"
   },
   "profile": {
     "title": "プロフィール",
@@ -651,7 +655,8 @@
     "addPriceOption": "価格オプションを追加",
     "venueLabel": "場所はどこですか？（任意）",
     "capacityLabel": "参加人数に上限を設けますか？（任意）",
-    "capacityPlaceholder": "上限なし"
+    "capacityPlaceholder": "上限なし",
+    "friendsOnly": "友達のみ"
   },
   "userProfile": {
     "title": "ユーザープロフィール",
@@ -790,5 +795,20 @@
     "yearPlaceholder": "年",
     "monthPlaceholder": "月",
     "dayPlaceholder": "日"
+  },
+  "friends": {
+    "importTitle": "連絡先から友達を見つける",
+    "importExplainer": "連絡先をSHAKEに登録済みのユーザーと照合します。連絡先がアップロードや保存されることはなく、プライベートな照合のみが行われます。",
+    "checking": "連絡先を確認中…",
+    "checkContacts": "連絡先を確認する",
+    "noMatches": "SHAKEに登録されている連絡先はまだありません。",
+    "foundCount": "SHAKEで{{count}}件見つかりました",
+    "selectAll": "すべて選択",
+    "someone": "誰か",
+    "friends": "友達",
+    "requested": "リクエスト済み",
+    "accept": "承認",
+    "sending": "送信中…",
+    "sendRequests": "{{count}}件の友達リクエストを送信"
   }
 }

@@ -261,7 +261,11 @@
     "failedToCopyLink": "Error al copiar el enlace",
     "joiningBtn": "Uniéndose…",
     "listView": "Vista de lista",
-    "mapView": "Vista de mapa"
+    "mapView": "Vista de mapa",
+    "friends": "Amigos",
+    "addFriends": "Agregar amigos",
+    "noFriendsYet": "Aún no has agregado amigos.",
+    "noFriendPlans": "Ninguno de tus amigos tiene un plan próximo por ahora."
   },
   "profile": {
     "title": "Perfil",
@@ -650,7 +654,8 @@
     "addPriceOption": "Agregar otra opción de precio",
     "venueLabel": "¿Dónde será? (opcional)",
     "capacityLabel": "¿Límite de participantes? (opcional)",
-    "capacityPlaceholder": "Sin límite"
+    "capacityPlaceholder": "Sin límite",
+    "friendsOnly": "Solo amigos"
   },
   "userProfile": {
     "title": "Perfil de Usuario",
@@ -789,5 +794,20 @@
     "yearPlaceholder": "Año",
     "monthPlaceholder": "Mes",
     "dayPlaceholder": "Día"
+  },
+  "friends": {
+    "importTitle": "Encuentra amigos en tus contactos",
+    "importExplainer": "Comparamos tus contactos con personas que ya están en SHAKE. Tus contactos nunca se suben ni se guardan — solo se verifica una coincidencia privada.",
+    "checking": "Revisando contactos…",
+    "checkContacts": "Revisar mis contactos",
+    "noMatches": "Ninguno de tus contactos está en SHAKE todavía.",
+    "foundCount": "{{count}} encontrados en SHAKE",
+    "selectAll": "Seleccionar todos",
+    "someone": "Alguien",
+    "friends": "Amigos",
+    "requested": "Solicitado",
+    "accept": "Aceptar",
+    "sending": "Enviando…",
+    "sendRequests": "Enviar {{count}} solicitudes de amistad"
   }
 }

@@ -261,7 +261,11 @@
     "failedToCopyLink": "Impossibile copiare il link",
     "joiningBtn": "Joining…",
     "listView": "Vista elenco",
-    "mapView": "Vista mappa"
+    "mapView": "Vista mappa",
+    "friends": "Amici",
+    "addFriends": "Aggiungi amici",
+    "noFriendsYet": "Non hai ancora aggiunto amici.",
+    "noFriendPlans": "Nessuno dei tuoi amici ha un piano imminente al momento."
   },
   "profile": {
     "title": "Profilo",
@@ -651,7 +655,8 @@
     "addPriceOption": "Aggiungi un'altra opzione di prezzo",
     "venueLabel": "Dove si svolge? (opzionale)",
     "capacityLabel": "Limitare i partecipanti? (opzionale)",
-    "capacityPlaceholder": "Nessun limite"
+    "capacityPlaceholder": "Nessun limite",
+    "friendsOnly": "Solo amici"
   },
   "userProfile": {
     "title": "Profilo Utente",
@@ -790,5 +795,20 @@
     "yearPlaceholder": "Anno",
     "monthPlaceholder": "Mese",
     "dayPlaceholder": "Giorno"
+  },
+  "friends": {
+    "importTitle": "Trova amici tra i tuoi contatti",
+    "importExplainer": "Confrontiamo i tuoi contatti con le persone già su SHAKE. I tuoi contatti non vengono mai caricati né salvati — viene verificata solo una corrispondenza privata.",
+    "checking": "Controllo contatti…",
+    "checkContacts": "Controlla i miei contatti",
+    "noMatches": "Nessuno dei tuoi contatti è ancora su SHAKE.",
+    "foundCount": "{{count}} trovati su SHAKE",
+    "selectAll": "Seleziona tutti",
+    "someone": "Qualcuno",
+    "friends": "Amici",
+    "requested": "Richiesto",
+    "accept": "Accetta",
+    "sending": "Invio…",
+    "sendRequests": "Invia {{count}} richieste di amicizia"
   }
 }

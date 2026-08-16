@@ -261,7 +261,11 @@
     "failedToCopyLink": "Failed to copy link",
     "joiningBtn": "Joining…",
     "listView": "List view",
-    "mapView": "Map view"
+    "mapView": "Map view",
+    "friends": "Friends",
+    "addFriends": "Add friends",
+    "noFriendsYet": "You haven't added any friends yet.",
+    "noFriendPlans": "None of your friends have an upcoming plan right now."
   },
   "profile": {
     "title": "Profile",
@@ -650,7 +654,8 @@
     "addPriceOption": "Add another price option",
     "venueLabel": "Where's it happening? (optional)",
     "capacityLabel": "Limit how many can join? (optional)",
-    "capacityPlaceholder": "No limit"
+    "capacityPlaceholder": "No limit",
+    "friendsOnly": "Only friends"
   },
   "userProfile": {
     "title": "User Profile",
@@ -789,5 +794,20 @@
     "yearPlaceholder": "Year",
     "monthPlaceholder": "Month",
     "dayPlaceholder": "Day"
+  },
+  "friends": {
+    "importTitle": "Find friends from your contacts",
+    "importExplainer": "We check your contacts against people already on SHAKE. Your contacts are never uploaded or stored — only a private match is checked.",
+    "checking": "Checking contacts…",
+    "checkContacts": "Check my contacts",
+    "noMatches": "None of your contacts are on SHAKE yet.",
+    "foundCount": "{{count}} found on SHAKE",
+    "selectAll": "Select all",
+    "someone": "Someone",
+    "friends": "Friends",
+    "requested": "Requested",
+    "accept": "Accept",
+    "sending": "Sending…",
+    "sendRequests": "Send {{count}} friend requests"
   }
 }
