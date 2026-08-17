@@ -75,7 +75,7 @@
     "expiresIn": "Läuft ab in {{time}}",
     "meetPeople": "Triff neue Leute.",
     "meetFriends": "Finde neue Freunde.",
-    "meetBuddy": "Finde einen Kumpel.",
+    "meetBuddy": "Triff deinen Kumpel.",
     "meetPartner": "Triff einen Partner.",
     "meetLove": "Finde eine neue Liebe.",
     "tagline": "Verbindung passiert offline.",
@@ -403,7 +403,8 @@
     "connectStripe": "Stripe verbinden",
     "finishStripeSetup": "Einrichtung abschließen",
     "stripeConnected": "Verbunden",
-    "stripePending": "Es fehlen noch ein paar Angaben, um die Einrichtung abzuschließen."
+    "stripePending": "Es fehlen noch ein paar Angaben, um die Einrichtung abzuschließen.",
+    "sectionShakers": "Shakers"
   },
   "points": {
     "title": "Meine Punkte",
@@ -810,5 +811,17 @@
     "accept": "Annehmen",
     "sending": "Wird gesendet…",
     "sendRequests": "{{count}} Freundschaftsanfragen senden"
+  },
+  "shakers": {
+    "manageFriends": "Meine Freunde",
+    "manageFriendsDesc": "Freunde ansehen, hinzufügen und entfernen",
+    "requests": "Freundschaftsanfragen",
+    "decline": "Ablehnen",
+    "myFriends": "Meine Freunde",
+    "manageFriend": "Freund verwalten",
+    "unshake": "Entfernen (Freund entfernen)",
+    "block": "Blockieren",
+    "blocked": "Blockiert",
+    "blockFailed": "Blockieren fehlgeschlagen"
   }
 }

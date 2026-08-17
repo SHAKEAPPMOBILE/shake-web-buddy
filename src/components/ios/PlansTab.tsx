@@ -1690,7 +1690,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           >
             {t('plans.friends', 'Friends')}
           </button>
-          {showFriendsOnly && (
+          {showFriendsOnly && friends.length > 0 && (
             <button
               type="button"
               onClick={() => setShowFriendsImportDialog(true)}

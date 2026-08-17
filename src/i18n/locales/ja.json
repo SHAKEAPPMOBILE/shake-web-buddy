@@ -75,7 +75,7 @@
     "expiresIn": "{{time}}後に期限切れ",
     "meetPeople": "新しい人と出会う。",
     "meetFriends": "新しい友達を作る。",
-    "meetBuddy": "仲間を見つける。",
+    "meetBuddy": "あなたの仲間と出会う。",
     "meetPartner": "パートナーと出会う。",
     "meetLove": "新しい恋を見つける。",
     "tagline": "つながりはオフラインで生まれる。",
@@ -403,7 +403,8 @@
     "connectStripe": "Stripeを接続",
     "finishStripeSetup": "設定を完了する",
     "stripeConnected": "接続済み",
-    "stripePending": "設定を完了するには、あといくつか情報が必要です。"
+    "stripePending": "設定を完了するには、あといくつか情報が必要です。",
+    "sectionShakers": "シェイカーズ"
   },
   "points": {
     "title": "マイポイント",
@@ -810,5 +811,17 @@
     "accept": "承認",
     "sending": "送信中…",
     "sendRequests": "{{count}}件の友達リクエストを送信"
+  },
+  "shakers": {
+    "manageFriends": "友達",
+    "manageFriendsDesc": "友達の確認、追加、削除ができます",
+    "requests": "友達リクエスト",
+    "decline": "拒否",
+    "myFriends": "友達",
+    "manageFriend": "友達を管理",
+    "unshake": "解除（友達を削除）",
+    "block": "ブロック",
+    "blocked": "ブロックしました",
+    "blockFailed": "ブロックできませんでした"
   }
 }

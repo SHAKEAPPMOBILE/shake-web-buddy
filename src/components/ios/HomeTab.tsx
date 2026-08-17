@@ -103,7 +103,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const meetPhrases = useMemo(() => [
     t('home.meetPeople', 'Meet new people.'),
     t('home.meetFriends', 'Meet new friends.'),
-    t('home.meetBuddy', 'Meet a new buddy.'),
+    t('home.meetBuddy', 'Meet your buddy.'),
     t('home.meetPartner', 'Meet a partner.'),
     t('home.meetLove', 'Meet a new love.')
   ], [t]);

@@ -75,7 +75,7 @@
     "expiresIn": "{{time}}后过期",
     "meetPeople": "认识新朋友。",
     "meetFriends": "交新朋友。",
-    "meetBuddy": "找到伙伴。",
+    "meetBuddy": "认识你的伙伴。",
     "meetPartner": "遇见伴侣。",
     "meetLove": "找到新爱情。",
     "tagline": "真正的连接发生在线下。",
@@ -403,7 +403,8 @@
     "connectStripe": "连接 Stripe",
     "finishStripeSetup": "完成设置",
     "stripeConnected": "已连接",
-    "stripePending": "还差几项信息才能完成设置。"
+    "stripePending": "还差几项信息才能完成设置。",
+    "sectionShakers": "Shakers"
   },
   "points": {
     "title": "我的积分",
@@ -810,5 +811,17 @@
     "accept": "接受",
     "sending": "发送中…",
     "sendRequests": "发送{{count}}个好友请求"
+  },
+  "shakers": {
+    "manageFriends": "我的好友",
+    "manageFriendsDesc": "查看、添加和移除好友",
+    "requests": "好友请求",
+    "decline": "拒绝",
+    "myFriends": "我的好友",
+    "manageFriend": "管理好友",
+    "unshake": "移除（删除好友）",
+    "block": "屏蔽",
+    "blocked": "已屏蔽",
+    "blockFailed": "屏蔽失败"
   }
 }

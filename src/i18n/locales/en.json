@@ -75,7 +75,7 @@
     "expiresIn": "Expires in {{time}}",
     "meetPeople": "Meet new people.",
     "meetFriends": "Meet new friends.",
-    "meetBuddy": "Meet a new buddy.",
+    "meetBuddy": "Meet your buddy.",
     "meetPartner": "Meet a partner.",
     "meetLove": "Meet a new love.",
     "tagline": "Connection happens offline.",
@@ -402,7 +402,8 @@
     "connectStripe": "Connect Stripe",
     "finishStripeSetup": "Finish Setup",
     "stripeConnected": "Connected",
-    "stripePending": "A few details are still needed to finish setup."
+    "stripePending": "A few details are still needed to finish setup.",
+    "sectionShakers": "Shakers"
   },
   "points": {
     "title": "My Points",
@@ -809,5 +810,17 @@
     "accept": "Accept",
     "sending": "Sending…",
     "sendRequests": "Send {{count}} friend requests"
+  },
+  "shakers": {
+    "manageFriends": "My Friends",
+    "manageFriendsDesc": "See, add, and unshake friends",
+    "requests": "Friend requests",
+    "decline": "Decline",
+    "myFriends": "My friends",
+    "manageFriend": "Manage friend",
+    "unshake": "Unshake (remove friend)",
+    "block": "Block",
+    "blocked": "Blocked",
+    "blockFailed": "Couldn't block"
   }
 }

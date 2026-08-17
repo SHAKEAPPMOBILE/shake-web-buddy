@@ -75,7 +75,7 @@
     "expiresIn": "Expire dans {{time}}",
     "meetPeople": "Rencontrez de nouvelles personnes.",
     "meetFriends": "Faites-vous de nouveaux amis.",
-    "meetBuddy": "Trouvez un compagnon.",
+    "meetBuddy": "Rencontrez votre compagnon.",
     "meetPartner": "Rencontrez un partenaire.",
     "meetLove": "Trouvez un nouvel amour.",
     "tagline": "La connexion se fait hors ligne.",
@@ -403,7 +403,8 @@
     "connectStripe": "Connecter Stripe",
     "finishStripeSetup": "Terminer la configuration",
     "stripeConnected": "Connecté",
-    "stripePending": "Quelques informations sont encore nécessaires pour terminer la configuration."
+    "stripePending": "Quelques informations sont encore nécessaires pour terminer la configuration.",
+    "sectionShakers": "Shakers"
   },
   "points": {
     "title": "Mes Points",
@@ -810,5 +811,17 @@
     "accept": "Accepter",
     "sending": "Envoi…",
     "sendRequests": "Envoyer {{count}} demandes d'amitié"
+  },
+  "shakers": {
+    "manageFriends": "Mes amis",
+    "manageFriendsDesc": "Voir, ajouter et retirer des amis",
+    "requests": "Demandes d'amitié",
+    "decline": "Refuser",
+    "myFriends": "Mes amis",
+    "manageFriend": "Gérer l'ami",
+    "unshake": "Retirer (supprimer l'ami)",
+    "block": "Bloquer",
+    "blocked": "Bloqué",
+    "blockFailed": "Impossible de bloquer"
   }
 }

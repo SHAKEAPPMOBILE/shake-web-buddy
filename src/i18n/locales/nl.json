@@ -75,7 +75,7 @@
     "expiresIn": "Verloopt over {{time}}",
     "meetPeople": "Ontmoet nieuwe mensen.",
     "meetFriends": "Maak nieuwe vrienden.",
-    "meetBuddy": "Vind een maatje.",
+    "meetBuddy": "Ontmoet je maatje.",
     "meetPartner": "Ontmoet een partner.",
     "meetLove": "Vind een nieuwe liefde.",
     "tagline": "Verbinding gebeurt offline.",
@@ -403,7 +403,8 @@
     "connectStripe": "Stripe koppelen",
     "finishStripeSetup": "Instellingen afronden",
     "stripeConnected": "Gekoppeld",
-    "stripePending": "Er zijn nog een paar gegevens nodig om de installatie af te ronden."
+    "stripePending": "Er zijn nog een paar gegevens nodig om de installatie af te ronden.",
+    "sectionShakers": "Shakers"
   },
   "points": {
     "title": "Mijn Punten",
@@ -810,5 +811,17 @@
     "accept": "Accepteren",
     "sending": "Verzenden…",
     "sendRequests": "{{count}} vriendschapsverzoeken versturen"
+  },
+  "shakers": {
+    "manageFriends": "Mijn vrienden",
+    "manageFriendsDesc": "Vrienden bekijken, toevoegen en verwijderen",
+    "requests": "Vriendschapsverzoeken",
+    "decline": "Weigeren",
+    "myFriends": "Mijn vrienden",
+    "manageFriend": "Vriend beheren",
+    "unshake": "Verwijderen (vriend verwijderen)",
+    "block": "Blokkeren",
+    "blocked": "Geblokkeerd",
+    "blockFailed": "Blokkeren mislukt"
   }
 }

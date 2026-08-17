@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, type CSSProperties } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle, Users } from "lucide-react";
+import { ManageFriendsDialog } from "@/components/ManageFriendsDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -110,6 +111,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const { isVerified, isPending, isRejected, isLoading: verificationLoading } = useCreatorVerification();
   const [showIDVerificationDialog, setShowIDVerificationDialog] = useState(false);
   const [showParanormal, setShowParanormal] = useState(false);
+  const [showManageFriends, setShowManageFriends] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState<{ user_id: string; name: string; avatar_url: string | null }[]>([]);
   const [isLoadingParanormal, setIsLoadingParanormal] = useState(false);
   const [faceAuthEnabled, setFaceAuthEnabled] = useState(false);
@@ -490,6 +492,41 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <span className="flex-1 text-sm font-medium text-gray-900">{t('profile.language', 'Language')}</span>
               <LanguageSelector showLabel={false} />
             </div>
+          </div>
+        </div>
+
+        {/* ── SHAKERS ── */}
+        <div>
+          <p className="text-xs uppercase tracking-wider text-gray-400 px-1 mb-2">{t('profile.sectionShakers', 'Shakers')}</p>
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+            {/* My Friends */}
+            <button
+              onClick={() => setShowManageFriends(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm font-medium text-gray-900">{t('shakers.manageFriends', 'My Friends')}</span>
+                <p className="text-xs text-gray-400">{t('shakers.manageFriendsDesc', 'See, add, and unshake friends')}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-300" />
+            </button>
+            {/* Paranormal Activity — blocked users, whether from nearby shakers or friends */}
+            <button
+              onClick={() => setShowParanormal(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <Ghost className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm font-medium text-gray-900">{t('profile.paranormalActivityTitle', 'Paranormal Activity')}</span>
+                <p className="text-xs text-gray-400">{t('profile.paranormalSubtitle', 'Blocked & flagged users')}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-300" />
+            </button>
           </div>
         </div>
 
@@ -991,20 +1028,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <ChevronRight className="w-4 h-4 text-gray-300" />
               </button>
             )}
-            {/* Paranormal Activity */}
-            <button
-              onClick={() => setShowParanormal(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-            >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
-                <Ghost className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <span className="text-sm font-medium text-gray-900">{t('profile.paranormalActivityTitle', 'Paranormal Activity')}</span>
-                <p className="text-xs text-gray-400">{t('profile.paranormalSubtitle', 'Blocked & flagged users')}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-300" />
-            </button>
           </div>
         </div>
 
@@ -1096,6 +1119,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       </div>
 
       {/* ── DIALOGS ── */}
+
+      <ManageFriendsDialog open={showManageFriends} onOpenChange={setShowManageFriends} />
 
       {/* Paranormal Activity */}
       <Dialog open={showParanormal} onOpenChange={setShowParanormal}>
