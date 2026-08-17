@@ -799,7 +799,7 @@
   },
   "friends": {
     "importTitle": "Trouvez des amis dans vos contacts",
-    "importExplainer": "Nous comparons vos contacts aux personnes déjà sur SHAKE. Vos contacts ne sont jamais téléchargés ni stockés — seule une correspondance privée est vérifiée.",
+    "importExplainer": "Nous comparons vos contacts aux personnes déjà sur SHAKE.",
     "checking": "Vérification des contacts…",
     "checkContacts": "Vérifier mes contacts",
     "noMatches": "Aucun de vos contacts n'est encore sur SHAKE.",

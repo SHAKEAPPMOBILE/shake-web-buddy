@@ -798,7 +798,7 @@
   },
   "friends": {
     "importTitle": "Encuentra amigos en tus contactos",
-    "importExplainer": "Comparamos tus contactos con personas que ya están en SHAKE. Tus contactos nunca se suben ni se guardan — solo se verifica una coincidencia privada.",
+    "importExplainer": "Comparamos tus contactos con personas que ya están en SHAKE.",
     "checking": "Revisando contactos…",
     "checkContacts": "Revisar mis contactos",
     "noMatches": "Ninguno de tus contactos está en SHAKE todavía.",

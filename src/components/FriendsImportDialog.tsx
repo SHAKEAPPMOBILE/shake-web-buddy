@@ -7,6 +7,7 @@ import { Users, X, Check } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useTranslation } from "react-i18next";
 import { useFriends, ContactMatch } from "@/hooks/useFriends";
+import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 
 interface FriendsImportDialogProps {
   open: boolean;
@@ -15,6 +16,7 @@ interface FriendsImportDialogProps {
 
 export function FriendsImportDialog({ open, onOpenChange }: FriendsImportDialogProps) {
   const { t } = useTranslation();
+  const { style: iconGradientStyle } = useSettlingGradient("friendsImport");
   const {
     isImporting,
     matches,
@@ -77,14 +79,11 @@ export function FriendsImportDialog({ open, onOpenChange }: FriendsImportDialogP
 
         {!hasImported ? (
           <div className="flex flex-col items-center text-center gap-4 py-8">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Users className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={iconGradientStyle}>
+              <Users className="w-8 h-8 text-white" />
             </div>
             <p className="text-sm text-muted-foreground max-w-xs">
-              {t(
-                "friends.importExplainer",
-                "We check your contacts against people already on SHAKE. Your contacts are never uploaded or stored — only a private match is checked."
-              )}
+              {t("friends.importExplainer", "We check your contacts against people already on SHAKE.")}
             </p>
             <Button onClick={handleImport} disabled={isImporting} className="w-full">
               {isImporting ? (

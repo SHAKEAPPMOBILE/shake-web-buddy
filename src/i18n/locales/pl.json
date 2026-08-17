@@ -799,7 +799,7 @@
   },
   "friends": {
     "importTitle": "Znajdź znajomych w kontaktach",
-    "importExplainer": "Porównujemy twoje kontakty z osobami już na SHAKE. Twoje kontakty nigdy nie są przesyłane ani przechowywane — sprawdzane jest tylko prywatne dopasowanie.",
+    "importExplainer": "Porównujemy twoje kontakty z osobami już na SHAKE.",
     "checking": "Sprawdzanie kontaktów…",
     "checkContacts": "Sprawdź moje kontakty",
     "noMatches": "Żaden z twoich kontaktów nie jest jeszcze na SHAKE.",

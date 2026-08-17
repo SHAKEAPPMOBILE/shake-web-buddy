@@ -799,7 +799,7 @@
   },
   "friends": {
     "importTitle": "Vind vrienden in je contacten",
-    "importExplainer": "We vergelijken je contacten met mensen die al op SHAKE zitten. Je contacten worden nooit geüpload of opgeslagen — er wordt alleen een privématch gecontroleerd.",
+    "importExplainer": "We vergelijken je contacten met mensen die al op SHAKE zitten.",
     "checking": "Contacten controleren…",
     "checkContacts": "Mijn contacten controleren",
     "noMatches": "Geen van je contacten zit al op SHAKE.",

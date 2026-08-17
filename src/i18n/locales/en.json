@@ -798,7 +798,7 @@
   },
   "friends": {
     "importTitle": "Find friends from your contacts",
-    "importExplainer": "We check your contacts against people already on SHAKE. Your contacts are never uploaded or stored — only a private match is checked.",
+    "importExplainer": "We check your contacts against people already on SHAKE.",
     "checking": "Checking contacts…",
     "checkContacts": "Check my contacts",
     "noMatches": "None of your contacts are on SHAKE yet.",

@@ -799,7 +799,7 @@
   },
   "friends": {
     "importTitle": "連絡先から友達を見つける",
-    "importExplainer": "連絡先をSHAKEに登録済みのユーザーと照合します。連絡先がアップロードや保存されることはなく、プライベートな照合のみが行われます。",
+    "importExplainer": "連絡先をSHAKEに登録済みのユーザーと照合します。",
     "checking": "連絡先を確認中…",
     "checkContacts": "連絡先を確認する",
     "noMatches": "SHAKEに登録されている連絡先はまだありません。",
