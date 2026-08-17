@@ -303,8 +303,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   // already in before joining.
   useEffect(() => {
     const activityId = CAROUSEL_ITEMS[currentActivityIndex]?.id;
+    // Clear immediately on swipe — otherwise the previous activity's avatars
+    // stay on screen for the ~1s the fetch takes, briefly showing the wrong
+    // people's faces on the new activity instead of just showing none yet.
+    setCarouselJoinAvatars([]);
     if (!activityId || activityId === 'propose-plan' || !selectedCity) {
-      setCarouselJoinAvatars([]);
       return;
     }
     let cancelled = false;
