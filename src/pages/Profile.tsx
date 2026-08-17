@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
-import { Camera, ChevronLeft, ChevronDown, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff, Globe } from "lucide-react";
+import { Camera, ChevronLeft, ChevronDown, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff, Globe, Phone } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -55,6 +55,7 @@ export default function Profile() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
   const [billingEmail, setBillingEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
@@ -85,6 +86,7 @@ export default function Profile() {
     linkedinUrl: string;
     twitterUrl: string;
     pushNotificationsEnabled: boolean;
+    contactPhone: string;
   } | null>(null);
 
   const focusBillingEmail = Boolean((location.state as any)?.focusBillingEmail);
@@ -162,6 +164,7 @@ export default function Profile() {
         // Fall back to auth email (e.g. Google OAuth) if no billing email is stored
         setBillingEmail(privateProfile.billing_email || user.email || "");
         setPushNotificationsEnabled(privateProfile.push_notifications_enabled ?? true);
+        setContactPhone((privateProfile as any).phone || "");
       } else {
         // No private profile row yet — still show the auth email
         setBillingEmail(user.email || "");
@@ -177,6 +180,7 @@ export default function Profile() {
         linkedinUrl: publicProfile?.linkedin_url || "",
         twitterUrl: publicProfile?.twitter_url || "",
         pushNotificationsEnabled: privateProfile?.push_notifications_enabled ?? true,
+        contactPhone: (privateProfile as any)?.phone || "",
       });
       setIsLoading(false);
     };
@@ -323,9 +327,10 @@ export default function Profile() {
       if (publicError) throw publicError;
 
       // Update private profile for push notifications and billing email
-      const privateUpdateData: { push_notifications_enabled: boolean; billing_email: string | null } = {
+      const privateUpdateData: { push_notifications_enabled: boolean; billing_email: string | null; phone: string | null } = {
         push_notifications_enabled: pushNotificationsEnabled,
         billing_email: billingEmail.trim() || null,
+        phone: contactPhone.trim() || null,
       };
       
       const { error: privateError } = await supabase
@@ -345,6 +350,7 @@ export default function Profile() {
         linkedinUrl: linkedinUrl.trim(),
         twitterUrl: twitterUrl.trim(),
         pushNotificationsEnabled,
+        contactPhone: contactPhone.trim(),
       });
 
       toast.success(t('profile.profileSaved'));
@@ -430,9 +436,10 @@ export default function Profile() {
       instagramUrl !== s.instagramUrl ||
       linkedinUrl !== s.linkedinUrl ||
       twitterUrl !== s.twitterUrl ||
-      pushNotificationsEnabled !== s.pushNotificationsEnabled
+      pushNotificationsEnabled !== s.pushNotificationsEnabled ||
+      contactPhone !== s.contactPhone
     );
-  }, [name, nationality, occupation, interests, instagramUrl, linkedinUrl, twitterUrl, pushNotificationsEnabled, savedValues]);
+  }, [name, nationality, occupation, interests, instagramUrl, linkedinUrl, twitterUrl, pushNotificationsEnabled, contactPhone, savedValues]);
 
   const handleBack = () => {
     if (isDirty) {
@@ -555,13 +562,6 @@ export default function Profile() {
 
             {/* Points Display */}
             <PointsDisplay userId={user?.id} size="lg" />
-
-            {/* Premium Badge */}
-            {isPremium && (
-              <div className="flex items-center px-3 py-1 bg-shake-yellow/10 rounded-full">
-                <span className="text-sm font-medium text-shake-yellow">Super-Human</span>
-              </div>
-            )}
           </div>
 
           {/* Profile Form */}
@@ -595,6 +595,24 @@ export default function Profile() {
               />
               <p className="text-xs text-muted-foreground">
                 {t('profile.emailUsageNote')}
+              </p>
+            </div>
+
+            {/* Phone — optional, only used so friends can find you by importing contacts */}
+            <div className="space-y-2">
+              <Label htmlFor="contact-phone" className="flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                {t('profile.phoneNumber', 'Phone Number')}
+              </Label>
+              <Input
+                id="contact-phone"
+                type="tel"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="+1 555 123 4567"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('profile.phoneUsageNote', "Optional. Lets friends find you when they import their contacts.")}
               </p>
             </div>
 

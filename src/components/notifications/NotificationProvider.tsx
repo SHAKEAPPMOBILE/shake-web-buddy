@@ -116,7 +116,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     typeof document !== "undefined"
       ? createPortal(
           <div
-            className="pointer-events-none fixed inset-x-0 top-0 z-[500] flex flex-col items-center gap-2 px-4 pt-[max(1rem,env(safe-area-inset-top))]"
+            className="pointer-events-none fixed inset-x-0 top-0 z-[10050] flex flex-col items-center gap-2 px-4 pt-[max(1rem,env(safe-area-inset-top))]"
             aria-live="polite"
           >
             {items.map((item) => (

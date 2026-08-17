@@ -404,7 +404,9 @@
     "finishStripeSetup": "完成设置",
     "stripeConnected": "已连接",
     "stripePending": "还差几项信息才能完成设置。",
-    "sectionShakers": "Shakers"
+    "sectionShakers": "Shakers",
+    "phoneNumber": "电话号码",
+    "phoneUsageNote": "选填。让好友在导入通讯录时可以找到你。"
   },
   "points": {
     "title": "我的积分",

@@ -81,6 +81,21 @@ serve(async (req) => {
       page += 1;
     }
 
+    // Also check profiles_private.phone — a plain, unverified phone number
+    // users can add for matching purposes, separate from auth.users.phone
+    // (which requires OTP verification and many users never set).
+    const { data: privatePhones } = await supabaseClient
+      .from("profiles_private")
+      .select("user_id, phone")
+      .not("phone", "is", null);
+    for (const row of privatePhones ?? []) {
+      if (row.user_id === requester.id || !row.phone) continue;
+      const digitsOnly = String(row.phone).replace(/\D/g, "");
+      if (!digitsOnly) continue;
+      const h = await sha256Hex(digitsOnly);
+      if (hashSet.has(h)) matchedUserIds.add(row.user_id);
+    }
+
     logStep("Matched users", { count: matchedUserIds.size });
 
     if (matchedUserIds.size === 0) {

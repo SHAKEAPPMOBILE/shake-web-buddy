@@ -404,7 +404,9 @@
     "finishStripeSetup": "Завершити налаштування",
     "stripeConnected": "Підключено",
     "stripePending": "Щоб завершити налаштування, потрібно додати ще декілька даних.",
-    "sectionShakers": "Shakers"
+    "sectionShakers": "Shakers",
+    "phoneNumber": "Номер телефону",
+    "phoneUsageNote": "Необов'язково. Дозволяє друзям знайти вас під час імпорту контактів."
   },
   "points": {
     "title": "Мої бали",

@@ -404,7 +404,9 @@
     "finishStripeSetup": "Terminer la configuration",
     "stripeConnected": "Connecté",
     "stripePending": "Quelques informations sont encore nécessaires pour terminer la configuration.",
-    "sectionShakers": "Shakers"
+    "sectionShakers": "Shakers",
+    "phoneNumber": "Numéro de téléphone",
+    "phoneUsageNote": "Facultatif. Permet à vos amis de vous trouver en important leurs contacts."
   },
   "points": {
     "title": "Mes Points",

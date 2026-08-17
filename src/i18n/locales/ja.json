@@ -404,7 +404,9 @@
     "finishStripeSetup": "設定を完了する",
     "stripeConnected": "接続済み",
     "stripePending": "設定を完了するには、あといくつか情報が必要です。",
-    "sectionShakers": "シェイカーズ"
+    "sectionShakers": "シェイカーズ",
+    "phoneNumber": "電話番号",
+    "phoneUsageNote": "任意です。友達が連絡先をインポートしたときにあなたを見つけられるようになります。"
   },
   "points": {
     "title": "マイポイント",

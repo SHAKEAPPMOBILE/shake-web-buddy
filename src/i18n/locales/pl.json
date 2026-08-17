@@ -404,7 +404,9 @@
     "finishStripeSetup": "Dokończ konfigurację",
     "stripeConnected": "Połączono",
     "stripePending": "Aby dokończyć konfigurację, brakuje jeszcze kilku danych.",
-    "sectionShakers": "Shakers"
+    "sectionShakers": "Shakers",
+    "phoneNumber": "Numer telefonu",
+    "phoneUsageNote": "Opcjonalne. Pozwala znajomym znaleźć cię po zaimportowaniu kontaktów."
   },
   "points": {
     "title": "Moje punkty",

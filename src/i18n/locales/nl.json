@@ -404,7 +404,9 @@
     "finishStripeSetup": "Instellingen afronden",
     "stripeConnected": "Gekoppeld",
     "stripePending": "Er zijn nog een paar gegevens nodig om de installatie af te ronden.",
-    "sectionShakers": "Shakers"
+    "sectionShakers": "Shakers",
+    "phoneNumber": "Telefoonnummer",
+    "phoneUsageNote": "Optioneel. Hiermee kunnen vrienden je vinden als ze hun contacten importeren."
   },
   "points": {
     "title": "Mijn Punten",

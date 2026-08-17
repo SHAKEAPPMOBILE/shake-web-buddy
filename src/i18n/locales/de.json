@@ -404,7 +404,9 @@
     "finishStripeSetup": "Einrichtung abschließen",
     "stripeConnected": "Verbunden",
     "stripePending": "Es fehlen noch ein paar Angaben, um die Einrichtung abzuschließen.",
-    "sectionShakers": "Shakers"
+    "sectionShakers": "Shakers",
+    "phoneNumber": "Telefonnummer",
+    "phoneUsageNote": "Optional. Damit dich Freunde finden können, wenn sie ihre Kontakte importieren."
   },
   "points": {
     "title": "Meine Punkte",

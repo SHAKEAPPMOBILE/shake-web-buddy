@@ -403,7 +403,9 @@
     "finishStripeSetup": "Finish Setup",
     "stripeConnected": "Connected",
     "stripePending": "A few details are still needed to finish setup.",
-    "sectionShakers": "Shakers"
+    "sectionShakers": "Shakers",
+    "phoneNumber": "Phone Number",
+    "phoneUsageNote": "Optional. Lets friends find you when they import their contacts."
   },
   "points": {
     "title": "My Points",
