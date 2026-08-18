@@ -27,6 +27,7 @@ export function ManageFriendsDialog({ open, onOpenChange }: ManageFriendsDialogP
   const {
     friends,
     pendingReceived,
+    pendingSent,
     isLoadingFriends,
     cancelFriendRequest,
     acceptFriendRequest,
@@ -119,6 +120,34 @@ export function ManageFriendsDialog({ open, onOpenChange }: ManageFriendsDialogP
                           className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center"
                         >
                           <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {pendingSent.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                    {t("shakers.sentRequests", "Requested")}
+                  </p>
+                  <div className="space-y-2">
+                    {pendingSent.map((f) => (
+                      <div key={f.friendship_id} className="flex items-center gap-3">
+                        <Avatar className="w-9 h-9">
+                          <AvatarImage src={f.avatar_url || undefined} />
+                          <AvatarFallback>{f.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                        </Avatar>
+                        <span className="flex-1 text-sm font-medium truncate">
+                          {f.name || t("friends.someone", "Someone")}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => cancelFriendRequest(f.friendship_id)}
+                          className="flex items-center gap-1 text-xs text-muted-foreground shrink-0"
+                        >
+                          {t("friends.requested", "Requested")} <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}

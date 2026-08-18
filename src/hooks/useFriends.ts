@@ -27,6 +27,7 @@ export function useFriends() {
   const [matches, setMatches] = useState<ContactMatch[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [pendingReceived, setPendingReceived] = useState<Friend[]>([]);
+  const [pendingSent, setPendingSent] = useState<Friend[]>([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(true);
 
   const fetchFriends = useCallback(async () => {
@@ -43,10 +44,12 @@ export function useFriends() {
     const rows = data ?? [];
     const accepted = rows.filter((f) => f.status === "accepted");
     const received = rows.filter((f) => f.status === "pending" && f.addressee_id === user.id);
+    const sent = rows.filter((f) => f.status === "pending" && f.requester_id === user.id);
 
     const friendUserIds = accepted.map((f) => (f.requester_id === user.id ? f.addressee_id : f.requester_id));
     const receivedUserIds = received.map((f) => f.requester_id);
-    const allIds = Array.from(new Set([...friendUserIds, ...receivedUserIds]));
+    const sentUserIds = sent.map((f) => f.addressee_id);
+    const allIds = Array.from(new Set([...friendUserIds, ...receivedUserIds, ...sentUserIds]));
 
     const { data: profiles } = allIds.length
       ? await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", allIds)
@@ -64,6 +67,12 @@ export function useFriends() {
       received.map((f) => {
         const p = profileMap.get(f.requester_id);
         return { friendship_id: f.id, user_id: f.requester_id, name: p?.name ?? null, avatar_url: p?.avatar_url ?? null };
+      })
+    );
+    setPendingSent(
+      sent.map((f) => {
+        const p = profileMap.get(f.addressee_id);
+        return { friendship_id: f.id, user_id: f.addressee_id, name: p?.name ?? null, avatar_url: p?.avatar_url ?? null };
       })
     );
     setIsLoadingFriends(false);
@@ -257,6 +266,7 @@ export function useFriends() {
     matches,
     friends,
     pendingReceived,
+    pendingSent,
     isLoadingFriends,
     importContactsAndMatch,
     searchUsersByName,
