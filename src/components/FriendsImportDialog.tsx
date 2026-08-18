@@ -186,7 +186,7 @@ export function FriendsImportDialog({ open, onOpenChange }: FriendsImportDialogP
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            <DialogTitle>
+            <DialogTitle className={mode === "search" ? undefined : "sr-only"}>
               {mode === "search"
                 ? t("friends.searchTitle", "Find friends by name")
                 : t("friends.importTitle", "Find friends from your contacts")}
@@ -198,7 +198,7 @@ export function FriendsImportDialog({ open, onOpenChange }: FriendsImportDialogP
           <div className="flex flex-col items-center text-center gap-4 py-8">
             <img src={catHead} alt="" className="w-20 h-20 object-contain" />
             <p className="text-sm text-muted-foreground max-w-xs">
-              {t("friends.importExplainer", "We check your contacts against people already on SHAKE.")}
+              {t("friends.importExplainer", "Find friends from your contacts, already on SHAKE.")}
             </p>
             <Button
               onClick={handleImport}
