@@ -1051,7 +1051,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => navigate('/community-guidelines')}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="flex-1 text-sm font-medium text-gray-900">{t('common.communityGuidelines', 'Community Guidelines')}</span>
@@ -1062,7 +1062,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => navigate('/privacy-policy')}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl bg-gray-500 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
                 <Lock className="w-5 h-5 text-white" />
               </div>
               <span className="flex-1 text-sm font-medium text-gray-900">{t('common.privacyPolicy', 'Privacy Policy')}</span>
@@ -1073,7 +1073,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => navigate('/terms-of-service')}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl bg-gray-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <span className="flex-1 text-sm font-medium text-gray-900">{t('common.termsOfService', 'Terms of Service')}</span>
