@@ -85,7 +85,11 @@ export function FriendsImportDialog({ open, onOpenChange }: FriendsImportDialogP
             <p className="text-sm text-muted-foreground max-w-xs">
               {t("friends.importExplainer", "We check your contacts against people already on SHAKE.")}
             </p>
-            <Button onClick={handleImport} disabled={isImporting} className="w-full">
+            <Button
+              onClick={handleImport}
+              disabled={isImporting}
+              className="w-full bg-gray-900 text-white hover:bg-gray-800"
+            >
               {isImporting ? (
                 <span className="flex items-center gap-2">
                   <LoadingSpinner size="sm" />
