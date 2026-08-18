@@ -673,35 +673,6 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                         </span>
                       )}
                     </div>
-
-                    {/* Attendee avatars — who's already joined this activity, tap to view their profile */}
-                    {!currentActivity?.isProposePlan && carouselJoinAvatars.length > 0 && (
-                      <div className="absolute -bottom-1 -right-2 flex">
-                        {carouselJoinAvatars.slice(0, 3).map((a, i) => (
-                          <button
-                            key={a.user_id}
-                            type="button"
-                            onClick={() => setAvatarProfileTarget({ userId: a.user_id, name: a.name, avatarUrl: a.avatar_url })}
-                            className="w-7 h-7 rounded-full border-2 border-background overflow-hidden flex items-center justify-center bg-muted text-[11px] font-semibold text-foreground shadow first:ml-0 -ml-2"
-                            style={{ zIndex: 10 - i }}
-                          >
-                            {getDisplayAvatarUrl(a.avatar_url) ? (
-                              <img src={getDisplayAvatarUrl(a.avatar_url)} alt={a.name || ""} className="w-full h-full object-cover" />
-                            ) : (
-                              a.name?.charAt(0)?.toUpperCase() || "?"
-                            )}
-                          </button>
-                        ))}
-                        {carouselJoinCount > 3 && (
-                          <div
-                            className="w-7 h-7 rounded-full border-2 border-background flex items-center justify-center bg-muted text-[10px] font-semibold text-muted-foreground shadow -ml-2"
-                            style={{ zIndex: 6 }}
-                          >
-                            +{carouselJoinCount - 3}
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
 
                   <button
@@ -718,9 +689,32 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                       ? t('home.anytimeAnywhere', 'Anytime, Anywhere.')
                       : currentActivity?.label}
                   </div>
-                  {!currentActivity?.isProposePlan && carouselJoinCount > 0 && (
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      {carouselJoinCount}/{MAX_GROUP_SIZE} joined
+                  {/* Attendee avatars — who's already joined this activity, tap to view their profile */}
+                  {!currentActivity?.isProposePlan && carouselJoinAvatars.length > 0 && (
+                    <div className="mt-2 flex items-center justify-center">
+                      {carouselJoinAvatars.slice(0, 3).map((a, i) => (
+                        <button
+                          key={a.user_id}
+                          type="button"
+                          onClick={() => setAvatarProfileTarget({ userId: a.user_id, name: a.name, avatarUrl: a.avatar_url })}
+                          className="w-8 h-8 rounded-full border-2 border-background overflow-hidden flex items-center justify-center bg-muted text-xs font-semibold text-foreground shadow first:ml-0 -ml-2"
+                          style={{ zIndex: 10 - i }}
+                        >
+                          {getDisplayAvatarUrl(a.avatar_url) ? (
+                            <img src={getDisplayAvatarUrl(a.avatar_url)} alt={a.name || ""} className="w-full h-full object-cover" />
+                          ) : (
+                            a.name?.charAt(0)?.toUpperCase() || "?"
+                          )}
+                        </button>
+                      ))}
+                      {carouselJoinCount > 3 && (
+                        <div
+                          className="w-8 h-8 rounded-full border-2 border-background flex items-center justify-center bg-muted text-[11px] font-semibold text-muted-foreground shadow -ml-2"
+                          style={{ zIndex: 6 }}
+                        >
+                          +{carouselJoinCount - 3}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
