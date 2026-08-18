@@ -196,9 +196,7 @@ export function FriendsImportDialog({ open, onOpenChange }: FriendsImportDialogP
 
         {mode === "intro" && (
           <div className="flex flex-col items-center text-center gap-4 py-8">
-            <div className="w-16 h-16 rounded-full overflow-hidden">
-              <img src={catHead} alt="" className="w-full h-full object-cover" />
-            </div>
+            <img src={catHead} alt="" className="w-20 h-20 object-contain" />
             <p className="text-sm text-muted-foreground max-w-xs">
               {t("friends.importExplainer", "We check your contacts against people already on SHAKE.")}
             </p>
