@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Calendar, Instagram, Linkedin, Twitter, Flag, Video, Ban, Send } from "lucide-react";
+import { User, Calendar, Instagram, Linkedin, Twitter, Flag, Video, Ban, Send, UserPlus, Check, X } from "lucide-react";
+import { useFriends } from "@/hooks/useFriends";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -72,7 +73,44 @@ export function UserProfileDialog({
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
   const { t } = useTranslation();
   const navigate = useNavigate();
-  
+  const { getFriendshipStatus, sendFriendRequest, cancelFriendRequest, acceptFriendRequest } = useFriends();
+  const [friendship, setFriendship] = useState<{ status: "pending" | "accepted" | "declined"; direction: "sent" | "received"; friendshipId: string } | null>(null);
+  const [isFriendActionPending, setIsFriendActionPending] = useState(false);
+
+  useEffect(() => {
+    if (!open || !userId || user?.id === userId) {
+      setFriendship(null);
+      return;
+    }
+    getFriendshipStatus(userId).then(setFriendship);
+  }, [open, userId, user?.id, getFriendshipStatus]);
+
+  const handleAddFriend = async () => {
+    setIsFriendActionPending(true);
+    const success = await sendFriendRequest(userId);
+    if (success) {
+      const updated = await getFriendshipStatus(userId);
+      setFriendship(updated);
+    }
+    setIsFriendActionPending(false);
+  };
+
+  const handleCancelFriendRequest = async () => {
+    if (!friendship) return;
+    setIsFriendActionPending(true);
+    await cancelFriendRequest(friendship.friendshipId);
+    setFriendship(null);
+    setIsFriendActionPending(false);
+  };
+
+  const handleAcceptFriendRequest = async () => {
+    if (!friendship) return;
+    setIsFriendActionPending(true);
+    const success = await acceptFriendRequest(friendship.friendshipId);
+    if (success) setFriendship({ ...friendship, status: "accepted" });
+    setIsFriendActionPending(false);
+  };
+
   const swipeHandlers = useSwipeToClose({
     onClose: () => onOpenChange(false),
     threshold: 80,
@@ -271,9 +309,9 @@ export function UserProfileDialog({
               </div>
             )}
 
-            {/* Direct message button */}
+            {/* Direct message + Add Friend buttons */}
             {!isOwnProfile && (
-              <div className="mt-4 flex justify-center">
+              <div className="mt-4 flex justify-center items-center gap-3">
                 <button
                   onClick={() => { onOpenChange(false); navigate("/", { state: { activeTab: "chat", other_user_id: userId } }); }}
                   className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
@@ -281,6 +319,43 @@ export function UserProfileDialog({
                 >
                   <Send className="w-4 h-4 text-primary" />
                 </button>
+
+                {!friendship && (
+                  <button
+                    onClick={handleAddFriend}
+                    disabled={isFriendActionPending}
+                    className="h-10 px-4 rounded-full bg-gray-900 hover:bg-gray-800 transition-colors flex items-center gap-1.5 text-white text-sm font-medium disabled:opacity-50"
+                  >
+                    {isFriendActionPending ? <LoadingSpinner size="sm" /> : <UserPlus className="w-4 h-4" />}
+                    {t("friends.add", "Add")}
+                  </button>
+                )}
+                {friendship?.status === "pending" && friendship.direction === "sent" && (
+                  <button
+                    onClick={handleCancelFriendRequest}
+                    disabled={isFriendActionPending}
+                    className="h-10 px-4 rounded-full bg-muted hover:bg-muted/70 transition-colors flex items-center gap-1.5 text-muted-foreground text-sm font-medium disabled:opacity-50"
+                  >
+                    <X className="w-4 h-4" />
+                    {t("friends.requested", "Requested")}
+                  </button>
+                )}
+                {friendship?.status === "pending" && friendship.direction === "received" && (
+                  <button
+                    onClick={handleAcceptFriendRequest}
+                    disabled={isFriendActionPending}
+                    className="h-10 px-4 rounded-full bg-primary hover:bg-primary/90 transition-colors flex items-center gap-1.5 text-primary-foreground text-sm font-medium disabled:opacity-50"
+                  >
+                    {isFriendActionPending ? <LoadingSpinner size="sm" /> : <Check className="w-4 h-4" />}
+                    {t("friends.accept", "Accept")}
+                  </button>
+                )}
+                {friendship?.status === "accepted" && (
+                  <span className="h-10 px-4 rounded-full bg-muted flex items-center gap-1.5 text-muted-foreground text-sm font-medium">
+                    <Check className="w-4 h-4" />
+                    {t("friends.friends", "Friends")}
+                  </span>
+                )}
               </div>
             )}
 

@@ -126,6 +126,70 @@ export function useFriends() {
     }
   }, []);
 
+  /** Looks up the current user's friendship state with one specific other user. */
+  const getFriendshipStatus = useCallback(async (
+    otherUserId: string
+  ): Promise<{ status: "pending" | "accepted" | "declined"; direction: "sent" | "received"; friendshipId: string } | null> => {
+    if (!user) return null;
+    const { data } = await supabase
+      .from("friendships")
+      .select("id, requester_id, addressee_id, status")
+      .or(`and(requester_id.eq.${user.id},addressee_id.eq.${otherUserId}),and(requester_id.eq.${otherUserId},addressee_id.eq.${user.id})`)
+      .maybeSingle();
+    if (!data) return null;
+    return {
+      status: data.status as "pending" | "accepted" | "declined",
+      direction: data.requester_id === user.id ? "sent" : "received",
+      friendshipId: data.id,
+    };
+  }, [user]);
+
+  /** Looks up users by display name, with each result's friendship status attached. */
+  const searchUsersByName = useCallback(async (query: string): Promise<ContactMatch[]> => {
+    if (!user || !query.trim()) return [];
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, name, avatar_url")
+      .ilike("name", `%${query.trim()}%`)
+      .neq("user_id", user.id)
+      .limit(20);
+
+    const results = profiles ?? [];
+    if (results.length === 0) return [];
+
+    const ids = results.map((p) => p.user_id);
+    const { data: friendshipRows } = await supabase
+      .from("friendships")
+      .select("id, requester_id, addressee_id, status")
+      .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+      .in("requester_id", [user.id, ...ids])
+      .in("addressee_id", [user.id, ...ids]);
+
+    const friendshipMap = new Map<string, { id: string; status: string; direction: "sent" | "received" }>();
+    (friendshipRows ?? []).forEach((f) => {
+      const otherId = f.requester_id === user.id ? f.addressee_id : f.requester_id;
+      if (!ids.includes(otherId)) return;
+      friendshipMap.set(otherId, {
+        id: f.id,
+        status: f.status,
+        direction: f.requester_id === user.id ? "sent" : "received",
+      });
+    });
+
+    return results.map((p) => {
+      const f = friendshipMap.get(p.user_id);
+      return {
+        user_id: p.user_id,
+        name: p.name,
+        avatar_url: p.avatar_url,
+        friendship_status: (f?.status as ContactMatch["friendship_status"]) ?? null,
+        friendship_direction: f?.direction ?? null,
+        friendship_id: f?.id ?? null,
+      };
+    });
+  }, [user]);
+
   const sendFriendRequest = useCallback(async (addresseeId: string): Promise<boolean> => {
     if (!user) return false;
     const { error } = await supabase.from("friendships").insert({ requester_id: user.id, addressee_id: addresseeId });
@@ -195,6 +259,8 @@ export function useFriends() {
     pendingReceived,
     isLoadingFriends,
     importContactsAndMatch,
+    searchUsersByName,
+    getFriendshipStatus,
     sendFriendRequest,
     sendFriendRequests,
     cancelFriendRequest,
