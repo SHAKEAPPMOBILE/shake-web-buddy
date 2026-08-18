@@ -15,15 +15,24 @@ interface FriendsImportDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** One result row shared by both the contacts-match list and the name-search list. */
+/**
+ * One result row shared by both the contacts-match list and the name-search
+ * list. `leading` is a fixed-width slot (checkbox or spacer) — it must stay
+ * the same width whether or not a request has been sent, otherwise the
+ * avatar/name visibly jump sideways when a status changes. Anything for the
+ * "not yet a friend" state belongs in `notRequestedAction` (trailing),
+ * matching where every other status already renders.
+ */
 function MatchRow({
   match,
   leading,
+  notRequestedAction,
   onCancel,
   onAccept,
 }: {
   match: ContactMatch;
   leading: React.ReactNode;
+  notRequestedAction?: React.ReactNode;
   onCancel: (friendshipId: string) => void;
   onAccept: (friendshipId: string) => void;
 }) {
@@ -39,6 +48,7 @@ function MatchRow({
         <p className="text-sm font-medium truncate">{match.name || t("friends.someone", "Someone")}</p>
       </div>
 
+      {!match.friendship_status && notRequestedAction}
       {match.friendship_status === "accepted" && (
         <span className="text-xs text-muted-foreground shrink-0">{t("friends.friends", "Friends")}</span>
       )}
@@ -46,7 +56,7 @@ function MatchRow({
         <button
           type="button"
           onClick={() => match.friendship_id && onCancel(match.friendship_id)}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive shrink-0"
+          className="flex items-center gap-1 text-xs text-muted-foreground shrink-0"
         >
           {t("friends.requested", "Requested")} <X className="w-3.5 h-3.5" />
         </button>
@@ -248,19 +258,16 @@ export function FriendsImportDialog({ open, onOpenChange }: FriendsImportDialogP
                     match={m}
                     onCancel={cancelFriendRequest}
                     onAccept={acceptFriendRequest}
-                    leading={
-                      !m.friendship_status ? (
-                        <button
-                          type="button"
-                          onClick={() => handleAddOne(m.user_id)}
-                          disabled={sendingIds.has(m.user_id)}
-                          className="text-xs font-medium text-primary shrink-0 order-last ml-auto disabled:opacity-50"
-                        >
-                          {sendingIds.has(m.user_id) ? <LoadingSpinner size="sm" /> : t("friends.add", "Add")}
-                        </button>
-                      ) : (
-                        <div className="w-4 shrink-0" />
-                      )
+                    leading={<div className="w-4 shrink-0" />}
+                    notRequestedAction={
+                      <button
+                        type="button"
+                        onClick={() => handleAddOne(m.user_id)}
+                        disabled={sendingIds.has(m.user_id)}
+                        className="text-xs font-medium text-primary shrink-0 disabled:opacity-50"
+                      >
+                        {sendingIds.has(m.user_id) ? <LoadingSpinner size="sm" /> : t("friends.add", "Add")}
+                      </button>
                     }
                   />
                 ))}
