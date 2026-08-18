@@ -3,6 +3,7 @@ import { Home, MapPin, MessageSquare, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTotalUnreadChats } from "@/hooks/useTotalUnreadChats";
+import { useFriends } from "@/hooks/useFriends";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
@@ -18,6 +19,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const { t } = useTranslation();
   const { user } = useAuth();
   const { totalUnread } = useTotalUnreadChats();
+  const { pendingReceived } = useFriends();
   // Always use the same blue as the activity ring (border-blue-400 = #60a5fa)
   const shakeButtonStyle = { background: "#60a5fa" };
 
@@ -131,6 +133,12 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                     </span>
                   )}
                 </div>
+                {pendingReceived.length > 0 && (
+                  <span
+                    className="absolute top-0 right-1 w-2.5 h-2.5 rounded-full bg-red-600 shadow-sm ring-2 ring-card"
+                    aria-label="Pending friend requests"
+                  />
+                )}
                 {/* Invisible spacer keeps this button the same height as icon+label tabs */}
                 <span className="text-[10px] invisible select-none" aria-hidden>·</span>
               </button>

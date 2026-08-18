@@ -3,6 +3,7 @@ import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle, Users } from "lucide-react";
 import { ManageFriendsDialog } from "@/components/ManageFriendsDialog";
+import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,6 +63,7 @@ const FACE_ID_FEATURE_ENABLED = false;
 export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionOpened }: ProfileTabProps) {
   const { t } = useTranslation();
   const { user, isPremium, isManualOverride, signOut } = useAuth();
+  const { pendingReceived } = useFriends();
   const isNative = Capacitor.isNativePlatform();
   // Teal/blue gradient matching the nav + button, with a 1.5s teal sweep on open.
   const { style: profileIconGradientStyle } = useSettlingGradient("profile", {
@@ -504,8 +506,14 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => setShowManageFriends(true)}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="relative w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
                 <Users className="w-5 h-5 text-white" />
+                {pendingReceived.length > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-600 shadow-sm ring-2 ring-white"
+                    aria-label="Pending friend requests"
+                  />
+                )}
               </div>
               <div className="flex-1">
                 <span className="text-sm font-medium text-gray-900">{t('shakers.manageFriends', 'My Friends')}</span>
