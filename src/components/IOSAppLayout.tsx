@@ -277,9 +277,11 @@ export function IOSAppLayout() {
   // Initialize push notifications for private messages
   usePrivateMessageNotifications();
 
-  // Check for app updates and request in-app review on 3rd launch
+  // Check for app updates and request in-app review on 3rd launch —
+  // only once the user is signed in and past onboarding (Guideline 5.6.3:
+  // don't prompt on first launch or during onboarding).
   const { needsUpdate } = useAppUpdateCheck();
-  useReviewPrompt();
+  useReviewPrompt(!!user && !isCheckingOnboarding && !showOnboarding);
 
   // Check if user needs to complete profile (name and avatar required for auth redirect)
   useEffect(() => {

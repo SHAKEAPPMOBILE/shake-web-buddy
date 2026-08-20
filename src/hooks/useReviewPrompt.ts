@@ -7,12 +7,21 @@ const REVIEW_REQUESTED_KEY = "shake_review_requested";
 const TARGET_LAUNCH = 3;
 
 /**
- * Increments the app-open counter on every mount and requests an in-app
- * review on the 3rd launch. Never requests more than once (guarded by
+ * Increments the app-open counter and requests an in-app review on the 3rd
+ * ELIGIBLE launch. Never requests more than once (guarded by
  * shake_review_requested). OS decides whether to actually show the dialog.
+ *
+ * `enabled` must be false while the user is logged out or still going
+ * through onboarding — Apple rejected an earlier build (Guideline 5.6.3)
+ * for prompting before the user had a chance to see the app's value.
+ * Launches during that window must not count at all, not just skip the
+ * prompt, otherwise a user who backgrounds the app a few times mid-signup
+ * (e.g. to read a verification code) can still hit the 3rd-launch trigger
+ * before onboarding is even done.
  */
-export function useReviewPrompt() {
+export function useReviewPrompt(enabled: boolean) {
   useEffect(() => {
+    if (!enabled) return;
     // Only on native — the plugin stubs throw on web
     if (!Capacitor.isNativePlatform()) return;
 
@@ -36,5 +45,5 @@ export function useReviewPrompt() {
       // localStorage or plugin unavailable — silently skip
       console.warn("[ReviewPrompt] error", err);
     }
-  }, []);
+  }, [enabled]);
 }
