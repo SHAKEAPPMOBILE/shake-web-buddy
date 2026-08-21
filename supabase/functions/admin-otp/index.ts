@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail } from "../_shared/postmark-email-service.ts";
 
 const corsHeaders = {
@@ -11,9 +12,6 @@ const ALLOWED_ADMIN_EMAILS = [
   "leoneltelesmeneses@gmail.com",
   "contact@shakeapp.today"
 ];
-
-// Store OTPs in memory (they expire after 10 minutes)
-const otpStore: Map<string, { code: string; expiresAt: number }> = new Map();
 
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -30,6 +28,12 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
     const body = await req.json();
     const { action, email, otp } = body;
 
@@ -55,10 +59,23 @@ serve(async (req) => {
 
       // Generate OTP
       const code = generateOTP();
-      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-      // Store OTP
-      otpStore.set(normalizedEmail, { code, expiresAt });
+      // Drop any previous unexpired code for this email, then store the new one.
+      // Durable (DB-backed) rather than in-memory — edge functions can route
+      // send-otp and verify-otp to two different isolates.
+      await supabaseAdmin.from("admin_otp_codes").delete().eq("email", normalizedEmail);
+      const { error: insertError } = await supabaseAdmin
+        .from("admin_otp_codes")
+        .insert({ email: normalizedEmail, code, expires_at: expiresAt.toISOString() });
+
+      if (insertError) {
+        console.error("[ADMIN-OTP] Failed to store OTP:", insertError);
+        return new Response(
+          JSON.stringify({ error: "Failed to generate verification code" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       // Send OTP via Postmark
       const postmarkToken = Deno.env.get("POSTMARK_SERVER_TOKEN");
@@ -124,7 +141,17 @@ serve(async (req) => {
       }
 
       const normalizedEmail = email.toLowerCase().trim();
-      const storedOtp = otpStore.get(normalizedEmail);
+      const { data: storedOtp, error: fetchError } = await supabaseAdmin
+        .from("admin_otp_codes")
+        .select("code, expires_at")
+        .eq("email", normalizedEmail)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error("[ADMIN-OTP] Failed to fetch OTP:", fetchError);
+      }
 
       if (!storedOtp) {
         return new Response(
@@ -133,8 +160,8 @@ serve(async (req) => {
         );
       }
 
-      if (Date.now() > storedOtp.expiresAt) {
-        otpStore.delete(normalizedEmail);
+      if (Date.now() > new Date(storedOtp.expires_at).getTime()) {
+        await supabaseAdmin.from("admin_otp_codes").delete().eq("email", normalizedEmail);
         return new Response(
           JSON.stringify({ error: "Verification code expired. Please request a new one." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -149,7 +176,7 @@ serve(async (req) => {
       }
 
       // OTP verified - clear it
-      otpStore.delete(normalizedEmail);
+      await supabaseAdmin.from("admin_otp_codes").delete().eq("email", normalizedEmail);
 
       // Return the admin password
       const adminPassword = Deno.env.get("ADMIN_SEED_PASSWORD");
