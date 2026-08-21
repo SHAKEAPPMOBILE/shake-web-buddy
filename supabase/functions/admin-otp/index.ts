@@ -10,7 +10,7 @@ const corsHeaders = {
 // Allowed admin emails for password recovery
 const ALLOWED_ADMIN_EMAILS = [
   "leoneltelesmeneses@gmail.com",
-  "contact@shakeapp.today"
+  "ryanelliott2993@gmail.com"
 ];
 
 function generateOTP(): string {
