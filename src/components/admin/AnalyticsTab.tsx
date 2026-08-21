@@ -46,7 +46,17 @@ interface CheckInStats {
   recent_check_ins: CheckInRecord[];
 }
 
+interface CityLeaderboardRow {
+  city: string;
+  joins_total: number;
+  joins_7d: number;
+  plans_created_total: number;
+  plans_created_7d: number;
+  check_ins_total: number;
+}
+
 interface GrowthStats {
+  cities: CityLeaderboardRow[];
   signups_last_7_days: Array<{ day: string; count: number }>;
   total_referrals: number;
   referrals_last_7_days: number;
@@ -237,6 +247,45 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Cities — Ranked by Plan Joins
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.growth.cities.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No city activity recorded yet</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>City</TableHead>
+                      <TableHead className="text-right">Joins (7d)</TableHead>
+                      <TableHead className="text-right">Joins (all-time)</TableHead>
+                      <TableHead className="text-right">Plans Created (7d)</TableHead>
+                      <TableHead className="text-right">Plans Created (all-time)</TableHead>
+                      <TableHead className="text-right">Check-ins (all-time)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.growth.cities.map((row) => (
+                      <TableRow key={row.city}>
+                        <TableCell className="font-medium">{row.city}</TableCell>
+                        <TableCell className="text-right">{row.joins_7d}</TableCell>
+                        <TableCell className="text-right">{row.joins_total}</TableCell>
+                        <TableCell className="text-right">{row.plans_created_7d}</TableCell>
+                        <TableCell className="text-right">{row.plans_created_total}</TableCell>
+                        <TableCell className="text-right">{row.check_ins_total}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>

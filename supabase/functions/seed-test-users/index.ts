@@ -1010,14 +1010,37 @@ Deno.serve(async (req) => {
       // 3. Activity statistics
       const { data: activities, count: totalActivities } = await supabaseAdmin
         .from("user_activities")
-        .select("city, activity_type", { count: "exact" });
-      
+        .select("city, activity_type, created_at", { count: "exact" });
+
       const activitiesByCity: Record<string, number> = {};
       const activitiesByType: Record<string, number> = {};
+      const plansCreated7dByCity: Record<string, number> = {};
+      const sevenDaysAgoIsoForCities = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       (activities || []).forEach(a => {
         const city = normalizeCity(a.city);
-        if (city) activitiesByCity[city] = (activitiesByCity[city] || 0) + 1;
+        if (city) {
+          activitiesByCity[city] = (activitiesByCity[city] || 0) + 1;
+          if (a.created_at >= sevenDaysAgoIsoForCities) {
+            plansCreated7dByCity[city] = (plansCreated7dByCity[city] || 0) + 1;
+          }
+        }
         activitiesByType[a.activity_type] = (activitiesByType[a.activity_type] || 0) + 1;
+      });
+
+      // Plan JOINS by city — the actual "where is Shake active" signal,
+      // distinct from where plans were merely created.
+      const { data: joinRowsForCities } = await supabaseAdmin
+        .from("activity_joins")
+        .select("city, joined_at");
+      const joinsTotalByCity: Record<string, number> = {};
+      const joins7dByCity: Record<string, number> = {};
+      (joinRowsForCities || []).forEach(j => {
+        const city = normalizeCity(j.city);
+        if (!city) return;
+        joinsTotalByCity[city] = (joinsTotalByCity[city] || 0) + 1;
+        if (j.joined_at >= sevenDaysAgoIsoForCities) {
+          joins7dByCity[city] = (joins7dByCity[city] || 0) + 1;
+        }
       });
       
       // 4. Check-in statistics
@@ -1128,8 +1151,27 @@ Deno.serve(async (req) => {
         .gte("created_at", sevenDaysAgoIso);
       (recentPlansCreated || []).forEach((r) => activeUserIds.add(r.user_id));
 
+      // Cities leaderboard — ranked by actual plan JOINS (real engagement),
+      // not just where plans were created.
+      const allCitiesSeen = new Set<string>([
+        ...Object.keys(joinsTotalByCity),
+        ...Object.keys(activitiesByCity),
+        ...Object.keys(checkInsByCity),
+      ]);
+      const citiesLeaderboard = Array.from(allCitiesSeen)
+        .map((city) => ({
+          city,
+          joins_total: joinsTotalByCity[city] || 0,
+          joins_7d: joins7dByCity[city] || 0,
+          plans_created_total: activitiesByCity[city] || 0,
+          plans_created_7d: plansCreated7dByCity[city] || 0,
+          check_ins_total: checkInsByCity[city] || 0,
+        }))
+        .sort((a, b) => b.joins_total - a.joins_total || b.plans_created_total - a.plans_created_total);
+
       const analyticsData = {
         growth: {
+          cities: citiesLeaderboard,
           signups_last_7_days: signupsLast7Days,
           total_referrals: totalReferrals || 0,
           referrals_last_7_days: referrals7d || 0,
