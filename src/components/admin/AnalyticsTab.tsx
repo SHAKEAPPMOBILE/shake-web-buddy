@@ -51,7 +51,7 @@ type WindowKey = "7d" | "30d" | "all";
 const WINDOW_OPTIONS: Array<{ key: WindowKey; label: string }> = [
   { key: "7d", label: "Last 7 days" },
   { key: "30d", label: "Last 30 days" },
-  { key: "all", label: "All time" },
+  { key: "all", label: "All time (since Aug 21, 2026)" },
 ];
 
 interface WindowBucket {
