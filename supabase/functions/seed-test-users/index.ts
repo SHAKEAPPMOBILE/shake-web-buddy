@@ -1031,16 +1031,21 @@ Deno.serve(async (req) => {
       // distinct from where plans were merely created.
       const { data: joinRowsForCities } = await supabaseAdmin
         .from("activity_joins")
-        .select("city, joined_at");
+        .select("city, activity_type, joined_at");
       const joinsTotalByCity: Record<string, number> = {};
       const joins7dByCity: Record<string, number> = {};
+      const joinsTotalByType: Record<string, number> = {};
+      const joins7dByType: Record<string, number> = {};
       (joinRowsForCities || []).forEach(j => {
+        const isRecent = j.joined_at >= sevenDaysAgoIsoForCities;
+        const type = j.activity_type || "unknown";
+        joinsTotalByType[type] = (joinsTotalByType[type] || 0) + 1;
+        if (isRecent) joins7dByType[type] = (joins7dByType[type] || 0) + 1;
+
         const city = normalizeCity(j.city);
         if (!city) return;
         joinsTotalByCity[city] = (joinsTotalByCity[city] || 0) + 1;
-        if (j.joined_at >= sevenDaysAgoIsoForCities) {
-          joins7dByCity[city] = (joins7dByCity[city] || 0) + 1;
-        }
+        if (isRecent) joins7dByCity[city] = (joins7dByCity[city] || 0) + 1;
       });
       
       // 4. Check-in statistics
@@ -1169,9 +1174,18 @@ Deno.serve(async (req) => {
         }))
         .sort((a, b) => b.joins_total - a.joins_total || b.plans_created_total - a.plans_created_total);
 
+      const joinsByType = Array.from(new Set([...Object.keys(joinsTotalByType), ...Object.keys(joins7dByType)]))
+        .map((type) => ({
+          type,
+          joins_total: joinsTotalByType[type] || 0,
+          joins_7d: joins7dByType[type] || 0,
+        }))
+        .sort((a, b) => b.joins_total - a.joins_total);
+
       const analyticsData = {
         growth: {
           cities: citiesLeaderboard,
+          joins_by_type: joinsByType,
           signups_last_7_days: signupsLast7Days,
           total_referrals: totalReferrals || 0,
           referrals_last_7_days: referrals7d || 0,

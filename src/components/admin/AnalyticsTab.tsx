@@ -55,8 +55,15 @@ interface CityLeaderboardRow {
   check_ins_total: number;
 }
 
+interface JoinsByTypeRow {
+  type: string;
+  joins_total: number;
+  joins_7d: number;
+}
+
 interface GrowthStats {
   cities: CityLeaderboardRow[];
+  joins_by_type: JoinsByTypeRow[];
   signups_last_7_days: Array<{ day: string; count: number }>;
   total_referrals: number;
   referrals_last_7_days: number;
@@ -279,6 +286,39 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
                         <TableCell className="text-right">{row.plans_created_7d}</TableCell>
                         <TableCell className="text-right">{row.plans_created_total}</TableCell>
                         <TableCell className="text-right">{row.check_ins_total}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Joins by Activity Type
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.growth.joins_by_type.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No joins recorded yet</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Joins (7d)</TableHead>
+                      <TableHead className="text-right">Joins (all-time)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.growth.joins_by_type.map((row) => (
+                      <TableRow key={row.type}>
+                        <TableCell className="font-medium capitalize">{row.type}</TableCell>
+                        <TableCell className="text-right">{row.joins_7d}</TableCell>
+                        <TableCell className="text-right">{row.joins_total}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
