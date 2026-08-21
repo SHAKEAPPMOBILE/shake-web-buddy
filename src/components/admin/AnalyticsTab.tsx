@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, MessageSquare, Users, Calendar, Activity, RefreshCw } from "lucide-react";
+import { Loader2, MessageSquare, Users, Calendar, Activity, RefreshCw, TrendingUp, Link2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDailyTheme } from "@/hooks/useDailyTheme";
@@ -46,7 +46,18 @@ interface CheckInStats {
   recent_check_ins: CheckInRecord[];
 }
 
+interface GrowthStats {
+  signups_last_7_days: Array<{ day: string; count: number }>;
+  total_referrals: number;
+  referrals_last_7_days: number;
+  total_referral_points: number;
+  total_referral_clicks: number;
+  referral_clicks_last_7_days: number;
+  active_users_last_7_days: number;
+}
+
 interface AnalyticsData {
+  growth: GrowthStats;
   messages: MessageStats;
   users: UserStats;
   activities: ActivityStats;
@@ -118,7 +129,19 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card className="bg-gradient-to-br from-rose-500 to-rose-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-8 h-8 opacity-80" />
+              <div>
+                <p className="text-2xl font-bold">{data.growth.active_users_last_7_days.toLocaleString()}</p>
+                <p className="text-sm opacity-90">Active Users (7d)</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className={`bg-gradient-to-br ${theme.gradient} text-white`}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -169,13 +192,83 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
       </div>
 
       {/* Detailed Analytics */}
-      <Tabs defaultValue="messages" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+      <Tabs defaultValue="growth" className="w-full">
+        <TabsList className="grid w-full grid-cols-5 max-w-3xl">
+          <TabsTrigger value="growth">Growth</TabsTrigger>
           <TabsTrigger value="messages">Messages</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
           <TabsTrigger value="checkins">Check-ins</TabsTrigger>
         </TabsList>
+
+        {/* Growth Tab — campaign baseline metrics, live */}
+        <TabsContent value="growth" className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Referrals (7d / all-time)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">
+                  {data.growth.referrals_last_7_days.toLocaleString()}
+                  <span className="text-base font-normal text-muted-foreground"> / {data.growth.total_referrals.toLocaleString()}</span>
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Referral Points Awarded</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">{data.growth.total_referral_points.toLocaleString()}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Link2 className="w-3.5 h-3.5" /> Referral Clicks (7d / all-time)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">
+                  {data.growth.referral_clicks_last_7_days.toLocaleString()}
+                  <span className="text-base font-normal text-muted-foreground"> / {data.growth.total_referral_clicks.toLocaleString()}</span>
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Signups — Last 7 Days
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.growth.signups_last_7_days.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No signups in the last 7 days</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Day</TableHead>
+                      <TableHead className="text-right">Signups</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.growth.signups_last_7_days.map((row) => (
+                      <TableRow key={row.day}>
+                        <TableCell>{row.day}</TableCell>
+                        <TableCell className="text-right">{row.count}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Messages Tab */}
         <TabsContent value="messages" className="mt-4 space-y-4">

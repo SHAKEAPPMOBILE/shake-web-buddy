@@ -1058,7 +1058,86 @@ Deno.serve(async (req) => {
         user_name: checkInProfileMap.get(c.user_id)?.name || null,
       }));
       
+      // 5. Growth statistics (signups by day, referrals, referral clicks, active users)
+      const sevenDaysAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const signupsByDay: Record<string, number> = {};
+      for (let i = 6; i >= 0; i--) {
+        const day = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        signupsByDay[day] = 0;
+      }
+      (usersData?.users || []).forEach((u) => {
+        if (!u.created_at || u.created_at < sevenDaysAgoIso) return;
+        const day = u.created_at.slice(0, 10); // YYYY-MM-DD
+        if (day in signupsByDay) signupsByDay[day] += 1;
+      });
+      const signupsLast7Days = Object.entries(signupsByDay)
+        .map(([day, count]) => ({ day, count }))
+        .sort((a, b) => a.day.localeCompare(b.day));
+
+      const { count: totalReferrals } = await supabaseAdmin
+        .from("referrals")
+        .select("*", { count: "exact", head: true });
+      const { count: referrals7d } = await supabaseAdmin
+        .from("referrals")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", sevenDaysAgoIso);
+      const { data: referralPointsRows } = await supabaseAdmin
+        .from("referrals")
+        .select("points_awarded");
+      const totalReferralPoints = (referralPointsRows || []).reduce((sum, r) => sum + (r.points_awarded || 0), 0);
+
+      const { count: totalReferralClicks } = await supabaseAdmin
+        .from("referral_clicks")
+        .select("*", { count: "exact", head: true });
+      const { count: referralClicks7d } = await supabaseAdmin
+        .from("referral_clicks")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", sevenDaysAgoIso);
+
+      // Active users: distinct user touching an activity_join, a message, or
+      // creating a plan in the last 7 days. Deliberately excludes check_ins.
+      const activeUserIds = new Set<string>();
+      const { data: recentJoins } = await supabaseAdmin
+        .from("activity_joins")
+        .select("user_id")
+        .gte("joined_at", sevenDaysAgoIso);
+      (recentJoins || []).forEach((r) => activeUserIds.add(r.user_id));
+
+      const { data: recentActivityMsgs } = await supabaseAdmin
+        .from("activity_messages")
+        .select("user_id")
+        .gte("created_at", sevenDaysAgoIso);
+      (recentActivityMsgs || []).forEach((r) => activeUserIds.add(r.user_id));
+
+      const { data: recentPlanMsgs } = await supabaseAdmin
+        .from("plan_messages")
+        .select("user_id")
+        .gte("created_at", sevenDaysAgoIso);
+      (recentPlanMsgs || []).forEach((r) => activeUserIds.add(r.user_id));
+
+      const { data: recentPrivateMsgs } = await supabaseAdmin
+        .from("private_messages")
+        .select("sender_id")
+        .gte("created_at", sevenDaysAgoIso);
+      (recentPrivateMsgs || []).forEach((r) => activeUserIds.add(r.sender_id));
+
+      const { data: recentPlansCreated } = await supabaseAdmin
+        .from("user_activities")
+        .select("user_id")
+        .gte("created_at", sevenDaysAgoIso);
+      (recentPlansCreated || []).forEach((r) => activeUserIds.add(r.user_id));
+
       const analyticsData = {
+        growth: {
+          signups_last_7_days: signupsLast7Days,
+          total_referrals: totalReferrals || 0,
+          referrals_last_7_days: referrals7d || 0,
+          total_referral_points: totalReferralPoints,
+          total_referral_clicks: totalReferralClicks || 0,
+          referral_clicks_last_7_days: referralClicks7d || 0,
+          active_users_last_7_days: activeUserIds.size,
+        },
         messages: {
           total_messages: (activityMsgCount || 0) + (planMsgCount || 0) + (privateMsgCount || 0),
           activity_messages: activityMsgCount || 0,
