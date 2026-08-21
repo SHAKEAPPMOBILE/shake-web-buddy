@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, MessageSquare, Users, Calendar, Activity, RefreshCw, TrendingUp, Link2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDailyTheme } from "@/hooks/useDailyTheme";
 
 interface AnalyticsTabProps {
@@ -46,24 +47,28 @@ interface CheckInStats {
   recent_check_ins: CheckInRecord[];
 }
 
-interface CityLeaderboardRow {
-  city: string;
-  joins_total: number;
-  joins_7d: number;
-  plans_created_total: number;
-  plans_created_7d: number;
-  check_ins_total: number;
+type WindowKey = "7d" | "30d" | "all";
+const WINDOW_OPTIONS: Array<{ key: WindowKey; label: string }> = [
+  { key: "7d", label: "Last 7 days" },
+  { key: "30d", label: "Last 30 days" },
+  { key: "all", label: "All time" },
+];
+
+interface WindowBucket {
+  dinner: number;
+  brunch: number;
+  joins: number;
+  plans_created: number;
+  check_ins: number;
 }
 
-interface JoinsByTypeRow {
-  type: string;
-  joins_total: number;
-  joins_7d: number;
+interface CityLeaderboardRow extends Record<WindowKey, WindowBucket> {
+  city: string;
 }
 
 interface GrowthStats {
+  activity_summary: Record<WindowKey, WindowBucket>;
   cities: CityLeaderboardRow[];
-  joins_by_type: JoinsByTypeRow[];
   signups_last_7_days: Array<{ day: string; count: number }>;
   total_referrals: number;
   referrals_last_7_days: number;
@@ -84,6 +89,7 @@ interface AnalyticsData {
 export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
   const theme = useDailyTheme();
   const [isLoading, setIsLoading] = useState(true);
+  const [activityWindow, setActivityWindow] = useState<WindowKey>("7d");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -159,7 +165,7 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
           </CardContent>
         </Card>
 
-        <Card className={`bg-gradient-to-br ${theme.gradient} text-white`}>
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <MessageSquare className="w-8 h-8 opacity-80" />
@@ -257,10 +263,69 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Cities — Ranked by Plan Joins
-              </CardTitle>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Activity Summary
+                </CardTitle>
+                <Select value={activityWindow} onValueChange={(v) => setActivityWindow(v as WindowKey)}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WINDOW_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.key} value={opt.key}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Dinner</TableCell>
+                    <TableCell className="text-right text-2xl font-bold">{data.growth.activity_summary[activityWindow].dinner.toLocaleString()}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Brunch</TableCell>
+                    <TableCell className="text-right text-2xl font-bold">{data.growth.activity_summary[activityWindow].brunch.toLocaleString()}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Joins</TableCell>
+                    <TableCell className="text-right text-2xl font-bold">{data.growth.activity_summary[activityWindow].joins.toLocaleString()}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Plans Created</TableCell>
+                    <TableCell className="text-right text-2xl font-bold">{data.growth.activity_summary[activityWindow].plans_created.toLocaleString()}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Check-ins</TableCell>
+                    <TableCell className="text-right text-2xl font-bold">{data.growth.activity_summary[activityWindow].check_ins.toLocaleString()}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Cities — Ranked by Plan Joins
+                </CardTitle>
+                <Select value={activityWindow} onValueChange={(v) => setActivityWindow(v as WindowKey)}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WINDOW_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.key} value={opt.key}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               {data.growth.cities.length === 0 ? (
@@ -270,57 +335,29 @@ export function AnalyticsTab({ adminPassword }: AnalyticsTabProps) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>City</TableHead>
-                      <TableHead className="text-right">Joins (7d)</TableHead>
-                      <TableHead className="text-right">Joins (all-time)</TableHead>
-                      <TableHead className="text-right">Plans Created (7d)</TableHead>
-                      <TableHead className="text-right">Plans Created (all-time)</TableHead>
-                      <TableHead className="text-right">Check-ins (all-time)</TableHead>
+                      <TableHead className="text-right">Dinner</TableHead>
+                      <TableHead className="text-right">Brunch</TableHead>
+                      <TableHead className="text-right">Joins</TableHead>
+                      <TableHead className="text-right">Plans Created</TableHead>
+                      <TableHead className="text-right">Check-ins</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.growth.cities.map((row) => (
-                      <TableRow key={row.city}>
-                        <TableCell className="font-medium">{row.city}</TableCell>
-                        <TableCell className="text-right">{row.joins_7d}</TableCell>
-                        <TableCell className="text-right">{row.joins_total}</TableCell>
-                        <TableCell className="text-right">{row.plans_created_7d}</TableCell>
-                        <TableCell className="text-right">{row.plans_created_total}</TableCell>
-                        <TableCell className="text-right">{row.check_ins_total}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Joins by Activity Type
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {data.growth.joins_by_type.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No joins recorded yet</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Joins (7d)</TableHead>
-                      <TableHead className="text-right">Joins (all-time)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.growth.joins_by_type.map((row) => (
-                      <TableRow key={row.type}>
-                        <TableCell className="font-medium capitalize">{row.type}</TableCell>
-                        <TableCell className="text-right">{row.joins_7d}</TableCell>
-                        <TableCell className="text-right">{row.joins_total}</TableCell>
-                      </TableRow>
-                    ))}
+                    {[...data.growth.cities]
+                      .sort((a, b) =>
+                        b[activityWindow].joins - a[activityWindow].joins ||
+                        b[activityWindow].plans_created - a[activityWindow].plans_created
+                      )
+                      .map((row) => (
+                        <TableRow key={row.city}>
+                          <TableCell className="font-medium">{row.city}</TableCell>
+                          <TableCell className="text-right">{row[activityWindow].dinner}</TableCell>
+                          <TableCell className="text-right">{row[activityWindow].brunch}</TableCell>
+                          <TableCell className="text-right">{row[activityWindow].joins}</TableCell>
+                          <TableCell className="text-right">{row[activityWindow].plans_created}</TableCell>
+                          <TableCell className="text-right">{row[activityWindow].check_ins}</TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               )}

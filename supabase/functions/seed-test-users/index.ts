@@ -1014,45 +1014,68 @@ Deno.serve(async (req) => {
 
       const activitiesByCity: Record<string, number> = {};
       const activitiesByType: Record<string, number> = {};
-      const plansCreated7dByCity: Record<string, number> = {};
-      const sevenDaysAgoIsoForCities = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       (activities || []).forEach(a => {
         const city = normalizeCity(a.city);
-        if (city) {
-          activitiesByCity[city] = (activitiesByCity[city] || 0) + 1;
-          if (a.created_at >= sevenDaysAgoIsoForCities) {
-            plansCreated7dByCity[city] = (plansCreated7dByCity[city] || 0) + 1;
-          }
-        }
+        if (city) activitiesByCity[city] = (activitiesByCity[city] || 0) + 1;
         activitiesByType[a.activity_type] = (activitiesByType[a.activity_type] || 0) + 1;
       });
 
       // Plan JOINS by city — the actual "where is Shake active" signal,
-      // distinct from where plans were merely created.
+      // distinct from where plans were merely created. Reads from the
+      // durable activity_join_history table, not the ephemeral
+      // activity_joins table (which a nightly cron purges), so these
+      // numbers actually accumulate over time instead of resetting.
       const { data: joinRowsForCities } = await supabaseAdmin
-        .from("activity_joins")
+        .from("activity_join_history")
         .select("city, activity_type, joined_at");
-      const joinsTotalByCity: Record<string, number> = {};
-      const joins7dByCity: Record<string, number> = {};
-      const joinsTotalByType: Record<string, number> = {};
-      const joins7dByType: Record<string, number> = {};
-      (joinRowsForCities || []).forEach(j => {
-        const isRecent = j.joined_at >= sevenDaysAgoIsoForCities;
-        const type = j.activity_type || "unknown";
-        joinsTotalByType[type] = (joinsTotalByType[type] || 0) + 1;
-        if (isRecent) joins7dByType[type] = (joins7dByType[type] || 0) + 1;
 
+      // --- Unified city x time-window breakdown (dinner / brunch / joins /
+      // plans created / check-ins), each rolled up into 7d, 30d, and
+      // all-time buckets so the admin UI can switch ranges with one dropdown
+      // instead of needing a column per range.
+      type WindowKey = "7d" | "30d" | "all";
+      type WindowBucket = { dinner: number; brunch: number; joins: number; plans_created: number; check_ins: number };
+      const WINDOW_KEYS: WindowKey[] = ["7d", "30d", "all"];
+      const emptyBucket = (): WindowBucket => ({ dinner: 0, brunch: 0, joins: 0, plans_created: 0, check_ins: 0 });
+      const cityWindowStats: Record<string, Record<WindowKey, WindowBucket>> = {};
+      const ensureCity = (city: string) => {
+        if (!cityWindowStats[city]) {
+          cityWindowStats[city] = { "7d": emptyBucket(), "30d": emptyBucket(), "all": emptyBucket() };
+        }
+        return cityWindowStats[city];
+      };
+      const cutoff7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const cutoff30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const windowsFor = (dateStr: string): WindowKey[] => {
+        const keys: WindowKey[] = ["all"];
+        if (dateStr >= cutoff30d) keys.push("30d");
+        if (dateStr >= cutoff7d) keys.push("7d");
+        return keys;
+      };
+
+      (joinRowsForCities || []).forEach(j => {
         const city = normalizeCity(j.city);
-        if (!city) return;
-        joinsTotalByCity[city] = (joinsTotalByCity[city] || 0) + 1;
-        if (isRecent) joins7dByCity[city] = (joins7dByCity[city] || 0) + 1;
+        if (!city || !j.joined_at) return;
+        const bucket = ensureCity(city);
+        windowsFor(j.joined_at).forEach((w) => {
+          bucket[w].joins += 1;
+          if (j.activity_type === "dinner") bucket[w].dinner += 1;
+          if (j.activity_type === "brunch") bucket[w].brunch += 1;
+        });
+      });
+
+      (activities || []).forEach(a => {
+        const city = normalizeCity(a.city);
+        if (!city || !a.created_at) return;
+        const bucket = ensureCity(city);
+        windowsFor(a.created_at).forEach((w) => { bucket[w].plans_created += 1; });
       });
       
       // 4. Check-in statistics
       const { data: checkIns, count: totalCheckIns } = await supabaseAdmin
         .from("check_ins")
         .select("id, user_id, venue_name, city, activity_type, check_in_date", { count: "exact" });
-      
+
       const checkInsByCity: Record<string, number> = {};
       const checkInsByVenue: Record<string, { venue: string; city: string; count: number }> = {};
       (checkIns || []).forEach(c => {
@@ -1063,6 +1086,35 @@ Deno.serve(async (req) => {
           checkInsByVenue[key] = { venue: c.venue_name, city, count: 0 };
         }
         checkInsByVenue[key].count += 1;
+
+        const normalized = normalizeCity(c.city);
+        if (normalized && c.check_in_date) {
+          const bucket = ensureCity(normalized);
+          windowsFor(c.check_in_date).forEach((w) => { bucket[w].check_ins += 1; });
+        }
+      });
+
+      // Global activity summary (not city-scoped) — Dinner / Brunch / Joins /
+      // Plans Created / Check-ins, each rolled into 7d / 30d / all-time. This
+      // is the primary "how active is Shake" view; the per-city table below
+      // uses the exact same cityWindowStats buckets so the two can never
+      // disagree with each other.
+      const activitySummary: Record<WindowKey, WindowBucket> = { "7d": emptyBucket(), "30d": emptyBucket(), "all": emptyBucket() };
+      (joinRowsForCities || []).forEach(j => {
+        if (!j.joined_at) return;
+        windowsFor(j.joined_at).forEach((w) => {
+          activitySummary[w].joins += 1;
+          if (j.activity_type === "dinner") activitySummary[w].dinner += 1;
+          if (j.activity_type === "brunch") activitySummary[w].brunch += 1;
+        });
+      });
+      (activities || []).forEach(a => {
+        if (!a.created_at) return;
+        windowsFor(a.created_at).forEach((w) => { activitySummary[w].plans_created += 1; });
+      });
+      (checkIns || []).forEach(c => {
+        if (!c.check_in_date) return;
+        windowsFor(c.check_in_date).forEach((w) => { activitySummary[w].check_ins += 1; });
       });
       
       // Recent check-ins with user names
@@ -1127,7 +1179,7 @@ Deno.serve(async (req) => {
       // creating a plan in the last 7 days. Deliberately excludes check_ins.
       const activeUserIds = new Set<string>();
       const { data: recentJoins } = await supabaseAdmin
-        .from("activity_joins")
+        .from("activity_join_history")
         .select("user_id")
         .gte("joined_at", sevenDaysAgoIso);
       (recentJoins || []).forEach((r) => activeUserIds.add(r.user_id));
@@ -1157,35 +1209,16 @@ Deno.serve(async (req) => {
       (recentPlansCreated || []).forEach((r) => activeUserIds.add(r.user_id));
 
       // Cities leaderboard — ranked by actual plan JOINS (real engagement),
-      // not just where plans were created.
-      const allCitiesSeen = new Set<string>([
-        ...Object.keys(joinsTotalByCity),
-        ...Object.keys(activitiesByCity),
-        ...Object.keys(checkInsByCity),
-      ]);
-      const citiesLeaderboard = Array.from(allCitiesSeen)
-        .map((city) => ({
-          city,
-          joins_total: joinsTotalByCity[city] || 0,
-          joins_7d: joins7dByCity[city] || 0,
-          plans_created_total: activitiesByCity[city] || 0,
-          plans_created_7d: plansCreated7dByCity[city] || 0,
-          check_ins_total: checkInsByCity[city] || 0,
-        }))
-        .sort((a, b) => b.joins_total - a.joins_total || b.plans_created_total - a.plans_created_total);
-
-      const joinsByType = Array.from(new Set([...Object.keys(joinsTotalByType), ...Object.keys(joins7dByType)]))
-        .map((type) => ({
-          type,
-          joins_total: joinsTotalByType[type] || 0,
-          joins_7d: joins7dByType[type] || 0,
-        }))
-        .sort((a, b) => b.joins_total - a.joins_total);
+      // not just where plans were created. Same windowed buckets as
+      // activitySummary above, just broken out per city.
+      const citiesLeaderboard = Object.entries(cityWindowStats)
+        .map(([city, windows]) => ({ city, ...windows }))
+        .sort((a, b) => b.all.joins - a.all.joins || b.all.plans_created - a.all.plans_created);
 
       const analyticsData = {
         growth: {
+          activity_summary: activitySummary,
           cities: citiesLeaderboard,
-          joins_by_type: joinsByType,
           signups_last_7_days: signupsLast7Days,
           total_referrals: totalReferrals || 0,
           referrals_last_7_days: referrals7d || 0,

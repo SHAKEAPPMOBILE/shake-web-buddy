@@ -278,9 +278,9 @@ export default function Admin() {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className={`bg-gradient-to-r ${theme.gradient} rounded-2xl p-6 text-white`}>
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 text-black">
           <h1 className="text-3xl font-bold">🎯 SHAKE Admin</h1>
-          <p className="opacity-90 mt-1">Manage users, venues, and payouts</p>
+          <p className="opacity-70 mt-1">Manage users, venues, and payouts</p>
         </div>
 
         <Tabs defaultValue="analytics" className="w-full">
