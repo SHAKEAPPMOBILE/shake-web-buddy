@@ -314,20 +314,20 @@ export function UserProfileDialog({
               <div className="mt-4 flex justify-center items-center gap-3">
                 <button
                   onClick={() => { onOpenChange(false); navigate("/", { state: { activeTab: "chat", other_user_id: userId } }); }}
-                  className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-gray-900 hover:bg-gray-800 transition-colors flex items-center justify-center"
                   aria-label="Send direct message"
                 >
-                  <Send className="w-4 h-4 text-primary" />
+                  <Send className="w-4 h-4 text-white" />
                 </button>
 
                 {!friendship && (
                   <button
                     onClick={handleAddFriend}
                     disabled={isFriendActionPending}
-                    className="h-10 px-4 rounded-full bg-gray-900 hover:bg-gray-800 transition-colors flex items-center gap-1.5 text-white text-sm font-medium disabled:opacity-50"
+                    aria-label={t("friends.add", "Add")}
+                    className="w-10 h-10 rounded-full bg-gray-900 hover:bg-gray-800 transition-colors flex items-center justify-center disabled:opacity-50"
                   >
-                    {isFriendActionPending ? <LoadingSpinner size="sm" /> : <UserPlus className="w-4 h-4" />}
-                    {t("friends.add", "Add")}
+                    {isFriendActionPending ? <LoadingSpinner size="sm" /> : <UserPlus className="w-4 h-4 text-white" />}
                   </button>
                 )}
                 {friendship?.status === "pending" && friendship.direction === "sent" && (
