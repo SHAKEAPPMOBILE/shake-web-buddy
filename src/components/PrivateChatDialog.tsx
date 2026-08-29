@@ -19,6 +19,7 @@ import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/
 import { supabase } from "@/integrations/supabase/client";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
+import { useFloatingBubbles } from "@/hooks/useFloatingBubbles";
 import { onTypingKeyDown } from "@/lib/haptics";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢"];
@@ -80,229 +81,11 @@ export function PrivateChatDialog({
   const { canSendText, addCharacters } = useTextMessageLimit();
 
   // ── Floating "aquarium" bubbles ──────────────────────────────────────────
-  // Every message gets a fixed-order vertical "band" (oldest at the top,
-  // newest at the bottom — same order a normal chat list would use), and
-  // floats/bounces horizontally *and* vertically within its own band. That
-  // keeps scrolling meaningful (older messages are always further up) while
-  // every bubble, on screen or not, is still a floating bubble. Only bands
-  // near the current scroll position are actually animated each frame —
-  // otherwise a long history would mean simulating hundreds of bubbles that
-  // aren't even visible.
-  const FLOAT_SPEED = 42; // px/sec
-  const FLOAT_PAD = 6;
-  const BAND_HEIGHT_TEXT = 72;
-  const BAND_HEIGHT_MEDIA = 220;
-  const CULL_BUFFER = 400; // px above/below the viewport that still animate
-
-  const isMediaMessage = useCallback((msg: { message_type?: string | null; message: string }) => {
-    const type = msg.message_type ?? "text";
-    return (type === "gif" || type === "image" || type === "video") && /^https?:\/\//i.test(msg.message);
-  }, []);
-
-  // Cumulative top offset + height for every message, in chronological order.
-  const bandLayout = useMemo(() => {
-    const bands = new Map<string, { top: number; height: number }>();
-    let cursor = 0;
-    messages.forEach((msg) => {
-      const height = isMediaMessage(msg) ? BAND_HEIGHT_MEDIA : BAND_HEIGHT_TEXT;
-      bands.set(msg.id, { top: cursor, height });
-      cursor += height;
-    });
-    return { bands, totalHeight: cursor };
-  }, [messages, isMediaMessage]);
-
-  const [pinnedIds, setPinnedIds] = useState<Record<string, boolean>>({});
-  const pinnedIdsRef = useRef<Record<string, boolean>>({});
-  useEffect(() => { pinnedIdsRef.current = pinnedIds; }, [pinnedIds]);
-
-  const bandLayoutRef = useRef(bandLayout);
-  bandLayoutRef.current = bandLayout;
-
-  const bubblePhysicsRef = useRef<Map<string, { x: number; y: number; vx: number; vy: number; w: number; h: number }>>(new Map());
-  const bubbleElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
-  const bubbleResizeObserverRef = useRef<ResizeObserver | null>(null);
-  // A long-press that opens the reaction picker still fires a trailing click
-  // when the finger lifts — this swallows just that one click so it doesn't
-  // also toggle the pin.
-  const suppressBubbleClickRef = useRef(false);
-  const reducedMotion = useMemo(
-    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    []
-  );
-
-  const randomFloatVelocity = useCallback(() => {
-    const angle = Math.random() * Math.PI * 2;
-    return { vx: Math.cos(angle) * FLOAT_SPEED, vy: Math.sin(angle) * FLOAT_SPEED };
-  }, []);
-
-  // Spawns physics for a bubble the moment its DOM node actually mounts,
-  // instead of in a separate effect keyed off the messages array. That
-  // effect-based approach raced against the async invite-gate check: if
-  // messages finished loading before the gate cleared, the effect would
-  // measure a not-yet-mounted (null) tank, bail out, and never fire again
-  // once the real chat UI mounted later — leaving every bubble stuck at its
-  // CSS default position (0,0), all piled on top of each other. Doing the
-  // spawn right here in the ref callback means it always has a real,
-  // mounted tank and a real, mounted bubble element to measure.
-  const registerBubbleEl = useCallback((id: string, el: HTMLDivElement | null) => {
-    const prev = bubbleElsRef.current.get(id);
-    if (prev && prev !== el && bubbleResizeObserverRef.current) {
-      bubbleResizeObserverRef.current.unobserve(prev);
-    }
-    if (!el) {
-      bubbleElsRef.current.delete(id);
-      return;
-    }
-    bubbleElsRef.current.set(id, el);
-    bubbleResizeObserverRef.current?.observe(el);
-
-    let physics = bubblePhysicsRef.current.get(id);
-    if (!physics) {
-      const tank = scrollRef.current;
-      const tw = tank?.clientWidth || 300;
-      const band = bandLayoutRef.current.bands.get(id) ?? { top: 0, height: BAND_HEIGHT_TEXT };
-      const w = el.offsetWidth || 90;
-      const h = el.offsetHeight || 44;
-      const v = randomFloatVelocity();
-      physics = {
-        x: Math.random() * Math.max(1, tw - w - FLOAT_PAD * 2) + FLOAT_PAD,
-        y: band.top + Math.random() * Math.max(1, band.height - h - FLOAT_PAD * 2) + FLOAT_PAD,
-        vx: v.vx, vy: v.vy, w, h,
-      };
-      bubblePhysicsRef.current.set(id, physics);
-    }
-    el.style.transform = `translate3d(${physics.x}px, ${physics.y}px, 0)`;
-  }, [randomFloatVelocity]);
-
-  const toggleBubblePin = useCallback((id: string) => {
-    setPinnedIds((prev) => {
-      const wasPinned = !!prev[id];
-      const next = { ...prev };
-      if (wasPinned) delete next[id];
-      else next[id] = true;
-
-      const physics = bubblePhysicsRef.current.get(id);
-      if (physics) {
-        if (wasPinned) {
-          const v = randomFloatVelocity();
-          physics.vx = v.vx;
-          physics.vy = v.vy;
-        } else {
-          physics.vx = 0;
-          physics.vy = 0;
-        }
-      }
-      return next;
-    });
-  }, [randomFloatVelocity]);
-
-  const handleBubbleClick = useCallback((id: string) => {
-    if (suppressBubbleClickRef.current) {
-      suppressBubbleClickRef.current = false;
-      return;
-    }
-    toggleBubblePin(id);
-  }, [toggleBubblePin]);
-
-  // Set up a shared ResizeObserver once — it keeps each bubble's collision
-  // box in sync as pin-reveal, reaction pills, or media load change its size.
-  useEffect(() => {
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const id = (entry.target as HTMLElement).dataset.msgId;
-        if (!id) continue;
-        const physics = bubblePhysicsRef.current.get(id);
-        if (!physics) continue;
-        physics.w = entry.borderBoxSize?.[0]?.inlineSize ?? entry.contentRect.width;
-        physics.h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
-      }
-    });
-    bubbleResizeObserverRef.current = observer;
-    bubbleElsRef.current.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
-  // Drop physics state for messages that no longer exist (deleted).
-  useEffect(() => {
-    const liveIds = new Set(messages.map((m) => m.id));
-    Array.from(bubblePhysicsRef.current.keys()).forEach((id) => {
-      if (!liveIds.has(id)) bubblePhysicsRef.current.delete(id);
-    });
-  }, [messages]);
-
-  // The float/bounce/separation loop. Runs once; reads pinnedIdsRef each
-  // frame so a pin toggle never has to tear down and restart the loop.
-  // Always running (even under reduced motion) guarantees overlap
-  // separation and the transform write actually happen — under reduced
-  // motion we just skip the velocity-driven drift, so bubbles settle into
-  // a non-overlapping layout instead of autonomously wandering.
-  useEffect(() => {
-    let raf = 0;
-    let lastT: number | null = null;
-
-    const tick = (t: number) => {
-      const tank = scrollRef.current;
-      if (!tank) { raf = requestAnimationFrame(tick); return; }
-      if (lastT === null) lastT = t;
-      const dt = Math.min((t - lastT) / 1000, 0.05);
-      lastT = t;
-
-      const tw = tank.clientWidth;
-      const scrollTop = tank.scrollTop;
-      const viewTop = scrollTop - CULL_BUFFER;
-      const viewBottom = scrollTop + tank.clientHeight + CULL_BUFFER;
-
-      const entries = Array.from(bubblePhysicsRef.current.entries()).filter(([id, b]) => {
-        const band = bandLayoutRef.current.bands.get(id);
-        const bandBottom = band ? band.top + band.height : b.y + b.h;
-        const bandTop = band ? band.top : b.y;
-        return bandBottom >= viewTop && bandTop <= viewBottom;
-      });
-
-      if (!reducedMotion) {
-        entries.forEach(([id, b]) => {
-          if (pinnedIdsRef.current[id]) return;
-          const band = bandLayoutRef.current.bands.get(id);
-          const bandTop = band ? band.top : 0;
-          const bandBottom = band ? band.top + band.height : tank.scrollHeight;
-          b.x += b.vx * dt;
-          b.y += b.vy * dt;
-          if (b.x < FLOAT_PAD) { b.x = FLOAT_PAD; b.vx = Math.abs(b.vx); }
-          if (b.x + b.w > tw - FLOAT_PAD) { b.x = tw - FLOAT_PAD - b.w; b.vx = -Math.abs(b.vx); }
-          if (b.y < bandTop + FLOAT_PAD) { b.y = bandTop + FLOAT_PAD; b.vy = Math.abs(b.vy); }
-          if (b.y + b.h > bandBottom - FLOAT_PAD) { b.y = bandBottom - FLOAT_PAD - b.h; b.vy = -Math.abs(b.vy); }
-        });
-      }
-
-      // Overlap separation always runs — this is what keeps bubbles from
-      // sitting stacked on each other, including right after they spawn.
-      for (let i = 0; i < entries.length; i++) {
-        for (let j = i + 1; j < entries.length; j++) {
-          const [idA, a] = entries[i];
-          const [idB, b] = entries[j];
-          const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
-          const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
-          if (overlapX > 0 && overlapY > 0) {
-            const pushX = overlapX / 2, pushY = overlapY / 2;
-            const dirX = (a.x + a.w / 2) < (b.x + b.w / 2) ? -1 : 1;
-            const dirY = (a.y + a.h / 2) < (b.y + b.h / 2) ? -1 : 1;
-            if (!pinnedIdsRef.current[idA]) { a.x += dirX * pushX * 0.5; a.y += dirY * pushY * 0.5; }
-            if (!pinnedIdsRef.current[idB]) { b.x -= dirX * pushX * 0.5; b.y -= dirY * pushY * 0.5; }
-          }
-        }
-      }
-
-      entries.forEach(([id, b]) => {
-        const el = bubbleElsRef.current.get(id);
-        if (el) el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
-      });
-
-      raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [reducedMotion]);
+  const floatItems = useMemo(() => messages.map((msg) => ({
+    id: msg.id,
+    isMedia: (msg.message_type ?? "text") !== "text" && /^https?:\/\//i.test(msg.message),
+  })), [messages]);
+  const { canvasHeight, isPinned, getBubbleProps, getClickHandler, suppressNextClick } = useFloatingBubbles(floatItems, scrollRef);
 
   const chatSuggestions = useMemo(() => [
     t('chat.suggestions.hey', 'Hey! 👋'),
@@ -536,7 +319,7 @@ export function PrivateChatDialog({
     cancelLongPress();
     if (longPressFired.current) {
       longPressFired.current = false;
-      suppressBubbleClickRef.current = true;
+      suppressNextClick();
       return;
     }
     // Double-tap detection
@@ -802,7 +585,7 @@ export function PrivateChatDialog({
             <p className="text-xs mt-1 text-gray-400">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
           </div>
         ) : (
-          <div className="relative" style={{ height: bandLayout.totalHeight }}>
+          <div className="relative" style={{ height: canvasHeight }}>
           {messages.map((msg) => {
             const isMe = msg.sender_id === user?.id;
             const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
@@ -811,7 +594,7 @@ export function PrivateChatDialog({
             const isMedia = isGif || isImage || isVideo;
 
             const msgReactions = reactions[msg.id] || [];
-            const isPinned = !!pinnedIds[msg.id];
+            const pinned = isPinned(msg.id);
 
             const incomingBubble: React.CSSProperties = {
               background: "white",
@@ -822,13 +605,14 @@ export function PrivateChatDialog({
               border: "1px solid rgba(0,198,182,0.4)",
             };
 
+            const { style: floatStyle, ...floatProps } = getBubbleProps(msg.id);
+
             return (
               <div
                 key={msg.id}
-                data-msg-id={msg.id}
-                ref={(el) => registerBubbleEl(msg.id, el)}
-                className={`absolute top-0 left-0 flex flex-col ${isMe ? "items-end" : "items-start"}`}
-                style={{ zIndex: isPinned ? 10 : 1 }}
+                {...floatProps}
+                className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                style={{ ...floatStyle, zIndex: pinned ? 10 : 1 }}
               >
                 {/* Bubble row: trash icon sits beside the bubble for own messages */}
                 <div className={`flex items-end gap-1 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
@@ -846,41 +630,41 @@ export function PrivateChatDialog({
                   className={`max-w-[80%] w-fit min-w-0 cursor-pointer ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
                   style={{
                     ...(isMedia ? undefined : isMe ? outgoingBubble : incomingBubble),
-                    boxShadow: isPinned ? "0 0 0 3px rgba(255,178,56,0.55), 0 4px 14px rgba(0,0,0,0.18)" : undefined,
+                    boxShadow: pinned ? "0 0 0 3px rgba(255,178,56,0.55), 0 4px 14px rgba(0,0,0,0.18)" : undefined,
                     transition: "box-shadow 0.25s ease",
                   }}
                   onTouchStart={(e) => startLongPress(msg.id, isMe, e.touches[0].clientY)}
                   onTouchMove={cancelLongPress}
                   onTouchEnd={() => handleTouchEnd(msg.id, isMe)}
                   onContextMenu={(e) => { e.preventDefault(); setActiveMsg({ id: msg.id, isMe, pickerY: e.clientY }); }}
-                  onClick={() => handleBubbleClick(msg.id)}
+                  onClick={getClickHandler(msg.id)}
                 >
                   {isGif ? (
                     <>
                       <InlineChatGif src={msg.message} variant="dark" onLoad={scrollMessagesToBottom} />
-                      {isPinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
+                      {pinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
                     </>
                   ) : isImage ? (
                     <>
                       <img src={msg.message} alt="shared image" className="rounded-2xl max-w-[260px] w-full object-cover" onLoad={scrollMessagesToBottom} />
-                      {isPinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
+                      {pinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
                     </>
                   ) : isVideo ? (
                     <>
                       <video src={msg.message} controls playsInline preload="metadata" className="rounded-2xl max-w-[260px] w-full bg-black/30" onLoadedMetadata={scrollMessagesToBottom} />
-                      {isPinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
+                      {pinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
                     </>
                   ) : (
                     <>
                       <p className={`text-sm break-words ${isMe ? "text-white" : "text-gray-900"}`}>{msg.message}</p>
-                      {isPinned && <p className={`text-[10px] mt-1 ${isMe ? "text-white/70" : "text-gray-400"}`}>{format(new Date(msg.created_at), "HH:mm")}</p>}
+                      {pinned && <p className={`text-[10px] mt-1 ${isMe ? "text-white/70" : "text-gray-400"}`}>{format(new Date(msg.created_at), "HH:mm")}</p>}
                     </>
                   )}
                 </div>
                 </div>{/* end bubble row */}
 
                 {/* Author pill — only while pinned */}
-                {isPinned && (
+                {pinned && (
                   <span
                     className="mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full text-white whitespace-nowrap"
                     style={{ background: "#049184" }}

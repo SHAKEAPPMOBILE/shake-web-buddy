@@ -30,6 +30,7 @@ import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphy
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { getNationalityFlag } from "@/data/countryCodes";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
+import { useFloatingBubbles } from "@/hooks/useFloatingBubbles";
 import { onTypingKeyDown } from "@/lib/haptics";
 
 interface GroupChatViewProps {
@@ -217,7 +218,17 @@ export function GroupChatView({
   const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null; nationality: string | null; occupation: string | null; interests: string[] | null }[]>([]);
   // MAX_GROUP_CAPACITY imported from @/lib/activityGroups
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatTankRef = useRef<HTMLDivElement>(null);
   const prevParticipantsRef = useRef<typeof participants>([]);
+
+  // Floating "aquarium" bubbles — see useFloatingBubbles for the full
+  // rationale/behavior. floatItems must stay chronologically ordered
+  // (oldest first), matching `messages`.
+  const floatItems = useMemo(() => messages.map((msg) => ({
+    id: msg.id,
+    isMedia: (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message),
+  })), [messages]);
+  const { canvasHeight, isPinned, getBubbleProps, getClickHandler } = useFloatingBubbles(floatItems, chatTankRef);
 
   // Curtain drag state
   const [snapState, setSnapState] = useState<SnapState>('partial');
@@ -435,10 +446,13 @@ export function GroupChatView({
     };
   }, [activityType, city, user?.id, isMuted]);
 
-  // Scroll to bottom when new messages arrive.
+  // Scroll to bottom when new messages arrive. Bubbles are absolutely
+  // positioned (floating), so messagesEndRef/scrollIntoView doesn't reach
+  // the real bottom of the tank — drive scrollTop on the tank directly.
   // useLayoutEffect + rAF fires after DOM update, timed with the paint cycle.
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const tank = chatTankRef.current;
+    if (tank) tank.scrollTo({ top: tank.scrollHeight, behavior: "smooth" });
   }, []);
 
   useLayoutEffect(() => {
@@ -966,8 +980,10 @@ export function GroupChatView({
           <div className="w-10 h-1 rounded-full bg-gray-300" />
         </div>
 
-        {/* ── CHAT MESSAGES ─────────────────────────────────────────────────── */}
-        <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-2 space-y-3 bg-white">
+        {/* ── CHAT MESSAGES — floats and bounces until tapped, which pins it
+             in place and reveals who sent it + when. Scroll up for the rest
+             of the conversation, still floating higher up in the tank. ── */}
+        <div className="relative flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-2 bg-white" ref={chatTankRef}>
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">
               <p className="text-center text-sm">
@@ -976,7 +992,8 @@ export function GroupChatView({
               </p>
             </div>
           ) : (
-            messages.map((msg) => {
+            <div className="relative" style={{ height: canvasHeight }}>
+            {messages.map((msg) => {
               const isOwnMessage = msg.user_id === user?.id;
               const profile = profiles[msg.user_id];
               const displayName = isOwnMessage ? 'You' : profile?.name || 'Shaker';
@@ -985,8 +1002,15 @@ export function GroupChatView({
               const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
               const isGif =
                 (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+              const pinned = isPinned(msg.id);
+              const { style: floatStyle, ...floatProps } = getBubbleProps(msg.id);
               return (
-                <div key={msg.id} className={`group flex gap-3 items-end ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                <div
+                  key={msg.id}
+                  {...floatProps}
+                  className={`group flex gap-3 items-end ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                  style={{ ...floatStyle, zIndex: pinned ? 10 : 1 }}
+                >
                   <ParticipantAvatar
                     avatarUrl={avatarUrl}
                     name={displayName}
@@ -1008,26 +1032,30 @@ export function GroupChatView({
                       onPointerUp={onMessagePointerEnd}
                       onPointerCancel={onMessagePointerEnd}
                       onPointerLeave={onMessagePointerEnd}
+                      onClick={getClickHandler(msg.id)}
                       header={
-                        <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                          <button
-                            type="button"
-                            className={`font-semibold text-sm ${isOwnMessage ? 'text-white' : 'text-gray-900'} ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
-                            onClick={() => {
-                              if (!isOwnMessage) {
-                                setSelectedUserProfile({
-                                  userId: msg.user_id,
-                                  userName: profile?.name || null,
-                                  avatarUrl: profile?.avatar_url || null,
-                                });
-                              }
-                            }}
-                            disabled={isOwnMessage}
-                          >
-                            {displayName}
-                          </button>
-                          <span className={`text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-400'}`}>{format(new Date(msg.created_at), 'h:mm a')}</span>
-                        </div>
+                        pinned ? (
+                          <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                            <button
+                              type="button"
+                              className={`font-semibold text-sm ${isOwnMessage ? 'text-white' : 'text-gray-900'} ${!isOwnMessage ? 'hover:text-primary cursor-pointer' : ''}`}
+                              onClick={(e) => {
+                                if (!isOwnMessage) {
+                                  e.stopPropagation();
+                                  setSelectedUserProfile({
+                                    userId: msg.user_id,
+                                    userName: profile?.name || null,
+                                    avatarUrl: profile?.avatar_url || null,
+                                  });
+                                }
+                              }}
+                              disabled={isOwnMessage}
+                            >
+                              {displayName}
+                            </button>
+                            <span className={`text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-400'}`}>{format(new Date(msg.created_at), 'h:mm a')}</span>
+                          </div>
+                        ) : undefined
                       }
                     >
                       <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
@@ -1035,9 +1063,7 @@ export function GroupChatView({
                           <InlineChatGif
                             src={msg.message}
                             variant="dark"
-                            onLoad={() =>
-                              messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-                            }
+                            onLoad={scrollToBottom}
                           />
                         ) : (
                           <div
@@ -1062,7 +1088,7 @@ export function GroupChatView({
                         {isOwnMessage && (
                           <button
                             type="button"
-                            onClick={() => handleDeleteMessage(msg.id)}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }}
                             className="opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100 p-1 text-gray-300 hover:text-red-400 transition-all"
                             title="Delete message"
                           >
@@ -1074,7 +1100,8 @@ export function GroupChatView({
                   </div>
                 </div>
               );
-            })
+            })}
+            </div>
           )}
           <div ref={messagesEndRef} />
         </div>

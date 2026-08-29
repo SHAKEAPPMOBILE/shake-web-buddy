@@ -35,6 +35,8 @@ type Props = {
   onPointerUp: (e: PointerEvent) => void;
   onPointerCancel: (e: PointerEvent) => void;
   onPointerLeave: (e: PointerEvent) => void;
+  /** Optional tap handler on the whole bubble — e.g. floating-bubble pin toggle. */
+  onClick?: () => void;
   /** e.g. name + time row — included in long-press / hover target */
   header?: ReactNode;
   children: ReactNode;
@@ -54,6 +56,7 @@ export function MessageBubbleReactions({
   onPointerUp,
   onPointerCancel,
   onPointerLeave,
+  onClick,
   header,
   children,
 }: Props) {
@@ -72,6 +75,7 @@ export function MessageBubbleReactions({
       onPointerCancel={onPointerCancel}
       onPointerLeave={onPointerLeave}
       onContextMenu={(e) => e.preventDefault()}
+      onClick={onClick}
     >
       {header}
       <div className={`flex flex-col gap-1.5 ${isOwn ? "items-end" : "items-start"} ${header ? "mt-0.5" : ""}`}>
@@ -134,7 +138,8 @@ export function MessageBubbleReactions({
               <button
                 key={emoji}
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   bump();
                   void onToggleReaction(messageId, emoji);
                 }}
