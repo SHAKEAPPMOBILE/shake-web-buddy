@@ -126,6 +126,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const isMobile = useIsMobile();
   const [activities, setActivities] = useState<PlanActivity[]>([]);
   const [cityPlans, setCityPlans] = useState<PlanActivity[]>([]);
+  // Guards fetchPlans against out-of-order resolution — see fetchPlans's isStale().
+  const latestFetchIdRef = useRef(0);
   const [isCitySheetOpen, setIsCitySheetOpen] = useState(false);
   const [joinedPlansCityFilter, setJoinedPlansCityFilter] = useState<string | null>(null);
   const [cityAtPickerOpen, setCityAtPickerOpen] = useState<string | null>(null);
@@ -209,6 +211,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     if (!user) {
       console.log("[SET:fetchPlans:no-user] setActivities → [] | setCityPlans → []");
       console.trace("[SET:fetchPlans:no-user]");
+      latestFetchIdRef.current = 0;
       setActivities([]);
       setCityPlans([]);
       setIsLoading(false);
@@ -222,6 +225,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const showAllCities = allPlansRef.current.showAllCities;
     const effectiveCity = selectedCity;
     const fetchId = Date.now();
+    // Only the most recently-started fetch is allowed to write state. Without this,
+    // an older fetch (e.g. one already in flight when the user joins a plan and
+    // triggers a fresh fetch) can resolve AFTER the newer one and clobber it with
+    // stale data — silently dropping the just-joined plan from "My Plans".
+    latestFetchIdRef.current = fetchId;
+    const isStale = () => latestFetchIdRef.current !== fetchId;
     console.log(`[PlansTab] fetchPlans START #${fetchId}`, { effectiveCity, showAllCities, caller: new Error().stack?.split('\n')[2]?.trim() });
 
     const loadingTimeout = setTimeout(() => setIsLoading(false), 5000);
@@ -440,6 +449,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         city: p.city,
         scheduled_for: getNextOccurrenceDate(p.activity_type).toISOString(),
         is_active: true,
+        is_auto_generated: true,
         creator_name: "...",
         participant_count: 1,
         isJoined: true,
@@ -469,6 +479,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           city: c.city,
           scheduled_for: getNextOccurrenceDate(c.activity_type).toISOString(),
           is_active: true,
+          is_auto_generated: true,
           note: dayLabel ? `This ${dayLabel}` : null,
           creator_name: "...",
           participant_count: c.userIds.length,
@@ -476,6 +487,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           isCarouselJoin: true,
         } as PlanActivity;
       });
+
+      if (isStale()) return;
 
       if (quickReal.length > 0 || quickCarousel.length > 0) {
         const _quickNext = sortByDate([...quickReal, ...quickCarousel]);
@@ -551,6 +564,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             city: p.city,
             scheduled_for: getNextOccurrenceDate(p.activity_type).toISOString(),
             is_active: true,
+            is_auto_generated: true,
             note: dayLabel ? `This ${dayLabel}` : null,
             creator_name: "Open group",
             participant_count: liveCount ?? 1,
@@ -600,9 +614,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           const countMap = new Map<string, number>();
           (joinsRes.data ?? []).forEach((j: any) => countMap.set(j.activity_id, (countMap.get(j.activity_id) ?? 0) + 1));
 
-          return Promise.all(discoveryCarouselEntries.map(async (carouselActivity) => {
-            const firstUserId = carouselActivity.userIds[0];
-            const profile = profileMap.get(firstUserId);
+          const withRealActivity = await Promise.all(discoveryCarouselEntries.map(async (carouselActivity) => {
             const realActivity = carouselActivity.activityId
               ? { id: carouselActivity.activityId }
               : (await supabase.from("user_activities").select("id")
@@ -612,6 +624,35 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   .order("scheduled_for", { ascending: false })
                   .limit(1)
                   .maybeSingle()).data;
+            return { carouselActivity, realActivityId: realActivity?.id ?? null };
+          }));
+
+          // Look up the REAL underlying user_activities row for each entry so
+          // is_auto_generated/creator/video reflect the actual plan, not the first
+          // random person who happened to join it. Without this, every card here
+          // (including genuine user-created plans surfaced via "All Cities") fell
+          // back to treating the first joiner as the creator and never knew whether
+          // the plan was an auto-generated open group (dinner/brunch/drinks) or a
+          // real user-made plan — showing that joiner's face full-bleed either way.
+          const realIds = Array.from(new Set(withRealActivity.map(w => w.realActivityId).filter((id): id is string => !!id)));
+          const realRowsRes = realIds.length
+            ? await supabase.from("user_activities").select("id, user_id, is_auto_generated, promo_video_url").in("id", realIds)
+            : { data: [] as any[] };
+          const realRowMap = new Map((realRowsRes.data ?? []).map((r: any) => [r.id, r]));
+          const realCreatorIds = Array.from(new Set((realRowsRes.data ?? []).map((r: any) => r.user_id).filter(Boolean)));
+          const realProfilesRes = realCreatorIds.length
+            ? await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", realCreatorIds)
+            : { data: [] as any[] };
+          const realProfileMap = new Map((realProfilesRes.data ?? []).map((p: any) => [p.user_id, p]));
+
+          return withRealActivity.map(({ carouselActivity, realActivityId }) => {
+            const firstUserId = carouselActivity.userIds[0];
+            const realRow = realActivityId ? realRowMap.get(realActivityId) : undefined;
+            // Built-in carousel types (dinner/drinks/brunch) with no matched real row
+            // are, by definition, the virtual open-group container — always auto-generated.
+            const isAutoGenerated = realRow ? realRow.is_auto_generated === true : true;
+            const creatorUserId = realRow?.user_id ?? firstUserId;
+            const profile = realRow ? realProfileMap.get(creatorUserId) : profileMap.get(firstUserId);
             const liveCount = carouselActivity.activityId
               ? countMap.get(carouselActivity.activityId) ?? 0
               : carouselActivity.userIds.length;
@@ -619,12 +660,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             const nextOccurrence = getNextOccurrenceDate(carouselActivity.activity_type);
             return {
               id: `carousel-${carouselActivity.activity_type}-${carouselActivity.city}-${carouselActivity.activityId ?? firstUserId}`,
-              realActivityId: realActivity?.id ?? null,
-              user_id: firstUserId,
+              realActivityId,
+              user_id: creatorUserId,
               activity_type: carouselActivity.activity_type,
               city: carouselActivity.city,
               scheduled_for: nextOccurrence.toISOString(),
               is_active: true,
+              is_auto_generated: isAutoGenerated,
+              promo_video_url: realRow?.promo_video_url ?? null,
               note: dayLabel ? `This ${dayLabel}` : null,
               creator_name: profile?.name || "Anonymous",
               creator_avatar: profile?.avatar_url,
@@ -632,7 +675,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               isJoined: false,
               isCarouselJoin: true,
             } as PlanActivity;
-          }));
+          });
         })(),
       ]);
 
@@ -645,6 +688,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       console.log(`[SET:fetchPlans:final] setActivities → ${_finalActivities.length} items`, _finalActivities.map(a => ({ id: a.id, activity_type: a.activity_type, city: a.city, isJoined: a.isJoined })));
       console.log(`[SET:fetchPlans:final] setCityPlans → ${_finalCity.length} items`, _finalCity.map(a => ({ id: a.id, activity_type: a.activity_type, city: a.city })));
       console.trace("[SET:fetchPlans:final]");
+      if (isStale()) return;
       setActivities(_finalActivities);
       setCityPlans(_finalCity);
 
@@ -1184,7 +1228,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       if (existingJoin) {
         if (normalizeCity(existingJoin.city) === normalizeCity(targetPlan.city)) {
           // Already in — open the plan they're actually in, never show the guard.
-          const ownedPlan = activities.find(a => a.id === existingJoin.plan_id) ?? plan;
+          // Carousel joins have no plan_id (activity_id is null on the join row), so
+          // fall back to the synthetic card id "activities" actually uses for those —
+          // without this, the lookup always missed and silently opened whatever plan
+          // was just tapped (e.g. another city's card) instead of the user's own.
+          const ownedPlanId = existingJoin.plan_id ?? `carousel-${existingJoin.activity_type}-${existingJoin.city}-${user.id}`;
+          const ownedPlan = activities.find(a => a.id === ownedPlanId) ?? plan;
           setSelectedPlan(ownedPlan);
           setShowChatView(true);
         } else {
@@ -1505,7 +1554,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       if (existingJoin) {
         if (normalizeCity(existingJoin.city) === normalizeCity(targetPlan.city)) {
           // Already in — open the plan they're actually in, never show the guard.
-          const ownedPlan = activities.find(a => a.id === existingJoin.plan_id) ?? plan;
+          // Carousel joins have no plan_id (activity_id is null on the join row), so
+          // fall back to the synthetic card id "activities" actually uses for those —
+          // without this, the lookup always missed and silently opened whatever plan
+          // was just tapped (e.g. another city's card) instead of the user's own.
+          const ownedPlanId = existingJoin.plan_id ?? `carousel-${existingJoin.activity_type}-${existingJoin.city}-${user.id}`;
+          const ownedPlan = activities.find(a => a.id === ownedPlanId) ?? plan;
           setSelectedPlan(ownedPlan);
           setShowChatView(true);
         } else {
