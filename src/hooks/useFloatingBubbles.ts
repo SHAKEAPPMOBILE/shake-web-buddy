@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, RefObject } from "react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent, RefObject } from "react";
 
 export interface FloatingBubbleItem {
   id: string;
@@ -15,22 +15,44 @@ interface Physics {
   vy: number;
   w: number;
   h: number;
+  /** Once a bubble has been thrown, it's no longer confined to its own
+   *  chronological band — it bounces around the whole tank instead. Re-
+   *  confining it on release would snap it right back where it came from,
+   *  which defeats the point of throwing it. */
+  escaped?: boolean;
 }
 
-const FLOAT_SPEED = 42; // px/sec
+interface DragState {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  startBubbleX: number;
+  startBubbleY: number;
+  samples: { x: number; y: number; t: number }[];
+  dragging: boolean;
+}
+
+const FLOAT_SPEED = 42; // px/sec, ambient drift
 const FLOAT_PAD = 6;
 const BAND_HEIGHT_TEXT = 72;
 const BAND_HEIGHT_MEDIA = 220;
 const CULL_BUFFER = 400; // px above/below the viewport that still animate
+const PIN_DURATION_MS = 10000;
+const DRAG_THRESHOLD = 6; // px of movement before a press counts as a drag, not a tap
+const THROW_MAX_SPEED = 900; // px/sec — clamp so a hard fling doesn't break the sim
+const VELOCITY_SAMPLE_WINDOW = 6;
 
 /**
  * Floating "aquarium" bubbles: each item gets a fixed chronological vertical
  * band (oldest on top, like a normal list) and floats/bounces within it —
  * scrolling stays meaningful (older items are always further up) while every
- * bubble, visible or not, is a floating bubble. Tapping an item (via the
- * onClick from getBubbleProps) pins it in place; call suppressNextClick()
- * from a long-press/other gesture handler to swallow the trailing click that
- * gesture produces so it doesn't also toggle the pin.
+ * bubble, on screen or not, is a floating bubble.
+ *
+ * Tap a bubble to pin it (freezes it, and is exclusive — pinning one
+ * un-pins whatever was pinned before, and auto-unpins itself after 10s).
+ * Press-and-drag a bubble to fling it — release velocity carries over, and a
+ * thrown bubble bounces around the whole tank instead of staying confined
+ * to its own band.
  *
  * Physics for a bubble are spawned the moment its DOM node mounts (inside
  * registerBubbleEl, wired up by getBubbleProps' ref), not in a separate
@@ -57,12 +79,16 @@ export function useFloatingBubbles(
   const bandLayoutRef = useRef(bandLayout);
   bandLayoutRef.current = bandLayout;
 
-  const [pinnedIds, setPinnedIds] = useState<Record<string, boolean>>({});
-  const pinnedIdsRef = useRef<Record<string, boolean>>({});
-  useEffect(() => { pinnedIdsRef.current = pinnedIds; }, [pinnedIds]);
+  // Exclusive pin: only one bubble pinned at a time, auto-clears after
+  // PIN_DURATION_MS. Picking a new one immediately resumes the old one.
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
+  const pinnedIdRef = useRef<string | null>(null);
+  useEffect(() => { pinnedIdRef.current = pinnedId; }, [pinnedId]);
+  const pinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const physicsRef = useRef<Map<string, Physics>>(new Map());
   const elsRef = useRef<Map<string, HTMLDivElement>>(new Map());
+  const dragRef = useRef<Map<string, DragState>>(new Map());
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const suppressClickRef = useRef(false);
   const reducedMotion = useMemo(
@@ -74,6 +100,38 @@ export function useFloatingBubbles(
     const angle = Math.random() * Math.PI * 2;
     return { vx: Math.cos(angle) * FLOAT_SPEED, vy: Math.sin(angle) * FLOAT_SPEED };
   }, []);
+
+  const resumeFloating = useCallback((id: string) => {
+    const physics = physicsRef.current.get(id);
+    if (!physics) return;
+    const v = randomVelocity();
+    physics.vx = v.vx;
+    physics.vy = v.vy;
+  }, [randomVelocity]);
+
+  const clearPin = useCallback(() => {
+    if (pinTimeoutRef.current) {
+      clearTimeout(pinTimeoutRef.current);
+      pinTimeoutRef.current = null;
+    }
+    const id = pinnedIdRef.current;
+    setPinnedId(null);
+    if (id) resumeFloating(id);
+  }, [resumeFloating]);
+
+  const pinBubble = useCallback((id: string) => {
+    if (pinTimeoutRef.current) clearTimeout(pinTimeoutRef.current);
+    const prevId = pinnedIdRef.current;
+    if (prevId && prevId !== id) resumeFloating(prevId);
+
+    setPinnedId(id);
+    const physics = physicsRef.current.get(id);
+    if (physics) { physics.vx = 0; physics.vy = 0; }
+
+    pinTimeoutRef.current = setTimeout(() => { clearPin(); }, PIN_DURATION_MS);
+  }, [resumeFloating, clearPin]);
+
+  useEffect(() => () => { if (pinTimeoutRef.current) clearTimeout(pinTimeoutRef.current); }, []);
 
   const registerBubbleEl = useCallback((id: string, el: HTMLDivElement | null) => {
     const prev = elsRef.current.get(id);
@@ -106,26 +164,9 @@ export function useFloatingBubbles(
   }, [containerRef, randomVelocity]);
 
   const togglePin = useCallback((id: string) => {
-    setPinnedIds((prev) => {
-      const wasPinned = !!prev[id];
-      const next = { ...prev };
-      if (wasPinned) delete next[id];
-      else next[id] = true;
-
-      const physics = physicsRef.current.get(id);
-      if (physics) {
-        if (wasPinned) {
-          const v = randomVelocity();
-          physics.vx = v.vx;
-          physics.vy = v.vy;
-        } else {
-          physics.vx = 0;
-          physics.vy = 0;
-        }
-      }
-      return next;
-    });
-  }, [randomVelocity]);
+    if (pinnedIdRef.current === id) clearPin();
+    else pinBubble(id);
+  }, [clearPin, pinBubble]);
 
   const handleClick = useCallback((id: string) => {
     if (suppressClickRef.current) {
@@ -137,6 +178,80 @@ export function useFloatingBubbles(
 
   const suppressNextClick = useCallback(() => {
     suppressClickRef.current = true;
+  }, []);
+
+  // ── Press-and-drag to throw ────────────────────────────────────────────
+  const handlePointerDown = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
+    const physics = physicsRef.current.get(id);
+    if (!physics) return;
+    dragRef.current.set(id, {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startBubbleX: physics.x,
+      startBubbleY: physics.y,
+      samples: [{ x: e.clientX, y: e.clientY, t: performance.now() }],
+      dragging: false,
+    });
+  }, []);
+
+  const handlePointerMove = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
+    const drag = dragRef.current.get(id);
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+
+    if (!drag.dragging && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+      drag.dragging = true;
+      try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* no-op */ }
+      suppressClickRef.current = true;
+      if (pinnedIdRef.current === id) clearPin();
+    }
+
+    if (drag.dragging) {
+      const physics = physicsRef.current.get(id);
+      if (physics) {
+        physics.x = drag.startBubbleX + dx;
+        physics.y = drag.startBubbleY + dy;
+        const el = elsRef.current.get(id);
+        if (el) el.style.transform = `translate3d(${physics.x}px, ${physics.y}px, 0)`;
+      }
+      drag.samples.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+      if (drag.samples.length > VELOCITY_SAMPLE_WINDOW) drag.samples.shift();
+    }
+  }, [clearPin]);
+
+  const endDrag = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
+    const drag = dragRef.current.get(id);
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    dragRef.current.delete(id);
+    if (!drag.dragging) return; // plain tap/click — handled separately
+
+    const physics = physicsRef.current.get(id);
+    if (!physics) return;
+    const samples = drag.samples;
+    const first = samples[0];
+    const last = samples[samples.length - 1];
+    const dt = Math.max(1, last.t - first.t) / 1000;
+    let vx = (last.x - first.x) / dt;
+    let vy = (last.y - first.y) / dt;
+    const speed = Math.hypot(vx, vy);
+    if (speed > THROW_MAX_SPEED) {
+      const scale = THROW_MAX_SPEED / speed;
+      vx *= scale;
+      vy *= scale;
+    }
+    physics.vx = vx;
+    physics.vy = vy;
+    physics.escaped = true;
+  }, []);
+
+  const handlePointerUp = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
+    endDrag(id, e);
+  }, [endDrag]);
+
+  const handlePointerCancel = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
+    dragRef.current.delete(id);
   }, []);
 
   // Shared ResizeObserver — keeps each bubble's collision box in sync as
@@ -185,18 +300,20 @@ export function useFloatingBubbles(
       const viewBottom = scrollTop + tank.clientHeight + CULL_BUFFER;
 
       const entries = Array.from(physicsRef.current.entries()).filter(([id, b]) => {
+        if (dragRef.current.has(id)) return true; // always keep the actively-dragged one live
         const band = bandLayoutRef.current.bands.get(id);
-        const bandBottom = band ? band.top + band.height : b.y + b.h;
-        const bandTop = band ? band.top : b.y;
+        const bandBottom = b.escaped ? tank.scrollHeight : band ? band.top + band.height : b.y + b.h;
+        const bandTop = b.escaped ? 0 : band ? band.top : b.y;
         return bandBottom >= viewTop && bandTop <= viewBottom;
       });
 
       if (!reducedMotion) {
         entries.forEach(([id, b]) => {
-          if (pinnedIdsRef.current[id]) return;
+          if (id === pinnedIdRef.current) return;
+          if (dragRef.current.has(id)) return; // being manually dragged this frame
           const band = bandLayoutRef.current.bands.get(id);
-          const bandTop = band ? band.top : 0;
-          const bandBottom = band ? band.top + band.height : tank.scrollHeight;
+          const bandTop = b.escaped ? 0 : band ? band.top : 0;
+          const bandBottom = b.escaped ? tank.scrollHeight : band ? band.top + band.height : tank.scrollHeight;
           b.x += b.vx * dt;
           b.y += b.vy * dt;
           if (b.x < FLOAT_PAD) { b.x = FLOAT_PAD; b.vx = Math.abs(b.vx); }
@@ -216,8 +333,8 @@ export function useFloatingBubbles(
             const pushX = overlapX / 2, pushY = overlapY / 2;
             const dirX = (a.x + a.w / 2) < (b.x + b.w / 2) ? -1 : 1;
             const dirY = (a.y + a.h / 2) < (b.y + b.h / 2) ? -1 : 1;
-            if (!pinnedIdsRef.current[idA]) { a.x += dirX * pushX * 0.5; a.y += dirY * pushY * 0.5; }
-            if (!pinnedIdsRef.current[idB]) { b.x -= dirX * pushX * 0.5; b.y -= dirY * pushY * 0.5; }
+            if (idA !== pinnedIdRef.current && !dragRef.current.has(idA)) { a.x += dirX * pushX * 0.5; a.y += dirY * pushY * 0.5; }
+            if (idB !== pinnedIdRef.current && !dragRef.current.has(idB)) { b.x -= dirX * pushX * 0.5; b.y -= dirY * pushY * 0.5; }
           }
         }
       }
@@ -234,15 +351,19 @@ export function useFloatingBubbles(
     return () => cancelAnimationFrame(raf);
   }, [reducedMotion, containerRef]);
 
-  const isPinned = useCallback((id: string) => !!pinnedIds[id], [pinnedIds]);
+  const isPinned = useCallback((id: string) => pinnedId === id, [pinnedId]);
 
-  // Positioning props — spread onto the element that should float (the
-  // outer wrapper, typically).
+  // Positioning + drag-to-throw props — spread onto the element that should
+  // float (the outer wrapper, typically).
   const getBubbleProps = useCallback((id: string) => ({
     ref: (el: HTMLDivElement | null) => registerBubbleEl(id, el),
     "data-bubble-id": id,
-    style: { position: "absolute" as const, top: 0, left: 0 },
-  }), [registerBubbleEl]);
+    style: { position: "absolute" as const, top: 0, left: 0, touchAction: "none" as const },
+    onPointerDown: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerDown(id, e),
+    onPointerMove: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerMove(id, e),
+    onPointerUp: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerUp(id, e),
+    onPointerCancel: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerCancel(id, e),
+  }), [registerBubbleEl, handlePointerDown, handlePointerMove, handlePointerUp, handlePointerCancel]);
 
   // Tap-to-pin handler — wire onto whatever element should be the tap
   // target (may be a nested element, not the floating wrapper itself).
