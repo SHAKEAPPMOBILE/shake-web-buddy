@@ -80,18 +80,43 @@ export function PrivateChatDialog({
   const { canSendText, addCharacters } = useTextMessageLimit();
 
   // ── Floating "aquarium" bubbles ──────────────────────────────────────────
-  // Only the most recent FLOAT_WINDOW messages float — floating the entire
-  // history of a long-running DM would mean dozens/hundreds of bubbles on
-  // screen at once, which isn't readable or performant.
-  const FLOAT_WINDOW = 20;
+  // Every message gets a fixed-order vertical "band" (oldest at the top,
+  // newest at the bottom — same order a normal chat list would use), and
+  // floats/bounces horizontally *and* vertically within its own band. That
+  // keeps scrolling meaningful (older messages are always further up) while
+  // every bubble, on screen or not, is still a floating bubble. Only bands
+  // near the current scroll position are actually animated each frame —
+  // otherwise a long history would mean simulating hundreds of bubbles that
+  // aren't even visible.
   const FLOAT_SPEED = 42; // px/sec
   const FLOAT_PAD = 6;
+  const BAND_HEIGHT_TEXT = 72;
+  const BAND_HEIGHT_MEDIA = 220;
+  const CULL_BUFFER = 400; // px above/below the viewport that still animate
 
-  const floatingMessages = useMemo(() => messages.slice(-FLOAT_WINDOW), [messages]);
+  const isMediaMessage = useCallback((msg: { message_type?: string | null; message: string }) => {
+    const type = msg.message_type ?? "text";
+    return (type === "gif" || type === "image" || type === "video") && /^https?:\/\//i.test(msg.message);
+  }, []);
+
+  // Cumulative top offset + height for every message, in chronological order.
+  const bandLayout = useMemo(() => {
+    const bands = new Map<string, { top: number; height: number }>();
+    let cursor = 0;
+    messages.forEach((msg) => {
+      const height = isMediaMessage(msg) ? BAND_HEIGHT_MEDIA : BAND_HEIGHT_TEXT;
+      bands.set(msg.id, { top: cursor, height });
+      cursor += height;
+    });
+    return { bands, totalHeight: cursor };
+  }, [messages, isMediaMessage]);
 
   const [pinnedIds, setPinnedIds] = useState<Record<string, boolean>>({});
   const pinnedIdsRef = useRef<Record<string, boolean>>({});
   useEffect(() => { pinnedIdsRef.current = pinnedIds; }, [pinnedIds]);
+
+  const bandLayoutRef = useRef(bandLayout);
+  bandLayoutRef.current = bandLayout;
 
   const bubblePhysicsRef = useRef<Map<string, { x: number; y: number; vx: number; vy: number; w: number; h: number }>>(new Map());
   const bubbleElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -110,18 +135,44 @@ export function PrivateChatDialog({
     return { vx: Math.cos(angle) * FLOAT_SPEED, vy: Math.sin(angle) * FLOAT_SPEED };
   }, []);
 
+  // Spawns physics for a bubble the moment its DOM node actually mounts,
+  // instead of in a separate effect keyed off the messages array. That
+  // effect-based approach raced against the async invite-gate check: if
+  // messages finished loading before the gate cleared, the effect would
+  // measure a not-yet-mounted (null) tank, bail out, and never fire again
+  // once the real chat UI mounted later — leaving every bubble stuck at its
+  // CSS default position (0,0), all piled on top of each other. Doing the
+  // spawn right here in the ref callback means it always has a real,
+  // mounted tank and a real, mounted bubble element to measure.
   const registerBubbleEl = useCallback((id: string, el: HTMLDivElement | null) => {
     const prev = bubbleElsRef.current.get(id);
     if (prev && prev !== el && bubbleResizeObserverRef.current) {
       bubbleResizeObserverRef.current.unobserve(prev);
     }
-    if (el) {
-      bubbleElsRef.current.set(id, el);
-      bubbleResizeObserverRef.current?.observe(el);
-    } else {
+    if (!el) {
       bubbleElsRef.current.delete(id);
+      return;
     }
-  }, []);
+    bubbleElsRef.current.set(id, el);
+    bubbleResizeObserverRef.current?.observe(el);
+
+    let physics = bubblePhysicsRef.current.get(id);
+    if (!physics) {
+      const tank = scrollRef.current;
+      const tw = tank?.clientWidth || 300;
+      const band = bandLayoutRef.current.bands.get(id) ?? { top: 0, height: BAND_HEIGHT_TEXT };
+      const w = el.offsetWidth || 90;
+      const h = el.offsetHeight || 44;
+      const v = randomFloatVelocity();
+      physics = {
+        x: Math.random() * Math.max(1, tw - w - FLOAT_PAD * 2) + FLOAT_PAD,
+        y: band.top + Math.random() * Math.max(1, band.height - h - FLOAT_PAD * 2) + FLOAT_PAD,
+        vx: v.vx, vy: v.vy, w, h,
+      };
+      bubblePhysicsRef.current.set(id, physics);
+    }
+    el.style.transform = `translate3d(${physics.x}px, ${physics.y}px, 0)`;
+  }, [randomFloatVelocity]);
 
   const toggleBubblePin = useCallback((id: string) => {
     setPinnedIds((prev) => {
@@ -171,38 +222,21 @@ export function PrivateChatDialog({
     return () => observer.disconnect();
   }, []);
 
-  // Give newly-arrived bubbles a starting position + velocity, and drop
-  // physics state for bubbles that have scrolled out of the float window.
+  // Drop physics state for messages that no longer exist (deleted).
   useEffect(() => {
-    const tank = scrollRef.current;
-    if (!tank) return;
-    const tw = tank.clientWidth, th = tank.clientHeight;
-    const liveIds = new Set(floatingMessages.map((m) => m.id));
-
+    const liveIds = new Set(messages.map((m) => m.id));
     Array.from(bubblePhysicsRef.current.keys()).forEach((id) => {
       if (!liveIds.has(id)) bubblePhysicsRef.current.delete(id);
     });
-
-    floatingMessages.forEach((msg) => {
-      if (bubblePhysicsRef.current.has(msg.id)) return;
-      const el = bubbleElsRef.current.get(msg.id);
-      const w = el?.offsetWidth || 90;
-      const h = el?.offsetHeight || 44;
-      const v = randomFloatVelocity();
-      const physics = {
-        x: Math.random() * Math.max(1, tw - w - FLOAT_PAD * 2) + FLOAT_PAD,
-        y: Math.random() * Math.max(1, th - h - FLOAT_PAD * 2) + FLOAT_PAD,
-        vx: v.vx, vy: v.vy, w, h,
-      };
-      bubblePhysicsRef.current.set(msg.id, physics);
-      if (el) el.style.transform = `translate3d(${physics.x}px, ${physics.y}px, 0)`;
-    });
-  }, [floatingMessages, randomFloatVelocity]);
+  }, [messages]);
 
   // The float/bounce/separation loop. Runs once; reads pinnedIdsRef each
   // frame so a pin toggle never has to tear down and restart the loop.
+  // Always running (even under reduced motion) guarantees overlap
+  // separation and the transform write actually happen — under reduced
+  // motion we just skip the velocity-driven drift, so bubbles settle into
+  // a non-overlapping layout instead of autonomously wandering.
   useEffect(() => {
-    if (reducedMotion) return;
     let raf = 0;
     let lastT: number | null = null;
 
@@ -213,19 +247,35 @@ export function PrivateChatDialog({
       const dt = Math.min((t - lastT) / 1000, 0.05);
       lastT = t;
 
-      const tw = tank.clientWidth, th = tank.clientHeight;
-      const entries = Array.from(bubblePhysicsRef.current.entries());
+      const tw = tank.clientWidth;
+      const scrollTop = tank.scrollTop;
+      const viewTop = scrollTop - CULL_BUFFER;
+      const viewBottom = scrollTop + tank.clientHeight + CULL_BUFFER;
 
-      entries.forEach(([id, b]) => {
-        if (pinnedIdsRef.current[id]) return;
-        b.x += b.vx * dt;
-        b.y += b.vy * dt;
-        if (b.x < FLOAT_PAD) { b.x = FLOAT_PAD; b.vx = Math.abs(b.vx); }
-        if (b.x + b.w > tw - FLOAT_PAD) { b.x = tw - FLOAT_PAD - b.w; b.vx = -Math.abs(b.vx); }
-        if (b.y < FLOAT_PAD) { b.y = FLOAT_PAD; b.vy = Math.abs(b.vy); }
-        if (b.y + b.h > th - FLOAT_PAD) { b.y = th - FLOAT_PAD - b.h; b.vy = -Math.abs(b.vy); }
+      const entries = Array.from(bubblePhysicsRef.current.entries()).filter(([id, b]) => {
+        const band = bandLayoutRef.current.bands.get(id);
+        const bandBottom = band ? band.top + band.height : b.y + b.h;
+        const bandTop = band ? band.top : b.y;
+        return bandBottom >= viewTop && bandTop <= viewBottom;
       });
 
+      if (!reducedMotion) {
+        entries.forEach(([id, b]) => {
+          if (pinnedIdsRef.current[id]) return;
+          const band = bandLayoutRef.current.bands.get(id);
+          const bandTop = band ? band.top : 0;
+          const bandBottom = band ? band.top + band.height : tank.scrollHeight;
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+          if (b.x < FLOAT_PAD) { b.x = FLOAT_PAD; b.vx = Math.abs(b.vx); }
+          if (b.x + b.w > tw - FLOAT_PAD) { b.x = tw - FLOAT_PAD - b.w; b.vx = -Math.abs(b.vx); }
+          if (b.y < bandTop + FLOAT_PAD) { b.y = bandTop + FLOAT_PAD; b.vy = Math.abs(b.vy); }
+          if (b.y + b.h > bandBottom - FLOAT_PAD) { b.y = bandBottom - FLOAT_PAD - b.h; b.vy = -Math.abs(b.vy); }
+        });
+      }
+
+      // Overlap separation always runs — this is what keeps bubbles from
+      // sitting stacked on each other, including right after they spawn.
       for (let i = 0; i < entries.length; i++) {
         for (let j = i + 1; j < entries.length; j++) {
           const [idA, a] = entries[i];
@@ -738,8 +788,10 @@ export function PrivateChatDialog({
       </div>
 
       {/* Messages — float and bounce off the walls until tapped, which pins
-          them in place and reveals who sent them + when. */}
-      <div className="relative flex-1 min-h-0 overflow-hidden py-4" ref={scrollRef}>
+          them in place and reveals who sent them + when. Scroll up for the
+          rest of the conversation — older messages float too, just higher
+          up in the (taller-than-the-viewport) tank. */}
+      <div className="relative flex-1 min-h-0 overflow-y-auto py-4" ref={scrollRef}>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <LoadingSpinner size="lg" />
@@ -750,7 +802,8 @@ export function PrivateChatDialog({
             <p className="text-xs mt-1 text-gray-400">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
           </div>
         ) : (
-          floatingMessages.map((msg) => {
+          <div className="relative" style={{ height: bandLayout.totalHeight }}>
+          {messages.map((msg) => {
             const isMe = msg.sender_id === user?.id;
             const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
             const isImage = msg.message_type === "image" && /^https?:\/\//i.test(msg.message);
@@ -858,7 +911,8 @@ export function PrivateChatDialog({
                 )}
               </div>
             );
-          })
+          })}
+          </div>
         )}
       </div>
 
