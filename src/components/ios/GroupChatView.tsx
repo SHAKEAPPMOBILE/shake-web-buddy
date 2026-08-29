@@ -1021,7 +1021,7 @@ export function GroupChatView({
                     className="w-8 h-8"
                   />
                   <div
-                    className={`w-fit min-w-0 max-w-[70%] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
+                    className={`w-fit min-w-0 max-w-[min(70vw,300px)] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
                   >
                     <MessageBubbleReactions
                       variant="dark"

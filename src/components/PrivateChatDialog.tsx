@@ -631,7 +631,7 @@ export function PrivateChatDialog({
                   </button>
                 )}
                 <div
-                  className={`max-w-[80%] w-fit min-w-0 cursor-pointer ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
+                  className={`max-w-[min(78vw,320px)] w-fit min-w-0 cursor-pointer ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
                   style={{
                     ...(isMedia ? undefined : isMe ? outgoingBubble : incomingBubble),
                     boxShadow: pinned ? "0 0 0 3px rgba(255,178,56,0.55), 0 4px 14px rgba(0,0,0,0.18)" : undefined,

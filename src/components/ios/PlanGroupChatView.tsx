@@ -729,7 +729,7 @@ export function PlanGroupChatView({
                     </AvatarFallback>
                   </Avatar>
                 </button>
-                <div className={`w-fit min-w-0 max-w-[70%] ${isGif || isImage || isVideo ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}>
+                <div className={`w-fit min-w-0 max-w-[min(70vw,300px)] ${isGif || isImage || isVideo ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}>
                   <MessageBubbleReactions
                     variant="light"
                     isOwn={isOwnMessage}
