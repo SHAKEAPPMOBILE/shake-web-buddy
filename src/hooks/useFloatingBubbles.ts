@@ -133,6 +133,21 @@ export function useFloatingBubbles(
 
   useEffect(() => () => { if (pinTimeoutRef.current) clearTimeout(pinTimeoutRef.current); }, []);
 
+  // Tap the tank background (not a bubble) to calm everything back down to
+  // ambient drift speed — an escape hatch after flinging bubbles around.
+  // Leaves pinned/dragged bubbles alone and doesn't force escaped bubbles
+  // back into their band (that would snap them there instantly, which is
+  // the opposite of "calm").
+  const calmDown = useCallback(() => {
+    physicsRef.current.forEach((physics, id) => {
+      if (id === pinnedIdRef.current) return;
+      if (dragRef.current.has(id)) return;
+      const v = randomVelocity();
+      physics.vx = v.vx;
+      physics.vy = v.vy;
+    });
+  }, [randomVelocity]);
+
   const registerBubbleEl = useCallback((id: string, el: HTMLDivElement | null) => {
     const prev = elsRef.current.get(id);
     if (prev && prev !== el && resizeObserverRef.current) {
@@ -296,14 +311,20 @@ export function useFloatingBubbles(
 
       const tw = tank.clientWidth;
       const scrollTop = tank.scrollTop;
+      const viewportTop = scrollTop;
+      const viewportBottom = scrollTop + tank.clientHeight;
       const viewTop = scrollTop - CULL_BUFFER;
       const viewBottom = scrollTop + tank.clientHeight + CULL_BUFFER;
 
       const entries = Array.from(physicsRef.current.entries()).filter(([id, b]) => {
-        if (dragRef.current.has(id)) return true; // always keep the actively-dragged one live
+        // Escaped (thrown) and actively-dragged bubbles are always kept live —
+        // they're bounded to the current viewport below, so they can never
+        // actually be outside the culled range; this is just a defensive
+        // belt-and-suspenders so a thrown bubble is never "abandoned" mid-flight.
+        if (dragRef.current.has(id) || b.escaped) return true;
         const band = bandLayoutRef.current.bands.get(id);
-        const bandBottom = b.escaped ? tank.scrollHeight : band ? band.top + band.height : b.y + b.h;
-        const bandTop = b.escaped ? 0 : band ? band.top : b.y;
+        const bandBottom = band ? band.top + band.height : b.y + b.h;
+        const bandTop = band ? band.top : b.y;
         return bandBottom >= viewTop && bandTop <= viewBottom;
       });
 
@@ -312,8 +333,12 @@ export function useFloatingBubbles(
           if (id === pinnedIdRef.current) return;
           if (dragRef.current.has(id)) return; // being manually dragged this frame
           const band = bandLayoutRef.current.bands.get(id);
-          const bandTop = b.escaped ? 0 : band ? band.top : 0;
-          const bandBottom = b.escaped ? tank.scrollHeight : band ? band.top + band.height : tank.scrollHeight;
+          // A thrown bubble bounces within the CURRENT viewport (not the full,
+          // possibly much taller, canvas) so it's always visible without
+          // having to scroll to find it — and stays visible even as the user
+          // scrolls, since this is recomputed from live scrollTop every frame.
+          const bandTop = b.escaped ? viewportTop : band ? band.top : 0;
+          const bandBottom = b.escaped ? viewportBottom : band ? band.top + band.height : viewportBottom;
           b.x += b.vx * dt;
           b.y += b.vy * dt;
           if (b.x < FLOAT_PAD) { b.x = FLOAT_PAD; b.vx = Math.abs(b.vx); }
@@ -376,6 +401,7 @@ export function useFloatingBubbles(
     getBubbleProps,
     getClickHandler,
     suppressNextClick,
+    calmDown,
   };
 }
 

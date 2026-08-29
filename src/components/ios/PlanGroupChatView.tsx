@@ -126,7 +126,7 @@ export function PlanGroupChatView({
     id: msg.id,
     isMedia: (msg.message_type === "gif" || msg.message_type === "image" || msg.message_type === "video") && /^https?:\/\//i.test(msg.message),
   })), [messages]);
-  const { canvasHeight, isPinned, getBubbleProps, getClickHandler } = useFloatingBubbles(floatItems, chatTankRef);
+  const { canvasHeight, isPinned, getBubbleProps, getClickHandler, calmDown } = useFloatingBubbles(floatItems, chatTankRef);
 
   const messageIds = useMemo(() => messages.map((m) => m.id), [messages]);
   const reactionsEnabled = Boolean(user && activity.id);
@@ -687,7 +687,11 @@ export function PlanGroupChatView({
             </p>
           </div>
         ) : (
-          <div className="relative" style={{ height: canvasHeight }}>
+          <div
+            className="relative"
+            style={{ height: canvasHeight }}
+            onClick={(e) => { if (e.target === e.currentTarget) calmDown(); }}
+          >
           {messages.map((msg) => {
             const isOwnMessage = msg.user_id === user?.id;
             const profile = profiles[msg.user_id];

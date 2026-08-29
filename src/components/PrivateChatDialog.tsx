@@ -85,7 +85,7 @@ export function PrivateChatDialog({
     id: msg.id,
     isMedia: (msg.message_type ?? "text") !== "text" && /^https?:\/\//i.test(msg.message),
   })), [messages]);
-  const { canvasHeight, isPinned, getBubbleProps, getClickHandler, suppressNextClick } = useFloatingBubbles(floatItems, scrollRef);
+  const { canvasHeight, isPinned, getBubbleProps, getClickHandler, suppressNextClick, calmDown } = useFloatingBubbles(floatItems, scrollRef);
 
   const chatSuggestions = useMemo(() => [
     t('chat.suggestions.hey', 'Hey! 👋'),
@@ -585,7 +585,11 @@ export function PrivateChatDialog({
             <p className="text-xs mt-1 text-gray-400">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
           </div>
         ) : (
-          <div className="relative" style={{ height: canvasHeight }}>
+          <div
+            className="relative"
+            style={{ height: canvasHeight }}
+            onClick={(e) => { if (e.target === e.currentTarget) calmDown(); }}
+          >
           {messages.map((msg) => {
             const isMe = msg.sender_id === user?.id;
             const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);

@@ -228,7 +228,7 @@ export function GroupChatView({
     id: msg.id,
     isMedia: (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message),
   })), [messages]);
-  const { canvasHeight, isPinned, getBubbleProps, getClickHandler } = useFloatingBubbles(floatItems, chatTankRef);
+  const { canvasHeight, isPinned, getBubbleProps, getClickHandler, calmDown } = useFloatingBubbles(floatItems, chatTankRef);
 
   // Curtain drag state
   const [snapState, setSnapState] = useState<SnapState>('partial');
@@ -992,7 +992,11 @@ export function GroupChatView({
               </p>
             </div>
           ) : (
-            <div className="relative" style={{ height: canvasHeight }}>
+            <div
+              className="relative"
+              style={{ height: canvasHeight }}
+              onClick={(e) => { if (e.target === e.currentTarget) calmDown(); }}
+            >
             {messages.map((msg) => {
               const isOwnMessage = msg.user_id === user?.id;
               const profile = profiles[msg.user_id];
