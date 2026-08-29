@@ -75,10 +75,184 @@ export function PrivateChatDialog({
   messagesRef.current = messages;
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
   const { canSendText, addCharacters } = useTextMessageLimit();
+
+  // ── Floating "aquarium" bubbles ──────────────────────────────────────────
+  // Only the most recent FLOAT_WINDOW messages float — floating the entire
+  // history of a long-running DM would mean dozens/hundreds of bubbles on
+  // screen at once, which isn't readable or performant.
+  const FLOAT_WINDOW = 20;
+  const FLOAT_SPEED = 42; // px/sec
+  const FLOAT_PAD = 6;
+
+  const floatingMessages = useMemo(() => messages.slice(-FLOAT_WINDOW), [messages]);
+
+  const [pinnedIds, setPinnedIds] = useState<Record<string, boolean>>({});
+  const pinnedIdsRef = useRef<Record<string, boolean>>({});
+  useEffect(() => { pinnedIdsRef.current = pinnedIds; }, [pinnedIds]);
+
+  const bubblePhysicsRef = useRef<Map<string, { x: number; y: number; vx: number; vy: number; w: number; h: number }>>(new Map());
+  const bubbleElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
+  const bubbleResizeObserverRef = useRef<ResizeObserver | null>(null);
+  // A long-press that opens the reaction picker still fires a trailing click
+  // when the finger lifts — this swallows just that one click so it doesn't
+  // also toggle the pin.
+  const suppressBubbleClickRef = useRef(false);
+  const reducedMotion = useMemo(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    []
+  );
+
+  const randomFloatVelocity = useCallback(() => {
+    const angle = Math.random() * Math.PI * 2;
+    return { vx: Math.cos(angle) * FLOAT_SPEED, vy: Math.sin(angle) * FLOAT_SPEED };
+  }, []);
+
+  const registerBubbleEl = useCallback((id: string, el: HTMLDivElement | null) => {
+    const prev = bubbleElsRef.current.get(id);
+    if (prev && prev !== el && bubbleResizeObserverRef.current) {
+      bubbleResizeObserverRef.current.unobserve(prev);
+    }
+    if (el) {
+      bubbleElsRef.current.set(id, el);
+      bubbleResizeObserverRef.current?.observe(el);
+    } else {
+      bubbleElsRef.current.delete(id);
+    }
+  }, []);
+
+  const toggleBubblePin = useCallback((id: string) => {
+    setPinnedIds((prev) => {
+      const wasPinned = !!prev[id];
+      const next = { ...prev };
+      if (wasPinned) delete next[id];
+      else next[id] = true;
+
+      const physics = bubblePhysicsRef.current.get(id);
+      if (physics) {
+        if (wasPinned) {
+          const v = randomFloatVelocity();
+          physics.vx = v.vx;
+          physics.vy = v.vy;
+        } else {
+          physics.vx = 0;
+          physics.vy = 0;
+        }
+      }
+      return next;
+    });
+  }, [randomFloatVelocity]);
+
+  const handleBubbleClick = useCallback((id: string) => {
+    if (suppressBubbleClickRef.current) {
+      suppressBubbleClickRef.current = false;
+      return;
+    }
+    toggleBubblePin(id);
+  }, [toggleBubblePin]);
+
+  // Set up a shared ResizeObserver once — it keeps each bubble's collision
+  // box in sync as pin-reveal, reaction pills, or media load change its size.
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const id = (entry.target as HTMLElement).dataset.msgId;
+        if (!id) continue;
+        const physics = bubblePhysicsRef.current.get(id);
+        if (!physics) continue;
+        physics.w = entry.borderBoxSize?.[0]?.inlineSize ?? entry.contentRect.width;
+        physics.h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
+      }
+    });
+    bubbleResizeObserverRef.current = observer;
+    bubbleElsRef.current.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  // Give newly-arrived bubbles a starting position + velocity, and drop
+  // physics state for bubbles that have scrolled out of the float window.
+  useEffect(() => {
+    const tank = scrollRef.current;
+    if (!tank) return;
+    const tw = tank.clientWidth, th = tank.clientHeight;
+    const liveIds = new Set(floatingMessages.map((m) => m.id));
+
+    Array.from(bubblePhysicsRef.current.keys()).forEach((id) => {
+      if (!liveIds.has(id)) bubblePhysicsRef.current.delete(id);
+    });
+
+    floatingMessages.forEach((msg) => {
+      if (bubblePhysicsRef.current.has(msg.id)) return;
+      const el = bubbleElsRef.current.get(msg.id);
+      const w = el?.offsetWidth || 90;
+      const h = el?.offsetHeight || 44;
+      const v = randomFloatVelocity();
+      const physics = {
+        x: Math.random() * Math.max(1, tw - w - FLOAT_PAD * 2) + FLOAT_PAD,
+        y: Math.random() * Math.max(1, th - h - FLOAT_PAD * 2) + FLOAT_PAD,
+        vx: v.vx, vy: v.vy, w, h,
+      };
+      bubblePhysicsRef.current.set(msg.id, physics);
+      if (el) el.style.transform = `translate3d(${physics.x}px, ${physics.y}px, 0)`;
+    });
+  }, [floatingMessages, randomFloatVelocity]);
+
+  // The float/bounce/separation loop. Runs once; reads pinnedIdsRef each
+  // frame so a pin toggle never has to tear down and restart the loop.
+  useEffect(() => {
+    if (reducedMotion) return;
+    let raf = 0;
+    let lastT: number | null = null;
+
+    const tick = (t: number) => {
+      const tank = scrollRef.current;
+      if (!tank) { raf = requestAnimationFrame(tick); return; }
+      if (lastT === null) lastT = t;
+      const dt = Math.min((t - lastT) / 1000, 0.05);
+      lastT = t;
+
+      const tw = tank.clientWidth, th = tank.clientHeight;
+      const entries = Array.from(bubblePhysicsRef.current.entries());
+
+      entries.forEach(([id, b]) => {
+        if (pinnedIdsRef.current[id]) return;
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        if (b.x < FLOAT_PAD) { b.x = FLOAT_PAD; b.vx = Math.abs(b.vx); }
+        if (b.x + b.w > tw - FLOAT_PAD) { b.x = tw - FLOAT_PAD - b.w; b.vx = -Math.abs(b.vx); }
+        if (b.y < FLOAT_PAD) { b.y = FLOAT_PAD; b.vy = Math.abs(b.vy); }
+        if (b.y + b.h > th - FLOAT_PAD) { b.y = th - FLOAT_PAD - b.h; b.vy = -Math.abs(b.vy); }
+      });
+
+      for (let i = 0; i < entries.length; i++) {
+        for (let j = i + 1; j < entries.length; j++) {
+          const [idA, a] = entries[i];
+          const [idB, b] = entries[j];
+          const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+          const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+          if (overlapX > 0 && overlapY > 0) {
+            const pushX = overlapX / 2, pushY = overlapY / 2;
+            const dirX = (a.x + a.w / 2) < (b.x + b.w / 2) ? -1 : 1;
+            const dirY = (a.y + a.h / 2) < (b.y + b.h / 2) ? -1 : 1;
+            if (!pinnedIdsRef.current[idA]) { a.x += dirX * pushX * 0.5; a.y += dirY * pushY * 0.5; }
+            if (!pinnedIdsRef.current[idB]) { b.x -= dirX * pushX * 0.5; b.y -= dirY * pushY * 0.5; }
+          }
+        }
+      }
+
+      entries.forEach(([id, b]) => {
+        const el = bubbleElsRef.current.get(id);
+        if (el) el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
+      });
+
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [reducedMotion]);
 
   const chatSuggestions = useMemo(() => [
     t('chat.suggestions.hey', 'Hey! 👋'),
@@ -312,6 +486,7 @@ export function PrivateChatDialog({
     cancelLongPress();
     if (longPressFired.current) {
       longPressFired.current = false;
+      suppressBubbleClickRef.current = true;
       return;
     }
     // Double-tap detection
@@ -562,8 +737,9 @@ export function PrivateChatDialog({
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-y-auto py-4" ref={scrollRef}>
+      {/* Messages — float and bounce off the walls until tapped, which pins
+          them in place and reveals who sent them + when. */}
+      <div className="relative flex-1 min-h-0 overflow-hidden py-4" ref={scrollRef}>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <LoadingSpinner size="lg" />
@@ -574,100 +750,116 @@ export function PrivateChatDialog({
             <p className="text-xs mt-1 text-gray-400">{t('chat.startConversation', 'Send a message to start the conversation!')}</p>
           </div>
         ) : (
-          <div className="space-y-3 px-4">
-            {messages.map((msg) => {
-              const isMe = msg.sender_id === user?.id;
-              const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
-              const isImage = msg.message_type === "image" && /^https?:\/\//i.test(msg.message);
-              const isVideo = msg.message_type === "video" && /^https?:\/\//i.test(msg.message);
-              const isMedia = isGif || isImage || isVideo;
+          floatingMessages.map((msg) => {
+            const isMe = msg.sender_id === user?.id;
+            const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+            const isImage = msg.message_type === "image" && /^https?:\/\//i.test(msg.message);
+            const isVideo = msg.message_type === "video" && /^https?:\/\//i.test(msg.message);
+            const isMedia = isGif || isImage || isVideo;
 
-              const msgReactions = reactions[msg.id] || [];
+            const msgReactions = reactions[msg.id] || [];
+            const isPinned = !!pinnedIds[msg.id];
 
-              const incomingBubble: React.CSSProperties = {
-                background: "white",
-                border: "1px solid rgba(0,0,0,0.08)",
-              };
-              const outgoingBubble: React.CSSProperties = {
-                background: "#00C6B6",
-                border: "1px solid rgba(0,198,182,0.4)",
-              };
+            const incomingBubble: React.CSSProperties = {
+              background: "white",
+              border: "1px solid rgba(0,0,0,0.08)",
+            };
+            const outgoingBubble: React.CSSProperties = {
+              background: "#00C6B6",
+              border: "1px solid rgba(0,198,182,0.4)",
+            };
 
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
-                >
-                  {/* Bubble row: trash icon sits beside the bubble for own messages */}
-                  <div className={`flex items-end gap-1 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                  {/* Trash icon — only for own messages, only when this msg is active */}
-                  {isMe && activeMsg?.id === msg.id && (
-                    <button
-                      onClick={() => handleDeleteMessage(msg.id)}
-                      className="opacity-50 hover:opacity-100 p-1 shrink-0 self-center"
-                      aria-label="Delete message"
-                    >
-                      <Trash2 className="w-4 h-4 text-gray-400" />
-                    </button>
-                  )}
-                  <div
-                    className={`max-w-[80%] w-fit min-w-0 ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
-                    style={isMedia ? undefined : isMe ? outgoingBubble : incomingBubble}
-                    onTouchStart={(e) => startLongPress(msg.id, isMe, e.touches[0].clientY)}
-                    onTouchMove={cancelLongPress}
-                    onTouchEnd={() => handleTouchEnd(msg.id, isMe)}
-                    onContextMenu={(e) => { e.preventDefault(); setActiveMsg({ id: msg.id, isMe, pickerY: e.clientY }); }}
+            return (
+              <div
+                key={msg.id}
+                data-msg-id={msg.id}
+                ref={(el) => registerBubbleEl(msg.id, el)}
+                className={`absolute top-0 left-0 flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                style={{ zIndex: isPinned ? 10 : 1 }}
+              >
+                {/* Bubble row: trash icon sits beside the bubble for own messages */}
+                <div className={`flex items-end gap-1 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                {/* Trash icon — only for own messages, only when this msg is active */}
+                {isMe && activeMsg?.id === msg.id && (
+                  <button
+                    onClick={() => handleDeleteMessage(msg.id)}
+                    className="opacity-50 hover:opacity-100 p-1 shrink-0 self-center"
+                    aria-label="Delete message"
                   >
-                    {isGif ? (
-                      <>
-                        <InlineChatGif src={msg.message} variant="dark" onLoad={scrollMessagesToBottom} />
-                        <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>
-                      </>
-                    ) : isImage ? (
-                      <>
-                        <img src={msg.message} alt="shared image" className="rounded-2xl max-w-[260px] w-full object-cover" onLoad={scrollMessagesToBottom} />
-                        <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>
-                      </>
-                    ) : isVideo ? (
-                      <>
-                        <video src={msg.message} controls playsInline preload="metadata" className="rounded-2xl max-w-[260px] w-full bg-black/30" onLoadedMetadata={scrollMessagesToBottom} />
-                        <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>
-                      </>
-                    ) : (
-                      <>
-                        <p className={`text-sm break-words ${isMe ? "text-white" : "text-gray-900"}`}>{msg.message}</p>
-                        <p className={`text-[10px] mt-1 ${isMe ? "text-white/70" : "text-gray-400"}`}>{format(new Date(msg.created_at), "HH:mm")}</p>
-                      </>
-                    )}
-                  </div>
-                  </div>{/* end bubble row */}
-
-                  {/* Reaction pills */}
-                  {msgReactions.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {msgReactions.map(({ emoji, userIds }) => (
-                        <button
-                          key={emoji}
-                          onClick={() => handleReaction(msg.id, emoji)}
-                          className="flex items-center gap-0.5 text-xs px-2 py-0.5 rounded-full border transition-colors"
-                          style={
-                            user && userIds.includes(user.id)
-                              ? { background: "rgba(0,198,182,0.2)", borderColor: "rgba(0,198,182,0.5)", color: "#0d9488" }
-                              : { background: "rgba(0,0,0,0.05)", borderColor: "rgba(0,0,0,0.12)", color: "#374151" }
-                          }
-                        >
-                          <span>{emoji}</span>
-                          {userIds.length > 1 && <span className="ml-0.5">{userIds.length}</span>}
-                        </button>
-                      ))}
-                    </div>
+                    <Trash2 className="w-4 h-4 text-gray-400" />
+                  </button>
+                )}
+                <div
+                  className={`max-w-[80%] w-fit min-w-0 cursor-pointer ${isMedia ? "shrink-0 overflow-visible" : "px-3 py-2 rounded-2xl"}`}
+                  style={{
+                    ...(isMedia ? undefined : isMe ? outgoingBubble : incomingBubble),
+                    boxShadow: isPinned ? "0 0 0 3px rgba(255,178,56,0.55), 0 4px 14px rgba(0,0,0,0.18)" : undefined,
+                    transition: "box-shadow 0.25s ease",
+                  }}
+                  onTouchStart={(e) => startLongPress(msg.id, isMe, e.touches[0].clientY)}
+                  onTouchMove={cancelLongPress}
+                  onTouchEnd={() => handleTouchEnd(msg.id, isMe)}
+                  onContextMenu={(e) => { e.preventDefault(); setActiveMsg({ id: msg.id, isMe, pickerY: e.clientY }); }}
+                  onClick={() => handleBubbleClick(msg.id)}
+                >
+                  {isGif ? (
+                    <>
+                      <InlineChatGif src={msg.message} variant="dark" onLoad={scrollMessagesToBottom} />
+                      {isPinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
+                    </>
+                  ) : isImage ? (
+                    <>
+                      <img src={msg.message} alt="shared image" className="rounded-2xl max-w-[260px] w-full object-cover" onLoad={scrollMessagesToBottom} />
+                      {isPinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
+                    </>
+                  ) : isVideo ? (
+                    <>
+                      <video src={msg.message} controls playsInline preload="metadata" className="rounded-2xl max-w-[260px] w-full bg-black/30" onLoadedMetadata={scrollMessagesToBottom} />
+                      {isPinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
+                    </>
+                  ) : (
+                    <>
+                      <p className={`text-sm break-words ${isMe ? "text-white" : "text-gray-900"}`}>{msg.message}</p>
+                      {isPinned && <p className={`text-[10px] mt-1 ${isMe ? "text-white/70" : "text-gray-400"}`}>{format(new Date(msg.created_at), "HH:mm")}</p>}
+                    </>
                   )}
                 </div>
-              );
-            })}
-          </div>
+                </div>{/* end bubble row */}
+
+                {/* Author pill — only while pinned */}
+                {isPinned && (
+                  <span
+                    className="mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full text-white whitespace-nowrap"
+                    style={{ background: "#049184" }}
+                  >
+                    {isMe ? t('chat.you', 'You') : displayName}
+                  </span>
+                )}
+
+                {/* Reaction pills */}
+                {msgReactions.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {msgReactions.map(({ emoji, userIds }) => (
+                      <button
+                        key={emoji}
+                        onClick={() => handleReaction(msg.id, emoji)}
+                        className="flex items-center gap-0.5 text-xs px-2 py-0.5 rounded-full border transition-colors"
+                        style={
+                          user && userIds.includes(user.id)
+                            ? { background: "rgba(0,198,182,0.2)", borderColor: "rgba(0,198,182,0.5)", color: "#0d9488" }
+                            : { background: "rgba(0,0,0,0.05)", borderColor: "rgba(0,0,0,0.12)", color: "#374151" }
+                        }
+                      >
+                        <span>{emoji}</span>
+                        {userIds.length > 1 && <span className="ml-0.5">{userIds.length}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* Quick suggestions - show when input is empty */}
