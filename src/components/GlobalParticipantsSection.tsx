@@ -33,6 +33,11 @@ const FREE_VISIBLE_COUNT = 7;
 export function GlobalParticipantsSection() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  // user_ids whose avatar_url pointed at an image that actually failed to
+  // load (broken/expired storage link) — excluded from the preview badge so
+  // a broken link never falls back to showing the generic placeholder icon
+  // there; the next real-photo candidate takes that slot instead.
+  const [failedPreviewAvatarIds, setFailedPreviewAvatarIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [showListDialog, setShowListDialog] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -225,11 +230,15 @@ export function GlobalParticipantsSection() {
   const blurredParticipants = filteredParticipants.slice(FREE_VISIBLE_COUNT);
   const hasMoreParticipants = blurredParticipants.length > 0;
 
-  // Preview avatars for the badge — real profile photos only, never the
-  // generic placeholder icon. Shows fewer than 7 rather than padding with
-  // photo-less users.
+  // Preview avatars for the badge — real, actually-loadable profile photos
+  // only, never the generic placeholder icon. Excludes users whose image
+  // URL turned out broken (see the img onError below) so a dead link gets
+  // swapped for the next candidate instead of showing a silhouette. Shows
+  // fewer than 7 rather than padding with photo-less/broken-photo users.
   const uniqueByUser = Array.from(new Map(participants.map((p) => [p.user_id, p] as const)).values());
-  const previewAvatars = uniqueByUser.filter((p) => p.avatar_url).slice(0, 7);
+  const previewAvatars = uniqueByUser
+    .filter((p) => p.avatar_url && !failedPreviewAvatarIds.has(p.user_id))
+    .slice(0, 7);
 
   if (totalCount === 0 && !isLoading) {
     return null;
@@ -251,18 +260,16 @@ export function GlobalParticipantsSection() {
                 className="w-7 h-7 rounded-full bg-muted border-2 border-card flex items-center justify-center overflow-hidden"
                 style={{ zIndex: previewAvatars.length - idx }}
               >
-                {p.avatar_url ? (
-                  <img
-                    src={getDisplayAvatarUrl(p.avatar_url) ?? p.avatar_url}
-                    alt={p.name || "Shaker"}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                ) : null}
-                <User className={`w-3.5 h-3.5 text-muted-foreground ${p.avatar_url ? 'hidden' : ''}`} />
+                <img
+                  src={getDisplayAvatarUrl(p.avatar_url) ?? p.avatar_url!}
+                  alt={p.name || "Shaker"}
+                  className="w-full h-full object-cover"
+                  onError={() => {
+                    setFailedPreviewAvatarIds((prev) => (
+                      prev.has(p.user_id) ? prev : new Set(prev).add(p.user_id)
+                    ));
+                  }}
+                />
               </div>
             ))}
           </div>
