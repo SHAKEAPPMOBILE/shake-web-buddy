@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import { useActivityVenue } from "@/contexts/VenueContext";
-import { getActivityById } from "@/data/activityTypes";
+import { getActivityById, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedActivityDay } from "@/lib/activity-translations";
 import { useTranslation } from "react-i18next";
 import { triggerConfettiBurstOnce, triggerConfettiWaterfall } from "@/lib/confetti";
@@ -85,7 +85,7 @@ export function ActivityJoinedConfirmation({
 
   const label = getTranslatedActivityLabel(t, activityType);
   const activityDay = getTranslatedActivityDay(t, activityType);
-  const activityTime = activityType === "dinner" ? "7:00 PM" : activityType === "drinks" ? "8:00 PM" : null;
+  const activityTime = ACTIVITY_START_TIMES[activityType] ?? null;
   const activityMeta = getActivityById(activityType);
 
   const trimAddress = (address: string | null | undefined): string => {

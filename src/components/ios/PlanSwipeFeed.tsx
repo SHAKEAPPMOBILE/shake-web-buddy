@@ -19,7 +19,7 @@ import { format, isToday, isTomorrow } from "date-fns";
 import { ChevronLeft, DollarSign, Volume2, VolumeX, User } from "lucide-react";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
-import { getActivityIcon, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
+import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
@@ -221,7 +221,14 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
     if (!plan.scheduled_for) return null;
     const d = parseDbDate(plan.scheduled_for);
     const day = isToday(d) ? t('common.today', 'Today') : isTomorrow(d) ? t('common.tomorrow', 'Tomorrow') : format(d, "EEE, d MMM");
-    return `${day} · ${format(d, "h:mm a")}`;
+    // Auto-generated (carousel) plans carry a synthetic noon scheduled_for —
+    // it only encodes which DAY the card is for, never a real time of day.
+    // Show the activity type's actual start time instead of formatting that
+    // placeholder noon straight out of scheduled_for.
+    const time = plan.is_auto_generated
+      ? ACTIVITY_START_TIMES[plan.activity_type]
+      : format(d, "h:mm a");
+    return time ? `${day} · ${time}` : day;
   })();
 
   /* ── Derive action button props ── */

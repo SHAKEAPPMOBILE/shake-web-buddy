@@ -7,7 +7,7 @@ import { SHAKE_CITIES, REGIONS } from "@/data/cities";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { SuperHumanIcon } from "@/components/SuperHumanIcon";
-import { getActivityDay, getActivityById } from "@/data/activityTypes";
+import { getActivityDay, getActivityById, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { getTranslatedActivityDay } from "@/lib/activity-translations";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -50,7 +50,7 @@ export function ActivityConfirmationDialog({
   if (!activity) return null;
 
   const activityDay = getTranslatedActivityDay(t, activity.id);
-  const activityTime = activity.id === 'dinner' ? '7:00 PM' : activity.id === 'drinks' ? '8:00 PM' : null;
+  const activityTime = ACTIVITY_START_TIMES[activity.id] ?? null;
   const displayCity = selectedCity || currentCity;
 
   const handleChangeCity = () => {
