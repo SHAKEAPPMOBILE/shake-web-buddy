@@ -217,7 +217,6 @@ export function GroupChatView({
   } | null>(null);
   const [participants, setParticipants] = useState<{ user_id: string; name: string | null; avatar_url: string | null; nationality: string | null; occupation: string | null; interests: string[] | null }[]>([]);
   // MAX_GROUP_CAPACITY imported from @/lib/activityGroups
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatTankRef = useRef<HTMLDivElement>(null);
   const prevParticipantsRef = useRef<typeof participants>([]);
 
@@ -1036,7 +1035,15 @@ export function GroupChatView({
                       onPointerUp={onMessagePointerEnd}
                       onPointerCancel={onMessagePointerEnd}
                       onPointerLeave={onMessagePointerEnd}
-                      onClick={getClickHandler(msg.id)}
+                      onClick={() => {
+                        // A long-press that opened the reaction bar still fires a
+                        // trailing click when the finger lifts — reactionBarMessageId
+                        // is set (synchronously, during the hold) before that click
+                        // fires, so this reliably tells the two gestures apart
+                        // without needing to touch the shared reaction-bar hook.
+                        if (reactionBarMessageId === msg.id) return;
+                        getClickHandler(msg.id)();
+                      }}
                       header={
                         pinned ? (
                           <div className={`flex items-baseline gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
@@ -1107,7 +1114,6 @@ export function GroupChatView({
             })}
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {user && !message.trim() && (

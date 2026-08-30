@@ -15,7 +15,7 @@ import { PlanGroupChatView } from "./PlanGroupChatView";
 import { PlansEmptyState } from "./PlansEmptyState";
 import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate } from "@/data/activityTypes";
+import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate, getActivityTimeString } from "@/data/activityTypes";
 import { formatDateWithTranslation, parseDbDate } from "@/lib/date-utils";
 import { cn, getPriceValue, getShareLabel } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -127,7 +127,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [activities, setActivities] = useState<PlanActivity[]>([]);
   const [cityPlans, setCityPlans] = useState<PlanActivity[]>([]);
   // Guards fetchPlans against out-of-order resolution — see fetchPlans's isStale().
+  // fetchCounterRef generates strictly-increasing ids (Date.now() can collide
+  // when two fetches start within the same millisecond, which defeats the guard).
   const latestFetchIdRef = useRef(0);
+  const fetchCounterRef = useRef(0);
   const [isCitySheetOpen, setIsCitySheetOpen] = useState(false);
   const [joinedPlansCityFilter, setJoinedPlansCityFilter] = useState<string | null>(null);
   const [cityAtPickerOpen, setCityAtPickerOpen] = useState<string | null>(null);
@@ -224,7 +227,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // even when fetchPlansRef.current holds an older function instance.
     const showAllCities = allPlansRef.current.showAllCities;
     const effectiveCity = selectedCity;
-    const fetchId = Date.now();
+    const fetchId = ++fetchCounterRef.current;
     // Only the most recently-started fetch is allowed to write state. Without this,
     // an older fetch (e.g. one already in flight when the user joins a plan and
     // triggers a fresh fetch) can resolve AFTER the newer one and clobber it with
@@ -1844,9 +1847,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
                       <span className="text-xs text-gray-500">
-                        {plan.scheduled_for
-                          ? format(parseDbDate(plan.scheduled_for), "EEE, d MMM · h:mm a")
-                          : t('common.today')}
+                        {plan.scheduled_for ? (() => {
+                          const d = parseDbDate(plan.scheduled_for);
+                          const timeStr = getActivityTimeString(plan.activity_type, plan.is_auto_generated, d, (dt) => format(dt, "h:mm a"));
+                          return timeStr ? `${format(d, "EEE, d MMM")} · ${timeStr}` : format(d, "EEE, d MMM");
+                        })() : t('common.today')}
                       </span>
                     </div>
                   </div>
@@ -2104,9 +2109,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                           <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
                           <span className="text-xs text-gray-500">
-                            {plan.scheduled_for
-                              ? format(parseDbDate(plan.scheduled_for), "EEE, d MMM · h:mm a")
-                              : t('common.today')}
+                            {plan.scheduled_for ? (() => {
+                              const d = parseDbDate(plan.scheduled_for);
+                              const timeStr = getActivityTimeString(plan.activity_type, plan.is_auto_generated, d, (dt) => format(dt, "h:mm a"));
+                              return timeStr ? `${format(d, "EEE, d MMM")} · ${timeStr}` : format(d, "EEE, d MMM");
+                            })() : t('common.today')}
                           </span>
                           {plan.scheduled_for && isToday(parseDbDate(plan.scheduled_for)) && (
                             <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-semibold px-1.5 py-0.5 rounded-full animate-pulse">
@@ -2325,13 +2332,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       </p>
                       <p className="text-xs text-white/80 mt-0.5 truncate">
                         {planPreview.city}
-                        {planPreview.scheduled_for && ` · ${
-                          isToday(parseDbDate(planPreview.scheduled_for))
-                            ? t('common.today')
-                            : isTomorrow(parseDbDate(planPreview.scheduled_for))
-                            ? t('common.tomorrow')
-                            : format(parseDbDate(planPreview.scheduled_for), "EEE, d MMM")
-                        } · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`}
+                        {planPreview.scheduled_for && (() => {
+                          const d = parseDbDate(planPreview.scheduled_for);
+                          const day = isToday(d) ? t('common.today') : isTomorrow(d) ? t('common.tomorrow') : format(d, "EEE, d MMM");
+                          const timeStr = getActivityTimeString(planPreview.activity_type, planPreview.is_auto_generated, d, (dt) => format(dt, "h:mm a"));
+                          return timeStr ? ` · ${day} · ${timeStr}` : ` · ${day}`;
+                        })()}
                       </p>
                       {(() => {
                         const venue = getVenueForActivity(planPreview.city, planPreview.activity_type);
@@ -2398,13 +2404,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     {planPreview.activity_type !== "general" && `${getActivityLabel(planPreview.activity_type)} · `}{planPreview.city}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {!planPreview.scheduled_for
-                      ? t('common.today')
-                      : isToday(parseDbDate(planPreview.scheduled_for))
-                      ? `${t('common.today')} · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`
-                      : isTomorrow(parseDbDate(planPreview.scheduled_for))
-                      ? `${t('common.tomorrow')} · ${format(parseDbDate(planPreview.scheduled_for), "h:mm a")}`
-                      : format(parseDbDate(planPreview.scheduled_for), "EEE, d MMM · h:mm a")}
+                    {!planPreview.scheduled_for ? t('common.today') : (() => {
+                      const d = parseDbDate(planPreview.scheduled_for);
+                      const day = isToday(d) ? t('common.today') : isTomorrow(d) ? t('common.tomorrow') : format(d, "EEE, d MMM");
+                      const timeStr = getActivityTimeString(planPreview.activity_type, planPreview.is_auto_generated, d, (dt) => format(dt, "h:mm a"));
+                      return timeStr ? `${day} · ${timeStr}` : day;
+                    })()}
                   </p>
                 </div>
 

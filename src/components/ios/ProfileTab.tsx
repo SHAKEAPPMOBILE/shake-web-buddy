@@ -946,10 +946,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                       navigator.share({
                         title: 'SHAKE',
                         text: t('profile.shareText', 'Join me on SHAKE to find fun activities and meet new people!'),
-                        url: 'https://shakeapp.today',
+                        url: 'https://www.shakeapp.today',
                       }).catch(() => {});
                     } else {
-                      navigator.clipboard.writeText('https://shakeapp.today').then(() => {
+                      navigator.clipboard.writeText('https://www.shakeapp.today').then(() => {
                         toast({ title: t('profile.linkCopied', 'Link copied!') });
                       });
                     }

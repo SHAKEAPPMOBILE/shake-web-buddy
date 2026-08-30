@@ -83,6 +83,10 @@ export function GlobalParticipantsSection() {
     if (showSpinner) {
       setIsLoading(true);
     }
+    // Give previously-broken avatar links another chance on every refetch —
+    // otherwise a photo that was broken once stays excluded from the preview
+    // pill forever, even after it's fixed, until a full remount.
+    setFailedPreviewAvatarIds(new Set());
 
     // Get all users who signed up (ordered by most recent), excluding test users
     const { data: profiles, error: profilesError } = await supabase

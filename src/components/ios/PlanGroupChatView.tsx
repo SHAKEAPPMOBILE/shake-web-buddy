@@ -743,7 +743,15 @@ export function PlanGroupChatView({
                     onPointerUp={onMessagePointerEnd}
                     onPointerCancel={onMessagePointerEnd}
                     onPointerLeave={onMessagePointerEnd}
-                    onClick={getClickHandler(msg.id)}
+                    onClick={() => {
+                      // A long-press that opened the reaction bar still fires a
+                      // trailing click when the finger lifts — reactionBarMessageId
+                      // is set (synchronously, during the hold) before that click
+                      // fires, so this reliably tells the two gestures apart
+                      // without needing to touch the shared reaction-bar hook.
+                      if (reactionBarMessageId === msg.id) return;
+                      getClickHandler(msg.id)();
+                    }}
                     header={
                       pinned ? (
                         <div className={`flex items-baseline gap-2 ${isOwnMessage ? "justify-end" : "justify-start"}`}>

@@ -287,11 +287,14 @@ export function useFloatingBubbles(
     return () => observer.disconnect();
   }, []);
 
-  // Drop physics state for items that no longer exist.
+  // Drop physics state (and cached ref callbacks) for items that no longer exist.
   useEffect(() => {
     const liveIds = new Set(items.map((i) => i.id));
     Array.from(physicsRef.current.keys()).forEach((id) => {
       if (!liveIds.has(id)) physicsRef.current.delete(id);
+    });
+    Array.from(refCallbacksRef.current.keys()).forEach((id) => {
+      if (!liveIds.has(id)) refCallbacksRef.current.delete(id);
     });
   }, [items]);
 
@@ -378,17 +381,33 @@ export function useFloatingBubbles(
 
   const isPinned = useCallback((id: string) => pinnedId === id, [pinnedId]);
 
+  // A fresh `(el) => registerBubbleEl(id, el)` closure on every getBubbleProps
+  // call would give React a new ref identity every render — since ref-identity
+  // changes make React detach (call with null) then reattach (call with the
+  // element) on EVERY re-render, that would unobserve/reobserve every bubble's
+  // ResizeObserver and re-run its physics-seed check on every pin toggle or
+  // other state change. Caching one stable callback per id avoids that churn.
+  const refCallbacksRef = useRef<Map<string, (el: HTMLDivElement | null) => void>>(new Map());
+  const getRefCallback = useCallback((id: string) => {
+    let cb = refCallbacksRef.current.get(id);
+    if (!cb) {
+      cb = (el: HTMLDivElement | null) => registerBubbleEl(id, el);
+      refCallbacksRef.current.set(id, cb);
+    }
+    return cb;
+  }, [registerBubbleEl]);
+
   // Positioning + drag-to-throw props — spread onto the element that should
   // float (the outer wrapper, typically).
   const getBubbleProps = useCallback((id: string) => ({
-    ref: (el: HTMLDivElement | null) => registerBubbleEl(id, el),
+    ref: getRefCallback(id),
     "data-bubble-id": id,
     style: { position: "absolute" as const, top: 0, left: 0, touchAction: "none" as const },
     onPointerDown: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerDown(id, e),
     onPointerMove: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerMove(id, e),
     onPointerUp: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerUp(id, e),
     onPointerCancel: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerCancel(id, e),
-  }), [registerBubbleEl, handlePointerDown, handlePointerMove, handlePointerUp, handlePointerCancel]);
+  }), [getRefCallback, handlePointerDown, handlePointerMove, handlePointerUp, handlePointerCancel]);
 
   // Tap-to-pin handler — wire onto whatever element should be the tap
   // target (may be a nested element, not the floating wrapper itself).
