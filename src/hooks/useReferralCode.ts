@@ -26,8 +26,12 @@ export function useReferralCode(userId: string | undefined) {
   return { referralCode, isLoading };
 }
 
-// Helper to build the referral link
+// Helper to build the referral link.
+// Must point at www (the actual app, which has the ReferralTracker route
+// that reads /<code> and stores it) — the bare "shakeapp.today" domain
+// routes to the separate marketing site, which has no route for an
+// arbitrary code and 404s.
 export function getReferralLink(referralCode: string | null): string {
-  if (!referralCode) return "https://shakeapp.today";
-  return `https://shakeapp.today/${referralCode}`;
+  if (!referralCode) return "https://www.shakeapp.today";
+  return `https://www.shakeapp.today/${referralCode}`;
 }
