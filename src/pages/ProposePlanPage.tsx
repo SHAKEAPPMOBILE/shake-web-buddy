@@ -214,6 +214,7 @@ export default function ProposePlanPage() {
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
+  const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
   const liveVideoRef = useRef<HTMLVideoElement>(null);
   const playbackVideoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -294,12 +295,25 @@ export default function ProposePlanPage() {
 
   const currentStepName = steps[currentStep];
 
+  // Description textarea starts compact and grows with content instead of
+  // opening at its full 5-line height — a tall box appearing instantly ate
+  // most of the composer and pushed the bot question/avatar above it off
+  // screen. Caps out and scrolls internally past MAX_DESCRIPTION_TEXTAREA_PX.
+  const MAX_DESCRIPTION_TEXTAREA_PX = 160;
+  const resizeDescriptionTextarea = useCallback(() => {
+    const el = descriptionTextareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, MAX_DESCRIPTION_TEXTAREA_PX)}px`;
+  }, []);
+
   // Auto-focus input on step change + scroll to bottom
   useEffect(() => {
     if (currentStepName === "name") nameInputRef.current?.focus();
     else if (currentStepName === "city") cityInputElRef.current?.focus();
     else if (currentStepName === "time") timeInputRef.current?.focus();
     else if (currentStepName === "price") priceInputRef.current?.focus();
+    else if (currentStepName === "description") resizeDescriptionTextarea();
     // Scroll the history area to the bottom so the new step is always
     // visible. Double rAF — waits one extra frame for the composer's
     // ResizeObserver (which drives the scroll area's bottom padding) to
@@ -313,7 +327,7 @@ export default function ProposePlanPage() {
         }
       });
     });
-  }, [currentStepName]);
+  }, [currentStepName, resizeDescriptionTextarea]);
 
   // Keyboard avoidance: shift composer above the on-screen keyboard
   useEffect(() => {
@@ -1722,12 +1736,14 @@ export default function ProposePlanPage() {
         return (
           <div className="space-y-3">
             <textarea
+              ref={descriptionTextareaRef}
               value={planDescription}
-              onChange={(e) => setPlanDescription(e.target.value)}
+              onChange={(e) => { setPlanDescription(e.target.value); resizeDescriptionTextarea(); }}
               placeholder={t("createPlan.descriptionPlaceholder", "Agenda, what to bring, dress code, anything worth knowing...")}
-              rows={5}
+              rows={2}
               maxLength={2000}
-              className="w-full rounded-2xl border border-border bg-muted/60 px-5 py-4 text-base resize-none focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+              className="w-full rounded-2xl border border-border bg-muted/60 px-5 py-4 text-base resize-none overflow-y-auto focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+              style={{ maxHeight: MAX_DESCRIPTION_TEXTAREA_PX }}
               autoFocus
             />
             <div className="flex items-center gap-3">
