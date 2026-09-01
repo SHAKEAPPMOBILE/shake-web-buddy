@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow, addDays } from "date-fns";
-import { Plus, User, Calendar, ArrowUp, ChevronLeft, ChevronUp, Play, Mic } from "lucide-react";
+import { Plus, User, Calendar, ChevronLeft, ChevronUp, Play, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1363,7 +1363,7 @@ export default function ProposePlanPage() {
                 disabled={!planText.trim() || hasProfanity}
                 className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
               >
-                <ArrowUp className="w-5 h-5" />
+                <ChevronUp className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -1385,7 +1385,7 @@ export default function ProposePlanPage() {
               disabled={!cityInput.trim()}
               className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
             >
-              <ArrowUp className="w-5 h-5" />
+              <ChevronUp className="w-5 h-5" />
             </button>
           </div>
         );
@@ -1509,7 +1509,7 @@ export default function ProposePlanPage() {
                 disabled={!selectedTime}
                 className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
               >
-                <ArrowUp className="w-5 h-5" />
+                <ChevronUp className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -1530,7 +1530,7 @@ export default function ProposePlanPage() {
                 onClick={advanceStep}
                 className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
               >
-                <ArrowUp className="w-5 h-5" />
+                <ChevronUp className="w-5 h-5" />
               </button>
             </div>
             <button
@@ -1604,7 +1604,7 @@ export default function ProposePlanPage() {
                     onClick={handlePriceSubmit}
                     className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                   >
-                    <ArrowUp className="w-5 h-5" />
+                    <ChevronUp className="w-5 h-5" />
                   </button>
                 </div>
 
@@ -1682,7 +1682,7 @@ export default function ProposePlanPage() {
               onClick={advanceStep}
               className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
             >
-              <ArrowUp className="w-5 h-5" />
+              <ChevronUp className="w-5 h-5" />
             </button>
           </div>
         );
