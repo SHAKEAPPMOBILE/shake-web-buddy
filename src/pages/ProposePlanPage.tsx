@@ -207,7 +207,6 @@ export default function ProposePlanPage() {
   // Upload — lets a user pick an existing video instead of recording live.
   // Anything over MAX_CLIP_SECONDS is rejected with an error (no trim editor).
   const uploadInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
@@ -600,18 +599,7 @@ export default function ProposePlanPage() {
   };
 
   // ── Photo — alternative to a video, uploads straight through (no probing/trim needed) ──
-  const handlePhotoUploadClick = () => {
-    imageInputRef.current?.click();
-  };
-
-  const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setVideoError("Please choose an image file.");
-      return;
-    }
+  const uploadPickedImage = async (file: File) => {
     const MAX_IMAGE_MB = 10;
     if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
       setVideoError(`Image too large. Maximum size is ${MAX_IMAGE_MB}MB.`);
@@ -689,25 +677,53 @@ export default function ProposePlanPage() {
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.lang = "en-US";
+    // Some browsers fire a spurious onerror (commonly "aborted") right after
+    // a perfectly good onresult, once the session naturally closes — without
+    // this guard that bogus error stomps the real (likely successful)
+    // outcome with a false "couldn't catch that" message.
+    let resultReceived = false;
     recognition.onresult = async (event: any) => {
+      resultReceived = true;
       const transcript: string = event.results?.[0]?.[0]?.transcript ?? "";
+      console.log("[ProposePlanPage] voice transcript:", transcript);
       setIsListening(false);
-      if (!transcript.trim()) return;
+      if (!transcript.trim()) {
+        setVoiceError(t("createPlan.voiceNoSpeech", "Didn't catch any words — try again."));
+        return;
+      }
       setVoiceParsing(true);
       try {
         const { data, error } = await supabase.functions.invoke("parse-plan-from-speech", { body: { transcript } });
-        if (error || !data?.fields) throw error || new Error("No fields returned");
+        if (error) {
+          console.error("[ProposePlanPage] parse-plan-from-speech invoke error:", error);
+          throw error;
+        }
+        if (!data?.fields) {
+          console.error("[ProposePlanPage] parse-plan-from-speech returned no fields:", data);
+          throw new Error("No fields returned");
+        }
         applyVoiceFields(data.fields);
       } catch (err) {
         console.error("[ProposePlanPage] voice parse failed:", err);
-        setVoiceError(t("createPlan.voiceParseFailed", "Couldn't quite catch that — try again or type it in."));
+        setVoiceError(t("createPlan.voiceParseFailed", "Heard you, but couldn't turn it into a plan — try again or type it in."));
       } finally {
         setVoiceParsing(false);
       }
     };
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
+      console.error("[ProposePlanPage] SpeechRecognition error:", event?.error);
       setIsListening(false);
-      setVoiceError(t("createPlan.voiceParseFailed", "Couldn't quite catch that — try again or type it in."));
+      if (resultReceived) return; // already handled by onresult — this is the spurious post-result error
+      const reason = event?.error;
+      const message =
+        reason === "not-allowed" || reason === "service-not-allowed"
+          ? t("createPlan.voiceNotAllowed", "Microphone access is blocked — check your browser's site settings.")
+          : reason === "no-speech"
+          ? t("createPlan.voiceNoSpeech", "Didn't catch any words — try again.")
+          : reason === "network"
+          ? t("createPlan.voiceNetwork", "Network issue reaching speech recognition — try again.")
+          : t("createPlan.voiceParseFailed", "Heard you, but couldn't turn it into a plan — try again or type it in.");
+      setVoiceError(message);
     };
     recognition.onend = () => setIsListening(false);
     speechRecognitionRef.current = recognition;
@@ -738,8 +754,14 @@ export default function ProposePlanPage() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    // One picker, either media type — route to whichever upload path fits
+    // what was actually picked instead of making the user choose up front.
+    if (file.type.startsWith("image/")) {
+      void uploadPickedImage(file);
+      return;
+    }
     if (!file.type.startsWith("video/")) {
-      setVideoError("Please choose a video file.");
+      setVideoError("Please choose a photo or video file.");
       return;
     }
     setVideoError(null);
@@ -1056,15 +1078,8 @@ export default function ProposePlanPage() {
         <input
           ref={uploadInputRef}
           type="file"
-          accept="video/*"
+          accept="video/*,image/*"
           onChange={handleUploadFileChange}
-          className="hidden"
-        />
-        <input
-          ref={imageInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handlePhotoFileChange}
           className="hidden"
         />
 
@@ -1150,30 +1165,10 @@ export default function ProposePlanPage() {
             </div>
           )}
 
-          {/* Upload / Photo / Skip pills — top corners, hidden during recording */}
+          {/* Skip pill — top-right, hidden during recording. Upload moved
+              down to sit beside the mic button (see below). */}
           {cameraMode === "live" && (
             <>
-              <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
-                <button
-                  type="button"
-                  onClick={handleUploadClick}
-                  disabled={videoUploading || imageUploading}
-                  className="px-3 py-1.5 rounded-full text-sm font-medium text-white disabled:opacity-50"
-                  style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
-                >
-                  {t("createPlan.uploadVideo")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePhotoUploadClick}
-                  disabled={videoUploading || imageUploading}
-                  className="px-3 py-1.5 rounded-full text-sm font-medium text-white disabled:opacity-50 flex items-center gap-1.5"
-                  style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
-                >
-                  {imageUploading && <LoadingSpinner size="sm" />}
-                  {imageUploading ? t("createPlan.photoUploading", "Uploading...") : t("createPlan.uploadPhoto", "Upload Photo")}
-                </button>
-              </div>
               <button
                 type="button"
                 onClick={handleSkipVideo}
@@ -1228,7 +1223,28 @@ export default function ProposePlanPage() {
 
           {/* Voice-to-plan mic — speak the plan instead of typing it.
               Replaces itself with an animated "listening" waveform while
-              active, and a spinner while the AI is parsing what was said. */}
+              active, and a spinner while the AI is parsing what was said.
+              Upload sits in the mirror-image spot on the left, same size/
+              style/vertical position — the two flank the (bigger, slightly
+              lower) record button rather than sitting up in the corners. */}
+          {cameraMode === "live" && (
+            <div className="absolute bottom-5 left-5 flex flex-col items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleUploadClick}
+                disabled={videoUploading || imageUploading}
+                className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center disabled:opacity-60"
+                style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+                aria-label={t("createPlan.uploadMedia", "Upload")}
+              >
+                {imageUploading ? <LoadingSpinner size="sm" /> : <ArrowUp className="w-5 h-5 text-white" />}
+              </button>
+              <span className="text-[11px] text-white/80 font-medium" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>
+                {imageUploading ? t("createPlan.photoUploading", "Uploading...") : t("createPlan.uploadMedia", "Upload")}
+              </span>
+            </div>
+          )}
+
           {cameraMode === "live" && (
             <div className="absolute bottom-5 right-5 flex flex-col items-center gap-1.5">
               <button
