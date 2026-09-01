@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { startOfDay, format, isToday, isTomorrow } from "date-fns";
-import { Plus, User, Calendar, ArrowUp, ChevronLeft, Play } from "lucide-react";
+import { startOfDay, format, isToday, isTomorrow, addDays } from "date-fns";
+import { Plus, User, Calendar, ArrowUp, ChevronLeft, Play, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,6 +49,47 @@ type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacit
 type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
 const MAX_CLIP_SECONDS = 10;
+
+// Lightweight, deliberately narrow parsers for the voice-to-plan feature —
+// only handle the common phrasings ("tomorrow", "this saturday", "8pm").
+// Anything else is left unset so the wizard just asks for it normally,
+// matching "if anything mandatory is missing, we ask again."
+const WEEKDAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+function parseSpokenDate(hint: string | null | undefined): Date | null {
+  if (!hint) return null;
+  const s = hint.toLowerCase().trim();
+  const today = startOfDay(new Date());
+  if (s.includes("today")) return today;
+  if (s.includes("tomorrow")) return addDays(today, 1);
+  const weekdayMatch = WEEKDAY_NAMES.findIndex((name) => s.includes(name));
+  if (weekdayMatch !== -1) {
+    const currentDay = today.getDay();
+    let daysUntil = weekdayMatch - currentDay;
+    if (daysUntil <= 0) daysUntil += 7; // "saturday" always means the NEXT one
+    return addDays(today, daysUntil);
+  }
+  return null;
+}
+
+function parseSpokenTime(hint: string | null | undefined): string | null {
+  if (!hint) return null;
+  const s = hint.toLowerCase().trim();
+  if (s.includes("noon")) return "12:00";
+  if (s.includes("midnight")) return "00:00";
+  const match = s.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+  if (!match) return null;
+  let hour = parseInt(match[1], 10);
+  const minute = match[2] ? parseInt(match[2], 10) : 0;
+  const meridiem = match[3];
+  if (isNaN(hour) || hour > 23 || minute > 59) return null;
+  if (meridiem === "pm" && hour !== 12) hour += 12;
+  if (meridiem === "am" && hour === 12) hour = 0;
+  // No am/pm said and hour is ambiguous (1-7) — assume evening, matching the
+  // wizard's own 8pm default and how people usually talk about plans.
+  if (!meridiem && hour >= 1 && hour <= 7) hour += 12;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
 
 
 function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subtext, handwritten = false, wrapperClassName }: { message: string; showAvatar?: boolean; avatarColor?: string; subtext?: string; handwritten?: boolean; wrapperClassName?: string }) {
@@ -152,6 +193,11 @@ export default function ProposePlanPage() {
   // A plan has at most one hero media item — a photo instead of a video.
   const [promoImageUrl, setPromoImageUrl] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  // Voice-to-plan: speak the plan instead of typing through every step.
+  const [isListening, setIsListening] = useState(false);
+  const [voiceParsing, setVoiceParsing] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const speechRecognitionRef = useRef<any>(null);
   const [cameraMode, setCameraMode] = useState<CameraMode>("idle");
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordedObjectUrl, setRecordedObjectUrl] = useState<string | null>(null);
@@ -335,6 +381,7 @@ export default function ProposePlanPage() {
       stopAllTracks();
       if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
       if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+      speechRecognitionRef.current?.stop();
       return;
     }
     // A video or photo was already picked — show the review UI without restarting the camera
@@ -600,6 +647,76 @@ export default function ProposePlanPage() {
     setPromoImageUrl(null);
     setVideoError(null);
     await startCamera();
+  };
+
+  // ── Voice-to-plan — speak the plan instead of typing through every step ──
+  const applyVoiceFields = useCallback((fields: Record<string, unknown>) => {
+    if (typeof fields.note === "string" && fields.note.trim()) setPlanText(fields.note.trim());
+    if (typeof fields.description === "string" && fields.description.trim()) setPlanDescription(fields.description.trim());
+    if (typeof fields.venue_name === "string" && fields.venue_name.trim()) setVenueName(fields.venue_name.trim());
+    if (typeof fields.price_amount === "string" && fields.price_amount.trim()) setPriceAmount(fields.price_amount.trim());
+    if (typeof fields.capacity === "number" && fields.capacity > 0) setCapacityInput(String(fields.capacity));
+    if (fields.audience === "everyone" || fields.audience === "women_only" || fields.audience === "friends_only") {
+      setAudience(fields.audience as "everyone" | "women_only" | "friends_only");
+    }
+    const spokenCity = typeof fields.city === "string" ? fields.city.trim() : "";
+    if (!city && spokenCity) setCityInput(spokenCity);
+
+    const parsedDate = parseSpokenDate(fields.date_hint as string | null | undefined);
+    if (parsedDate) setSelectedDate(parsedDate);
+    const parsedTime = parseSpokenTime(fields.time_hint as string | null | undefined);
+    if (parsedTime) setSelectedTime(parsedTime);
+
+    // Jump to wherever the flow still needs the user — city (if no context
+    // and voice didn't give one), then name (if voice gave no usable
+    // title), else straight to the final review so they can check/adjust
+    // everything voice filled in before submitting.
+    const needsCity = !city && !spokenCity;
+    const needsName = !(typeof fields.note === "string" && fields.note.trim());
+    if (needsCity) jumpToStep(steps.indexOf("city"));
+    else if (needsName) jumpToStep(steps.indexOf("name"));
+    else jumpToStep(steps.indexOf("preview"));
+  }, [city, steps]);
+
+  const handleVoiceStart = () => {
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) {
+      setVoiceError(t("createPlan.voiceUnsupported", "Voice input isn't available here yet — type it in instead."));
+      return;
+    }
+    setVoiceError(null);
+    const recognition = new SpeechRecognitionCtor();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+    recognition.onresult = async (event: any) => {
+      const transcript: string = event.results?.[0]?.[0]?.transcript ?? "";
+      setIsListening(false);
+      if (!transcript.trim()) return;
+      setVoiceParsing(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("parse-plan-from-speech", { body: { transcript } });
+        if (error || !data?.fields) throw error || new Error("No fields returned");
+        applyVoiceFields(data.fields);
+      } catch (err) {
+        console.error("[ProposePlanPage] voice parse failed:", err);
+        setVoiceError(t("createPlan.voiceParseFailed", "Couldn't quite catch that — try again or type it in."));
+      } finally {
+        setVoiceParsing(false);
+      }
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+      setVoiceError(t("createPlan.voiceParseFailed", "Couldn't quite catch that — try again or type it in."));
+    };
+    recognition.onend = () => setIsListening(false);
+    speechRecognitionRef.current = recognition;
+    setIsListening(true);
+    recognition.start();
+  };
+
+  const handleVoiceStop = () => {
+    speechRecognitionRef.current?.stop();
   };
 
   const togglePlayback = () => {
@@ -1109,6 +1226,53 @@ export default function ProposePlanPage() {
             </div>
           )}
 
+          {/* Voice-to-plan mic — speak the plan instead of typing it.
+              Replaces itself with an animated "listening" waveform while
+              active, and a spinner while the AI is parsing what was said. */}
+          {cameraMode === "live" && (
+            <div className="absolute bottom-5 right-5 flex flex-col items-center gap-1.5">
+              <button
+                type="button"
+                onClick={isListening ? handleVoiceStop : handleVoiceStart}
+                disabled={voiceParsing}
+                className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center disabled:opacity-60"
+                style={{ background: isListening ? "rgba(239,68,68,0.9)" : "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+                aria-label={isListening ? "Stop listening" : "Speak your plan"}
+              >
+                {voiceParsing ? (
+                  <LoadingSpinner size="sm" />
+                ) : isListening ? (
+                  <div className="flex items-end gap-0.5 h-4">
+                    {[0, 1, 2, 3].map((i) => (
+                      <span
+                        key={i}
+                        className="w-0.5 rounded-full bg-white"
+                        style={{
+                          animation: `voiceWave 0.8s ease-in-out ${i * 0.12}s infinite`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Mic className="w-5 h-5 text-white" />
+                )}
+              </button>
+              <span className="text-[11px] text-white/80 font-medium" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>
+                {voiceParsing
+                  ? t("createPlan.voiceThinking", "Thinking…")
+                  : isListening
+                  ? t("createPlan.voiceListening", "Listening…")
+                  : t("createPlan.voiceSpeak", "Speak plan")}
+              </span>
+            </div>
+          )}
+          <style>{`
+            @keyframes voiceWave {
+              0%, 100% { height: 4px; }
+              50% { height: 16px; }
+            }
+          `}</style>
+
           {/* Playback actions */}
           {cameraMode === "playback" && (
             <div className="absolute bottom-4 left-4 right-4 flex gap-3">
@@ -1136,6 +1300,9 @@ export default function ProposePlanPage() {
         {/* Upload error (outside the camera box) */}
         {videoError && cameraMode !== "error" && (
           <p className="text-sm text-destructive text-center">{videoError}</p>
+        )}
+        {voiceError && (
+          <p className="text-sm text-destructive text-center">{voiceError}</p>
         )}
 
       </div>
