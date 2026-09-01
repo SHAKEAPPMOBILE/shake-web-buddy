@@ -22,6 +22,8 @@ export interface UserActivity {
   venue_lat?: number | null;
   venue_lng?: number | null;
   promo_video_url?: string | null;
+  promo_image_url?: string | null;
+  description?: string | null;
   creator_name?: string;
   creator_avatar?: string;
   participant_count?: number;
@@ -186,7 +188,9 @@ export function useUserActivities(city: string) {
     audience?: "everyone" | "women_only" | "friends_only",
     priceTiers?: { label: string; amount: number }[],
     capacity?: number,
-    venue?: { name?: string; address?: string; lat?: number; lng?: number }
+    venue?: { name?: string; address?: string; lat?: number; lng?: number },
+    promoImageUrl?: string,
+    description?: string
   ): Promise<boolean> => {
     const targetCity = cityOverride || city;
     if (!user) {
@@ -248,6 +252,8 @@ export function useUserActivities(city: string) {
       note: note?.trim() || null,
       price_amount: priceAmount || null,
       promo_video_url: promoVideoUrl || null,
+      promo_image_url: promoImageUrl || null,
+      description: description?.trim() || null,
       audience: audience || "everyone",
       price_tiers: priceTiers && priceTiers.length > 0 ? priceTiers : null,
       capacity: capacity && capacity > 0 ? capacity : null,

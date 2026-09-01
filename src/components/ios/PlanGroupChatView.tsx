@@ -54,6 +54,7 @@ interface Activity {
   created_at: string;
   updated_at: string;
   promo_video_url?: string | null;
+  promo_image_url?: string | null;
   price_amount?: string | null;
 }
 

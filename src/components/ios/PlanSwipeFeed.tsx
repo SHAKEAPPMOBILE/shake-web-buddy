@@ -16,7 +16,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, DollarSign, Volume2, VolumeX, User } from "lucide-react";
+import { ChevronLeft, DollarSign, Volume2, VolumeX, User, X } from "lucide-react";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
@@ -39,6 +39,8 @@ export interface FeedPlan {
   scheduled_for: string | null;
   note?: string | null;
   promo_video_url?: string | null;
+  promo_image_url?: string | null;
+  description?: string | null;
   creator_name?: string;
   creator_avatar?: string;
   participant_count?: number;
@@ -124,6 +126,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
   const [previewAvatars, setPreviewAvatars] = useState<{ avatar_url: string | null }[]>([]);
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [joinCount, setJoinCount] = useState<number | null>(null);
+  const [showDescription, setShowDescription] = useState(false);
 
   const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const { videoWidth, videoHeight } = e.currentTarget;
@@ -217,6 +220,13 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
     }
   };
 
+  const planTitle = !plan.isCarouselJoin && plan.note
+    ? plan.note
+    : t(
+        `activities.${ACTIVITY_TRANSLATION_KEYS[plan.activity_type] ?? ""}`,
+        getActivityLabel(plan.activity_type)
+      );
+
   const dateLabel = (() => {
     if (!plan.scheduled_for) return null;
     const d = parseDbDate(plan.scheduled_for);
@@ -304,8 +314,26 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             }
           </div>
         </>
+      ) : plan.promo_image_url ? (
+        /* ── Photo card — creator-uploaded, takes priority over every
+             other fallback below (same rank as video, just a still). ── */
+        <>
+          <img
+            src={plan.promo_image_url}
+            alt={plan.note || getActivityLabel(plan.activity_type)}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 45%, transparent 100%)",
+              zIndex: 2,
+            }}
+          />
+        </>
       ) : (
-        /* ── No-video card ──
+        /* ── No promo media card ──
              Fallback chain:
              1. is_auto_generated → activity-type image (never a face)
              2. creator_avatar    → full-bleed creator photo
@@ -501,20 +529,26 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
           )}
 
           <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>
-            <p className="font-bold text-white text-base leading-tight truncate">
-              {/* Discovery-carousel entries (other cities' open groups) store a day
-                  hint like "This Saturday" in `note` — never a real title — so
-                  always show the activity type label for those. Same gate the
-                  Plans list already uses (isCarouselJoin), not is_auto_generated:
-                  a user's OWN joined auto-generated slot has no note at all, but a
-                  discovery-carousel card's note is a day hint, not a title. */}
-              {!plan.isCarouselJoin && plan.note
-                ? plan.note
-                : t(
-                    `activities.${ACTIVITY_TRANSLATION_KEYS[plan.activity_type] ?? ""}`,
-                    getActivityLabel(plan.activity_type)
-                  )}
-            </p>
+            {plan.description?.trim() ? (
+              <button
+                type="button"
+                onClick={() => setShowDescription(true)}
+                className="font-bold text-white text-base leading-tight truncate text-left underline decoration-white/40 underline-offset-2"
+                style={{ pointerEvents: "auto" }}
+              >
+                {/* Discovery-carousel entries (other cities' open groups) store a day
+                    hint like "This Saturday" in `note` — never a real title — so
+                    always show the activity type label for those. Same gate the
+                    Plans list already uses (isCarouselJoin), not is_auto_generated:
+                    a user's OWN joined auto-generated slot has no note at all, but a
+                    discovery-carousel card's note is a day hint, not a title. */}
+                {planTitle}
+              </button>
+            ) : (
+              <p className="font-bold text-white text-base leading-tight truncate">
+                {planTitle}
+              </p>
+            )}
             {!plan.is_auto_generated && plan.creator_name && (
               <p className="text-white/80 text-sm mt-0.5 truncate">
                 {plan.creator_name}
@@ -532,6 +566,52 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         </div>
 
       </div>
+
+      {/* Description half-sheet — tapping the title slides this up over the
+          bottom half of the card, leaving the video/photo visible above it.
+          Always mounted (once a description exists) so the slide is an
+          actual transform transition, not a mount/unmount pop. */}
+      {plan.description?.trim() && (
+        <>
+          <div
+            className="absolute inset-0 z-30 transition-opacity duration-300"
+            style={{
+              background: "rgba(0,0,0,0.35)",
+              opacity: showDescription ? 1 : 0,
+              pointerEvents: showDescription ? "auto" : "none",
+            }}
+            onClick={() => setShowDescription(false)}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 z-40 bg-white rounded-t-3xl shadow-2xl flex flex-col transition-transform duration-300 ease-out"
+            style={{
+              height: "50%",
+              transform: showDescription ? "translateY(0)" : "translateY(100%)",
+            }}
+          >
+            {/* Grab handle */}
+            <div className="flex justify-center pt-2.5 pb-1 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-gray-300" />
+            </div>
+            <div className="flex items-start justify-between gap-3 px-5 pb-3 shrink-0">
+              <p className="font-bold text-gray-900 text-base leading-tight pt-1">{planTitle}</p>
+              <button
+                type="button"
+                onClick={() => setShowDescription(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0"
+                aria-label="Close description"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-6">
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {plan.description}
+              </p>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Participants dialog — portal-rendered, not constrained by scroll container */}
       {plan.is_auto_generated ? (

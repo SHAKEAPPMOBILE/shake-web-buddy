@@ -45,7 +45,7 @@ const CURRENCIES = [
 
 const MAX_CHARACTERS = 50;
 
-type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "preview";
+type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "description" | "preview";
 type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
 const MAX_CLIP_SECONDS = 10;
@@ -87,6 +87,7 @@ export default function ProposePlanPage() {
     capacity: t("createPlan.botCapacity", "Limit how many can join? (optional)"),
     video: t("createPlan.botVideo"),
     audience: t("createPlan.botAudience"),
+    description: t("createPlan.botDescription", "Want to add a longer description? Agenda, details, anything that doesn't fit above. (optional)"),
     preview: "",
   }), [t]);
 
@@ -100,6 +101,7 @@ export default function ProposePlanPage() {
     capacity: "#fef08a", // yellow-200
     video: "#93c5fd", // blue-300
     audience: "#fbcfe8", // pink-200
+    description: "#ddd6fe", // violet-200
   };
 
   const { user, isPremium } = useAuth();
@@ -113,6 +115,7 @@ export default function ProposePlanPage() {
   const { createActivity, isLoading, remainingActivities, fetchMyActivities, lastCreatedActivityIdRef } = useUserActivities(city);
 
   const [planText, setPlanText] = useState("");
+  const [planDescription, setPlanDescription] = useState("");
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
   // Extra named price tiers beyond the base price/currency above, e.g.
@@ -141,6 +144,9 @@ export default function ProposePlanPage() {
   const [promoVideoUrl, setPromoVideoUrl] = useState<string | null>(null);
   const [videoUploading, setVideoUploading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
+  // A plan has at most one hero media item — a photo instead of a video.
+  const [promoImageUrl, setPromoImageUrl] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
   const [cameraMode, setCameraMode] = useState<CameraMode>("idle");
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordedObjectUrl, setRecordedObjectUrl] = useState<string | null>(null);
@@ -150,6 +156,7 @@ export default function ProposePlanPage() {
   // Upload — lets a user pick an existing video instead of recording live.
   // Anything over MAX_CLIP_SECONDS is rejected with an error (no trim editor).
   const uploadInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cityInputElRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
@@ -228,7 +235,7 @@ export default function ProposePlanPage() {
   const steps: StepName[] = useMemo(() => {
     const s: StepName[] = ["video", "name"];
     if (!city) s.push("city");
-    s.push("date", "time", "venue", "price", "capacity", "audience", "preview");
+    s.push("date", "time", "venue", "price", "capacity", "audience", "description", "preview");
     return s;
   }, [city]);
 
@@ -325,15 +332,15 @@ export default function ProposePlanPage() {
       if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
       return;
     }
-    // A video was already captured — show the review UI without restarting the camera
-    if (promoVideoUrl) return;
+    // A video or photo was already picked — show the review UI without restarting the camera
+    if (promoVideoUrl || promoImageUrl) return;
     startCamera();
     return () => {
       stopAllTracks();
       if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
       if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
     };
-  }, [currentStepName, promoVideoUrl, startCamera, stopAllTracks]);
+  }, [currentStepName, promoVideoUrl, promoImageUrl, startCamera, stopAllTracks]);
 
   // Attach live stream / auto-start playback when cameraMode changes
   useEffect(() => {
@@ -383,13 +390,14 @@ export default function ProposePlanPage() {
         return extras.length > 0 ? `${extras.length + 1} price options` : base;
       }
       case "capacity": return capacityInput.trim() ? `${capacityInput} max` : t("createPlan.skipped");
-      case "video": return promoVideoUrl ? t("createPlan.videoAdded") : t("createPlan.skipped");
+      case "video": return promoVideoUrl ? t("createPlan.videoAdded") : promoImageUrl ? t("createPlan.photoAdded", "Photo added") : t("createPlan.skipped");
       case "audience":
         return audience === "women_only"
           ? t("createPlan.womenOnly")
           : audience === "friends_only"
           ? t("createPlan.friendsOnly", "Only friends")
           : t("createPlan.everyone");
+      case "description": return planDescription.trim() ? t("createPlan.descriptionAdded", "Description added") : t("createPlan.skipped");
       default: return "";
     }
   };
@@ -516,6 +524,7 @@ export default function ProposePlanPage() {
         .from("plan-videos")
         .getPublicUrl(path);
       if (recordedObjectUrl) { URL.revokeObjectURL(recordedObjectUrl); setRecordedObjectUrl(null); }
+      setPromoImageUrl(null);
       setPromoVideoUrl(publicUrl);
       advanceStep();
     } catch {
@@ -532,8 +541,59 @@ export default function ProposePlanPage() {
     if (recordedObjectUrl) { URL.revokeObjectURL(recordedObjectUrl); setRecordedObjectUrl(null); }
     setRecordedBlob(null);
     setPromoVideoUrl(null);
+    setPromoImageUrl(null);
     setCameraMode("idle");
     advanceStep();
+  };
+
+  // ── Photo — alternative to a video, uploads straight through (no probing/trim needed) ──
+  const handlePhotoUploadClick = () => {
+    imageInputRef.current?.click();
+  };
+
+  const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setVideoError("Please choose an image file.");
+      return;
+    }
+    const MAX_IMAGE_MB = 10;
+    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+      setVideoError(`Image too large. Maximum size is ${MAX_IMAGE_MB}MB.`);
+      return;
+    }
+    setVideoError(null);
+    setImageUploading(true);
+    try {
+      stopAllTracks();
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user!.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("plan-images")
+        .upload(path, file, { contentType: file.type || undefined });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage
+        .from("plan-images")
+        .getPublicUrl(path);
+      // A plan has one hero media item — picking a photo replaces any video.
+      if (recordedObjectUrl) { URL.revokeObjectURL(recordedObjectUrl); setRecordedObjectUrl(null); }
+      setRecordedBlob(null);
+      setPromoVideoUrl(null);
+      setPromoImageUrl(publicUrl);
+      advanceStep();
+    } catch {
+      setVideoError("Upload failed. Please try again.");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleRetakePhoto = async () => {
+    setPromoImageUrl(null);
+    setVideoError(null);
+    await startCamera();
   };
 
   const togglePlayback = () => {
@@ -718,7 +778,9 @@ export default function ProposePlanPage() {
         ? { name: venuePlace.name, address: venuePlace.address, lat: venuePlace.lat, lng: venuePlace.lng }
         : venueName.trim()
         ? { name: venueName.trim() }
-        : undefined
+        : undefined,
+      promoImageUrl || undefined,
+      planDescription.trim() || undefined
     );
 
     if (!success) {
@@ -822,6 +884,39 @@ export default function ProposePlanPage() {
       );
     }
 
+    // ── Photo already picked — review state ─────────────────────────────────
+    if (promoImageUrl) {
+      return (
+        <div className="space-y-4">
+          <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block">
+            <img
+              src={promoImageUrl}
+              alt="Plan photo"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Retake / Keep this */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleRetakePhoto}
+              className="flex-1 py-3 rounded-full text-sm font-semibold bg-muted text-foreground"
+            >
+              {t("createPlan.retake")}
+            </button>
+            <button
+              type="button"
+              onClick={advanceStep}
+              className="flex-1 py-3 rounded-full text-sm font-semibold bg-black text-white"
+            >
+              {t("createPlan.keepThis")}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-4">
         <input
@@ -829,6 +924,13 @@ export default function ProposePlanPage() {
           type="file"
           accept="video/*"
           onChange={handleUploadFileChange}
+          className="hidden"
+        />
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoFileChange}
           className="hidden"
         />
 
@@ -914,22 +1016,34 @@ export default function ProposePlanPage() {
             </div>
           )}
 
-          {/* Upload + Skip pills — top corners, hidden during recording */}
+          {/* Upload / Photo / Skip pills — top corners, hidden during recording */}
           {cameraMode === "live" && (
             <>
-              <button
-                type="button"
-                onClick={handleUploadClick}
-                disabled={videoUploading}
-                className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-sm font-medium text-white disabled:opacity-50 z-10"
-                style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
-              >
-                {t("createPlan.uploadVideo")}
-              </button>
+              <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
+                <button
+                  type="button"
+                  onClick={handleUploadClick}
+                  disabled={videoUploading || imageUploading}
+                  className="px-3 py-1.5 rounded-full text-sm font-medium text-white disabled:opacity-50"
+                  style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+                >
+                  {t("createPlan.uploadVideo")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePhotoUploadClick}
+                  disabled={videoUploading || imageUploading}
+                  className="px-3 py-1.5 rounded-full text-sm font-medium text-white disabled:opacity-50 flex items-center gap-1.5"
+                  style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+                >
+                  {imageUploading && <LoadingSpinner size="sm" />}
+                  {imageUploading ? t("createPlan.photoUploading", "Uploading...") : t("createPlan.uploadPhoto", "Upload Photo")}
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={handleSkipVideo}
-                disabled={videoUploading}
+                disabled={videoUploading || imageUploading}
                 className="absolute top-3 right-3 px-3 py-1.5 rounded-full text-sm font-medium text-white disabled:opacity-50 z-10"
                 style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
               >
@@ -1394,6 +1508,37 @@ export default function ProposePlanPage() {
           </div>
         );
 
+      case "description":
+        return (
+          <div className="space-y-3">
+            <textarea
+              value={planDescription}
+              onChange={(e) => setPlanDescription(e.target.value)}
+              placeholder={t("createPlan.descriptionPlaceholder", "Agenda, what to bring, dress code, anything worth knowing...")}
+              rows={5}
+              maxLength={2000}
+              className="w-full rounded-2xl border border-border bg-muted/60 px-5 py-4 text-base resize-none focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+              autoFocus
+            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={advanceStep}
+                className="flex-1 py-3 rounded-full text-sm font-semibold bg-muted text-foreground"
+              >
+                {t("createPlan.skip", "Skip")}
+              </button>
+              <button
+                type="button"
+                onClick={advanceStep}
+                className="flex-1 py-3 rounded-full text-sm font-semibold bg-black text-white"
+              >
+                {t("common.next", "Next")}
+              </button>
+            </div>
+          </div>
+        );
+
       case "preview":
         // Rendered inline in the scrollable area via renderPreviewCard() instead of
         // here — this step's content (card + big button + link) is too tall for the
@@ -1409,13 +1554,16 @@ export default function ProposePlanPage() {
   const renderPreviewCard = () => {
     return (
           <div>
-            {/* Back button — returns to price step */}
-            <div className="pb-3 flex items-center">
-              <MinimalBackButton
-                onClick={handleBack}
-                className="text-foreground/80 hover:text-foreground"
-              />
-            </div>
+            {/* Back button — only on web; native already has the sticky header's
+                back button, and both together showed as two stacked arrows. */}
+            {!Capacitor.isNativePlatform() && (
+              <div className="pb-3 flex items-center">
+                <MinimalBackButton
+                  onClick={handleBack}
+                  className="text-foreground/80 hover:text-foreground"
+                />
+              </div>
+            )}
           <div className="space-y-5">
             {/* Preview card */}
             {promoVideoUrl ? (
@@ -1444,6 +1592,45 @@ export default function ProposePlanPage() {
                 </button>
 
                 {/* Text card below video — same style as no-video branch */}
+                <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                      {userAvatarUrl ? (
+                        <img
+                          src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
+                          alt="Your avatar"
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        <User className="w-7 h-7 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
+                        {priceAmount.trim() && (
+                          <span className="text-green-500 font-medium ml-1">
+                            · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : promoImageUrl ? (
+              /* ── Photo card: standalone portrait, no text overlay ── */
+              <>
+                <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block">
+                  <img
+                    src={promoImageUrl}
+                    alt="Plan photo"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Text card below photo — same style as no-media branch */}
                 <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
@@ -1614,6 +1801,22 @@ export default function ProposePlanPage() {
                 </button>
               )}
 
+              {/* Full-width portrait photo — same size as final preview page */}
+              {promoImageUrl && (
+                <button
+                  type="button"
+                  onClick={() => { jumpToStep(steps.indexOf("video")); setIsEditingAnswers(false); }}
+                  className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
+                  aria-label="Edit plan photo"
+                >
+                  <img
+                    src={promoImageUrl}
+                    alt="Plan photo"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                </button>
+              )}
+
               {/* All answered Q&As — uniform size, full opacity, no crescendo */}
               {steps
                 .slice(0, steps.length - 1)
@@ -1699,6 +1902,12 @@ export default function ProposePlanPage() {
                             loop
                             playsInline
                             autoPlay
+                            className="w-16 h-20 rounded-xl object-cover"
+                          />
+                        ) : step === "video" && promoImageUrl ? (
+                          <img
+                            src={promoImageUrl}
+                            alt="Plan photo"
                             className="w-16 h-20 rounded-xl object-cover"
                           />
                         ) : (
