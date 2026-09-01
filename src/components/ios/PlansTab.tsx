@@ -47,6 +47,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useVenueContext } from "@/contexts/VenueContext";
+import { PlanAvatarStack, CohostAvatar } from "@/components/PlanAvatarStack";
 
 interface PlanActivity {
   id: string;
@@ -67,6 +68,7 @@ interface PlanActivity {
   group_number?: number | null;
   creator_name?: string;
   creator_avatar?: string;
+  cohosts?: CohostAvatar[];
   participant_count?: number;
   isJoined?: boolean;
   isCarouselJoin?: boolean;
@@ -517,10 +519,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         (async () => {
           const realUserIds = Array.from(new Set(filteredRealJoins.map(p => p.plan_user_id!).filter(Boolean)));
           const realPlanIds = filteredRealJoins.map(p => p.plan_id!).filter(Boolean);
-          const [profilesRes, joinsRes, videosRes] = await Promise.all([
+          const [profilesRes, joinsRes, videosRes, cohostsRes] = await Promise.all([
             realUserIds.length ? supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", realUserIds) : Promise.resolve({ data: [] as any[] }),
             realPlanIds.length ? supabase.from("activity_joins").select("activity_id").in("activity_id", realPlanIds) : Promise.resolve({ data: [] as any[] }),
             realPlanIds.length ? supabase.from("user_activities").select("id, promo_video_url, promo_image_url, description").in("id", realPlanIds) : Promise.resolve({ data: [] as any[] }),
+            realPlanIds.length ? supabase.from("plan_cohosts").select("activity_id, user_id").in("activity_id", realPlanIds).eq("status", "active") : Promise.resolve({ data: [] as any[] }),
           ]);
           const profileMap = new Map((profilesRes.data ?? []).map((p: any) => [p.user_id, p]));
           const countMap = new Map<string, number>();
@@ -528,6 +531,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           const videoMap = new Map((videosRes.data ?? []).map((a: any) => [a.id, a.promo_video_url]));
           const imageMap = new Map((videosRes.data ?? []).map((a: any) => [a.id, a.promo_image_url]));
           const descriptionMap = new Map((videosRes.data ?? []).map((a: any) => [a.id, a.description]));
+          const cohostUserIds = Array.from(new Set((cohostsRes.data ?? []).map((c: any) => c.user_id).filter(Boolean)));
+          const cohostProfilesRes = cohostUserIds.length
+            ? await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", cohostUserIds)
+            : { data: [] as any[] };
+          const cohostProfileMap = new Map((cohostProfilesRes.data ?? []).map((p: any) => [p.user_id, p]));
+          const cohostsByActivity = new Map<string, CohostAvatar[]>();
+          (cohostsRes.data ?? []).forEach((c: any) => {
+            const profile = cohostProfileMap.get(c.user_id);
+            const arr = cohostsByActivity.get(c.activity_id) ?? [];
+            arr.push({ user_id: c.user_id, name: profile?.name, avatar_url: profile?.avatar_url });
+            cohostsByActivity.set(c.activity_id, arr);
+          });
 
           return filteredRealJoins.map(p => {
             const profile = profileMap.get(p.plan_user_id!);
@@ -551,6 +566,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               created_at: p.created_at ?? undefined,
               creator_name: profile?.name || "Anonymous",
               creator_avatar: profile?.avatar_url ?? undefined,
+              cohosts: cohostsByActivity.get(p.plan_id!) ?? [],
               participant_count: countMap.get(p.plan_id!) ?? 0,
               isJoined: true,
               isCarouselJoin: false,
@@ -588,13 +604,26 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         (async () => {
           const cityUserIds = Array.from(new Set(cityPublicPlans.map((a: any) => a.user_id).filter(Boolean)));
           const cityActivityIds = cityPublicPlans.map((a: any) => a.id);
-          const [profilesRes, joinsRes] = await Promise.all([
+          const [profilesRes, joinsRes, cohostsRes] = await Promise.all([
             cityUserIds.length ? supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", cityUserIds) : Promise.resolve({ data: [] as any[] }),
             cityActivityIds.length ? supabase.from("activity_joins").select("activity_id").in("activity_id", cityActivityIds) : Promise.resolve({ data: [] as any[] }),
+            cityActivityIds.length ? supabase.from("plan_cohosts").select("activity_id, user_id").in("activity_id", cityActivityIds).eq("status", "active") : Promise.resolve({ data: [] as any[] }),
           ]);
           const profileMap = new Map((profilesRes.data ?? []).map((p: any) => [p.user_id, p]));
           const countMap = new Map<string, number>();
           (joinsRes.data ?? []).forEach((j: any) => countMap.set(j.activity_id, (countMap.get(j.activity_id) ?? 0) + 1));
+          const cohostUserIds = Array.from(new Set((cohostsRes.data ?? []).map((c: any) => c.user_id).filter(Boolean)));
+          const cohostProfilesRes = cohostUserIds.length
+            ? await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", cohostUserIds)
+            : { data: [] as any[] };
+          const cohostProfileMap = new Map((cohostProfilesRes.data ?? []).map((p: any) => [p.user_id, p]));
+          const cohostsByActivity = new Map<string, CohostAvatar[]>();
+          (cohostsRes.data ?? []).forEach((c: any) => {
+            const profile = cohostProfileMap.get(c.user_id);
+            const arr = cohostsByActivity.get(c.activity_id) ?? [];
+            arr.push({ user_id: c.user_id, name: profile?.name, avatar_url: profile?.avatar_url });
+            cohostsByActivity.set(c.activity_id, arr);
+          });
 
           return cityPublicPlans.map((activity: any) => {
             const profile = profileMap.get(activity.user_id);
@@ -602,6 +631,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               ...activity,
               creator_name: profile?.name || "Anonymous",
               creator_avatar: profile?.avatar_url,
+              cohosts: cohostsByActivity.get(activity.id) ?? [],
               participant_count: countMap.get(activity.id) ?? 0,
               isJoined: false,
             } as PlanActivity;
@@ -1980,6 +2010,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           </button>
                         </span>
                       )}
+                      {plan.cohosts && plan.cohosts.length > 0 && (
+                        <PlanAvatarStack
+                          creatorAvatarUrl={plan.creator_avatar}
+                          creatorName={plan.creator_name}
+                          cohosts={plan.cohosts}
+                          size={16}
+                          ringClassName="ring-1 ring-white"
+                        />
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 mt-1">
@@ -2115,6 +2154,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                                 {plan.creator_name || "Anonymous"}
                               </button>
                             </span>
+                          )}
+                          {plan.cohosts && plan.cohosts.length > 0 && (
+                            <PlanAvatarStack
+                              creatorAvatarUrl={plan.creator_avatar}
+                              creatorName={plan.creator_name}
+                              cohosts={plan.cohosts}
+                              size={16}
+                              ringClassName="ring-1 ring-white"
+                            />
                           )}
                         </div>
 

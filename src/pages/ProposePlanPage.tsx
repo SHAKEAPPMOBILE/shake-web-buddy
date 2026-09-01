@@ -47,7 +47,7 @@ const CURRENCIES = [
 
 const MAX_CHARACTERS = 50;
 
-type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "description" | "invite" | "preview";
+type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "description" | "preview";
 type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
 const MAX_CLIP_SECONDS = 10;
@@ -131,9 +131,10 @@ export default function ProposePlanPage() {
     video: t("createPlan.botVideo"),
     audience: t("createPlan.botAudience"),
     description: t("createPlan.botDescription", "Want to add a longer description? Agenda, details, anything that doesn't fit above. (optional)"),
-    invite: t("createPlan.botInvite", "Invite anyone by email? They'll get a link straight to this plan. (optional)"),
     preview: "",
   }), [t]);
+
+  const BOT_COHOST_QUESTION = t("createPlan.botCohost", "Add a co-host? They'll show up right next to you as an organizer. (optional)");
 
   const STEP_AVATAR_COLORS: Partial<Record<StepName, string>> = {
     name:  "#facc15", // yellow-400 — existing default
@@ -146,8 +147,8 @@ export default function ProposePlanPage() {
     video: "#93c5fd", // blue-300
     audience: "#fbcfe8", // pink-200
     description: "#ddd6fe", // violet-200
-    invite: "#bae6fd", // sky-200
   };
+  const COHOST_AVATAR_COLOR = "#bae6fd"; // sky-200
 
   const { user, isPremium } = useAuth();
   const { selectedCity } = useCity();
@@ -161,10 +162,14 @@ export default function ProposePlanPage() {
 
   const [planText, setPlanText] = useState("");
   const [planDescription, setPlanDescription] = useState("");
-  const [inviteEmails, setInviteEmails] = useState<string[]>([]);
-  const [inviteEmailInput, setInviteEmailInput] = useState("");
-  const [inviteEmailError, setInviteEmailError] = useState<string | null>(null);
-  const [showAllInvitesDialog, setShowAllInvitesDialog] = useState(false);
+  // Co-host invites — collected on a dedicated screen shown AFTER the plan is
+  // created (the activity has to exist before we can attach co-hosts to it).
+  const [showCohostStep, setShowCohostStep] = useState(false);
+  const [cohostSending, setCohostSending] = useState(false);
+  const [cohostEmails, setCohostEmails] = useState<string[]>([]);
+  const [cohostEmailInput, setCohostEmailInput] = useState("");
+  const [cohostEmailError, setCohostEmailError] = useState<string | null>(null);
+  const [showAllCohostsDialog, setShowAllCohostsDialog] = useState(false);
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
   // Extra named price tiers beyond the base price/currency above, e.g.
@@ -289,7 +294,7 @@ export default function ProposePlanPage() {
   const steps: StepName[] = useMemo(() => {
     const s: StepName[] = ["video", "name"];
     if (!city) s.push("city");
-    s.push("date", "time", "venue", "price", "capacity", "audience", "description", "invite", "preview");
+    s.push("date", "time", "venue", "price", "capacity", "audience", "description", "preview");
     return s;
   }, [city]);
 
@@ -473,7 +478,6 @@ export default function ProposePlanPage() {
           ? t("createPlan.friendsOnly", "Only friends")
           : t("createPlan.everyone");
       case "description": return planDescription.trim() ? t("createPlan.descriptionAdded", "Description added") : t("createPlan.skipped");
-      case "invite": return inviteEmails.length > 0 ? `${inviteEmails.length} invited` : t("createPlan.skipped");
       default: return "";
     }
   };
@@ -958,22 +962,216 @@ export default function ProposePlanPage() {
     }
     triggerConfettiWaterfall();
 
-    // Fire-and-forget: send the invite emails now that the plan actually
-    // exists (activity_id wasn't available any earlier in the wizard).
-    if (inviteEmails.length > 0 && lastCreatedActivityIdRef.current) {
-      void supabase.functions.invoke("send-plan-invite", {
-        body: { activity_id: lastCreatedActivityIdRef.current, emails: inviteEmails },
-      }).then(({ error }) => {
-        if (error) console.error("[ProposePlanPage] send-plan-invite failed:", error);
-      });
-    }
+    // Co-hosts can only be attached once the plan actually exists (needs a
+    // real activity_id), so that's collected on its own screen right after
+    // creation instead of as a wizard step.
+    setShowCohostStep(true);
+  };
 
-    // Land on the Plans tab with the swipe feed already open on the plan the
-    // user just created (see IOSAppLayout's location.state handling), instead
-    // of just popping back to wherever they came from (often the Shake home
-    // dashboard) — they should see their own new plan on the scrollable feed
-    // and be able to swipe to others or jump straight into its chat.
+  // Leaves the co-host screen — sends any committed co-host emails (if any),
+  // then lands on the Plans tab with the swipe feed open on the new plan
+  // (see IOSAppLayout's location.state handling), instead of just popping
+  // back to wherever the user came from (often the Shake home dashboard).
+  const finishCohostStep = async () => {
+    if (cohostSending) return;
+    const activityId = lastCreatedActivityIdRef.current;
+    if (cohostEmails.length > 0 && activityId) {
+      setCohostSending(true);
+      try {
+        const { error } = await supabase.functions.invoke("invite-cohost", {
+          body: { activity_id: activityId, emails: cohostEmails },
+        });
+        if (error) console.error("[ProposePlanPage] invite-cohost failed:", error);
+      } catch (err) {
+        console.error("[ProposePlanPage] invite-cohost failed:", err);
+      } finally {
+        setCohostSending(false);
+      }
+    }
+    navigate("/", { state: { activeTab: "plans", pendingNewPlanId: activityId } });
+  };
+
+  // Plain skip — leaves without sending whatever's still sitting in the
+  // co-host list, distinct from "Done" which sends any committed emails.
+  const skipCohostStep = () => {
     navigate("/", { state: { activeTab: "plans", pendingNewPlanId: lastCreatedActivityIdRef.current } });
+  };
+
+  const COHOST_CAP = 5;
+  const COHOST_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Splits on comma, semicolon, or any whitespace — covers a typed
+  // "email, " as well as a whole pasted block of emails separated any
+  // which way, instead of only accepting one at a time.
+  const COHOST_EMAIL_SPLIT_RE = /[\s,;]+/;
+
+  // commitTrailing: false while the user is still typing (onChange) — the
+  // last token might be a half-finished email, so it stays in the box
+  // instead of being flagged invalid on every keystroke. true for
+  // paste/blur/Enter/the + button, where whatever's left really is done.
+  const processCohostEmailInput = (raw: string, commitTrailing: boolean) => {
+    const endsWithDelimiter = raw.length > 0 && COHOST_EMAIL_SPLIT_RE.test(raw.slice(-1));
+    const parts = raw.split(COHOST_EMAIL_SPLIT_RE).map((p) => p.trim()).filter(Boolean);
+    if (parts.length === 0) {
+      setCohostEmailInput("");
+      return;
+    }
+    const trailingIsComplete = endsWithDelimiter || commitTrailing;
+    const toCommit = trailingIsComplete ? parts : parts.slice(0, -1);
+    const remainder = trailingIsComplete ? "" : parts[parts.length - 1];
+
+    const validNew: string[] = [];
+    let invalidCount = 0;
+    let capHit = false;
+    toCommit.forEach((p) => {
+      const email = p.toLowerCase();
+      if (COHOST_EMAIL_RE.test(email)) {
+        if (cohostEmails.includes(email) || validNew.includes(email)) return;
+        if (cohostEmails.length + validNew.length >= COHOST_CAP) {
+          capHit = true;
+          return;
+        }
+        validNew.push(email);
+      } else {
+        invalidCount++;
+      }
+    });
+
+    if (validNew.length > 0) setCohostEmails((prev) => [...prev, ...validNew]);
+    setCohostEmailInput(remainder);
+    setCohostEmailError(
+      capHit
+        ? t("createPlan.cohostCapHit", `Max ${COHOST_CAP} co-hosts per plan.`)
+        : invalidCount > 0
+        ? invalidCount === 1
+          ? t("createPlan.invalidEmail", "That doesn't look like a valid email.")
+          : t("createPlan.someInvalidEmails", `Skipped ${invalidCount} that didn't look like valid emails.`)
+        : null
+    );
+  };
+  const addCohostEmailFromInput = () => processCohostEmailInput(cohostEmailInput, true);
+
+  const renderCohostStep = () => {
+    const INLINE_CHIP_LIMIT = 3;
+    const overflowCount = cohostEmails.length - INLINE_CHIP_LIMIT;
+    return (
+      <div className="flex-1 flex flex-col overflow-y-auto">
+        <div className="w-full max-w-sm mx-auto px-6 pt-8 pb-8 space-y-6">
+          <BotBubble message={BOT_COHOST_QUESTION} showAvatar={true} avatarColor={COHOST_AVATAR_COLOR} />
+
+          <div className="space-y-3">
+            {cohostEmails.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {(overflowCount > 0 ? cohostEmails.slice(0, INLINE_CHIP_LIMIT) : cohostEmails).map((email) => (
+                  <span
+                    key={email}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-muted/70 border border-border text-foreground"
+                  >
+                    {email}
+                    <button
+                      type="button"
+                      onClick={() => setCohostEmails((prev) => prev.filter((e) => e !== email))}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label={`Remove ${email}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {overflowCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllCohostsDialog(true)}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-muted border border-border text-foreground font-medium hover:bg-muted/70 transition-colors"
+                  >
+                    +{overflowCount} more…
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="flex items-center gap-3">
+              <textarea
+                value={cohostEmailInput}
+                onChange={(e) => { processCohostEmailInput(e.target.value, false); setCohostEmailError(null); }}
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData("text");
+                  if (!pasted) return;
+                  e.preventDefault();
+                  processCohostEmailInput(cohostEmailInput + pasted, true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { e.preventDefault(); addCohostEmailFromInput(); }
+                }}
+                onBlur={addCohostEmailFromInput}
+                placeholder={t("createPlan.cohostEmailPlaceholder", "friend@email.com — paste a whole list at once if you like")}
+                rows={1}
+                autoFocus
+                className="flex-1 min-h-14 max-h-32 rounded-2xl border border-border bg-muted/60 px-5 py-4 text-base resize-none focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+              />
+              <button
+                type="button"
+                onClick={addCohostEmailFromInput}
+                disabled={!cohostEmailInput.trim()}
+                className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-muted-foreground/60 disabled:opacity-40"
+              >
+                <span className="text-xl leading-none">+</span>
+              </button>
+            </div>
+            {cohostEmailError && (
+              <p className="text-sm text-destructive">{cohostEmailError}</p>
+            )}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={skipCohostStep}
+                disabled={cohostSending}
+                className="flex-1 py-3 rounded-full text-sm font-semibold bg-muted text-foreground disabled:opacity-60"
+              >
+                {t("createPlan.skip", "Skip")}
+              </button>
+              <button
+                type="button"
+                onClick={finishCohostStep}
+                disabled={cohostSending}
+                className="flex-1 py-3 rounded-full text-sm font-semibold bg-black text-white flex items-center justify-center gap-2 disabled:opacity-70"
+              >
+                {cohostSending && <LoadingSpinner size="sm" />}
+                {t("common.done", "Done")}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Full co-host list — same "collapse to a few + open a scrollable
+            dialog" pattern used for the Shakers-nearby preview pill. */}
+        <Dialog open={showAllCohostsDialog} onOpenChange={setShowAllCohostsDialog}>
+          <DialogContent className="sm:max-w-md bg-white">
+            <DialogHeader>
+              <DialogTitle>{t("createPlan.allCohosts", "Co-hosts")} ({cohostEmails.length})</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh]">
+              <div className="flex flex-col gap-2 pr-3">
+                {cohostEmails.map((email) => (
+                  <div
+                    key={email}
+                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-muted/50 border border-border"
+                  >
+                    <span className="text-sm text-foreground truncate">{email}</span>
+                    <button
+                      type="button"
+                      onClick={() => setCohostEmails((prev) => prev.filter((e) => e !== email))}
+                      className="text-muted-foreground hover:text-destructive shrink-0"
+                      aria-label={`Remove ${email}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
   };
 
   // Date chip data
@@ -1765,159 +1963,6 @@ export default function ProposePlanPage() {
           </div>
         );
 
-      case "invite": {
-        const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        // Splits on comma, semicolon, or any whitespace (space/newline/tab) —
-        // covers a typed "email, " as well as a whole pasted block of emails
-        // separated any which way, instead of only accepting one at a time.
-        const EMAIL_SPLIT_RE = /[\s,;]+/;
-
-        // commitTrailing: false while the user is still typing (onChange) —
-        // the last token might be a half-finished email, so it stays in the
-        // box instead of being flagged invalid on every keystroke. true for
-        // paste/blur/Enter/the + button, where whatever's left really is done.
-        const processEmailInput = (raw: string, commitTrailing: boolean) => {
-          const endsWithDelimiter = raw.length > 0 && EMAIL_SPLIT_RE.test(raw.slice(-1));
-          const parts = raw.split(EMAIL_SPLIT_RE).map((p) => p.trim()).filter(Boolean);
-          if (parts.length === 0) {
-            setInviteEmailInput("");
-            return;
-          }
-          const trailingIsComplete = endsWithDelimiter || commitTrailing;
-          const toCommit = trailingIsComplete ? parts : parts.slice(0, -1);
-          const remainder = trailingIsComplete ? "" : parts[parts.length - 1];
-
-          const validNew: string[] = [];
-          let invalidCount = 0;
-          toCommit.forEach((p) => {
-            const email = p.toLowerCase();
-            if (EMAIL_RE.test(email)) {
-              if (!inviteEmails.includes(email) && !validNew.includes(email)) validNew.push(email);
-            } else {
-              invalidCount++;
-            }
-          });
-
-          if (validNew.length > 0) setInviteEmails((prev) => [...prev, ...validNew]);
-          setInviteEmailInput(remainder);
-          setInviteEmailError(
-            invalidCount > 0
-              ? invalidCount === 1
-                ? t("createPlan.invalidEmail", "That doesn't look like a valid email.")
-                : t("createPlan.someInvalidEmails", `Skipped ${invalidCount} that didn't look like valid emails.`)
-              : null
-          );
-        };
-
-        const addEmailFromInput = () => processEmailInput(inviteEmailInput, true);
-
-        const INLINE_CHIP_LIMIT = 3;
-        const overflowCount = inviteEmails.length - INLINE_CHIP_LIMIT;
-        return (
-          <>
-          <div className="space-y-3">
-            {inviteEmails.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {(overflowCount > 0 ? inviteEmails.slice(0, INLINE_CHIP_LIMIT) : inviteEmails).map((email) => (
-                  <span
-                    key={email}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-muted/70 border border-border text-foreground"
-                  >
-                    {email}
-                    <button
-                      type="button"
-                      onClick={() => setInviteEmails((prev) => prev.filter((e) => e !== email))}
-                      className="text-muted-foreground hover:text-foreground"
-                      aria-label={`Remove ${email}`}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-                {overflowCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllInvitesDialog(true)}
-                    className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-muted border border-border text-foreground font-medium hover:bg-muted/70 transition-colors"
-                  >
-                    +{overflowCount} more…
-                  </button>
-                )}
-              </div>
-            )}
-            <div className="flex items-center gap-3">
-              <textarea
-                value={inviteEmailInput}
-                onChange={(e) => { processEmailInput(e.target.value, false); setInviteEmailError(null); }}
-                onPaste={(e) => {
-                  const pasted = e.clipboardData.getData("text");
-                  if (!pasted) return;
-                  e.preventDefault();
-                  processEmailInput(inviteEmailInput + pasted, true);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") { e.preventDefault(); addEmailFromInput(); }
-                }}
-                onBlur={addEmailFromInput}
-                placeholder={t("createPlan.emailPlaceholder", "friend@email.com — paste a whole list at once if you like")}
-                rows={1}
-                className="flex-1 min-h-14 max-h-32 rounded-2xl border border-border bg-muted/60 px-5 py-4 text-base resize-none focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
-              />
-              <button
-                type="button"
-                onClick={addEmailFromInput}
-                disabled={!inviteEmailInput.trim()}
-                className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-muted-foreground/60 disabled:opacity-40"
-              >
-                <span className="text-xl leading-none">+</span>
-              </button>
-            </div>
-            {inviteEmailError && (
-              <p className="text-sm text-destructive">{inviteEmailError}</p>
-            )}
-            <button
-              type="button"
-              onClick={advanceStep}
-              className="w-full py-3 rounded-full text-sm font-semibold bg-black text-white"
-            >
-              {inviteEmails.length > 0 ? t("common.next", "Next") : t("createPlan.skip", "Skip")}
-            </button>
-          </div>
-
-          {/* Full invite list — same "collapse to a few + open a scrollable
-              dialog" pattern as the Shakers-nearby preview pill, just for
-              emails instead of avatars. */}
-          <Dialog open={showAllInvitesDialog} onOpenChange={setShowAllInvitesDialog}>
-            <DialogContent className="sm:max-w-md bg-white">
-              <DialogHeader>
-                <DialogTitle>{t("createPlan.allInvites", "Invited")} ({inviteEmails.length})</DialogTitle>
-              </DialogHeader>
-              <ScrollArea className="max-h-[60vh]">
-                <div className="flex flex-col gap-2 pr-3">
-                  {inviteEmails.map((email) => (
-                    <div
-                      key={email}
-                      className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-muted/50 border border-border"
-                    >
-                      <span className="text-sm text-foreground truncate">{email}</span>
-                      <button
-                        type="button"
-                        onClick={() => setInviteEmails((prev) => prev.filter((e) => e !== email))}
-                        className="text-muted-foreground hover:text-destructive shrink-0"
-                        aria-label={`Remove ${email}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
-          </>
-        );
-      }
-
       case "preview":
         // Rendered inline in the scrollable area via renderPreviewCard() instead of
         // here — this step's content (card + big button + link) is too tall for the
@@ -2218,6 +2263,8 @@ export default function ProposePlanPage() {
             </div>
           </div>
         </div>
+      ) : showCohostStep ? (
+        renderCohostStep()
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Back button — web only (native has sticky header); all steps except preview */}

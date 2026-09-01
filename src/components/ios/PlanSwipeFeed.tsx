@@ -29,6 +29,7 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
 import type { UserActivity } from "@/hooks/useUserActivities";
+import type { CohostAvatar } from "@/components/PlanAvatarStack";
 
 /* ── Types (mirror PlansTab's PlanActivity) ───────────────────────────────── */
 export interface FeedPlan {
@@ -43,6 +44,7 @@ export interface FeedPlan {
   description?: string | null;
   creator_name?: string;
   creator_avatar?: string;
+  cohosts?: CohostAvatar[];
   participant_count?: number;
   isJoined?: boolean;
   price_amount?: string | null;
@@ -508,24 +510,41 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               (see the "!plan.is_auto_generated" check there) instead of misleadingly
               crediting/linking to that person. */}
           {!plan.is_auto_generated && (
-            <button
-              type="button"
-              onClick={onViewProfile}
-              className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/50 shadow-lg shrink-0 flex items-center justify-center bg-white/10"
-              style={{ pointerEvents: "auto" }}
-            >
-              {plan.creator_avatar ? (
-                <img
-                  src={plan.creator_avatar}
-                  alt={plan.creator_name || ""}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-lg font-bold text-white">
-                  {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
-                </span>
-              )}
-            </button>
+            <div className="flex items-center shrink-0" style={{ pointerEvents: "auto" }}>
+              <button
+                type="button"
+                onClick={onViewProfile}
+                className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/50 shadow-lg shrink-0 flex items-center justify-center bg-white/10"
+              >
+                {plan.creator_avatar ? (
+                  <img
+                    src={plan.creator_avatar}
+                    alt={plan.creator_name || ""}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-lg font-bold text-white">
+                    {plan.creator_name?.charAt(0)?.toUpperCase() || "?"}
+                  </span>
+                )}
+              </button>
+              {/* Co-hosts — visual only, not individually tappable */}
+              {plan.cohosts?.slice(0, 5).map((cohost) => (
+                <div
+                  key={cohost.user_id}
+                  className="w-9 h-9 rounded-full overflow-hidden border-2 border-white/50 shadow-lg shrink-0 flex items-center justify-center bg-white/10"
+                  style={{ marginLeft: -10 }}
+                >
+                  {cohost.avatar_url ? (
+                    <img src={cohost.avatar_url} alt={cohost.name || ""} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-bold text-white">
+                      {(cohost.name || "?").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
 
           <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>

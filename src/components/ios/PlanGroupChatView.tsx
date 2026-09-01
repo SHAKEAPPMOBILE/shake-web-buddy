@@ -155,12 +155,30 @@ export function PlanGroupChatView({
     t('chat.suggestions.onMyWay', 'On my way! 🏃'),
   ], [t]);
 
+  // Co-hosts — shown as small avatars next to the creator's in the header.
+  const [cohostUserIds, setCohostUserIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (!activity.id) return;
+    let cancelled = false;
+    supabase
+      .from("plan_cohosts")
+      .select("user_id")
+      .eq("activity_id", activity.id)
+      .eq("status", "active")
+      .then(({ data }) => {
+        if (cancelled) return;
+        setCohostUserIds((data ?? []).map((r: any) => r.user_id).filter(Boolean));
+      });
+    return () => { cancelled = true; };
+  }, [activity.id]);
+
   // Get unique user IDs from messages
   const userIds = useMemo(() => {
     const ids = [...new Set(messages.map((msg) => msg.user_id))];
     if (!ids.includes(activity.user_id)) ids.push(activity.user_id);
+    cohostUserIds.forEach((id) => { if (!ids.includes(id)) ids.push(id); });
     return ids;
-  }, [messages, activity.user_id]);
+  }, [messages, activity.user_id, cohostUserIds]);
 
   const { profiles } = useUserProfiles(userIds);
 
@@ -549,39 +567,69 @@ export function PlanGroupChatView({
 
           {/* Content column — normal flow, top to bottom, no overlap */}
           <div className="flex flex-col items-center px-4 pb-4" style={{ paddingTop: 64 }}>
-            {/* 1. Creator video / avatar / emoji */}
-            <button
-              type="button"
-              onClick={() => {
-                if (activity.promo_video_url) { setVideoFullscreen(true); return; }
-                setSelectedUserProfile({
-                  userId: activity.user_id,
-                  userName: creatorProfile?.name || null,
-                  avatarUrl: creatorProfile?.avatar_url || null,
-                });
-              }}
-              className="w-16 h-16 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center shadow-sm focus:outline-none"
-            >
-              {activity.promo_video_url ? (
-                <video
-                  src={activity.promo_video_url}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
-              ) : creatorProfile?.avatar_url ? (
-                <Avatar className="w-full h-full rounded-full">
-                  <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
-                  <AvatarFallback className="bg-white/20 flex items-center justify-center">
-                    <span className="text-4xl">{planEmoji}</span>
-                  </AvatarFallback>
-                </Avatar>
-              ) : (
-                <span className="text-4xl">{planEmoji}</span>
-              )}
-            </button>
+            {/* 1. Creator video / avatar / emoji, plus co-host avatars */}
+            <div className="flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  if (activity.promo_video_url) { setVideoFullscreen(true); return; }
+                  setSelectedUserProfile({
+                    userId: activity.user_id,
+                    userName: creatorProfile?.name || null,
+                    avatarUrl: creatorProfile?.avatar_url || null,
+                  });
+                }}
+                className="w-16 h-16 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center shadow-sm focus:outline-none shrink-0"
+              >
+                {activity.promo_video_url ? (
+                  <video
+                    src={activity.promo_video_url}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : creatorProfile?.avatar_url ? (
+                  <Avatar className="w-full h-full rounded-full">
+                    <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
+                    <AvatarFallback className="bg-white/20 flex items-center justify-center">
+                      <span className="text-4xl">{planEmoji}</span>
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <span className="text-4xl">{planEmoji}</span>
+                )}
+              </button>
+              {cohostUserIds.slice(0, 5).map((cohostId) => {
+                const cohostProfile = profiles[cohostId];
+                return (
+                  <button
+                    key={cohostId}
+                    type="button"
+                    onClick={() => setSelectedUserProfile({
+                      userId: cohostId,
+                      userName: cohostProfile?.name || null,
+                      avatarUrl: cohostProfile?.avatar_url || null,
+                    })}
+                    className="w-10 h-10 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center shadow-sm focus:outline-none shrink-0"
+                    style={{ marginLeft: -12 }}
+                  >
+                    {cohostProfile?.avatar_url ? (
+                      <img
+                        src={getDisplayAvatarUrl(cohostProfile.avatar_url)}
+                        alt={cohostProfile?.name || "Co-host"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-base font-bold text-white">
+                        {(cohostProfile?.name || "?").charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* 2. Plan title */}
             <h1 className="text-base font-bold text-white text-center leading-tight mt-2">{planTitle}</h1>

@@ -248,6 +248,21 @@ export function IOSAppLayout() {
     navigate(location.pathname, { replace: true, state: { activeTab: "plans", pendingNewPlanId: pendingInviteId } });
   }, [isLoading, user, navigate, location.pathname]);
 
+  // Claim any co-host invite(s) sent to this email before the person had a
+  // SHAKE account — RLS only lets a signed-in user claim a pending_signup
+  // row that matches their own verified email (see plan_cohosts policies).
+  useEffect(() => {
+    if (isLoading || !user?.email) return;
+    void supabase
+      .from("plan_cohosts")
+      .update({ user_id: user.id, status: "active" })
+      .eq("status", "pending_signup")
+      .eq("email", user.email.trim().toLowerCase())
+      .then(({ error }) => {
+        if (error) console.error("[IOSAppLayout] claim pending cohost failed:", error);
+      });
+  }, [isLoading, user]);
+
   // Get active activity types the user has joined that are SCHEDULED FOR TODAY (for proximity detection)
   const userActiveActivityTypes = useMemo(() => {
     if (!user) return [];
