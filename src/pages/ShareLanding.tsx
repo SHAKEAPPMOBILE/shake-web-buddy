@@ -6,6 +6,7 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { format } from "date-fns";
 import { parseDbDate } from "@/lib/date-utils";
 import logoShake from "@/assets/shake-logo-new.png";
+import { storePendingPlanInvite } from "@/lib/pendingPlanInvite";
 
 interface ActivityInfo {
   id: string;
@@ -50,6 +51,10 @@ export default function ShareLanding() {
           .maybeSingle();
         if (error || !data) { setNotFound(true); setIsLoading(false); return; }
         actData = data;
+        // Remember which plan this link pointed at so that once the visitor
+        // signs up or logs in, the app can land them right on it — same
+        // localStorage-then-redeem-post-auth pattern as referral codes.
+        if (data.id) storePendingPlanInvite(data.id);
       } else {
         // carousel plan: "acttype-city-useruuid" format, no DB row needed
         const parts = decoded.split("-");

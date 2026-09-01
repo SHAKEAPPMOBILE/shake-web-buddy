@@ -45,7 +45,7 @@ const CURRENCIES = [
 
 const MAX_CHARACTERS = 50;
 
-type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "description" | "preview";
+type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "description" | "invite" | "preview";
 type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
 const MAX_CLIP_SECONDS = 10;
@@ -88,6 +88,7 @@ export default function ProposePlanPage() {
     video: t("createPlan.botVideo"),
     audience: t("createPlan.botAudience"),
     description: t("createPlan.botDescription", "Want to add a longer description? Agenda, details, anything that doesn't fit above. (optional)"),
+    invite: t("createPlan.botInvite", "Invite anyone by email? They'll get a link straight to this plan. (optional)"),
     preview: "",
   }), [t]);
 
@@ -102,6 +103,7 @@ export default function ProposePlanPage() {
     video: "#93c5fd", // blue-300
     audience: "#fbcfe8", // pink-200
     description: "#ddd6fe", // violet-200
+    invite: "#bae6fd", // sky-200
   };
 
   const { user, isPremium } = useAuth();
@@ -116,6 +118,9 @@ export default function ProposePlanPage() {
 
   const [planText, setPlanText] = useState("");
   const [planDescription, setPlanDescription] = useState("");
+  const [inviteEmails, setInviteEmails] = useState<string[]>([]);
+  const [inviteEmailInput, setInviteEmailInput] = useState("");
+  const [inviteEmailError, setInviteEmailError] = useState<string | null>(null);
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
   // Extra named price tiers beyond the base price/currency above, e.g.
@@ -235,7 +240,7 @@ export default function ProposePlanPage() {
   const steps: StepName[] = useMemo(() => {
     const s: StepName[] = ["video", "name"];
     if (!city) s.push("city");
-    s.push("date", "time", "venue", "price", "capacity", "audience", "description", "preview");
+    s.push("date", "time", "venue", "price", "capacity", "audience", "description", "invite", "preview");
     return s;
   }, [city]);
 
@@ -398,6 +403,7 @@ export default function ProposePlanPage() {
           ? t("createPlan.friendsOnly", "Only friends")
           : t("createPlan.everyone");
       case "description": return planDescription.trim() ? t("createPlan.descriptionAdded", "Description added") : t("createPlan.skipped");
+      case "invite": return inviteEmails.length > 0 ? `${inviteEmails.length} invited` : t("createPlan.skipped");
       default: return "";
     }
   };
@@ -788,6 +794,17 @@ export default function ProposePlanPage() {
       return;
     }
     triggerConfettiWaterfall();
+
+    // Fire-and-forget: send the invite emails now that the plan actually
+    // exists (activity_id wasn't available any earlier in the wizard).
+    if (inviteEmails.length > 0 && lastCreatedActivityIdRef.current) {
+      void supabase.functions.invoke("send-plan-invite", {
+        body: { activity_id: lastCreatedActivityIdRef.current, emails: inviteEmails },
+      }).then(({ error }) => {
+        if (error) console.error("[ProposePlanPage] send-plan-invite failed:", error);
+      });
+    }
+
     // Land on the Plans tab with the swipe feed already open on the plan the
     // user just created (see IOSAppLayout's location.state handling), instead
     // of just popping back to wherever they came from (often the Shake home
@@ -1538,6 +1555,81 @@ export default function ProposePlanPage() {
             </div>
           </div>
         );
+
+      case "invite": {
+        const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const addEmailFromInput = () => {
+          const email = inviteEmailInput.trim().toLowerCase();
+          if (!email) return;
+          if (!EMAIL_RE.test(email)) {
+            setInviteEmailError(t("createPlan.invalidEmail", "That doesn't look like a valid email."));
+            return;
+          }
+          if (inviteEmails.includes(email)) {
+            setInviteEmailInput("");
+            return;
+          }
+          setInviteEmails((prev) => [...prev, email]);
+          setInviteEmailInput("");
+          setInviteEmailError(null);
+        };
+        return (
+          <div className="space-y-3">
+            {inviteEmails.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {inviteEmails.map((email) => (
+                  <span
+                    key={email}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-muted/70 border border-border text-foreground"
+                  >
+                    {email}
+                    <button
+                      type="button"
+                      onClick={() => setInviteEmails((prev) => prev.filter((e) => e !== email))}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label={`Remove ${email}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-3">
+              <input
+                type="email"
+                inputMode="email"
+                value={inviteEmailInput}
+                onChange={(e) => { setInviteEmailInput(e.target.value); setInviteEmailError(null); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addEmailFromInput(); }
+                }}
+                onBlur={addEmailFromInput}
+                placeholder={t("createPlan.emailPlaceholder", "friend@email.com")}
+                className="flex-1 h-14 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+              />
+              <button
+                type="button"
+                onClick={addEmailFromInput}
+                disabled={!inviteEmailInput.trim()}
+                className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-muted-foreground/60 disabled:opacity-40"
+              >
+                <span className="text-xl leading-none">+</span>
+              </button>
+            </div>
+            {inviteEmailError && (
+              <p className="text-sm text-destructive">{inviteEmailError}</p>
+            )}
+            <button
+              type="button"
+              onClick={advanceStep}
+              className="w-full py-3 rounded-full text-sm font-semibold bg-black text-white"
+            >
+              {inviteEmails.length > 0 ? t("common.next", "Next") : t("createPlan.skip", "Skip")}
+            </button>
+          </div>
+        );
+      }
 
       case "preview":
         // Rendered inline in the scrollable area via renderPreviewCard() instead of

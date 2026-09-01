@@ -34,6 +34,7 @@ import { hasValidAvatarUrl } from "@/lib/avatar";
 import { isEmailPrefixName } from "@/lib/profileName";
 import { getOrderedActivities, getNextOccurrenceDate, getActivityLabel } from "@/data/activityTypes";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { getPendingPlanInvite, clearPendingPlanInvite } from "@/lib/pendingPlanInvite";
 import EventsPage from "@/pages/EventsPage";
 
 export function IOSAppLayout() {
@@ -234,7 +235,19 @@ export function IOSAppLayout() {
       navigate(location.pathname, { replace: true, state: null });
     }
   }, [location.state, navigate, location.pathname]);
-  
+
+  // Redeem a pending email-invite plan once the user is actually signed in —
+  // /invite/:activityId (ShareLanding) stores this before sending the visitor
+  // here to sign up or log in. Reuses the exact same pendingNewPlanId hand-off
+  // ProposePlanPage uses after creating a plan, so it opens the same way.
+  useEffect(() => {
+    if (isLoading || !user) return;
+    const pendingInviteId = getPendingPlanInvite();
+    if (!pendingInviteId) return;
+    clearPendingPlanInvite();
+    navigate(location.pathname, { replace: true, state: { activeTab: "plans", pendingNewPlanId: pendingInviteId } });
+  }, [isLoading, user, navigate, location.pathname]);
+
   // Get active activity types the user has joined that are SCHEDULED FOR TODAY (for proximity detection)
   const userActiveActivityTypes = useMemo(() => {
     if (!user) return [];
