@@ -32,6 +32,7 @@ import { NotificationProvider } from "@/components/notifications/NotificationPro
 import ProposePlanPage from "./pages/ProposePlanPage";
 import EventChatPage from "./pages/EventChatPage";
 import ShareLanding from "./pages/ShareLanding";
+import GuestPlanPage from "./pages/GuestPlanPage";
 
 const queryClient = new QueryClient();
 
@@ -42,7 +43,7 @@ const KNOWN_ROUTES = new Set([
   "auth", "profile", "admin", "welcome",
   "privacy-policy", "terms-of-service", "community-guidelines",
   "subscription-success", "propose-plan", "plans",
-  "chat", "events", "home", "invite", "",
+  "chat", "events", "home", "invite", "guest", "",
 ]);
 
 // Component to track referral codes from URLs.
@@ -204,6 +205,7 @@ const App = () => {
                     <Route path="/propose-plan" element={<ProposePlanPage />} />
                     <Route path="/chat/event/:eventId" element={<EventChatPage />} />
                     <Route path="/invite/:activityId" element={<ShareLanding />} />
+                    <Route path="/guest/:token" element={<GuestPlanPage />} />
                     <Route path="/*" element={<IOSAppLayout />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>

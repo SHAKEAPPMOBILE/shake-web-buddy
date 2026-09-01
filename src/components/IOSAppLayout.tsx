@@ -263,6 +263,15 @@ export function IOSAppLayout() {
       });
   }, [isLoading, user]);
 
+  // Convert any plans this email guest-joined (no account, via a shared link)
+  // into real joins now that they've signed up — see claim-guest-joins.
+  useEffect(() => {
+    if (isLoading || !user) return;
+    void supabase.functions.invoke("claim-guest-joins").then(({ error }) => {
+      if (error) console.error("[IOSAppLayout] claim guest joins failed:", error);
+    });
+  }, [isLoading, user]);
+
   // Get active activity types the user has joined that are SCHEDULED FOR TODAY (for proximity detection)
   const userActiveActivityTypes = useMemo(() => {
     if (!user) return [];

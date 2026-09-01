@@ -70,6 +70,13 @@ verify_jwt = false
 [functions.verify-phone-change]
 verify_jwt = false
 
+# Guest join — unauthenticated visitors joining a plan without an account.
+[functions.guest-join-plan]
+verify_jwt = false
+
+[functions.get-guest-join]
+verify_jwt = false
+
 # Public event discovery — browser uses anon key + optional user JWT.
 # Must match Dashboard: fetch-events → Settings → Enforce JWT Verification = OFF
 [functions.fetch-events]

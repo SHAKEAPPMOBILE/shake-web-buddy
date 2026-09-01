@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_ACTIVITY_TYPES, getNextOccurrenceDate } from "@/data/activityTypes";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
@@ -22,9 +22,17 @@ interface ActivityInfo {
 
 export default function ShareLanding() {
   const { activityId } = useParams<{ activityId: string }>();
+  const navigate = useNavigate();
   const [activity, setActivity] = useState<ActivityInfo | null>(null);
+  const [isRealPlan, setIsRealPlan] = useState(false);
+  const [isGuestEligible, setIsGuestEligible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [showGuestForm, setShowGuestForm] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestError, setGuestError] = useState<string | null>(null);
+  const [guestSubmitting, setGuestSubmitting] = useState(false);
 
   useEffect(() => {
     if (!activityId) {
@@ -40,17 +48,19 @@ export default function ShareLanding() {
       const decoded = decodeURIComponent(activityId);
       const isUuid = UUID_RE.test(decoded);
 
-      let actData: { id: string | null; activity_type: string; city: string; scheduled_for: string | null; user_id: string | null; note: string | null; price_amount: string | null } | null = null;
+      let actData: { id: string | null; activity_type: string; city: string; scheduled_for: string | null; user_id: string | null; note: string | null; price_amount: string | null; audience?: string | null } | null = null;
 
       if (isUuid) {
         const { data, error } = await supabase
           .from("user_activities")
-          .select("id, activity_type, city, scheduled_for, user_id, note, price_amount")
+          .select("id, activity_type, city, scheduled_for, user_id, note, price_amount, audience")
           .eq("id", decoded)
           .eq("is_active", true)
           .maybeSingle();
         if (error || !data) { setNotFound(true); setIsLoading(false); return; }
         actData = data;
+        setIsRealPlan(true);
+        setIsGuestEligible(!data.price_amount && (!data.audience || data.audience === "everyone"));
         // Remember which plan this link pointed at so that once the visitor
         // signs up or logs in, the app can land them right on it — same
         // localStorage-then-redeem-post-auth pattern as referral codes.
@@ -72,6 +82,8 @@ export default function ShareLanding() {
           note: null,
           price_amount: null,
         };
+        setIsRealPlan(false);
+        setIsGuestEligible(true);
       }
 
       // Phase 2: render the card immediately with what we have.
@@ -164,6 +176,40 @@ export default function ShareLanding() {
       setIsLoading(false);
     });
   }, [activityId]);
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const handleGuestJoin = async () => {
+    if (!activity) return;
+    const email = guestEmail.trim().toLowerCase();
+    if (!EMAIL_RE.test(email)) {
+      setGuestError("That doesn't look like a valid email.");
+      return;
+    }
+    setGuestError(null);
+    setGuestSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("guest-join-plan", {
+        body: isRealPlan
+          ? { activity_id: activity.id, email, name: guestName.trim() || undefined }
+          : {
+              activity_type: activity.activity_type,
+              city: activity.city,
+              scheduled_for: activity.scheduled_for,
+              email,
+              name: guestName.trim() || undefined,
+            },
+      });
+      if (error || !data?.success) {
+        setGuestError(data?.error || "Couldn't join that plan — try again.");
+        return;
+      }
+      navigate(`/guest/${data.token}`);
+    } catch {
+      setGuestError("Couldn't join that plan — try again.");
+    } finally {
+      setGuestSubmitting(false);
+    }
+  };
 
   const activityInfo = activity
     ? ALL_ACTIVITY_TYPES.find((a) => a.id === activity.activity_type)
@@ -335,6 +381,52 @@ export default function ShareLanding() {
           <p className="text-white/30 text-xs text-center px-4">
             Free to download · Sign up in seconds
           </p>
+
+          {/* Guest join — only for free, everyone-audience plans. No account
+              needed, capped at 2 plans per email (enforced server-side). */}
+          {isGuestEligible && !showGuestForm && (
+            <button
+              type="button"
+              onClick={() => setShowGuestForm(true)}
+              className="text-white/50 text-sm underline underline-offset-2"
+            >
+              Just want to join this one? Do it without an account
+            </button>
+          )}
+
+          {isGuestEligible && showGuestForm && (
+            <div
+              className="w-full rounded-2xl px-5 py-4 flex flex-col gap-3"
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)" }}
+            >
+              <p className="text-white/70 text-xs">
+                No account needed — you just won't be able to chat with the group. You can join up to 2 plans this way.
+              </p>
+              <input
+                type="text"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                placeholder="Your name (optional)"
+                className="w-full h-11 rounded-xl bg-white/10 border border-white/10 px-4 text-sm text-white placeholder:text-white/40 focus:outline-none"
+              />
+              <input
+                type="email"
+                value={guestEmail}
+                onChange={(e) => { setGuestEmail(e.target.value); setGuestError(null); }}
+                placeholder="you@email.com"
+                className="w-full h-11 rounded-xl bg-white/10 border border-white/10 px-4 text-sm text-white placeholder:text-white/40 focus:outline-none"
+              />
+              {guestError && <p className="text-red-300 text-xs">{guestError}</p>}
+              <button
+                type="button"
+                onClick={handleGuestJoin}
+                disabled={guestSubmitting || !guestEmail.trim()}
+                className="w-full py-3 rounded-full font-semibold text-white text-sm text-center bg-white/15 disabled:opacity-50"
+              >
+                {guestSubmitting ? "Joining…" : "Join without an account"}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
