@@ -24,6 +24,8 @@ import { Capacitor } from "@capacitor/core";
 import { useScrollNudge } from "@/hooks/useScrollNudge";
 import { VenueSearchInput, VenuePlace } from "@/components/VenueSearchInput";
 import { Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Set to true to re-enable ID verification gate on the paid-plan create path.
 const ID_VERIFICATION_ENABLED = false;
@@ -162,6 +164,7 @@ export default function ProposePlanPage() {
   const [inviteEmails, setInviteEmails] = useState<string[]>([]);
   const [inviteEmailInput, setInviteEmailInput] = useState("");
   const [inviteEmailError, setInviteEmailError] = useState<string | null>(null);
+  const [showAllInvitesDialog, setShowAllInvitesDialog] = useState(false);
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
   // Extra named price tiers beyond the base price/currency above, e.g.
@@ -1741,26 +1744,58 @@ export default function ProposePlanPage() {
 
       case "invite": {
         const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const addEmailFromInput = () => {
-          const email = inviteEmailInput.trim().toLowerCase();
-          if (!email) return;
-          if (!EMAIL_RE.test(email)) {
-            setInviteEmailError(t("createPlan.invalidEmail", "That doesn't look like a valid email."));
-            return;
-          }
-          if (inviteEmails.includes(email)) {
+        // Splits on comma, semicolon, or any whitespace (space/newline/tab) —
+        // covers a typed "email, " as well as a whole pasted block of emails
+        // separated any which way, instead of only accepting one at a time.
+        const EMAIL_SPLIT_RE = /[\s,;]+/;
+
+        // commitTrailing: false while the user is still typing (onChange) —
+        // the last token might be a half-finished email, so it stays in the
+        // box instead of being flagged invalid on every keystroke. true for
+        // paste/blur/Enter/the + button, where whatever's left really is done.
+        const processEmailInput = (raw: string, commitTrailing: boolean) => {
+          const endsWithDelimiter = raw.length > 0 && EMAIL_SPLIT_RE.test(raw.slice(-1));
+          const parts = raw.split(EMAIL_SPLIT_RE).map((p) => p.trim()).filter(Boolean);
+          if (parts.length === 0) {
             setInviteEmailInput("");
             return;
           }
-          setInviteEmails((prev) => [...prev, email]);
-          setInviteEmailInput("");
-          setInviteEmailError(null);
+          const trailingIsComplete = endsWithDelimiter || commitTrailing;
+          const toCommit = trailingIsComplete ? parts : parts.slice(0, -1);
+          const remainder = trailingIsComplete ? "" : parts[parts.length - 1];
+
+          const validNew: string[] = [];
+          let invalidCount = 0;
+          toCommit.forEach((p) => {
+            const email = p.toLowerCase();
+            if (EMAIL_RE.test(email)) {
+              if (!inviteEmails.includes(email) && !validNew.includes(email)) validNew.push(email);
+            } else {
+              invalidCount++;
+            }
+          });
+
+          if (validNew.length > 0) setInviteEmails((prev) => [...prev, ...validNew]);
+          setInviteEmailInput(remainder);
+          setInviteEmailError(
+            invalidCount > 0
+              ? invalidCount === 1
+                ? t("createPlan.invalidEmail", "That doesn't look like a valid email.")
+                : t("createPlan.someInvalidEmails", `Skipped ${invalidCount} that didn't look like valid emails.`)
+              : null
+          );
         };
+
+        const addEmailFromInput = () => processEmailInput(inviteEmailInput, true);
+
+        const INLINE_CHIP_LIMIT = 3;
+        const overflowCount = inviteEmails.length - INLINE_CHIP_LIMIT;
         return (
+          <>
           <div className="space-y-3">
             {inviteEmails.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {inviteEmails.map((email) => (
+                {(overflowCount > 0 ? inviteEmails.slice(0, INLINE_CHIP_LIMIT) : inviteEmails).map((email) => (
                   <span
                     key={email}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-muted/70 border border-border text-foreground"
@@ -1776,20 +1811,34 @@ export default function ProposePlanPage() {
                     </button>
                   </span>
                 ))}
+                {overflowCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllInvitesDialog(true)}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-muted border border-border text-foreground font-medium hover:bg-muted/70 transition-colors"
+                  >
+                    +{overflowCount} more…
+                  </button>
+                )}
               </div>
             )}
             <div className="flex items-center gap-3">
-              <input
-                type="email"
-                inputMode="email"
+              <textarea
                 value={inviteEmailInput}
-                onChange={(e) => { setInviteEmailInput(e.target.value); setInviteEmailError(null); }}
+                onChange={(e) => { processEmailInput(e.target.value, false); setInviteEmailError(null); }}
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData("text");
+                  if (!pasted) return;
+                  e.preventDefault();
+                  processEmailInput(inviteEmailInput + pasted, true);
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addEmailFromInput(); }
+                  if (e.key === "Enter") { e.preventDefault(); addEmailFromInput(); }
                 }}
                 onBlur={addEmailFromInput}
-                placeholder={t("createPlan.emailPlaceholder", "friend@email.com")}
-                className="flex-1 h-14 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+                placeholder={t("createPlan.emailPlaceholder", "friend@email.com — paste a whole list at once if you like")}
+                rows={1}
+                className="flex-1 min-h-14 max-h-32 rounded-2xl border border-border bg-muted/60 px-5 py-4 text-base resize-none focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
               />
               <button
                 type="button"
@@ -1811,6 +1860,38 @@ export default function ProposePlanPage() {
               {inviteEmails.length > 0 ? t("common.next", "Next") : t("createPlan.skip", "Skip")}
             </button>
           </div>
+
+          {/* Full invite list — same "collapse to a few + open a scrollable
+              dialog" pattern as the Shakers-nearby preview pill, just for
+              emails instead of avatars. */}
+          <Dialog open={showAllInvitesDialog} onOpenChange={setShowAllInvitesDialog}>
+            <DialogContent className="sm:max-w-md bg-white">
+              <DialogHeader>
+                <DialogTitle>{t("createPlan.allInvites", "Invited")} ({inviteEmails.length})</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[60vh]">
+                <div className="flex flex-col gap-2 pr-3">
+                  {inviteEmails.map((email) => (
+                    <div
+                      key={email}
+                      className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-muted/50 border border-border"
+                    >
+                      <span className="text-sm text-foreground truncate">{email}</span>
+                      <button
+                        type="button"
+                        onClick={() => setInviteEmails((prev) => prev.filter((e) => e !== email))}
+                        className="text-muted-foreground hover:text-destructive shrink-0"
+                        aria-label={`Remove ${email}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+          </>
         );
       }
 
