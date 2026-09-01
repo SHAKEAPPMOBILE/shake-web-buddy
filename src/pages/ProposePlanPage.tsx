@@ -300,11 +300,18 @@ export default function ProposePlanPage() {
     else if (currentStepName === "city") cityInputElRef.current?.focus();
     else if (currentStepName === "time") timeInputRef.current?.focus();
     else if (currentStepName === "price") priceInputRef.current?.focus();
-    // Scroll the history area to the bottom so the new step is always visible
+    // Scroll the history area to the bottom so the new step is always
+    // visible. Double rAF — waits one extra frame for the composer's
+    // ResizeObserver (which drives the scroll area's bottom padding) to
+    // settle on a taller composer (e.g. a step with a multi-line bot
+    // question) before measuring scrollHeight, otherwise the scroll lands
+    // short and the tail end of a longer question sits under the composer.
     requestAnimationFrame(() => {
-      if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-      }
+      requestAnimationFrame(() => {
+        if (scrollAreaRef.current) {
+          scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+        }
+      });
     });
   }, [currentStepName]);
 
@@ -2214,7 +2221,7 @@ export default function ProposePlanPage() {
             <div className={currentStep === 0 && currentStepName !== "video" ? "min-h-[8vh]" : "min-h-1"} />
             <div
               className="w-full max-w-sm mx-auto px-6 pt-4"
-              style={{ paddingBottom: composerHeight + keyboardOffset + 32 }}
+              style={{ paddingBottom: composerHeight + keyboardOffset + 64 }}
             >
               {/* Past Q&A — oldest (top) faintest/smallest, most-recent (bottom) clearer */}
               {currentStep > 0 && currentStepName !== "preview" && (
