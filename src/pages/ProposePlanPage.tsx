@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow, addDays } from "date-fns";
-import { Plus, User, Calendar, ArrowUp, ChevronLeft, Play, Mic } from "lucide-react";
+import { Plus, User, Calendar, ArrowUp, ChevronLeft, ChevronUp, Play, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1237,7 +1237,7 @@ export default function ProposePlanPage() {
                 style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
                 aria-label={t("createPlan.uploadMedia", "Upload")}
               >
-                {imageUploading ? <LoadingSpinner size="sm" /> : <ArrowUp className="w-5 h-5 text-white" />}
+                {imageUploading ? <LoadingSpinner size="sm" /> : <ChevronUp className="w-5 h-5 text-white" />}
               </button>
               <span className="text-[11px] text-white/80 font-medium" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>
                 {imageUploading ? t("createPlan.photoUploading", "Uploading...") : t("createPlan.uploadMedia", "Upload")}
