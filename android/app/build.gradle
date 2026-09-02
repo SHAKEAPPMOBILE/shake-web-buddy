@@ -7,8 +7,8 @@ android {
         applicationId "com.shakebyleo.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 36
-        versionName "18.35"
+        versionCode 37
+        versionName "18.36"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         aaptOptions {
