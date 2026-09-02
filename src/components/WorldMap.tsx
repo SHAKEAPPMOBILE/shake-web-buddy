@@ -8,30 +8,28 @@ import { getActivityEmoji, getActivityColor } from "@/data/activityTypes";
 import { Button } from "@/components/ui/button";
 import { LocateFixed } from "lucide-react";
 
-// Free raster basemap — CARTO's dark-matter tiles, no API key or billing
-// required (unlike Mapbox's hosted vector styles). Visually close to the
-// previous "mapbox://styles/mapbox/dark-v11" look.
+// Free raster basemap — Esri's dark-gray canvas tiles, no API key or billing
+// required. Was CARTO's dark-matter tiles until CARTO gated their free
+// anonymous endpoint behind a required API key (basemaps.cartocdn.com now
+// serves an "API KEY REQUIRED" watermark instead of real map tiles).
 const FREE_DARK_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
-    "carto-dark": {
+    "esri-dark-gray": {
       type: "raster",
       tiles: [
-        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
       ],
       tileSize: 256,
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://www.esri.com">Esri</a>',
     },
   },
   layers: [
     {
-      id: "carto-dark-layer",
+      id: "esri-dark-gray-layer",
       type: "raster",
-      source: "carto-dark",
+      source: "esri-dark-gray",
       minzoom: 0,
       maxzoom: 20,
     },
