@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
@@ -140,9 +140,9 @@ export function GlobalParticipantsSection() {
       ...shuffledWithoutAvatar,
     ];
 
-    // Exclude blocked users from feed
-    const blockedSet = new Set(blockedUserIds);
-    setParticipants(prioritizedList.filter((p) => !blockedSet.has(p.user_id)));
+    // Blocked-user filtering happens at render time (see filteredParticipants
+    // below) so blocking/unblocking never has to re-fetch the whole list.
+    setParticipants(prioritizedList);
     setIsLoading(false);
   };
 
@@ -209,7 +209,11 @@ export function GlobalParticipantsSection() {
       supabase.removeChannel(profilesChannel);
       clearInterval(interval);
     };
-  }, [user?.id, blockedUserIds]);
+    // Deliberately NOT depending on blockedUserIds — that only needs to
+    // re-filter the already-fetched list (see filteredParticipants below),
+    // not tear down and restart the fetch/subscription/interval.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const handleParticipantClick = (participant: Participant) => {
     setSelectedUser({
@@ -224,11 +228,16 @@ export function GlobalParticipantsSection() {
     setShowPremiumDialog(true);
   };
 
+  const unblockedParticipants = useMemo(() => {
+    const blockedSet = new Set(blockedUserIds);
+    return participants.filter((p) => !blockedSet.has(p.user_id));
+  }, [participants, blockedUserIds]);
+
   const filteredParticipants = searchQuery.trim()
-    ? participants.filter((p) =>
+    ? unblockedParticipants.filter((p) =>
         (p.name || "").toLowerCase().includes(searchQuery.trim().toLowerCase())
       )
-    : participants;
+    : unblockedParticipants;
 
   const visibleParticipants = filteredParticipants.slice(0, FREE_VISIBLE_COUNT);
   const blurredParticipants = filteredParticipants.slice(FREE_VISIBLE_COUNT);
@@ -239,7 +248,7 @@ export function GlobalParticipantsSection() {
   // URL turned out broken (see the img onError below) so a dead link gets
   // swapped for the next candidate instead of showing a silhouette. Shows
   // fewer than 7 rather than padding with photo-less/broken-photo users.
-  const uniqueByUser = Array.from(new Map(participants.map((p) => [p.user_id, p] as const)).values());
+  const uniqueByUser = Array.from(new Map(unblockedParticipants.map((p) => [p.user_id, p] as const)).values());
   const previewAvatars = uniqueByUser
     .filter((p) => p.avatar_url && !failedPreviewAvatarIds.has(p.user_id))
     .slice(0, 7);

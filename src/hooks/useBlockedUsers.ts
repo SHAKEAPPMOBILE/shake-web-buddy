@@ -2,11 +2,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Stable reference — `data: blockedIds = []` would otherwise hand back a new
+// array literal on every render while the query is disabled/pending, which
+// broke effects elsewhere that depend on blockedUserIds (see
+// GlobalParticipantsSection's mount/subscribe effect).
+const EMPTY_BLOCKED_IDS: string[] = [];
+
 export function useBlockedUsers() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: blockedIds = [], isLoading } = useQuery({
+  const { data: blockedIds = EMPTY_BLOCKED_IDS, isLoading } = useQuery({
     queryKey: ["user-blocks", user?.id ?? ""],
     queryFn: async () => {
       if (!user) return [];

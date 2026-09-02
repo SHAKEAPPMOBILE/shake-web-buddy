@@ -21,6 +21,7 @@ import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useTranslation } from "react-i18next";
 import { Capacitor } from "@capacitor/core";
+import { SpeechRecognition as NativeSpeechRecognition } from "@capacitor-community/speech-recognition";
 import { useScrollNudge } from "@/hooks/useScrollNudge";
 import { VenueSearchInput, VenuePlace } from "@/components/VenueSearchInput";
 import { Trash2 } from "lucide-react";
@@ -130,7 +131,7 @@ export default function ProposePlanPage() {
     capacity: t("createPlan.botCapacity", "Limit how many can join? (optional)"),
     video: t("createPlan.botVideo"),
     audience: t("createPlan.botAudience"),
-    description: t("createPlan.botDescription", "Want to add a longer description? Agenda, details, anything that doesn't fit above. (optional)"),
+    description: t("createPlan.botDescription", "Add a description"),
     preview: "",
   }), [t]);
 
@@ -694,13 +695,84 @@ export default function ProposePlanPage() {
     else jumpToStep(steps.indexOf("preview"));
   }, [city, steps]);
 
-  const handleVoiceStart = () => {
+  // Shared by both the native and web recognition paths below — turns a
+  // final transcript into applied wizard fields via the AI extractor.
+  const processVoiceTranscript = useCallback(async (transcript: string) => {
+    console.log("[ProposePlanPage] voice transcript:", transcript);
+    if (!transcript.trim()) {
+      setVoiceError(t("createPlan.voiceNoSpeech", "Didn't catch any words — try again."));
+      return;
+    }
+    setVoiceParsing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("parse-plan-from-speech", { body: { transcript } });
+      if (error) {
+        console.error("[ProposePlanPage] parse-plan-from-speech invoke error:", error);
+        throw error;
+      }
+      if (!data?.fields) {
+        console.error("[ProposePlanPage] parse-plan-from-speech returned no fields:", data);
+        throw new Error("No fields returned");
+      }
+      applyVoiceFields(data.fields);
+    } catch (err) {
+      console.error("[ProposePlanPage] voice parse failed:", err);
+      setVoiceError(t("createPlan.voiceParseFailed", "Heard you, but couldn't turn it into a plan — try again or type it in."));
+    } finally {
+      setVoiceParsing(false);
+    }
+  }, [applyVoiceFields, t]);
+
+  const handleVoiceStart = async () => {
+    setVoiceError(null);
+
+    // The Web Speech API (SpeechRecognition/webkitSpeechRecognition) isn't
+    // implemented in iOS's WKWebView — a native app always hits "not-allowed"
+    // no matter the mic permission. Use the on-device recognizer instead
+    // (SFSpeechRecognizer on iOS, SpeechRecognizer on Android).
+    if (Capacitor.isNativePlatform()) {
+      // Checked separately from the recording try/catch below so a plugin
+      // that isn't wired into this particular native build (e.g. iOS, until
+      // its CocoaPods integration is added) surfaces the honest "not
+      // available" message instead of a misleading "couldn't parse" one.
+      let isAvailable = false;
+      try {
+        isAvailable = (await NativeSpeechRecognition.available()).available;
+      } catch (err) {
+        console.error("[ProposePlanPage] native SpeechRecognition.available() failed:", err);
+      }
+      if (!isAvailable) {
+        setVoiceError(t("createPlan.voiceUnsupported", "Voice input isn't available here yet — type it in instead."));
+        return;
+      }
+      try {
+        let permission = await NativeSpeechRecognition.checkPermissions();
+        if (permission.speechRecognition !== "granted") {
+          permission = await NativeSpeechRecognition.requestPermissions();
+        }
+        if (permission.speechRecognition !== "granted") {
+          setVoiceError(t("createPlan.voiceNotAllowedNative", "Microphone access is blocked — enable it for SHAKE in Settings."));
+          return;
+        }
+        setIsListening(true);
+        const result = await NativeSpeechRecognition.start({ language: "en-US", partialResults: false, popup: false });
+        setIsListening(false);
+        await processVoiceTranscript(result.matches?.[0] ?? "");
+      } catch (err) {
+        console.error("[ProposePlanPage] native SpeechRecognition error:", err);
+        setIsListening(false);
+        setVoiceError(t("createPlan.voiceParseFailed", "Heard you, but couldn't turn it into a plan — try again or type it in."));
+      }
+      return;
+    }
+
+    // Web path — browser (desktop or Android WebView, which does support
+    // this API since it's Chromium-based).
     const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionCtor) {
       setVoiceError(t("createPlan.voiceUnsupported", "Voice input isn't available here yet — type it in instead."));
       return;
     }
-    setVoiceError(null);
     const recognition = new SpeechRecognitionCtor();
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -713,30 +785,8 @@ export default function ProposePlanPage() {
     recognition.onresult = async (event: any) => {
       resultReceived = true;
       const transcript: string = event.results?.[0]?.[0]?.transcript ?? "";
-      console.log("[ProposePlanPage] voice transcript:", transcript);
       setIsListening(false);
-      if (!transcript.trim()) {
-        setVoiceError(t("createPlan.voiceNoSpeech", "Didn't catch any words — try again."));
-        return;
-      }
-      setVoiceParsing(true);
-      try {
-        const { data, error } = await supabase.functions.invoke("parse-plan-from-speech", { body: { transcript } });
-        if (error) {
-          console.error("[ProposePlanPage] parse-plan-from-speech invoke error:", error);
-          throw error;
-        }
-        if (!data?.fields) {
-          console.error("[ProposePlanPage] parse-plan-from-speech returned no fields:", data);
-          throw new Error("No fields returned");
-        }
-        applyVoiceFields(data.fields);
-      } catch (err) {
-        console.error("[ProposePlanPage] voice parse failed:", err);
-        setVoiceError(t("createPlan.voiceParseFailed", "Heard you, but couldn't turn it into a plan — try again or type it in."));
-      } finally {
-        setVoiceParsing(false);
-      }
+      await processVoiceTranscript(transcript);
     };
     recognition.onerror = (event: any) => {
       console.error("[ProposePlanPage] SpeechRecognition error:", event?.error);
@@ -760,6 +810,10 @@ export default function ProposePlanPage() {
   };
 
   const handleVoiceStop = () => {
+    if (Capacitor.isNativePlatform()) {
+      NativeSpeechRecognition.stop().catch((err) => console.error("[ProposePlanPage] native SpeechRecognition.stop() failed:", err));
+      return;
+    }
     speechRecognitionRef.current?.stop();
   };
 
@@ -1570,13 +1624,16 @@ export default function ProposePlanPage() {
                   {planText.length}/{MAX_CHARACTERS}
                 </span>
               </div>
-              <button
-                onClick={handleNameSubmit}
-                disabled={!planText.trim() || hasProfanity}
-                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
-              >
-                <ChevronUp className="w-5 h-5" />
-              </button>
+              <div className="flex flex-col items-center gap-1.5 shrink-0">
+                {renderStepMicButton()}
+                <button
+                  onClick={handleNameSubmit}
+                  disabled={!planText.trim() || hasProfanity}
+                  className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
+                >
+                  <ChevronUp className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -1592,13 +1649,16 @@ export default function ProposePlanPage() {
               placeholder="e.g. Paris, New York, São Paulo…"
               className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20 placeholder:text-muted-foreground"
             />
-            <button
-              onClick={handleCitySubmit}
-              disabled={!cityInput.trim()}
-              className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
-            >
-              <ChevronUp className="w-5 h-5" />
-            </button>
+            <div className="flex flex-col items-center gap-1.5 shrink-0">
+              {renderStepMicButton()}
+              <button
+                onClick={handleCitySubmit}
+                disabled={!cityInput.trim()}
+                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
+              >
+                <ChevronUp className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         );
 
@@ -1716,13 +1776,16 @@ export default function ProposePlanPage() {
                 className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20"
                 style={{ colorScheme: "light", color: "#111" }}
               />
-              <button
-                onClick={handleTimeSubmit}
-                disabled={!selectedTime}
-                className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
-              >
-                <ChevronUp className="w-5 h-5" />
-              </button>
+              <div className="flex flex-col items-center gap-1.5 shrink-0">
+                {renderStepMicButton()}
+                <button
+                  onClick={handleTimeSubmit}
+                  disabled={!selectedTime}
+                  className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
+                >
+                  <ChevronUp className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -1738,12 +1801,15 @@ export default function ProposePlanPage() {
                 onSelectPlace={(place) => { setVenuePlace(place); setVenueName(place.name); }}
                 placeholder={t("createPlan.venuePlaceholder", "Search a place or type an address")}
               />
-              <button
-                onClick={advanceStep}
-                className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
-              >
-                <ChevronUp className="w-5 h-5" />
-              </button>
+              <div className="flex flex-col items-center gap-1.5 shrink-0">
+                {renderStepMicButton()}
+                <button
+                  onClick={advanceStep}
+                  className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
+                >
+                  <ChevronUp className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <button
               type="button"
@@ -1812,12 +1878,15 @@ export default function ProposePlanPage() {
                     />
                   </div>
                   {/* Continue — matches time/date step circular button */}
-                  <button
-                    onClick={handlePriceSubmit}
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
-                  >
-                    <ChevronUp className="w-5 h-5" />
-                  </button>
+                  <div className="flex flex-col items-center gap-1.5 shrink-0">
+                    {renderStepMicButton()}
+                    <button
+                      onClick={handlePriceSubmit}
+                      className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
+                    >
+                      <ChevronUp className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Extra named price tiers — e.g. "Girls $10 / Boys $15". The
@@ -1890,12 +1959,15 @@ export default function ProposePlanPage() {
               className="flex-1 h-14 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
               autoFocus
             />
-            <button
-              onClick={advanceStep}
-              className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
-            >
-              <ChevronUp className="w-5 h-5" />
-            </button>
+            <div className="flex flex-col items-center gap-1.5 shrink-0">
+              {renderStepMicButton()}
+              <button
+                onClick={advanceStep}
+                className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
+              >
+                <ChevronUp className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         );
 
@@ -1945,6 +2017,7 @@ export default function ProposePlanPage() {
               autoFocus
             />
             <div className="flex items-center gap-3">
+              {renderStepMicButton()}
               <button
                 type="button"
                 onClick={advanceStep}
@@ -2148,8 +2221,45 @@ export default function ProposePlanPage() {
     );
   };
 
+  // Compact mic button placed above the send button on every step's composer
+  // (not just the video step) — speaking here re-runs the same whole-plan
+  // extraction as the big mic on the video step, filling in whatever
+  // hasn't been answered yet from wherever the user currently is.
+  const renderStepMicButton = () => (
+    <button
+      type="button"
+      onClick={isListening ? handleVoiceStop : handleVoiceStart}
+      disabled={voiceParsing}
+      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 disabled:opacity-60 transition-colors"
+      style={{ background: isListening ? "rgba(239,68,68,0.9)" : "rgba(0,0,0,0.08)" }}
+      aria-label={isListening ? t("createPlan.voiceStop", "Stop listening") : t("createPlan.voiceSpeak", "Speak your plan")}
+    >
+      {voiceParsing ? (
+        <LoadingSpinner size="sm" />
+      ) : isListening ? (
+        <div className="flex items-end gap-0.5 h-3">
+          {[0, 1, 2, 3].map((i) => (
+            <span
+              key={i}
+              className="w-0.5 rounded-full bg-white"
+              style={{ animation: `voiceWave 0.8s ease-in-out ${i * 0.12}s infinite` }}
+            />
+          ))}
+        </div>
+      ) : (
+        <Mic className="w-4 h-4 text-foreground/70" />
+      )}
+    </button>
+  );
+
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <style>{`
+        @keyframes voiceWave {
+          0%, 100% { height: 4px; }
+          50% { height: 16px; }
+        }
+      `}</style>
       {/* Header — back arrow only on native (phone); hidden on web */}
       {Capacitor.isNativePlatform() && !isEditingAnswers && (
         <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center">

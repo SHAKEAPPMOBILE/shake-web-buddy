@@ -41,7 +41,9 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>SHAKE uses your location to show events and plans happening near you.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>SHAKE needs microphone access to record videos.</string>
+	<string>SHAKE needs microphone access to record videos and speak plans.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>SHAKE uses speech recognition to turn what you say into a plan when you speak it instead of typing.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>SHAKE needs permission to save photos to your library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
