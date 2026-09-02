@@ -220,6 +220,10 @@ export default function ProposePlanPage() {
   const voiceChunksRef = useRef<Blob[]>([]);
   const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voiceTargetStepRef = useRef<StepName | "full">("full");
+  // Silence detection — auto-stops recording after a pause, instead of
+  // requiring a second tap or waiting out the full MAX_VOICE_SECONDS.
+  const voiceAudioContextRef = useRef<AudioContext | null>(null);
+  const voiceSilenceIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [cameraMode, setCameraMode] = useState<CameraMode>("idle");
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordedObjectUrl, setRecordedObjectUrl] = useState<string | null>(null);
@@ -879,6 +883,47 @@ export default function ProposePlanPage() {
       setIsListening(true);
       setVoiceListeningTarget(target);
       voiceTimeoutRef.current = setTimeout(() => stopVoiceRecording(), MAX_VOICE_SECONDS * 1000);
+
+      // Auto-stop after a pause instead of requiring a second tap — waits
+      // for actual speech first, then ends the recording once volume has
+      // stayed below the noise floor for SILENCE_MS straight.
+      const SILENCE_MS = 1500;
+      const MIN_RECORDING_MS = 700;
+      const SPEECH_THRESHOLD = 0.02;
+      try {
+        const AudioContextCtor = window.AudioContext || (window as any).webkitAudioContext;
+        const audioContext = new AudioContextCtor();
+        voiceAudioContextRef.current = audioContext;
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
+        source.connect(analyser);
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        const startedAt = Date.now();
+        let hasSpoken = false;
+        let lastLoudAt = Date.now();
+        voiceSilenceIntervalRef.current = setInterval(() => {
+          analyser.getByteTimeDomainData(data);
+          let sumSquares = 0;
+          for (let i = 0; i < data.length; i++) {
+            const normalized = (data[i] - 128) / 128;
+            sumSquares += normalized * normalized;
+          }
+          const rms = Math.sqrt(sumSquares / data.length);
+          const now = Date.now();
+          if (rms > SPEECH_THRESHOLD) {
+            hasSpoken = true;
+            lastLoudAt = now;
+          }
+          if (hasSpoken && now - startedAt > MIN_RECORDING_MS && now - lastLoudAt > SILENCE_MS) {
+            stopVoiceRecording();
+          }
+        }, 150);
+      } catch (err) {
+        // Silence detection is a nicety, not a requirement — the mic tap /
+        // MAX_VOICE_SECONDS timeout still stop the recording either way.
+        console.error("[ProposePlanPage] silence detection unavailable:", err);
+      }
     } catch (err) {
       console.error("[ProposePlanPage] mic access failed:", err);
       setVoiceError(t("createPlan.voiceNotAllowed", "Microphone access is blocked — check your permissions."));
@@ -887,9 +932,13 @@ export default function ProposePlanPage() {
 
   const stopVoiceRecording = () => {
     if (voiceTimeoutRef.current) { clearTimeout(voiceTimeoutRef.current); voiceTimeoutRef.current = null; }
+    if (voiceSilenceIntervalRef.current) { clearInterval(voiceSilenceIntervalRef.current); voiceSilenceIntervalRef.current = null; }
+    if (voiceAudioContextRef.current) { voiceAudioContextRef.current.close().catch(() => {}); voiceAudioContextRef.current = null; }
     setIsListening(false);
     setVoiceListeningTarget(null);
-    voiceMediaRecorderRef.current?.stop();
+    if (voiceMediaRecorderRef.current?.state === "recording") {
+      voiceMediaRecorderRef.current.stop();
+    }
   };
 
   const togglePlayback = () => {
