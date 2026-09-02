@@ -88,10 +88,24 @@ function parseSpokenTime(hint: string | null | undefined): string | null {
   if (isNaN(hour) || hour > 23 || minute > 59) return null;
   if (meridiem === "pm" && hour !== 12) hour += 12;
   if (meridiem === "am" && hour === 12) hour = 0;
-  // No am/pm said and hour is ambiguous (1-7) — assume evening, matching the
-  // wizard's own 8pm default and how people usually talk about plans.
-  if (!meridiem && hour >= 1 && hour <= 7) hour += 12;
+  // No am/pm said — assume evening for any plain hour 1-12, matching the
+  // wizard's own 8pm default and how people usually talk about plans
+  // ("let's meet at 10" almost always means 10pm, not 10am).
+  if (!meridiem && hour >= 1 && hour <= 12) hour += 12;
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+// Falls back to the first bare integer in the raw transcript when the AI
+// extraction didn't populate a field — e.g. answering "10" to "What time?"
+// or "Limit how many can join?" has no context clueing the model in on
+// what that number means, so it comes back null even though the transcript
+// itself has a perfectly good answer sitting right there.
+function extractBareNumber(transcript: string | null | undefined): number | null {
+  if (!transcript) return null;
+  const match = transcript.match(/\d+/);
+  if (!match) return null;
+  const n = parseInt(match[0], 10);
+  return isNaN(n) ? null : n;
 }
 
 
@@ -352,10 +366,15 @@ export default function ProposePlanPage() {
     });
   }, [currentStepName, resizeDescriptionTextarea]);
 
-  // Keyboard avoidance: shift composer above the on-screen keyboard
+  // Keyboard avoidance: shift composer above the on-screen keyboard. Only
+  // relevant to the step-flow's own composer — the edit-answers recap view
+  // has no text input, and forcing its scroll position on every
+  // visualViewport "scroll" event (which also fires from the user's own
+  // manual scrolling, not just the keyboard) made that page feel stuck,
+  // snapping back down before it could be read.
   useEffect(() => {
     const vv = window.visualViewport;
-    if (!vv) return;
+    if (!vv || isEditingAnswers) return;
     const update = () => {
       const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       setKeyboardOffset(offset);
@@ -372,7 +391,7 @@ export default function ProposePlanPage() {
       vv.removeEventListener("resize", update);
       vv.removeEventListener("scroll", update);
     };
-  }, []);
+  }, [isEditingAnswers]);
 
   // Track composer height so scroll-area padding stays accurate
   useEffect(() => {
@@ -723,7 +742,7 @@ export default function ProposePlanPage() {
 
   // Applies just the ONE field this step asked for, via that step's own
   // submit path — so a voice answer behaves exactly like a typed one.
-  const applyVoiceFieldForStep = useCallback(async (step: StepName, fields: Record<string, unknown>) => {
+  const applyVoiceFieldForStep = useCallback(async (step: StepName, fields: Record<string, unknown>, transcript: string) => {
     switch (step) {
       case "name": {
         const note = typeof fields.note === "string" ? fields.note.trim() : "";
@@ -753,7 +772,11 @@ export default function ProposePlanPage() {
         return;
       }
       case "time": {
-        const parsedTime = parseSpokenTime(fields.time_hint as string | null | undefined);
+        // A bare number ("10") has no context clueing the model in on
+        // what it's an answer to, so time_hint often comes back null even
+        // though the transcript itself is a perfectly good time answer.
+        const timeHint = (fields.time_hint as string | null | undefined) ?? extractBareNumber(transcript)?.toString() ?? null;
+        const parsedTime = parseSpokenTime(timeHint);
         if (!parsedTime) { setVoiceError(voiceNoAnswerMessage()); return; }
         setSelectedTime(parsedTime);
         setPastTimeError(false);
@@ -781,7 +804,7 @@ export default function ProposePlanPage() {
       }
       case "price": {
         const priceStr = typeof fields.price_amount === "string" ? fields.price_amount.trim() : "";
-        const parsed = priceStr ? parseFloat(priceStr.replace(",", ".")) : NaN;
+        const parsed = priceStr ? parseFloat(priceStr.replace(",", ".")) : (extractBareNumber(transcript) ?? NaN);
         if (isNaN(parsed) || parsed <= 0) { setVoiceError(voiceNoAnswerMessage()); return; }
         setShowPriceInput(true);
         setPriceAmount(String(parsed));
@@ -790,7 +813,7 @@ export default function ProposePlanPage() {
         return;
       }
       case "capacity": {
-        const cap = typeof fields.capacity === "number" ? fields.capacity : NaN;
+        const cap = typeof fields.capacity === "number" ? fields.capacity : (extractBareNumber(transcript) ?? NaN);
         if (!cap || cap <= 0) { setVoiceError(voiceNoAnswerMessage()); return; }
         setCapacityInput(String(cap));
         advanceStep();
@@ -848,7 +871,7 @@ export default function ProposePlanPage() {
       if (target === "full") {
         applyVoiceFields(fields);
       } else {
-        await applyVoiceFieldForStep(target, fields);
+        await applyVoiceFieldForStep(target, fields, data.transcript);
       }
     } catch (err) {
       console.error("[ProposePlanPage] voice parse failed:", err);
@@ -2449,8 +2472,11 @@ export default function ProposePlanPage() {
       ) : isEditingAnswers ? (
         /* ── Edit-answers recap view ── */
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Non-scrolling back button — top-left, matches profile page pattern */}
-          <div className="px-6 pt-4 pb-2 flex items-center">
+          {/* Non-scrolling back button — top-left, matches profile page pattern.
+              This view has no sticky native header of its own (see the main
+              header's `!isEditingAnswers` guard), so it needs the safe-area
+              padding itself or the notch/Dynamic Island sits on top of it. */}
+          <div className="px-6 pb-2 flex items-center" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}>
             <MinimalBackButton
               onClick={() => setIsEditingAnswers(false)}
               className="text-foreground/80 hover:text-foreground"
