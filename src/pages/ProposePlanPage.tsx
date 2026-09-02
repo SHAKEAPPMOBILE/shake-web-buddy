@@ -21,9 +21,9 @@ import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useTranslation } from "react-i18next";
 import { Capacitor } from "@capacitor/core";
-import { SpeechRecognition as NativeSpeechRecognition } from "@capacitor-community/speech-recognition";
 import { useScrollNudge } from "@/hooks/useScrollNudge";
 import { VenueSearchInput, VenuePlace } from "@/components/VenueSearchInput";
+import { searchVenuePlaces } from "@/lib/venueSearch";
 import { Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -135,7 +135,7 @@ export default function ProposePlanPage() {
     preview: "",
   }), [t]);
 
-  const BOT_COHOST_QUESTION = t("createPlan.botCohost", "Add a co-host? They'll show up right next to you as an organizer. (optional)");
+  const BOT_COHOST_QUESTION = t("createPlan.botCohost", "Add a co-host?");
 
   const STEP_AVATAR_COLORS: Partial<Record<StepName, string>> = {
     name:  "#facc15", // yellow-400 — existing default
@@ -204,9 +204,22 @@ export default function ProposePlanPage() {
   const [imageUploading, setImageUploading] = useState(false);
   // Voice-to-plan: speak the plan instead of typing through every step.
   const [isListening, setIsListening] = useState(false);
+  // Which mic is recording — drives the camera box swapping its live preview
+  // for the audio-visualizer overlay only when it's the video step's own big
+  // mic ("full"), not one of the small per-step mic buttons.
+  const [voiceListeningTarget, setVoiceListeningTarget] = useState<StepName | "full" | null>(null);
   const [voiceParsing, setVoiceParsing] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
-  const speechRecognitionRef = useRef<any>(null);
+  // Voice recording — MediaRecorder + server-side transcription, works
+  // identically on web/Android/iOS (unlike the Web Speech API, which iOS's
+  // WKWebView never implements, and unlike @capacitor-community/speech-
+  // recognition, which only ships a CocoaPods podspec and can't link into
+  // this project's SPM-only iOS build).
+  const voiceMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const voiceStreamRef = useRef<MediaStream | null>(null);
+  const voiceChunksRef = useRef<Blob[]>([]);
+  const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voiceTargetStepRef = useRef<StepName | "full">("full");
   const [cameraMode, setCameraMode] = useState<CameraMode>("idle");
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordedObjectUrl, setRecordedObjectUrl] = useState<string | null>(null);
@@ -410,7 +423,7 @@ export default function ProposePlanPage() {
       stopAllTracks();
       if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
       if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
-      speechRecognitionRef.current?.stop();
+      if (voiceMediaRecorderRef.current) stopVoiceRecording();
       return;
     }
     // A video or photo was already picked — show the review UI without restarting the camera
@@ -667,6 +680,13 @@ export default function ProposePlanPage() {
   };
 
   // ── Voice-to-plan — speak the plan instead of typing through every step ──
+  // Two consumers of the same record → transcribe → extract pipeline:
+  //  - "full" (the camera step's big mic): describe the whole plan in one
+  //    go, fills whatever fields it can and jumps to wherever's still needed.
+  //  - a specific step name (every other step's small mic): only that
+  //    step's own field is pulled out of the extraction and applied via the
+  //    same submit path a typed answer would use — anything said that
+  //    doesn't answer that step's question is treated as not understood.
   const applyVoiceFields = useCallback((fields: Record<string, unknown>) => {
     if (typeof fields.note === "string" && fields.note.trim()) setPlanText(fields.note.trim());
     if (typeof fields.description === "string" && fields.description.trim()) setPlanDescription(fields.description.trim());
@@ -695,126 +715,181 @@ export default function ProposePlanPage() {
     else jumpToStep(steps.indexOf("preview"));
   }, [city, steps]);
 
-  // Shared by both the native and web recognition paths below — turns a
-  // final transcript into applied wizard fields via the AI extractor.
-  const processVoiceTranscript = useCallback(async (transcript: string) => {
-    console.log("[ProposePlanPage] voice transcript:", transcript);
-    if (!transcript.trim()) {
+  const voiceNoAnswerMessage = () => t("createPlan.voiceNoAnswer", "Didn't catch an answer to this question — try again.");
+
+  // Applies just the ONE field this step asked for, via that step's own
+  // submit path — so a voice answer behaves exactly like a typed one.
+  const applyVoiceFieldForStep = useCallback(async (step: StepName, fields: Record<string, unknown>) => {
+    switch (step) {
+      case "name": {
+        const note = typeof fields.note === "string" ? fields.note.trim() : "";
+        if (!note) { setVoiceError(voiceNoAnswerMessage()); return; }
+        const result = checkProfanity(note);
+        if (result.hasProfanity) {
+          setPlanText(note.slice(0, MAX_CHARACTERS));
+          setProfanityError(t("createPlan.profanityWarning"));
+          return;
+        }
+        setPlanText(note.slice(0, MAX_CHARACTERS));
+        setProfanityError(null);
+        advanceStep();
+        return;
+      }
+      case "city": {
+        const spokenCity = typeof fields.city === "string" ? fields.city.trim() : "";
+        if (!spokenCity) { setVoiceError(voiceNoAnswerMessage()); return; }
+        setCityInput(spokenCity);
+        advanceStep();
+        return;
+      }
+      case "date": {
+        const parsedDate = parseSpokenDate(fields.date_hint as string | null | undefined);
+        if (!parsedDate) { setVoiceError(voiceNoAnswerMessage()); return; }
+        handleDateSelect(parsedDate);
+        return;
+      }
+      case "time": {
+        const parsedTime = parseSpokenTime(fields.time_hint as string | null | undefined);
+        if (!parsedTime) { setVoiceError(voiceNoAnswerMessage()); return; }
+        setSelectedTime(parsedTime);
+        setPastTimeError(false);
+        advanceStep();
+        return;
+      }
+      case "venue": {
+        const spokenVenue = typeof fields.venue_name === "string" ? fields.venue_name.trim() : "";
+        if (!spokenVenue) { setVoiceError(voiceNoAnswerMessage()); return; }
+        setVenueName(spokenVenue);
+        setVenuePlace(null);
+        // Resolve against the same place-search backing the typed venue
+        // input, so a spoken venue lands with real coordinates when possible.
+        try {
+          const matches = await searchVenuePlaces(spokenVenue);
+          if (matches[0]) {
+            setVenuePlace(matches[0]);
+            setVenueName(matches[0].name);
+          }
+        } catch (err) {
+          console.error("[ProposePlanPage] voice venue search failed:", err);
+        }
+        advanceStep();
+        return;
+      }
+      case "price": {
+        const priceStr = typeof fields.price_amount === "string" ? fields.price_amount.trim() : "";
+        const parsed = priceStr ? parseFloat(priceStr.replace(",", ".")) : NaN;
+        if (isNaN(parsed) || parsed <= 0) { setVoiceError(voiceNoAnswerMessage()); return; }
+        setShowPriceInput(true);
+        setPriceAmount(String(parsed));
+        setPriceError(null);
+        advanceStep();
+        return;
+      }
+      case "capacity": {
+        const cap = typeof fields.capacity === "number" ? fields.capacity : NaN;
+        if (!cap || cap <= 0) { setVoiceError(voiceNoAnswerMessage()); return; }
+        setCapacityInput(String(cap));
+        advanceStep();
+        return;
+      }
+      case "description": {
+        const desc =
+          typeof fields.description === "string" && fields.description.trim()
+            ? fields.description.trim()
+            : typeof fields.note === "string"
+            ? fields.note.trim()
+            : "";
+        if (!desc) { setVoiceError(voiceNoAnswerMessage()); return; }
+        setPlanDescription(desc.slice(0, 2000));
+        requestAnimationFrame(resizeDescriptionTextarea);
+        return;
+      }
+      default:
+        return;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, resizeDescriptionTextarea]);
+
+  const MAX_VOICE_SECONDS = 30;
+
+  const blobToBase64 = (blob: Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(((reader.result as string) || "").split(",")[1] ?? "");
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+  const handleVoiceRecordingComplete = useCallback(async (blob: Blob) => {
+    const target = voiceTargetStepRef.current;
+    if (blob.size === 0) {
       setVoiceError(t("createPlan.voiceNoSpeech", "Didn't catch any words — try again."));
       return;
     }
     setVoiceParsing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("parse-plan-from-speech", { body: { transcript } });
+      const audio_base64 = await blobToBase64(blob);
+      const { data, error } = await supabase.functions.invoke("transcribe-and-parse-plan", {
+        body: { audio_base64, mime_type: blob.type },
+      });
       if (error) {
-        console.error("[ProposePlanPage] parse-plan-from-speech invoke error:", error);
+        console.error("[ProposePlanPage] transcribe-and-parse-plan invoke error:", error);
         throw error;
       }
-      if (!data?.fields) {
-        console.error("[ProposePlanPage] parse-plan-from-speech returned no fields:", data);
-        throw new Error("No fields returned");
+      if (!data?.transcript) {
+        setVoiceError(t("createPlan.voiceNoSpeech", "Didn't catch any words — try again."));
+        return;
       }
-      applyVoiceFields(data.fields);
+      const fields = data.fields ?? {};
+      if (target === "full") {
+        applyVoiceFields(fields);
+      } else {
+        await applyVoiceFieldForStep(target, fields);
+      }
     } catch (err) {
       console.error("[ProposePlanPage] voice parse failed:", err);
       setVoiceError(t("createPlan.voiceParseFailed", "Heard you, but couldn't turn it into a plan — try again or type it in."));
     } finally {
       setVoiceParsing(false);
     }
-  }, [applyVoiceFields, t]);
+  }, [applyVoiceFields, applyVoiceFieldForStep, t]);
 
-  const handleVoiceStart = async () => {
+  const startVoiceRecording = async (target: StepName | "full") => {
     setVoiceError(null);
-
-    // The Web Speech API (SpeechRecognition/webkitSpeechRecognition) isn't
-    // implemented in iOS's WKWebView — a native app always hits "not-allowed"
-    // no matter the mic permission. Use the on-device recognizer instead
-    // (SFSpeechRecognizer on iOS, SpeechRecognizer on Android).
-    if (Capacitor.isNativePlatform()) {
-      // Checked separately from the recording try/catch below so a plugin
-      // that isn't wired into this particular native build (e.g. iOS, until
-      // its CocoaPods integration is added) surfaces the honest "not
-      // available" message instead of a misleading "couldn't parse" one.
-      let isAvailable = false;
-      try {
-        isAvailable = (await NativeSpeechRecognition.available()).available;
-      } catch (err) {
-        console.error("[ProposePlanPage] native SpeechRecognition.available() failed:", err);
-      }
-      if (!isAvailable) {
-        setVoiceError(t("createPlan.voiceUnsupported", "Voice input isn't available here yet — type it in instead."));
-        return;
-      }
-      try {
-        let permission = await NativeSpeechRecognition.checkPermissions();
-        if (permission.speechRecognition !== "granted") {
-          permission = await NativeSpeechRecognition.requestPermissions();
-        }
-        if (permission.speechRecognition !== "granted") {
-          setVoiceError(t("createPlan.voiceNotAllowedNative", "Microphone access is blocked — enable it for SHAKE in Settings."));
-          return;
-        }
-        setIsListening(true);
-        const result = await NativeSpeechRecognition.start({ language: "en-US", partialResults: false, popup: false });
-        setIsListening(false);
-        await processVoiceTranscript(result.matches?.[0] ?? "");
-      } catch (err) {
-        console.error("[ProposePlanPage] native SpeechRecognition error:", err);
-        setIsListening(false);
-        setVoiceError(t("createPlan.voiceParseFailed", "Heard you, but couldn't turn it into a plan — try again or type it in."));
-      }
-      return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      voiceStreamRef.current = stream;
+      const mimeType = MediaRecorder.isTypeSupported("audio/mp4")
+        ? "audio/mp4"
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "";
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      voiceChunksRef.current = [];
+      voiceTargetStepRef.current = target;
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) voiceChunksRef.current.push(e.data); };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        voiceStreamRef.current = null;
+        const blob = new Blob(voiceChunksRef.current, { type: recorder.mimeType || mimeType || "audio/webm" });
+        void handleVoiceRecordingComplete(blob);
+      };
+      voiceMediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsListening(true);
+      setVoiceListeningTarget(target);
+      voiceTimeoutRef.current = setTimeout(() => stopVoiceRecording(), MAX_VOICE_SECONDS * 1000);
+    } catch (err) {
+      console.error("[ProposePlanPage] mic access failed:", err);
+      setVoiceError(t("createPlan.voiceNotAllowed", "Microphone access is blocked — check your permissions."));
     }
-
-    // Web path — browser (desktop or Android WebView, which does support
-    // this API since it's Chromium-based).
-    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognitionCtor) {
-      setVoiceError(t("createPlan.voiceUnsupported", "Voice input isn't available here yet — type it in instead."));
-      return;
-    }
-    const recognition = new SpeechRecognitionCtor();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = "en-US";
-    // Some browsers fire a spurious onerror (commonly "aborted") right after
-    // a perfectly good onresult, once the session naturally closes — without
-    // this guard that bogus error stomps the real (likely successful)
-    // outcome with a false "couldn't catch that" message.
-    let resultReceived = false;
-    recognition.onresult = async (event: any) => {
-      resultReceived = true;
-      const transcript: string = event.results?.[0]?.[0]?.transcript ?? "";
-      setIsListening(false);
-      await processVoiceTranscript(transcript);
-    };
-    recognition.onerror = (event: any) => {
-      console.error("[ProposePlanPage] SpeechRecognition error:", event?.error);
-      setIsListening(false);
-      if (resultReceived) return; // already handled by onresult — this is the spurious post-result error
-      const reason = event?.error;
-      const message =
-        reason === "not-allowed" || reason === "service-not-allowed"
-          ? t("createPlan.voiceNotAllowed", "Microphone access is blocked — check your browser's site settings.")
-          : reason === "no-speech"
-          ? t("createPlan.voiceNoSpeech", "Didn't catch any words — try again.")
-          : reason === "network"
-          ? t("createPlan.voiceNetwork", "Network issue reaching speech recognition — try again.")
-          : t("createPlan.voiceParseFailed", "Heard you, but couldn't turn it into a plan — try again or type it in.");
-      setVoiceError(message);
-    };
-    recognition.onend = () => setIsListening(false);
-    speechRecognitionRef.current = recognition;
-    setIsListening(true);
-    recognition.start();
   };
 
-  const handleVoiceStop = () => {
-    if (Capacitor.isNativePlatform()) {
-      NativeSpeechRecognition.stop().catch((err) => console.error("[ProposePlanPage] native SpeechRecognition.stop() failed:", err));
-      return;
-    }
-    speechRecognitionRef.current?.stop();
+  const stopVoiceRecording = () => {
+    if (voiceTimeoutRef.current) { clearTimeout(voiceTimeoutRef.current); voiceTimeoutRef.current = null; }
+    setIsListening(false);
+    setVoiceListeningTarget(null);
+    voiceMediaRecorderRef.current?.stop();
   };
 
   const togglePlayback = () => {
@@ -1377,6 +1452,24 @@ export default function ProposePlanPage() {
             />
           )}
 
+          {/* Recording the whole-plan voice note — replaces the camera
+              preview with a full-box audio visualizer, then hands the view
+              straight back to the camera the instant recording stops. */}
+          {cameraMode === "live" && isListening && voiceListeningTarget === "full" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ background: "#0d0d1a" }}>
+              <div className="flex items-end gap-1.5 h-16">
+                {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                  <span
+                    key={i}
+                    className="w-1.5 rounded-full bg-white"
+                    style={{ animation: `voiceWaveBig 0.9s ease-in-out ${i * 0.1}s infinite` }}
+                  />
+                ))}
+              </div>
+              <p className="text-white/70 text-sm font-medium">{t("createPlan.voiceListening", "Listening…")}</p>
+            </div>
+          )}
+
           {/* Idle / initialising */}
           {cameraMode === "idle" && (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -1525,7 +1618,7 @@ export default function ProposePlanPage() {
             <div className="absolute bottom-5 right-5 flex flex-col items-center gap-1.5">
               <button
                 type="button"
-                onClick={isListening ? handleVoiceStop : handleVoiceStart}
+                onClick={isListening ? stopVoiceRecording : () => startVoiceRecording("full")}
                 disabled={voiceParsing}
                 className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center disabled:opacity-60"
                 style={{ background: isListening ? "rgba(239,68,68,0.9)" : "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
@@ -1562,6 +1655,10 @@ export default function ProposePlanPage() {
             @keyframes voiceWave {
               0%, 100% { height: 4px; }
               50% { height: 16px; }
+            }
+            @keyframes voiceWaveBig {
+              0%, 100% { height: 12px; }
+              50% { height: 64px; }
             }
           `}</style>
 
@@ -2222,13 +2319,15 @@ export default function ProposePlanPage() {
   };
 
   // Compact mic button placed above the send button on every step's composer
-  // (not just the video step) — speaking here re-runs the same whole-plan
-  // extraction as the big mic on the video step, filling in whatever
-  // hasn't been answered yet from wherever the user currently is.
+  // (not just the video step) — unlike the big mic there, this one is scoped
+  // to whatever question the current step is asking: it only applies the ONE
+  // matching field from the extraction (e.g. time_hint on the time step) and
+  // reports "didn't catch an answer" for anything that doesn't actually
+  // answer that question, instead of silently doing nothing.
   const renderStepMicButton = () => (
     <button
       type="button"
-      onClick={isListening ? handleVoiceStop : handleVoiceStart}
+      onClick={isListening ? stopVoiceRecording : () => startVoiceRecording(currentStepName)}
       disabled={voiceParsing}
       className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 disabled:opacity-60 transition-colors"
       style={{ background: isListening ? "rgba(239,68,68,0.9)" : "rgba(0,0,0,0.08)" }}

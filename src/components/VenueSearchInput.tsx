@@ -1,13 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { searchVenuePlaces, type VenuePlace } from "@/lib/venueSearch";
 
-export interface VenuePlace {
-  name: string;
-  address: string;
-  lat: number;
-  lng: number;
-}
+export type { VenuePlace };
 
 interface VenueSearchInputProps {
   value: string;
@@ -74,38 +70,8 @@ export function VenueSearchInput({
     const requestId = ++requestIdRef.current;
     setIsLoading(true);
     try {
-      const url = new URL("https://photon.komoot.io/api/");
-      url.searchParams.set("q", query);
-      url.searchParams.set("limit", "5");
-      const coords = coordsRef.current;
-      if (coords) {
-        url.searchParams.set("lat", String(coords.lat));
-        url.searchParams.set("lon", String(coords.lng));
-      }
-
-      const res = await fetch(url.toString());
-      if (!res.ok) throw new Error(`Photon geocoding failed: ${res.status}`);
-      const data = await res.json();
+      const places = await searchVenuePlaces(query, coordsRef.current);
       if (requestId !== requestIdRef.current) return; // a newer request already landed
-
-      const places: VenuePlace[] = (data.features || [])
-        .map((f: any) => {
-          const p = f.properties || {};
-          const name: string = p.name || p.street || p.city || "";
-          const addressParts = [
-            p.housenumber && p.street ? `${p.housenumber} ${p.street}` : p.street,
-            p.city,
-            p.state,
-            p.country,
-          ].filter(Boolean);
-          return {
-            name,
-            address: addressParts.join(", ") || name,
-            lat: f.geometry?.coordinates?.[1],
-            lng: f.geometry?.coordinates?.[0],
-          };
-        })
-        .filter((p: VenuePlace) => p.name && typeof p.lat === "number" && typeof p.lng === "number");
       setSuggestions(places);
       setIsOpen(places.length > 0);
     } catch (err) {
