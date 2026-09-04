@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.shakebyleo.app",
+      "sha256_cert_fingerprints": [
+        "35:C2:9C:A7:0F:E2:C4:FC:B2:8D:62:10:C0:09:7D:CE:76:A7:44:2F:64:18:24:E1:B5:9A:72:15:E7:1B:66:6E"
+      ]
+    }
+  }
+]

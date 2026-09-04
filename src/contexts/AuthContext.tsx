@@ -3,7 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredReferralCode, clearStoredReferralCode } from "@/hooks/useReferralTracking";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
-import { isNativePlatform, isNativeAndroid } from "@/lib/platform-utils";
+import { isNativePlatform } from "@/lib/platform-utils";
 import { getNextOccurrenceDate } from "@/data/activityTypes";
 
 export type OtpResult = {
@@ -489,13 +489,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return raw || fallback;
   };
 
-  const authCallbackBaseUrl = isNativeAndroid()
-    ? "com.shakebyleo.app://auth/callback"
-    : isNativePlatform()
-      ? "com.shakeapp.shakeapp://auth/callback"
-      : import.meta.env.DEV
-        ? "http://localhost:8080/auth/callback"
-        : "https://www.shakeapp.today/auth/callback";
+  // Email confirmation/reset links must resolve as an HTTPS Universal Link
+  // (iOS) / App Link (Android) so tapping them in Mail opens the app
+  // directly — a custom URL scheme here left users stranded in Safari after
+  // confirming, since Mail/Safari only auto-hands off to the app for a
+  // verified https domain (apple-app-site-association / assetlinks.json),
+  // never for an arbitrary custom scheme. OAuth sign-in (Google/Apple) is a
+  // different, working mechanism — that flow's own in-app browser session
+  // captures the custom-scheme redirect itself, so it's untouched here.
+  const authCallbackBaseUrl = isNativePlatform()
+    ? "https://www.shakeapp.today/auth/callback"
+    : import.meta.env.DEV
+      ? "http://localhost:8080/auth/callback"
+      : "https://www.shakeapp.today/auth/callback";
 
   // Signup magic link uses `?intent=signup` so OAuthCallback can route to set-password.
   // Add the full URL with query to Supabase Auth → Redirect URLs if your project requires exact matches.
