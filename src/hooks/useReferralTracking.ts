@@ -43,10 +43,15 @@ export function useReferralTracking() {
 
     // Only store if it looks like a referral code (has alphanumeric chars and dash)
     // and is not a known route
+    // Kept in sync with App.tsx's KNOWN_ROUTES — a route missing from this
+    // list gets misfiled as a referral code (harmless: it just never
+    // matches a real profile and gets cleared on the next processReferral
+    // pass, but it's still worth keeping these in sync).
     const knownRoutes = [
       "auth", "profile", "admin", "welcome",
       "privacy-policy", "terms-of-service", "community-guidelines",
-      "subscription-success", ""
+      "subscription-success", "propose-plan", "plans",
+      "chat", "events", "home", "invite", "guest", ""
     ];
 
     if (

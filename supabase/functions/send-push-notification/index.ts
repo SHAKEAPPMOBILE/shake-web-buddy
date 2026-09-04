@@ -72,15 +72,32 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // ------------------------------------------------------------------
-    // Auth: require a non-empty Bearer token (internal function calls only)
+    // Auth: a real signed-in user (client calls — chat/say-hi notifications),
+    // or the service role key itself (server-to-server calls from other
+    // edge functions, e.g. invite-cohost). Previously this only checked the
+    // Authorization header was a non-empty "Bearer ..." string — any valid
+    // session token passed, with no check the caller even exists, letting
+    // anyone push arbitrary-content notifications to any to_user_id.
     // ------------------------------------------------------------------
     const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : "";
 
-    if (!authHeader.startsWith("Bearer ") || authHeader.length <= "Bearer ".length) {
+    if (!token) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    const isServiceRoleCall = token === serviceRoleKey;
+    if (!isServiceRoleCall) {
+      const { data: authData, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !authData.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // ------------------------------------------------------------------

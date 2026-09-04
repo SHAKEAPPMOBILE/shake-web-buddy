@@ -16,10 +16,8 @@ import { IOSAppLayout } from "@/components/IOSAppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useReferralTracking } from "@/hooks/useReferralTracking";
 import { initializeRevenueCat } from "./lib/revenuecat";
-import { toast } from "@/lib/app-toast";
 import Auth from "./pages/Auth";
 import OAuthCallback from "./pages/OAuthCallback";
-import { supabase } from "@/integrations/supabase/client";
 import Profile from "./pages/Profile";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -77,93 +75,32 @@ const App = () => {
     initializeRevenueCat();
   }, []);
 
-  // Handle deep link callbacks from OAuth redirects
+  // Handle deep links (Universal Links, App Links, and the OAuth custom
+  // scheme) by hard-navigating the WebView to the same path/query/hash the
+  // link carried, instead of re-verifying the auth payload here. This used
+  // to reimplement its own cruder version of OAuthCallback.tsx's logic —
+  // always verifying token_hash as type "email" regardless of what the link
+  // actually was, never handling ?intent=signup (skipping the "create a
+  // password" step for every native signup), and navigating home before the
+  // profile row was ready. Routing through the real /auth/callback route
+  // reuses that already-correct, single implementation for every platform.
   useEffect(() => {
     const handlerPromise = CapacitorApp.addListener('appUrlOpen', async (event) => {
       try {
         const url = event.url;
         console.log('Deep link received:', url);
-
         if (!url) return;
 
-        // Parse the URL for auth tokens (either query params or hash fragment)
-        let code: string | null = null;
-        let tokenHash: string | null = null;
-        let accessToken: string | null = null;
-        let refreshToken: string | null = null;
+        const parsed = new URL(url);
+        // A custom scheme (com.shakeapp.shakeapp://auth/callback) parses
+        // its first path segment as the URL's host, not as part of the
+        // pathname — unlike a real https:// Universal Link, where it's
+        // already part of the pathname.
+        const isCustomScheme = !parsed.protocol.startsWith('http');
+        const path = isCustomScheme ? `/${parsed.host}${parsed.pathname}` : parsed.pathname;
 
-        try {
-          const parsed = new URL(url);
-          code = parsed.searchParams.get('code');
-          tokenHash = parsed.searchParams.get('token_hash');
-          accessToken = parsed.searchParams.get('access_token');
-          refreshToken = parsed.searchParams.get('refresh_token');
-
-          if ((!accessToken || !refreshToken || !code || !tokenHash) && parsed.hash) {
-            const hashParams = new URLSearchParams(parsed.hash.replace(/^#/, ""));
-            code = code || hashParams.get('code');
-            tokenHash = tokenHash || hashParams.get('token_hash');
-            accessToken = accessToken || hashParams.get('access_token');
-            refreshToken = refreshToken || hashParams.get('refresh_token');
-          }
-        } catch (e) {
-          console.warn('Failed to parse deep link URL', e);
-        }
-
-        if (code) {
-          console.log('Exchanging deep-link OAuth code for session');
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) {
-            console.error('Failed to exchange OAuth code from deep link', error);
-            toast.error('Sign-in failed. Please try again.');
-            await Browser.close().catch(() => {});
-            return;
-          }
-        } else if (accessToken && refreshToken) {
-          console.log('Setting Supabase session from deep link');
-          // @ts-ignore - setSession exists on the auth client
-          const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-          if (error) {
-            console.error('Failed to set Supabase session from deep link tokens', error);
-            toast.error('Sign-in failed. Please try again.');
-            await Browser.close().catch(() => {});
-            return;
-          }
-        } else if (tokenHash) {
-          const { error } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: "email",
-          });
-          if (error) {
-            console.error('Failed to verify token_hash from deep link', error);
-            toast.error('Sign-in failed. Please try again.');
-            await Browser.close().catch(() => {});
-            return;
-          }
-        } else {
-          console.log('No recognizable auth payload found on deep link');
-
-          // If this is a share/invite link, force a full navigation to the invite URL.
-          // window.history.pushState doesn't work when the app is on auth/welcome screen,
-          // so we use window.location.href to force a clean load of the ShareLanding page.
-          try {
-            const parsed = new URL(url);
-            if (parsed.pathname.startsWith('/invite/')) {
-              console.log('[DeepLink] invite path detected, navigating to', parsed.pathname);
-              await Browser.close().catch(() => {});
-              window.location.href = `https://www.shakeapp.today${parsed.pathname}`;
-              return;
-            }
-          } catch {}
-
-          await Browser.close().catch(() => {});
-          return;
-        }
-
-        // Auth exchange succeeded — return to the app shell.
-        window.history.replaceState({}, "", "/");
-        window.dispatchEvent(new PopStateEvent("popstate"));
         await Browser.close().catch(() => {});
+        window.location.href = path + parsed.search + parsed.hash;
       } catch (err) {
         console.error('Error handling deep link', err);
       }
