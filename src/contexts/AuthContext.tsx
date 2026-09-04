@@ -372,10 +372,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }, 3000);
 
+    // Race guard: onAuthStateChange's initial callback and the explicit
+    // getSession() call below both resolve asynchronously, in no guaranteed
+    // order. If getSession() resolves second (common on a slow connection —
+    // exactly when a just-confirmed signup is still loading), it used to
+    // unconditionally stomp didJustSignUp back to false, yanking the user
+    // out of onboarding mid-flow. Once something re-showed onboarding after
+    // that, OnboardingScreens remounted and its local step state reset to
+    // 0 — "answered all the questions, then it asked me all from the
+    // beginning". Once the listener has already made a determination for
+    // this session, getSession()'s callback defers to it instead of
+    // guessing "restore" by default.
+    let authStateChangeFired = false;
+
     // Set up auth state listener FIRST
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      authStateChangeFired = true;
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
@@ -436,8 +450,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(existingSession?.user ?? null);
         setIsLoading(false);
 
-        // Restoring a session is not a signup flow.
-        setDidJustSignUp(false);
+        // Restoring a session is not a signup flow — but only assume that
+        // if onAuthStateChange hasn't already made the real determination
+        // for this session (see the race-guard comment above).
+        if (!authStateChangeFired) {
+          setDidJustSignUp(false);
+        }
 
         if (existingSession?.user) {
           setTimeout(() => {
