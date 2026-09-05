@@ -139,6 +139,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [joinedPlansCityFilter, setJoinedPlansCityFilter] = useState<string | null>(null);
   const [cityAtPickerOpen, setCityAtPickerOpen] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // True only once a fetchPlans() pass has fully completed (quick render +
+  // enrichment) — isLoading itself flips false as soon as the quick pass
+  // finds ANY of the user's own plans, which says nothing about whether
+  // there are truly zero plans overall. Gating the empty-state illustration
+  // on this instead of just `!isLoading` stops it flashing before the full
+  // picture is in.
+  const [hasCompletedFullFetch, setHasCompletedFullFetch] = useState(false);
   // "My City" (false) is the default; "All Cities" (true) is opt-in
   const [showAllCities, setShowAllCities] = useState(false);
   // Fuzzed approximate-location map view of "My City" plans, alternative to the list.
@@ -222,8 +229,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       setActivities([]);
       setCityPlans([]);
       setIsLoading(false);
+      setHasCompletedFullFetch(true);
       return;
     }
+
+    setHasCompletedFullFetch(false);
 
     setIsLoading(true);
     // Read showAllCities from the ref, not the closure — the ref is updated
@@ -736,6 +746,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     } finally {
       clearTimeout(loadingTimeout);
       setIsLoading(false);
+      setHasCompletedFullFetch(true);
     }
   }, [selectedCity, user, joinedPlansCityFilter]); // showAllCities intentionally omitted — read live from allPlansRef.current
 
@@ -1935,7 +1946,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         </div>
       ) : (
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 space-y-3 bg-white dark:bg-white min-h-0">
-        {isLoading || awaitingPendingPlan ? (
+        {isLoading || awaitingPendingPlan || (!hasCompletedFullFetch && activities.length === 0 && cityPlans.length === 0) ? (
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
           </div>
