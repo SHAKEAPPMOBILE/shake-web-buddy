@@ -195,7 +195,7 @@ export function LanguageSelector({ className, showLabel = true, inline = false, 
       {/* Done button */}
       <button
         onClick={() => { setIsOpen(false); onDone?.(); }}
-        className="mt-3 w-full py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold transition-opacity hover:opacity-90 active:opacity-75"
+        className="mt-3 w-full py-2 rounded-full bg-black text-white text-sm font-semibold transition-opacity hover:opacity-90 active:opacity-75"
       >
         {t('languageSelector.done', 'Done')}
       </button>
