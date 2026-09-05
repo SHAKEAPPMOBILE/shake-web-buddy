@@ -13,6 +13,15 @@ interface StripeConnectState {
   error: string | null;
 }
 
+// This hook is instantiated independently by several components at once
+// (ProfileTab, ProposePlanPage, CreateActivityDialog) — each got its own
+// copy of the "connect_success" URL-param effect below, so landing back
+// from Stripe with more than one of them mounted sent the admin
+// notification email once per instance. Module-scoped (not per-hook-call)
+// so it's shared across every instance for the lifetime of this page load,
+// but still resets on a genuine fresh page load/redirect.
+let connectSuccessNotified = false;
+
 export function useStripeConnect() {
   const { user } = useAuth();
   const [state, setState] = useState<StripeConnectState>({
@@ -151,10 +160,13 @@ export function useStripeConnect() {
       
       if (urlParams.get("connect_success") === "true") {
         toast.success("Stripe account connected successfully!");
-        const notifyName = user?.email ?? user?.id ?? "A user";
-        supabase.functions.invoke("send-admin-notification", {
-          body: { subject: "SHAKE: Payout method connected", body: `${notifyName} connected Stripe as a payout method.` },
-        }).catch(() => {});
+        if (!connectSuccessNotified) {
+          connectSuccessNotified = true;
+          const notifyName = user?.email ?? user?.id ?? "A user";
+          supabase.functions.invoke("send-admin-notification", {
+            body: { subject: "SHAKE: Payout method connected", body: `${notifyName} connected Stripe as a payout method.` },
+          }).catch(() => {});
+        }
       }
     }
     

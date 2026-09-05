@@ -62,7 +62,19 @@ serve(async (req) => {
     const account = await stripe.accounts.retrieve(privateProfile.stripe_account_id);
     
     const isComplete = account.charges_enabled && account.payouts_enabled;
-    const newStatus = isComplete ? "complete" : "pending";
+    // Stripe's own signal for "the user still has to act" — details_submitted
+    // (and an empty currently_due list) means they finished every step Stripe
+    // asked for; charges/payouts just aren't enabled yet because Stripe is
+    // still reviewing the submission, not because anything is missing.
+    // Previously this collapsed to the same "pending" bucket as someone who
+    // never finished onboarding, so the app told a fully-submitted user to
+    // "Finish Setup" when there was nothing left for them to do.
+    const stillNeedsAction = (account.requirements?.currently_due?.length ?? 0) > 0 || !account.details_submitted;
+    const newStatus = isComplete
+      ? "complete"
+      : stillNeedsAction
+      ? "pending"
+      : "verification_pending";
     
     // Get email from Stripe account
     const accountEmail = account.email || null;

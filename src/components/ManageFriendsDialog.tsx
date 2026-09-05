@@ -19,9 +19,14 @@ import { FriendsImportDialog } from "@/components/FriendsImportDialog";
 interface ManageFriendsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Renders the same content as a plain fragment (no Dialog/overlay) instead
+   *  of a modal — used to embed this inline as an expanding section, matching
+   *  the other Profile rows (My Points, Creator Payouts) instead of popping
+   *  up as its own separate window. */
+  inline?: boolean;
 }
 
-export function ManageFriendsDialog({ open, onOpenChange }: ManageFriendsDialogProps) {
+export function ManageFriendsDialog({ open, onOpenChange, inline = false }: ManageFriendsDialogProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const {
@@ -58,32 +63,41 @@ export function ManageFriendsDialog({ open, onOpenChange }: ManageFriendsDialogP
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col">
+  if (inline && !open) return null;
+
+  const addFriendsButton = (
+    <button
+      type="button"
+      onClick={() => setShowImportDialog(true)}
+      className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-primary border border-primary/30 bg-primary/5"
+    >
+      <Plus className="w-3.5 h-3.5" />
+      {t("plans.addFriends", "Add friends")}
+    </button>
+  );
+
+  const body = (
+    <>
+      {inline ? (
+        <div className="flex items-center justify-end mb-3">{addFriendsButton}</div>
+      ) : (
         <DialogHeader>
           <div className="flex items-center justify-between gap-3 pr-6">
             <DialogTitle>{t("shakers.manageFriends", "My Friends")}</DialogTitle>
-            <button
-              type="button"
-              onClick={() => setShowImportDialog(true)}
-              className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-primary border border-primary/30 bg-primary/5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              {t("plans.addFriends", "Add friends")}
-            </button>
+            {addFriendsButton}
           </div>
         </DialogHeader>
+      )}
 
-        <FriendsImportDialog
-          open={showImportDialog}
-          onOpenChange={(next) => {
-            setShowImportDialog(next);
-            if (!next) refetchFriends();
-          }}
-        />
+      <FriendsImportDialog
+        open={showImportDialog}
+        onOpenChange={(next) => {
+          setShowImportDialog(next);
+          if (!next) refetchFriends();
+        }}
+      />
 
-        <div className="flex-1 overflow-y-auto space-y-5">
+      <div className={inline ? "space-y-5" : "flex-1 overflow-y-auto space-y-5"}>
           {isLoadingFriends ? (
             <div className="flex justify-center py-8">
               <LoadingSpinner size="lg" />
@@ -205,6 +219,15 @@ export function ManageFriendsDialog({ open, onOpenChange }: ManageFriendsDialogP
             </>
           )}
         </div>
+    </>
+  );
+
+  if (inline) return body;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col">
+        {body}
       </DialogContent>
     </Dialog>
   );

@@ -83,15 +83,43 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showStatusRecorder, setShowStatusRecorder] = useState(false);
-  const [showPointsDialog, setShowPointsDialog] = useState(false);
   const [appVersionLabel, setAppVersionLabel] = useState<string | null>(null);
   const [showSubscriptionDropdown, setShowSubscriptionDropdown] = useState(false);
   const { statusVideo, hasActiveStatus, refetch: refetchStatus, deleteVideo: deleteStatusVideo } = useStatusVideo(user?.id);
   const { points } = useUserPoints(user?.id);
   const { referralCode } = useReferralCode(user?.id);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [showReferralLink, setShowReferralLink] = useState(false);
-  const [showPayoutOptions, setShowPayoutOptions] = useState(false);
+  // One expandable row open at a time (My Points, Creator Payouts, My
+  // Friends, Paranormal Activity, Share Shake) — matches a normal accordion
+  // instead of letting several stay open simultaneously. Opening a new one
+  // auto-collapses whichever was open; the scroll-into-view in
+  // toggleSection compensates for the layout shift that causes, so the row
+  // just opened doesn't end up pushed almost out of view.
+  type ProfileSection = "points" | "payouts" | "friends" | "paranormal" | "referral";
+  const [expandedSection, setExpandedSection] = useState<ProfileSection | null>(null);
+  const sectionRefs = {
+    points: useRef<HTMLButtonElement>(null),
+    payouts: useRef<HTMLButtonElement>(null),
+    friends: useRef<HTMLButtonElement>(null),
+    paranormal: useRef<HTMLButtonElement>(null),
+    referral: useRef<HTMLButtonElement>(null),
+  };
+  const toggleSection = (section: ProfileSection) => {
+    setExpandedSection((prev) => {
+      const next = prev === section ? null : section;
+      if (next) {
+        // Two rAFs: one for this state update's own re-render, one more so
+        // the previously-open section's collapse animation/layout has
+        // actually settled before we measure where to scroll to.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            sectionRefs[section].current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        });
+      }
+      return next;
+    });
+  };
   const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
   const [showManagePlanDialog, setShowManagePlanDialog] = useState(false);
   const { isConnected: stripeConnected, status: stripeStatus, isLoading: stripeLoading, startOnboarding: startStripeOnboarding } = useStripeConnect();
@@ -112,8 +140,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const { totalNet, currency, activities, isLoading: earningsLoading } = useCreatorEarnings();
   const { isVerified, isPending, isRejected, isLoading: verificationLoading } = useCreatorVerification();
   const [showIDVerificationDialog, setShowIDVerificationDialog] = useState(false);
-  const [showParanormal, setShowParanormal] = useState(false);
-  const [showManageFriends, setShowManageFriends] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState<{ user_id: string; name: string; avatar_url: string | null }[]>([]);
   const [isLoadingParanormal, setIsLoadingParanormal] = useState(false);
   const [faceAuthEnabled, setFaceAuthEnabled] = useState(false);
@@ -368,10 +394,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   }, []);
 
   useEffect(() => {
-    if (showParanormal) {
+    if (expandedSection === "paranormal") {
       fetchBlockedUsers();
     }
-  }, [showParanormal, fetchBlockedUsers]);
+  }, [expandedSection, fetchBlockedUsers]);
 
   useEffect(() => {
     const onFocus = () => fetchProfile();
@@ -508,7 +534,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* My Friends */}
             <button
-              onClick={() => setShowManageFriends(true)}
+              ref={sectionRefs.friends}
+              onClick={() => toggleSection("friends")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="relative w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
@@ -524,11 +551,21 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <span className="text-sm font-medium text-gray-900">{t('shakers.manageFriends', 'My Friends')}</span>
                 <p className="text-xs text-gray-400">{t('shakers.manageFriendsDesc', 'See, add, and unshake friends')}</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-gray-300" />
+              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", expandedSection === "friends" && "rotate-90")} />
             </button>
+            {expandedSection === "friends" && (
+              <div className="px-4 py-4 bg-gray-50 animate-fade-in">
+                <ManageFriendsDialog
+                  open={expandedSection === "friends"}
+                  onOpenChange={(v) => setExpandedSection(v ? "friends" : null)}
+                  inline
+                />
+              </div>
+            )}
             {/* Paranormal Activity — blocked users, whether from nearby shakers or friends */}
             <button
-              onClick={() => setShowParanormal(true)}
+              ref={sectionRefs.paranormal}
+              onClick={() => toggleSection("paranormal")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
@@ -538,8 +575,55 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <span className="text-sm font-medium text-gray-900">{t('profile.paranormalActivityTitle', 'Paranormal Activity')}</span>
                 <p className="text-xs text-gray-400">{t('profile.paranormalSubtitle', 'Blocked & flagged users')}</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-gray-300" />
+              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", expandedSection === "paranormal" && "rotate-90")} />
             </button>
+            {expandedSection === "paranormal" && (
+              <div className="px-4 py-4 bg-gray-50 animate-fade-in space-y-4">
+                <p className="text-sm text-muted-foreground">{t('profile.paranormalDialogDesc', "Blocked users won't appear in your feed or chats.")}</p>
+                {isLoadingParanormal ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : blockedUsers.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    {t('profile.noBlockedUsers', 'No blocked users 👻')}
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {blockedUsers.map((u) => (
+                      <div key={u.user_id} className="flex items-center justify-between gap-3 py-1">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-8 h-8">
+                            <AvatarImage src={getDisplayAvatarUrl(u.avatar_url ?? undefined)} alt={u.name} />
+                            <AvatarFallback>
+                              <User className="w-4 h-4 text-muted-foreground" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">{u.name}</span>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await supabase
+                                .from("user_blocks")
+                                .delete()
+                                .eq("blocker_id", user.id)
+                                .eq("blocked_id", u.user_id);
+                              setBlockedUsers((prev) => prev.filter((p) => p.user_id !== u.user_id));
+                            } catch (error) {
+                              console.error("Error unblocking user:", error);
+                            }
+                          }}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          {t('profile.unblock', 'Unblock')}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -602,7 +686,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
             {/* My Points */}
             <button
-              onClick={() => setShowPointsDialog(!showPointsDialog)}
+              ref={sectionRefs.points}
+              onClick={() => toggleSection("points")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
@@ -612,9 +697,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <span className="text-sm font-medium text-gray-900">{t('profile.myPoints')}</span>
                 <p className="text-xs text-gray-400">{t('profile.pointsEarned', { count: points.toLocaleString() })}</p>
               </div>
-              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showPointsDialog && "rotate-90")} />
+              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", expandedSection === "points" && "rotate-90")} />
             </button>
-            {showPointsDialog && (
+            {expandedSection === "points" && (
               <div className="px-4 py-4 bg-gray-50 animate-fade-in">
                 <PointsDashboard userId={user?.id} />
               </div>
@@ -622,7 +707,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
 
             {/* Creator Payouts */}
             <button
-              onClick={() => setShowPayoutOptions(!showPayoutOptions)}
+              ref={sectionRefs.payouts}
+              onClick={() => toggleSection("payouts")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
@@ -639,9 +725,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               {(savedPaypal || savedVenmo || savedCashApp) && (
                 <div className="w-2 h-2 rounded-full bg-shake-green mr-1" />
               )}
-              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showPayoutOptions && "rotate-90")} />
+              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", expandedSection === "payouts" && "rotate-90")} />
             </button>
-            {showPayoutOptions && (
+            {expandedSection === "payouts" && (
               <div className="px-4 pb-4 pt-3 bg-gray-50 animate-fade-in space-y-4">
                 {/* Earnings Summary */}
                 <div className="border rounded-2xl p-3 bg-gradient-to-r from-shake-yellow/10 to-shake-green/10">
@@ -881,11 +967,19 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                         <p className="text-[10px] text-gray-400">~2.9% + $0.30 per transaction</p>
                       </div>
                     </div>
-                    {stripeConnected && stripeStatus === "complete" && <Check className="w-4 h-4 text-shake-green" />}
+                    {stripeConnected && (stripeStatus === "complete" || stripeStatus === "verification_pending") && <Check className="w-4 h-4 text-shake-green" />}
                   </div>
                   {stripeConnected && stripeStatus === "complete" ? (
                     <p className="text-xs text-gray-600 px-1">
                       {t('profile.stripeConnected', 'Connected')}
+                    </p>
+                  ) : stripeConnected && stripeStatus === "verification_pending" ? (
+                    // Every step Stripe asked for is done — charges/payouts
+                    // just aren't enabled yet because Stripe is reviewing the
+                    // submission, not because anything is missing. No button
+                    // here: there's nothing left for the user to do but wait.
+                    <p className="text-xs text-gray-600 px-1">
+                      {t('profile.stripeUnderReview', "You're all set — Stripe is reviewing your account. This can take 1-3 business days.")}
                     </p>
                   ) : (
                     <>
@@ -930,7 +1024,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </button>
             {/* Share Shake */}
             <button
-              onClick={() => setShowReferralLink(!showReferralLink)}
+              ref={sectionRefs.referral}
+              onClick={() => toggleSection("referral")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
@@ -940,9 +1035,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 <span className="text-sm font-medium text-gray-900">{t('profile.shareShake')}</span>
                 <p className="text-xs text-gray-400">{t('profile.earnPoints', 'Earn +5 points per signup')}</p>
               </div>
-              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", showReferralLink && "rotate-90")} />
+              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", expandedSection === "referral" && "rotate-90")} />
             </button>
-            {showReferralLink && (
+            {expandedSection === "referral" && (
               <div className="px-4 py-3 bg-gray-50 animate-fade-in space-y-3">
                 {/* General app share */}
                 <button
@@ -1132,62 +1227,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       </div>
 
       {/* ── DIALOGS ── */}
-
-      <ManageFriendsDialog open={showManageFriends} onOpenChange={setShowManageFriends} />
-
-      {/* Paranormal Activity */}
-      <Dialog open={showParanormal} onOpenChange={setShowParanormal}>
-        <DialogContent className="max-w-md [&>button:last-child]:hidden">
-          <DialogHeader>
-            <DialogTitle>{t('profile.paranormalDialogTitle')}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">{t('profile.paranormalDialogDesc', "Blocked users won't appear in your feed or chats.")}</p>
-            {isLoadingParanormal ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : blockedUsers.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">
-                {t('profile.noBlockedUsers', 'No blocked users 👻')}
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {blockedUsers.map((u) => (
-                  <div key={u.user_id} className="flex items-center justify-between gap-3 py-1">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={getDisplayAvatarUrl(u.avatar_url ?? undefined)} alt={u.name} />
-                        <AvatarFallback>
-                          <User className="w-4 h-4 text-muted-foreground" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm font-medium">{u.name}</span>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await supabase
-                            .from("user_blocks")
-                            .delete()
-                            .eq("blocker_id", user.id)
-                            .eq("blocked_id", u.user_id);
-                          setBlockedUsers((prev) => prev.filter((p) => p.user_id !== u.user_id));
-                        } catch (error) {
-                          console.error("Error unblocking user:", error);
-                        }
-                      }}
-                      className="text-xs font-medium text-primary hover:underline"
-                    >
-                      {t('profile.unblock', 'Unblock')}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
 
