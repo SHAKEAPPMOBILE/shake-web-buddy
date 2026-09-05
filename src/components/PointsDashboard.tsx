@@ -84,7 +84,7 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
 
   if (isLoading) {
     return (
-      <div className="bg-gradient-to-br from-shake-yellow/10 to-shake-green/5 rounded-2xl p-6 border border-shake-yellow/20">
+      <div className="bg-white rounded-2xl p-6 border border-gray-100">
         <Skeleton className="h-8 w-24 mb-2" />
         <Skeleton className="h-12 w-32" />
       </div>
@@ -94,35 +94,35 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
   return (
     <div className="space-y-4">
       {/* Points Card */}
-      <div className="bg-gradient-to-br from-shake-yellow/80 to-shake-green/60 rounded-2xl p-6 border border-shake-yellow/30">
+      <div className="bg-white rounded-2xl p-6 border border-gray-100">
         {/* Header */}
         <div className="flex items-center gap-2 mb-4">
           <img src={shakeCoin} alt="Points" className="w-8 h-8" />
-          <h3 className="text-lg font-display font-bold text-white">{t('points.title', 'My Points')}</h3>
+          <h3 className="text-lg font-display font-bold text-gray-900">{t('points.title', 'My Points')}</h3>
         </div>
 
         {/* Points display */}
         <div className="flex items-baseline gap-2 mb-4">
-          <span className="text-4xl font-bold text-white">
+          <span className="text-4xl font-bold text-shake-green">
             {points.toLocaleString()}
           </span>
-          <span className="text-white/70">{t('profile.points', 'points')}</span>
+          <span className="text-gray-400">{t('profile.points', 'points')}</span>
         </div>
 
         {/* Welcome Bonus Section */}
-        <div className={`rounded-xl p-4 border ${isClaimed ? 'bg-white/20 border-white/30' : isComplete ? 'bg-white/20 border-white/30' : 'bg-white/10 border-white/20'}`}>
+        <div className={`rounded-xl p-4 border ${isClaimed ? 'bg-shake-green/5 border-shake-green/20' : isComplete ? 'bg-primary/5 border-primary/20' : 'bg-amber-50 border-amber-100'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {isClaimed ? (
-                <CheckCircle2 className="w-5 h-5 text-white" />
+                <CheckCircle2 className="w-5 h-5 text-shake-green" />
               ) : isComplete ? (
-                <Gift className="w-5 h-5 text-white" />
+                <Gift className="w-5 h-5 text-primary" />
               ) : (
-                <AlertCircle className="w-5 h-5 text-white/70" />
+                <AlertCircle className="w-5 h-5 text-amber-500" />
               )}
               <div>
-                <p className="font-medium text-sm text-white">{t('points.welcomeBonus', 'Welcome Bonus')}</p>
-                <p className="text-xs text-white/70">
+                <p className="font-medium text-sm text-gray-900">{t('points.welcomeBonus', 'Welcome Bonus')}</p>
+                <p className="text-xs text-gray-500">
                   {isClaimed
                     ? t('points.claimed', 'Claimed! +10 points')
                     : isComplete
@@ -135,43 +135,43 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
               <Button
                 size="sm"
                 onClick={handleClaimBonus}
-                className="bg-white hover:bg-white/90 text-black"
+                className="bg-primary hover:bg-primary/90 text-white"
               >
                 {t('points.claimButton', 'Claim +10')}
               </Button>
             )}
           </div>
           {!isClaimed && !isComplete && missingFields.length > 0 && (
-            <div className="mt-2 text-xs text-white/70">
+            <div className="mt-2 text-xs text-gray-500">
               {t('points.missing', 'Missing')}: {missingFields.join(", ")}
             </div>
           )}
         </div>
 
         {/* How to earn section */}
-        <div className="bg-white/15 rounded-xl p-4 space-y-3 mt-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-white">
-            <Sparkles className="w-4 h-4 text-white" />
+        <div className="bg-gray-50 rounded-xl p-4 space-y-3 mt-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+            <Sparkles className="w-4 h-4 text-primary" />
             <span>{t('points.howToEarn', 'How to earn points')}</span>
           </div>
 
-          <div className="space-y-3 text-sm text-white/80">
+          <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start gap-2">
-              <Gift className="w-4 h-4 mt-0.5 text-white shrink-0" />
+              <Gift className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
               <span>
-                <strong className="text-white">{t('points.completeProfileDesc', 'Complete your profile')}</strong> — {t('points.completeProfilePoints', 'Earn +10 points when you fill out all profile fields')}
+                <strong className="text-gray-900">{t('points.completeProfileDesc', 'Complete your profile')}</strong> — {t('points.completeProfilePoints', 'Earn +10 points when you fill out all profile fields')}
               </span>
             </div>
             <div className="flex items-start gap-2">
-              <TrendingUp className="w-4 h-4 mt-0.5 text-white shrink-0" />
+              <TrendingUp className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
               <span>
-                <strong className="text-white">{t('points.createActivities', 'Create popular activities')}</strong> — {t('points.createActivitiesPoints', 'Earn +5 points for every 5 attendees on activities you create (10 attendees = +10 points, etc.)')}
+                <strong className="text-gray-900">{t('points.createActivities', 'Create popular activities')}</strong> — {t('points.createActivitiesPoints', 'Earn +5 points for every 5 attendees on activities you create (10 attendees = +10 points, etc.)')}
               </span>
             </div>
             <div className="flex items-start gap-2">
-              <UserPlus className="w-4 h-4 mt-0.5 text-white shrink-0" />
+              <UserPlus className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
               <span>
-                <strong className="text-white">{t('points.inviteFriends', 'Invite friends')}</strong> — {t('points.inviteFriendsPoints', 'Earn +5 points when someone signs up using your referral link')}
+                <strong className="text-gray-900">{t('points.inviteFriends', 'Invite friends')}</strong> — {t('points.inviteFriendsPoints', 'Earn +5 points when someone signs up using your referral link')}
               </span>
             </div>
           </div>

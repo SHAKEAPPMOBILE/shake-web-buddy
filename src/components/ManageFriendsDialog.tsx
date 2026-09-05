@@ -24,9 +24,17 @@ interface ManageFriendsDialogProps {
    *  the other Profile rows (My Points, Creator Payouts) instead of popping
    *  up as its own separate window. */
   inline?: boolean;
+  /** Friends data/actions, lifted from the caller's own useFriends() call
+   *  instead of this component calling the hook itself — ProfileTab already
+   *  needs useFriends() for its "pending request" badge, so it starts
+   *  fetching (and the avatar images start downloading) as soon as the
+   *  Profile tab mounts. Calling useFriends() again in here would restart
+   *  that fetch from zero at the moment this section is opened, which is
+   *  exactly the "friends list is slow to open" delay this avoids. */
+  friendsData: ReturnType<typeof useFriends>;
 }
 
-export function ManageFriendsDialog({ open, onOpenChange, inline = false }: ManageFriendsDialogProps) {
+export function ManageFriendsDialog({ open, onOpenChange, inline = false, friendsData }: ManageFriendsDialogProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const {
@@ -38,7 +46,7 @@ export function ManageFriendsDialog({ open, onOpenChange, inline = false }: Mana
     acceptFriendRequest,
     declineFriendRequest,
     refetchFriends,
-  } = useFriends();
+  } = friendsData;
   const [blockingId, setBlockingId] = useState<string | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
 

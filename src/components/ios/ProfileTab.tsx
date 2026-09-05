@@ -63,7 +63,12 @@ const FACE_ID_FEATURE_ENABLED = false;
 export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionOpened }: ProfileTabProps) {
   const { t } = useTranslation();
   const { user, isPremium, isManualOverride, signOut } = useAuth();
-  const { pendingReceived } = useFriends();
+  // Fetched once here (not re-fetched inside ManageFriendsDialog) so the
+  // request starts as soon as the Profile tab mounts — by the time the user
+  // opens "My Friends" the data (and its avatar images) has had a head start
+  // instead of only beginning to load at that moment.
+  const friendsData = useFriends();
+  const { pendingReceived } = friendsData;
   const isNative = Capacitor.isNativePlatform();
   // Teal/blue gradient matching the nav + button, with a 1.5s teal sweep on open.
   const { style: profileIconGradientStyle } = useSettlingGradient("profile", {
@@ -120,6 +125,36 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       return next;
     });
   };
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // If the user scrolls the page itself (not by opening another section) far
+  // enough that the open section's own row has scrolled almost out of view,
+  // collapse it — otherwise its expanded content trails off invisibly above
+  // the fold with nothing left on screen to tie it to.
+  useEffect(() => {
+    if (!expandedSection) return;
+    const container = scrollContainerRef.current;
+    const button = sectionRefs[expandedSection].current;
+    if (!container || !button) return;
+
+    let ticking = false;
+    const checkPosition = () => {
+      ticking = false;
+      const containerTop = container.getBoundingClientRect().top;
+      const buttonBottom = button.getBoundingClientRect().bottom;
+      if (buttonBottom < containerTop + 32) {
+        setExpandedSection(null);
+      }
+    };
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(checkPosition);
+      }
+    };
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sectionRefs is a fresh object each render but its ref instances are stable
+  }, [expandedSection]);
   const [preferredMethod, setPreferredMethod] = useState<string | null>(null);
   const [showManagePlanDialog, setShowManagePlanDialog] = useState(false);
   const { isConnected: stripeConnected, status: stripeStatus, isLoading: stripeLoading, startOnboarding: startStripeOnboarding } = useStripeConnect();
@@ -429,7 +464,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 pt-[env(safe-area-inset-top,0px)] overflow-y-auto pb-[env(safe-area-inset-bottom,0px)] bg-[#F2F2F7] text-gray-900">
+    <div ref={scrollContainerRef} className="flex flex-col h-full min-h-0 pt-[env(safe-area-inset-top,0px)] overflow-y-auto pb-[env(safe-area-inset-bottom,0px)] bg-[#F2F2F7] text-gray-900">
 
       {/* Profile Header */}
       <button
@@ -559,6 +594,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   open={expandedSection === "friends"}
                   onOpenChange={(v) => setExpandedSection(v ? "friends" : null)}
                   inline
+                  friendsData={friendsData}
                 />
               </div>
             )}
@@ -730,7 +766,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             {expandedSection === "payouts" && (
               <div className="px-4 pb-4 pt-3 bg-gray-50 animate-fade-in space-y-4">
                 {/* Earnings Summary */}
-                <div className="border rounded-2xl p-3 bg-gradient-to-r from-shake-yellow/10 to-shake-green/10">
+                <div className="border border-gray-100 rounded-2xl p-3 bg-white">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-shake-green" />
