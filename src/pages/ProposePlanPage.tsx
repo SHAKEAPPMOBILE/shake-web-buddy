@@ -148,27 +148,27 @@ function extractBareNumber(transcript: string | null | undefined): number | null
   return isNaN(n) ? null : n;
 }
 
-// Time-of-day ambiance for the create-plan background. Reads straight off
-// the device's own clock (already in the user's local time zone, no math
-// needed) and stays in a light, pastel range across every bucket — only the
-// hue/warmth shifts, never the lightness — so every existing dark-on-light
-// text and link color on this page stays legible regardless of the hour.
+// Time-of-day ambiance for the create-plan background — same principle as
+// Luma's own pages: a colored band confined to the top of the page, fading
+// into plain white for the rest of it, rather than tinting the whole
+// screen. Reads straight off the device's own clock (already in the user's
+// local time zone, no math needed).
 function getTimeOfDayGradient(): string {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 11) {
-    // Sunrise — warm peach easing into the neutral base
-    return "linear-gradient(160deg, #FFEEDD 0%, #FDF1F0 45%, #F3F2F8 100%)";
+    // Sunrise — warm peach/pink band
+    return "linear-gradient(180deg, #FFD9A0 0%, #FFB6C1 20%, #FDF1F0 40%, #FFFFFF 60%, #FFFFFF 100%)";
   }
   if (hour >= 11 && hour < 17) {
-    // Midday — bright, airy sky-blue tint
-    return "linear-gradient(160deg, #EAF4FB 0%, #F0EEFA 50%, #F3F2F8 100%)";
+    // Midday — bright sky-blue band
+    return "linear-gradient(180deg, #A8D8F0 0%, #C9E4F5 20%, #EAF4FB 40%, #FFFFFF 60%, #FFFFFF 100%)";
   }
   if (hour >= 17 && hour < 20) {
-    // Sunset — warm pink/orange easing into soft violet
-    return "linear-gradient(160deg, #FFE3D3 0%, #F6D9E8 45%, #E9DFF5 100%)";
+    // Sunset — warm orange/pink band
+    return "linear-gradient(180deg, #FF9A76 0%, #E195C4 20%, #F6D9E8 40%, #FFFFFF 60%, #FFFFFF 100%)";
   }
-  // Night — cooler, deeper (but still light) indigo/lavender
-  return "linear-gradient(160deg, #DCD6F0 0%, #C9C3E8 45%, #B8B4DE 100%)";
+  // Night — deeper indigo/violet band
+  return "linear-gradient(180deg, #6B5B95 0%, #8E7CC3 20%, #D8D0EC 40%, #FFFFFF 60%, #FFFFFF 100%)";
 }
 
 
@@ -265,13 +265,13 @@ export default function ProposePlanPage() {
   // their choice and shouldn't be asked twice).
   const [usedVoiceForFullPlan, setUsedVoiceForFullPlan] = useState(false);
   const [showVideoStep, setShowVideoStep] = useState(false);
-  // Set right before jumping BACK to the wizard's video step from somewhere
-  // past it (the preview card's "Add video/pic" link, the edit-answers
-  // recap, or its own thumbnail/history entry) — without this, finishing
-  // that visit just advanced to the next step in sequence ("name"), which
-  // looked like a brand new plan was starting instead of returning to
-  // wherever the user actually came from.
-  const [videoStepReturnTo, setVideoStepReturnTo] = useState<number | null>(null);
+  // Set right before jumping BACK to an already-answered step — from the
+  // edit-answers recap, or from a past-Q&A history entry while still mid-
+  // wizard. Without this, submitting that one field just advanced to the
+  // NEXT step in sequence, marching the user forward through every other
+  // field all over again instead of returning them to wherever they
+  // actually came from (see advanceStep).
+  const [stepReturnTo, setStepReturnTo] = useState<number | null>(null);
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
   // Extra named price tiers beyond the base price/currency above, e.g.
@@ -616,8 +616,20 @@ export default function ProposePlanPage() {
     }
   };
 
-  const advanceStep = () =>
+  // Every step's "submit"/"skip" action funnels through this one function —
+  // when a step was reached by jumping BACK to it (see stepReturnTo), this
+  // returns to wherever that jump came from instead of blindly advancing to
+  // the next step in sequence, which used to march the user forward through
+  // every other already-answered field all over again.
+  const advanceStep = () => {
+    if (stepReturnTo !== null) {
+      const target = stepReturnTo;
+      setStepReturnTo(null);
+      jumpToStep(target);
+      return;
+    }
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+  };
 
   const jumpToStep = (stepIndex: number) => {
     setCurrentStep(stepIndex);
@@ -627,33 +639,27 @@ export default function ProposePlanPage() {
     setShowPriceInput(false);
   };
 
+  // Jump to an already-answered (or not-yet-reached) step, remembering where
+  // to return once that step's submit/skip fires (see advanceStep).
+  const jumpToStepWithReturn = (targetIndex: number, returnTo: number) => {
+    setStepReturnTo(returnTo);
+    jumpToStep(targetIndex);
+  };
+
   const handleBack = () => {
     if (currentStep > 0) jumpToStep(currentStep - 1);
   };
 
-  // Camera-step "keep/use/skip" actions normally just advance the create-plan
-  // wizard, but the same camera UI is reused in two other places:
-  //  - the post-co-host "add a video?" screen (see showVideoStep) — there,
-  //    the tap needs to finish up and navigate home instead of stepping to a
-  //    wizard step that doesn't apply.
-  //  - a "jump back to add/change the video" from the preview card, the
-  //    edit-answers recap, or the video step's own history entry (see
-  //    videoStepReturnTo) — there, it needs to return to wherever that jump
-  //    came from instead of advancing to "name" as if starting over.
+  // The post-co-host "add a video?" screen (see showVideoStep) reuses the
+  // wizard's own camera UI, but isn't a step in `steps` at all — finishing
+  // it needs to persist the media and navigate home instead of advancing.
   const advanceOrFinishVideoStep = () => {
     if (showVideoStep) { void finishVideoStep(); return; }
-    if (videoStepReturnTo !== null) {
-      const target = videoStepReturnTo;
-      setVideoStepReturnTo(null);
-      jumpToStep(target);
-      return;
-    }
     advanceStep();
   };
 
   const jumpToVideoStep = (returnTo: number) => {
-    setVideoStepReturnTo(returnTo);
-    jumpToStep(steps.indexOf("video"));
+    jumpToStepWithReturn(steps.indexOf("video"), returnTo);
   };
 
   const handleExitFlow = useCallback(() => {
@@ -2387,16 +2393,6 @@ export default function ProposePlanPage() {
   const renderPreviewCard = () => {
     return (
           <div>
-            {/* Back button — only on web; native already has the sticky header's
-                back button, and both together showed as two stacked arrows. */}
-            {!Capacitor.isNativePlatform() && (
-              <div className="pb-3 flex items-center">
-                <MinimalBackButton
-                  onClick={handleBack}
-                  className="text-foreground/80 hover:text-foreground"
-                />
-              </div>
-            )}
           <div className="space-y-5">
             {/* Preview card */}
             {promoVideoUrl ? (
@@ -2731,7 +2727,7 @@ export default function ProposePlanPage() {
                     <button
                       key={step}
                       type="button"
-                      onClick={() => { jumpToStep(stepIndex); setIsEditingAnswers(false); }}
+                      onClick={() => { jumpToStepWithReturn(stepIndex, steps.indexOf("preview")); setIsEditingAnswers(false); }}
                       className="w-full text-left space-y-0.5 hover:opacity-80 transition-opacity"
                     >
                       <p className="text-sm text-muted-foreground">{BOT_QUESTIONS[step]}</p>
@@ -2740,6 +2736,30 @@ export default function ProposePlanPage() {
                   );
                 })
               }
+
+              {/* Add Plan — same action/guard as the preview card's own
+                  button, so finishing a review here doesn't require going
+                  back to preview first just to tap it again. */}
+              {dayLimitError && (
+                <p className="text-sm text-destructive text-center">{t("createPlan.dayLimitError")}</p>
+              )}
+              <button
+                onClick={handleCreate}
+                disabled={!isValid || isLoading || connectLoading}
+                className="w-full py-4 rounded-full transition-all hover:opacity-90 disabled:opacity-50 flex flex-col items-center justify-center gap-0.5"
+                style={{ background: "#000000" }}
+              >
+                {isLoading || connectLoading ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    <span className="text-white">
+                      {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-lg font-semibold tracking-wide text-white">{t("createPlan.addPlan")}</span>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -2747,8 +2767,11 @@ export default function ProposePlanPage() {
         renderVideoStep()
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Back button — web only (native has sticky header); all steps except preview */}
-          {!Capacitor.isNativePlatform() && currentStepName !== "preview" && (
+          {/* Back button — web only (native has sticky header); same flush
+              top-left position for every step, preview included — it used
+              to render its own indented copy inside the centered content
+              column instead of sitting flush with the page edge. */}
+          {!Capacitor.isNativePlatform() && (
             <div className="px-6 pt-4 pb-2 flex items-center">
               <MinimalBackButton
                 onClick={() => currentStep > 0 ? handleBack() : handleExitFlow()}
@@ -2790,7 +2813,7 @@ export default function ProposePlanPage() {
                       <button
                         key={step}
                         type="button"
-                        onClick={() => step === "video" ? jumpToVideoStep(currentStep) : jumpToStep(i)}
+                        onClick={() => jumpToStepWithReturn(i, currentStep)}
                         className={cn(
                           "w-full text-left space-y-0.5 transition-all hover:opacity-90 active:opacity-100",
                           opacity
@@ -2842,14 +2865,14 @@ export default function ProposePlanPage() {
                       // preview card, the recap, or this step's own history entry)
                       // — "Propose a Plan" reads as starting over, when really
                       // they're just attaching media to what's already made.
-                      currentStepName === "video" && videoStepReturnTo !== null
+                      currentStepName === "video" && stepReturnTo !== null
                         ? t("createPlan.addVideoPicQuestion", "Add a video or photo?")
                         : BOT_QUESTIONS[currentStepName]
                     }
                     showAvatar={true}
                     avatarColor={STEP_AVATAR_COLORS[currentStepName] ?? "#93c5fd"}
                     subtext={currentStepName === "name" ? t("createPlan.soOthersCanJoin") : undefined}
-                    handwritten={currentStepName === "video" && videoStepReturnTo === null}
+                    handwritten={currentStepName === "video" && stepReturnTo === null}
                     wrapperClassName={currentStepName === "video" ? "mb-3" : undefined}
                   />
                 </div>
