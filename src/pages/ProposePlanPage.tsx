@@ -1434,7 +1434,7 @@ export default function ProposePlanPage() {
                 placeholder={t("createPlan.cohostEmailPlaceholder", "friend@email.com — paste a whole list at once if you like")}
                 rows={2}
                 autoFocus
-                className="flex-1 min-h-20 max-h-32 rounded-2xl border border-border bg-muted/60 px-5 py-4 text-base leading-snug resize-none focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+                className="flex-1 min-h-20 max-h-32 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 py-4 text-base leading-snug resize-none focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
               />
               <button
                 type="button"
@@ -1842,7 +1842,10 @@ export default function ProposePlanPage() {
             </div>
           )}
 
-          {cameraMode === "live" && (
+          {/* Speak-the-whole-plan mic — hidden once the plan was already
+              created that way (see usedVoiceForFullPlan); recording video/
+              photo still makes sense here, re-narrating the plan doesn't. */}
+          {cameraMode === "live" && !usedVoiceForFullPlan && (
             <div className="absolute bottom-5 right-5 flex flex-col items-center gap-1.5">
               <button
                 type="button"
@@ -1943,7 +1946,7 @@ export default function ProposePlanPage() {
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleNameSubmit(); } }}
                   placeholder="Type here..."
                   maxLength={MAX_CHARACTERS}
-                  className="w-full h-16 rounded-2xl border border-border bg-muted/60 px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20 placeholder:text-muted-foreground"
+                  className="w-full h-16 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 pr-14 text-base focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20 placeholder:text-muted-foreground"
                 />
                 <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                   {planText.length}/{MAX_CHARACTERS}
@@ -1972,7 +1975,7 @@ export default function ProposePlanPage() {
               onChange={(e) => setCityInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCitySubmit(); } }}
               placeholder="e.g. Paris, New York, São Paulo…"
-              className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20 placeholder:text-muted-foreground"
+              className="flex-1 h-16 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 text-base focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20 placeholder:text-muted-foreground"
             />
             <div className="flex flex-col items-center gap-1.5 shrink-0">
               {renderStepMicButton()}
@@ -1992,7 +1995,7 @@ export default function ProposePlanPage() {
           <div className="relative">
             <div className="flex items-center gap-3">
               {/* Date pills — inside a unified input-row container matching time/name steps */}
-              <div className="flex-1 flex gap-2 items-center overflow-x-auto h-16 rounded-2xl border border-border bg-muted/60 px-4 scrollbar-hide">
+              <div className="flex-1 flex gap-2 items-center overflow-x-auto h-16 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-4 scrollbar-hide">
                 {datePills.map(({ label, date }) => {
                   const isSelected = format(date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
                   return (
@@ -2098,7 +2101,7 @@ export default function ProposePlanPage() {
                 value={selectedTime}
                 onChange={(e) => { setSelectedTime(e.target.value); setPastTimeError(false); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleTimeSubmit(); }}
-                className="flex-1 h-16 rounded-2xl border border-border bg-muted/60 px-5 text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20"
+                className="flex-1 h-16 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20"
                 style={{ colorScheme: "light", color: "#111" }}
               />
               <div className="flex flex-col items-center gap-1.5 shrink-0">
@@ -2173,7 +2176,7 @@ export default function ProposePlanPage() {
                 )}
                 <div className="flex items-center gap-3">
                   {/* Unified container — currency selector + amount input in one rounded box */}
-                  <div className="flex-1 flex items-center h-16 rounded-2xl border border-border bg-muted/60 overflow-hidden">
+                  <div className="flex-1 flex items-center h-16 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] overflow-hidden">
                     {/* Currency select — fixed ~96px, divider on right */}
                     <select
                       value={priceCurrency}
@@ -2233,7 +2236,7 @@ export default function ProposePlanPage() {
                         setExtraPriceTiers(next);
                       }}
                       placeholder={t("createPlan.tierLabelPlaceholder", "e.g. Girls, Students")}
-                      className="flex-1 h-12 rounded-xl border border-border bg-muted/60 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500/40"
+                      className="flex-1 h-12 rounded-xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-4 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500/40"
                     />
                     <input
                       type="text"
@@ -2245,7 +2248,7 @@ export default function ProposePlanPage() {
                         setExtraPriceTiers(next);
                       }}
                       placeholder={selectedCurrencySymbol}
-                      className="w-24 h-12 rounded-xl border border-border bg-muted/60 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500/40"
+                      className="w-24 h-12 rounded-xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-3 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500/40"
                     />
                     <button
                       type="button"
@@ -2281,7 +2284,7 @@ export default function ProposePlanPage() {
               onChange={(e) => setCapacityInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") advanceStep(); }}
               placeholder={t("createPlan.capacityPlaceholder", "No limit")}
-              className="flex-1 h-14 rounded-2xl border border-border bg-muted/60 px-5 text-base focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+              className="flex-1 h-14 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 text-base focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
               autoFocus
             />
             <div className="flex flex-col items-center gap-1.5 shrink-0">
@@ -2337,7 +2340,7 @@ export default function ProposePlanPage() {
               placeholder={t("createPlan.descriptionPlaceholder", "Agenda, what to bring, dress code, anything worth knowing...")}
               rows={2}
               maxLength={2000}
-              className="w-full rounded-2xl border border-border bg-muted/60 px-5 py-4 text-base resize-none overflow-y-auto focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+              className="w-full rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 py-4 text-base resize-none overflow-y-auto focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
               style={{ maxHeight: MAX_DESCRIPTION_TEXTAREA_PX }}
               autoFocus
             />
@@ -2563,7 +2566,12 @@ export default function ProposePlanPage() {
   // matching field from the extraction (e.g. time_hint on the time step) and
   // reports "didn't catch an answer" for anything that doesn't actually
   // answer that question, instead of silently doing nothing.
-  const renderStepMicButton = () => (
+  const renderStepMicButton = () => {
+    // The whole plan was already spoken once (see usedVoiceForFullPlan) —
+    // offering to speak an individual field again here is redundant and
+    // reads as if voice input somehow failed the first time.
+    if (usedVoiceForFullPlan) return null;
+    return (
     <button
       type="button"
       onClick={isListening ? stopVoiceRecording : () => startVoiceRecording(currentStepName)}
@@ -2588,7 +2596,8 @@ export default function ProposePlanPage() {
         <Mic className="w-4 h-4 text-foreground/70" />
       )}
     </button>
-  );
+    );
+  };
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#F3F2F8" }}>
@@ -2822,11 +2831,19 @@ export default function ProposePlanPage() {
               {BOT_QUESTIONS[currentStepName] && (
                 <div key={currentStep} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <BotBubble
-                    message={BOT_QUESTIONS[currentStepName]}
+                    message={
+                      // Jumped back here after the plan already exists (from the
+                      // preview card, the recap, or this step's own history entry)
+                      // — "Propose a Plan" reads as starting over, when really
+                      // they're just attaching media to what's already made.
+                      currentStepName === "video" && videoStepReturnTo !== null
+                        ? t("createPlan.addVideoPicQuestion", "Add a video or photo?")
+                        : BOT_QUESTIONS[currentStepName]
+                    }
                     showAvatar={true}
                     avatarColor={STEP_AVATAR_COLORS[currentStepName] ?? "#93c5fd"}
                     subtext={currentStepName === "name" ? t("createPlan.soOthersCanJoin") : undefined}
-                    handwritten={currentStepName === "video"}
+                    handwritten={currentStepName === "video" && videoStepReturnTo === null}
                     wrapperClassName={currentStepName === "video" ? "mb-3" : undefined}
                   />
                 </div>

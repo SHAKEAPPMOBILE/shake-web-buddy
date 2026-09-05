@@ -100,7 +100,7 @@ export function VenueSearchInput({
           onFocus={() => suggestions.length > 0 && setIsOpen(true)}
           placeholder={placeholder}
           className={cn(
-            "w-full h-14 pl-10 pr-10 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40",
+            "w-full h-14 pl-10 pr-10 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40",
             inputClassName
           )}
         />
