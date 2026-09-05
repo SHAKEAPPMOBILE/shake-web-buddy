@@ -1153,7 +1153,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                     setMotionPermission("prompt");
                   }
                 }}
-                className="data-[state=unchecked]:bg-gray-200"
+                className="data-[state=checked]:bg-black data-[state=unchecked]:bg-gray-200"
+                thumbClassName="bg-white"
               />
             </div>
             {/* Notifications — native only */}

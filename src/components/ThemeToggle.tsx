@@ -18,7 +18,8 @@ export function ThemeToggle({ label = "Theme", className }: ThemeToggleProps) {
         checked={isDark}
         onCheckedChange={toggleTheme}
         aria-label="Toggle theme"
-        className="data-[state=unchecked]:bg-gray-200"
+        className="data-[state=checked]:bg-black data-[state=unchecked]:bg-gray-200"
+        thumbClassName="bg-white"
       />
       <Moon className="w-4 h-4 text-gray-400" />
     </div>
