@@ -272,6 +272,9 @@ export default function ProposePlanPage() {
   // field all over again instead of returning them to wherever they
   // actually came from (see advanceStep).
   const [stepReturnTo, setStepReturnTo] = useState<number | null>(null);
+  // True when the pending return (above) should reopen the edit-answers
+  // recap rather than just landing on the plain preview step.
+  const [returnToEditAnswers, setReturnToEditAnswers] = useState(false);
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
   // Extra named price tiers beyond the base price/currency above, e.g.
@@ -620,12 +623,18 @@ export default function ProposePlanPage() {
   // when a step was reached by jumping BACK to it (see stepReturnTo), this
   // returns to wherever that jump came from instead of blindly advancing to
   // the next step in sequence, which used to march the user forward through
-  // every other already-answered field all over again.
+  // every other already-answered field all over again. If that jump came
+  // from the edit-answers recap (see returnToEditAnswers), it reopens the
+  // recap too — otherwise fixing one field there dumped the user onto the
+  // plain preview screen instead of back into the review list they were on.
   const advanceStep = () => {
     if (stepReturnTo !== null) {
       const target = stepReturnTo;
+      const reopenRecap = returnToEditAnswers;
       setStepReturnTo(null);
+      setReturnToEditAnswers(false);
       jumpToStep(target);
+      if (reopenRecap) setIsEditingAnswers(true);
       return;
     }
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
@@ -641,8 +650,11 @@ export default function ProposePlanPage() {
 
   // Jump to an already-answered (or not-yet-reached) step, remembering where
   // to return once that step's submit/skip fires (see advanceStep).
-  const jumpToStepWithReturn = (targetIndex: number, returnTo: number) => {
+  // reopenRecap: true when the jump came from the edit-answers recap itself,
+  // so finishing this field reopens the recap instead of landing on preview.
+  const jumpToStepWithReturn = (targetIndex: number, returnTo: number, reopenRecap = false) => {
     setStepReturnTo(returnTo);
+    setReturnToEditAnswers(reopenRecap);
     jumpToStep(targetIndex);
   };
 
@@ -658,8 +670,8 @@ export default function ProposePlanPage() {
     advanceStep();
   };
 
-  const jumpToVideoStep = (returnTo: number) => {
-    jumpToStepWithReturn(steps.indexOf("video"), returnTo);
+  const jumpToVideoStep = (returnTo: number, reopenRecap = false) => {
+    jumpToStepWithReturn(steps.indexOf("video"), returnTo, reopenRecap);
   };
 
   const handleExitFlow = useCallback(() => {
@@ -2671,7 +2683,7 @@ export default function ProposePlanPage() {
               {promoVideoUrl && (
                 <button
                   type="button"
-                  onClick={() => { jumpToVideoStep(steps.indexOf("preview")); setIsEditingAnswers(false); }}
+                  onClick={() => { jumpToVideoStep(steps.indexOf("preview"), true); setIsEditingAnswers(false); }}
                   className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
                   aria-label="Edit promo video"
                 >
@@ -2693,7 +2705,7 @@ export default function ProposePlanPage() {
               {promoImageUrl && (
                 <button
                   type="button"
-                  onClick={() => { jumpToVideoStep(steps.indexOf("preview")); setIsEditingAnswers(false); }}
+                  onClick={() => { jumpToVideoStep(steps.indexOf("preview"), true); setIsEditingAnswers(false); }}
                   className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
                   aria-label="Edit plan photo"
                 >
@@ -2709,7 +2721,7 @@ export default function ProposePlanPage() {
               {!promoVideoUrl && !promoImageUrl && (
                 <button
                   type="button"
-                  onClick={() => { jumpToVideoStep(steps.indexOf("preview")); setIsEditingAnswers(false); }}
+                  onClick={() => { jumpToVideoStep(steps.indexOf("preview"), true); setIsEditingAnswers(false); }}
                   className="w-full text-left space-y-0.5 hover:opacity-80 transition-opacity"
                 >
                   <p className="text-sm text-muted-foreground">{BOT_QUESTIONS.video}</p>
@@ -2727,7 +2739,7 @@ export default function ProposePlanPage() {
                     <button
                       key={step}
                       type="button"
-                      onClick={() => { jumpToStepWithReturn(stepIndex, steps.indexOf("preview")); setIsEditingAnswers(false); }}
+                      onClick={() => { jumpToStepWithReturn(stepIndex, steps.indexOf("preview"), true); setIsEditingAnswers(false); }}
                       className="w-full text-left space-y-0.5 hover:opacity-80 transition-opacity"
                     >
                       <p className="text-sm text-muted-foreground">{BOT_QUESTIONS[step]}</p>
