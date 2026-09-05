@@ -1033,6 +1033,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     if (!pendingNewPlanId) return;
     const idx = combinedPlansList.findIndex((p) => p.id === pendingNewPlanId);
     if (idx < 0) return;
+    // Still on the quick-render pass (creator_name "..." placeholder, no
+    // promo media yet) — opening now flashes the purple/blue "no media"
+    // fallback card for the ~1s Phase 4 enrichment takes to fill in the
+    // real photo/video and creator info. Wait for that pass instead.
+    if (combinedPlansList[idx].creator_name === "...") return;
     setFeedSourceList(combinedPlansList);
     setFeedStartIndex(idx);
     setFeedOpen(true);

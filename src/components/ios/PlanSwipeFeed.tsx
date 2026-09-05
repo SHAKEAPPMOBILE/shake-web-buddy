@@ -528,10 +528,12 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                   </span>
                 )}
               </button>
-              {/* Co-hosts — visual only, not individually tappable */}
+              {/* Co-hosts — tappable, same as the creator avatar */}
               {plan.cohosts?.slice(0, 5).map((cohost) => (
-                <div
+                <button
                   key={cohost.user_id}
+                  type="button"
+                  onClick={() => onViewParticipantProfile(cohost.user_id, cohost.name ?? null, cohost.avatar_url ?? null)}
                   className="w-9 h-9 rounded-full overflow-hidden border-2 border-white/50 shadow-lg shrink-0 flex items-center justify-center bg-white/10"
                   style={{ marginLeft: -10 }}
                 >
@@ -542,7 +544,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                       {(cohost.name || "?").charAt(0).toUpperCase()}
                     </span>
                   )}
-                </div>
+                </button>
               ))}
             </div>
           )}
