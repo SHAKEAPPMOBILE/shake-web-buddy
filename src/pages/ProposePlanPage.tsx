@@ -1550,6 +1550,36 @@ export default function ProposePlanPage() {
             {t("createPlan.skip", "Skip")}
           </button>
         )}
+
+        {/* Confirms the plan already exists (created via the voice note)
+            while asking for media, instead of an unexplained camera screen
+            with no context that anything happened yet. */}
+        <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+              {userAvatarUrl ? (
+                <img
+                  src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
+                  alt="Your avatar"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <User className="w-7 h-7 text-muted-foreground" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
+                {priceAmount.trim() && (
+                  <span className="text-green-500 font-medium ml-1">
+                    · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
