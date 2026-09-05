@@ -363,8 +363,19 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               </div>
             </div>
           ) : plan.creator_avatar ? (
-            /* User-created with avatar: full-bleed, or framed on gradient if small */
-            <div className={cn("absolute inset-0 flex items-center justify-center", smallImage && "bg-white")}>
+            /* User-created with avatar: full-bleed, or framed on a blurred
+               copy of the same image if small — a flat bg-white behind it
+               used to read as a stark cutout box against the rest of the
+               card instead of blending in. */
+            <div className={cn("absolute inset-0 flex items-center justify-center overflow-hidden", smallImage && "bg-muted")}>
+              {smallImage && (
+                <img
+                  src={plan.creator_avatar}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60"
+                />
+              )}
               <img
                 src={plan.creator_avatar}
                 alt={plan.creator_name || ""}
@@ -374,7 +385,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 }}
                 className={cn(
                   smallImage
-                    ? "max-w-[92%] max-h-[92%] object-contain rounded-lg shadow-2xl"
+                    ? "relative max-w-[92%] max-h-[92%] object-contain rounded-lg shadow-2xl"
                     : "absolute inset-0 w-full h-full object-cover"
                 )}
               />
