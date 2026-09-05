@@ -59,12 +59,52 @@ const MAX_CLIP_SECONDS = 10;
 // matching "if anything mandatory is missing, we ask again."
 const WEEKDAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
+// Full names first (so "september" doesn't get missed by a check order) plus
+// the common 3-letter abbreviations Whisper/the extraction model tends to use.
+const MONTH_NAMES = [
+  "january", "february", "march", "april", "may", "june",
+  "july", "august", "september", "october", "november", "december",
+];
+const MONTH_ABBREVIATIONS: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11,
+};
+
+function findSpokenMonthIndex(s: string): number {
+  const byFullName = MONTH_NAMES.findIndex((name) => s.includes(name));
+  if (byFullName !== -1) return byFullName;
+  for (const [abbr, index] of Object.entries(MONTH_ABBREVIATIONS)) {
+    if (new RegExp(`\\b${abbr}\\b`).test(s)) return index;
+  }
+  return -1;
+}
+
 function parseSpokenDate(hint: string | null | undefined): Date | null {
   if (!hint) return null;
   const s = hint.toLowerCase().trim();
   const today = startOfDay(new Date());
   if (s.includes("today")) return today;
   if (s.includes("tomorrow")) return addDays(today, 1);
+
+  // Explicit date — "september 29", "the 29th of september", "sept 29th".
+  // The extraction prompt explicitly asks for hints like "september 5th"
+  // verbatim, so this has to be handled here rather than assuming every
+  // hint is relative ("tomorrow", "this saturday").
+  const monthIndex = findSpokenMonthIndex(s);
+  if (monthIndex !== -1) {
+    const dayMatch = s.match(/\d{1,2}/);
+    const day = dayMatch ? parseInt(dayMatch[0], 10) : NaN;
+    if (!isNaN(day) && day >= 1 && day <= 31) {
+      let candidate = startOfDay(new Date(today.getFullYear(), monthIndex, day));
+      // A month/day already passed this year almost always means next year
+      // for a spontaneous-plans app (nobody's proposing a plan for last March).
+      if (candidate.getTime() < today.getTime()) {
+        candidate = startOfDay(new Date(today.getFullYear() + 1, monthIndex, day));
+      }
+      return candidate;
+    }
+  }
+
   const weekdayMatch = WEEKDAY_NAMES.findIndex((name) => s.includes(name));
   if (weekdayMatch !== -1) {
     const currentDay = today.getDay();
@@ -109,9 +149,9 @@ function extractBareNumber(transcript: string | null | undefined): number | null
 }
 
 
-// Same warm cream used for the group chat's own message background (see
-// PlanGroupChatView's bg-[hsl(50,40%,92%)]) instead of the flat grey box —
-// keeps the "chat bubble" shape but reads as part of the same conversation.
+// Luma-style card: a soft, neutral page background (see the page wrapper's
+// #F3F2F8) with content sitting in crisp white cards with a light shadow,
+// instead of a flat colored box blending into the page.
 function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subtext, handwritten = false, wrapperClassName }: { message: string; showAvatar?: boolean; avatarColor?: string; subtext?: string; handwritten?: boolean; wrapperClassName?: string }) {
   if (!message) return null;
   return (
@@ -124,7 +164,10 @@ function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subte
           😎
         </div>
       )}
-      <div className="bg-[hsl(50,40%,92%)] rounded-2xl rounded-tl-none px-5 py-4 flex-1">
+      <div
+        className="bg-white rounded-2xl rounded-tl-none px-5 py-4 flex-1"
+        style={{ boxShadow: "0 1px 3px rgba(16,15,40,0.06), 0 4px 16px rgba(16,15,40,0.05)" }}
+      >
         <p className={cn("text-xl leading-snug text-foreground", handwritten ? "font-handwritten text-2xl" : "font-semibold")}>
           {message}
         </p>
@@ -196,6 +239,13 @@ export default function ProposePlanPage() {
   // made their choice and shouldn't be asked twice).
   const [usedVoiceForFullPlan, setUsedVoiceForFullPlan] = useState(false);
   const [showVideoStep, setShowVideoStep] = useState(false);
+  // Set right before jumping BACK to the wizard's video step from somewhere
+  // past it (the preview card's "Add video/pic" link, the edit-answers
+  // recap, or its own thumbnail/history entry) — without this, finishing
+  // that visit just advanced to the next step in sequence ("name"), which
+  // looked like a brand new plan was starting instead of returning to
+  // wherever the user actually came from.
+  const [videoStepReturnTo, setVideoStepReturnTo] = useState<number | null>(null);
   const [priceAmount, setPriceAmount] = useState("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
   // Extra named price tiers beyond the base price/currency above, e.g.
@@ -549,12 +599,28 @@ export default function ProposePlanPage() {
   };
 
   // Camera-step "keep/use/skip" actions normally just advance the create-plan
-  // wizard, but the same camera UI is reused for the post-co-host "add a
-  // video?" screen (see showVideoStep) — there, the same tap needs to finish
-  // up and navigate home instead of stepping to a wizard step that doesn't apply.
+  // wizard, but the same camera UI is reused in two other places:
+  //  - the post-co-host "add a video?" screen (see showVideoStep) — there,
+  //    the tap needs to finish up and navigate home instead of stepping to a
+  //    wizard step that doesn't apply.
+  //  - a "jump back to add/change the video" from the preview card, the
+  //    edit-answers recap, or the video step's own history entry (see
+  //    videoStepReturnTo) — there, it needs to return to wherever that jump
+  //    came from instead of advancing to "name" as if starting over.
   const advanceOrFinishVideoStep = () => {
     if (showVideoStep) { void finishVideoStep(); return; }
+    if (videoStepReturnTo !== null) {
+      const target = videoStepReturnTo;
+      setVideoStepReturnTo(null);
+      jumpToStep(target);
+      return;
+    }
     advanceStep();
+  };
+
+  const jumpToVideoStep = (returnTo: number) => {
+    setVideoStepReturnTo(returnTo);
+    jumpToStep(steps.indexOf("video"));
   };
 
   const handleExitFlow = useCallback(() => {
@@ -2468,13 +2534,24 @@ export default function ProposePlanPage() {
             </button>
 
             {/* Edit answers — opens recap view */}
-            <button
-              type="button"
-              onClick={() => setIsEditingAnswers(true)}
-              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-center"
-            >
-              {t("createPlan.editAnswers")}
-            </button>
+            <div className="flex items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => setIsEditingAnswers(true)}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-center"
+              >
+                {t("createPlan.editAnswers")}
+              </button>
+              {!promoVideoUrl && !promoImageUrl && (
+                <button
+                  type="button"
+                  onClick={() => jumpToVideoStep(steps.indexOf("preview"))}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-center"
+                >
+                  {t("createPlan.addVideoPic", "Add video/pic")}
+                </button>
+              )}
+            </div>
           </div>
           </div>
     );
@@ -2514,7 +2591,7 @@ export default function ProposePlanPage() {
   );
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#F3F2F8" }}>
       <style>{`
         @keyframes voiceWave {
           0%, 100% { height: 4px; }
@@ -2581,7 +2658,7 @@ export default function ProposePlanPage() {
               {promoVideoUrl && (
                 <button
                   type="button"
-                  onClick={() => { jumpToStep(steps.indexOf("video")); setIsEditingAnswers(false); }}
+                  onClick={() => { jumpToVideoStep(steps.indexOf("preview")); setIsEditingAnswers(false); }}
                   className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
                   aria-label="Edit promo video"
                 >
@@ -2603,7 +2680,7 @@ export default function ProposePlanPage() {
               {promoImageUrl && (
                 <button
                   type="button"
-                  onClick={() => { jumpToStep(steps.indexOf("video")); setIsEditingAnswers(false); }}
+                  onClick={() => { jumpToVideoStep(steps.indexOf("preview")); setIsEditingAnswers(false); }}
                   className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
                   aria-label="Edit plan photo"
                 >
@@ -2612,6 +2689,18 @@ export default function ProposePlanPage() {
                     alt="Plan photo"
                     className="absolute inset-0 w-full h-full object-cover"
                   />
+                </button>
+              )}
+
+              {/* No media yet — offer to add one instead of just hiding the option */}
+              {!promoVideoUrl && !promoImageUrl && (
+                <button
+                  type="button"
+                  onClick={() => { jumpToVideoStep(steps.indexOf("preview")); setIsEditingAnswers(false); }}
+                  className="w-full text-left space-y-0.5 hover:opacity-80 transition-opacity"
+                >
+                  <p className="text-sm text-muted-foreground">{BOT_QUESTIONS.video}</p>
+                  <p className="text-xl font-semibold text-foreground">{t("createPlan.addVideoPic", "Add video/pic")}</p>
                 </button>
               )}
 
@@ -2686,7 +2775,7 @@ export default function ProposePlanPage() {
                       <button
                         key={step}
                         type="button"
-                        onClick={() => jumpToStep(i)}
+                        onClick={() => step === "video" ? jumpToVideoStep(currentStep) : jumpToStep(i)}
                         className={cn(
                           "w-full text-left space-y-0.5 transition-all hover:opacity-90 active:opacity-100",
                           opacity
