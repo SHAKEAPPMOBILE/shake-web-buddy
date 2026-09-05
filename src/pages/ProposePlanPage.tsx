@@ -157,18 +157,18 @@ function getTimeOfDayGradient(): string {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 11) {
     // Sunrise — warm peach/pink band
-    return "linear-gradient(180deg, #FFD9A0 0%, #FFB6C1 20%, #FDF1F0 40%, #FFFFFF 60%, #FFFFFF 100%)";
+    return "linear-gradient(180deg, #FFD9A0 0%, #FFB6C1 8%, #FFFFFF 18%, #FFFFFF 100%)";
   }
   if (hour >= 11 && hour < 17) {
     // Midday — bright sky-blue band
-    return "linear-gradient(180deg, #A8D8F0 0%, #C9E4F5 20%, #EAF4FB 40%, #FFFFFF 60%, #FFFFFF 100%)";
+    return "linear-gradient(180deg, #A8D8F0 0%, #C9E4F5 8%, #FFFFFF 18%, #FFFFFF 100%)";
   }
   if (hour >= 17 && hour < 20) {
     // Sunset — warm orange/pink band
-    return "linear-gradient(180deg, #FF9A76 0%, #E195C4 20%, #F6D9E8 40%, #FFFFFF 60%, #FFFFFF 100%)";
+    return "linear-gradient(180deg, #FF9A76 0%, #E195C4 8%, #FFFFFF 18%, #FFFFFF 100%)";
   }
   // Night — deeper indigo/violet band
-  return "linear-gradient(180deg, #6B5B95 0%, #8E7CC3 20%, #D8D0EC 40%, #FFFFFF 60%, #FFFFFF 100%)";
+  return "linear-gradient(180deg, #6B5B95 0%, #8E7CC3 8%, #FFFFFF 18%, #FFFFFF 100%)";
 }
 
 
