@@ -141,7 +141,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       ticking = false;
       const containerTop = container.getBoundingClientRect().top;
       const buttonBottom = button.getBoundingClientRect().bottom;
-      if (buttonBottom < containerTop + 32) {
+      if (buttonBottom < containerTop - 40) {
         setExpandedSection(null);
       }
     };
