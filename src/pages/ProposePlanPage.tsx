@@ -148,6 +148,29 @@ function extractBareNumber(transcript: string | null | undefined): number | null
   return isNaN(n) ? null : n;
 }
 
+// Time-of-day ambiance for the create-plan background. Reads straight off
+// the device's own clock (already in the user's local time zone, no math
+// needed) and stays in a light, pastel range across every bucket — only the
+// hue/warmth shifts, never the lightness — so every existing dark-on-light
+// text and link color on this page stays legible regardless of the hour.
+function getTimeOfDayGradient(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) {
+    // Sunrise — warm peach easing into the neutral base
+    return "linear-gradient(160deg, #FFEEDD 0%, #FDF1F0 45%, #F3F2F8 100%)";
+  }
+  if (hour >= 11 && hour < 17) {
+    // Midday — bright, airy sky-blue tint
+    return "linear-gradient(160deg, #EAF4FB 0%, #F0EEFA 50%, #F3F2F8 100%)";
+  }
+  if (hour >= 17 && hour < 20) {
+    // Sunset — warm pink/orange easing into soft violet
+    return "linear-gradient(160deg, #FFE3D3 0%, #F6D9E8 45%, #E9DFF5 100%)";
+  }
+  // Night — cooler, deeper (but still light) indigo/lavender
+  return "linear-gradient(160deg, #DCD6F0 0%, #C9C3E8 45%, #B8B4DE 100%)";
+}
+
 
 // Luma-style card: a soft, neutral page background (see the page wrapper's
 // #F3F2F8) with content sitting in crisp white cards with a light shadow,
@@ -211,6 +234,10 @@ export default function ProposePlanPage() {
     description: "#ddd6fe", // violet-200
     cohost: "#bae6fd", // sky-200
   };
+
+  // Computed once per visit (not a live clock) — good enough for an ambient
+  // backdrop, and avoids re-rendering the whole page on a timer.
+  const timeOfDayGradient = useMemo(() => getTimeOfDayGradient(), []);
 
   const { user, isPremium } = useAuth();
   const { selectedCity } = useCity();
@@ -2581,7 +2608,7 @@ export default function ProposePlanPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#F3F2F8" }}>
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: timeOfDayGradient }}>
       <style>{`
         @keyframes voiceWave {
           0%, 100% { height: 4px; }

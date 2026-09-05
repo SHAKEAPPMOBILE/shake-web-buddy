@@ -22,7 +22,6 @@ import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
-import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
@@ -694,11 +693,6 @@ export function PlanSwipeFeed({
 }: PlanSwipeFeedProps) {
   const { user } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [profileTarget, setProfileTarget] = useState<{
-    userId: string;
-    userName: string | null;
-    avatarUrl: string | null;
-  } | null>(null);
 
   /* Re-sort whenever plans or myCity changes so enriched data (e.g. promo_video_url)
      is reflected without remounting the feed. */
@@ -855,25 +849,11 @@ export function PlanSwipeFeed({
               onPayForPlan={() => onPayForPlan(plan)}
               onEnterChat={() => onEnterChat(plan)}
               onViewProfile={() => handleViewProfile(plan)}
-              onViewParticipantProfile={(userId, userName, avatarUrl) => {
-                setProfileTarget({ userId, userName, avatarUrl });
-                onViewProfile(userId, userName, avatarUrl);
-              }}
+              onViewParticipantProfile={onViewProfile}
             />
           ))}
         </div>
       </div>
-
-      {/* User profile dialog */}
-      {profileTarget && (
-        <UserProfileDialog
-          open={!!profileTarget}
-          onOpenChange={(open) => { if (!open) setProfileTarget(null); }}
-          userId={profileTarget.userId}
-          userName={profileTarget.userName}
-          avatarUrl={profileTarget.avatarUrl}
-        />
-      )}
     </>
   );
 }

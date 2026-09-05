@@ -241,6 +241,16 @@ export function UserProfileDialog({
             <DialogTitle className="sr-only">{t("userProfile.title")}</DialogTitle>
           </DialogHeader>
 
+          {/* Everything below is gated behind one loading flag — the dialog
+              either shows a spinner or the fully-formed profile, never a
+              partial one that fills in piece by piece (avatar/name first,
+              tags and activity popping in seconds later). */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <LoadingSpinner size="md" />
+            </div>
+          ) : (
+          <>
           {/* Avatar and Name */}
           <div className="flex flex-col items-center py-4">
             {/* Avatar — tap to enlarge */}
@@ -276,7 +286,7 @@ export function UserProfileDialog({
             {/* Nationality and Occupation — held back until the fetch resolves
                 (see isLoading) so this doesn't pop in and grow the card
                 after the rest of the profile is already visible. */}
-            {!isLoading && (socialLinks.nationality || socialLinks.occupation) && (
+            {(socialLinks.nationality || socialLinks.occupation) && (
               <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
                 {socialLinks.nationality && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-sm">
@@ -294,7 +304,7 @@ export function UserProfileDialog({
             )}
 
             {/* Interests */}
-            {!isLoading && socialLinks.interests && socialLinks.interests.length > 0 && (
+            {socialLinks.interests && socialLinks.interests.length > 0 && (
               <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2">
                 {socialLinks.interests.map((interest) => (
                   <span
@@ -308,7 +318,7 @@ export function UserProfileDialog({
             )}
             
             {/* Last known city */}
-            {!isLoading && lastKnownCity && (
+            {lastKnownCity && (
               <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
                 <span className="inline-flex items-center justify-center w-3.5 h-3.5">📍</span>
                 <span>{lastKnownCity}</span>
@@ -480,6 +490,8 @@ export function UserProfileDialog({
                 {t("userProfile.reportUser")}
               </Button>
             </div>
+          )}
+          </>
           )}
         </DialogContent>
       </Dialog>
