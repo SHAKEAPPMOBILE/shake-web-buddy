@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
-import { Camera, ChevronLeft, ChevronDown, User, LogOut, Save, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff, Globe, Phone } from "lucide-react";
+import { Camera, ChevronLeft, ChevronDown, User, LogOut, Instagram, Linkedin, Twitter, Bell, Mail, Lock, Eye, EyeOff, Globe, Phone } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
@@ -490,16 +490,9 @@ export default function Profile() {
             ref={saveButtonRef}
             onClick={() => handleSaveProfile()}
             disabled={isSaving || isLoading}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all disabled:opacity-50"
-            style={{
-              background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))",
-            }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-all disabled:opacity-50"
           >
-            {isSaving ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
+            {isSaving && <LoadingSpinner size="sm" />}
             {t('common.save')}
           </button>
         </div>
