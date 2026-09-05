@@ -48,7 +48,7 @@ const CURRENCIES = [
 
 const MAX_CHARACTERS = 50;
 
-type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "description" | "preview";
+type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "description" | "cohost" | "preview";
 type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
 
 const MAX_CLIP_SECONDS = 10;
@@ -192,10 +192,10 @@ export default function ProposePlanPage() {
     video: t("createPlan.botVideo"),
     audience: t("createPlan.botAudience"),
     description: t("createPlan.botDescription", "Add a description"),
+    cohost: t("createPlan.botCohost", "Add a co-host?"),
     preview: "",
   }), [t]);
 
-  const BOT_COHOST_QUESTION = t("createPlan.botCohost", "Add a co-host?");
   const BOT_POST_CREATE_VIDEO_QUESTION = t("createPlan.botVideoAfterVoice", "Want to add a video too? 🎬");
 
   const STEP_AVATAR_COLORS: Partial<Record<StepName, string>> = {
@@ -209,8 +209,8 @@ export default function ProposePlanPage() {
     video: "#93c5fd", // blue-300
     audience: "#fbcfe8", // pink-200
     description: "#ddd6fe", // violet-200
+    cohost: "#bae6fd", // sky-200
   };
-  const COHOST_AVATAR_COLOR = "#bae6fd"; // sky-200
 
   const { user, isPremium } = useAuth();
   const { selectedCity } = useCity();
@@ -224,19 +224,18 @@ export default function ProposePlanPage() {
 
   const [planText, setPlanText] = useState("");
   const [planDescription, setPlanDescription] = useState("");
-  // Co-host invites — collected on a dedicated screen shown AFTER the plan is
-  // created (the activity has to exist before we can attach co-hosts to it).
-  const [showCohostStep, setShowCohostStep] = useState(false);
-  const [cohostSending, setCohostSending] = useState(false);
+  // Co-host invites — answered as a wizard step (right before preview); the
+  // actual invite-cohost call happens in handleCreate once the activity
+  // exists, since the emails collected here need a real activity_id.
   const [cohostEmails, setCohostEmails] = useState<string[]>([]);
   const [cohostEmailInput, setCohostEmailInput] = useState("");
   const [cohostEmailError, setCohostEmailError] = useState<string | null>(null);
   const [showAllCohostsDialog, setShowAllCohostsDialog] = useState(false);
   // Speaking the whole plan at the "video" step's big mic jumps straight past
   // it (see applyVoiceFields) — never giving that user a chance to actually
-  // attach a video/photo. Offer it once more, after the co-host step, only
-  // for that path (a typed-flow user who deliberately tapped Skip already
-  // made their choice and shouldn't be asked twice).
+  // attach a video/photo. Offer it once more, right after creation, only for
+  // that path (a typed-flow user who deliberately tapped Skip already made
+  // their choice and shouldn't be asked twice).
   const [usedVoiceForFullPlan, setUsedVoiceForFullPlan] = useState(false);
   const [showVideoStep, setShowVideoStep] = useState(false);
   // Set right before jumping BACK to the wizard's video step from somewhere
@@ -383,11 +382,14 @@ export default function ProposePlanPage() {
   // Ordered steps — insert "city" only when context provides no city.
   // "audience" (who's this plan for) is asked of every creator regardless of
   // their own gender — a man can create a women-only plan just as easily as
-  // a woman can, the question isn't gated on who's asking.
+  // a woman can, the question isn't gated on who's asking. "cohost" sits
+  // right before "preview" — co-hosts are part of finalizing the plan
+  // (same as video/description), not an afterthought tacked on once the
+  // plan already exists.
   const steps: StepName[] = useMemo(() => {
     const s: StepName[] = ["video", "name"];
     if (!city) s.push("city");
-    s.push("date", "time", "venue", "price", "capacity", "audience", "description", "preview");
+    s.push("date", "time", "venue", "price", "capacity", "audience", "description", "cohost", "preview");
     return s;
   }, [city]);
 
@@ -579,6 +581,10 @@ export default function ProposePlanPage() {
           ? t("createPlan.friendsOnly", "Only friends")
           : t("createPlan.everyone");
       case "description": return planDescription.trim() ? t("createPlan.descriptionAdded", "Description added") : t("createPlan.skipped");
+      case "cohost":
+        return cohostEmails.length > 0
+          ? t("createPlan.cohostCountAdded", `${cohostEmails.length} invited`)
+          : t("createPlan.skipped");
       default: return "";
     }
   };
@@ -1253,21 +1259,11 @@ export default function ProposePlanPage() {
     }
     triggerConfettiWaterfall();
 
-    // Co-hosts can only be attached once the plan actually exists (needs a
-    // real activity_id), so that's collected on its own screen right after
-    // creation instead of as a wizard step.
-    setShowCohostStep(true);
-  };
-
-  // Leaves the co-host screen — sends any committed co-host emails (if any),
-  // then lands on the Plans tab with the swipe feed open on the new plan
-  // (see IOSAppLayout's location.state handling), instead of just popping
-  // back to wherever the user came from (often the Shake home dashboard).
-  const finishCohostStep = async () => {
-    if (cohostSending) return;
+    // Co-hosts are answered pre-creation (the "cohost" step, right before
+    // preview), but can only actually be invited once the plan has a real
+    // activity_id — so that call happens here, right after creation.
     const activityId = lastCreatedActivityIdRef.current;
     if (cohostEmails.length > 0 && activityId) {
-      setCohostSending(true);
       try {
         const { error } = await supabase.functions.invoke("invite-cohost", {
           body: { activity_id: activityId, emails: cohostEmails },
@@ -1275,37 +1271,24 @@ export default function ProposePlanPage() {
         if (error) console.error("[ProposePlanPage] invite-cohost failed:", error);
       } catch (err) {
         console.error("[ProposePlanPage] invite-cohost failed:", err);
-      } finally {
-        setCohostSending(false);
       }
     }
-    leaveCohostStep(activityId);
-  };
 
-  // Plain skip — leaves without sending whatever's still sitting in the
-  // co-host list, distinct from "Done" which sends any committed emails.
-  const skipCohostStep = () => {
-    leaveCohostStep(lastCreatedActivityIdRef.current);
-  };
-
-  // Shared exit path for both Done and Skip: a plan created via the whole-
-  // plan voice note skipped the wizard's own video step entirely (see
-  // usedVoiceForFullPlan), so give it one more chance to attach a video/
-  // photo here before finally leaving. A typed-flow user who already saw
-  // and skipped that step isn't asked again.
-  const leaveCohostStep = (activityId: string | null | undefined) => {
+    // A plan created via the whole-plan voice note skipped the wizard's own
+    // video step entirely (see usedVoiceForFullPlan), so give it one more
+    // chance to attach a video/photo before finally leaving. A typed-flow
+    // user who already saw and skipped that step isn't asked again.
     if (usedVoiceForFullPlan && !promoVideoUrl && !promoImageUrl) {
-      setShowCohostStep(false);
       setShowVideoStep(true);
       return;
     }
     navigate("/", { state: { activeTab: "plans", pendingNewPlanId: activityId } });
   };
 
-  // Leaves the post-co-host "add a video?" screen — persists whatever was
-  // captured/uploaded there onto the already-created activity (it didn't
-  // exist yet when the wizard's own video step would normally have done
-  // this), then lands on the new plan same as finishCohostStep/skipCohostStep.
+  // Leaves the post-creation "add a video?" screen (see showVideoStep) —
+  // persists whatever was captured/uploaded there onto the already-created
+  // activity (it didn't exist yet when the wizard's own video step would
+  // normally have done this), then lands on the new plan same as handleCreate.
   const finishVideoStep = async () => {
     const activityId = lastCreatedActivityIdRef.current;
     if (activityId && (promoVideoUrl || promoImageUrl)) {
@@ -1379,95 +1362,90 @@ export default function ProposePlanPage() {
   };
   const addCohostEmailFromInput = () => processCohostEmailInput(cohostEmailInput, true);
 
-  const renderCohostStep = () => {
+  // "cohost" composer — same scroll-history + fixed-composer treatment as
+  // every other step (see renderComposer's "cohost" case) instead of a
+  // separate full-page screen, now that co-hosts are answered pre-creation
+  // rather than tacked on after the plan already exists.
+  const renderCohostComposer = () => {
     const INLINE_CHIP_LIMIT = 3;
     const overflowCount = cohostEmails.length - INLINE_CHIP_LIMIT;
     return (
-      <div className="flex-1 flex flex-col overflow-y-auto">
-        <div className="w-full max-w-sm mx-auto px-6 pt-8 pb-8 space-y-6">
-          <BotBubble message={BOT_COHOST_QUESTION} showAvatar={true} avatarColor={COHOST_AVATAR_COLOR} />
-
-          <div className="space-y-3">
-            {cohostEmails.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {(overflowCount > 0 ? cohostEmails.slice(0, INLINE_CHIP_LIMIT) : cohostEmails).map((email) => (
-                  <span
-                    key={email}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-muted/70 border border-border text-foreground"
-                  >
-                    {email}
-                    <button
-                      type="button"
-                      onClick={() => setCohostEmails((prev) => prev.filter((e) => e !== email))}
-                      className="text-muted-foreground hover:text-foreground"
-                      aria-label={`Remove ${email}`}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-                {overflowCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllCohostsDialog(true)}
-                    className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-muted border border-border text-foreground font-medium hover:bg-muted/70 transition-colors"
-                  >
-                    +{overflowCount} more…
-                  </button>
-                )}
-              </div>
+      <div className="space-y-3">
+        {cohostEmails.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {(overflowCount > 0 ? cohostEmails.slice(0, INLINE_CHIP_LIMIT) : cohostEmails).map((email) => (
+              <span
+                key={email}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-muted/70 border border-border text-foreground"
+              >
+                {email}
+                <button
+                  type="button"
+                  onClick={() => setCohostEmails((prev) => prev.filter((e) => e !== email))}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={`Remove ${email}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            {overflowCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAllCohostsDialog(true)}
+                className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-muted border border-border text-foreground font-medium hover:bg-muted/70 transition-colors"
+              >
+                +{overflowCount} more…
+              </button>
             )}
-            <div className="flex items-center gap-3">
-              <textarea
-                value={cohostEmailInput}
-                onChange={(e) => { processCohostEmailInput(e.target.value, false); setCohostEmailError(null); }}
-                onPaste={(e) => {
-                  const pasted = e.clipboardData.getData("text");
-                  if (!pasted) return;
-                  e.preventDefault();
-                  processCohostEmailInput(cohostEmailInput + pasted, true);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") { e.preventDefault(); addCohostEmailFromInput(); }
-                }}
-                onBlur={addCohostEmailFromInput}
-                placeholder={t("createPlan.cohostEmailPlaceholder", "friend@email.com — paste a whole list at once if you like")}
-                rows={2}
-                autoFocus
-                className="flex-1 min-h-20 max-h-32 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 py-4 text-base leading-snug resize-none focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
-              />
-              <button
-                type="button"
-                onClick={addCohostEmailFromInput}
-                disabled={!cohostEmailInput.trim()}
-                className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-muted-foreground/60 disabled:opacity-40"
-              >
-                <span className="text-xl leading-none">+</span>
-              </button>
-            </div>
-            {cohostEmailError && (
-              <p className="text-sm text-destructive">{cohostEmailError}</p>
-            )}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={skipCohostStep}
-                disabled={cohostSending}
-                className="flex-1 py-3 rounded-full text-sm font-semibold bg-muted text-foreground disabled:opacity-60"
-              >
-                {t("createPlan.skip", "Skip")}
-              </button>
-              <button
-                type="button"
-                onClick={finishCohostStep}
-                disabled={cohostSending}
-                className="flex-1 py-3 rounded-full text-sm font-semibold bg-black text-white flex items-center justify-center gap-2 disabled:opacity-70"
-              >
-                {cohostSending && <LoadingSpinner size="sm" />}
-                {t("common.done", "Done")}
-              </button>
-            </div>
           </div>
+        )}
+        <div className="flex items-center gap-3">
+          <textarea
+            value={cohostEmailInput}
+            onChange={(e) => { processCohostEmailInput(e.target.value, false); setCohostEmailError(null); }}
+            onPaste={(e) => {
+              const pasted = e.clipboardData.getData("text");
+              if (!pasted) return;
+              e.preventDefault();
+              processCohostEmailInput(cohostEmailInput + pasted, true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); addCohostEmailFromInput(); }
+            }}
+            onBlur={addCohostEmailFromInput}
+            placeholder={t("createPlan.cohostEmailPlaceholder", "friend@email.com — paste a whole list at once if you like")}
+            rows={2}
+            autoFocus
+            className="flex-1 min-h-20 max-h-32 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 py-4 text-base leading-snug resize-none focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+          />
+          <button
+            type="button"
+            onClick={addCohostEmailFromInput}
+            disabled={!cohostEmailInput.trim()}
+            className="w-14 h-14 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity hover:opacity-90 bg-muted-foreground/60 disabled:opacity-40"
+          >
+            <span className="text-xl leading-none">+</span>
+          </button>
+        </div>
+        {cohostEmailError && (
+          <p className="text-sm text-destructive">{cohostEmailError}</p>
+        )}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => { setCohostEmails([]); setCohostEmailInput(""); setCohostEmailError(null); advanceStep(); }}
+            className="flex-1 py-3 rounded-full text-sm font-semibold bg-muted text-foreground"
+          >
+            {t("createPlan.skip", "Skip")}
+          </button>
+          <button
+            type="button"
+            onClick={() => { addCohostEmailFromInput(); advanceStep(); }}
+            className="flex-1 py-3 rounded-full text-sm font-semibold bg-black text-white"
+          >
+            {t("common.next", "Next")}
+          </button>
         </div>
 
         {/* Full co-host list — same "collapse to a few + open a scrollable
@@ -2364,6 +2342,9 @@ export default function ProposePlanPage() {
           </div>
         );
 
+      case "cohost":
+        return renderCohostComposer();
+
       case "preview":
         // Rendered inline in the scrollable area via renderPreviewCard() instead of
         // here — this step's content (card + big button + link) is too tall for the
@@ -2735,8 +2716,6 @@ export default function ProposePlanPage() {
             </div>
           </div>
         </div>
-      ) : showCohostStep ? (
-        renderCohostStep()
       ) : showVideoStep ? (
         renderVideoStep()
       ) : (

@@ -60,7 +60,11 @@ export function UserProfileDialog({
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({ instagram_url: null, linkedin_url: null, twitter_url: null, nationality: null, occupation: null, interests: null });
   const [userAge, setUserAge] = useState<number | null>(null);
   const [lastKnownCity, setLastKnownCity] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // Starts true (not false) so the very first paint after opening already
+  // shows the loading state — otherwise there's a one-frame flash of "no
+  // tags / no recent activity" before the fetch even begins, then the real
+  // content pops in and visibly grows the card a second time.
+  const [isLoading, setIsLoading] = useState(true);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showEnlargedAvatar, setShowEnlargedAvatar] = useState(false);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
@@ -234,7 +238,7 @@ export function UserProfileDialog({
             </div>
           )}
           <DialogHeader>
-            <DialogTitle className="text-center text-xl font-display text-gray-900">{t("userProfile.title")}</DialogTitle>
+            <DialogTitle className="sr-only">{t("userProfile.title")}</DialogTitle>
           </DialogHeader>
 
           {/* Avatar and Name */}
@@ -269,8 +273,10 @@ export function UserProfileDialog({
               {userName || "Shaker"}{userAge ? `, ${userAge}` : ''}
             </h3>
             
-            {/* Nationality and Occupation */}
-            {(socialLinks.nationality || socialLinks.occupation) && (
+            {/* Nationality and Occupation — held back until the fetch resolves
+                (see isLoading) so this doesn't pop in and grow the card
+                after the rest of the profile is already visible. */}
+            {!isLoading && (socialLinks.nationality || socialLinks.occupation) && (
               <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
                 {socialLinks.nationality && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-sm">
@@ -288,7 +294,7 @@ export function UserProfileDialog({
             )}
 
             {/* Interests */}
-            {socialLinks.interests && socialLinks.interests.length > 0 && (
+            {!isLoading && socialLinks.interests && socialLinks.interests.length > 0 && (
               <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2">
                 {socialLinks.interests.map((interest) => (
                   <span
@@ -302,7 +308,7 @@ export function UserProfileDialog({
             )}
             
             {/* Last known city */}
-            {lastKnownCity && (
+            {!isLoading && lastKnownCity && (
               <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
                 <span className="inline-flex items-center justify-center w-3.5 h-3.5">📍</span>
                 <span>{lastKnownCity}</span>
