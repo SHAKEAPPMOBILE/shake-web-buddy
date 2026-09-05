@@ -94,12 +94,17 @@ serve(async (req) => {
         .eq("user_id", user.id);
     }
 
-    logStep("Account status checked", { 
+    logStep("Account status checked", {
       accountId: privateProfile.stripe_account_id,
       chargesEnabled: account.charges_enabled,
       payoutsEnabled: account.payouts_enabled,
       status: newStatus,
-      email: accountEmail
+      email: accountEmail,
+      detailsSubmitted: account.details_submitted,
+      currentlyDue: account.requirements?.currently_due,
+      pendingVerification: account.requirements?.pending_verification,
+      pastDue: account.requirements?.past_due,
+      disabledReason: account.requirements?.disabled_reason,
     });
 
     return new Response(JSON.stringify({ 
