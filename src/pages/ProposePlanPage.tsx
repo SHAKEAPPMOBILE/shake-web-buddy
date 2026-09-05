@@ -219,7 +219,7 @@ export default function ProposePlanPage() {
     preview: "",
   }), [t]);
 
-  const BOT_INLINE_VIDEO_QUESTION = t("createPlan.botVideoAfterVoice", "Want to add a video too? 🎬");
+  const BOT_INLINE_VIDEO_QUESTION = t("createPlan.botVideoAfterVoice", "Want to add a video too?");
 
   const STEP_AVATAR_COLORS: Partial<Record<StepName, string>> = {
     name:  "#facc15", // yellow-400 — existing default
