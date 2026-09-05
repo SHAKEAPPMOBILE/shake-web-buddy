@@ -219,7 +219,7 @@ export default function ProposePlanPage() {
     preview: "",
   }), [t]);
 
-  const BOT_POST_CREATE_VIDEO_QUESTION = t("createPlan.botVideoAfterVoice", "Want to add a video too? 🎬");
+  const BOT_INLINE_VIDEO_QUESTION = t("createPlan.botVideoAfterVoice", "Want to add a video too? 🎬");
 
   const STEP_AVATAR_COLORS: Partial<Record<StepName, string>> = {
     name:  "#facc15", // yellow-400 — existing default
@@ -260,11 +260,15 @@ export default function ProposePlanPage() {
   const [showAllCohostsDialog, setShowAllCohostsDialog] = useState(false);
   // Speaking the whole plan at the "video" step's big mic jumps straight past
   // it (see applyVoiceFields) — never giving that user a chance to actually
-  // attach a video/photo. Offer it once more, right after creation, only for
-  // that path (a typed-flow user who deliberately tapped Skip already made
-  // their choice and shouldn't be asked twice).
+  // attach a video/photo. Offer it inline on the preview screen instead,
+  // right alongside the plan summary, only for that path (a typed-flow user
+  // who deliberately tapped Skip already made their choice and shouldn't be
+  // asked twice).
   const [usedVoiceForFullPlan, setUsedVoiceForFullPlan] = useState(false);
-  const [showVideoStep, setShowVideoStep] = useState(false);
+  // Set when that inline offer's own Skip is tapped — otherwise the camera
+  // box would just reappear right after being dismissed, since neither
+  // promoVideoUrl nor promoImageUrl ever gets set by skipping.
+  const [voiceVideoOfferDismissed, setVoiceVideoOfferDismissed] = useState(false);
   // Set right before jumping BACK to an already-answered step — from the
   // edit-answers recap, or from a past-Q&A history entry while still mid-
   // wizard. Without this, submitting that one field just advanced to the
@@ -425,6 +429,17 @@ export default function ProposePlanPage() {
 
   const currentStepName = steps[currentStep];
 
+  // A plan created via the whole-plan voice note skipped the wizard's own
+  // video step entirely (see applyVoiceFields), so the preview screen offers
+  // it inline instead — right alongside the plan summary — until either
+  // media is attached or the offer is explicitly dismissed.
+  const showInlineVideoCapture =
+    currentStepName === "preview" &&
+    usedVoiceForFullPlan &&
+    !promoVideoUrl &&
+    !promoImageUrl &&
+    !voiceVideoOfferDismissed;
+
   // Description textarea starts compact and grows with content instead of
   // opening at its full 5-line height — a tall box appearing instantly ate
   // most of the composer and pushed the bot question/avatar above it off
@@ -534,10 +549,10 @@ export default function ProposePlanPage() {
   }, []);
 
   // Start camera when entering the video step (either the wizard's own step,
-  // or the post-co-host "add a video?" screen for a plan created by voice);
+  // or the inline offer on the preview screen for a plan created by voice);
   // stop tracks when leaving.
   useEffect(() => {
-    const cameraStepActive = currentStepName === "video" || showVideoStep;
+    const cameraStepActive = currentStepName === "video" || showInlineVideoCapture;
     if (!cameraStepActive) {
       stopAllTracks();
       if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
@@ -553,7 +568,7 @@ export default function ProposePlanPage() {
       if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
       if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
     };
-  }, [currentStepName, showVideoStep, promoVideoUrl, promoImageUrl, startCamera, stopAllTracks]);
+  }, [currentStepName, showInlineVideoCapture, promoVideoUrl, promoImageUrl, startCamera, stopAllTracks]);
 
   // Attach live stream / auto-start playback when cameraMode changes
   useEffect(() => {
@@ -660,14 +675,6 @@ export default function ProposePlanPage() {
 
   const handleBack = () => {
     if (currentStep > 0) jumpToStep(currentStep - 1);
-  };
-
-  // The post-co-host "add a video?" screen (see showVideoStep) reuses the
-  // wizard's own camera UI, but isn't a step in `steps` at all — finishing
-  // it needs to persist the media and navigate home instead of advancing.
-  const advanceOrFinishVideoStep = () => {
-    if (showVideoStep) { void finishVideoStep(); return; }
-    advanceStep();
   };
 
   const jumpToVideoStep = (returnTo: number, reopenRecap = false) => {
@@ -783,7 +790,7 @@ export default function ProposePlanPage() {
       if (recordedObjectUrl) { URL.revokeObjectURL(recordedObjectUrl); setRecordedObjectUrl(null); }
       setPromoImageUrl(null);
       setPromoVideoUrl(publicUrl);
-      advanceOrFinishVideoStep();
+      advanceStep();
     } catch {
       setVideoError("Upload failed. Please try again.");
     } finally {
@@ -800,7 +807,16 @@ export default function ProposePlanPage() {
     setPromoVideoUrl(null);
     setPromoImageUrl(null);
     setCameraMode("idle");
-    advanceOrFinishVideoStep();
+    // On the preview screen's inline offer, "Skip" just dismisses it —
+    // advanceStep() would no-op there anyway (preview is the last step),
+    // but without this flag the offer's own condition stays true (neither
+    // promoVideoUrl nor promoImageUrl ever got set) and the camera box
+    // would just reappear right after being dismissed.
+    if (currentStepName === "preview") {
+      setVoiceVideoOfferDismissed(true);
+    } else {
+      advanceStep();
+    }
   };
 
   // ── Photo — alternative to a video, uploads straight through (no probing/trim needed) ──
@@ -828,7 +844,7 @@ export default function ProposePlanPage() {
       setRecordedBlob(null);
       setPromoVideoUrl(null);
       setPromoImageUrl(publicUrl);
-      advanceOrFinishVideoStep();
+      advanceStep();
     } catch {
       setVideoError("Upload failed. Please try again.");
     } finally {
@@ -1319,39 +1335,7 @@ export default function ProposePlanPage() {
       }
     }
 
-    // A plan created via the whole-plan voice note skipped the wizard's own
-    // video step entirely (see usedVoiceForFullPlan), so give it one more
-    // chance to attach a video/photo before finally leaving. A typed-flow
-    // user who already saw and skipped that step isn't asked again.
-    if (usedVoiceForFullPlan && !promoVideoUrl && !promoImageUrl) {
-      setShowVideoStep(true);
-      return;
-    }
     navigate("/", { state: { activeTab: "plans", pendingNewPlanId: activityId } });
-  };
-
-  // Leaves the post-creation "add a video?" screen (see showVideoStep) —
-  // persists whatever was captured/uploaded there onto the already-created
-  // activity (it didn't exist yet when the wizard's own video step would
-  // normally have done this), then lands on the new plan same as handleCreate.
-  const finishVideoStep = async () => {
-    const activityId = lastCreatedActivityIdRef.current;
-    if (activityId && (promoVideoUrl || promoImageUrl)) {
-      try {
-        const { error } = await supabase
-          .from("user_activities")
-          .update({ promo_video_url: promoVideoUrl || null, promo_image_url: promoImageUrl || null })
-          .eq("id", activityId);
-        if (error) console.error("[ProposePlanPage] failed to attach post-create media:", error);
-      } catch (err) {
-        console.error("[ProposePlanPage] failed to attach post-create media:", err);
-      }
-    }
-    navigate("/", { state: { activeTab: "plans", pendingNewPlanId: activityId } });
-  };
-
-  const skipVideoStep = () => {
-    navigate("/", { state: { activeTab: "plans", pendingNewPlanId: lastCreatedActivityIdRef.current } });
   };
 
   const COHOST_CAP = 5;
@@ -1526,64 +1510,6 @@ export default function ProposePlanPage() {
     );
   };
 
-  // Post-co-host "add a video?" screen — only reached when the plan was
-  // created via the whole-plan voice note (usedVoiceForFullPlan), which
-  // jumps straight past the wizard's own video step. Reuses the same camera
-  // capture UI as that step; its own Skip pill covers the "live camera"
-  // case, this adds a plain Skip for when the camera errored out instead.
-  const renderVideoStep = () => (
-    <div className="flex-1 flex flex-col overflow-y-auto">
-      <div className="w-full max-w-sm mx-auto px-6 pt-8 pb-8 space-y-4">
-        <BotBubble
-          message={BOT_POST_CREATE_VIDEO_QUESTION}
-          showAvatar={true}
-          avatarColor={STEP_AVATAR_COLORS.video}
-          handwritten
-        />
-        {renderCameraCapture()}
-        {!promoVideoUrl && !promoImageUrl && cameraMode === "error" && (
-          <button
-            type="button"
-            onClick={skipVideoStep}
-            className="w-full py-3 rounded-full text-sm font-semibold bg-muted text-foreground"
-          >
-            {t("createPlan.skip", "Skip")}
-          </button>
-        )}
-
-        {/* Confirms the plan already exists (created via the voice note)
-            while asking for media, instead of an unexplained camera screen
-            with no context that anything happened yet. */}
-        <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
-              {userAvatarUrl ? (
-                <img
-                  src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
-                  alt="Your avatar"
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <User className="w-7 h-7 text-muted-foreground" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
-                {priceAmount.trim() && (
-                  <span className="text-green-500 font-medium ml-1">
-                    · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   // Date chip data
   const datePills = useMemo(() => {
     const todayDow = today.getDay();
@@ -1662,7 +1588,7 @@ export default function ProposePlanPage() {
             </button>
             <button
               type="button"
-              onClick={advanceOrFinishVideoStep}
+              onClick={advanceStep}
               className="flex-1 py-3 rounded-full text-sm font-semibold bg-black text-white"
             >
               {t("createPlan.keepThis")}
@@ -1695,7 +1621,7 @@ export default function ProposePlanPage() {
             </button>
             <button
               type="button"
-              onClick={advanceOrFinishVideoStep}
+              onClick={advanceStep}
               className="flex-1 py-3 rounded-full text-sm font-semibold bg-black text-white"
             >
               {t("createPlan.keepThis")}
@@ -2530,33 +2456,48 @@ export default function ProposePlanPage() {
                 </div>
               </>
             ) : (
-              /* ── No-video card: existing design, untouched ── */
-              <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
-                <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                    {userAvatarUrl ? (
-                      <img
-                        src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
-                        alt="Your avatar"
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    ) : (
-                      <User className="w-7 h-7 text-muted-foreground" />
-                    )}
+              /* ── No-video card, optionally with the inline voice-created-
+                  plan camera offer sitting right above it (see
+                  showInlineVideoCapture) instead of only a small text link. ── */
+              <>
+                {showInlineVideoCapture && (
+                  <div className="space-y-3 mb-5">
+                    <BotBubble
+                      message={BOT_INLINE_VIDEO_QUESTION}
+                      showAvatar={true}
+                      avatarColor={STEP_AVATAR_COLORS.video}
+                      handwritten
+                    />
+                    {renderCameraCapture()}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
-                      {priceAmount.trim() && (
-                        <span className="text-green-500 font-medium ml-1">
-                          · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
-                        </span>
+                )}
+                <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                      {userAvatarUrl ? (
+                        <img
+                          src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
+                          alt="Your avatar"
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        <User className="w-7 h-7 text-muted-foreground" />
                       )}
-                    </p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {effectiveCity} · {isToday(selectedDate) ? t("common.today") : isTomorrow(selectedDate) ? t("common.tomorrow") : format(selectedDate, "EEE, MMM d")} · {format(previewDateTime, "h:mm a")}
+                        {priceAmount.trim() && (
+                          <span className="text-green-500 font-medium ml-1">
+                            · {selectedCurrencySymbol}{priceAmount} {priceCurrency}
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
             )}
 
             {dayLimitError && (
@@ -2591,7 +2532,7 @@ export default function ProposePlanPage() {
               >
                 {t("createPlan.editAnswers")}
               </button>
-              {!promoVideoUrl && !promoImageUrl && (
+              {!promoVideoUrl && !promoImageUrl && !showInlineVideoCapture && (
                 <button
                   type="button"
                   onClick={() => jumpToVideoStep(steps.indexOf("preview"))}
@@ -2805,8 +2746,6 @@ export default function ProposePlanPage() {
             </div>
           </div>
         </div>
-      ) : showVideoStep ? (
-        renderVideoStep()
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Back button — web only (native has sticky header); same flush
