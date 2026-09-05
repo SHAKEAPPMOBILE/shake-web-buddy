@@ -1024,6 +1024,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     return [...activities, ...cityOnly];
   }, [activities, cityPlans]);
 
+  // True from the moment we land here with a just-created plan until the
+  // swipe feed actually opens on it (see the effect below) — covers the
+  // exact window that otherwise flashed the "no plans yet" empty state,
+  // then a plain list, then finally the feed, all within under a second.
+  const awaitingPendingPlan = (() => {
+    if (!pendingNewPlanId) return false;
+    const entry = combinedPlansList.find((p) => p.id === pendingNewPlanId);
+    return !entry || entry.creator_name === "...";
+  })();
+
   // Open the swipe feed on a plan the user just created (see PlansTabProps.pendingNewPlanId,
   // set by ProposePlanPage's navigate("/", { state: { pendingNewPlanId } }) on success).
   // Waits for it to actually show up in combinedPlansList — fetchPlans' initial load /
@@ -1925,7 +1935,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         </div>
       ) : (
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 space-y-3 bg-white dark:bg-white min-h-0">
-        {isLoading ? (
+        {isLoading || awaitingPendingPlan ? (
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
           </div>
