@@ -1946,7 +1946,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         </div>
       ) : (
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 space-y-3 bg-white dark:bg-white min-h-0">
-        {isLoading || awaitingPendingPlan || (!hasCompletedFullFetch && activities.length === 0 && cityPlans.length === 0) ? (
+        {isLoading || awaitingPendingPlan || !!pendingNewPlanId || (!hasCompletedFullFetch && activities.length === 0 && cityPlans.length === 0) ? (
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
           </div>

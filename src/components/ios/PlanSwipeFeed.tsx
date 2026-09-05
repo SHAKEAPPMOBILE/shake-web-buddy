@@ -363,19 +363,15 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               </div>
             </div>
           ) : plan.creator_avatar ? (
-            /* User-created with avatar: full-bleed, or framed on a blurred
-               copy of the same image if small — a flat bg-white behind it
-               used to read as a stark cutout box against the rest of the
-               card instead of blending in. */
-            <div className={cn("absolute inset-0 flex items-center justify-center overflow-hidden", smallImage && "bg-muted")}>
-              {smallImage && (
-                <img
-                  src={plan.creator_avatar}
-                  alt=""
-                  aria-hidden="true"
-                  className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60"
-                />
-              )}
+            /* User-created with avatar: full-bleed, or framed on the same
+               purple/pink/blue gradient used behind the chat header if
+               small — a flat bg-white (and, before that, a blurred copy of
+               the avatar itself) behind it used to read as a stark cutout
+               box or a muddy blob instead of blending in. */
+            <div
+              className="absolute inset-0 flex items-center justify-center overflow-hidden"
+              style={smallImage ? { background: "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)" } : undefined}
+            >
               <img
                 src={plan.creator_avatar}
                 alt={plan.creator_name || ""}
