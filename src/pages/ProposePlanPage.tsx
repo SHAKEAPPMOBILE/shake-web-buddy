@@ -165,7 +165,7 @@ function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subte
         </div>
       )}
       <div
-        className="bg-white rounded-2xl rounded-tl-none px-5 py-4 flex-1"
+        className="bg-white rounded-2xl px-5 py-4 flex-1"
         style={{ boxShadow: "0 1px 3px rgba(16,15,40,0.06), 0 4px 16px rgba(16,15,40,0.05)" }}
       >
         <p className={cn("text-xl leading-snug text-foreground", handwritten ? "font-handwritten text-2xl" : "font-semibold")}>
