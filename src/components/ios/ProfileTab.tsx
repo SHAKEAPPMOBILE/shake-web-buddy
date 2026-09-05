@@ -118,6 +118,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [isLoadingParanormal, setIsLoadingParanormal] = useState(false);
   const [faceAuthEnabled, setFaceAuthEnabled] = useState(false);
   const [gender, setGender] = useState<string | null>(null);
+  // gender starts null before fetchProfile resolves — without this flag the
+  // "add your gender" warning banner briefly shows for users who already
+  // have one set, until the real value loads in and clears it.
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [showFaceCapture, setShowFaceCapture] = useState(false);
   const [isUpdatingFaceAuth, setIsUpdatingFaceAuth] = useState(false);
   const [showRemoveFaceConfirm, setShowRemoveFaceConfirm] = useState(false);
@@ -299,6 +303,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     if (privateProfile.data) {
       setPreferredMethod(privateProfile.data.preferred_payout_method ?? null);
     }
+    setProfileLoaded(true);
   }, [user]);
 
   const savePayoutField = async (field: string, value: string) => {
@@ -431,7 +436,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
              (b) no payout method is saved (savedPaypal, savedVenmo, savedCashApp
                  all empty — the same fields shown in the Creator Payouts section).
            Tapping opens the Creator Payouts section in-page. */}
-      {!earningsLoading && activities.some(a => getPriceValue(a.priceAmount) > 0) &&
+      {!earningsLoading && !stripeLoading && activities.some(a => getPriceValue(a.priceAmount) > 0) &&
        !stripeConnected && (
         <button
           type="button"
@@ -454,7 +459,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
            filters (creating them, and being let into ones other women made)
            actually work for this person. Tapping jumps straight to the gender
            picker inside Edit Profile. */}
-      {gender === null && (
+      {profileLoaded && gender === null && (
         <button
           type="button"
           onClick={() => navigate("/profile", { state: { focusGender: true } })}

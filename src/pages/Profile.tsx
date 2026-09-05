@@ -43,6 +43,7 @@ export default function Profile() {
   const emailInputRef = useRef<HTMLInputElement>(null);
   const mainScrollRef = useRef<HTMLElement>(null);
   useScrollNudge(mainScrollRef);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
 
   const [name, setName] = useState("");
   const [nationality, setNationality] = useState("");
@@ -302,8 +303,9 @@ export default function Profile() {
     }
   };
 
-  const handleSaveProfile = async () => {
-    if (!user) return;
+  const handleSaveProfile = async (options?: { silent?: boolean }) => {
+    if (!user || isSaving) return;
+    const silent = options?.silent ?? false;
 
     setIsSaving(true);
 
@@ -353,17 +355,19 @@ export default function Profile() {
         contactPhone: contactPhone.trim(),
       });
 
-      toast.success(t('profile.profileSaved'));
-      triggerConfettiWaterfall();
+      if (!silent) {
+        toast.success(t('profile.profileSaved'));
+        triggerConfettiWaterfall();
 
-      // If user was routed here to add their email for subscription,
-      // return them back so they can subscribe again.
-      if (returnTo) {
-        navigate(returnTo, { replace: true });
+        // If user was routed here to add their email for subscription,
+        // return them back so they can subscribe again.
+        if (returnTo) {
+          navigate(returnTo, { replace: true });
+        }
       }
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error(t('profile.profileSaveFailed'));
+      if (!silent) toast.error(t('profile.profileSaveFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -449,6 +453,20 @@ export default function Profile() {
     }
   };
 
+  // Auto-save whenever focus leaves the form entirely (tapping the page
+  // background, scrolling off to another section) instead of only on the
+  // explicit Save button — fires quietly (no toast/confetti) and only when
+  // something actually changed. Ignores focus just hopping between two
+  // fields inside the form (relatedTarget still inside it).
+  const handleFormBlur = (e: React.FocusEvent<HTMLElement>) => {
+    if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget as Node)) return;
+    // Let the Save button's own click handle it — with the full toast/
+    // confetti — instead of racing a silent auto-save started by the blur
+    // that same click causes.
+    if (e.relatedTarget === saveButtonRef.current) return;
+    if (isDirty && !isSaving) void handleSaveProfile({ silent: true });
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -469,7 +487,8 @@ export default function Profile() {
             iconClassName="w-6 h-6"
           />
           <button
-            onClick={handleSaveProfile}
+            ref={saveButtonRef}
+            onClick={() => handleSaveProfile()}
             disabled={isSaving || isLoading}
             className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-white hover:opacity-90 transition-all disabled:opacity-50"
             style={{
@@ -489,6 +508,7 @@ export default function Profile() {
       {/* Main Content */}
       <main
         ref={mainScrollRef}
+        onBlur={handleFormBlur}
         className="flex-1 min-h-0 px-4 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]"
       >
         <div className="max-w-md mx-auto space-y-6">
@@ -628,7 +648,9 @@ export default function Profile() {
                 onClick={() => setIsGenderExpanded((prev) => !prev)}
                 className="flex items-center gap-2 w-full text-left"
               >
-                <span className="text-lg">🧑</span>
+                <span className="text-lg">
+                  {gender === "woman" ? "👩" : gender === "man" ? "👨" : "🧑"}
+                </span>
                 <Label className="cursor-pointer">{t('profile.gender')}</Label>
                 {gender && (
                   <span className="text-sm text-muted-foreground">
