@@ -109,13 +109,13 @@ function extractBareNumber(transcript: string | null | undefined): number | null
 }
 
 
-// No boxed bubble — a colored tick (borrowing the avatar's own color) plus
-// plain, larger text reads as "someone's asking you something" without the
-// flat grey chat-bubble look.
+// Same warm cream used for the group chat's own message background (see
+// PlanGroupChatView's bg-[hsl(50,40%,92%)]) instead of the flat grey box —
+// keeps the "chat bubble" shape but reads as part of the same conversation.
 function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subtext, handwritten = false, wrapperClassName }: { message: string; showAvatar?: boolean; avatarColor?: string; subtext?: string; handwritten?: boolean; wrapperClassName?: string }) {
   if (!message) return null;
   return (
-    <div className={cn("flex flex-row items-center gap-3 mb-8", wrapperClassName)}>
+    <div className={cn("flex flex-row items-end gap-3 mb-8", wrapperClassName)}>
       {showAvatar && (
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
@@ -124,10 +124,7 @@ function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subte
           😎
         </div>
       )}
-      <div
-        className="flex-1 pl-4 py-0.5 border-l-[3px]"
-        style={{ borderColor: avatarColor }}
-      >
+      <div className="bg-[hsl(50,40%,92%)] rounded-2xl rounded-tl-none px-5 py-4 flex-1">
         <p className={cn("text-xl leading-snug text-foreground", handwritten ? "font-handwritten text-2xl" : "font-semibold")}>
           {message}
         </p>

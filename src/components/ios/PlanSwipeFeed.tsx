@@ -125,7 +125,7 @@ function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterCha
   const [joining, setJoining] = useState(false);
   const [lowRes, setLowRes] = useState(false);
   const [smallImage, setSmallImage] = useState(false);
-  const [previewAvatars, setPreviewAvatars] = useState<{ avatar_url: string | null }[]>([]);
+  const [previewAvatars, setPreviewAvatars] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [joinCount, setJoinCount] = useState<number | null>(null);
   const [showDescription, setShowDescription] = useState(false);
@@ -198,11 +198,15 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
       if (cancelled || !userIds.length) return;
       const profiles = await Promise.all(
         userIds.map((uid) =>
-          supabase.from("profiles").select("avatar_url").eq("user_id", uid).maybeSingle()
+          supabase.from("profiles").select("name, avatar_url").eq("user_id", uid).maybeSingle()
         )
       );
       if (!cancelled) {
-        setPreviewAvatars(profiles.map((r) => ({ avatar_url: r.data?.avatar_url ?? null })));
+        setPreviewAvatars(profiles.map((r, i) => ({
+          user_id: userIds[i],
+          name: r.data?.name ?? null,
+          avatar_url: r.data?.avatar_url ?? null,
+        })));
       }
     })();
     return () => { cancelled = true; };
@@ -415,32 +419,39 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         className="absolute right-4 z-10 flex flex-col items-center gap-4"
         style={{ top: "50%", transform: "translateY(-50%)", pointerEvents: "auto" }}
       >
-        {/* Avatar stack — tappable, opens participant list */}
+        {/* Avatar stack — each avatar independently tappable to that person's
+            profile; the "+N" (when there are more than shown) opens the full
+            participant list instead. */}
         {previewAvatars.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setParticipantsOpen(true)}
-            className="flex flex-col items-center gap-1 transition-opacity hover:opacity-80"
-          >
+          <div className="flex flex-col items-center gap-1">
             <div className="flex flex-col items-center -space-y-2">
               {previewAvatars.slice(0, 3).map((a, i) => (
-                <Avatar key={i} className="w-8 h-8 border-2 border-white/60 shadow-md">
-                  <AvatarImage src={getDisplayAvatarUrl(a.avatar_url)} />
-                  <AvatarFallback className="bg-white/20 text-white">
-                    <User className="w-3 h-3" />
-                  </AvatarFallback>
-                </Avatar>
+                <button
+                  key={a.user_id || i}
+                  type="button"
+                  onClick={() => onViewParticipantProfile(a.user_id, a.name, a.avatar_url)}
+                  className="transition-opacity hover:opacity-80"
+                >
+                  <Avatar className="w-8 h-8 border-2 border-white/60 shadow-md">
+                    <AvatarImage src={getDisplayAvatarUrl(a.avatar_url)} />
+                    <AvatarFallback className="bg-white/20 text-white">
+                      <User className="w-3 h-3" />
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
               ))}
             </div>
             {((joinCount ?? plan.participant_count ?? 0) > 3) && (
-              <span
-                className="text-white text-[11px] font-semibold mt-1 leading-none"
+              <button
+                type="button"
+                onClick={() => setParticipantsOpen(true)}
+                className="text-white text-[11px] font-semibold mt-1 leading-none transition-opacity hover:opacity-80"
                 style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
               >
                 +{(joinCount ?? plan.participant_count ?? 0) - 3}
-              </span>
+              </button>
             )}
-          </button>
+          </div>
         )}
 
         {/* CHAT / JOIN button */}
