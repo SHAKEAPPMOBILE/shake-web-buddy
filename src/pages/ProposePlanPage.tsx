@@ -273,6 +273,11 @@ export default function ProposePlanPage() {
   // choice — drives the "(Suggested)" label; cleared the moment they touch
   // the venue field themselves.
   const [venueIsSuggested, setVenueIsSuggested] = useState(false);
+  // A "suggest a venue" voice request that arrived before any city was
+  // known (e.g. "recommend me a rooftop for sunday" on a first-ever plan,
+  // with no city picked yet) — retried once a city actually gets set,
+  // instead of being silently dropped forever.
+  const pendingVenueSuggestionRef = useRef<{ activityType: string | null; searchQuery: string | null } | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()));
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
@@ -959,6 +964,11 @@ export default function ProposePlanPage() {
             setVenueIsSuggested(true);
           }
         });
+      } else {
+        // No city known yet at all (voice didn't give one and none was
+        // selected) — hold onto the request and retry once one is set,
+        // rather than dropping it silently.
+        pendingVenueSuggestionRef.current = { activityType, searchQuery };
       }
     }
 
@@ -972,6 +982,22 @@ export default function ProposePlanPage() {
     else if (needsName) jumpToStep(steps.indexOf("name"));
     else jumpToStep(steps.indexOf("preview"));
   }, [city, steps, resolveSuggestedVenue]);
+
+  // Retries a venue suggestion that arrived before any city was known, the
+  // moment one becomes available — whether typed on the city step or
+  // resolved automatically from the device's location.
+  useEffect(() => {
+    const pending = pendingVenueSuggestionRef.current;
+    if (!pending || !effectiveCity) return;
+    pendingVenueSuggestionRef.current = null;
+    resolveSuggestedVenue(pending.activityType, pending.searchQuery, effectiveCity).then((place) => {
+      if (place) {
+        setVenuePlace(place);
+        setVenueName(place.name);
+        setVenueIsSuggested(true);
+      }
+    });
+  }, [effectiveCity, resolveSuggestedVenue]);
 
   const voiceNoAnswerMessage = () => t("createPlan.voiceNoAnswer", "Didn't catch an answer to this question — try again.");
 
