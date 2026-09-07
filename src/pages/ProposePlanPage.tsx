@@ -25,6 +25,8 @@ import { useScrollNudge } from "@/hooks/useScrollNudge";
 import { VenueSearchInput, VenuePlace } from "@/components/VenueSearchInput";
 import { searchVenuePlaces } from "@/lib/venueSearch";
 import { useVenueContext } from "@/contexts/VenueContext";
+import { SHAKE_CITIES, getDistanceFromLatLng } from "@/data/cities";
+import { normalizeCity } from "@/hooks/useDatabaseVenues";
 import { Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -868,9 +870,30 @@ export default function ProposePlanPage() {
       }
     }
     if (venueSearchQuery && venueSearchQuery.trim()) {
+      // Bias the free-text search with the city's real coordinates, not just
+      // its name in the query string — a name match alone ("park Austin")
+      // still lets Photon return a same-named place on the other side of
+      // the world. A generic category word like "park" or "beach" has no
+      // other signal tying it to the right city, so this matters here more
+      // than it would for a specific place name.
+      const cityCoords = SHAKE_CITIES.find((c) => normalizeCity(c.name) === normalizeCity(cityForSearch));
       try {
-        const matches = await searchVenuePlaces(`${venueSearchQuery.trim()} ${cityForSearch}`.trim());
-        if (matches[0]) return matches[0];
+        const matches = await searchVenuePlaces(
+          `${venueSearchQuery.trim()} ${cityForSearch}`.trim(),
+          cityCoords ? { lat: cityCoords.lat, lng: cityCoords.lng } : null
+        );
+        const top = matches[0];
+        if (top) {
+          // Coordinate bias alone doesn't guarantee proximity — Photon can
+          // still rank a distant same-name match first. Reject anything
+          // implausibly far from the target city rather than hand back a
+          // suggestion nowhere near where the user actually is.
+          if (cityCoords) {
+            const distanceKm = getDistanceFromLatLng(cityCoords.lat, cityCoords.lng, top.lat, top.lng);
+            if (distanceKm > 50) return null;
+          }
+          return top;
+        }
       } catch (err) {
         console.error("[ProposePlanPage] suggested venue search failed:", err);
       }
