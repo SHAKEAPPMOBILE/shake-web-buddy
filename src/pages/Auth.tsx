@@ -1252,8 +1252,8 @@ export default function Auth() {
     return (
       <div className="h-[100dvh] bg-white flex flex-col items-center justify-center px-6 py-10 text-center">
         <img src={logoShake} alt="SHAKE" className="h-24 w-24 mb-8" />
-        <h1 className="text-3xl font-bold text-black mb-3">
-          {t('auth.welcomeTitle', 'Welcome to SHAKE')} 🎉
+        <h1 className="text-6xl font-script font-normal text-black mb-3">
+          {t('auth.welcomeScriptWord', 'Welcome')}
         </h1>
         <p className="text-muted-foreground mb-10 max-w-xs">
           {t('auth.loginOrCreate', 'Log In or create your account')}
@@ -1720,7 +1720,7 @@ export default function Auth() {
             <div className="space-y-4">
               <div className="space-y-2 text-center">
                 <img src={logoShake} alt="SHAKE" className="h-20 w-20 mx-auto mb-8" />
-                <h1 className="text-2xl font-bold text-black">{t('auth.welcomeTitle', 'Welcome to SHAKE')}</h1>
+                <h1 className="text-5xl font-script font-normal text-black">{t('auth.welcomeScriptWord', 'Welcome')}</h1>
                 <p className="text-muted-foreground">{t('auth.loginOrCreate', 'Log In or create your account')}</p>
               </div>
 

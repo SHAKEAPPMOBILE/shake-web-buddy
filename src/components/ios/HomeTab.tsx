@@ -813,7 +813,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-foreground text-background text-lg font-bold">+</span> 
                   {t('home.toStartShaking', 'to start shaking!')}
                 </span>
-              ) : meetPhrases[currentPhraseIndex]}
+              ) : (
+                <span className="font-script font-normal">{meetPhrases[currentPhraseIndex]}</span>
+              )}
             </span>
             {!showTapInstruction && (
               <span className="text-gradient block mt-2">{t('home.shakeUpYourLife', 'SHAKE up your life.')}</span>
