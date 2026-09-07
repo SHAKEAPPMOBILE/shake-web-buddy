@@ -20,7 +20,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const { user } = useAuth();
   const { totalUnread } = useTotalUnreadChats();
   const { pendingReceived } = useFriends();
-  const shakeButtonStyle = { background: "#000000" };
+  const shakeButtonStyle = { background: "#FFFFFF" };
 
   // Current user's avatar for the Profile tab
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
@@ -83,10 +83,10 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                 className="relative -mt-6 flex flex-col items-center"
               >
                 <div className={cn(
-                  "w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all",
+                  "w-16 h-16 rounded-full flex items-center justify-center shadow-lg border border-gray-200 transition-all",
                   isActive && "scale-110"
                 )} style={shakeButtonStyle}>
-                  <Plus className="w-8 h-8 text-white" />
+                  <Plus className="w-8 h-8 text-black" />
                 </div>
               </button>
             );
