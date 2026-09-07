@@ -17,7 +17,6 @@ export default {
         sans: ["DM Sans", "system-ui", "sans-serif"],
         display: ["Space Grotesk", "system-ui", "sans-serif"],
         handwritten: ["Sue Ellen Francisco", "cursive"],
-        script: ["Sacramento", "cursive"],
       },
       colors: {
         border: "hsl(var(--border))",

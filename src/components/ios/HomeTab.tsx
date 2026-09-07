@@ -814,7 +814,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   {t('home.toStartShaking', 'to start shaking!')}
                 </span>
               ) : (
-                <span className="font-script font-normal">{meetPhrases[currentPhraseIndex]}</span>
+                <span className="font-handwritten font-normal">{meetPhrases[currentPhraseIndex]}</span>
               )}
             </span>
             {!showTapInstruction && (
