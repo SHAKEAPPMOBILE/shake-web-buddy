@@ -9,14 +9,16 @@ export const PLAN_EXTRACTION_SYSTEM_PROMPT = `You extract structured plan detail
   "city": string | null,                // city name only, if mentioned
   "date_hint": string | null,           // speaker's own words for when, e.g. "this saturday", "tomorrow", "next friday", "september 5th" — do not resolve to a calendar date yourself
   "time_hint": string | null,           // speaker's own words for time, e.g. "8pm", "around 7", "noon"
-  "venue_name": string | null,          // place name if mentioned
+  "venue_name": string | null,          // place name if mentioned — ONLY a place they actually named, never one you thought of
   "price_amount": string | null,        // just the number if a price was mentioned, e.g. "10" for "$10 cover"
   "capacity": number | null,            // max people, if a limit was mentioned
   "audience": "everyone" | "women_only" | "friends_only" | null,
-  "description": string | null         // any extra agenda/detail beyond the title worth keeping, else null
+  "description": string | null,        // any extra agenda/detail beyond the title worth keeping, else null
+  "wants_suggestion": boolean,          // true if they're ASKING you for an idea/recommendation instead of stating their own plan — e.g. "suggest a place for lunch", "what should I do friday night", "any ideas for a picnic spot"
+  "venue_search_query": string | null   // ONLY when wants_suggestion is true AND venue_name is null: a short, generic PLACE CATEGORY to search for nearby (e.g. "park", "beach", "hiking trail", "rooftop bar", "hotel"), inferred from what they asked — NEVER a specific business/place name, a real one gets looked up separately
 }
 
-Only fill a field if it was actually said or very strongly implied — never invent details. If nothing usable was said at all, return all nulls.`;
+Only fill a field if it was actually said or very strongly implied — never invent details. venue_name must never be filled when wants_suggestion is true — that means they want us to find a real place, not that they named one. If nothing usable was said at all, return all nulls (wants_suggestion false).`;
 
 /** Calls Anthropic to turn a transcript into the structured field set above. */
 export async function extractPlanFields(transcript: string, apiKey: string): Promise<Record<string, unknown>> {

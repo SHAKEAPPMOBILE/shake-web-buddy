@@ -24,6 +24,7 @@ import { Capacitor } from "@capacitor/core";
 import { useScrollNudge } from "@/hooks/useScrollNudge";
 import { VenueSearchInput, VenuePlace } from "@/components/VenueSearchInput";
 import { searchVenuePlaces } from "@/lib/venueSearch";
+import { useVenueContext } from "@/contexts/VenueContext";
 import { Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -218,6 +219,7 @@ export default function ProposePlanPage() {
 
   const { user, isPremium } = useAuth();
   const { selectedCity } = useCity();
+  const { getVenueForActivity } = useVenueContext();
   const city = selectedCity ?? "";
   // Always-current ref: written synchronously on every render so handleCreate
   // reads the freshest selectedCity even if the closure captured a stale "".
@@ -264,6 +266,11 @@ export default function ProposePlanPage() {
   const [capacityInput, setCapacityInput] = useState("");
   const [venueName, setVenueName] = useState("");
   const [venuePlace, setVenuePlace] = useState<VenuePlace | null>(null);
+  // True when venueName/venuePlace came from an AI suggestion (voice asked
+  // "suggest a venue" rather than naming one) rather than the user's own
+  // choice — drives the "(Suggested)" label; cleared the moment they touch
+  // the venue field themselves.
+  const [venueIsSuggested, setVenueIsSuggested] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()));
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
@@ -378,6 +385,11 @@ export default function ProposePlanPage() {
 
   const isPaidActivity = priceAmount.trim().length > 0;
   const effectiveCity = city || cityInput.trim();
+  // Always-current ref — applyVoiceFieldForStep's useCallback deps are kept
+  // deliberately minimal, so it would otherwise read a stale, empty
+  // effectiveCity from whenever the callback was first created.
+  const effectiveCityRef = useRef(effectiveCity);
+  effectiveCityRef.current = effectiveCity;
   const isValid = planText.trim().length > 0 && !hasProfanity && effectiveCity.length > 0 && selectedTime.length > 0;
 
   // Combine the selected date + time for preview and submission
@@ -587,7 +599,11 @@ export default function ProposePlanPage() {
           ? t("common.tomorrow")
           : format(selectedDate, "EEE, MMM d");
       case "time": return format(previewDateTime, "h:mm a");
-      case "venue": return venuePlace?.name || venueName.trim() || t("createPlan.skipped");
+      case "venue": {
+        const v = venuePlace?.name || venueName.trim();
+        if (!v) return t("createPlan.skipped");
+        return venueIsSuggested ? `(Suggested) ${v}` : v;
+      }
       case "price": {
         if (!priceAmount.trim()) return t("createPlan.free");
         const base = `${selectedCurrencySymbol}${priceAmount} ${priceCurrency}`;
@@ -835,6 +851,33 @@ export default function ProposePlanPage() {
     await startCamera();
   };
 
+  // Resolves an AI-requested venue suggestion ("suggest a place for lunch",
+  // "any ideas for a picnic spot") to a REAL place — never an invented one.
+  // Dinner/brunch/drinks go against our own curated venues DB first; any
+  // other category falls back to the same free place search VenueSearchInput
+  // uses, biased toward the current city.
+  const resolveSuggestedVenue = useCallback(async (
+    activityType: string | null,
+    venueSearchQuery: string | null,
+    cityForSearch: string
+  ): Promise<VenuePlace | null> => {
+    if (activityType === "dinner" || activityType === "brunch" || activityType === "drinks") {
+      const dbVenue = getVenueForActivity(cityForSearch, activityType);
+      if (dbVenue && typeof dbVenue.latitude === "number" && typeof dbVenue.longitude === "number") {
+        return { name: dbVenue.name, address: dbVenue.address, lat: dbVenue.latitude, lng: dbVenue.longitude };
+      }
+    }
+    if (venueSearchQuery && venueSearchQuery.trim()) {
+      try {
+        const matches = await searchVenuePlaces(`${venueSearchQuery.trim()} ${cityForSearch}`.trim());
+        if (matches[0]) return matches[0];
+      } catch (err) {
+        console.error("[ProposePlanPage] suggested venue search failed:", err);
+      }
+    }
+    return null;
+  }, [getVenueForActivity]);
+
   // ── Voice-to-plan — speak the plan instead of typing through every step ──
   // Two consumers of the same record → transcribe → extract pipeline:
   //  - "full" (the camera step's big mic): describe the whole plan in one
@@ -861,6 +904,26 @@ export default function ProposePlanPage() {
     const parsedTime = parseSpokenTime(fields.time_hint as string | null | undefined);
     if (parsedTime) setSelectedTime(parsedTime);
 
+    // They asked for a venue idea rather than naming one — resolve it in the
+    // background against a real place (our DB for dinner/brunch/drinks, a
+    // free places search otherwise) so it's filled in by the time they reach
+    // the review, still clearly marked as our pick rather than theirs.
+    const spokenVenue = typeof fields.venue_name === "string" ? fields.venue_name.trim() : "";
+    if (!spokenVenue && fields.wants_suggestion === true) {
+      const activityType = typeof fields.activity_type === "string" ? fields.activity_type : null;
+      const searchQuery = typeof fields.venue_search_query === "string" ? fields.venue_search_query : null;
+      const cityForSearch = city || spokenCity;
+      if (cityForSearch) {
+        resolveSuggestedVenue(activityType, searchQuery, cityForSearch).then((place) => {
+          if (place) {
+            setVenuePlace(place);
+            setVenueName(place.name);
+            setVenueIsSuggested(true);
+          }
+        });
+      }
+    }
+
     // Jump to wherever the flow still needs the user — city (if no context
     // and voice didn't give one), then name (if voice gave no usable
     // title), else straight to the final review so they can check/adjust
@@ -870,7 +933,7 @@ export default function ProposePlanPage() {
     if (needsCity) jumpToStep(steps.indexOf("city"));
     else if (needsName) jumpToStep(steps.indexOf("name"));
     else jumpToStep(steps.indexOf("preview"));
-  }, [city, steps]);
+  }, [city, steps, resolveSuggestedVenue]);
 
   const voiceNoAnswerMessage = () => t("createPlan.voiceNoAnswer", "Didn't catch an answer to this question — try again.");
 
@@ -919,9 +982,28 @@ export default function ProposePlanPage() {
       }
       case "venue": {
         const spokenVenue = typeof fields.venue_name === "string" ? fields.venue_name.trim() : "";
-        if (!spokenVenue) { setVoiceError(voiceNoAnswerMessage()); return; }
+        if (!spokenVenue) {
+          // "Suggest a place for X" instead of naming one — resolve a real
+          // venue the same way the full-plan path does.
+          const cityForSuggestion = effectiveCityRef.current;
+          if (fields.wants_suggestion === true && cityForSuggestion) {
+            const activityType = typeof fields.activity_type === "string" ? fields.activity_type : null;
+            const searchQuery = typeof fields.venue_search_query === "string" ? fields.venue_search_query : null;
+            const place = await resolveSuggestedVenue(activityType, searchQuery, cityForSuggestion);
+            if (place) {
+              setVenuePlace(place);
+              setVenueName(place.name);
+              setVenueIsSuggested(true);
+              advanceStep();
+              return;
+            }
+          }
+          setVoiceError(voiceNoAnswerMessage());
+          return;
+        }
         setVenueName(spokenVenue);
         setVenuePlace(null);
+        setVenueIsSuggested(false);
         // Resolve against the same place-search backing the typed venue
         // input, so a spoken venue lands with real coordinates when possible.
         try {
@@ -2081,8 +2163,8 @@ export default function ProposePlanPage() {
               <VenueSearchInput
                 className="flex-1"
                 value={venueName}
-                onChange={(text) => { setVenueName(text); setVenuePlace(null); }}
-                onSelectPlace={(place) => { setVenuePlace(place); setVenueName(place.name); }}
+                onChange={(text) => { setVenueName(text); setVenuePlace(null); setVenueIsSuggested(false); }}
+                onSelectPlace={(place) => { setVenuePlace(place); setVenueName(place.name); setVenueIsSuggested(false); }}
                 placeholder={t("createPlan.venuePlaceholder", "Search a place or type an address")}
               />
               <div className="flex flex-col items-center gap-1.5 shrink-0">
@@ -2097,7 +2179,7 @@ export default function ProposePlanPage() {
             </div>
             <button
               type="button"
-              onClick={() => { setVenueName(""); setVenuePlace(null); advanceStep(); }}
+              onClick={() => { setVenueName(""); setVenuePlace(null); setVenueIsSuggested(false); advanceStep(); }}
               className="text-sm text-muted-foreground underline underline-offset-2 w-full text-center"
             >
               {t("createPlan.skip", "Skip")}
