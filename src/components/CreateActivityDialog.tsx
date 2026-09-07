@@ -495,7 +495,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
             {/* Capacity (optional) */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">
-                {t("createPlan.capacityLabel", "Limit how many can join? (optional)")}
+                {t("createPlan.capacityLabel", "How many can join? (optional)")}
               </label>
               <Input
                 type="number"

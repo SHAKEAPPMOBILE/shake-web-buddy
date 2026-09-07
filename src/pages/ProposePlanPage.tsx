@@ -138,7 +138,7 @@ function parseSpokenTime(hint: string | null | undefined): string | null {
 
 // Falls back to the first bare integer in the raw transcript when the AI
 // extraction didn't populate a field — e.g. answering "10" to "What time?"
-// or "Limit how many can join?" has no context clueing the model in on
+// or "How many can join?" has no context clueing the model in on
 // what that number means, so it comes back null even though the transcript
 // itself has a perfectly good answer sitting right there.
 function extractBareNumber(transcript: string | null | undefined): number | null {
@@ -190,7 +190,7 @@ export default function ProposePlanPage() {
     time: t("createPlan.botTime"),
     venue: t("createPlan.botVenue", "Where's it happening? 📍"),
     price: t("createPlan.botPrice"),
-    capacity: t("createPlan.botCapacity", "Limit how many can join? (optional)"),
+    capacity: t("createPlan.botCapacity", "How many can join? (optional)"),
     video: t("createPlan.botVideo"),
     audience: t("createPlan.botAudience"),
     description: t("createPlan.botDescription", "Add a description"),
