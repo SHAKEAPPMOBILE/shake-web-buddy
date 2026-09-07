@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ActivityDetailsCard } from "./ActivityDetailsCard";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 
 
 // Fixed carousel order mirrors the useMemo fixedOrder inside HomeTab.
@@ -99,6 +100,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const [selectedJoinCity, setSelectedJoinCity] = useState<string | null>(null);
   const [showCityChoices, setShowCityChoices] = useState(false);
   const { getVenueForActivity, isLoading: venuesLoading } = useVenueContext();
+  const timeOfDayGradient = useMemo(() => getTimeOfDayGradient(), []);
   // Rotating text for "Meet new..." phrases
   const meetPhrases = useMemo(() => [
     t('home.meetPeople', 'Meet new people.'),
@@ -619,12 +621,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       {/* Carousel Overlay - Fixed fullscreen, no scroll, perfectly centered */}
       {showActivities && (
         <div
-          className="fixed inset-x-0 top-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-40 flex items-center justify-center bg-background/95 backdrop-blur-md"
+          className="fixed inset-x-0 top-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-40 flex items-center justify-center backdrop-blur-md"
           onClick={handleBackdropClick}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          style={{ touchAction: 'pan-y' }}
+          style={{ touchAction: 'pan-y', background: timeOfDayGradient }}
         >
           <div
             className="flex flex-col items-center justify-center w-full px-6"
