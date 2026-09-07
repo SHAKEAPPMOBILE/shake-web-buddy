@@ -20,8 +20,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const { user } = useAuth();
   const { totalUnread } = useTotalUnreadChats();
   const { pendingReceived } = useFriends();
-  // Always use the same blue as the activity ring (border-blue-400 = #60a5fa)
-  const shakeButtonStyle = { background: "#60a5fa" };
+  const shakeButtonStyle = { background: "#000000" };
 
   // Current user's avatar for the Profile tab
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);

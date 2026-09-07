@@ -222,8 +222,6 @@ export default function ProposePlanPage() {
     preview: "",
   }), [t]);
 
-  const BOT_INLINE_VIDEO_QUESTION = t("createPlan.botVideoAfterVoice", "Want to add a video too?");
-
   const STEP_AVATAR_COLORS: Partial<Record<StepName, string>> = {
     name:  "#facc15", // yellow-400 — existing default
     city:  "#facc15",
@@ -2465,12 +2463,6 @@ export default function ProposePlanPage() {
               <>
                 {showInlineVideoCapture && (
                   <div className="space-y-3 mb-5">
-                    <BotBubble
-                      message={BOT_INLINE_VIDEO_QUESTION}
-                      showAvatar={true}
-                      avatarColor={STEP_AVATAR_COLORS.video}
-                      handwritten
-                    />
                     {renderCameraCapture()}
                   </div>
                 )}
