@@ -876,7 +876,22 @@ export default function ProposePlanPage() {
       // the world. A generic category word like "park" or "beach" has no
       // other signal tying it to the right city, so this matters here more
       // than it would for a specific place name.
-      const cityCoords = SHAKE_CITIES.find((c) => normalizeCity(c.name) === normalizeCity(cityForSearch));
+      //
+      // Not limited to our own city picker list — a known SHAKE city skips
+      // the extra round trip, but any other city name (anywhere, not just
+      // our launch markets) gets geocoded the same free way, so this holds
+      // as a universal rule rather than one that only works for cities
+      // we've hardcoded.
+      const known = SHAKE_CITIES.find((c) => normalizeCity(c.name) === normalizeCity(cityForSearch));
+      let cityCoords: { lat: number; lng: number } | null = known ? { lat: known.lat, lng: known.lng } : null;
+      if (!cityCoords) {
+        try {
+          const cityMatches = await searchVenuePlaces(cityForSearch, null, 1);
+          if (cityMatches[0]) cityCoords = { lat: cityMatches[0].lat, lng: cityMatches[0].lng };
+        } catch (err) {
+          console.error("[ProposePlanPage] city geocode failed:", err);
+        }
+      }
       try {
         const matches = await searchVenuePlaces(
           `${venueSearchQuery.trim()} ${cityForSearch}`.trim(),
