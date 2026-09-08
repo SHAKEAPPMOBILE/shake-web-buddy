@@ -16,9 +16,11 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, DollarSign, Volume2, VolumeX, User, X } from "lucide-react";
+import { ChevronLeft, DollarSign, Volume2, VolumeX, User, X, Send } from "lucide-react";
+import { Share } from "@capacitor/share";
+import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
-import { getPriceValue, cn } from "@/lib/utils";
+import { getPriceValue, cn, getShareLabel } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
@@ -27,6 +29,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
+import { toast } from "@/lib/app-toast";
 import type { UserActivity } from "@/hooks/useUserActivities";
 import type { CohostAvatar } from "@/components/PlanAvatarStack";
 
@@ -117,6 +120,7 @@ interface FeedCardProps {
 
 function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile, onViewParticipantProfile }: FeedCardProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
@@ -162,6 +166,23 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
     observer.observe(el);
     return () => observer.disconnect();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* Left open, a card's description sheet would otherwise stay mounted and
+     visible while scrolled mostly out of view — it reads as the wrong
+     plan's text bleeding into the next card. Separate from the video
+     observer above since photo-only cards have no videoRef to gate on. */
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.intersectionRatio < 0.6) setShowDescription(false);
+      },
+      { threshold: 0.6 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   /* Sync muted state → video DOM (handles tap-toggle path) */
   useEffect(() => {
@@ -245,6 +266,31 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
       : format(d, "h:mm a");
     return time ? `${day} · ${time}` : day;
   })();
+
+  const handleShare = async () => {
+    const activityLabel = getShareLabel(plan.note, getActivityLabel(plan.activity_type));
+    const activityEmoji = getActivityEmoji(plan.activity_type);
+    const dateStr = plan.scheduled_for
+      ? format(parseDbDate(plan.scheduled_for), "EEE, d MMM")
+      : format(new Date(), "EEE, d MMM");
+    const shareId = plan.id.startsWith("carousel-")
+      ? `${plan.activity_type}-${plan.city}-${user?.id ?? ""}`
+      : plan.id;
+    const shareUrl = `https://www.shakeapp.today/invite/${encodeURIComponent(shareId)}`;
+    const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
+    const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
+
+    if (Capacitor.isNativePlatform()) {
+      try { await Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: shareTitle }); }
+      catch (err) { if ((err as any).errorMessage !== "Share canceled") toast.error(t('plans.failedToShare')); }
+    } else if (navigator.share) {
+      try { await navigator.share({ title: shareTitle, text: shareText, url: shareUrl }); }
+      catch (err) { if ((err as Error).name !== "AbortError") toast.error(t('plans.failedToShare')); }
+    } else {
+      try { await navigator.clipboard.writeText(shareUrl); toast.success(t('plans.linkCopied'), { description: t('plans.shareFriends') }); }
+      catch { toast.error(t('plans.failedToCopyLink')); }
+    }
+  };
 
   /* ── Derive action button props ── */
   const actionButton = (() => {
@@ -459,6 +505,16 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             )}
           </div>
         )}
+
+        {/* Share to a friend */}
+        <button
+          type="button"
+          onClick={handleShare}
+          aria-label={t('plans.sharePlan', 'Share this plan')}
+          className="w-11 h-11 rounded-full flex items-center justify-center shadow-xl bg-white/90 transition-all hover:opacity-90"
+        >
+          <Send className="w-5 h-5 text-foreground" />
+        </button>
 
         {/* CHAT / JOIN button */}
         <button

@@ -66,9 +66,9 @@ export const ReportContentButton = ({ contentId, contentType, iconOnly = false }
               ))}
             </SelectContent>
           </Select>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>Cancel</Button>
-            <Button variant="destructive" disabled={!reason || isReporting} onClick={handleSubmit}>
+          <DialogFooter className="gap-3 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleOpenChange(false)}>Cancel</Button>
+            <Button variant="destructive" size="sm" disabled={!reason || isReporting} onClick={handleSubmit}>
               {isReporting ? "Submitting..." : "Submit Report"}
             </Button>
           </DialogFooter>
