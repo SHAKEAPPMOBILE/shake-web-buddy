@@ -98,7 +98,7 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    const origin = req.headers.get("origin") || "https://shake-web-buddy.lovable.app";
+    const origin = req.headers.get("origin") || "https://www.shakeapp.today";
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],

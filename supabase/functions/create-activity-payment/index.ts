@@ -124,7 +124,7 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
     
-    const origin = req.headers.get("origin") || "https://shake-web-buddy.lovable.app";
+    const origin = req.headers.get("origin") || "https://www.shakeapp.today";
     
     // Get activity description for checkout
     const activityDescription = activity.note || activity.activity_type;
