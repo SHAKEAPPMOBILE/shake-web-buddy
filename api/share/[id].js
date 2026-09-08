@@ -49,16 +49,19 @@ function resolveAvatarUrl(avatarUrl) {
   return avatarUrl.startsWith("http") ? avatarUrl : `${BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
 }
 
-function buildOgHtml({ id, activityType, city, participantCount, note, creatorAvatarUrl, promoImageUrl }) {
+function buildOgHtml({ id, activityType, city, participantCount, note, creatorAvatarUrl, promoImageUrl, promoVideoThumbnailUrl }) {
   const meta = ACTIVITY_META[activityType] || { label: activityType, emoji: "🎉", image: `${BASE_URL}/shake-logo.png` };
   const customLabel = getFirstWordTruncated(note);
   const label = customLabel || meta.label;
   const emoji = customLabel ? "🎉" : meta.emoji;
-  // The plan's own uploaded photo beats everything else — it's what the
-  // organizer actually chose to represent this specific plan. A video has
-  // no static frame available here (no server-side thumbnail step), so it
-  // falls through to the creator's avatar / activity icon / SHAKE logo.
-  const image = resolveAvatarUrl(promoImageUrl) || resolveAvatarUrl(creatorAvatarUrl) || meta.image;
+  // The plan's own media beats everything else — it's what the organizer
+  // actually chose to represent this specific plan. A photo upload wins
+  // over a video's captured frame when somehow both are set (shouldn't
+  // happen — a plan has one hero media item — but photo is the more
+  // deliberate choice if it does); either beats the creator's avatar,
+  // which beats a generic per-activity-type icon, which beats the plain
+  // SHAKE logo.
+  const image = resolveAvatarUrl(promoImageUrl) || resolveAvatarUrl(promoVideoThumbnailUrl) || resolveAvatarUrl(creatorAvatarUrl) || meta.image;
   const ogTitle = `${emoji} Join ${label} in ${city}!`;
   const ogDesc = participantCount > 0
     ? `${participantCount} ${participantCount === 1 ? "person" : "people"} already joined ${label} in ${city}. Join them on SHAKE!`
@@ -122,7 +125,7 @@ export default async function handler(req, res) {
 
   try {
     const actRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/user_activities?id=eq.${encodeURIComponent(id)}&is_active=eq.true&select=id,activity_type,city,note,user_id,promo_image_url&limit=1`,
+      `${SUPABASE_URL}/rest/v1/user_activities?id=eq.${encodeURIComponent(id)}&is_active=eq.true&select=id,activity_type,city,note,user_id,promo_image_url,promo_video_thumbnail_url&limit=1`,
       { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
     );
 
@@ -171,6 +174,7 @@ export default async function handler(req, res) {
       note: activity.note,
       creatorAvatarUrl,
       promoImageUrl: activity.promo_image_url,
+      promoVideoThumbnailUrl: activity.promo_video_thumbnail_url,
     });
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");

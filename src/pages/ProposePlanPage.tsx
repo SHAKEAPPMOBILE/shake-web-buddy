@@ -152,7 +152,53 @@ function extractBareNumber(transcript: string | null | undefined): number | null
   return isNaN(n) ? null : n;
 }
 
+/** Grabs a single frame from a recorded video clip as a JPEG blob — the
+ *  only way a video plan gets a real (non-avatar, non-generic) image for
+ *  the WhatsApp/social share preview, since there's no server-side video
+ *  processing step to pull a frame from the uploaded video itself. */
+function captureVideoFrame(blob: Blob): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.style.position = "fixed";
+    video.style.opacity = "0";
+    video.style.pointerEvents = "none";
+    video.style.width = "1px";
+    video.style.height = "1px";
+    document.body.appendChild(video);
 
+    const cleanup = () => {
+      URL.revokeObjectURL(url);
+      video.remove();
+    };
+    const fail = () => { cleanup(); resolve(null); };
+    const timeout = setTimeout(fail, 6000);
+
+    video.addEventListener("loadedmetadata", () => {
+      // A touch past the very first frame — frame 0 is sometimes black/blank.
+      video.currentTime = Math.min(0.3, (video.duration || 1) / 2);
+    });
+    video.addEventListener("seeked", () => {
+      clearTimeout(timeout);
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 720;
+        canvas.height = video.videoHeight || 1280;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { fail(); return; }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((thumbBlob) => { cleanup(); resolve(thumbBlob); }, "image/jpeg", 0.85);
+      } catch {
+        fail();
+      }
+    });
+    video.addEventListener("error", fail);
+    video.src = url;
+  });
+}
 
 // Luma-style card: a soft, neutral page background (see the page wrapper's
 // #F3F2F8) with content sitting in crisp white cards with a light shadow,
@@ -296,6 +342,11 @@ export default function ProposePlanPage() {
   const [isEditingAnswers, setIsEditingAnswers] = useState(false);
   const [showPriceInput, setShowPriceInput] = useState(false);
   const [promoVideoUrl, setPromoVideoUrl] = useState<string | null>(null);
+  // A static frame grabbed from the video, client-side — the only way a
+  // video plan can have a real preview image in the WhatsApp/social share
+  // card (og:image can't be a playing video, and there's no server-side
+  // frame-extraction step).
+  const [promoVideoThumbnailUrl, setPromoVideoThumbnailUrl] = useState<string | null>(null);
   const [videoUploading, setVideoUploading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
   // A plan has at most one hero media item — a photo instead of a video.
@@ -687,6 +738,7 @@ export default function ProposePlanPage() {
     setRecordedObjectUrl(null);
     setRecordedBlob(null);
     setPromoVideoUrl(null);
+    setPromoVideoThumbnailUrl(null);
     setCameraMode("idle");
     navigate(-1);
   }, [stopAllTracks, recordedObjectUrl, navigate]);
@@ -779,14 +831,36 @@ export default function ProposePlanPage() {
     try {
       const mimeType = recordedBlob.type;
       const ext = mimeType.includes("mp4") ? "mp4" : "webm";
-      const path = `${user!.id}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("plan-videos")
-        .upload(path, recordedBlob, { contentType: mimeType });
-      if (uploadError) throw uploadError;
+      const timestamp = Date.now();
+      const path = `${user!.id}/${timestamp}.${ext}`;
+
+      // Best-effort — a failed/slow thumbnail capture should never block
+      // getting the actual video uploaded and the plan created.
+      const thumbBlob = await captureVideoFrame(recordedBlob).catch(() => null);
+
+      const uploadTasks: Promise<unknown>[] = [
+        supabase.storage.from("plan-videos").upload(path, recordedBlob, { contentType: mimeType }),
+      ];
+      const thumbPath = `${user!.id}/${timestamp}-thumb.jpg`;
+      if (thumbBlob) {
+        uploadTasks.push(
+          supabase.storage.from("plan-videos").upload(thumbPath, thumbBlob, { contentType: "image/jpeg" })
+        );
+      }
+      const [videoUploadResult, thumbUploadResult] = await Promise.all(uploadTasks);
+      if ((videoUploadResult as { error: unknown }).error) throw (videoUploadResult as { error: unknown }).error;
+
       const { data: { publicUrl } } = supabase.storage
         .from("plan-videos")
         .getPublicUrl(path);
+
+      if (thumbBlob && thumbUploadResult && !(thumbUploadResult as { error: unknown }).error) {
+        const { data: { publicUrl: thumbUrl } } = supabase.storage
+          .from("plan-videos")
+          .getPublicUrl(thumbPath);
+        setPromoVideoThumbnailUrl(thumbUrl);
+      }
+
       if (recordedObjectUrl) { URL.revokeObjectURL(recordedObjectUrl); setRecordedObjectUrl(null); }
       setPromoImageUrl(null);
       setPromoVideoUrl(publicUrl);
@@ -805,6 +879,7 @@ export default function ProposePlanPage() {
     if (recordedObjectUrl) { URL.revokeObjectURL(recordedObjectUrl); setRecordedObjectUrl(null); }
     setRecordedBlob(null);
     setPromoVideoUrl(null);
+    setPromoVideoThumbnailUrl(null);
     setPromoImageUrl(null);
     setCameraMode("idle");
     // On the preview screen's inline offer, "Skip" just dismisses it —
@@ -843,6 +918,7 @@ export default function ProposePlanPage() {
       if (recordedObjectUrl) { URL.revokeObjectURL(recordedObjectUrl); setRecordedObjectUrl(null); }
       setRecordedBlob(null);
       setPromoVideoUrl(null);
+      setPromoVideoThumbnailUrl(null);
       setPromoImageUrl(publicUrl);
       advanceStep();
     } catch {
@@ -1434,7 +1510,8 @@ export default function ProposePlanPage() {
         ? { name: venueName.trim() }
         : undefined,
       promoImageUrl || undefined,
-      planDescription.trim() || undefined
+      planDescription.trim() || undefined,
+      promoVideoThumbnailUrl || undefined
     );
 
     if (!success) {
@@ -1704,7 +1781,7 @@ export default function ProposePlanPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => { setPromoVideoUrl(null); handleRetake(); }}
+              onClick={() => { setPromoVideoUrl(null); setPromoVideoThumbnailUrl(null); handleRetake(); }}
               className="flex-1 py-3 rounded-full text-sm font-semibold bg-muted text-foreground"
             >
               {t("createPlan.retake")}
