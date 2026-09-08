@@ -234,6 +234,7 @@
     "liveFeedAllCities": "Live feed — all cities",
     "leavePlanItem": "Leave plan",
     "deletePlanItem": "Delete plan",
+    "editPlanItem": "Edit plan",
     "leavePlanTitle": "Leave {{activity}}?",
     "leavePlanDesc": "You'll be removed from this activity and the group chat.",
     "leaveBtn": "Leave",
@@ -599,6 +600,11 @@
   },
   "createPlan": {
     "title": "Propose a Plan",
+    "descriptionLabel": "Description (optional)",
+    "descriptionPlaceholder": "Any extra detail worth sharing",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "audienceLabel": "Who can join?",
     "unlimitedPlans": "Unlimited plans as a Super-Human ✨",
     "freePlansLeft": "You have {{count}} free plan(s) left this month",
     "usedFreePlan": "You have used your free plan this month",
@@ -661,6 +667,12 @@
     "capacityLabel": "How many can join? (optional)",
     "capacityPlaceholder": "No limit",
     "friendsOnly": "Only friends"
+  },
+  "editPlan": {
+    "title": "Edit plan",
+    "loadFailed": "Couldn't load this plan",
+    "saving": "Saving…",
+    "saveBtn": "Save changes"
   },
   "userProfile": {
     "title": "User Profile",

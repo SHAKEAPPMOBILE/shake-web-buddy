@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Trash2, Images, MoreVertical, LogOut, Camera, ChevronLeft } from "lucide-react";
+import { Send, User, Trash2, Images, MoreVertical, LogOut, Camera, ChevronLeft, Pencil } from "lucide-react";
+import { EditActivityDialog } from "@/components/EditActivityDialog";
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -103,6 +104,7 @@ export function PlanGroupChatView({
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [videoFullscreen, setVideoFullscreen] = useState(false);
 
@@ -551,9 +553,17 @@ export function PlanGroupChatView({
                   <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
                   <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
                     {isCreator ? (
-                      <button onClick={handleInitiateDelete} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                        <Trash2 className="w-4 h-4" /> {t('plans.deletePlanItem', 'Delete plan')}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => { setShowMenu(false); setShowEditDialog(true); }}
+                          className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" /> {t('plans.editPlanItem', 'Edit plan')}
+                        </button>
+                        <button onClick={handleInitiateDelete} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                          <Trash2 className="w-4 h-4" /> {t('plans.deletePlanItem', 'Delete plan')}
+                        </button>
+                      </>
                     ) : (
                       <button onClick={handleLeavePlan} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
                         <LogOut className="w-4 h-4" /> {t('plans.leavePlanItem', 'Leave plan')}
@@ -984,6 +994,15 @@ export function PlanGroupChatView({
       />
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+
+      {isCreator && (
+        <EditActivityDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          activityId={activity.id}
+          city={activity.city}
+        />
+      )}
 
       {/* ── Delete-plan confirmation dialog ── */}
       {showDeleteConfirm && (

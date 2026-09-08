@@ -311,7 +311,17 @@ export function useUserActivities(city: string) {
   // Update an activity
   const updateActivity = async (
     activityId: string,
-    updates: { activity_type?: string; scheduled_for?: Date }
+    updates: {
+      activity_type?: string;
+      scheduled_for?: Date;
+      note?: string;
+      description?: string | null;
+      price_amount?: string | null;
+      price_tiers?: { label: string; amount: number }[] | null;
+      capacity?: number | null;
+      audience?: "everyone" | "women_only" | "friends_only";
+      venue?: { name?: string; address?: string; lat?: number; lng?: number } | null;
+    }
   ): Promise<boolean> => {
     if (!user) return false;
 
@@ -320,6 +330,18 @@ export function useUserActivities(city: string) {
     const updateData: Record<string, unknown> = {};
     if (updates.activity_type) updateData.activity_type = updates.activity_type;
     if (updates.scheduled_for) updateData.scheduled_for = updates.scheduled_for.toISOString();
+    if (updates.note !== undefined) updateData.note = updates.note.trim() || null;
+    if (updates.description !== undefined) updateData.description = updates.description?.trim() || null;
+    if (updates.price_amount !== undefined) updateData.price_amount = updates.price_amount || null;
+    if (updates.price_tiers !== undefined) updateData.price_tiers = updates.price_tiers && updates.price_tiers.length > 0 ? updates.price_tiers : null;
+    if (updates.capacity !== undefined) updateData.capacity = updates.capacity && updates.capacity > 0 ? updates.capacity : null;
+    if (updates.audience) updateData.audience = updates.audience;
+    if (updates.venue !== undefined) {
+      updateData.venue_name = updates.venue?.name?.trim() || null;
+      updateData.venue_address = updates.venue?.address?.trim() || null;
+      updateData.venue_lat = updates.venue?.lat ?? null;
+      updateData.venue_lng = updates.venue?.lng ?? null;
+    }
 
     const { error } = await supabase
       .from("user_activities")
