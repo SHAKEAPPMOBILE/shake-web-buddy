@@ -1078,7 +1078,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         isJoined: false,
         isCarouselJoin: true,
       } as PlanActivity;
-    });
+    })
+      // Whichever's next occurrence is soonest goes first — e.g. on a
+      // Thursday, dinner (today) sorts ahead of brunch (Saturday), not by
+      // ACTIVITY_TYPES' fixed declaration order.
+      .sort((a, b) => parseDbDate(a.scheduled_for!).getTime() - parseDbDate(b.scheduled_for!).getTime());
   }, [selectedCity, activities, combinedPlansList]);
 
   const swipeFeedList = useMemo(
