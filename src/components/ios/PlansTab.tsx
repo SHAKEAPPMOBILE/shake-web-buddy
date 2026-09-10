@@ -33,6 +33,7 @@ import { PlanSwipeFeed } from "./PlanSwipeFeed";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
 import { ActivityDetailDialog } from "@/components/ActivityDetailDialog";
 import { ActivityDetailsCard } from "./ActivityDetailsCard";
+import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 import { useFriends } from "@/hooks/useFriends";
 import { FriendsImportDialog } from "@/components/FriendsImportDialog";
@@ -863,6 +864,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   // through onConfirmActivity (the shared Home-carousel join pipeline) so the
   // full "You're in!" celebration shows too — see handleFeedJoin.
   const [swipeCarouselJoinPrompt, setSwipeCarouselJoinPrompt] = useState<PlanActivity | null>(null);
+  // Same light, time-of-day-tinted backdrop Home's carousel uses behind this
+  // exact card — a dark bg-black/40 read as broken/unreadable layered over
+  // the swipe feed's own video/photo background.
+  const timeOfDayGradient = useMemo(() => getTimeOfDayGradient(), []);
 
 
   // Notify parent when entering/leaving chat view
@@ -2794,34 +2799,40 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           : null;
         const venue = getVenueForActivity(plan.city, plan.activity_type);
         return (
-          <div className="fixed inset-0 z-[60] bg-black/40" onClick={() => setSwipeCarouselJoinPrompt(null)}>
-            <ActivityDetailsCard
-              show={true}
-              activity={activityObj ? {
-                id: activityObj.id,
-                label: getActivityLabel(plan.activity_type),
-                emoji: getActivityEmoji(plan.activity_type),
-                icon: getActivityIcon(plan.activity_type) ?? undefined,
-                isProposePlan: false,
-              } : null}
-              dayName={dayName}
-              time={time}
-              joinCity={plan.city}
-              venueName={venue?.name}
-              carouselJoinCount={plan.participant_count ?? 0}
-              maxGroupSize={MAX_GROUP_CAPACITY}
-              hasNoVenue={false}
-              showDifferentCity={false}
-              onConfirm={() => {
-                setSwipeCarouselJoinPrompt(null);
-                setFeedOpen(false);
-                void onConfirmActivity?.(
-                  { id: plan.activity_type, label: getActivityLabel(plan.activity_type), emoji: getActivityEmoji(plan.activity_type) },
-                  plan.city,
-                );
-              }}
-              onClose={() => setSwipeCarouselJoinPrompt(null)}
-            />
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center px-6 backdrop-blur-md"
+            style={{ background: timeOfDayGradient }}
+            onClick={() => setSwipeCarouselJoinPrompt(null)}
+          >
+            <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+              <ActivityDetailsCard
+                show={true}
+                activity={activityObj ? {
+                  id: activityObj.id,
+                  label: getActivityLabel(plan.activity_type),
+                  emoji: getActivityEmoji(plan.activity_type),
+                  icon: getActivityIcon(plan.activity_type) ?? undefined,
+                  isProposePlan: false,
+                } : null}
+                dayName={dayName}
+                time={time}
+                joinCity={plan.city}
+                venueName={venue?.name}
+                carouselJoinCount={plan.participant_count ?? 0}
+                maxGroupSize={MAX_GROUP_CAPACITY}
+                hasNoVenue={false}
+                showDifferentCity={false}
+                onConfirm={() => {
+                  setSwipeCarouselJoinPrompt(null);
+                  setFeedOpen(false);
+                  void onConfirmActivity?.(
+                    { id: plan.activity_type, label: getActivityLabel(plan.activity_type), emoji: getActivityEmoji(plan.activity_type) },
+                    plan.city,
+                  );
+                }}
+                onClose={() => setSwipeCarouselJoinPrompt(null)}
+              />
+            </div>
           </div>
         );
       })()}
