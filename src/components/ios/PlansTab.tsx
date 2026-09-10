@@ -1786,7 +1786,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
             )}
           >
-            {t('plans.myCity')}
+            📍 {t('plans.myCity')}
           </button>
           <button
             type="button"
@@ -1810,7 +1810,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 : "bg-transparent text-gray-500 border-gray-200 hover:border-gray-400"
             )}
           >
-            {t('plans.friends', 'Friends')}
+            🤝 {t('plans.friends', 'Friends')}
           </button>
           {showFriendsOnly && friends.length > 0 && (
             <button
