@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
-import { Eye, User, Sparkles, Search, X } from "lucide-react";
+import { User, Sparkles, Search, X } from "lucide-react";
 import { PremiumDialog } from "@/components/PremiumDialog";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { Button } from "@/components/ui/button";
@@ -288,7 +288,7 @@ export function GlobalParticipantsSection() {
           </div>
         )}
         <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4 text-shake-yellow" />
+          <span className="text-sm leading-none">👀</span>
           <span className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">{totalCount}</span>{" "}
             {totalCount === 1 ? "Shaker" : "Shakers"}
