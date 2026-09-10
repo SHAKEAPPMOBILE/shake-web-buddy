@@ -86,6 +86,12 @@ interface PlansTabProps {
   onPendingNewPlanHandled?: () => void;
   onOpenEvents?: () => void;
   onJoinActivity?: () => void;
+  /** Same callback HomeTab's carousel uses — joins a standing city group
+   *  (dinner/drinks/brunch) by type and shows the shared "You're in!"
+   *  ActivityJoinedConfirmation modal. Reused here so joining one of these
+   *  types from the Plans swipe feed gives the identical confirm + join +
+   *  celebration flow, instead of a separate bespoke one. */
+  onConfirmActivity?: (activity: { id: string; label: string; emoji: string }, cityOverride?: string) => void | Promise<void>;
 }
 
 /** Shape returned by the get_my_active_plans RPC. */
@@ -117,7 +123,7 @@ interface MyActivePlan {
  *  from hiding a card the user is actually in. */
 const normalizeCity = (city: string): string => city.trim().toLowerCase();
 
-export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, pendingNewPlanId, onPendingNewPlanHandled, onOpenEvents, onJoinActivity }: PlansTabProps = {}) {
+export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, pendingNewPlanId, onPendingNewPlanHandled, onOpenEvents, onJoinActivity, onConfirmActivity }: PlansTabProps = {}) {
   const { t, i18n } = useTranslation();
   const { style: plansSettlingGradientStyle } = useSettlingGradient("plans");
   const { selectedLanguage } = useLanguage();
@@ -853,7 +859,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [feedStartIndex, setFeedStartIndex] = useState(0);
   const [feedSourceList, setFeedSourceList] = useState<PlanActivity[]>([]);
   const [autoGenCardPlan, setAutoGenCardPlan] = useState<PlanActivity | null>(null);
-  
+  // Same "Yes!/Hum!" prompt as autoGenCardPlan, but confirming here routes
+  // through onConfirmActivity (the shared Home-carousel join pipeline) so the
+  // full "You're in!" celebration shows too — see handleFeedJoin.
+  const [swipeCarouselJoinPrompt, setSwipeCarouselJoinPrompt] = useState<PlanActivity | null>(null);
+
 
   // Notify parent when entering/leaving chat view
   useEffect(() => {
@@ -1412,6 +1422,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
    */
   const handleFeedJoin = async (plan: PlanActivity): Promise<{ success: boolean }> => {
     if (!user) return { success: false };
+
+    // Standing city groups (dinner/drinks/brunch) opened from the swipe feed
+    // get the same "Yes!/Hum!" confirm + join + celebration flow as the Home
+    // carousel, instead of joining silently in place. This handler never
+    // performs the insert for these itself — it just opens the prompt and
+    // returns success:false so FeedCard doesn't prematurely flip to
+    // "joined" before the user has actually confirmed.
+    if (plan.isCarouselJoin && plan.is_auto_generated && !plan.isJoined) {
+      setSwipeCarouselJoinPrompt(plan);
+      return { success: false };
+    }
 
     if (!plan.isJoined && plan.user_id !== user.id && !(await checkWomenOnlyGate(plan.audience, user.id))) {
       return { success: false };
@@ -2748,6 +2769,52 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 }
               }}
               onClose={() => setAutoGenCardPlan(null)}
+            />
+          </div>
+        );
+      })()}
+
+      {/* ── Swipe-feed carousel join prompt — same card, but confirming routes
+           through onConfirmActivity so the full Home-carousel "You're in!"
+           celebration shows too, not just a silent join. ──────────────── */}
+      {swipeCarouselJoinPrompt && (() => {
+        const plan = swipeCarouselJoinPrompt;
+        const activityObj = ALL_ACTIVITY_TYPES.find(a => a.id === plan.activity_type);
+        const dayName = plan.scheduled_for
+          ? format(parseDbDate(plan.scheduled_for), 'EEEE')
+          : getActivityDay(plan.activity_type) ?? "";
+        const time = plan.activity_type === 'dinner' ? '7:00 PM'
+          : plan.activity_type === 'drinks' ? '8:00 PM'
+          : null;
+        const venue = getVenueForActivity(plan.city, plan.activity_type);
+        return (
+          <div className="fixed inset-0 z-[60] bg-black/40" onClick={() => setSwipeCarouselJoinPrompt(null)}>
+            <ActivityDetailsCard
+              show={true}
+              activity={activityObj ? {
+                id: activityObj.id,
+                label: getActivityLabel(plan.activity_type),
+                emoji: getActivityEmoji(plan.activity_type),
+                icon: getActivityIcon(plan.activity_type) ?? undefined,
+                isProposePlan: false,
+              } : null}
+              dayName={dayName}
+              time={time}
+              joinCity={plan.city}
+              venueName={venue?.name}
+              carouselJoinCount={plan.participant_count ?? 0}
+              maxGroupSize={MAX_GROUP_CAPACITY}
+              hasNoVenue={false}
+              showDifferentCity={false}
+              onConfirm={() => {
+                setSwipeCarouselJoinPrompt(null);
+                setFeedOpen(false);
+                void onConfirmActivity?.(
+                  { id: plan.activity_type, label: getActivityLabel(plan.activity_type), emoji: getActivityEmoji(plan.activity_type) },
+                  plan.city,
+                );
+              }}
+              onClose={() => setSwipeCarouselJoinPrompt(null)}
             />
           </div>
         );

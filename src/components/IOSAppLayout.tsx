@@ -601,6 +601,7 @@ export function IOSAppLayout() {
             onPendingNewPlanHandled={() => setPendingNewPlanId(null)}
             onOpenEvents={() => openNearYou("plans")}
             onJoinActivity={handleOpenActivities}
+            onConfirmActivity={handleHomeActivitySelect}
           />
         );
       case "profile":
