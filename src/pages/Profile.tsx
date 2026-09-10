@@ -57,6 +57,7 @@ export default function Profile() {
   const [twitterUrl, setTwitterUrl] = useState("");
   const [billingEmail, setBillingEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
@@ -88,6 +89,7 @@ export default function Profile() {
     twitterUrl: string;
     pushNotificationsEnabled: boolean;
     contactPhone: string;
+    dateOfBirth: string;
   } | null>(null);
 
   const focusBillingEmail = Boolean((location.state as any)?.focusBillingEmail);
@@ -129,7 +131,10 @@ export default function Profile() {
           .maybeSingle(),
         supabase
           .from("profiles_private")
-          .select("*")
+          // Only the columns this page actually reads — select("*") was
+          // pulling several unused columns (Stripe/PayPal status, onboarding
+          // flags, etc.) on every load for no reason.
+          .select("billing_email, push_notifications_enabled, phone, date_of_birth")
           .eq("user_id", user.id)
           .maybeSingle(),
       ]);
@@ -166,6 +171,7 @@ export default function Profile() {
         setBillingEmail(privateProfile.billing_email || user.email || "");
         setPushNotificationsEnabled(privateProfile.push_notifications_enabled ?? true);
         setContactPhone((privateProfile as any).phone || "");
+        setDateOfBirth((privateProfile as any).date_of_birth || "");
       } else {
         // No private profile row yet — still show the auth email
         setBillingEmail(user.email || "");
@@ -182,6 +188,7 @@ export default function Profile() {
         twitterUrl: publicProfile?.twitter_url || "",
         pushNotificationsEnabled: privateProfile?.push_notifications_enabled ?? true,
         contactPhone: (privateProfile as any)?.phone || "",
+        dateOfBirth: (privateProfile as any)?.date_of_birth || "",
       });
       setIsLoading(false);
     };
@@ -329,10 +336,11 @@ export default function Profile() {
       if (publicError) throw publicError;
 
       // Update private profile for push notifications and billing email
-      const privateUpdateData: { push_notifications_enabled: boolean; billing_email: string | null; phone: string | null } = {
+      const privateUpdateData: { push_notifications_enabled: boolean; billing_email: string | null; phone: string | null; date_of_birth: string | null } = {
         push_notifications_enabled: pushNotificationsEnabled,
         billing_email: billingEmail.trim() || null,
         phone: contactPhone.trim() || null,
+        date_of_birth: dateOfBirth || null,
       };
       
       const { error: privateError } = await supabase
@@ -353,6 +361,7 @@ export default function Profile() {
         twitterUrl: twitterUrl.trim(),
         pushNotificationsEnabled,
         contactPhone: contactPhone.trim(),
+        dateOfBirth,
       });
 
       if (!silent) {
@@ -441,9 +450,10 @@ export default function Profile() {
       linkedinUrl !== s.linkedinUrl ||
       twitterUrl !== s.twitterUrl ||
       pushNotificationsEnabled !== s.pushNotificationsEnabled ||
-      contactPhone !== s.contactPhone
+      contactPhone !== s.contactPhone ||
+      dateOfBirth !== s.dateOfBirth
     );
-  }, [name, nationality, occupation, interests, instagramUrl, linkedinUrl, twitterUrl, pushNotificationsEnabled, contactPhone, savedValues]);
+  }, [name, nationality, occupation, interests, instagramUrl, linkedinUrl, twitterUrl, pushNotificationsEnabled, contactPhone, dateOfBirth, savedValues]);
 
   const handleBack = () => {
     if (isDirty) {
@@ -687,6 +697,21 @@ export default function Profile() {
                 value={nationality}
                 onChange={setNationality}
                 placeholder={t('profile.nationality')}
+              />
+            </div>
+
+            {/* Date of birth */}
+            <div className="space-y-2">
+              <Label htmlFor="dateOfBirth" className="flex items-center gap-2">
+                <span className="text-lg">🎂</span>
+                {t('profile.dateOfBirth', 'Date of birth')}
+              </Label>
+              <Input
+                id="dateOfBirth"
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
               />
             </div>
 

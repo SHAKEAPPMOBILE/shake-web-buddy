@@ -285,6 +285,7 @@
     "genderSaveFailed": "Couldn't save — please try again.",
     "genderInfoMissing": "Add gender",
     "nationality": "Nationality",
+    "dateOfBirth": "Date of birth",
     "birthday": "Birthday",
     "phone": "Phone",
     "socialLinks": "Social Links",
