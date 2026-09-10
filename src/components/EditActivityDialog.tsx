@@ -5,15 +5,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { startOfDay, format } from "date-fns";
-import { CalendarIcon, Trash2 } from "lucide-react";
+import { CalendarIcon, Trash2, ImagePlus, X } from "lucide-react";
 import { VenueSearchInput, VenuePlace } from "@/components/VenueSearchInput";
 import { cn } from "@/lib/utils";
 import { useUserActivities } from "@/hooks/useUserActivities";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { checkProfanity } from "@/lib/profanity-filter";
+import { captureVideoFrame } from "@/lib/captureVideoFrame";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/lib/app-toast";
 
@@ -51,11 +53,15 @@ interface FullActivityRow {
   venue_lat: number | null;
   venue_lng: number | null;
   audience: "everyone" | "women_only" | "friends_only" | null;
+  promo_image_url: string | null;
+  promo_video_url: string | null;
 }
 
 export function EditActivityDialog({ open, onOpenChange, activityId, city, onSaved }: EditActivityDialogProps) {
   const { updateActivity, isLoading } = useUserActivities(city);
+  const { user } = useAuth();
   const { t } = useTranslation();
+  const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
   const [loadingRow, setLoadingRow] = useState(true);
   const [planText, setPlanText] = useState("");
@@ -72,6 +78,19 @@ export function EditActivityDialog({ open, onOpenChange, activityId, city, onSav
   const [audience, setAudience] = useState<"everyone" | "women_only" | "friends_only">("everyone");
   const [profanityError, setProfanityError] = useState<string | null>(null);
 
+  // Media: the plan's existing photo/video (from the fetched row), plus a
+  // pending replacement file picked but not yet uploaded (only uploaded on
+  // Save, so cancelling the dialog never touches storage). removed=true
+  // means "clear it" — distinct from "leave untouched" (both existing and
+  // pendingFile null, removed false).
+  const [existingMediaUrl, setExistingMediaUrl] = useState<string | null>(null);
+  const [existingMediaKind, setExistingMediaKind] = useState<"video" | "image" | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+  const [mediaRemoved, setMediaRemoved] = useState(false);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const [mediaUploading, setMediaUploading] = useState(false);
+
   // Fetch the full row fresh every time the dialog opens — the caller
   // only ever has the narrow subset of fields it needs for its own UI.
   useEffect(() => {
@@ -81,7 +100,7 @@ export function EditActivityDialog({ open, onOpenChange, activityId, city, onSav
     (async () => {
       const { data, error } = await supabase
         .from("user_activities")
-        .select("note, description, scheduled_for, price_amount, price_tiers, capacity, venue_name, venue_address, venue_lat, venue_lng, audience")
+        .select("note, description, scheduled_for, price_amount, price_tiers, capacity, venue_name, venue_address, venue_lat, venue_lng, audience, promo_image_url, promo_video_url")
         .eq("id", activityId)
         .maybeSingle();
       if (cancelled) return;
@@ -114,10 +133,43 @@ export function EditActivityDialog({ open, onOpenChange, activityId, city, onSav
       );
       setAudience(row.audience ?? "everyone");
       setProfanityError(null);
+      setExistingMediaUrl(row.promo_video_url || row.promo_image_url || null);
+      setExistingMediaKind(row.promo_video_url ? "video" : row.promo_image_url ? "image" : null);
+      setPendingFile(null);
+      setPendingPreviewUrl(null);
+      setMediaRemoved(false);
+      setMediaError(null);
       setLoadingRow(false);
     })();
     return () => { cancelled = true; };
   }, [open, activityId, onOpenChange, t]);
+
+  // Revoke the preview object URL whenever it's replaced or the dialog closes.
+  useEffect(() => {
+    return () => { if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl); };
+  }, [pendingPreviewUrl]);
+
+  const handleMediaFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+      setMediaError(t("editPlan.mediaTypeError", "Pick a photo or video file"));
+      return;
+    }
+    setMediaError(null);
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingFile(file);
+    setPendingPreviewUrl(URL.createObjectURL(file));
+    setMediaRemoved(false);
+  };
+
+  const handleRemoveMedia = () => {
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingFile(null);
+    setPendingPreviewUrl(null);
+    setMediaRemoved(true);
+  };
 
   const isValid = planText.trim().length > 0 && !profanityError;
   const selectedCurrencySymbol = CURRENCIES.find((c) => c.code === priceCurrency)?.symbol || "$";
@@ -151,6 +203,49 @@ export function EditActivityDialog({ open, onOpenChange, activityId, city, onSav
       ? [...(!isNaN(basePriceNum) ? [{ label: "General", amount: basePriceNum }] : []), ...validExtraTiers]
       : null;
 
+    // Media upload happens first — if it fails, nothing else about the plan
+    // should change either, so the whole save just stops here.
+    let media: Parameters<typeof updateActivity>[1]["media"];
+    if (pendingFile) {
+      setMediaUploading(true);
+      setMediaError(null);
+      try {
+        const isVideo = pendingFile.type.startsWith("video/");
+        const ext = pendingFile.name.split(".").pop()?.toLowerCase() || (isVideo ? "mp4" : "jpg");
+        const bucket = isVideo ? "plan-videos" : "plan-images";
+        const path = `${user!.id}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from(bucket)
+          .upload(path, pendingFile, { contentType: pendingFile.type || undefined });
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
+
+        if (isVideo) {
+          let thumbnailUrl: string | null = null;
+          const thumbBlob = await captureVideoFrame(pendingFile).catch(() => null);
+          if (thumbBlob) {
+            const thumbPath = `${user!.id}/${Date.now()}-thumb.jpg`;
+            const { error: thumbErr } = await supabase.storage
+              .from("plan-videos")
+              .upload(thumbPath, thumbBlob, { contentType: "image/jpeg" });
+            if (!thumbErr) {
+              thumbnailUrl = supabase.storage.from("plan-videos").getPublicUrl(thumbPath).data.publicUrl;
+            }
+          }
+          media = { type: "video", url: publicUrl, thumbnailUrl };
+        } else {
+          media = { type: "image", url: publicUrl };
+        }
+      } catch {
+        setMediaError(t("editPlan.mediaUploadFailed", "Upload failed. Please try again."));
+        setMediaUploading(false);
+        return;
+      }
+      setMediaUploading(false);
+    } else if (mediaRemoved) {
+      media = { type: "none" };
+    }
+
     const success = await updateActivity(activityId, {
       scheduled_for: scheduledFor,
       note: planText.trim(),
@@ -164,6 +259,7 @@ export function EditActivityDialog({ open, onOpenChange, activityId, city, onSav
         : venueName.trim()
         ? { name: venueName.trim() }
         : null,
+      media,
     });
 
     if (success) {
@@ -220,6 +316,77 @@ export function EditActivityDialog({ open, onOpenChange, activityId, city, onSav
                 className="min-h-[80px] resize-none text-sm"
                 placeholder={t("createPlan.descriptionPlaceholder", "Any extra detail worth sharing")}
               />
+            </div>
+
+            {/* Photo / video */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                {t("editPlan.mediaLabel", "Photo or video (optional)")}
+              </label>
+              <input
+                ref={mediaFileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={handleMediaFileChange}
+              />
+              {pendingPreviewUrl ? (
+                <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+                  {pendingFile?.type.startsWith("video/") ? (
+                    <video src={pendingPreviewUrl} className="w-full h-full object-cover" muted playsInline autoPlay loop />
+                  ) : (
+                    <img src={pendingPreviewUrl} className="w-full h-full object-cover" alt="" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleRemoveMedia}
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                    aria-label={t("editPlan.removeMedia", "Remove")}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : existingMediaUrl && !mediaRemoved ? (
+                <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+                  {existingMediaKind === "video" ? (
+                    <video src={existingMediaUrl} className="w-full h-full object-cover" muted playsInline autoPlay loop />
+                  ) : (
+                    <img src={existingMediaUrl} className="w-full h-full object-cover" alt="" />
+                  )}
+                  <div className="absolute inset-x-2 bottom-2 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => mediaFileInputRef.current?.click()}
+                      className="px-3 py-1.5 rounded-full bg-black/60 text-white text-xs font-medium hover:bg-black/80 transition-colors"
+                    >
+                      {t("editPlan.changeMedia", "Change")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveMedia}
+                      className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                      aria-label={t("editPlan.removeMedia", "Remove")}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => mediaFileInputRef.current?.click()}
+                  className="w-full py-6 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
+                >
+                  <ImagePlus className="w-5 h-5" />
+                  <span className="text-sm">{t("editPlan.addMedia", "Add a photo or video")}</span>
+                </button>
+              )}
+              {mediaError && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-destructive" />
+                  {mediaError}
+                </p>
+              )}
             </div>
 
             {/* Date + time */}
@@ -391,14 +558,14 @@ export function EditActivityDialog({ open, onOpenChange, activityId, city, onSav
 
             <button
               onClick={handleSave}
-              disabled={!isValid || isLoading}
+              disabled={!isValid || isLoading || mediaUploading}
               className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50"
               style={{ background: "linear-gradient(to right, rgba(88, 28, 135, 0.8), rgba(67, 56, 202, 0.7))" }}
             >
-              {isLoading ? (
+              {isLoading || mediaUploading ? (
                 <span className="flex items-center justify-center gap-2">
                   <LoadingSpinner size="sm" />
-                  {t("editPlan.saving", "Saving…")}
+                  {mediaUploading ? t("editPlan.uploadingMedia", "Uploading…") : t("editPlan.saving", "Saving…")}
                 </span>
               ) : (
                 t("editPlan.saveBtn", "Save changes")

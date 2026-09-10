@@ -672,7 +672,14 @@
     "title": "Edit plan",
     "loadFailed": "Couldn't load this plan",
     "saving": "Saving…",
-    "saveBtn": "Save changes"
+    "saveBtn": "Save changes",
+    "mediaLabel": "Photo or video (optional)",
+    "addMedia": "Add a photo or video",
+    "changeMedia": "Change",
+    "removeMedia": "Remove",
+    "mediaTypeError": "Pick a photo or video file",
+    "mediaUploadFailed": "Upload failed. Please try again.",
+    "uploadingMedia": "Uploading…"
   },
   "userProfile": {
     "title": "User Profile",

@@ -321,6 +321,12 @@ export function useUserActivities(city: string) {
       capacity?: number | null;
       audience?: "everyone" | "women_only" | "friends_only";
       venue?: { name?: string; address?: string; lat?: number; lng?: number } | null;
+      // A plan has one hero media item — omit to leave it untouched,
+      // "none" clears it, otherwise it's replaced outright.
+      media?:
+        | { type: "video"; url: string; thumbnailUrl: string | null }
+        | { type: "image"; url: string }
+        | { type: "none" };
     }
   ): Promise<boolean> => {
     if (!user) return false;
@@ -341,6 +347,21 @@ export function useUserActivities(city: string) {
       updateData.venue_address = updates.venue?.address?.trim() || null;
       updateData.venue_lat = updates.venue?.lat ?? null;
       updateData.venue_lng = updates.venue?.lng ?? null;
+    }
+    if (updates.media) {
+      if (updates.media.type === "video") {
+        updateData.promo_video_url = updates.media.url;
+        updateData.promo_video_thumbnail_url = updates.media.thumbnailUrl;
+        updateData.promo_image_url = null;
+      } else if (updates.media.type === "image") {
+        updateData.promo_image_url = updates.media.url;
+        updateData.promo_video_url = null;
+        updateData.promo_video_thumbnail_url = null;
+      } else {
+        updateData.promo_video_url = null;
+        updateData.promo_video_thumbnail_url = null;
+        updateData.promo_image_url = null;
+      }
     }
 
     const { error } = await supabase
