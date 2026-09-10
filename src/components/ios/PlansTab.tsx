@@ -426,30 +426,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         (!c.activityId || (!myJoinedPlanIds.has(c.activityId) && !cityPublicPlanIds.has(c.activityId)))
       );
 
-      // The three standing city groups (dinner/drinks/brunch) should always be
-      // swipeable/joinable, even with zero current joiners — otherwise a type
-      // nobody has joined yet (e.g. brunch in a quiet city) never appears in
-      // the Plans feed at all, unlike the Home tab carousel, which always
-      // offers all three regardless of live count. Only for My City — "All
-      // Cities" discovery is about surfacing what's already happening
-      // elsewhere, not every possible standing type per city.
-      if (!showAllCities && effectiveCity) {
-        const normEffectiveCity = normalizeCity(effectiveCity);
-        ACTIVITY_TYPES.forEach((type) => {
-          if (myActiveTypes.has(type.id)) return;
-          const hasEntry = discoveryCarouselEntries.some(
-            (c) => c.activity_type === type.id && normalizeCity(c.city) === normEffectiveCity
-          );
-          if (hasEntry) return;
-          discoveryCarouselEntries.push({
-            activity_type: type.id,
-            city: effectiveCity,
-            userIds: [],
-            activityId: null,
-          });
-        });
-      }
-
       // ── Phase 3: quick render — cards without profiles (stops spinner early) ─
       const sortByDate = (arr: PlanActivity[]) =>
         arr.sort((a, b) => {
@@ -513,9 +489,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
       const quickDiscovery: PlanActivity[] = discoveryCarouselEntries.map((c) => {
         const dayLabel = getActivityDay(c.activity_type);
-        const isStandingOpen = c.userIds.length === 0 && !c.activityId;
         return {
-          id: `carousel-${c.activity_type}-${c.city}-${c.activityId ?? c.userIds[0] ?? "open"}`,
+          id: `carousel-${c.activity_type}-${c.city}-${c.activityId ?? c.userIds[0]}`,
           user_id: c.userIds[0],
           activity_type: c.activity_type,
           city: c.city,
@@ -523,7 +498,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           is_active: true,
           is_auto_generated: true,
           note: dayLabel ? `This ${dayLabel}` : null,
-          creator_name: isStandingOpen ? "Open group" : "...",
+          creator_name: "...",
           participant_count: c.userIds.length,
           isJoined: false,
           isCarouselJoin: true,
@@ -678,7 +653,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         // activityId-less carousel entries) stays per-entry since it's a distinct filter
         // per activity_type+city combo, but this list is small (bounded by distinct types).
         (async () => {
-          const discoveryUserIds = Array.from(new Set(discoveryCarouselEntries.map(c => c.userIds[0]).filter((id): id is string => !!id)));
+          const discoveryUserIds = Array.from(new Set(discoveryCarouselEntries.map(c => c.userIds[0])));
           const discoveryActivityIds = discoveryCarouselEntries.map(c => c.activityId).filter((id): id is string => !!id);
           const [profilesRes, joinsRes] = await Promise.all([
             discoveryUserIds.length ? supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", discoveryUserIds) : Promise.resolve({ data: [] as any[] }),
@@ -721,7 +696,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
 
           return withRealActivity.map(({ carouselActivity, realActivityId }) => {
             const firstUserId = carouselActivity.userIds[0];
-            const isStandingOpen = carouselActivity.userIds.length === 0 && !carouselActivity.activityId;
             const realRow = realActivityId ? realRowMap.get(realActivityId) : undefined;
             // Built-in carousel types (dinner/drinks/brunch) with no matched real row
             // are, by definition, the virtual open-group container — always auto-generated.
@@ -734,7 +708,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             const dayLabel      = getActivityDay(carouselActivity.activity_type);
             const nextOccurrence = getNextOccurrenceDate(carouselActivity.activity_type);
             return {
-              id: `carousel-${carouselActivity.activity_type}-${carouselActivity.city}-${carouselActivity.activityId ?? firstUserId ?? "open"}`,
+              id: `carousel-${carouselActivity.activity_type}-${carouselActivity.city}-${carouselActivity.activityId ?? firstUserId}`,
               realActivityId,
               user_id: creatorUserId,
               activity_type: carouselActivity.activity_type,
@@ -746,9 +720,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               promo_image_url: realRow?.promo_image_url ?? null,
               description: realRow?.description ?? null,
               note: dayLabel ? `This ${dayLabel}` : null,
-              // No real joiners yet and no matched user_activities row —
-              // there's no "creator" to attribute a standing group to.
-              creator_name: isStandingOpen && !realRow ? "Open group" : (profile?.name || "Anonymous"),
+              creator_name: profile?.name || "Anonymous",
               creator_avatar: profile?.avatar_url,
               participant_count: liveCount ?? carouselActivity.userIds.length,
               isJoined: false,
@@ -1063,6 +1035,46 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     return [...activities, ...cityOnly];
   }, [activities, cityPlans]);
 
+  // Swipe-only extras: the three standing city groups (dinner/drinks/brunch)
+  // the user hasn't joined and that have no card already in combinedPlansList
+  // (i.e. nobody's joined them yet either, so they never made it into
+  // discovery). These must NOT appear in the plain scrollable list — only
+  // reachable while swiping, appended after everything already visible.
+  // No DB round-trip: purely derived from state already loaded, and never
+  // attached to any real user_activities row (there may not be one).
+  const standingOpenGroupCards = useMemo(() => {
+    if (!selectedCity) return [];
+    const normCity = normalizeCity(selectedCity);
+    const myTypes = new Set(activities.map((a) => a.activity_type));
+    return ACTIVITY_TYPES.filter((type) => {
+      if (myTypes.has(type.id)) return false;
+      return !combinedPlansList.some(
+        (p) => p.activity_type === type.id && normalizeCity(p.city) === normCity
+      );
+    }).map((type) => {
+      const dayLabel = getActivityDay(type.id);
+      return {
+        id: `standing-open-${type.id}-${normCity}`,
+        user_id: undefined,
+        activity_type: type.id,
+        city: selectedCity,
+        scheduled_for: getNextOccurrenceDate(type.id).toISOString(),
+        is_active: true,
+        is_auto_generated: true,
+        note: dayLabel ? `This ${dayLabel}` : null,
+        creator_name: "Open group",
+        participant_count: 0,
+        isJoined: false,
+        isCarouselJoin: true,
+      } as PlanActivity;
+    });
+  }, [selectedCity, activities, combinedPlansList]);
+
+  const swipeFeedList = useMemo(
+    () => [...combinedPlansList, ...standingOpenGroupCards],
+    [combinedPlansList, standingOpenGroupCards]
+  );
+
   // True from the moment we land here with a just-created plan until the
   // swipe feed actually opens on it (see the effect below) — covers the
   // exact window that otherwise flashed the "no plans yet" empty state,
@@ -1087,7 +1099,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // fallback card for the ~1s Phase 4 enrichment takes to fill in the
     // real photo/video and creator info. Wait for that pass instead.
     if (combinedPlansList[idx].creator_name === "...") return;
-    setFeedSourceList(combinedPlansList);
+    setFeedSourceList(swipeFeedList);
     setFeedStartIndex(idx);
     setFeedOpen(true);
     onPendingNewPlanHandled?.();
@@ -1129,7 +1141,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // app instead of a small popup modal, and letting the user swipe past their
     // own joined plans into the rest of the feed instead of getting stuck.
     const idx = combinedPlansList.findIndex((p) => p.id === plan.id);
-    setFeedSourceList(combinedPlansList);
+    setFeedSourceList(swipeFeedList);
     setFeedStartIndex(idx >= 0 ? idx : 0);
     setFeedOpen(true);
   };
@@ -1246,7 +1258,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // included. Previously auto-generated plans opened a small ActivityDetailsCard
     // modal here, which was inconsistent with the My City tab behaviour.
     const idx = combinedPlansList.findIndex((p) => p.id === plan.id);
-    setFeedSourceList(combinedPlansList);
+    setFeedSourceList(swipeFeedList);
     setFeedStartIndex(idx >= 0 ? idx : 0);
     setFeedOpen(true);
   };
