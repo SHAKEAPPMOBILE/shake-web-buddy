@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Trash2, Images, MoreVertical, LogOut, Camera, ChevronLeft, Pencil } from "lucide-react";
-import { EditActivityDialog } from "@/components/EditActivityDialog";
+import { Send, User, Trash2, Images, MoreVertical, LogOut, Camera, ChevronLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -85,6 +85,7 @@ export function PlanGroupChatView({
   attendeeCount = 0,
 }: PlanGroupChatViewProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<PlanMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -104,7 +105,6 @@ export function PlanGroupChatView({
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [videoFullscreen, setVideoFullscreen] = useState(false);
 
@@ -555,13 +555,13 @@ export function PlanGroupChatView({
                     {isCreator ? (
                       <>
                         <button
-                          onClick={() => { setShowMenu(false); setShowEditDialog(true); }}
+                          onClick={() => { setShowMenu(false); navigate('/propose-plan', { state: { editActivityId: activity.id } }); }}
                           className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
                         >
-                          <Pencil className="w-4 h-4" /> {t('plans.editPlanItem', 'Edit plan')}
+                          <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🛸</span> {t('plans.editPlanItem', 'Edit plan')}
                         </button>
                         <button onClick={handleInitiateDelete} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                          <Trash2 className="w-4 h-4" /> {t('plans.deletePlanItem', 'Delete plan')}
+                          <span className="w-4 h-4 flex items-center justify-center text-base leading-none">💩</span> {t('plans.deletePlanItem', 'Delete plan')}
                         </button>
                       </>
                     ) : (
@@ -994,15 +994,6 @@ export function PlanGroupChatView({
       />
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
-
-      {isCreator && (
-        <EditActivityDialog
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-          activityId={activity.id}
-          city={activity.city}
-        />
-      )}
 
       {/* ── Delete-plan confirmation dialog ── */}
       {showDeleteConfirm && (

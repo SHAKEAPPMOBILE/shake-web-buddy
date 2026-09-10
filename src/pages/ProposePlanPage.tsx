@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow, addDays } from "date-fns";
 import { Plus, User, Calendar, ChevronLeft, ChevronUp, Play, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ import { checkProfanity } from "@/lib/profanity-filter";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/lib/app-toast";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
@@ -183,6 +184,7 @@ function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subte
 
 export default function ProposePlanPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
 
   const BOT_QUESTIONS = useMemo((): Record<StepName, string> => ({
@@ -227,7 +229,7 @@ export default function ProposePlanPage() {
   const selectedCityRef = useRef(selectedCity);
   selectedCityRef.current = selectedCity;
 
-  const { createActivity, isLoading, remainingActivities, fetchMyActivities, lastCreatedActivityIdRef } = useUserActivities(city);
+  const { createActivity, updateActivity, isLoading, remainingActivities, fetchMyActivities, lastCreatedActivityIdRef } = useUserActivities(city);
 
   const [planText, setPlanText] = useState("");
   const [planDescription, setPlanDescription] = useState("");
@@ -293,6 +295,14 @@ export default function ProposePlanPage() {
   // Chat flow
   const [currentStep, setCurrentStep] = useState(0);
   const [isEditingAnswers, setIsEditingAnswers] = useState(false);
+  // Editing an existing plan (via PlanGroupChatView's "Edit plan" menu item)
+  // instead of creating a new one — reuses this whole wizard, just prefilled
+  // and dropped straight onto its own edit-answers recap (see the effect
+  // below), with handleCreate branching to updateActivity on submit.
+  const editActivityId = (location.state as { editActivityId?: string } | null)?.editActivityId ?? null;
+  const isEditMode = !!editActivityId;
+  const [editLoading, setEditLoading] = useState(isEditMode);
+  const [editOriginalActivityType, setEditOriginalActivityType] = useState<string | null>(null);
   const [showPriceInput, setShowPriceInput] = useState(false);
   const [promoVideoUrl, setPromoVideoUrl] = useState<string | null>(null);
   // A static frame grabbed from the video, client-side — the only way a
@@ -428,6 +438,67 @@ export default function ProposePlanPage() {
   }, [city]);
 
   const currentStepName = steps[currentStep];
+
+  // Edit mode: fetch the full row once and prefill every field, then drop
+  // straight onto the edit-answers recap (the same screen "Edit answers"
+  // opens to) — its own tap-to-change-media handling and per-field jump
+  // targets already do exactly what editing needs, no separate UI required.
+  useEffect(() => {
+    if (!editActivityId) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("user_activities")
+        .select("activity_type, city, note, description, scheduled_for, price_amount, price_tiers, capacity, venue_name, venue_address, venue_lat, venue_lng, audience, promo_image_url, promo_video_url, promo_video_thumbnail_url")
+        .eq("id", editActivityId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error || !data) {
+        toast.error(t("editPlan.loadFailed", "Couldn't load this plan"));
+        navigate(-1);
+        return;
+      }
+      const row = data as {
+        activity_type: string; city: string; note: string | null; description: string | null;
+        scheduled_for: string; price_amount: string | null;
+        price_tiers: { label: string; amount: number }[] | null; capacity: number | null;
+        venue_name: string | null; venue_address: string | null; venue_lat: number | null; venue_lng: number | null;
+        audience: "everyone" | "women_only" | "friends_only" | null;
+        promo_image_url: string | null; promo_video_url: string | null; promo_video_thumbnail_url: string | null;
+      };
+      const d = new Date(row.scheduled_for);
+      setEditOriginalActivityType(row.activity_type);
+      setCityInput(row.city ?? "");
+      setPlanText(row.note ?? "");
+      setPlanDescription(row.description ?? "");
+      setSelectedDate(startOfDay(d));
+      setSelectedTime(format(d, "HH:mm"));
+      const tiers = row.price_tiers ?? [];
+      const general = tiers.find((tr) => tr.label === "General");
+      setPriceAmount(general ? String(general.amount) : row.price_amount ? row.price_amount.replace(/[^\d.]/g, "") : "");
+      setExtraPriceTiers(tiers.filter((tr) => tr.label !== "General").map((tr) => ({ label: tr.label, amount: String(tr.amount) })));
+      const matchedCurrency = CURRENCIES.find((c) => row.price_amount?.includes(c.code));
+      setPriceCurrency(matchedCurrency?.code ?? "USD");
+      setCapacityInput(row.capacity ? String(row.capacity) : "");
+      setVenueName(row.venue_name ?? "");
+      setVenuePlace(
+        row.venue_name && typeof row.venue_lat === "number" && typeof row.venue_lng === "number"
+          ? { name: row.venue_name, address: row.venue_address ?? "", lat: row.venue_lat, lng: row.venue_lng }
+          : null
+      );
+      setAudience(row.audience ?? "everyone");
+      setPromoImageUrl(row.promo_image_url);
+      setPromoVideoUrl(row.promo_video_url);
+      setPromoVideoThumbnailUrl(row.promo_video_thumbnail_url);
+      setCurrentStep(steps.indexOf("preview"));
+      setIsEditingAnswers(true);
+      setEditLoading(false);
+    })();
+    return () => { cancelled = true; };
+    // Intentionally runs once on mount only — editActivityId comes from the
+    // navigation that opened this page and never changes underneath it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // A plan created via the whole-plan voice note skipped the wizard's own
   // video step entirely (see applyVoiceFields), so the preview screen offers
@@ -1397,14 +1468,20 @@ export default function ProposePlanPage() {
   const handleCreate = async () => {
     if (!isValid || !detectedActivity) return;
 
-    if (ID_VERIFICATION_ENABLED && isPaidActivity && !isVerified && !isVerificationPending) {
-      setShowIDVerification(true);
-      return;
-    }
+    // Editing an already-live plan — it already cleared whatever gates it
+    // needed to get created in the first place, so those don't re-trigger
+    // here (e.g. adding ID verification requirements after the fact would
+    // just be a confusing place to first ask for it).
+    if (!isEditMode) {
+      if (ID_VERIFICATION_ENABLED && isPaidActivity && !isVerified && !isVerificationPending) {
+        setShowIDVerification(true);
+        return;
+      }
 
-    if (PAYOUT_METHOD_GATE_ENABLED && priceAmount.trim() && !hasPayoutMethod) {
-      setShowStripeCountrySelector(true);
-      return;
+      if (PAYOUT_METHOD_GATE_ENABLED && priceAmount.trim() && !hasPayoutMethod) {
+        setShowStripeCountrySelector(true);
+        return;
+      }
     }
 
     const selectedCurrency = CURRENCIES.find((c) => c.code === priceCurrency);
@@ -1446,6 +1523,38 @@ export default function ProposePlanPage() {
         ]
       : undefined;
 
+    const venuePayload = venuePlace
+      ? { name: venuePlace.name, address: venuePlace.address, lat: venuePlace.lat, lng: venuePlace.lng }
+      : venueName.trim()
+      ? { name: venueName.trim() }
+      : undefined;
+
+    if (isEditMode && editActivityId) {
+      const media = promoVideoUrl
+        ? { type: "video" as const, url: promoVideoUrl, thumbnailUrl: promoVideoThumbnailUrl }
+        : promoImageUrl
+        ? { type: "image" as const, url: promoImageUrl }
+        : { type: "none" as const };
+
+      const success = await updateActivity(editActivityId, {
+        activity_type: editOriginalActivityType ?? detectedActivity.type,
+        scheduled_for: activityDate,
+        note: planText.trim(),
+        description: planDescription.trim() || null,
+        price_amount: formattedPrice ?? null,
+        price_tiers: priceTiersPayload ?? null,
+        capacity: capacityInput.trim() ? parseInt(capacityInput.trim(), 10) : null,
+        audience,
+        venue: venuePayload ?? null,
+        media,
+      });
+
+      if (success) {
+        navigate(-1);
+      }
+      return;
+    }
+
     const success = await createActivity(
       detectedActivity.type,
       activityDate,
@@ -1457,11 +1566,7 @@ export default function ProposePlanPage() {
       audience,
       priceTiersPayload,
       capacityInput.trim() ? parseInt(capacityInput.trim(), 10) : undefined,
-      venuePlace
-        ? { name: venuePlace.name, address: venuePlace.address, lat: venuePlace.lat, lng: venuePlace.lng }
-        : venueName.trim()
-        ? { name: venueName.trim() }
-        : undefined,
+      venuePayload,
       promoImageUrl || undefined,
       planDescription.trim() || undefined,
       promoVideoThumbnailUrl || undefined
@@ -2662,11 +2767,11 @@ export default function ProposePlanPage() {
                 <>
                   <LoadingSpinner size="sm" />
                   <span className="text-white">
-                    {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
+                    {connectLoading ? t("createPlan.checkingPayment") : isEditMode ? t("editPlan.saving", "Saving…") : t("createPlan.creating")}
                   </span>
                 </>
               ) : (
-                <span className="text-lg font-semibold tracking-wide text-white">{t("createPlan.addPlan")}</span>
+                <span className="text-lg font-semibold tracking-wide text-white">{isEditMode ? t("editPlan.saveBtn", "Save changes") : t("createPlan.addPlan")}</span>
               )}
             </button>
 
@@ -2732,6 +2837,14 @@ export default function ProposePlanPage() {
     </button>
     );
   };
+
+  if (editLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: timeOfDayGradient }}>
@@ -2883,11 +2996,11 @@ export default function ProposePlanPage() {
                   <>
                     <LoadingSpinner size="sm" />
                     <span className="text-white">
-                      {connectLoading ? t("createPlan.checkingPayment") : t("createPlan.creating")}
+                      {connectLoading ? t("createPlan.checkingPayment") : isEditMode ? t("editPlan.saving", "Saving…") : t("createPlan.creating")}
                     </span>
                   </>
                 ) : (
-                  <span className="text-lg font-semibold tracking-wide text-white">{t("createPlan.addPlan")}</span>
+                  <span className="text-lg font-semibold tracking-wide text-white">{isEditMode ? t("editPlan.saveBtn", "Save changes") : t("createPlan.addPlan")}</span>
                 )}
               </button>
             </div>
