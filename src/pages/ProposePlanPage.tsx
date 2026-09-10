@@ -1550,7 +1550,12 @@ export default function ProposePlanPage() {
       });
 
       if (success) {
-        navigate(-1);
+        // Same "open the swipe feed on this exact plan" mechanism the
+        // create path below uses (see PlansTab's pendingNewPlanId) — a
+        // save should land back on the plan itself, not wherever "back"
+        // happens to point (the Home carousel, if that's where the ⋮ menu
+        // was opened from).
+        navigate("/", { state: { activeTab: "plans", pendingNewPlanId: editActivityId } });
       }
       return;
     }
