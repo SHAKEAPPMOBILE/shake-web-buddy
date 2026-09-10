@@ -15,7 +15,7 @@ import { PlanGroupChatView } from "./PlanGroupChatView";
 import { PlansEmptyState } from "./PlansEmptyState";
 import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, getActivityDay, getNextOccurrenceDate, getActivityTimeString } from "@/data/activityTypes";
+import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, STANDING_CAROUSEL_TYPES, getActivityDay, getNextOccurrenceDate, getActivityTimeString } from "@/data/activityTypes";
 import { formatDateWithTranslation, parseDbDate } from "@/lib/date-utils";
 import { cn, getPriceValue, getShareLabel } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -87,7 +87,7 @@ interface PlansTabProps {
   onOpenEvents?: () => void;
   onJoinActivity?: () => void;
   /** Same callback HomeTab's carousel uses — joins a standing city group
-   *  (dinner/drinks/brunch) by type and shows the shared "You're in!"
+   *  (dinner/brunch) by type and shows the shared "You're in!"
    *  ActivityJoinedConfirmation modal. Reused here so joining one of these
    *  types from the Plans swipe feed gives the identical confirm + join +
    *  celebration flow, instead of a separate bespoke one. */
@@ -1045,8 +1045,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     return [...activities, ...cityOnly];
   }, [activities, cityPlans]);
 
-  // Swipe-only extras: the three standing city groups (dinner/drinks/brunch)
-  // the user hasn't joined and that have no card already in combinedPlansList
+  // Swipe-only extras: the standing city groups (dinner/brunch — see
+  // STANDING_CAROUSEL_TYPES, "drinks" is no longer offered as fresh) the
+  // user hasn't joined and that have no card already in combinedPlansList
   // (i.e. nobody's joined them yet either, so they never made it into
   // discovery). These must NOT appear in the plain scrollable list — only
   // reachable while swiping, appended after everything already visible.
@@ -1056,7 +1057,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     if (!selectedCity) return [];
     const normCity = normalizeCity(selectedCity);
     const myTypes = new Set(activities.map((a) => a.activity_type));
-    return ACTIVITY_TYPES.filter((type) => {
+    return ACTIVITY_TYPES.filter((type) => STANDING_CAROUSEL_TYPES.includes(type.id)).filter((type) => {
       if (myTypes.has(type.id)) return false;
       return !combinedPlansList.some(
         (p) => p.activity_type === type.id && normalizeCity(p.city) === normCity
@@ -1423,7 +1424,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const handleFeedJoin = async (plan: PlanActivity): Promise<{ success: boolean }> => {
     if (!user) return { success: false };
 
-    // Standing city groups (dinner/drinks/brunch) opened from the swipe feed
+    // Any standing city group (dinner/brunch, or a legacy drinks group that
+    // already exists) opened from the swipe feed
     // get the same "Yes!/Hum!" confirm + join + celebration flow as the Home
     // carousel, instead of joining silently in place. This handler never
     // performs the insert for these itself — it just opens the prompt and

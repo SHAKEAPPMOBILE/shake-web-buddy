@@ -185,6 +185,13 @@ export const ACTIVITY_TYPES: ActivityType[] = [
   },
 ];
 
+// The standing city groups still offered as fresh, joinable open groups —
+// "drinks" was dropped from new discovery (HomeTab's own carousel already
+// only shows dinner/brunch); existing drinks joins/chats keep working, it's
+// just never offered as something new to join. Single source of truth for
+// this so it doesn't silently drift out of sync between screens again.
+export const STANDING_CAROUSEL_TYPES: string[] = ['dinner', 'brunch'];
+
 // Additional activities only for "create a plan" dialog (excludes carousel activities)
 // Note: Legacy activity types (surf, run, co-working, basketball, tennis-padel, football, shopping, arts) 
 // have been removed as they are no longer in use
