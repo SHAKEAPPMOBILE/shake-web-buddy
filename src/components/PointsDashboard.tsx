@@ -3,12 +3,10 @@ import { useWelcomeBonus } from "@/hooks/useWelcomeBonus";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Sparkles, TrendingUp, UserPlus, Users, Gift, CheckCircle2, AlertCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { formatDistanceToNow } from "date-fns";
-import { toast } from "@/hooks/use-toast";
 import shakeCoin from "@/assets/shake-coin-transparent.png";
 import { useTranslation } from "react-i18next";
 
@@ -29,20 +27,11 @@ interface ReferralWithProfile {
 
 export function PointsDashboard({ userId }: PointsDashboardProps) {
   const { t } = useTranslation();
-  const { points, isLoading, refetch: refetchPoints } = useUserPoints(userId);
-  const { isComplete, isClaimed, isLoading: bonusLoading, missingFields, claimBonus } = useWelcomeBonus(userId);
-
-  const handleClaimBonus = async () => {
-    const success = await claimBonus();
-    if (success) {
-      refetchPoints();
-      toast({
-        title: t('points.bonusClaimedTitle', '🎉 Welcome Bonus Claimed!'),
-        description: t('points.bonusClaimedDesc', 'You earned +10 points for completing your profile!'),
-        duration: 2000,
-      });
-    }
-  };
+  const { points, isLoading } = useUserPoints(userId);
+  // autoClaim: false — WelcomeBonusWatcher (mounted once at the app root)
+  // owns the actual claim+celebration+push; this instance only reads state
+  // to render the card below.
+  const { isComplete, isClaimed, isLoading: bonusLoading, missingFields } = useWelcomeBonus(userId, { autoClaim: false });
 
   const { data: referrals = [], isLoading: referralsLoading } = useQuery({
     queryKey: ["referrals", userId],
@@ -126,20 +115,11 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
                   {isClaimed
                     ? t('points.claimed', 'Claimed! +10 points')
                     : isComplete
-                      ? t('points.readyToClaim', 'Ready to claim!')
+                      ? t('points.claimingAutomatically', 'Claiming automatically…')
                       : t('points.completeProfile', 'Complete your profile ({{count}} fields missing)', { count: missingFields.length })}
                 </p>
               </div>
             </div>
-            {!isClaimed && isComplete && (
-              <Button
-                size="sm"
-                onClick={handleClaimBonus}
-                className="bg-primary hover:bg-primary/90 text-white"
-              >
-                {t('points.claimButton', 'Claim +10')}
-              </Button>
-            )}
           </div>
           {!isClaimed && !isComplete && missingFields.length > 0 && (
             <div className="mt-2 text-xs text-gray-500">

@@ -477,7 +477,7 @@ export default function Profile() {
     if (isDirty && !isSaving) void handleSaveProfile({ silent: true });
   };
 
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -515,33 +515,6 @@ export default function Profile() {
         className="flex-1 min-h-0 px-4 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]"
       >
         <div className="max-w-md mx-auto space-y-6">
-          {isLoading ? (
-            /* Skeleton loading state — shown while Supabase queries resolve */
-            <div className="space-y-6 animate-pulse">
-              {/* Avatar skeleton */}
-              <div className="flex flex-col items-center py-6 gap-3">
-                <div className="w-24 h-24 rounded-full bg-muted" />
-                <div className="h-4 w-24 rounded bg-muted" />
-              </div>
-              {/* Form field skeletons */}
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="h-3 w-20 rounded bg-muted" />
-                  <div className="h-10 w-full rounded-lg bg-muted" />
-                </div>
-              ))}
-              {/* Interests skeleton */}
-              <div className="space-y-2">
-                <div className="h-3 w-20 rounded bg-muted" />
-                <div className="flex flex-wrap gap-2">
-                  {[...Array(8)].map((_, i) => (
-                    <div key={i} className="h-8 rounded-full bg-muted" style={{ width: `${60 + (i % 3) * 20}px` }} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-          <>
           {/* Profile Header */}
           <div className="flex flex-col items-center py-6">
             {/* Avatar with camera button */}
@@ -929,8 +902,6 @@ export default function Profile() {
               Permanently delete your account and all data
             </p>
           </div>
-          </>
-          )}
         </div>
       </main>
 

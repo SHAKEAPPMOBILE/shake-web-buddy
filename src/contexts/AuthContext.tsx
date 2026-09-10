@@ -213,6 +213,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Failed to create referral:", insertError);
       } else {
         console.log("Referral created successfully! Referrer gets +5 points");
+        // Fire-and-forget — lets the referrer know right away, from the
+        // referred user's own session (the referrer isn't online here).
+        supabase.functions
+          .invoke("send-push-notification", {
+            body: {
+              to_user_id: referrer.user_id,
+              title: "🎉 You earned points!",
+              body: "A friend joined SHAKE using your invite — you got +5 points.",
+            },
+          })
+          .catch((err) => console.error("Error sending referral push:", err));
       }
 
       clearStoredReferralCode();
