@@ -2800,7 +2800,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         const venue = getVenueForActivity(plan.city, plan.activity_type);
         return (
           <div
-            className="fixed inset-0 z-[60] flex items-center justify-center px-6 backdrop-blur-md"
+            className="fixed inset-x-0 top-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-[60] flex items-center justify-center px-6 backdrop-blur-md"
             style={{ background: timeOfDayGradient }}
             onClick={() => setSwipeCarouselJoinPrompt(null)}
           >
@@ -2825,10 +2825,22 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 onConfirm={() => {
                   setSwipeCarouselJoinPrompt(null);
                   setFeedOpen(false);
-                  void onConfirmActivity?.(
-                    { id: plan.activity_type, label: getActivityLabel(plan.activity_type), emoji: getActivityEmoji(plan.activity_type) },
-                    plan.city,
-                  );
+                  void (async () => {
+                    // onConfirmActivity (IOSAppLayout's handleHomeActivitySelect) owns
+                    // the actual join insert — it's a separate pipeline from this
+                    // component's own handleFeedJoin/handleDirectCityJoin, which
+                    // normally apply the local setActivities/setCityPlans update
+                    // themselves. The realtime activity_joins listener explicitly
+                    // skips refetching for the current user's own joins (assuming
+                    // one of those local updates already happened), so without this
+                    // explicit fetchPlans() the newly-joined plan wouldn't show up
+                    // here until something else forced a refetch.
+                    await onConfirmActivity?.(
+                      { id: plan.activity_type, label: getActivityLabel(plan.activity_type), emoji: getActivityEmoji(plan.activity_type) },
+                      plan.city,
+                    );
+                    fetchPlans();
+                  })();
                 }}
                 onClose={() => setSwipeCarouselJoinPrompt(null)}
               />
