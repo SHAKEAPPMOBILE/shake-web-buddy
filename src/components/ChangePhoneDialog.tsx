@@ -107,7 +107,7 @@ export function ChangePhoneDialog({ open, onOpenChange, currentPhone, onPhoneUpd
       }
 
       setVerificationId(data?.verificationId || "");
-      toast.success(t("changePhone.codeSent", { phone: parsed.data }));
+      toast.success(t("changePhone.codeSent", "Code sent to {{phone}}", { phone: parsed.data }));
       setResendCountdown(60);
       setStep("verify");
     } catch {

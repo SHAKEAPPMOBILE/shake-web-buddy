@@ -46,7 +46,9 @@
     "paymentGateInfo": "After payment, you'll have access to the group chat and can coordinate with other participants.",
     "creatorPaymentNotSetup": "The activity creator hasn't set up payments yet. Please contact them directly or try again later.",
     "selectPriceOption": "Please select a price option first.",
-    "choosePriceOption": "Choose a price option"
+    "choosePriceOption": "Choose a price option",
+    "date": "Date",
+    "join": "Join"
   },
   "days": {
     "sunday": "Sunday",
@@ -87,7 +89,13 @@
     "noVenuesInCity": "No venues in your city yet — but you can still propose a plan!",
     "proposePlanBtn": "Propose a Plan",
     "yesBtn": "Yes!",
-    "humBtn": "Hum!"
+    "humBtn": "Hum!",
+    "anytimeAnywhere": "Anytime, Anywhere.",
+    "eventsNearYou": "Events near you",
+    "proposePlan": "Propose a plan",
+    "tapInstruction": "Tap on the blue + below to start shaking.",
+    "tapOnThe": "Tap on",
+    "toStartShaking": "to start shaking!"
   },
   "activities": {
     "brunch": "Brunch",
@@ -408,7 +416,30 @@
     "stripePending": "A few details are still needed to finish setup.",
     "sectionShakers": "Shakers",
     "phoneNumber": "Phone Number",
-    "phoneUsageNote": "Optional. Lets friends find you when they import their contacts."
+    "phoneUsageNote": "Optional. Lets friends find you when they import their contacts.",
+    "creatorPayouts": "Creator Payouts",
+    "edit": "Edit",
+    "fromPaidActivities": "From {{count}} paid activities",
+    "idPendingDesc": "Under review - usually within 1 hour",
+    "idRejectedDesc": "Please resubmit your ID",
+    "idRequiredDesc": "Required to create paid activities",
+    "idVerification": "ID Verification",
+    "idVerifiedDesc": "You can create paid activities",
+    "managePlan": "Manage Plan",
+    "noEarningsYet": "Create paid activities to start earning!",
+    "notVerified": "Not verified",
+    "participants": "participants",
+    "payoutNote": "Add at least one method so we can send your earnings.",
+    "payoutNoteStripeOnly": "Connect Stripe below — it's the only payout method for now. We'll add more (including crypto) soon.",
+    "payoutSaved": "Payout method saved",
+    "payoutsConnected": "Ready to receive payments",
+    "payoutsNotConnected": "Set up to receive payments",
+    "pending": "Pending",
+    "rejected": "Rejected",
+    "save": "Save",
+    "stripeUnderReview": "You're all set — Stripe is reviewing your account. This can take 1-3 business days.",
+    "verified": "Verified",
+    "yourEarnings": "Your Earnings"
   },
   "points": {
     "title": "My Points",
@@ -670,7 +701,31 @@
     "venueLabel": "Where's it happening? (optional)",
     "capacityLabel": "How many can join? (optional)",
     "capacityPlaceholder": "No limit",
-    "friendsOnly": "Only friends"
+    "friendsOnly": "Only friends",
+    "addVideoPic": "Add video/pic",
+    "addVideoPicQuestion": "Add a video or photo?",
+    "allCohosts": "Co-hosts",
+    "botCohost": "Add a co-host?",
+    "botDescription": "Add a description",
+    "cohostCapHit": "Max {{cap}} co-hosts per plan.",
+    "cohostCountAdded": "{{count}} invited",
+    "cohostEmailPlaceholder": "friend@email.com — paste a whole list at once if you like",
+    "descriptionAdded": "Description added",
+    "invalidEmail": "That doesn't look like a valid email.",
+    "photoAdded": "Photo added",
+    "photoUploading": "Uploading...",
+    "someInvalidEmails": "Skipped {{count}} that didn't look like valid emails.",
+    "uploadMedia": "Upload",
+    "voiceListening": "Listening…",
+    "voiceNoAnswer": "Didn't catch an answer to this question — try again.",
+    "voiceNoSpeech": "Didn't catch any words — try again.",
+    "voiceNotAllowed": "Microphone access is blocked — check your permissions.",
+    "voiceParseFailed": "Heard you, but couldn't turn it into a plan — try again or type it in.",
+    "voiceSpeak": "Speak your plan",
+    "voiceStop": "Stop listening",
+    "voiceThinking": "Thinking…",
+    "recordBtn": "Record",
+    "openSettings": "Open Settings"
   },
   "editPlan": {
     "title": "Edit plan",
@@ -689,7 +744,11 @@
     "title": "User Profile",
     "recentActivity": "Recent Activity",
     "noRecentActivity": "No recent activity",
-    "reportUser": "Report User"
+    "reportUser": "Report User",
+    "alreadyBlocked": "Already blocked.",
+    "blockFailed": "Could not block user.",
+    "blockSuccess": "User blocked. They won't appear in your feed.",
+    "blockUser": "Block user"
   },
   "chatInvite": {
     "title": "User Profile",
@@ -736,7 +795,8 @@
     "verifyAndSave": "Verify & save",
     "verifying": "Verifying…",
     "resend": "Resend",
-    "resendIn": "Resend in {{count}}s"
+    "resendIn": "Resend in {{count}}s",
+    "codeSent": "Code sent to {{phone}}"
   },
   "managePlan": {
     "yourPlan": "Your Plan",
@@ -776,7 +836,12 @@
     "todaysVenue": "Today's Venue",
     "tbdVoteInChat": "TBD - Vote in chat!",
     "joinGroupChat": "Join Group Chat",
-    "maybeLater": "Maybe later"
+    "maybeLater": "Maybe later",
+    "loadingVenue": "Loading...",
+    "retry": "Retry",
+    "venueLoadFailed": "Couldn't load venue info.",
+    "youreGoing": "You're going!",
+    "youreIn": "You're in!"
   },
   "myActivities": {
     "title": "My Activities",
@@ -836,7 +901,12 @@
     "requested": "Requested",
     "accept": "Accept",
     "sending": "Sending…",
-    "sendRequests": "Send {{count}} friend requests"
+    "sendRequests": "Send {{count}} friend requests",
+    "add": "Add",
+    "noSearchResults": "No one found with that name.",
+    "searchByName": "Or search by name",
+    "searchPlaceholder": "Search by name…",
+    "searchTitle": "Find friends by name"
   },
   "shakers": {
     "manageFriends": "My Friends",
@@ -848,6 +918,20 @@
     "unshake": "Unshake (remove friend)",
     "block": "Block",
     "blocked": "Blocked",
-    "blockFailed": "Couldn't block"
+    "blockFailed": "Couldn't block",
+    "sentRequests": "Requested"
+  },
+  "stripe": {
+    "connecting": "Connecting...",
+    "continueToStripe": "Continue to Stripe",
+    "countryLabel": "Payout Country",
+    "noCountryMatch": "No countries found",
+    "resetDescription": "Your existing account will be deleted. Select the correct country for your new payout account.",
+    "resetTitle": "Reset Payout Account",
+    "resetWarning": "This will delete your current Stripe Connect account and create a new one. You'll need to complete verification again.",
+    "searchCountry": "Search country...",
+    "selectCountryDescription": "Choose the country where you have a bank account to receive payouts.",
+    "selectCountryPlaceholder": "Select your country",
+    "selectCountryTitle": "Select Your Country"
   }
 }

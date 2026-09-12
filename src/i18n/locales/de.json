@@ -46,7 +46,9 @@
     "paymentGateInfo": "Nach der Zahlung haben Sie Zugang zum Gruppenchat und können sich mit anderen Teilnehmern abstimmen.",
     "creatorPaymentNotSetup": "Der Aktivitätsersteller hat noch keine Zahlungen eingerichtet. Kontaktiere ihn direkt oder versuche es später erneut.",
     "selectPriceOption": "Bitte wähle zuerst eine Preisoption aus.",
-    "choosePriceOption": "Preisoption wählen"
+    "choosePriceOption": "Preisoption wählen",
+    "date": "Datum",
+    "join": "Beitreten"
   },
   "days": {
     "sunday": "Sonntag",
@@ -87,7 +89,13 @@
     "noVenuesInCity": "Noch keine Orte in deiner Stadt — aber du kannst einen Plan vorschlagen!",
     "proposePlanBtn": "Plan vorschlagen",
     "yesBtn": "Ja!",
-    "humBtn": "Hm!"
+    "humBtn": "Hm!",
+    "anytimeAnywhere": "Jederzeit, überall.",
+    "eventsNearYou": "Veranstaltungen in deiner Nähe",
+    "proposePlan": "Plan vorschlagen",
+    "tapInstruction": "Tippe auf das blaue + unten, um mit dem Shaken zu beginnen.",
+    "tapOnThe": "Tippe auf",
+    "toStartShaking": "um mit dem Shaken zu beginnen!"
   },
   "activities": {
     "brunch": "Brunch",
@@ -265,7 +273,9 @@
     "friends": "Freunde",
     "addFriends": "Freunde hinzufügen",
     "noFriendsYet": "Du hast noch keine Freunde hinzugefügt.",
-    "noFriendPlans": "Keiner deiner Freunde hat gerade einen anstehenden Plan."
+    "noFriendPlans": "Keiner deiner Freunde hat gerade einen anstehenden Plan.",
+    "editPlanItem": "Plan bearbeiten",
+    "sharePlan": "Diesen Plan teilen"
   },
   "profile": {
     "title": "Profil",
@@ -406,7 +416,31 @@
     "stripePending": "Es fehlen noch ein paar Angaben, um die Einrichtung abzuschließen.",
     "sectionShakers": "Shakers",
     "phoneNumber": "Telefonnummer",
-    "phoneUsageNote": "Optional. Damit dich Freunde finden können, wenn sie ihre Kontakte importieren."
+    "phoneUsageNote": "Optional. Damit dich Freunde finden können, wenn sie ihre Kontakte importieren.",
+    "creatorPayouts": "Ersteller-Auszahlungen",
+    "dateOfBirth": "Geburtsdatum",
+    "edit": "Bearbeiten",
+    "fromPaidActivities": "Aus {{count}} kostenpflichtigen Aktivitäten",
+    "idPendingDesc": "Wird geprüft – normalerweise innerhalb von 1 Stunde",
+    "idRejectedDesc": "Bitte reiche deinen Ausweis erneut ein",
+    "idRequiredDesc": "Erforderlich, um kostenpflichtige Aktivitäten zu erstellen",
+    "idVerification": "Ausweisverifizierung",
+    "idVerifiedDesc": "Du kannst kostenpflichtige Aktivitäten erstellen",
+    "managePlan": "Plan verwalten",
+    "noEarningsYet": "Erstelle kostenpflichtige Aktivitäten, um mit dem Verdienen zu beginnen!",
+    "notVerified": "Nicht verifiziert",
+    "participants": "Teilnehmer",
+    "payoutNote": "Füge mindestens eine Methode hinzu, damit wir dir deine Einnahmen senden können.",
+    "payoutNoteStripeOnly": "Verbinde Stripe unten – das ist derzeit die einzige Auszahlungsmethode. Weitere (auch Krypto) folgen bald.",
+    "payoutSaved": "Auszahlungsmethode gespeichert",
+    "payoutsConnected": "Bereit, Zahlungen zu empfangen",
+    "payoutsNotConnected": "Einrichten, um Zahlungen zu empfangen",
+    "pending": "Ausstehend",
+    "rejected": "Abgelehnt",
+    "save": "Speichern",
+    "stripeUnderReview": "Alles erledigt – Stripe prüft dein Konto. Das kann 1–3 Werktage dauern.",
+    "verified": "Verifiziert",
+    "yourEarnings": "Deine Einnahmen"
   },
   "points": {
     "title": "Meine Punkte",
@@ -430,7 +464,11 @@
     "noReferrals": "Noch keine Empfehlungen",
     "shareToEarn": "Teile deinen Link, um +5 Punkte pro Anmeldung zu verdienen!",
     "bonusClaimedTitle": "🎉 Willkommensbonus beansprucht!",
-    "bonusClaimedDesc": "Du hast +10 Punkte für das Vervollständigen deines Profils verdient!"
+    "bonusClaimedDesc": "Du hast +10 Punkte für das Vervollständigen deines Profils verdient!",
+    "claimingAutomatically": "Wird automatisch eingelöst…",
+    "congrats": "Glückwunsch!",
+    "congratsNamed": "Glückwunsch, {{name}}!",
+    "youGotPoints": "Du hast +{{points}} Punkte erhalten"
   },
   "auth": {
     "enterPhone": "Gib deine Telefonnummer ein",
@@ -660,13 +698,47 @@
     "venueLabel": "Wo findet es statt? (optional)",
     "capacityLabel": "Teilnehmerzahl begrenzen? (optional)",
     "capacityPlaceholder": "Kein Limit",
-    "friendsOnly": "Nur Freunde"
+    "friendsOnly": "Nur Freunde",
+    "addVideoPic": "Video/Foto hinzufügen",
+    "addVideoPicQuestion": "Ein Video oder Foto hinzufügen?",
+    "allCohosts": "Co-Gastgeber",
+    "audienceLabel": "Wer kann teilnehmen?",
+    "botCohost": "Einen Co-Gastgeber hinzufügen?",
+    "botDescription": "Beschreibung hinzufügen",
+    "cohostCapHit": "Maximal {{cap}} Co-Gastgeber pro Plan.",
+    "cohostCountAdded": "{{count}} eingeladen",
+    "cohostEmailPlaceholder": "freund@email.com — du kannst auch eine ganze Liste einfügen",
+    "dateLabel": "Datum",
+    "descriptionAdded": "Beschreibung hinzugefügt",
+    "descriptionLabel": "Beschreibung (optional)",
+    "descriptionPlaceholder": "Weitere Details, die es wert sind, geteilt zu werden",
+    "invalidEmail": "Das sieht nach keiner gültigen E-Mail-Adresse aus.",
+    "photoAdded": "Foto hinzugefügt",
+    "photoUploading": "Wird hochgeladen...",
+    "someInvalidEmails": "{{count}} übersprungen, die keine gültigen E-Mail-Adressen zu sein scheinen.",
+    "timeLabel": "Uhrzeit",
+    "tryAgain": "Erneut versuchen",
+    "uploadMedia": "Hochladen",
+    "voiceListening": "Höre zu…",
+    "voiceNoAnswer": "Auf diese Frage wurde keine Antwort erkannt — versuche es erneut.",
+    "voiceNoSpeech": "Keine Worte erkannt — versuche es erneut.",
+    "voiceNotAllowed": "Der Mikrofonzugriff ist blockiert — überprüfe deine Berechtigungen.",
+    "voiceParseFailed": "Ich habe dich gehört, konnte daraus aber keinen Plan machen — versuche es erneut oder tippe es ein.",
+    "voiceSpeak": "Sag deinen Plan",
+    "voiceStop": "Zuhören beenden",
+    "voiceThinking": "Denke nach…",
+    "recordBtn": "Aufnehmen",
+    "openSettings": "Einstellungen öffnen"
   },
   "userProfile": {
     "title": "Benutzerprofil",
     "recentActivity": "Letzte Aktivität",
     "noRecentActivity": "Keine aktuelle Aktivität",
-    "reportUser": "Benutzer melden"
+    "reportUser": "Benutzer melden",
+    "alreadyBlocked": "Bereits blockiert.",
+    "blockFailed": "Nutzer konnte nicht blockiert werden.",
+    "blockSuccess": "Nutzer blockiert. Er wird nicht mehr in deinem Feed erscheinen.",
+    "blockUser": "Nutzer blockieren"
   },
   "report": {
     "title": "Benutzer melden",
@@ -703,7 +775,8 @@
     "verifyAndSave": "Verifizieren & speichern",
     "verifying": "Wird verifiziert…",
     "resend": "Erneut senden",
-    "resendIn": "Erneut senden in {{count}}s"
+    "resendIn": "Erneut senden in {{count}}s",
+    "codeSent": "Code gesendet an {{phone}}"
   },
   "managePlan": {
     "yourPlan": "Dein Plan",
@@ -743,7 +816,12 @@
     "todaysVenue": "Heutiger Treffpunkt",
     "tbdVoteInChat": "Noch offen - Im Chat abstimmen!",
     "joinGroupChat": "Gruppenchat beitreten",
-    "maybeLater": "Vielleicht später"
+    "maybeLater": "Vielleicht später",
+    "loadingVenue": "Wird geladen...",
+    "retry": "Erneut versuchen",
+    "venueLoadFailed": "Ortsinformationen konnten nicht geladen werden.",
+    "youreGoing": "Du bist dabei!",
+    "youreIn": "Du bist dabei!"
   },
   "myActivities": {
     "title": "Meine Aktivitäten",
@@ -813,7 +891,12 @@
     "requested": "Angefragt",
     "accept": "Annehmen",
     "sending": "Wird gesendet…",
-    "sendRequests": "{{count}} Freundschaftsanfragen senden"
+    "sendRequests": "{{count}} Freundschaftsanfragen senden",
+    "add": "Hinzufügen",
+    "noSearchResults": "Niemand mit diesem Namen gefunden.",
+    "searchByName": "Oder nach Namen suchen",
+    "searchPlaceholder": "Nach Namen suchen…",
+    "searchTitle": "Freunde nach Namen suchen"
   },
   "shakers": {
     "manageFriends": "Meine Freunde",
@@ -825,6 +908,33 @@
     "unshake": "Entfernen (Freund entfernen)",
     "block": "Blockieren",
     "blocked": "Blockiert",
-    "blockFailed": "Blockieren fehlgeschlagen"
+    "blockFailed": "Blockieren fehlgeschlagen",
+    "sentRequests": "Angefragt"
+  },
+  "editPlan": {
+    "addMedia": "Foto oder Video hinzufügen",
+    "changeMedia": "Ändern",
+    "loadFailed": "Dieser Plan konnte nicht geladen werden",
+    "mediaLabel": "Foto oder Video (optional)",
+    "mediaTypeError": "Wähle eine Foto- oder Videodatei",
+    "mediaUploadFailed": "Hochladen fehlgeschlagen. Bitte versuche es erneut.",
+    "removeMedia": "Entfernen",
+    "saveBtn": "Änderungen speichern",
+    "saving": "Wird gespeichert…",
+    "title": "Plan bearbeiten",
+    "uploadingMedia": "Wird hochgeladen…"
+  },
+  "stripe": {
+    "connecting": "Verbindung wird hergestellt...",
+    "continueToStripe": "Weiter zu Stripe",
+    "countryLabel": "Auszahlungsland",
+    "noCountryMatch": "Keine Länder gefunden",
+    "resetDescription": "Dein bestehendes Konto wird gelöscht. Wähle das richtige Land für dein neues Auszahlungskonto.",
+    "resetTitle": "Auszahlungskonto zurücksetzen",
+    "resetWarning": "Dadurch wird dein aktuelles Stripe-Connect-Konto gelöscht und ein neues erstellt. Du musst die Verifizierung erneut abschließen.",
+    "searchCountry": "Land suchen...",
+    "selectCountryDescription": "Wähle das Land, in dem du ein Bankkonto hast, um Auszahlungen zu erhalten.",
+    "selectCountryPlaceholder": "Wähle dein Land",
+    "selectCountryTitle": "Wähle dein Land"
   }
 }

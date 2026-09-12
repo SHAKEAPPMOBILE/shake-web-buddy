@@ -46,7 +46,9 @@
     "paymentGateInfo": "Na betaling krijg je toegang tot de groepschat en kun je coördineren met andere deelnemers.",
     "creatorPaymentNotSetup": "De activiteitsmaker heeft nog geen betalingen ingesteld. Neem direct contact met hen op of probeer het later opnieuw.",
     "selectPriceOption": "Selecteer eerst een prijsoptie.",
-    "choosePriceOption": "Kies een prijsoptie"
+    "choosePriceOption": "Kies een prijsoptie",
+    "date": "Datum",
+    "join": "Deelnemen"
   },
   "days": {
     "sunday": "Zondag",
@@ -87,7 +89,13 @@
     "noVenuesInCity": "Nog geen locaties in jouw stad — maar je kunt wel een plan voorstellen!",
     "proposePlanBtn": "Stel een plan voor",
     "yesBtn": "Ja!",
-    "humBtn": "Hmm!"
+    "humBtn": "Hmm!",
+    "anytimeAnywhere": "Altijd, overal.",
+    "eventsNearYou": "Evenementen bij jou in de buurt",
+    "proposePlan": "Plan voorstellen",
+    "tapInstruction": "Tik op de blauwe + hieronder om te beginnen met shaken.",
+    "tapOnThe": "Tik op de",
+    "toStartShaking": "om te beginnen met shaken!"
   },
   "activities": {
     "brunch": "Brunch",
@@ -265,7 +273,9 @@
     "friends": "Vrienden",
     "addFriends": "Vrienden toevoegen",
     "noFriendsYet": "Je hebt nog geen vrienden toegevoegd.",
-    "noFriendPlans": "Geen van je vrienden heeft nu een aankomend plan."
+    "noFriendPlans": "Geen van je vrienden heeft nu een aankomend plan.",
+    "editPlanItem": "Plan bewerken",
+    "sharePlan": "Dit plan delen"
   },
   "profile": {
     "title": "Profiel",
@@ -406,7 +416,31 @@
     "stripePending": "Er zijn nog een paar gegevens nodig om de installatie af te ronden.",
     "sectionShakers": "Shakers",
     "phoneNumber": "Telefoonnummer",
-    "phoneUsageNote": "Optioneel. Hiermee kunnen vrienden je vinden als ze hun contacten importeren."
+    "phoneUsageNote": "Optioneel. Hiermee kunnen vrienden je vinden als ze hun contacten importeren.",
+    "creatorPayouts": "Uitbetalingen als organisator",
+    "dateOfBirth": "Geboortedatum",
+    "edit": "Bewerken",
+    "fromPaidActivities": "Van {{count}} betaalde activiteiten",
+    "idPendingDesc": "In beoordeling - meestal binnen 1 uur",
+    "idRejectedDesc": "Dien je ID opnieuw in",
+    "idRequiredDesc": "Vereist om betaalde activiteiten te maken",
+    "idVerification": "ID-verificatie",
+    "idVerifiedDesc": "Je kunt betaalde activiteiten maken",
+    "managePlan": "Plan beheren",
+    "noEarningsYet": "Maak betaalde activiteiten om te beginnen met verdienen!",
+    "notVerified": "Niet geverifieerd",
+    "participants": "deelnemers",
+    "payoutNote": "Voeg minstens één methode toe zodat we je verdiensten kunnen sturen.",
+    "payoutNoteStripeOnly": "Koppel Stripe hieronder — dit is voorlopig de enige uitbetaalmethode. Er komen binnenkort meer (waaronder crypto).",
+    "payoutSaved": "Uitbetaalmethode opgeslagen",
+    "payoutsConnected": "Klaar om betalingen te ontvangen",
+    "payoutsNotConnected": "Instellen om betalingen te ontvangen",
+    "pending": "In afwachting",
+    "rejected": "Afgewezen",
+    "save": "Opslaan",
+    "stripeUnderReview": "Helemaal klaar — Stripe beoordeelt je account. Dit kan 1-3 werkdagen duren.",
+    "verified": "Geverifieerd",
+    "yourEarnings": "Jouw verdiensten"
   },
   "points": {
     "title": "Mijn Punten",
@@ -430,7 +464,11 @@
     "noReferrals": "Nog geen verwijzingen",
     "shareToEarn": "Deel je link om +5 punten per aanmelding te verdienen!",
     "bonusClaimedTitle": "🎉 Welkomstbonus Opgehaald!",
-    "bonusClaimedDesc": "Je hebt +10 punten verdiend voor het voltooien van je profiel!"
+    "bonusClaimedDesc": "Je hebt +10 punten verdiend voor het voltooien van je profiel!",
+    "claimingAutomatically": "Automatisch claimen…",
+    "congrats": "Gefeliciteerd!",
+    "congratsNamed": "Gefeliciteerd {{name}}!",
+    "youGotPoints": "Je hebt +{{points}} punten verdiend"
   },
   "auth": {
     "enterPhone": "Voer je telefoonnummer in",
@@ -660,13 +698,47 @@
     "venueLabel": "Waar vindt het plaats? (optioneel)",
     "capacityLabel": "Aantal deelnemers beperken? (optioneel)",
     "capacityPlaceholder": "Geen limiet",
-    "friendsOnly": "Alleen vrienden"
+    "friendsOnly": "Alleen vrienden",
+    "addVideoPic": "Video/foto toevoegen",
+    "addVideoPicQuestion": "Een video of foto toevoegen?",
+    "allCohosts": "Co-hosts",
+    "audienceLabel": "Wie kan deelnemen?",
+    "botCohost": "Een co-host toevoegen?",
+    "botDescription": "Voeg een beschrijving toe",
+    "cohostCapHit": "Maximaal {{cap}} co-hosts per plan.",
+    "cohostCountAdded": "{{count}} uitgenodigd",
+    "cohostEmailPlaceholder": "vriend@email.com — plak gerust een hele lijst tegelijk",
+    "dateLabel": "Datum",
+    "descriptionAdded": "Beschrijving toegevoegd",
+    "descriptionLabel": "Beschrijving (optioneel)",
+    "descriptionPlaceholder": "Extra details die het delen waard zijn",
+    "invalidEmail": "Dat lijkt geen geldig e-mailadres.",
+    "photoAdded": "Foto toegevoegd",
+    "photoUploading": "Uploaden...",
+    "someInvalidEmails": "{{count}} overgeslagen die geen geldig e-mailadres leken.",
+    "timeLabel": "Tijd",
+    "tryAgain": "Opnieuw proberen",
+    "uploadMedia": "Uploaden",
+    "voiceListening": "Aan het luisteren…",
+    "voiceNoAnswer": "Geen antwoord op deze vraag gehoord — probeer het opnieuw.",
+    "voiceNoSpeech": "Geen woorden gehoord — probeer het opnieuw.",
+    "voiceNotAllowed": "Microfoontoegang is geblokkeerd — controleer je machtigingen.",
+    "voiceParseFailed": "Ik hoorde je, maar kon er geen plan van maken — probeer het opnieuw of typ het in.",
+    "voiceSpeak": "Spreek je plan in",
+    "voiceStop": "Stop met luisteren",
+    "voiceThinking": "Aan het nadenken…",
+    "recordBtn": "Opnemen",
+    "openSettings": "Instellingen openen"
   },
   "userProfile": {
     "title": "Gebruikersprofiel",
     "recentActivity": "Recente Activiteit",
     "noRecentActivity": "Geen recente activiteit",
-    "reportUser": "Gebruiker Melden"
+    "reportUser": "Gebruiker Melden",
+    "alreadyBlocked": "Al geblokkeerd.",
+    "blockFailed": "Kon gebruiker niet blokkeren.",
+    "blockSuccess": "Gebruiker geblokkeerd. Deze verschijnt niet meer in je feed.",
+    "blockUser": "Gebruiker blokkeren"
   },
   "report": {
     "title": "Gebruiker Melden",
@@ -703,7 +775,8 @@
     "verifyAndSave": "Verifiëren & opslaan",
     "verifying": "Verifiëren…",
     "resend": "Opnieuw versturen",
-    "resendIn": "Opnieuw versturen over {{count}}s"
+    "resendIn": "Opnieuw versturen over {{count}}s",
+    "codeSent": "Code verzonden naar {{phone}}"
   },
   "managePlan": {
     "yourPlan": "Je Plan",
@@ -743,7 +816,12 @@
     "todaysVenue": "Locatie van vandaag",
     "tbdVoteInChat": "Nog te bepalen - Stem in de chat!",
     "joinGroupChat": "Groepschat joinen",
-    "maybeLater": "Misschien later"
+    "maybeLater": "Misschien later",
+    "loadingVenue": "Laden...",
+    "retry": "Opnieuw proberen",
+    "venueLoadFailed": "Kon locatie-informatie niet laden.",
+    "youreGoing": "Je gaat erheen!",
+    "youreIn": "Je doet mee!"
   },
   "myActivities": {
     "title": "Mijn Activiteiten",
@@ -813,7 +891,12 @@
     "requested": "Aangevraagd",
     "accept": "Accepteren",
     "sending": "Verzenden…",
-    "sendRequests": "{{count}} vriendschapsverzoeken versturen"
+    "sendRequests": "{{count}} vriendschapsverzoeken versturen",
+    "add": "Toevoegen",
+    "noSearchResults": "Niemand gevonden met die naam.",
+    "searchByName": "Of zoek op naam",
+    "searchPlaceholder": "Zoeken op naam…",
+    "searchTitle": "Vrienden zoeken op naam"
   },
   "shakers": {
     "manageFriends": "Mijn vrienden",
@@ -825,6 +908,33 @@
     "unshake": "Verwijderen (vriend verwijderen)",
     "block": "Blokkeren",
     "blocked": "Geblokkeerd",
-    "blockFailed": "Blokkeren mislukt"
+    "blockFailed": "Blokkeren mislukt",
+    "sentRequests": "Aangevraagd"
+  },
+  "editPlan": {
+    "addMedia": "Foto of video toevoegen",
+    "changeMedia": "Wijzigen",
+    "loadFailed": "Kon dit plan niet laden",
+    "mediaLabel": "Foto of video (optioneel)",
+    "mediaTypeError": "Kies een foto- of videobestand",
+    "mediaUploadFailed": "Uploaden mislukt. Probeer het opnieuw.",
+    "removeMedia": "Verwijderen",
+    "saveBtn": "Wijzigingen opslaan",
+    "saving": "Opslaan…",
+    "title": "Plan bewerken",
+    "uploadingMedia": "Uploaden…"
+  },
+  "stripe": {
+    "connecting": "Verbinden...",
+    "continueToStripe": "Doorgaan naar Stripe",
+    "countryLabel": "Uitbetalingsland",
+    "noCountryMatch": "Geen landen gevonden",
+    "resetDescription": "Je bestaande account wordt verwijderd. Selecteer het juiste land voor je nieuwe uitbetaalaccount.",
+    "resetTitle": "Uitbetaalaccount resetten",
+    "resetWarning": "Hierdoor wordt je huidige Stripe Connect-account verwijderd en een nieuw account aangemaakt. Je moet de verificatie opnieuw voltooien.",
+    "searchCountry": "Land zoeken...",
+    "selectCountryDescription": "Kies het land waar je een bankrekening hebt om uitbetalingen te ontvangen.",
+    "selectCountryPlaceholder": "Selecteer je land",
+    "selectCountryTitle": "Selecteer je land"
   }
 }

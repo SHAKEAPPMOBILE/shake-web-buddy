@@ -46,7 +46,9 @@
     "paymentGateInfo": "お支払い後、グループチャットにアクセスでき、他の参加者と調整できます。",
     "creatorPaymentNotSetup": "アクティビティ作成者はまだ支払いを設定していません。直接連絡するか、後でもう一度お試しください。",
     "selectPriceOption": "先に価格オプションを選択してください。",
-    "choosePriceOption": "価格オプションを選択"
+    "choosePriceOption": "価格オプションを選択",
+    "date": "日付",
+    "join": "参加"
   },
   "days": {
     "sunday": "日曜日",
@@ -87,7 +89,13 @@
     "noVenuesInCity": "あなたの街にはまだ場所がありませんが、プランを提案できます！",
     "proposePlanBtn": "プランを提案",
     "yesBtn": "はい！",
-    "humBtn": "うーん！"
+    "humBtn": "うーん！",
+    "anytimeAnywhere": "いつでも、どこでも。",
+    "eventsNearYou": "近くのイベント",
+    "proposePlan": "プランを提案する",
+    "tapInstruction": "下の青い＋をタップしてシェイクを始めよう。",
+    "tapOnThe": "タップしよう：",
+    "toStartShaking": "シェイクを始めよう！"
   },
   "activities": {
     "brunch": "ブランチ",
@@ -265,7 +273,9 @@
     "friends": "友達",
     "addFriends": "友達を追加",
     "noFriendsYet": "まだ友達を追加していません。",
-    "noFriendPlans": "友達に今後の予定はありません。"
+    "noFriendPlans": "友達に今後の予定はありません。",
+    "editPlanItem": "プランを編集",
+    "sharePlan": "このプランを共有"
   },
   "profile": {
     "title": "プロフィール",
@@ -406,7 +416,31 @@
     "stripePending": "設定を完了するには、あといくつか情報が必要です。",
     "sectionShakers": "シェイカーズ",
     "phoneNumber": "電話番号",
-    "phoneUsageNote": "任意です。友達が連絡先をインポートしたときにあなたを見つけられるようになります。"
+    "phoneUsageNote": "任意です。友達が連絡先をインポートしたときにあなたを見つけられるようになります。",
+    "creatorPayouts": "クリエイター報酬",
+    "dateOfBirth": "生年月日",
+    "edit": "編集",
+    "fromPaidActivities": "{{count}}件の有料アクティビティから",
+    "idPendingDesc": "審査中 - 通常1時間以内に完了します",
+    "idRejectedDesc": "本人確認書類を再提出してください",
+    "idRequiredDesc": "有料アクティビティの作成には必要です",
+    "idVerification": "本人確認",
+    "idVerifiedDesc": "有料アクティビティを作成できます",
+    "managePlan": "プランを管理",
+    "noEarningsYet": "有料アクティビティを作成して収益化を始めよう！",
+    "notVerified": "未確認",
+    "participants": "参加者",
+    "payoutNote": "収益をお送りするために、少なくとも1つの方法を追加してください。",
+    "payoutNoteStripeOnly": "下でStripeを接続してください — 現時点では唯一の受取方法です。今後、仮想通貨を含む他の方法も追加予定です。",
+    "payoutSaved": "受取方法を保存しました",
+    "payoutsConnected": "支払いを受け取る準備ができています",
+    "payoutsNotConnected": "支払いを受け取るための設定をしてください",
+    "pending": "保留中",
+    "rejected": "却下",
+    "save": "保存",
+    "stripeUnderReview": "設定完了です — Stripeがアカウントを審査しています。1〜3営業日ほどかかる場合があります。",
+    "verified": "確認済み",
+    "yourEarnings": "あなたの収益"
   },
   "points": {
     "title": "マイポイント",
@@ -430,7 +464,11 @@
     "noReferrals": "まだ紹介はありません",
     "shareToEarn": "リンクをシェアして登録ごとに+5ポイント獲得！",
     "bonusClaimedTitle": "🎉 ウェルカムボーナス獲得！",
-    "bonusClaimedDesc": "プロフィール完成で+10ポイント獲得しました！"
+    "bonusClaimedDesc": "プロフィール完成で+10ポイント獲得しました！",
+    "claimingAutomatically": "自動的に受け取り中…",
+    "congrats": "おめでとう！",
+    "congratsNamed": "おめでとう、{{name}}さん！",
+    "youGotPoints": "{{points}}ポイント獲得しました"
   },
   "auth": {
     "enterPhone": "電話番号を入力",
@@ -660,13 +698,47 @@
     "venueLabel": "場所はどこですか？（任意）",
     "capacityLabel": "参加人数に上限を設けますか？（任意）",
     "capacityPlaceholder": "上限なし",
-    "friendsOnly": "友達のみ"
+    "friendsOnly": "友達のみ",
+    "addVideoPic": "動画・写真を追加",
+    "addVideoPicQuestion": "動画や写真を追加しますか？",
+    "allCohosts": "共同ホスト",
+    "audienceLabel": "誰が参加できますか？",
+    "botCohost": "共同ホストを追加しますか？",
+    "botDescription": "説明を追加してください",
+    "cohostCapHit": "1つのプランにつき共同ホストは最大{{cap}}人までです。",
+    "cohostCountAdded": "{{count}}人を招待しました",
+    "cohostEmailPlaceholder": "friend@email.com — リストをまとめて貼り付けてもOK",
+    "dateLabel": "日付",
+    "descriptionAdded": "説明を追加しました",
+    "descriptionLabel": "説明（任意）",
+    "descriptionPlaceholder": "共有しておきたい追加情報があれば",
+    "invalidEmail": "有効なメールアドレスではないようです。",
+    "photoAdded": "写真を追加しました",
+    "photoUploading": "アップロード中...",
+    "someInvalidEmails": "有効なメールアドレスに見えなかった{{count}}件をスキップしました。",
+    "timeLabel": "時間",
+    "tryAgain": "もう一度試す",
+    "uploadMedia": "アップロード",
+    "voiceListening": "聞いています…",
+    "voiceNoAnswer": "この質問への回答を認識できませんでした — もう一度お試しください。",
+    "voiceNoSpeech": "音声を認識できませんでした — もう一度お試しください。",
+    "voiceNotAllowed": "マイクへのアクセスがブロックされています — 権限を確認してください。",
+    "voiceParseFailed": "音声は聞き取れましたが、プランに変換できませんでした — もう一度試すか、入力してください。",
+    "voiceSpeak": "プランを話す",
+    "voiceStop": "聞き取りを停止",
+    "voiceThinking": "考え中…",
+    "recordBtn": "録画",
+    "openSettings": "設定を開く"
   },
   "userProfile": {
     "title": "ユーザープロフィール",
     "recentActivity": "最近のアクティビティ",
     "noRecentActivity": "最近のアクティビティなし",
-    "reportUser": "ユーザーを報告"
+    "reportUser": "ユーザーを報告",
+    "alreadyBlocked": "すでにブロック済みです。",
+    "blockFailed": "ユーザーをブロックできませんでした。",
+    "blockSuccess": "ユーザーをブロックしました。フィードに表示されなくなります。",
+    "blockUser": "ユーザーをブロック"
   },
   "report": {
     "title": "ユーザーを報告",
@@ -703,7 +775,8 @@
     "verifyAndSave": "確認して保存",
     "verifying": "確認中…",
     "resend": "再送信",
-    "resendIn": "{{count}}秒後に再送信"
+    "resendIn": "{{count}}秒後に再送信",
+    "codeSent": "{{phone}} にコードを送信しました"
   },
   "managePlan": {
     "yourPlan": "あなたのプラン",
@@ -743,7 +816,12 @@
     "todaysVenue": "今日の会場",
     "tbdVoteInChat": "未定 - チャットで投票！",
     "joinGroupChat": "グループチャットに参加",
-    "maybeLater": "また後で"
+    "maybeLater": "また後で",
+    "loadingVenue": "読み込み中...",
+    "retry": "再試行",
+    "venueLoadFailed": "会場情報を読み込めませんでした。",
+    "youreGoing": "参加決定！",
+    "youreIn": "参加確定！"
   },
   "myActivities": {
     "title": "マイアクティビティ",
@@ -813,7 +891,12 @@
     "requested": "リクエスト済み",
     "accept": "承認",
     "sending": "送信中…",
-    "sendRequests": "{{count}}件の友達リクエストを送信"
+    "sendRequests": "{{count}}件の友達リクエストを送信",
+    "add": "追加",
+    "noSearchResults": "その名前の人は見つかりませんでした。",
+    "searchByName": "または名前で検索",
+    "searchPlaceholder": "名前で検索…",
+    "searchTitle": "名前で友達を探す"
   },
   "shakers": {
     "manageFriends": "友達",
@@ -825,6 +908,33 @@
     "unshake": "解除（友達を削除）",
     "block": "ブロック",
     "blocked": "ブロックしました",
-    "blockFailed": "ブロックできませんでした"
+    "blockFailed": "ブロックできませんでした",
+    "sentRequests": "リクエスト済み"
+  },
+  "editPlan": {
+    "addMedia": "写真または動画を追加",
+    "changeMedia": "変更",
+    "loadFailed": "このプランを読み込めませんでした",
+    "mediaLabel": "写真または動画（任意）",
+    "mediaTypeError": "写真または動画ファイルを選択してください",
+    "mediaUploadFailed": "アップロードに失敗しました。もう一度お試しください。",
+    "removeMedia": "削除",
+    "saveBtn": "変更を保存",
+    "saving": "保存中…",
+    "title": "プランを編集",
+    "uploadingMedia": "アップロード中…"
+  },
+  "stripe": {
+    "connecting": "接続中...",
+    "continueToStripe": "Stripeへ進む",
+    "countryLabel": "支払い国",
+    "noCountryMatch": "国が見つかりません",
+    "resetDescription": "既存のアカウントは削除されます。新しい受取アカウント用に正しい国を選択してください。",
+    "resetTitle": "受取アカウントをリセット",
+    "resetWarning": "現在のStripe Connectアカウントが削除され、新しいアカウントが作成されます。再度本人確認が必要になります。",
+    "searchCountry": "国を検索...",
+    "selectCountryDescription": "支払いを受け取る銀行口座がある国を選んでください。",
+    "selectCountryPlaceholder": "国を選択",
+    "selectCountryTitle": "国を選択してください"
   }
 }
