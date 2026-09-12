@@ -22,6 +22,7 @@ import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useTranslation } from "react-i18next";
 import { Capacitor } from "@capacitor/core";
+import { NativeSettings, AndroidSettings, IOSSettings } from "capacitor-native-settings";
 import { useScrollNudge } from "@/hooks/useScrollNudge";
 import { VenueSearchInput, VenuePlace } from "@/components/VenueSearchInput";
 import { searchVenuePlaces } from "@/lib/venueSearch";
@@ -55,7 +56,7 @@ const CURRENCIES = [
 const MAX_CHARACTERS = 50;
 
 type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "description" | "cohost" | "preview";
-type CameraMode = "idle" | "live" | "recording" | "playback" | "error";
+type CameraMode = "prompt" | "idle" | "live" | "recording" | "playback" | "error";
 
 const MAX_CLIP_SECONDS = 10;
 
@@ -312,6 +313,12 @@ export default function ProposePlanPage() {
   const [promoVideoThumbnailUrl, setPromoVideoThumbnailUrl] = useState<string | null>(null);
   const [videoUploading, setVideoUploading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
+  // True only for an actual OS-level permission denial — Try again just
+  // re-runs getUserMedia, which the OS won't re-prompt for once denied, so
+  // that button alone would be a dead end again. Only shown for this case
+  // (not e.g. no camera hardware, or camera in use elsewhere), where
+  // deep-linking to Settings wouldn't help anyway.
+  const [videoPermissionDenied, setVideoPermissionDenied] = useState(false);
   // A plan has at most one hero media item — a photo instead of a video.
   const [promoImageUrl, setPromoImageUrl] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
@@ -596,6 +603,7 @@ export default function ProposePlanPage() {
 
   const startCamera = useCallback(async () => {
     setVideoError(null);
+    setVideoPermissionDenied(false);
     setCameraMode("idle");
     setRecordedBlob(null);
     setRecordedObjectUrl(null);
@@ -607,8 +615,9 @@ export default function ProposePlanPage() {
       });
       streamRef.current = stream;
       setCameraMode("live");
-    } catch {
+    } catch (err) {
       setVideoError("Camera access needed to record — you can Skip instead.");
+      setVideoPermissionDenied(err instanceof Error && err.name === "NotAllowedError");
       setCameraMode("error");
     }
   }, []);
@@ -633,7 +642,13 @@ export default function ProposePlanPage() {
     }
     // A video or photo was already picked — show the review UI without restarting the camera
     if (promoVideoUrl || promoImageUrl) return;
-    startCamera();
+    // Ask before touching the camera/mic at all — getUserMedia triggers a
+    // real OS permission prompt, and firing that unconditionally the
+    // instant this step is reached (even for someone who never intends to
+    // add media) is bad UX on its own, and turns an unexplained "no" into
+    // the dead-end the error state used to be. Camera only actually starts
+    // once the user taps "Record" on this prompt (see renderCameraCapture).
+    setCameraMode("prompt");
     return () => {
       stopAllTracks();
       if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
@@ -703,7 +718,7 @@ export default function ProposePlanPage() {
       case "description": return planDescription.trim() ? t("createPlan.descriptionAdded", "Description added") : t("createPlan.skipped");
       case "cohost":
         return cohostEmails.length > 0
-          ? t("createPlan.cohostCountAdded", `${cohostEmails.length} invited`)
+          ? t("createPlan.cohostCountAdded", "{{count}} invited", { count: cohostEmails.length })
           : t("createPlan.skipped");
       default: return "";
     }
@@ -894,6 +909,13 @@ export default function ProposePlanPage() {
     } finally {
       setVideoUploading(false);
     }
+  };
+
+  const handleOpenAppSettings = () => {
+    void NativeSettings.open({
+      optionAndroid: AndroidSettings.ApplicationDetails,
+      optionIOS: IOSSettings.App,
+    });
   };
 
   const handleSkipVideo = () => {
@@ -1644,11 +1666,11 @@ export default function ProposePlanPage() {
     setCohostEmailInput(remainder);
     setCohostEmailError(
       capHit
-        ? t("createPlan.cohostCapHit", `Max ${COHOST_CAP} co-hosts per plan.`)
+        ? t("createPlan.cohostCapHit", "Max {{cap}} co-hosts per plan.", { cap: COHOST_CAP })
         : invalidCount > 0
         ? invalidCount === 1
           ? t("createPlan.invalidEmail", "That doesn't look like a valid email.")
-          : t("createPlan.someInvalidEmails", `Skipped ${invalidCount} that didn't look like valid emails.`)
+          : t("createPlan.someInvalidEmails", "Skipped {{count}} that didn't look like valid emails.", { count: invalidCount })
         : null
     );
   };
@@ -1910,6 +1932,39 @@ export default function ProposePlanPage() {
           className="relative w-full rounded-2xl overflow-hidden bg-black"
           style={{ aspectRatio: "3/4", maxHeight: "68vh" }}
         >
+          {/* Ask before requesting camera/mic access at all — nothing has
+              touched getUserMedia yet at this point. */}
+          {cameraMode === "prompt" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6" style={{ background: "#0d0d1a" }}>
+              <p className="text-white/80 text-center text-sm leading-relaxed">
+                {t("createPlan.addVideoPicQuestion", "Add a video or photo?")}
+              </p>
+              <div className="flex flex-col items-center gap-3 w-full max-w-[220px]">
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="w-full py-3 rounded-full text-sm font-semibold bg-white text-black"
+                >
+                  {t("createPlan.recordBtn", "Record")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUploadClick}
+                  className="w-full py-3 rounded-full text-sm font-semibold text-white border border-white/30"
+                >
+                  {t("createPlan.uploadMedia", "Upload")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSkipVideo}
+                  className="text-sm text-white/60 underline underline-offset-2"
+                >
+                  {t("createPlan.skipVideo", "Skip")}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Live preview (front camera, mirrored so it feels natural) */}
           {(cameraMode === "live" || cameraMode === "recording") && (
             <video
@@ -1956,13 +2011,27 @@ export default function ProposePlanPage() {
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
               <p className="text-white/80 text-center text-sm leading-relaxed">{videoError}</p>
               <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={startCamera}
-                  className="px-4 py-2 rounded-full text-sm font-medium text-white border border-white/30"
-                >
-                  {t("createPlan.tryAgain", "Try again")}
-                </button>
+                {videoPermissionDenied && Capacitor.isNativePlatform() ? (
+                  // Once actually denied, the OS won't show the permission
+                  // prompt again just because we call getUserMedia a second
+                  // time — "Try again" alone would silently fail forever.
+                  // Settings is the only way back in from here.
+                  <button
+                    type="button"
+                    onClick={handleOpenAppSettings}
+                    className="px-4 py-2 rounded-full text-sm font-medium text-white border border-white/30"
+                  >
+                    {t("createPlan.openSettings", "Open Settings")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="px-4 py-2 rounded-full text-sm font-medium text-white border border-white/30"
+                  >
+                    {t("createPlan.tryAgain", "Try again")}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleSkipVideo}
@@ -2141,7 +2210,7 @@ export default function ProposePlanPage() {
                   ? t("createPlan.voiceThinking", "Thinking…")
                   : isListening
                   ? t("createPlan.voiceListening", "Listening…")
-                  : t("createPlan.voiceSpeak", "Speak plan")}
+                  : t("createPlan.voiceSpeak", "Speak your plan")}
               </span>
             </div>
           )}

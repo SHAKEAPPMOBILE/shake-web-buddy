@@ -18,6 +18,7 @@ dependencies {
     implementation project(':capacitor-push-notifications')
     implementation project(':capacitor-share')
     implementation project(':revenuecat-purchases-capacitor')
+    implementation project(':capacitor-native-settings')
 
 }
 
