@@ -1947,10 +1947,31 @@ export default function ProposePlanPage() {
             </div>
           )}
 
-          {/* Camera / permission error */}
+          {/* Camera / permission error — was a dead end before: the message
+              said "you can Skip instead" but the Skip pill below only
+              rendered for cameraMode "live", so denying the permission
+              prompt (or the browser blocking it outright) left no way
+              forward at all. */}
           {cameraMode === "error" && (
-            <div className="absolute inset-0 flex items-center justify-center p-6">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6">
               <p className="text-white/80 text-center text-sm leading-relaxed">{videoError}</p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="px-4 py-2 rounded-full text-sm font-medium text-white border border-white/30"
+                >
+                  {t("createPlan.tryAgain", "Try again")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSkipVideo}
+                  className="px-4 py-2 rounded-full text-sm font-medium text-white"
+                  style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+                >
+                  {t("createPlan.skipVideo")}
+                </button>
+              </div>
             </div>
           )}
 
