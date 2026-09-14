@@ -95,7 +95,13 @@
     "proposePlan": "Propor um plano",
     "tapInstruction": "Toque no + azul abaixo para começar a shakear.",
     "tapOnThe": "Toque no",
-    "toStartShaking": "para começar a shakear!"
+    "toStartShaking": "para começar a shakear!",
+    "matchMeUp": "Me combine",
+    "findYourMatch": "Encontre seu match",
+    "findingMatch": "Procurando seu match...",
+    "noMatchFound": "Nenhum usuário compatível no momento, tente entrar em um plano",
+    "sharedInterestsCount": "{{count}} interesses em comum",
+    "sayHiBtn": "Dizer oi!"
   },
   "activities": {
     "brunch": "Brunch",

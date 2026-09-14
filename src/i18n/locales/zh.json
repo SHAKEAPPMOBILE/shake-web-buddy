@@ -95,7 +95,13 @@
     "proposePlan": "发起计划",
     "tapInstruction": "点击下方的蓝色 + 号开始 Shake。",
     "tapOnThe": "点击",
-    "toStartShaking": "开始 Shake 吧！"
+    "toStartShaking": "开始 Shake 吧！",
+    "matchMeUp": "为我配对",
+    "findYourMatch": "寻找你的配对",
+    "findingMatch": "正在寻找你的配对...",
+    "noMatchFound": "目前没有匹配的用户，试试加入一个活动吧",
+    "sharedInterestsCount": "{{count}} 个共同兴趣",
+    "sayHiBtn": "打个招呼！"
   },
   "activities": {
     "brunch": "早午餐",

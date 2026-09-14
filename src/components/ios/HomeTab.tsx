@@ -18,6 +18,7 @@ import { REGIONS, SHAKE_CITIES } from "@/data/cities";
 import { useVenueContext } from "@/contexts/VenueContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ActivityDetailsCard } from "./ActivityDetailsCard";
+import { MatchMeUpCard, MatchedProfile } from "./MatchMeUpCard";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
@@ -36,6 +37,7 @@ type CarouselItem = {
   dayNumber: number | null;
   nextDate: Date | null;
   isProposePlan?: boolean;
+  isMatchMeUp?: boolean;
 };
 
 /**
@@ -97,6 +99,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const { selectedCity, isLoading: isCityLoading, isCityOutOfRange } = useCity();
   const [isCitySelectorOpen, setIsCitySelectorOpen] = useState(false);
   const [showActivityDetails, setShowActivityDetails] = useState(false);
+  const [showMatchDetails, setShowMatchDetails] = useState(false);
+  const [matchStatus, setMatchStatus] = useState<"loading" | "found" | "none">("loading");
+  const [matchedProfile, setMatchedProfile] = useState<MatchedProfile | null>(null);
   const [selectedJoinCity, setSelectedJoinCity] = useState<string | null>(null);
   const [showCityChoices, setShowCityChoices] = useState(false);
   const { getVenueForActivity, isLoading: venuesLoading } = useVenueContext();
@@ -224,7 +229,17 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       nextDate: null,
       isProposePlan: true,
     });
-    
+
+    // "Match me up" — always last, opt-in (nothing happens until tapped).
+    orderedItems.push({
+      id: 'match-me-up',
+      label: t('home.matchMeUp', 'Match me up'),
+      emoji: '🤝',
+      dayNumber: null,
+      nextDate: null,
+      isMatchMeUp: true,
+    });
+
     return orderedItems;
   }, [t]);
 
@@ -248,8 +263,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     const smartIndex = getSmartCarouselIndex();
     const activity = CAROUSEL_ITEMS[smartIndex];
 
-    // Sunday or "Propose a plan" slot → fall back to the full carousel
-    if (!activity || activity.isProposePlan) {
+    // Sunday, "Propose a plan", or "Match me up" slot → fall back to the full carousel
+    if (!activity || activity.isProposePlan || activity.isMatchMeUp) {
       setCurrentActivityIndex(smartIndex);
       onOpenActivities?.();
       return;
@@ -274,6 +289,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     if (showActivities) {
       setCurrentActivityIndex(getSmartCarouselIndex());
       setShowActivityDetails(false);
+      setShowMatchDetails(false);
       setSelectedJoinCity(null);
       setShowCityChoices(false);
     }
@@ -372,6 +388,44 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     }, 4000);
   };
 
+  // Opt-in, on-demand: nothing runs until the user taps the "Match me up"
+  // circle. Queries find-interest-match live — no persistence, no history,
+  // no push notification (that's the original weekly-push idea; this is the
+  // simpler pull version actually shipped).
+  const handleFindMatch = async () => {
+    setShowMatchDetails(true);
+    setMatchStatus("loading");
+    setMatchedProfile(null);
+
+    const city = selectedJoinCity || selectedCity || "";
+    if (!city) {
+      setMatchStatus("none");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke("find-interest-match", {
+        body: { city },
+      });
+      if (error || !data?.matched) {
+        setMatchStatus("none");
+        return;
+      }
+      setMatchedProfile(data.profile as MatchedProfile);
+      setMatchStatus("found");
+    } catch (err) {
+      console.error("[MatchMeUp] find-interest-match failed:", err);
+      setMatchStatus("none");
+    }
+  };
+
+  const handleSayHi = () => {
+    if (!matchedProfile) return;
+    setShowMatchDetails(false);
+    onCloseActivities?.();
+    navigate("/", { state: { activeTab: "chat", other_user_id: matchedProfile.user_id } });
+  };
+
   const handleActivitySelect = () => {
     // On iOS Safari, `onClick` can fire after touch handlers and state updates.
     // So we lock the chosen activity on pointer/touch start and use it here.
@@ -384,6 +438,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       if (activityToSelect.isProposePlan) {
         onCloseActivities?.();
         navigate("/propose-plan");
+        tappedActivityRef.current = null;
+        return;
+      }
+      if (activityToSelect.isMatchMeUp) {
+        void handleFindMatch();
         tappedActivityRef.current = null;
         return;
       }
@@ -528,13 +587,17 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
         setShowCityChoices(false);
         return;
       }
+      if (showMatchDetails) {
+        setShowMatchDetails(false);
+        return;
+      }
 
       // Only close if clicking the backdrop itself, not the carousel
       if (e.target === e.currentTarget) {
         onCloseActivities?.();
       }
     },
-    [onCloseActivities, showActivityDetails]
+    [onCloseActivities, showActivityDetails, showMatchDetails]
   );
 
   // Landing page for logged out users
@@ -661,12 +724,16 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   ActivityDetailsCard's own opacity left a brief window where
                   both were semi-visible together, showing this date headline
                   bleeding through the card. */}
-              <div className={cn(showActivityDetails ? "opacity-0 pointer-events-none" : "opacity-100")}>
-                {/* Date display - Above the circle (or "Propose a plan" text) */}
+              <div className={cn((showActivityDetails || showMatchDetails) ? "opacity-0 pointer-events-none" : "opacity-100")}>
+                {/* Date display - Above the circle (or "Propose a plan" / "Match me up" text) */}
                 <div className="mb-8 animate-fade-in text-center">
                   {currentActivity?.isProposePlan ? (
                     <div className="text-5xl md:text-6xl font-handwritten text-foreground">
                       {t('home.proposePlan', 'Propose a plan')}
+                    </div>
+                  ) : currentActivity?.isMatchMeUp ? (
+                    <div className="text-5xl md:text-6xl font-handwritten text-foreground">
+                      {t('home.matchMeUp', 'Match me up')}
                     </div>
                   ) : (
                     <div className="text-5xl md:text-6xl font-handwritten text-foreground">
@@ -717,10 +784,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   <div className="text-xl font-semibold text-foreground">
                     {currentActivity?.isProposePlan
                       ? t('home.anytimeAnywhere', 'Anytime, Anywhere.')
-                      : currentActivity?.label}
+                      : currentActivity?.isMatchMeUp
+                        ? t('home.findYourMatch', 'Find your match')
+                        : currentActivity?.label}
                   </div>
                   {/* Attendee avatars — who's already joined this activity, tap to view their profile */}
-                  {!currentActivity?.isProposePlan && carouselJoinAvatars.length > 0 && (
+                  {!currentActivity?.isProposePlan && !currentActivity?.isMatchMeUp && carouselJoinAvatars.length > 0 && (
                     <div className="mt-2 flex items-center justify-center">
                       {carouselJoinAvatars.slice(0, 3).map((a, i) => (
                         <button
@@ -783,6 +852,15 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                 onToggleCityChoices={() => setShowCityChoices((prev) => !prev)}
                 onSelectCity={(cityName) => { setSelectedJoinCity(cityName); setShowCityChoices(false); }}
                 onUpgradeClick={onUpgradeClick}
+              />
+
+              <MatchMeUpCard
+                show={showMatchDetails}
+                status={matchStatus}
+                profile={matchedProfile}
+                joinCity={joinCity}
+                onSayHi={handleSayHi}
+                onClose={() => setShowMatchDetails(false)}
               />
             </div>
           </div>

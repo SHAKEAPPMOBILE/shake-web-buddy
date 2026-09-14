@@ -95,7 +95,13 @@
     "proposePlan": "Plan voorstellen",
     "tapInstruction": "Tik op de blauwe + hieronder om te beginnen met shaken.",
     "tapOnThe": "Tik op de",
-    "toStartShaking": "om te beginnen met shaken!"
+    "toStartShaking": "om te beginnen met shaken!",
+    "matchMeUp": "Match mij",
+    "findYourMatch": "Vind je match",
+    "findingMatch": "Je match wordt gezocht...",
+    "noMatchFound": "Op dit moment geen match gevonden, probeer een plan te joinen",
+    "sharedInterestsCount": "{{count}} gedeelde interesses",
+    "sayHiBtn": "Zeg hoi!"
   },
   "activities": {
     "brunch": "Brunch",

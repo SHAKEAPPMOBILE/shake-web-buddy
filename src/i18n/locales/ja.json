@@ -95,7 +95,13 @@
     "proposePlan": "プランを提案する",
     "tapInstruction": "下の青い＋をタップしてシェイクを始めよう。",
     "tapOnThe": "タップしよう：",
-    "toStartShaking": "シェイクを始めよう！"
+    "toStartShaking": "シェイクを始めよう！",
+    "matchMeUp": "マッチさせて",
+    "findYourMatch": "マッチを探す",
+    "findingMatch": "マッチを探しています...",
+    "noMatchFound": "現在マッチするユーザーがいません。プランに参加してみましょう",
+    "sharedInterestsCount": "共通の興味 {{count}} 件",
+    "sayHiBtn": "挨拶する！"
   },
   "activities": {
     "brunch": "ブランチ",

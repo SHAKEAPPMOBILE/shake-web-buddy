@@ -95,7 +95,13 @@
     "proposePlan": "Запропонувати план",
     "tapInstruction": "Торкніться синього + внизу, щоб почати shake.",
     "tapOnThe": "Торкніться",
-    "toStartShaking": "щоб почати shake!"
+    "toStartShaking": "щоб почати shake!",
+    "matchMeUp": "Знайди мені пару",
+    "findYourMatch": "Знайди свій метч",
+    "findingMatch": "Шукаємо твій метч...",
+    "noMatchFound": "Наразі немає відповідних користувачів, спробуй приєднатися до плану",
+    "sharedInterestsCount": "{{count}} спільних інтересів",
+    "sayHiBtn": "Привітатися!"
   },
   "activities": {
     "brunch": "Бранч",
