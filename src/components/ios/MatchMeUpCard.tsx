@@ -12,6 +12,8 @@ export interface MatchMeUpCardProps {
   show: boolean;
   status: "loading" | "found" | "none";
   profile: MatchedProfile | null;
+  /** The current user's own avatar — shown side by side with the match's. */
+  myAvatarUrl: string | null;
   joinCity: string;
   onSayHi: () => void;
   onClose: () => void;
@@ -26,7 +28,7 @@ export interface MatchMeUpCardProps {
  * ActivityDetailsCard's prop contract (capacity, venue, city-switcher —
  * none of which apply here) with match-specific special cases.
  */
-export function MatchMeUpCard({ show, status, profile, joinCity, onSayHi, onClose }: MatchMeUpCardProps) {
+export function MatchMeUpCard({ show, status, profile, myAvatarUrl, joinCity, onSayHi, onClose }: MatchMeUpCardProps) {
   const { t } = useTranslation();
 
   return (
@@ -63,14 +65,24 @@ export function MatchMeUpCard({ show, status, profile, joinCity, onSayHi, onClos
 
       {status === "found" && profile && (
         <div className="w-full p-5 text-center space-y-3">
-          <div className="w-24 h-24 mx-auto rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
-            {profile.avatar_url ? (
-              <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <span className="text-3xl font-semibold text-foreground">
-                {profile.name?.charAt(0)?.toUpperCase() || "?"}
-              </span>
-            )}
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden shrink-0">
+              {myAvatarUrl ? (
+                <img src={myAvatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <span className="text-2xl font-semibold text-foreground">You</span>
+              )}
+            </div>
+            <span className="text-2xl shrink-0">🤝</span>
+            <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden shrink-0">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <span className="text-2xl font-semibold text-foreground">
+                  {profile.name?.charAt(0)?.toUpperCase() || "?"}
+                </span>
+              )}
+            </div>
           </div>
 
           <p className="text-2xl font-display font-bold text-foreground">{profile.name}</p>

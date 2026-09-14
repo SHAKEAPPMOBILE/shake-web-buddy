@@ -102,6 +102,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const [showMatchDetails, setShowMatchDetails] = useState(false);
   const [matchStatus, setMatchStatus] = useState<"loading" | "found" | "none">("loading");
   const [matchedProfile, setMatchedProfile] = useState<MatchedProfile | null>(null);
+  const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
   const [selectedJoinCity, setSelectedJoinCity] = useState<string | null>(null);
   const [showCityChoices, setShowCityChoices] = useState(false);
   const { getVenueForActivity, isLoading: venuesLoading } = useVenueContext();
@@ -387,6 +388,21 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       setShowTapInstruction(false);
     }, 4000);
   };
+
+  // My own avatar, shown side-by-side with the match's in MatchMeUpCard.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setMyAvatarUrl(data?.avatar_url ?? null);
+      });
+    return () => { cancelled = true; };
+  }, [user]);
 
   // Opt-in, on-demand: nothing runs until the user taps the "Match me up"
   // circle. Queries find-interest-match live — no persistence, no history,
@@ -785,7 +801,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     {currentActivity?.isProposePlan
                       ? t('home.anytimeAnywhere', 'Anytime, Anywhere.')
                       : currentActivity?.isMatchMeUp
-                        ? t('home.findYourMatch', 'Find your match')
+                        ? t('home.findYourMatch', 'Find a match')
                         : currentActivity?.label}
                   </div>
                   {/* Attendee avatars — who's already joined this activity, tap to view their profile */}
@@ -858,6 +874,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                 show={showMatchDetails}
                 status={matchStatus}
                 profile={matchedProfile}
+                myAvatarUrl={myAvatarUrl}
                 joinCity={joinCity}
                 onSayHi={handleSayHi}
                 onClose={() => setShowMatchDetails(false)}
