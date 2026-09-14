@@ -177,14 +177,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     (async () => {
       setIsFriendPlansLoading(true);
       const friendIds = friends.map((f) => f.user_id);
-      const nowIso = new Date().toISOString();
+      // Same 3h-after-start grace window as the main discovery query below.
+      const cutoffIso = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
       const { data } = await supabase
         .from("user_activities")
         .select("*")
         .in("user_id", friendIds)
         .eq("is_active", true)
         .eq("is_hidden", false)
-        .or(`scheduled_for.gte.${nowIso},scheduled_for.is.null`)
+        .or(`scheduled_for.gte.${cutoffIso},scheduled_for.is.null`)
         .order("scheduled_for", { ascending: true, nullsFirst: false })
         .limit(50);
       if (cancelled) return;
@@ -260,14 +261,19 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     const loadingTimeout = setTimeout(() => setIsLoading(false), 5000);
 
     try {
-      // Visibility window: plans more than 24 h past are hidden from the feed.
+      // Visibility window: a plan stays in the public feed until 3h after its
+      // start time, not the instant it starts — someone browsing at 5:30pm
+      // should still see a plan that started at 5pm. This same cutoff also
+      // has to gate the DB queries below (not just this JS safety net) —
+      // they used to filter scheduled_for >= now(), which discarded a plan
+      // right at start time before this filter ever got a chance to apply.
       const nowMs = Date.now();
-      const twentyFourHoursAgo = new Date(nowMs - 24 * 60 * 60 * 1000);
-      const fiveDaysAgo        = new Date(nowMs - 5 * 24 * 60 * 60 * 1000);
+      const threeHoursAgo = new Date(nowMs - 3 * 60 * 60 * 1000);
+      const fiveDaysAgo   = new Date(nowMs - 5 * 24 * 60 * 60 * 1000);
 
       const isActivityVisible = (a: { scheduled_for: string | null; created_at: string }) =>
         a.scheduled_for !== null
-          ? parseDbDate(a.scheduled_for) >= twentyFourHoursAgo
+          ? parseDbDate(a.scheduled_for) >= threeHoursAgo
           : parseDbDate(a.created_at)    >= fiveDaysAgo;
 
       // Normalised city strings for comparison (trim + lowercase on both sides).
@@ -348,12 +354,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       // My City  → non-hidden, non-auto plans in effectiveCity, future-dated.
       // All Cities → non-hidden plans in cities OTHER than effectiveCity, future-dated.
       //
-      // The future-date filter (scheduled_for >= now OR null) is applied at the DB
-      // level so that LIMIT is never consumed by past plans. Without it, Medellín's
-      // 16+ past-dated rows fill LIMIT 20 before newer plans (e.g. July 29) are
-      // reached, causing them to silently vanish from the feed.
-      const nowDate = new Date(nowMs);
-      const nowIso = nowDate.toISOString();
+      // The future-date filter (scheduled_for >= cutoff OR null) is applied at
+      // the DB level so that LIMIT is never consumed by past plans. Without it,
+      // Medellín's 16+ past-dated rows fill LIMIT 20 before newer plans (e.g.
+      // July 29) are reached, causing them to silently vanish from the feed.
+      // Cutoff is threeHoursAgo (not now()) so a plan doesn't drop out of the
+      // query the instant it starts — matches isActivityVisible's grace window.
+      const nowIso = threeHoursAgo.toISOString();
       const cityPlansDataResult = await (
         !effectiveCity
           ? Promise.resolve({ data: [] as any[], error: null })
@@ -391,18 +398,18 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       // Creators see their own plans here when Feed A (RPC) didn't return them
       // (e.g. pre-fix plans with blank city in activity_joins). Plans already in
       // Feed A are already excluded by _afterJoinFilter, so no duplicates.
+      // isActivityVisible already IS the 3h-after-start cutoff — no further
+      // "is it still in the future" re-filter on top, or that would just
+      // undo the grace window this fix exists for.
       const _afterVisibility = _afterJoinFilter.filter((a: { scheduled_for: string | null; created_at: string }) => isActivityVisible(a));
-      const _afterFuture     = _afterVisibility.filter((a: { scheduled_for: string | null }) => a.scheduled_for == null || parseDbDate(a.scheduled_for) >= nowDate);
-      const _dropped = _rawRows.filter((a: any) => !_afterFuture.find((b: any) => b.id === a.id));
+      const _dropped = _rawRows.filter((a: any) => !_afterVisibility.find((b: any) => b.id === a.id));
       if (_dropped.length > 0) {
         console.log(`[PlansTab:FILTER] ${_dropped.length} row(s) dropped from real-plans feed:`, _dropped.map((a: any) => ({
           id: a.id, title: a.title, city: a.city, is_active: a.is_active, user_id: a.user_id, scheduled_for: a.scheduled_for,
-          reason: myJoinedPlanIds.has(a.id) ? "already-joined"
-            : !isActivityVisible(a) ? "not-visible-24h-window"
-            : "past-dated",
+          reason: myJoinedPlanIds.has(a.id) ? "already-joined" : "not-visible-3h-window",
         })));
       }
-      const cityPublicPlans: any[] = _afterFuture;
+      const cityPublicPlans: any[] = _afterVisibility;
 
       // IDs of plans already in the real-plans feed — used below to deduplicate the
       // discovery carousel so auto-generated plans don't appear in both sections.
