@@ -642,9 +642,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             <button
               type="button"
               onClick={() => setIsCitySelectorOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-sm text-foreground hover:border-primary/40 transition-colors"
+              className="inline-flex items-center px-3 py-1.5 rounded-full bg-card border border-border text-sm text-foreground hover:border-primary/40 transition-colors"
             >
-              <LocationPinEmoji className="text-base" />
               <span className="truncate max-w-[120px]">
                 {selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..."
                   ? selectedCity
