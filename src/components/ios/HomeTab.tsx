@@ -628,6 +628,31 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           onTouchEnd={handleTouchEnd}
           style={{ touchAction: 'pan-y', background: timeOfDayGradient }}
         >
+          {/* Top bar — SHAKE-SOCIAL wordmark on the left, city pill on the
+              right, same pieces as the logged-out splash and the logged-in
+              home header, just relocated into the corners for this overlay. */}
+          <div
+            className="absolute inset-x-0 top-0 pt-[calc(env(safe-area-inset-top,0px)+1rem)] px-5 flex items-start justify-between z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="leading-tight text-left">
+              <p className="text-base font-display font-bold text-foreground tracking-wider">SHAKE</p>
+              <p className="text-[10px] font-display font-medium text-muted-foreground tracking-[0.3em]">SOCIAL</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsCitySelectorOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-sm text-foreground hover:border-primary/40 transition-colors"
+            >
+              <LocationPinEmoji className="text-base" />
+              <span className="truncate max-w-[120px]">
+                {selectedCity && selectedCity.trim() !== "" && selectedCity !== "Loading..."
+                  ? selectedCity
+                  : t('home.selectYourCity', 'Select your city')}
+              </span>
+            </button>
+          </div>
+
           <div
             className="flex flex-col items-center justify-center w-full px-6"
             onClick={(e) => e.stopPropagation()}

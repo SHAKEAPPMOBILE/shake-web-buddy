@@ -41,3 +41,24 @@ export function attachActionHaptics(): () => void {
   document.addEventListener("pointerdown", handler, true);
   return () => document.removeEventListener("pointerdown", handler, true);
 }
+
+/**
+ * App-wide typing haptic — one delegated `keydown` listener mounted once at
+ * the root (see App.tsx) instead of wiring `onKeyDown={onTypingKeyDown}` into
+ * every text field by hand, which is how chat and sign-up ended up with it
+ * and profile editing (and everything else) quietly didn't. Fires for any
+ * real keystroke into an <input>, <textarea>, or contenteditable element,
+ * anywhere in the app.
+ */
+export function attachTypingHaptics(): () => void {
+  const handler = (e: KeyboardEvent) => {
+    if (MODIFIER_KEYS.has(e.key) || e.ctrlKey || e.metaKey || e.altKey) return;
+    const target = e.target as HTMLElement | null;
+    const isTypingTarget =
+      target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
+    if (!isTypingTarget) return;
+    typingHaptic();
+  };
+  document.addEventListener("keydown", handler, true);
+  return () => document.removeEventListener("keydown", handler, true);
+}

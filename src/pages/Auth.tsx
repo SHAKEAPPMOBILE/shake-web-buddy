@@ -40,7 +40,7 @@ import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
 import { OnboardingInterestsStep } from "@/components/auth/OnboardingInterestsStep";
 import { OnboardingSocialStep } from "@/components/auth/OnboardingSocialStep";
-import { onTypingKeyDown, attachActionHaptics } from "@/lib/haptics";
+import { attachActionHaptics } from "@/lib/haptics";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
 const FACE_ID_FEATURE_ENABLED = false;
@@ -327,22 +327,44 @@ export default function Auth() {
     const timer = setTimeout(() => {
       try {
         ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const playNote = (freq: number, startAt: number, duration: number, gain: number) => {
+        const now = ctx.currentTime;
+
+        // Upward "whoosh" sweep — the energetic build before the accent,
+        // instead of just starting cold on a note.
+        const sweep = ctx.createOscillator();
+        const sweepFilter = ctx.createBiquadFilter();
+        const sweepGain = ctx.createGain();
+        sweep.connect(sweepFilter);
+        sweepFilter.connect(sweepGain);
+        sweepGain.connect(ctx.destination);
+        sweep.type = "sawtooth";
+        sweepFilter.type = "lowpass";
+        sweepFilter.frequency.setValueAtTime(1200, now);
+        sweep.frequency.setValueAtTime(220, now);
+        sweep.frequency.exponentialRampToValueAtTime(760, now + 0.16);
+        sweepGain.gain.setValueAtTime(0, now);
+        sweepGain.gain.linearRampToValueAtTime(0.22, now + 0.03);
+        sweepGain.gain.linearRampToValueAtTime(0, now + 0.18);
+        sweep.start(now);
+        sweep.stop(now + 0.18);
+
+        // Bright two-note "yeah!" accent landing right as the sweep peaks —
+        // punchier and more celebratory than a plain chime.
+        const playAccent = (freq: number, startAt: number, gain: number) => {
           const osc = ctx!.createOscillator();
           const gainNode = ctx!.createGain();
           osc.connect(gainNode);
           gainNode.connect(ctx!.destination);
-          osc.type = "sine";
-          osc.frequency.setValueAtTime(freq, ctx!.currentTime + startAt);
-          gainNode.gain.setValueAtTime(0, ctx!.currentTime + startAt);
-          gainNode.gain.linearRampToValueAtTime(gain, ctx!.currentTime + startAt + 0.02);
-          gainNode.gain.exponentialRampToValueAtTime(0.001, ctx!.currentTime + startAt + duration);
-          osc.start(ctx!.currentTime + startAt);
-          osc.stop(ctx!.currentTime + startAt + duration);
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, now + startAt);
+          gainNode.gain.setValueAtTime(0, now + startAt);
+          gainNode.gain.linearRampToValueAtTime(gain, now + startAt + 0.015);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, now + startAt + 0.35);
+          osc.start(now + startAt);
+          osc.stop(now + startAt + 0.35);
         };
-        // Simple ascending two-note chime: C5 → E5
-        playNote(523.25, 0,    0.5, 0.18);
-        playNote(659.25, 0.18, 0.6, 0.14);
+        playAccent(987.77, 0.15, 0.2);   // B5
+        playAccent(1318.51, 0.19, 0.16); // E6
       } catch {
         // Audio blocked or unsupported — silently skip
       }
@@ -1462,7 +1484,7 @@ export default function Auth() {
                     placeholder="Your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    onKeyDown={(e) => { onTypingKeyDown(e); if (e.key === "Enter") handleNameContinue(); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleNameContinue(); }}
                     className="w-full h-14 pl-10 pr-4 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
                     autoFocus
                   />
@@ -1504,7 +1526,7 @@ export default function Auth() {
                     placeholder="+1 (555) 000-0000"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    onKeyDown={(e) => { onTypingKeyDown(e); if (e.key === "Enter") advanceProfileStep(); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") advanceProfileStep(); }}
                     className="flex-1 h-14 px-5 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
                     autoFocus
                   />
@@ -1613,7 +1635,7 @@ export default function Auth() {
                         setOccupationTouched(true);
                         setOccupationError(validateOccupation(occupation));
                       }}
-                      onKeyDown={(e) => { onTypingKeyDown(e); if (e.key === "Enter") handleOccupationContinue(); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleOccupationContinue(); }}
                       className="w-full h-14 pl-10 pr-4 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
                       autoFocus
                     />

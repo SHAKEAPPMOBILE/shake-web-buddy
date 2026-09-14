@@ -16,6 +16,7 @@ import { IOSAppLayout } from "@/components/IOSAppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useReferralTracking } from "@/hooks/useReferralTracking";
 import { initializeRevenueCat } from "./lib/revenuecat";
+import { attachTypingHaptics } from "@/lib/haptics";
 import Auth from "./pages/Auth";
 import OAuthCallback from "./pages/OAuthCallback";
 import Profile from "./pages/Profile";
@@ -75,6 +76,10 @@ const App = () => {
   useEffect(() => {
     initializeRevenueCat();
   }, []);
+
+  // One delegated listener for typing haptics, for the whole app — chats,
+  // profile editing, sign-up, propose-a-plan, everywhere someone types.
+  useEffect(() => attachTypingHaptics(), []);
 
   // Handle deep links (Universal Links, App Links, and the OAuth custom
   // scheme) by hard-navigating the WebView to the same path/query/hash the

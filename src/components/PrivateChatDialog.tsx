@@ -20,7 +20,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 import { useFloatingBubbles } from "@/hooks/useFloatingBubbles";
-import { onTypingKeyDown } from "@/lib/haptics";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢"];
 
@@ -765,7 +764,6 @@ export function PrivateChatDialog({
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={onTypingKeyDown}
             placeholder={canSendText ? t('chat.typeMessage', 'Type a message...') : t('chat.characterLimitReached', 'Character limit reached')}
             className="flex-1 text-gray-900 placeholder:text-gray-400 focus-visible:ring-gray-300"
             style={{ background: "white", borderColor: "rgba(0,0,0,0.15)", color: "#111827" }}

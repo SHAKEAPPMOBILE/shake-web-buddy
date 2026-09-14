@@ -33,7 +33,6 @@ import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/
 import { getPriceValue } from "@/lib/utils";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 import { useFloatingBubbles } from "@/hooks/useFloatingBubbles";
-import { onTypingKeyDown } from "@/lib/haptics";
 
 interface PlanMessage {
   id: string;
@@ -955,7 +954,6 @@ export function PlanGroupChatView({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            onKeyDown={onTypingKeyDown}
             disabled={!user || (!isPremium && !canSendText) || giphyPickerOpen || isUploadingMedia}
             className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
           />
