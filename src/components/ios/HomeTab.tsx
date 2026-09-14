@@ -633,7 +633,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative w-full max-w-sm">
-              <div className={cn("transition-opacity duration-200", showActivityDetails ? "opacity-0 pointer-events-none" : "opacity-100")}>
+              {/* Hard cut, not a cross-fade — animating this against
+                  ActivityDetailsCard's own opacity left a brief window where
+                  both were semi-visible together, showing this date headline
+                  bleeding through the card. */}
+              <div className={cn(showActivityDetails ? "opacity-0 pointer-events-none" : "opacity-100")}>
                 {/* Date display - Above the circle (or "Propose a plan" text) */}
                 <div className="mb-8 animate-fade-in text-center">
                   {currentActivity?.isProposePlan ? (
@@ -747,7 +751,6 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                 carouselJoinCount={carouselJoinCount}
                 maxGroupSize={MAX_GROUP_SIZE}
                 hasNoVenue={hasNoVenue}
-                background={timeOfDayGradient}
                 showCityChoices={showCityChoices}
                 groupedCities={groupedCities}
                 isPremium={isPremium}
