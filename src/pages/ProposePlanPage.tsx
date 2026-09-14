@@ -642,14 +642,35 @@ export default function ProposePlanPage() {
     }
     // A video or photo was already picked — show the review UI without restarting the camera
     if (promoVideoUrl || promoImageUrl) return;
-    // Ask before touching the camera/mic at all — getUserMedia triggers a
-    // real OS permission prompt, and firing that unconditionally the
-    // instant this step is reached (even for someone who never intends to
-    // add media) is bad UX on its own, and turns an unexplained "no" into
-    // the dead-end the error state used to be. Camera only actually starts
-    // once the user taps "Record" on this prompt (see renderCameraCapture).
-    setCameraMode("prompt");
+
+    let cancelled = false;
+    (async () => {
+      // Only ask permission for permission's sake when we don't already know
+      // the answer. If the browser already granted camera access (a prior
+      // visit, or the native app's own permission), calling getUserMedia
+      // resolves silently with no OS dialog — so go straight to the live
+      // camera instead of making the user tap through an extra "Add a video
+      // or photo?" step first. If it's already denied, or we genuinely don't
+      // know yet (Safari has no camera entry in the Permissions API), land
+      // on that same prompt instead of firing getUserMedia unconditionally —
+      // that's still the real OS permission dialog, and asking for it the
+      // instant this step is reached (even for someone who never intends to
+      // add media) is bad UX, and turns an unexplained "no" into a dead end.
+      try {
+        const status = await navigator.permissions?.query({ name: "camera" as PermissionName });
+        if (cancelled) return;
+        if (status?.state === "granted") {
+          void startCamera();
+          return;
+        }
+      } catch {
+        // "camera" isn't a recognized permission name in this browser — fall through.
+      }
+      if (!cancelled) setCameraMode("prompt");
+    })();
+
     return () => {
+      cancelled = true;
       stopAllTracks();
       if (recordingTimerRef.current) { clearTimeout(recordingTimerRef.current); recordingTimerRef.current = null; }
       if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
