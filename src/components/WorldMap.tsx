@@ -14,6 +14,9 @@ import { LocateFixed } from "lucide-react";
 // serves an "API KEY REQUIRED" watermark instead of real map tiles).
 const FREE_DARK_STYLE: maplibregl.StyleSpecification = {
   version: 8,
+  // Globe below ~zoom 5, auto-blending to a flat mercator map as you zoom
+  // in — built into MapLibre, no custom shader work needed.
+  projection: { type: "globe" },
   sources: {
     "esri-dark-gray": {
       type: "raster",
@@ -35,6 +38,41 @@ const FREE_DARK_STYLE: maplibregl.StyleSpecification = {
     },
   ],
 };
+
+// Space-black sky far out, easing into a normal dusk-blue atmosphere as you
+// descend toward a city — so the globe reads as "floating in space" at low
+// zoom instead of just a round version of the same flat basemap.
+const SPACE_SKY: maplibregl.SkySpecification = {
+  "sky-color": ["interpolate", ["linear"], ["zoom"], 0, "#04040c", 3, "#0a0a2a", 6, "#2b2f6b"],
+  "horizon-color": ["interpolate", ["linear"], ["zoom"], 0, "#0a0a20", 3, "#1c2050", 6, "#5a5f9e"],
+  "sky-horizon-blend": 0.6,
+  "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 0.9, 4, 0.5, 7, 0],
+};
+
+// Zoom span over which the starfield backdrop fades — fully visible out in
+// "universe view", gone by the time you're looking at a single city.
+const STARFIELD_FADE_START_ZOOM = 5;
+const STARFIELD_FADE_END_ZOOM = 2;
+
+// Deterministic pseudo-random star field (fixed seed) so it doesn't
+// re-shuffle on every re-render — plain CSS radial-gradients, no canvas or
+// image asset needed.
+function generateStarfieldBackground(count: number): string {
+  let seed = 1337;
+  const rand = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+  const stars: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const x = (rand() * 100).toFixed(2);
+    const y = (rand() * 100).toFixed(2);
+    const size = (rand() * 1.4 + 0.4).toFixed(2);
+    const alpha = (rand() * 0.6 + 0.4).toFixed(2);
+    stars.push(`radial-gradient(${size}px ${size}px at ${x}% ${y}%, rgba(255,255,255,${alpha}), transparent 100%)`);
+  }
+  return stars.join(", ");
+}
 
 export interface WorldMapHandle {
   flyToCity: (cityName: string) => void;
@@ -98,8 +136,23 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const clusterIndexRef = useRef<Supercluster<ClusterPointProps> | null>(null);
   const activityByIdRef = useRef<Map<string, WorldMapActivity>>(new Map());
+  const starfieldRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [hoveredActivity, setHoveredActivity] = useState<string | null>(null);
+  const starfieldBackground = useMemo(() => generateStarfieldBackground(140), []);
+
+  // Fade the starfield in/out by directly mutating style.opacity on every
+  // zoom tick — going through React state here would re-render the whole
+  // map wrapper dozens of times a second during a pinch/scroll zoom.
+  const updateStarfieldOpacity = useCallback(() => {
+    if (!map.current || !starfieldRef.current) return;
+    const zoom = map.current.getZoom();
+    const t = Math.max(
+      0,
+      Math.min(1, (STARFIELD_FADE_START_ZOOM - zoom) / (STARFIELD_FADE_START_ZOOM - STARFIELD_FADE_END_ZOOM))
+    );
+    starfieldRef.current.style.opacity = String(t);
+  }, []);
 
   // Expose flyToCity method via ref
   useImperativeHandle(ref, () => ({
@@ -182,15 +235,20 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
     );
 
     map.current.on("load", () => {
+      map.current?.setSky(SPACE_SKY);
       setMapLoaded(true);
+      updateStarfieldOpacity();
     });
 
+    map.current.on("zoom", updateStarfieldOpacity);
+
     return () => {
+      map.current?.off("zoom", updateStarfieldOpacity);
       markersRef.current.forEach((marker) => marker.remove());
       map.current?.remove();
       map.current = null;
     };
-  }, [initialCity]);
+  }, [initialCity, updateStarfieldOpacity]);
 
   // Build one individual-activity marker element — creator avatar with a small
   // activity-emoji badge, falling back to a plain colored emoji circle when
@@ -376,11 +434,20 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
 
   return (
     <div className="relative w-full h-full min-h-[300px]">
-      <div 
-        ref={mapContainer} 
-        className="absolute inset-0 rounded-xl overflow-hidden"
+      {/* Starfield — sits behind the map canvas, faded in via updateStarfieldOpacity
+          as you zoom out past the globe threshold; the globe's own WebGL canvas is
+          transparent outside the sphere so these show through around it. */}
+      <div
+        ref={starfieldRef}
+        aria-hidden="true"
+        className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none transition-opacity"
+        style={{ opacity: 0, background: `#04040c`, backgroundImage: starfieldBackground }}
       />
-      
+      <div
+        ref={mapContainer}
+        className="absolute inset-0 rounded-xl overflow-hidden bg-transparent"
+      />
+
       {/* Center on city button */}
       {mapLoaded && initialCity && (
         <Button

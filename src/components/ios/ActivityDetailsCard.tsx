@@ -24,6 +24,10 @@ export interface ActivityDetailsCardProps {
   carouselJoinCount: number;
   maxGroupSize: number;
   hasNoVenue: boolean;
+  /** Opaque background to paint behind the card so nothing behind it (e.g. the
+   * date headline it's replacing) can ever show through. Defaults to the
+   * page background color. */
+  background?: string;
   /** Label for the primary confirm button. Defaults to "Yes!" */
   confirmLabel?: string;
   showCityChoices?: boolean;
@@ -53,6 +57,7 @@ export function ActivityDetailsCard({
   groupedCities = {},
   isPremium = false,
   showDifferentCity = true,
+  background,
   onConfirm,
   onClose,
   onToggleCityChoices,
@@ -65,9 +70,10 @@ export function ActivityDetailsCard({
   return (
     <div
       className={cn(
-        "absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-200",
+        "absolute inset-0 flex flex-col items-center justify-center rounded-3xl",
         show ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
+      style={{ background: show ? (background ?? "hsl(var(--background))") : undefined }}
       onClick={onClose}
     >
       <div className="w-full p-5 text-center space-y-3 bg-transparent border-0 shadow-none">

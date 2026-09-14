@@ -747,6 +747,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                 carouselJoinCount={carouselJoinCount}
                 maxGroupSize={MAX_GROUP_SIZE}
                 hasNoVenue={hasNoVenue}
+                background={timeOfDayGradient}
                 showCityChoices={showCityChoices}
                 groupedCities={groupedCities}
                 isPremium={isPremium}
