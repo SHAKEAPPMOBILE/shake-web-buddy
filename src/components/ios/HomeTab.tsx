@@ -28,6 +28,11 @@ import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 // ['dinner'=0, 'brunch'=1, propose-plan appended at end]
 const CAROUSEL_FIXED_ORDER = ['dinner', 'brunch'];
 
+// Temporary rollout flag: keep the "Match me up" feature fully built (edge
+// function, MatchMeUpCard, etc.) but hidden from the carousel until it's
+// ready to ship.
+const MATCH_ME_UP_ENABLED = false;
+
 // Hoisted so it can be referenced in state declarations inside the component.
 type CarouselItem = {
   id: string;
@@ -232,14 +237,16 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     });
 
     // "Match me up" — always last, opt-in (nothing happens until tapped).
-    orderedItems.push({
-      id: 'match-me-up',
-      label: t('home.matchMeUp', 'Match me up'),
-      emoji: '🤝',
-      dayNumber: null,
-      nextDate: null,
-      isMatchMeUp: true,
-    });
+    if (MATCH_ME_UP_ENABLED) {
+      orderedItems.push({
+        id: 'match-me-up',
+        label: t('home.matchMeUp', 'Match me up'),
+        emoji: '🤝',
+        dayNumber: null,
+        nextDate: null,
+        isMatchMeUp: true,
+      });
+    }
 
     return orderedItems;
   }, [t]);
