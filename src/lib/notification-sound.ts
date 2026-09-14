@@ -114,7 +114,7 @@ export const playWelcomeVoice = async () => {
 
     const audioBlob = await response.blob();
     welcomeAudioUrl = URL.createObjectURL(audioBlob);
-    
+
     const audio = new Audio(welcomeAudioUrl);
     audio.volume = 0.7;
     await audio.play();
@@ -122,5 +122,53 @@ export const playWelcomeVoice = async () => {
     console.error("Error playing welcome voice:", error);
   } finally {
     welcomeAudioLoading = false;
+  }
+};
+
+// Cache for the hype "Yeaaah!" audio blob URL
+let hypeYeahAudioUrl: string | null = null;
+let hypeYeahAudioLoading = false;
+
+// Play a real voice saying "Yeaaah!" — used for the auth method screen's
+// entrance sound, replacing a synthesized tone with an actual human voice.
+export const playHypeYeah = async () => {
+  try {
+    if (hypeYeahAudioLoading) return;
+
+    if (hypeYeahAudioUrl) {
+      const audio = new Audio(hypeYeahAudioUrl);
+      audio.volume = 0.8;
+      await audio.play();
+      return;
+    }
+
+    hypeYeahAudioLoading = true;
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-hype-yeah`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Hype audio request failed: ${response.status}`);
+    }
+
+    const audioBlob = await response.blob();
+    hypeYeahAudioUrl = URL.createObjectURL(audioBlob);
+
+    const audio = new Audio(hypeYeahAudioUrl);
+    audio.volume = 0.8;
+    await audio.play();
+  } catch (error) {
+    console.error("Error playing hype yeah voice:", error);
+  } finally {
+    hypeYeahAudioLoading = false;
   }
 };

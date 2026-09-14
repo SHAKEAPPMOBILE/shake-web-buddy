@@ -41,6 +41,7 @@ import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
 import { OnboardingInterestsStep } from "@/components/auth/OnboardingInterestsStep";
 import { OnboardingSocialStep } from "@/components/auth/OnboardingSocialStep";
 import { attachActionHaptics } from "@/lib/haptics";
+import { playHypeYeah } from "@/lib/notification-sound";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
 const FACE_ID_FEATURE_ENABLED = false;
@@ -301,11 +302,11 @@ export default function Auth() {
   const emailLoginFormRef = useRef<HTMLFormElement>(null);
   const profileScrollRef = useRef<HTMLDivElement>(null);
 
-  // Play a gentle welcome chime when the method screen first mounts.
-  // Uses the Web Audio API so no audio file is needed (placeholder — Leonel can
-  // swap for a real asset later by replacing this with new Audio('/sound.mp3').play()).
-  // Respects the user's system mute via AudioContext — if audio is blocked/muted
-  // by the browser the catch silently swallows the error.
+  // Play a real voice saying "Yeaaah!" when the method screen first mounts —
+  // was a synthesized Web Audio chime, which read as too technical/robotic;
+  // this fetches an actual ElevenLabs voice line (same pattern as the
+  // welcome-voice celebration) instead of trying to fake a human exclamation
+  // out of oscillators.
   // Guarded so it can NEVER play once the person is actually logged in (only the
   // pre-login method-selection screen should ever trigger it), and only once per
   // browser session even if this screen gets remounted (e.g. a redirect flicker).
@@ -323,56 +324,10 @@ export default function Auth() {
     } catch {
       /* sessionStorage unavailable — fall through and play anyway */
     }
-    let ctx: AudioContext | null = null;
     const timer = setTimeout(() => {
-      try {
-        ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const now = ctx.currentTime;
-
-        // Upward "whoosh" sweep — the energetic build before the accent,
-        // instead of just starting cold on a note.
-        const sweep = ctx.createOscillator();
-        const sweepFilter = ctx.createBiquadFilter();
-        const sweepGain = ctx.createGain();
-        sweep.connect(sweepFilter);
-        sweepFilter.connect(sweepGain);
-        sweepGain.connect(ctx.destination);
-        sweep.type = "sawtooth";
-        sweepFilter.type = "lowpass";
-        sweepFilter.frequency.setValueAtTime(1200, now);
-        sweep.frequency.setValueAtTime(220, now);
-        sweep.frequency.exponentialRampToValueAtTime(760, now + 0.16);
-        sweepGain.gain.setValueAtTime(0, now);
-        sweepGain.gain.linearRampToValueAtTime(0.22, now + 0.03);
-        sweepGain.gain.linearRampToValueAtTime(0, now + 0.18);
-        sweep.start(now);
-        sweep.stop(now + 0.18);
-
-        // Bright two-note "yeah!" accent landing right as the sweep peaks —
-        // punchier and more celebratory than a plain chime.
-        const playAccent = (freq: number, startAt: number, gain: number) => {
-          const osc = ctx!.createOscillator();
-          const gainNode = ctx!.createGain();
-          osc.connect(gainNode);
-          gainNode.connect(ctx!.destination);
-          osc.type = "triangle";
-          osc.frequency.setValueAtTime(freq, now + startAt);
-          gainNode.gain.setValueAtTime(0, now + startAt);
-          gainNode.gain.linearRampToValueAtTime(gain, now + startAt + 0.015);
-          gainNode.gain.exponentialRampToValueAtTime(0.001, now + startAt + 0.35);
-          osc.start(now + startAt);
-          osc.stop(now + startAt + 0.35);
-        };
-        playAccent(987.77, 0.15, 0.2);   // B5
-        playAccent(1318.51, 0.19, 0.16); // E6
-      } catch {
-        // Audio blocked or unsupported — silently skip
-      }
+      playHypeYeah();
     }, 300); // slight delay so the screen has rendered
-    return () => {
-      clearTimeout(timer);
-      try { ctx?.close(); } catch { /* ignore */ }
-    };
+    return () => clearTimeout(timer);
   }, []); // run once on mount — step starts as "method"
 
   useEffect(() => {
