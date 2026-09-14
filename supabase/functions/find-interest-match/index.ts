@@ -8,9 +8,12 @@ const corsHeaders = {
 
 // "Match me up" carousel item: finds the best same-city match for the
 // calling user, ranked by number of shared interests (more overlap = better
-// match). Computed live on each request — no persistence, no history, no
-// notification; this is a pull (the user opting in by tapping the carousel
-// item), not the weekly push version originally discussed.
+// match), excluding anyone already shown to them before (match_me_up_shown)
+// so tapping it repeatedly walks through the ranked pool instead of
+// repeating the same top match — once everyone's been shown, "exhausted".
+// No push notification here — this is a pull (the user opting in by
+// tapping the carousel item), not the weekly push version originally
+// discussed.
 //
 // There's no profiles.city column — city is a client-side concept
 // (CityContext, GPS/IP + localStorage), never written back to the DB. The
@@ -86,12 +89,30 @@ serve(async (req) => {
     if (joinErr) console.error("[find-interest-match] activity_joins query error:", joinErr);
     if (hostErr) console.error("[find-interest-match] user_activities query error:", hostErr);
 
-    const candidateIds = [
+    const allCandidateIds = [
       ...new Set([...(joinRows ?? []), ...(hostRows ?? [])].map((r) => r.user_id as string)),
     ];
 
-    if (candidateIds.length === 0) {
+    if (allCandidateIds.length === 0) {
       return new Response(JSON.stringify({ matched: false, reason: "no_candidates" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Exclude anyone already shown to this user — tapping "Match me up"
+    // again should advance through the ranked list, not repeat the same
+    // top match every time.
+    const { data: alreadyShownRows, error: shownErr } = await supabase
+      .from("match_me_up_shown")
+      .select("shown_user_id")
+      .eq("user_id", userId);
+
+    if (shownErr) console.error("[find-interest-match] match_me_up_shown query error:", shownErr);
+    const alreadyShownSet = new Set((alreadyShownRows ?? []).map((r) => r.shown_user_id as string));
+    const candidateIds = allCandidateIds.filter((id) => !alreadyShownSet.has(id));
+
+    if (candidateIds.length === 0) {
+      return new Response(JSON.stringify({ matched: false, reason: "exhausted" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -131,6 +152,11 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const { error: logErr } = await supabase
+      .from("match_me_up_shown")
+      .insert({ user_id: userId, shown_user_id: best.user_id });
+    if (logErr) console.error("[find-interest-match] match_me_up_shown insert error:", logErr);
 
     return new Response(
       JSON.stringify({
