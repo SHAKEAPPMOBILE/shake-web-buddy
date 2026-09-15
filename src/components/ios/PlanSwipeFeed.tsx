@@ -705,10 +705,29 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             onClick={() => setShowDescription(false)}
           />
           <div
-            className="absolute inset-x-0 bottom-0 z-40 bg-white rounded-t-3xl shadow-2xl flex flex-col transition-transform duration-300 ease-out"
+            className="absolute inset-x-0 bottom-0 z-40 bg-white rounded-t-3xl shadow-2xl flex flex-col"
             style={{
               height: "50%",
               transform: showDescription ? "translateY(0)" : "translateY(100%)",
+              // `translateY(100%)` is relative to THIS element's own box, not
+              // the viewport — once this card has scrolled far enough away
+              // (its bottom edge now above the viewport), "closed" can
+              // coincidentally land the sheet right back inside the
+              // viewport, at whatever offset the math works out to (this is
+              // exactly what was happening: a whole card-height of scroll
+              // plus the sheet's own 50%-height translate cancelled out to
+              // put it right back at the top of the screen). The transform
+              // alone can't be trusted to actually hide it, so back it with
+              // `visibility` too — delayed so the slide-down still plays
+              // when closing normally (tapping the X on the card that's
+              // actually in view), but guarantees true invisibility once
+              // showDescription is false, regardless of where the transform
+              // math happens to place it.
+              visibility: showDescription ? "visible" : "hidden",
+              transitionProperty: "transform, visibility",
+              transitionDuration: "300ms",
+              transitionTimingFunction: "ease-out",
+              transitionDelay: showDescription ? "0ms" : "300ms",
             }}
           >
             {/* Grab handle */}
