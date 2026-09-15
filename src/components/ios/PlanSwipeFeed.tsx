@@ -111,6 +111,9 @@ interface FeedCardProps {
   plan: FeedPlan;
   isOwn: boolean;
   inline?: boolean;
+  /** The swipe feed's own scroll container — used only as a `scrollend`
+   * backstop for closing a stuck-open description sheet (see below). */
+  scrollContainerRef?: React.RefObject<HTMLDivElement>;
   onJoinInPlace: () => Promise<{ success: boolean }>;
   onPayForPlan: () => void;
   onEnterChat: () => void;
@@ -118,7 +121,7 @@ interface FeedCardProps {
   onViewParticipantProfile: (userId: string, userName: string | null, avatarUrl: string | null) => void;
 }
 
-function FeedCard({ plan, isOwn, inline, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile, onViewParticipantProfile }: FeedCardProps) {
+function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile, onViewParticipantProfile }: FeedCardProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -170,7 +173,11 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
   /* Left open, a card's description sheet would otherwise stay mounted and
      visible while scrolled mostly out of view — it reads as the wrong
      plan's text bleeding into the next card. Separate from the video
-     observer above since photo-only cards have no videoRef to gate on. */
+     observer above since photo-only cards have no videoRef to gate on.
+     Multiple thresholds (not just 0.6) so a fast scroll-snap swipe — which
+     can jump this card's visibility from ~1 straight to 0 in one paint —
+     still reports an intermediate sample instead of relying on catching
+     the single 0.6 crossing exactly. */
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
@@ -178,11 +185,32 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
       ([entry]) => {
         if (entry.intersectionRatio < 0.6) setShowDescription(false);
       },
-      { threshold: 0.6 }
+      { threshold: [0, 0.2, 0.4, 0.6, 0.8, 1] }
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  /* Backstop for the observer above: once the feed's own scroll fully
+     settles (not mid-swipe), directly re-check this card's own visibility
+     via a synchronous DOM measurement and force-close if it's not the one
+     in view. Catches the case an async, browser-throttled
+     IntersectionObserver callback could still miss or lag behind on a fast
+     swipe — this runs exactly when the user has stopped scrolling, so
+     there's no "mid-transition" ambiguity to race against. */
+  useEffect(() => {
+    const scrollEl = scrollContainerRef?.current;
+    const cardEl = cardRef.current;
+    if (!scrollEl || !cardEl) return;
+    const handleScrollEnd = () => {
+      const rect = cardEl.getBoundingClientRect();
+      const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
+      const ratio = rect.height > 0 ? visibleHeight / rect.height : 0;
+      if (ratio < 0.6) setShowDescription(false);
+    };
+    scrollEl.addEventListener("scrollend", handleScrollEnd, { passive: true });
+    return () => scrollEl.removeEventListener("scrollend", handleScrollEnd);
+  }, [scrollContainerRef]);
 
   /* Sync muted state → video DOM (handles tap-toggle path) */
   useEffect(() => {
@@ -908,6 +936,7 @@ export function PlanSwipeFeed({
               plan={plan}
               isOwn={plan.user_id === user?.id}
               inline={inline}
+              scrollContainerRef={scrollRef}
               onJoinInPlace={() => onJoinInPlace(plan)}
               onPayForPlan={() => onPayForPlan(plan)}
               onEnterChat={() => onEnterChat(plan)}
