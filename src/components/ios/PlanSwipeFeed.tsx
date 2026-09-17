@@ -659,7 +659,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               <button
                 type="button"
                 onClick={() => setShowDescription(true)}
-                className="font-bold text-white text-base leading-tight truncate text-left underline decoration-white/40 underline-offset-2"
+                className="block w-full font-bold text-white text-base leading-tight truncate text-left underline decoration-white/40 underline-offset-2"
                 style={{ pointerEvents: "auto" }}
               >
                 {/* Discovery-carousel entries (other cities' open groups) store a day
@@ -679,7 +679,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               <button
                 type="button"
                 onClick={onViewProfile}
-                className="text-white/80 text-sm mt-0.5 truncate text-left"
+                className="block w-full text-white/80 text-sm mt-0.5 truncate text-left"
                 style={{ pointerEvents: "auto" }}
               >
                 {plan.creator_name}
@@ -713,7 +713,12 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             creator_name: plan.creator_name,
             creator_avatar: plan.creator_avatar,
           }}
-          onCreatorClick={onViewProfile}
+          onCreatorClick={() => {
+            // Only one dialog on screen at a time — close this one as the
+            // profile dialog takes over, instead of stacking on top of it.
+            setShowDescription(false);
+            onViewProfile();
+          }}
         />
       )}
 
