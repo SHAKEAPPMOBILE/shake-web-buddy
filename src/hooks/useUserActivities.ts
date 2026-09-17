@@ -192,7 +192,8 @@ export function useUserActivities(city: string) {
     venue?: { name?: string; address?: string; lat?: number; lng?: number },
     promoImageUrl?: string,
     description?: string,
-    promoVideoThumbnailUrl?: string
+    promoVideoThumbnailUrl?: string,
+    isQuickPost?: boolean
   ): Promise<boolean> => {
     const targetCity = cityOverride || city;
     if (!user) {
@@ -264,6 +265,7 @@ export function useUserActivities(city: string) {
       venue_address: venue?.address?.trim() || null,
       venue_lat: venue?.lat ?? null,
       venue_lng: venue?.lng ?? null,
+      is_quick_post: isQuickPost ?? false,
     }).select().maybeSingle();
     if (error || !newActivity) {
       console.error("Error creating activity:", error);

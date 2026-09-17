@@ -1644,6 +1644,47 @@ export default function ProposePlanPage() {
     navigate("/", { state: { activeTab: "plans", pendingNewPlanId: activityId } });
   };
 
+  // "Post like this" — skips every remaining step (title, date, location,
+  // price…) and publishes the captured video/photo as-is: no title, starting
+  // now, visible in the poster's city for 24h (createActivity's is_quick_post
+  // flag widens the discovery-feed visibility window for this one row — see
+  // isActivityVisible in PlansTab.tsx).
+  const handleQuickPost = async () => {
+    if (isLoading) return;
+    if (!promoVideoUrl && !promoImageUrl) return;
+
+    const freshCity = selectedCityRef.current || cityInput.trim() || undefined;
+    if (!freshCity) {
+      toast.error(t("createPlan.cityRequired", "Set your city first"));
+      return;
+    }
+
+    const success = await createActivity(
+      "general",
+      new Date(),
+      undefined,
+      freshCity,
+      undefined,
+      undefined,
+      promoVideoUrl || undefined,
+      "everyone",
+      undefined,
+      undefined,
+      undefined,
+      promoImageUrl || undefined,
+      undefined,
+      promoVideoThumbnailUrl || undefined,
+      true
+    );
+
+    if (!success) {
+      setDayLimitError(true);
+      return;
+    }
+    triggerConfettiWaterfall();
+    navigate("/", { state: { activeTab: "plans", pendingNewPlanId: lastCreatedActivityIdRef.current } });
+  };
+
   const COHOST_CAP = 5;
   const COHOST_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   // Splits on comma, semicolon, or any whitespace — covers a typed
@@ -3181,21 +3222,37 @@ export default function ProposePlanPage() {
                             {BOT_QUESTIONS[step]}
                           </p>
                         )}
-                        {step === "video" && promoVideoUrl ? (
-                          <video
-                            src={promoVideoUrl}
-                            muted
-                            loop
-                            playsInline
-                            autoPlay
-                            className="w-16 h-20 rounded-xl object-cover"
-                          />
-                        ) : step === "video" && promoImageUrl ? (
-                          <img
-                            src={promoImageUrl}
-                            alt="Plan photo"
-                            className="w-16 h-20 rounded-xl object-cover"
-                          />
+                        {step === "video" && (promoVideoUrl || promoImageUrl) ? (
+                          <div className="flex items-center gap-3">
+                            {promoVideoUrl ? (
+                              <video
+                                src={promoVideoUrl}
+                                muted
+                                loop
+                                playsInline
+                                autoPlay
+                                className="w-16 h-20 rounded-xl object-cover shrink-0"
+                              />
+                            ) : (
+                              <img
+                                src={promoImageUrl}
+                                alt="Plan photo"
+                                className="w-16 h-20 rounded-xl object-cover shrink-0"
+                              />
+                            )}
+                            {stepsBack === 1 && currentStepName === "name" && (
+                              <span
+                                role="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleQuickPost();
+                                }}
+                                className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold whitespace-nowrap shadow-sm active:scale-95 transition-transform"
+                              >
+                                {t("createPlan.postLikeThis")}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <p className={cn("font-semibold text-foreground leading-tight", answerSize)}>
                             {getUserAnswer(step)}

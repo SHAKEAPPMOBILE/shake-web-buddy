@@ -270,9 +270,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       const nowMs = Date.now();
       const threeHoursAgo = new Date(nowMs - 3 * 60 * 60 * 1000);
       const fiveDaysAgo   = new Date(nowMs - 5 * 24 * 60 * 60 * 1000);
+      // "Post like this" quick posts (no title, just the captured video/pic)
+      // get a longer 24h window instead of the normal 3h-after-start cutoff —
+      // scheduled_for is set to the moment they were posted.
+      const twentyFourHoursAgo = new Date(nowMs - 24 * 60 * 60 * 1000);
 
-      const isActivityVisible = (a: { scheduled_for: string | null; created_at: string }) =>
-        a.scheduled_for !== null
+      const isActivityVisible = (a: { scheduled_for: string | null; created_at: string; is_quick_post?: boolean }) =>
+        a.is_quick_post
+          ? parseDbDate(a.scheduled_for ?? a.created_at) >= twentyFourHoursAgo
+          : a.scheduled_for !== null
           ? parseDbDate(a.scheduled_for) >= threeHoursAgo
           : parseDbDate(a.created_at)    >= fiveDaysAgo;
 
@@ -361,6 +367,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       // Cutoff is threeHoursAgo (not now()) so a plan doesn't drop out of the
       // query the instant it starts — matches isActivityVisible's grace window.
       const nowIso = threeHoursAgo.toISOString();
+      // Quick posts get their own, more permissive OR branch (24h instead of
+      // 3h) so they don't fall out of this query before isActivityVisible
+      // ever gets a chance to apply its own 24h check — without widening the
+      // general cutoff for everything else (that's the exact past-dated-rows-
+      // eating-LIMIT bug the comment above warns about).
+      const quickPostCutoffIso = twentyFourHoursAgo.toISOString();
+      const visibilityOr = `scheduled_for.gte.${nowIso},scheduled_for.is.null,and(is_quick_post.eq.true,scheduled_for.gte.${quickPostCutoffIso})`;
       const cityPlansDataResult = await (
         !effectiveCity
           ? Promise.resolve({ data: [] as any[], error: null })
@@ -371,7 +384,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 .neq("city", effectiveCity)
                 .eq("is_active", true)
                 .eq("is_hidden", false)
-                .or(`scheduled_for.gte.${nowIso},scheduled_for.is.null`)
+                .or(visibilityOr)
                 .order("scheduled_for", { ascending: true, nullsFirst: false })
                 .limit(30)
             : supabase
@@ -381,7 +394,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 .eq("is_active", true)
                 .eq("is_hidden", false)
                 .neq("is_auto_generated", true)
-                .or(`scheduled_for.gte.${nowIso},scheduled_for.is.null`)
+                .or(visibilityOr)
                 .order("scheduled_for", { ascending: true, nullsFirst: false })
                 .limit(20)
       );

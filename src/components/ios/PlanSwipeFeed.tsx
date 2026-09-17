@@ -16,7 +16,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, DollarSign, Volume2, VolumeX, User, X, Send } from "lucide-react";
+import { ChevronLeft, DollarSign, Volume2, VolumeX, User, Send } from "lucide-react";
 import { Share } from "@capacitor/share";
 import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
@@ -29,6 +29,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
+import { PlanDescriptionDialog } from "@/components/PlanDescriptionDialog";
 import { toast } from "@/lib/app-toast";
 import type { UserActivity } from "@/hooks/useUserActivities";
 import type { CohostAvatar } from "@/components/PlanAvatarStack";
@@ -689,69 +690,23 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
 
       </div>
 
-      {/* Description half-sheet — tapping the title slides this up over the
-          bottom half of the card, leaving the video/photo visible above it.
-          Always mounted (once a description exists) so the slide is an
-          actual transform transition, not a mount/unmount pop. */}
+      {/* Description dialog — same header treatment as the paid-plan
+          ActivityDetailDialog (avatar + emoji + title + tappable "by
+          {name}"), just with the description text as the body instead of
+          the join/payment details. */}
       {plan.description?.trim() && (
-        <>
-          <div
-            className="absolute inset-0 z-30 transition-opacity duration-300"
-            style={{
-              background: "rgba(0,0,0,0.35)",
-              opacity: showDescription ? 1 : 0,
-              pointerEvents: showDescription ? "auto" : "none",
-            }}
-            onClick={() => setShowDescription(false)}
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 z-40 bg-white rounded-t-3xl shadow-2xl flex flex-col"
-            style={{
-              height: "50%",
-              transform: showDescription ? "translateY(0)" : "translateY(100%)",
-              // `translateY(100%)` is relative to THIS element's own box, not
-              // the viewport — once this card has scrolled far enough away
-              // (its bottom edge now above the viewport), "closed" can
-              // coincidentally land the sheet right back inside the
-              // viewport, at whatever offset the math works out to (this is
-              // exactly what was happening: a whole card-height of scroll
-              // plus the sheet's own 50%-height translate cancelled out to
-              // put it right back at the top of the screen). The transform
-              // alone can't be trusted to actually hide it, so back it with
-              // `visibility` too — delayed so the slide-down still plays
-              // when closing normally (tapping the X on the card that's
-              // actually in view), but guarantees true invisibility once
-              // showDescription is false, regardless of where the transform
-              // math happens to place it.
-              visibility: showDescription ? "visible" : "hidden",
-              transitionProperty: "transform, visibility",
-              transitionDuration: "300ms",
-              transitionTimingFunction: "ease-out",
-              transitionDelay: showDescription ? "0ms" : "300ms",
-            }}
-          >
-            {/* Grab handle */}
-            <div className="flex justify-center pt-2.5 pb-1 shrink-0">
-              <div className="w-10 h-1 rounded-full bg-gray-300" />
-            </div>
-            <div className="flex items-start justify-between gap-3 px-5 pb-3 shrink-0">
-              <p className="font-bold text-gray-900 text-base leading-tight pt-1">{planTitle}</p>
-              <button
-                type="button"
-                onClick={() => setShowDescription(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0"
-                aria-label="Close description"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-6">
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {plan.description}
-              </p>
-            </div>
-          </div>
-        </>
+        <PlanDescriptionDialog
+          open={showDescription}
+          onOpenChange={setShowDescription}
+          activity={{
+            activity_type: plan.activity_type,
+            title: planTitle,
+            description: plan.description,
+            creator_name: plan.creator_name,
+            creator_avatar: plan.creator_avatar,
+          }}
+          onCreatorClick={onViewProfile}
+        />
       )}
 
       {/* Participants dialog — portal-rendered, not constrained by scroll container */}
