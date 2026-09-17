@@ -75,6 +75,7 @@ interface PlanActivity {
   isCarouselJoin?: boolean;
   realActivityId?: string | null;
   is_auto_generated?: boolean | null;
+  is_quick_post?: boolean | null;
   audience?: string | null;
 }
 
@@ -559,7 +560,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           const [profilesRes, joinsRes, videosRes, cohostsRes] = await Promise.all([
             realUserIds.length ? supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", realUserIds) : Promise.resolve({ data: [] as any[] }),
             realPlanIds.length ? supabase.from("activity_joins").select("activity_id").in("activity_id", realPlanIds) : Promise.resolve({ data: [] as any[] }),
-            realPlanIds.length ? supabase.from("user_activities").select("id, promo_video_url, promo_image_url, description").in("id", realPlanIds) : Promise.resolve({ data: [] as any[] }),
+            realPlanIds.length ? supabase.from("user_activities").select("id, promo_video_url, promo_image_url, description, is_quick_post").in("id", realPlanIds) : Promise.resolve({ data: [] as any[] }),
             realPlanIds.length ? supabase.from("plan_cohosts").select("activity_id, user_id").in("activity_id", realPlanIds).eq("status", "active") : Promise.resolve({ data: [] as any[] }),
           ]);
           const profileMap = new Map((profilesRes.data ?? []).map((p: any) => [p.user_id, p]));
@@ -568,6 +569,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           const videoMap = new Map((videosRes.data ?? []).map((a: any) => [a.id, a.promo_video_url]));
           const imageMap = new Map((videosRes.data ?? []).map((a: any) => [a.id, a.promo_image_url]));
           const descriptionMap = new Map((videosRes.data ?? []).map((a: any) => [a.id, a.description]));
+          const quickPostMap = new Map((videosRes.data ?? []).map((a: any) => [a.id, a.is_quick_post]));
           const cohostUserIds = Array.from(new Set((cohostsRes.data ?? []).map((c: any) => c.user_id).filter(Boolean)));
           const cohostProfilesRes = cohostUserIds.length
             ? await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", cohostUserIds)
@@ -595,6 +597,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               promo_video_url: videoMap.get(p.plan_id!) ?? null,
               promo_image_url: imageMap.get(p.plan_id!) ?? null,
               description: descriptionMap.get(p.plan_id!) ?? null,
+              is_quick_post: quickPostMap.get(p.plan_id!) ?? false,
               group_number: p.group_number,
               is_auto_generated: p.is_auto_generated,
               audience: p.audience,

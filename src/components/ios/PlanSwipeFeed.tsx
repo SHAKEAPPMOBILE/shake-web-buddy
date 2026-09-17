@@ -53,6 +53,7 @@ export interface FeedPlan {
   price_amount?: string | null;
   price_tiers?: { label: string; amount: number }[] | null;
   is_auto_generated?: boolean | null;
+  is_quick_post?: boolean | null;
   isCarouselJoin?: boolean;
 }
 
@@ -652,7 +653,9 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
           )}
 
           <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>
-            {plan.description?.trim() ? (
+            {/* "Post like this" quick posts have no title at all — just the
+                media plus the creator's name and city/date below. */}
+            {plan.is_quick_post ? null : plan.description?.trim() ? (
               <button
                 type="button"
                 onClick={() => setShowDescription(true)}
