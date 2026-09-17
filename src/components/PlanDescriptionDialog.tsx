@@ -39,9 +39,12 @@ export function PlanDescriptionDialog({ open, onOpenChange, activity, onCreatorC
     enabled: isMobile,
   });
 
+  // No badge for an unrecognized/generic type ("general", quick posts, etc.)
+  // — falling back to a random 📍 pin misleadingly suggested a location tie-in
+  // that isn't there.
   const getActivityEmoji = (type: string) => {
     const activityType = ALL_ACTIVITY_TYPES.find((a) => a.id === type);
-    return activityType?.emoji || "📍";
+    return activityType?.emoji || null;
   };
 
   return (
@@ -72,9 +75,11 @@ export function PlanDescriptionDialog({ open, onOpenChange, activity, onCreatorC
                   {activity.creator_name?.charAt(0)?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
-              <span className="absolute -bottom-1 -right-1 text-2xl">
-                {getActivityEmoji(activity.activity_type)}
-              </span>
+              {getActivityEmoji(activity.activity_type) && (
+                <span className="absolute -bottom-1 -right-1 text-2xl">
+                  {getActivityEmoji(activity.activity_type)}
+                </span>
+              )}
             </button>
 
             <div className="flex-1 min-w-0">

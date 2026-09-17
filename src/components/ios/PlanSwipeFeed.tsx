@@ -676,9 +676,14 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               </p>
             )}
             {!plan.is_auto_generated && plan.creator_name && (
-              <p className="text-white/80 text-sm mt-0.5 truncate">
+              <button
+                type="button"
+                onClick={onViewProfile}
+                className="text-white/80 text-sm mt-0.5 truncate text-left"
+                style={{ pointerEvents: "auto" }}
+              >
                 {plan.creator_name}
-              </p>
+              </button>
             )}
             <p className="text-white/80 text-sm mt-0.5 truncate">
               {plan.city}{dateLabel ? ` · ${dateLabel}` : ""}
@@ -869,11 +874,6 @@ export function PlanSwipeFeed({
 
   const handleViewProfile = useCallback(
     (plan: FeedPlan) => {
-      setProfileTarget({
-        userId: plan.user_id,
-        userName: plan.creator_name ?? null,
-        avatarUrl: plan.creator_avatar ?? null,
-      });
       onViewProfile(plan.user_id, plan.creator_name ?? null, plan.creator_avatar ?? null);
     },
     [onViewProfile]
