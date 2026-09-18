@@ -30,6 +30,7 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { ParticipantsListDialog } from "@/components/ParticipantsListDialog";
 import { PlanParticipantsDialog } from "@/components/PlanParticipantsDialog";
 import { PlanDescriptionDialog } from "@/components/PlanDescriptionDialog";
+import { LivingActivityIcon } from "@/components/LivingActivityIcon";
 import { toast } from "@/lib/app-toast";
 import type { UserActivity } from "@/hooks/useUserActivities";
 import type { CohostAvatar } from "@/components/PlanAvatarStack";
@@ -427,9 +428,12 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-32 h-32 rounded-full bg-card overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-2xl">
                 {getActivityIcon(plan.activity_type) ? (
-                  <div
+                  <LivingActivityIcon
+                    activityType={plan.activity_type}
+                    src={getActivityIcon(plan.activity_type)!}
+                    alt={plan.activity_type}
+                    variant="bg"
                     className="w-full h-full rounded-full bg-cover bg-center bg-no-repeat"
-                    style={{ backgroundImage: `url(${getActivityIcon(plan.activity_type)})` }}
                   />
                 ) : (
                   <span className="text-5xl flex items-center justify-center w-full h-full">
@@ -464,11 +468,14 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             </div>
           ) : getActivityIcon(plan.activity_type) ? (
             /* User-created, no avatar: fall back to activity-type image */
-            <img
-              src={getActivityIcon(plan.activity_type)!}
-              alt={plan.activity_type}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
+            <div className="absolute inset-0">
+              <LivingActivityIcon
+                activityType={plan.activity_type}
+                src={getActivityIcon(plan.activity_type)!}
+                alt={plan.activity_type}
+                className="w-full h-full object-cover"
+              />
+            </div>
           ) : (
             /* Last resort: purple gradient + name initial */
             <>

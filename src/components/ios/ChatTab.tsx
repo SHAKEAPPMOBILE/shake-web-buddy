@@ -24,6 +24,7 @@ import {
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 import { PrivateChatDialog } from "@/components/PrivateChatDialog";
+import { LivingActivityIcon } from "@/components/LivingActivityIcon";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { toast } from "@/lib/app-toast";
 
@@ -1080,7 +1081,8 @@ export function ChatTab({
                       {activity.is_event ? (
                         <Ticket className="w-6 h-6 text-white drop-shadow-sm" strokeWidth={2.25} />
                       ) : (
-                        <img
+                        <LivingActivityIcon
+                          activityType={activity.activity_type}
                           src={getActivityIcon(activity.activity_type)}
                           alt={activity.activity_type}
                           className="w-full h-full object-cover"

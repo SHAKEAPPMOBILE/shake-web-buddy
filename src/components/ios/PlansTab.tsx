@@ -32,6 +32,7 @@ import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { PlanSwipeFeed } from "./PlanSwipeFeed";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
 import { ActivityDetailDialog } from "@/components/ActivityDetailDialog";
+import { LivingActivityIcon } from "@/components/LivingActivityIcon";
 import { ActivityDetailsCard } from "./ActivityDetailsCard";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
@@ -2069,7 +2070,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       <img src={plan.promo_image_url} alt={plan.note || plan.activity_type} className="w-full h-full object-cover" />
                     ) : isStandardActivity(plan.activity_type) ? (
                       getActivityIcon(plan.activity_type) ? (
-                        <img src={getActivityIcon(plan.activity_type)!} alt={plan.activity_type} className="w-full h-full object-cover" />
+                        <LivingActivityIcon activityType={plan.activity_type} src={getActivityIcon(plan.activity_type)!} alt={plan.activity_type} className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-xl">{getActivityEmoji(plan.activity_type)}</span>
                       )
@@ -2215,7 +2216,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                           <img src={plan.promo_image_url} alt={plan.note || plan.activity_type} className="w-full h-full object-cover" />
                         ) : isStandardActivity(plan.activity_type) ? (
                           getActivityIcon(plan.activity_type) ? (
-                            <img src={getActivityIcon(plan.activity_type)!} alt={plan.activity_type} className="w-full h-full object-cover" />
+                            <LivingActivityIcon activityType={plan.activity_type} src={getActivityIcon(plan.activity_type)!} alt={plan.activity_type} className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-xl">{getActivityEmoji(plan.activity_type)}</span>
                           )
