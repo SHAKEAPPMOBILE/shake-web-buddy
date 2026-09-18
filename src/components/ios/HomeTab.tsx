@@ -21,6 +21,7 @@ import { ActivityDetailsCard } from "./ActivityDetailsCard";
 import { MatchMeUpCard, MatchedProfile } from "./MatchMeUpCard";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { LivingActivityIcon } from "@/components/LivingActivityIcon";
+import { EmojiShine } from "@/components/EmojiShine";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 
@@ -792,9 +793,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                           className="w-full h-full rounded-full bg-cover bg-center bg-no-repeat"
                         />
                       ) : (
-                        <span className="text-5xl flex items-center justify-center w-full h-full">
-                          {currentActivity?.emoji}
-                        </span>
+                        <EmojiShine
+                          emoji={currentActivity?.emoji ?? ""}
+                          className="text-5xl w-full h-full"
+                          enabled={currentActivity?.id === "propose-plan"}
+                        />
                       )}
                     </div>
                   </div>
@@ -1013,7 +1016,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   frameClassName="rounded-full overflow-hidden"
                 />
               ) : (
-                <span className="text-4xl">{shakeConfirmActivity.emoji}</span>
+                <EmojiShine
+                  emoji={shakeConfirmActivity.emoji}
+                  className="text-4xl"
+                  enabled={shakeConfirmActivity.id === "propose-plan"}
+                />
               )}
             </div>
 
