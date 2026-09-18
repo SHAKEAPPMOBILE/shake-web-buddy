@@ -2084,7 +2084,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900">
-                        {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note?.trim() || getActivityLabel(plan.activity_type))}
+                        {plan.isCarouselJoin
+                          ? getActivityLabel(plan.activity_type)
+                          : (plan.note?.trim() || (plan.is_quick_post ? "" : getActivityLabel(plan.activity_type)))}
                       </h3>
                       {plan.isJoined && (
                         !plan.is_auto_generated && plan.user_id === user?.id ? (
@@ -2230,7 +2232,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         {/* Activity type name — icon is already in the left circle */}
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <h3 className="font-semibold text-gray-900 text-sm">
-                            {plan.isCarouselJoin ? getActivityLabel(plan.activity_type) : (plan.note || getActivityLabel(plan.activity_type))}
+                            {plan.isCarouselJoin
+                              ? getActivityLabel(plan.activity_type)
+                              : (plan.note?.trim() || (plan.is_quick_post ? "" : getActivityLabel(plan.activity_type)))}
                             {showAllCities && ` · ${plan.city}`}
                           </h3>
                           {isSoon(plan.scheduled_for) && (
