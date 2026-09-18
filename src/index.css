@@ -376,26 +376,32 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   .living-icon-steam-1 { animation: living-icon-rise 3.6s ease-in-out infinite; }
   .living-icon-steam-2 { animation: living-icon-rise 4.2s ease-in-out infinite 0.9s; }
   .living-icon-steam-3 { animation: living-icon-rise 3.9s ease-in-out infinite 1.9s; }
-  .living-icon-drip-1 { animation: living-icon-fall 3.4s cubic-bezier(.55,0,.85,.35) infinite; }
-  .living-icon-drip-2 { animation: living-icon-fall 3.4s cubic-bezier(.55,0,.85,.35) infinite 1.7s; }
+  .living-icon-drip-1 { animation: living-icon-fall 4.4s cubic-bezier(.55,0,.85,.35) infinite; }
+  .living-icon-drip-2 { animation: living-icon-fall 4.4s cubic-bezier(.55,0,.85,.35) infinite 2.2s; }
 }
 @media (prefers-reduced-motion: reduce) {
   .living-icon-steam { opacity: 0.55; }
   .living-icon-drip { transform: translate(-50%, 0) scale(1, 1); opacity: 0.6; }
 }
 
+/* Rise well clear of the icon's own frame — the overlay SVG is
+   overflow-visible and the caller's clipping only wraps the photo, so
+   this is free to read as steam drifting up past the icon entirely. */
 @keyframes living-icon-rise {
   0%   { opacity: 0;    transform: translateY(8px) scaleY(0.9); }
-  18%  { opacity: 0.85; }
-  75%  { opacity: 0.35; }
-  100% { opacity: 0;    transform: translateY(-22px) scaleY(1.06); }
+  14%  { opacity: 0.85; }
+  70%  { opacity: 0.4; }
+  100% { opacity: 0;    transform: translateY(-48px) scaleY(1.1); }
 }
+/* Falls well past the icon's own frame, toward whatever sits below it
+   (a label, the next element) before fading — same reasoning as the
+   steam rising past the top. */
 @keyframes living-icon-fall {
-  0%   { transform: translate(-50%, 0)     scale(1, 0.2);    opacity: 0; }
-  8%   { opacity: 1; }
-  45%  { transform: translate(-50%, 130%)  scale(0.9, 1.3);  opacity: 1; }
-  75%  { transform: translate(-50%, 230%)  scale(0.75, 1.6); opacity: 0.7; }
-  100% { transform: translate(-50%, 260%)  scale(0.6, 1.8);  opacity: 0; }
+  0%   { transform: translate(-50%, 0)      scale(1, 0.2);    opacity: 0; }
+  6%   { opacity: 1; }
+  40%  { transform: translate(-50%, 500%)   scale(0.9, 1.3);  opacity: 1; }
+  70%  { transform: translate(-50%, 1000%)  scale(0.75, 1.5); opacity: 0.8; }
+  100% { transform: translate(-50%, 1450%)  scale(0.55, 1.7); opacity: 0; }
 }
 
 /* iOS Safe Areas */

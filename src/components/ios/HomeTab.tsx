@@ -777,7 +777,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
                   <div className="relative mx-6 shrink-0">
                     <div
-                      className="w-32 h-32 rounded-full bg-card overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-2xl cursor-pointer transition-transform hover:scale-105 animate-float"
+                      className="w-32 h-32 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl cursor-pointer transition-transform hover:scale-105 animate-float"
                       onPointerDown={() => {
                         tappedActivityRef.current = CAROUSEL_ITEMS[currentActivityIndex] ?? null;
                       }}
@@ -1003,13 +1003,14 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           />
           <div className="relative z-10 w-full max-w-sm mx-4 mb-6 sm:mb-0 px-6 py-8 flex flex-col gap-4 rounded-3xl bg-white shadow-2xl text-center pointer-events-auto">
             {/* Activity avatar */}
-            <div className="w-20 h-20 mx-auto rounded-full overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-lg">
+            <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center border-2 border-blue-400 shadow-lg">
               {shakeConfirmActivity.icon ? (
                 <LivingActivityIcon
                   activityType={shakeConfirmActivity.id}
                   src={shakeConfirmActivity.icon}
                   alt={shakeConfirmActivity.label}
                   className="w-full h-full object-cover"
+                  frameClassName="rounded-full overflow-hidden"
                 />
               ) : (
                 <span className="text-4xl">{shakeConfirmActivity.emoji}</span>

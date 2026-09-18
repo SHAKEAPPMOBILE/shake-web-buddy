@@ -426,7 +426,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
           {plan.is_auto_generated ? (
             /* Auto-generated plan: carousel-style circle, not full-bleed */
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-32 h-32 rounded-full bg-card overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-2xl">
+              <div className="w-32 h-32 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl">
                 {getActivityIcon(plan.activity_type) ? (
                   <LivingActivityIcon
                     activityType={plan.activity_type}
