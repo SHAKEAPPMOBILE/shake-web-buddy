@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ActivityDetailsCard } from "./ActivityDetailsCard";
 import { MatchMeUpCard, MatchedProfile } from "./MatchMeUpCard";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { LivingActivityIcon } from "@/components/LivingActivityIcon";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 
@@ -783,9 +784,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                       onClick={handleActivitySelect}
                     >
                       {currentActivity?.icon ? (
-                        <div
+                        <LivingActivityIcon
+                          activityType={currentActivity.id}
+                          src={currentActivity.icon}
+                          alt={currentActivity.label}
+                          variant="bg"
                           className="w-full h-full rounded-full bg-cover bg-center bg-no-repeat"
-                          style={{ backgroundImage: `url(${currentActivity.icon})` }}
                         />
                       ) : (
                         <span className="text-5xl flex items-center justify-center w-full h-full">
@@ -1001,7 +1005,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             {/* Activity avatar */}
             <div className="w-20 h-20 mx-auto rounded-full overflow-hidden flex items-center justify-center border-2 border-blue-400 shadow-lg">
               {shakeConfirmActivity.icon ? (
-                <img
+                <LivingActivityIcon
+                  activityType={shakeConfirmActivity.id}
                   src={shakeConfirmActivity.icon}
                   alt={shakeConfirmActivity.label}
                   className="w-full h-full object-cover"
