@@ -22,6 +22,7 @@ import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn, getShareLabel } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
+import { getCityBackground } from "@/data/cityBackgrounds";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { supabase } from "@/integrations/supabase/client";
@@ -424,8 +425,18 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         ── */
         <>
           {plan.is_auto_generated ? (
-            /* Auto-generated plan: carousel-style circle, not full-bleed */
+            /* Auto-generated plan: carousel-style circle over a city
+               landmark illustration instead of plain white — falls back to
+               white automatically when the city has no illustration yet. */
             <div className="absolute inset-0 flex items-center justify-center">
+              {getCityBackground(plan.city) && (
+                <img
+                  src={getCityBackground(plan.city)}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              )}
               <div className="w-32 h-32 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl">
                 {getActivityIcon(plan.activity_type) ? (
                   <LivingActivityIcon
