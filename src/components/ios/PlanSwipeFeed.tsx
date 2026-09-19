@@ -433,14 +433,15 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 /* Framed like a Polaroid, not stretched full-bleed — these
                    illustrations are small source crops, so blowing them up
                    to fill the whole card just makes the softness obvious.
-                   Contained + slightly tilted reads as a snapshot instead.
-                   Stacked in normal flow right above the circle (negative
-                   margin to pull them close) rather than absolute-positioned
-                   guesswork, so the two always sit together regardless of
-                   screen height. */
+                   No tilt: a rotated rectangle's visual weight leans to one
+                   side even though it's mathematically centered, which read
+                   as the circle below it being off-center. Stacked in normal
+                   flow right above the circle (negative margin to pull them
+                   close) rather than absolute-positioned guesswork, so the
+                   two always sit together regardless of screen height. */
                 <div
                   className="bg-white p-2 pb-5 rounded-sm shadow-xl pointer-events-none"
-                  style={{ width: "74vw", maxWidth: 300, transform: "rotate(-3deg)", marginBottom: -8 }}
+                  style={{ width: "74vw", maxWidth: 300, marginBottom: -8 }}
                 >
                   <img
                     src={getCityBackground(plan.city)}
