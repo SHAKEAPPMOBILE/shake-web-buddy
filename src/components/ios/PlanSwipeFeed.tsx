@@ -437,14 +437,21 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                    which also hides the softness of these small source
                    crops far better than a sharp-edged card ever could. */
                 <div
-                  className="absolute inset-0 pointer-events-none"
+                  className="absolute pointer-events-none"
                   style={{
+                    top: "50%",
+                    left: "50%",
+                    width: "78vw",
+                    maxWidth: 320,
+                    height: "78vw",
+                    maxHeight: 320,
+                    transform: "translate(-50%, -50%)",
                     backgroundImage: `url(${getCityBackground(plan.city)})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center 40%",
                     filter: "grayscale(1) contrast(0.94) brightness(1.08)",
-                    WebkitMaskImage: "radial-gradient(ellipse 62% 46% at 50% 40%, black 35%, transparent 78%)",
-                    maskImage: "radial-gradient(ellipse 62% 46% at 50% 40%, black 35%, transparent 78%)",
+                    WebkitMaskImage: "radial-gradient(circle, black 32%, transparent 72%)",
+                    maskImage: "radial-gradient(circle, black 32%, transparent 72%)",
                   }}
                 />
               )}
