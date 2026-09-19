@@ -13,6 +13,32 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // activity-starting-soon-tick cron job.
 const MINUTES_BEFORE = 60;
 
+// Auto-generated (carousel) plans carry a synthetic NOON scheduled_for —
+// it only encodes which day the plan is for, never a real time of day (see
+// the identical comment on ACTIVITY_START_TIMES in src/data/activityTypes.ts,
+// and getActivityTimeString there, which the frontend uses to never format
+// that noon value as a real time). This reminder used to treat scheduled_for
+// as the literal start time, which for brunch — real start 11:00, placeholder
+// 12:00 — fired the "starts in 1 hour" push exactly AT the real 11:00 start
+// instead of an hour before it. These are the same corrections in hours
+// relative to that placeholder noon, one per auto-generated activity type;
+// anything not listed here (or not auto-generated) needs no correction.
+const AUTO_GENERATED_HOUR_OFFSET_FROM_NOON: Record<string, number> = {
+  brunch: -1, // 11:00 AM
+  dinner: 7,  // 7:00 PM
+  drinks: 8,  // 8:00 PM
+};
+const MIN_OFFSET_HOURS = Math.min(0, ...Object.values(AUTO_GENERATED_HOUR_OFFSET_FROM_NOON));
+const MAX_OFFSET_HOURS = Math.max(0, ...Object.values(AUTO_GENERATED_HOUR_OFFSET_FROM_NOON));
+
+function realStartTime(activity: { activity_type: string; is_auto_generated: boolean | null; scheduled_for: string }): Date {
+  const raw = new Date(activity.scheduled_for);
+  if (!activity.is_auto_generated) return raw;
+  const offsetHours = AUTO_GENERATED_HOUR_OFFSET_FROM_NOON[activity.activity_type];
+  if (offsetHours === undefined) return raw;
+  return new Date(raw.getTime() + offsetHours * 60 * 60 * 1000);
+}
+
 serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -30,21 +56,26 @@ serve(async (req) => {
     }
 
     const now = new Date();
-    // Window: activities starting between (now + 45min) and (now + 60min) —
-    // the 15-min bucket a cron firing every 15 minutes needs to land each
-    // activity in exactly one tick.
+    // The true 45-60min-from-now window we're looking for, by real start time.
     const windowStart = new Date(now.getTime() + (MINUTES_BEFORE - 15) * 60 * 1000);
     const windowEnd = new Date(now.getTime() + MINUTES_BEFORE * 60 * 1000);
 
-    console.log(`[activity-starting-soon-reminder] Checking window ${windowStart.toISOString()} → ${windowEnd.toISOString()}`);
+    // The raw scheduled_for query has to be widened by the auto-generated
+    // correction range so a row whose real start lands in the window above
+    // isn't missed just because its stored (placeholder, for auto-generated
+    // rows) timestamp doesn't. Filtered precisely by real start time below.
+    const rawQueryStart = new Date(windowStart.getTime() - MAX_OFFSET_HOURS * 60 * 60 * 1000);
+    const rawQueryEnd = new Date(windowEnd.getTime() - MIN_OFFSET_HOURS * 60 * 60 * 1000);
 
-    const { data: activities, error: actError } = await supabase
+    console.log(`[activity-starting-soon-reminder] Real-start window ${windowStart.toISOString()} → ${windowEnd.toISOString()}, raw query ${rawQueryStart.toISOString()} → ${rawQueryEnd.toISOString()}`);
+
+    const { data: candidates, error: actError } = await supabase
       .from("user_activities")
-      .select("id, activity_type, note, venue_name, city, scheduled_for")
+      .select("id, activity_type, note, venue_name, city, scheduled_for, is_auto_generated")
       .eq("is_active", true)
       .eq("starting_soon_reminder_sent", false)
-      .gte("scheduled_for", windowStart.toISOString())
-      .lt("scheduled_for", windowEnd.toISOString());
+      .gte("scheduled_for", rawQueryStart.toISOString())
+      .lt("scheduled_for", rawQueryEnd.toISOString());
 
     if (actError) {
       console.error("[activity-starting-soon-reminder] Query error:", actError);
@@ -54,7 +85,12 @@ serve(async (req) => {
       });
     }
 
-    if (!activities || activities.length === 0) {
+    const activities = (candidates ?? []).filter((a) => {
+      const start = realStartTime(a);
+      return start >= windowStart && start < windowEnd;
+    });
+
+    if (activities.length === 0) {
       return new Response(JSON.stringify({ success: true, processed: 0, totalNotified: 0 }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -65,6 +101,26 @@ serve(async (req) => {
     const processedIds: string[] = [];
 
     for (const activity of activities) {
+      // Atomically claim this activity before sending anything — if the
+      // conditional update affects no row, some other invocation (a retried
+      // or overlapping cron tick) already claimed it, so this one backs off
+      // instead of sending a duplicate "starts in 1 hour" push.
+      const { data: claimed, error: claimError } = await supabase
+        .from("user_activities")
+        .update({ starting_soon_reminder_sent: true })
+        .eq("id", activity.id)
+        .eq("starting_soon_reminder_sent", false)
+        .select("id");
+
+      if (claimError) {
+        console.error(`[activity-starting-soon-reminder] Claim error for ${activity.id}:`, claimError);
+        continue;
+      }
+      if (!claimed || claimed.length === 0) {
+        console.log(`[activity-starting-soon-reminder] ${activity.id} already claimed by another tick, skipping`);
+        continue;
+      }
+
       const { data: joins, error: joinsError } = await supabase
         .from("activity_joins")
         .select("user_id")
@@ -118,17 +174,6 @@ serve(async (req) => {
           const errText = await pushRes.text();
           console.error(`[activity-starting-soon-reminder] Push failed for ${profile.user_id}:`, pushRes.status, errText);
         }
-      }
-    }
-
-    if (processedIds.length > 0) {
-      const { error: updateError } = await supabase
-        .from("user_activities")
-        .update({ starting_soon_reminder_sent: true })
-        .in("id", processedIds);
-
-      if (updateError) {
-        console.error("[activity-starting-soon-reminder] Failed to mark starting_soon_reminder_sent:", updateError);
       }
     }
 
