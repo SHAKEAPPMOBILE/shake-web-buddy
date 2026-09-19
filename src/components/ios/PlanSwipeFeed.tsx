@@ -430,12 +430,23 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                white automatically when the city has no illustration yet. */
             <div className="absolute inset-0 flex items-center justify-center">
               {getCityBackground(plan.city) && (
-                <img
-                  src={getCityBackground(plan.city)}
-                  alt=""
-                  aria-hidden="true"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+                /* Framed like a Polaroid, not stretched full-bleed — these
+                   illustrations are small source crops, so blowing them up
+                   to fill the whole card just makes the softness obvious.
+                   Contained + slightly tilted reads as a snapshot instead. */
+                <div
+                  className="absolute pointer-events-none"
+                  style={{ top: "16%", transform: "translateY(-50%) rotate(-3deg)" }}
+                >
+                  <div className="bg-white p-2 pb-5 rounded-sm shadow-xl" style={{ width: "58vw", maxWidth: 240 }}>
+                    <img
+                      src={getCityBackground(plan.city)}
+                      alt=""
+                      aria-hidden="true"
+                      className="w-full aspect-[4/3] object-cover"
+                    />
+                  </div>
+                </div>
               )}
               <div className="w-32 h-32 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl">
                 {getActivityIcon(plan.activity_type) ? (
