@@ -431,15 +431,20 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             <div className="absolute inset-0 flex items-center justify-center">
               {getCityBackground(plan.city) && (
                 /* Dissolves into the white background at its own edges
-                   (radial mask fading to transparent) and desaturated to
-                   grayscale, instead of a hard-edged photo — reads as a
-                   faint atmospheric backdrop rather than a discrete image,
-                   which also hides the softness of these small source
-                   crops far better than a sharp-edged card ever could. */
+                   (radial mask fading to transparent) instead of a
+                   hard-edged photo — reads as a faint atmospheric backdrop
+                   rather than a discrete image, which also hides the
+                   softness of these small source crops far better than a
+                   sharp-edged card ever could. Mostly desaturated but not
+                   fully — partial grayscale lets whatever that image's own
+                   strongest hue is (orange for Marrakech, green for Kyoto,
+                   blue for a coastal skyline...) show through faintly
+                   without needing per-image tuning. Sits above the circle,
+                   not centered behind it. */
                 <div
                   className="absolute pointer-events-none"
                   style={{
-                    top: "50%",
+                    top: "38%",
                     left: "50%",
                     width: "78vw",
                     maxWidth: 320,
@@ -449,7 +454,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                     backgroundImage: `url(${getCityBackground(plan.city)})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center 40%",
-                    filter: "grayscale(1) contrast(0.94) brightness(1.08)",
+                    filter: "grayscale(0.65) saturate(1.15) contrast(0.96) brightness(1.06)",
                     WebkitMaskImage: "radial-gradient(circle, black 32%, transparent 72%)",
                     maskImage: "radial-gradient(circle, black 32%, transparent 72%)",
                   }}
