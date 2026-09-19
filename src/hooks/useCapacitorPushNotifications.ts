@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { InAppReview } from "@capacitor-community/in-app-review";
+import { openAppStore } from "@/lib/appStoreLinks";
 
 export function useCapacitorPushNotifications() {
   const { user } = useAuth();
@@ -78,7 +79,12 @@ export function useCapacitorPushNotifications() {
         const data = action.notification.data as Record<string, string> | undefined;
         if (!data) return;
 
-        if (data.action === "rate_app") {
+        if (data.action === "open_store") {
+          // "New version available" broadcasts — take the tap straight to
+          // the right store listing instead of just opening the app, which
+          // did nothing useful for someone trying to update.
+          void openAppStore();
+        } else if (data.action === "rate_app") {
           // Only show the in-app review once per 30-day window to avoid fatigue
           const lastReviewKey = "last_review_prompt";
           const last = localStorage.getItem(lastReviewKey);

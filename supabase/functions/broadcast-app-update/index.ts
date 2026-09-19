@@ -79,7 +79,7 @@ serve(async (req) => {
           to_user_id: uid,
           title: TITLE,
           body: BODY,
-          data: { tab: "home" },
+          data: { action: "open_store" },
         }),
       });
       if (pushRes.ok) {
