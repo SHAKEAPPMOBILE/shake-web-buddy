@@ -428,27 +428,29 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             /* Auto-generated plan: carousel-style circle over a city
                landmark illustration instead of plain white — falls back to
                white automatically when the city has no illustration yet. */
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
               {getCityBackground(plan.city) && (
                 /* Framed like a Polaroid, not stretched full-bleed — these
                    illustrations are small source crops, so blowing them up
                    to fill the whole card just makes the softness obvious.
-                   Contained + slightly tilted reads as a snapshot instead. */
+                   Contained + slightly tilted reads as a snapshot instead.
+                   Stacked in normal flow right above the circle (negative
+                   margin to pull them close) rather than absolute-positioned
+                   guesswork, so the two always sit together regardless of
+                   screen height. */
                 <div
-                  className="absolute pointer-events-none"
-                  style={{ top: "16%", transform: "translateY(-50%) rotate(-3deg)" }}
+                  className="bg-white p-2 pb-5 rounded-sm shadow-xl pointer-events-none"
+                  style={{ width: "74vw", maxWidth: 300, transform: "rotate(-3deg)", marginBottom: -8 }}
                 >
-                  <div className="bg-white p-2 pb-5 rounded-sm shadow-xl" style={{ width: "58vw", maxWidth: 240 }}>
-                    <img
-                      src={getCityBackground(plan.city)}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-full aspect-[4/3] object-cover"
-                    />
-                  </div>
+                  <img
+                    src={getCityBackground(plan.city)}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-full aspect-[4/3] object-cover"
+                  />
                 </div>
               )}
-              <div className="w-32 h-32 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl">
+              <div className="w-32 h-32 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl shrink-0">
                 {getActivityIcon(plan.activity_type) ? (
                   <LivingActivityIcon
                     activityType={plan.activity_type}
