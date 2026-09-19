@@ -439,18 +439,22 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                    fully — partial grayscale lets whatever that image's own
                    strongest hue is (orange for Marrakech, green for Kyoto,
                    blue for a coastal skyline...) show through faintly
-                   without needing per-image tuning. Sits above the circle,
-                   not centered behind it. */
+                   without needing per-image tuning. Bottom edge pinned to
+                   line up with the circle's own bottom edge (bottom:
+                   calc(50% - half the circle's height)) rather than
+                   centered on it, so making this bigger shows more of the
+                   illustration above/around the circle without the two
+                   drifting apart vertically. */
                 <div
                   className="absolute pointer-events-none"
                   style={{
-                    top: "38%",
+                    bottom: "calc(50% - 80px)",
                     left: "50%",
-                    width: "78vw",
-                    maxWidth: 320,
-                    height: "78vw",
-                    maxHeight: 320,
-                    transform: "translate(-50%, -50%)",
+                    width: "98vw",
+                    maxWidth: 440,
+                    height: "98vw",
+                    maxHeight: 440,
+                    transform: "translateX(-50%)",
                     backgroundImage: `url(${getCityBackground(plan.city)})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center 40%",
@@ -460,7 +464,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                   }}
                 />
               )}
-              <div className="w-32 h-32 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl">
+              <div className="w-40 h-40 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl">
                 {getActivityIcon(plan.activity_type) ? (
                   <LivingActivityIcon
                     activityType={plan.activity_type}
