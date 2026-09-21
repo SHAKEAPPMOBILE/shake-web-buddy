@@ -3300,10 +3300,28 @@ export default function ProposePlanPage() {
               )}
 
               {/* Preview card — rendered in-flow (not the fixed composer) since its
-                  content (card + button + link) is too tall to live in a bottom bar. */}
+                  content (card + button + link) is too tall to live in a bottom bar.
+                  Vertically centered in the available space (it used to sit pinned
+                  to the top with a big empty gap below it), with a small looping
+                  "hula" sway on the user's own avatar above it so the review screen
+                  doesn't feel static while they read it over. */}
               {currentStepName === "preview" && (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  {renderPreviewCard()}
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[65vh] flex flex-col items-center justify-center">
+                  <div className="hula-sway w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0 mb-4 shadow-md">
+                    {userAvatarUrl ? (
+                      <img
+                        src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
+                        alt=""
+                        aria-hidden="true"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-3xl">💃</span>
+                    )}
+                  </div>
+                  <div className="w-full">
+                    {renderPreviewCard()}
+                  </div>
                 </div>
               )}
             </div>

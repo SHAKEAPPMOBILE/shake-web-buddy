@@ -440,6 +440,25 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   100%     { left: 130%;  opacity: 0; }
 }
 
+/* Idle "hula" sway on the preview-step avatar — a playful hip-sway loop
+   that keeps the "review your plan" screen from feeling static while the
+   user reads it over before tapping Add Plan / Edit answers / Add video. */
+.hula-sway {
+  transform-origin: 50% 90%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hula-sway { animation: hula-sway 1.6s ease-in-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hula-sway { animation: none; }
+}
+@keyframes hula-sway {
+  0%, 100% { transform: rotate(-7deg) translateY(0); }
+  25%      { transform: rotate(0deg) translateY(-3px); }
+  50%      { transform: rotate(7deg) translateY(0); }
+  75%      { transform: rotate(0deg) translateY(-3px); }
+}
+
 /* iOS Safe Areas */
 .safe-area-top {
   padding-top: constant(safe-area-inset-top);
