@@ -73,6 +73,18 @@ export function usePrivateMessages(otherUserId: string | null) {
         // the new message. Calling fetchMessages() AND having realtime both append
         // the same row is the root cause of the duplicate-message bug.
 
+        // Sending a message re-opens the conversation from OUR side, same as any
+        // messaging app — the chat list's own stale-hide check only re-surfaces a
+        // hidden conversation when the OTHER person messages us, so without this
+        // a conversation we hid stayed hidden forever even after we ourselves
+        // messaged them again. Fire-and-forget: never block sending on it.
+        void supabase
+          .from("private_conversation_hidden")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("other_user_id", otherUserId)
+          .then(() => {});
+
         // Fire-and-forget push to recipient
         void (async () => {
           const [{ data: senderProfile }, { count: threadCount }] = await Promise.all([

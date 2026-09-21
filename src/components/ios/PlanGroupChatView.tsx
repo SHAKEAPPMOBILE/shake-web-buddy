@@ -56,6 +56,7 @@ interface Activity {
   promo_video_url?: string | null;
   promo_image_url?: string | null;
   price_amount?: string | null;
+  is_quick_post?: boolean | null;
 }
 
 interface PlanGroupChatViewProps {
@@ -501,7 +502,11 @@ export function PlanGroupChatView({
   })();
 
   const planEmoji = getActivityEmoji(activity.activity_type);
-  const planTitle = activity.note || getActivityLabel(activity.activity_type) || t('plans.untitledPlan', 'Untitled Plan');
+  const planTitle = activity.note
+    ? activity.note
+    : activity.is_quick_post
+    ? ""
+    : getActivityLabel(activity.activity_type) || t('plans.untitledPlan', 'Untitled Plan');
 
   // Curtain live height
   const baseHeight = SNAP_HEIGHTS[snapState];

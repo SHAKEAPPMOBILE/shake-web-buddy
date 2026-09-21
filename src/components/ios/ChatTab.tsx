@@ -44,6 +44,7 @@ interface ChatActivity {
   is_plan: boolean;
   plan_id?: string;
   is_auto_generated?: boolean;
+  is_quick_post?: boolean;
   creator_name?: string;
   creator_avatar?: string;
   note?: string | null;
@@ -412,6 +413,7 @@ export function ChatTab({
               is_plan: true,
               plan_id: plan.id,
               is_auto_generated: plan.is_auto_generated ?? false,
+              is_quick_post: plan.is_quick_post ?? false,
               creator_name: profile?.name || "Anonymous",
               creator_avatar: profile?.avatar_url,
               note: plan.note,
@@ -1097,6 +1099,8 @@ export function ChatTab({
                     <h3 className="font-bold text-gray-900 text-[15px] leading-snug">
                       {activity.is_plan && activity.note
                         ? activity.note
+                        : activity.is_plan && activity.is_quick_post
+                        ? ""
                         : activity.is_event && activity.event_name
                         ? activity.event_name
                         : getActivityLabel(activity.activity_type)}
