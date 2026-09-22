@@ -1911,6 +1911,7 @@ export default function ProposePlanPage() {
           >
             <video
               src={promoVideoUrl}
+              poster={promoVideoThumbnailUrl || undefined}
               autoPlay
               muted
               loop
@@ -2790,6 +2791,7 @@ export default function ProposePlanPage() {
                   {/* Background video */}
                   <video
                     src={promoVideoUrl}
+                    poster={promoVideoThumbnailUrl || undefined}
                     autoPlay
                     muted
                     loop
@@ -3077,6 +3079,7 @@ export default function ProposePlanPage() {
                 >
                   <video
                     src={promoVideoUrl}
+                    poster={promoVideoThumbnailUrl || undefined}
                     autoPlay
                     muted
                     loop
@@ -3227,6 +3230,7 @@ export default function ProposePlanPage() {
                             {promoVideoUrl ? (
                               <video
                                 src={promoVideoUrl}
+                                poster={promoVideoThumbnailUrl || undefined}
                                 muted
                                 loop
                                 playsInline
@@ -3383,6 +3387,7 @@ export default function ProposePlanPage() {
               tapping the letterbox area (black bg) falls through to the outer div */}
           <video
             src={promoVideoUrl}
+            poster={promoVideoThumbnailUrl || undefined}
             controls
             autoPlay
             loop
