@@ -452,7 +452,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 <div
                   className="absolute pointer-events-none"
                   style={{
-                    top: "50%",
+                    top: "calc(50% - 90px)",
                     left: "50%",
                     width: "100vw",
                     maxWidth: 480,
