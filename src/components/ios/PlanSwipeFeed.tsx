@@ -735,10 +735,12 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             </p>
           </div>
 
-          {/* Report button */}
-          <div style={{ pointerEvents: "auto" }}>
-            <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
-          </div>
+          {/* Report button — never shown on your own plan */}
+          {!isOwn && (
+            <div style={{ pointerEvents: "auto" }}>
+              <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
+            </div>
+          )}
         </div>
 
       </div>
