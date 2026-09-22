@@ -23,8 +23,10 @@ import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn, getShareLabel } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { getCityBackground } from "@/data/cityBackgrounds";
+import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
+import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
@@ -57,6 +59,7 @@ export interface FeedPlan {
   is_auto_generated?: boolean | null;
   is_quick_post?: boolean | null;
   isCarouselJoin?: boolean;
+  background_id?: string | null;
 }
 
 interface PlanSwipeFeedProps {
@@ -123,9 +126,11 @@ interface FeedCardProps {
   onEnterChat: () => void;
   onViewProfile: () => void;
   onViewParticipantProfile: (userId: string, userName: string | null, avatarUrl: string | null) => void;
+  /** Closes the whole feed — used after the owner deletes this plan mid-swipe. */
+  onClose: () => void;
 }
 
-function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile, onViewParticipantProfile }: FeedCardProps) {
+function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile, onViewParticipantProfile, onClose }: FeedCardProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -139,6 +144,10 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [joinCount, setJoinCount] = useState<number | null>(null);
   const [showDescription, setShowDescription] = useState(false);
+  // Local override so picking a new background from the options menu reflects
+  // immediately without waiting on a refetch of the `plan` prop.
+  const [localBackgroundId, setLocalBackgroundId] = useState<string | null | undefined>(plan.background_id);
+  const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
 
   const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const { videoWidth, videoHeight } = e.currentTarget;
@@ -515,13 +524,15 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               />
             </div>
           ) : (
-            /* Last resort: purple gradient + name initial */
+            /* Last resort: chosen background preset, or the default purple
+               gradient + name initial when none was picked */
             <>
               <div
                 className="absolute inset-0"
                 style={{
-                  background:
-                    "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)",
+                  background: selectedBackground
+                    ? selectedBackground.css
+                    : "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)",
                 }}
               />
               <div className="absolute inset-0 flex items-center justify-center">
@@ -641,6 +652,21 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             </span>
           )}
         </button>
+
+        {/* Options menu — own plan only, replaces where a report flag would
+            otherwise sit for the owner */}
+        {isOwn && (
+          <PlanOptionsMenu
+            activity={plan}
+            isCreator
+            otherParticipantsCount={joinCount ?? plan.participant_count ?? 0}
+            isPaidPlan={isPaid}
+            onDeleted={onClose}
+            onBackgroundChange={setLocalBackgroundId}
+            triggerClassName="w-11 h-11 rounded-full flex items-center justify-center shadow-xl bg-white/90 transition-all hover:opacity-90"
+            iconClassName="w-5 h-5 text-foreground"
+          />
+        )}
       </div>
 
       {/* ── Bottom overlay: avatar + title + meta ──
@@ -735,10 +761,12 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             </p>
           </div>
 
-          {/* Report button */}
-          <div style={{ pointerEvents: "auto" }}>
-            <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
-          </div>
+          {/* Report button — never shown on your own plan */}
+          {!isOwn && (
+            <div style={{ pointerEvents: "auto" }}>
+              <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
+            </div>
+          )}
         </div>
 
       </div>
@@ -969,6 +997,7 @@ export function PlanSwipeFeed({
               onEnterChat={() => onEnterChat(plan)}
               onViewProfile={() => handleViewProfile(plan)}
               onViewParticipantProfile={onViewProfile}
+              onClose={onClose}
             />
           ))}
         </div>
