@@ -1,4 +1,6 @@
 import shakeLogo from "@/assets/shake-logo-new.png";
+import { Video } from "lucide-react";
+import { FaApple, FaAndroid } from "react-icons/fa";
 
 /**
  * Investor one-pager — lives at /pager so it can be updated without
@@ -22,21 +24,11 @@ const PROBLEM_POINTS = [
 ];
 
 const SOLUTION_POINTS = [
-  { text: "Go for lunch, dinner, brunch, drinks or a hike with other humans" },
+  { text: "Weekly lunches, brunches and other plans created by people." },
   { text: "Accept a venue suggestion — meet at the place and time" },
   { text: "Record a short video and propose a plan — friends swipe through and join", bold: true },
   { text: "Browse plans in My City or across All Cities" },
-  { text: "Find Shakers nearby and search people by name" },
   { text: "Chat, reply to specific messages, and unsend — just like you'd expect" },
-];
-
-const LIVE_TODAY = [
-  "iOS + Android apps in market",
-  "Video plan proposals",
-  "Real-time chat with reply & unsend",
-  "Search Shakers by name",
-  "Plans across multiple cities",
-  "Lisbon + Medellín launch markets",
 ];
 
 const PROJECTIONS = [
@@ -112,12 +104,29 @@ export default function Pager() {
             <div className="bg-[#2563eb] text-white rounded-2xl p-6 md:w-64">
               <h2 className="text-xs font-bold tracking-wide mb-4">LIVE TODAY</h2>
               <ul className="space-y-3 text-sm">
-                {LIVE_TODAY.map((item) => (
-                  <li key={item} className="flex gap-2">
-                    <span aria-hidden>✦</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
+                <li className="flex items-center gap-2">
+                  <span aria-hidden>✦</span>
+                  <FaApple className="w-4 h-4" aria-label="iOS" />
+                  <FaAndroid className="w-4 h-4" aria-label="Android" />
+                  <span>apps in market</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span aria-hidden>✦</span>
+                  <span>Video plan proposals</span>
+                  <Video className="w-4 h-4 shrink-0" />
+                </li>
+                <li className="flex gap-2">
+                  <span aria-hidden>✦</span>
+                  <span>Make plans just by saying them.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span aria-hidden>✦</span>
+                  <span>Plans across multiple cities</span>
+                </li>
+                <li className="flex gap-2">
+                  <span aria-hidden>✦</span>
+                  <span>Lisbon + Medellín launch markets with over 10 events done</span>
+                </li>
               </ul>
             </div>
           </div>
@@ -137,13 +146,15 @@ export default function Pager() {
                 BUSINESS MODEL
               </h2>
               <div className="mb-4">
-                <p className="font-semibold">Subscription</p>
-                <p className="text-neutral-600 text-sm">$1.99 SHAKE Premium / month</p>
-              </div>
-              <div className="mb-4">
                 <p className="font-semibold">Fees on activities</p>
                 <p className="text-neutral-600 text-sm">
                   10% platform fee on paid activities & ticketed events booked through Shake
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="font-semibold">Venue advertising</p>
+                <p className="text-neutral-600 text-sm">
+                  Paid placements for venues to reach Shakers planning nearby activities
                 </p>
               </div>
               <hr className="my-4 border-neutral-200" />
