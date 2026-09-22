@@ -514,11 +514,16 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               </div>
             </>
           )}
-          {/* Gradient scrim for bottom overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%)" }}
-          />
+          {/* Gradient scrim for bottom overlay — skipped for the auto-generated
+              card: its background is already the light time-of-day wash (not
+              an unpredictable photo), and a black scrim on top of that just
+              muddies the color into gray instead of legibly framing it. */}
+          {!plan.is_auto_generated && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%)" }}
+            />
+          )}
         </>
       )}
 
@@ -693,14 +698,23 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             </div>
           )}
 
-          <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>
+          {/* Dark text on the light auto-generated wash (no black scrim behind
+              it), white text with a shadow everywhere else (photo/video/color
+              backgrounds of unpredictable brightness). */}
+          <div
+            className="flex-1 min-w-0"
+            style={plan.is_auto_generated ? undefined : { textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}
+          >
             {/* "Post like this" quick posts have no title at all — just the
                 media plus the creator's name and city/date below. */}
             {plan.is_quick_post ? null : plan.description?.trim() ? (
               <button
                 type="button"
                 onClick={() => setShowDescription(true)}
-                className="block w-full font-bold text-white text-base leading-tight truncate text-left underline decoration-white/40 underline-offset-2"
+                className={cn(
+                  "block w-full font-bold text-base leading-tight truncate text-left underline underline-offset-2",
+                  plan.is_auto_generated ? "text-gray-900 decoration-gray-400" : "text-white decoration-white/40"
+                )}
                 style={{ pointerEvents: "auto" }}
               >
                 {/* Discovery-carousel entries (other cities' open groups) store a day
@@ -712,7 +726,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 {planTitle}
               </button>
             ) : (
-              <p className="font-bold text-white text-base leading-tight truncate">
+              <p className={cn("font-bold text-base leading-tight truncate", plan.is_auto_generated ? "text-gray-900" : "text-white")}>
                 {planTitle}
               </p>
             )}
@@ -726,7 +740,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 {plan.creator_name}
               </button>
             )}
-            <p className="text-white/80 text-sm mt-0.5 truncate">
+            <p className={cn("text-sm mt-0.5 truncate", plan.is_auto_generated ? "text-gray-500" : "text-white/80")}>
               {plan.city}{dateLabel ? ` · ${dateLabel}` : ""}
             </p>
           </div>
