@@ -5,7 +5,7 @@
  *  Cities with no illustration yet just keep the plain white background. */
 export const CITY_BACKGROUNDS: Record<string, string> = {
   "Medellín": "/icons/cities/medellin.jpg",
-  "New York City": "/icons/cities/new-york-city.jpg",
+  "New York City": "/icons/cities/new-york-city.webp",
   "Washington D.C.": "/icons/cities/washington-dc.jpg",
   "Lisbon": "/icons/cities/lisbon.webp",
   "Chennai": "/icons/cities/chennai.jpg",
@@ -23,11 +23,11 @@ export const CITY_BACKGROUNDS: Record<string, string> = {
   "Guadalajara": "/icons/cities/guadalajara.jpg",
   "Chicago": "/icons/cities/chicago.jpg",
   "Seattle": "/icons/cities/seattle.jpg",
-  "Toronto": "/icons/cities/toronto.jpg",
+  "Toronto": "/icons/cities/toronto.webp",
   "Vancouver": "/icons/cities/vancouver.webp",
   "Montreal": "/icons/cities/montreal.jpg",
   "Mexico City": "/icons/cities/mexico-city.jpg",
-  "Miami": "/icons/cities/miami.jpg",
+  "Miami": "/icons/cities/miami.webp",
   "Bogotá": "/icons/cities/bogota.jpg",
   "Cartagena": "/icons/cities/cartagena.jpg",
   "Quito": "/icons/cities/quito.jpg",
