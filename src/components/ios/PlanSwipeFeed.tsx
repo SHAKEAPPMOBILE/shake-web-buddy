@@ -356,7 +356,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
     <div
       ref={cardRef}
       className={cn("relative w-full flex-shrink-0 overflow-hidden", plan.is_auto_generated ? "bg-white" : "bg-black")}
-      style={{ height: inline ? "calc(100dvh - 208px - env(safe-area-inset-bottom, 0px))" : "100dvh", scrollSnapAlign: "start", scrollSnapStop: "always" }}
+      style={{ height: inline ? "100%" : "100dvh", scrollSnapAlign: "start", scrollSnapStop: "always" }}
     >
       {plan.promo_video_url ? (
         /* ── Video card ── */
