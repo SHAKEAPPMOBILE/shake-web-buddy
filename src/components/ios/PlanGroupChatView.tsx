@@ -31,7 +31,7 @@ import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { getNationalityFlag } from "@/data/countryCodes";
 import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
-import { getPriceValue } from "@/lib/utils";
+import { cn, getPriceValue } from "@/lib/utils";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 import { useFloatingBubbles } from "@/hooks/useFloatingBubbles";
 
@@ -71,15 +71,6 @@ interface PlanGroupChatViewProps {
 type SnapState = 'collapsed' | 'partial' | 'full';
 const SNAP_HEIGHTS: Record<SnapState, number> = { collapsed: 88, partial: 320, full: 460 };
 const SNAP_THRESHOLD = 60;
-
-// Frosted glass pill style shared by avatar + occupation pills
-const pillStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.15)',
-  border: '1px solid rgba(255,255,255,0.3)',
-  backdropFilter: 'blur(8px)',
-  WebkitBackdropFilter: 'blur(8px)',
-  borderRadius: 999,
-};
 
 export function PlanGroupChatView({
   activity,
@@ -509,6 +500,24 @@ export function PlanGroupChatView({
     ? getBackgroundStyle(selectedBackground)
     : { background: DEFAULT_HEADER_GRADIENT };
 
+  // Illustration presets are white-background line art — the white/frosted
+  // text and pills below were designed against a colorful gradient and go
+  // near-invisible on white, so flip everything to dark when one's active.
+  const isLightHeaderBackground = Boolean(selectedBackground?.image);
+  const headerTextClass = isLightHeaderBackground ? "text-black" : "text-white";
+  const headerTextMutedClass = isLightHeaderBackground ? "text-black/70" : "text-white/90";
+  const headerTextFaintClass = isLightHeaderBackground ? "text-black/60" : "text-white/70";
+  const headerIconClass = isLightHeaderBackground ? "text-black/70 hover:text-black" : "text-white/80 hover:text-white";
+  const headerAvatarRingClass = isLightHeaderBackground ? "bg-black/5 border-black/15" : "bg-white/20 border-white/30";
+  const headerAvatarFallbackClass = isLightHeaderBackground ? "bg-black/5" : "bg-white/20";
+  const headerAvatarIconClass = isLightHeaderBackground ? "text-black/50" : "text-white/70";
+  // Frosted pill style shared by the avatar + occupation pills
+  const headerPillStyle: React.CSSProperties = isLightHeaderBackground
+    ? { background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.12)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999 }
+    : { background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderRadius: 999 };
+  const headerMenuTriggerClass = isLightHeaderBackground ? "p-2 rounded-full hover:bg-black/10 transition-colors" : "p-2 rounded-full hover:bg-white/20 transition-colors";
+  const headerMenuIconClass = isLightHeaderBackground ? "w-5 h-5 text-black/70" : "w-5 h-5 text-white/80";
+
   return (
     <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50 pt-[env(safe-area-inset-top)]">
 
@@ -533,7 +542,7 @@ export function PlanGroupChatView({
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-4 z-10">
             <MinimalBackButton
               onClick={onBack}
-              className="shrink-0 text-white/80 hover:text-white"
+              className={cn("shrink-0", headerIconClass)}
               aria-label={t('common.back', 'Back')}
               iconClassName="w-6 h-6"
             />
@@ -545,6 +554,8 @@ export function PlanGroupChatView({
               onDeleted={onBack}
               onLeft={onBack}
               onBackgroundChange={setLocalBackgroundId}
+              triggerClassName={headerMenuTriggerClass}
+              iconClassName={headerMenuIconClass}
             />
           </div>
 
@@ -562,7 +573,7 @@ export function PlanGroupChatView({
                     avatarUrl: creatorProfile?.avatar_url || null,
                   });
                 }}
-                className="w-16 h-16 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center shadow-sm focus:outline-none shrink-0"
+                className={cn("w-16 h-16 rounded-full border overflow-hidden flex items-center justify-center shadow-sm focus:outline-none shrink-0", headerAvatarRingClass)}
               >
                 {activity.promo_video_url ? (
                   <video
@@ -576,7 +587,7 @@ export function PlanGroupChatView({
                 ) : creatorProfile?.avatar_url ? (
                   <Avatar className="w-full h-full rounded-full">
                     <AvatarImage src={getDisplayAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile?.name || "Creator"} className="object-cover" />
-                    <AvatarFallback className="bg-white/20 flex items-center justify-center">
+                    <AvatarFallback className={cn("flex items-center justify-center", headerAvatarFallbackClass)}>
                       <span className="text-4xl">{planEmoji}</span>
                     </AvatarFallback>
                   </Avatar>
@@ -595,7 +606,7 @@ export function PlanGroupChatView({
                       userName: cohostProfile?.name || null,
                       avatarUrl: cohostProfile?.avatar_url || null,
                     })}
-                    className="w-10 h-10 rounded-full bg-white/20 border border-white/30 overflow-hidden flex items-center justify-center shadow-sm focus:outline-none shrink-0"
+                    className={cn("w-10 h-10 rounded-full border overflow-hidden flex items-center justify-center shadow-sm focus:outline-none shrink-0", headerAvatarRingClass)}
                     style={{ marginLeft: -12 }}
                   >
                     {cohostProfile?.avatar_url ? (
@@ -605,7 +616,7 @@ export function PlanGroupChatView({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-base font-bold text-white">
+                      <span className={cn("text-base font-bold", headerTextClass)}>
                         {(cohostProfile?.name || "?").charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -615,28 +626,28 @@ export function PlanGroupChatView({
             </div>
 
             {/* 2. Plan title */}
-            <h1 className="text-base font-bold text-white text-center leading-tight mt-2">{planTitle}</h1>
+            <h1 className={cn("text-base font-bold text-center leading-tight mt-2", headerTextClass)}>{planTitle}</h1>
 
             {/* 3. Date label */}
-            {planDateLabel && <p className="text-sm font-semibold text-white/90 mt-1">{planDateLabel}</p>}
+            {planDateLabel && <p className={cn("text-sm font-semibold mt-1", headerTextMutedClass)}>{planDateLabel}</p>}
 
             {/* 4. Avatar pill */}
             <div className="flex justify-center w-full mt-4">
               {otherParticipants.length === 0 ? (
-                <div style={{ ...pillStyle, padding: '10px 20px' }}>
-                  <p className="text-xs text-white/70">You're the first one here!</p>
+                <div style={{ ...headerPillStyle, padding: '10px 20px' }}>
+                  <p className={cn("text-xs", headerTextFaintClass)}>You're the first one here!</p>
                 </div>
               ) : (
                 <button
                   onClick={() => setShowParticipantsDialog(true)}
                   className="flex items-center gap-2"
-                  style={{ ...pillStyle, padding: '10px 20px' }}
+                  style={{ ...headerPillStyle, padding: '10px 20px' }}
                 >
                   {otherParticipants.map((p) => (
-                    <Avatar key={p.user_id} className="w-8 h-8 rounded-full border border-white/30 bg-white/20 shrink-0">
+                    <Avatar key={p.user_id} className={cn("w-8 h-8 rounded-full border shrink-0", headerAvatarRingClass)}>
                       <AvatarImage src={getDisplayAvatarUrl(p.avatar_url)} alt={p.name || t('chat.shaker', 'Shaker')} className="object-cover" />
-                      <AvatarFallback className="bg-white/20 flex items-center justify-center">
-                        <User className="w-3.5 h-3.5 text-white/70" />
+                      <AvatarFallback className={cn("flex items-center justify-center", headerAvatarFallbackClass)}>
+                        <User className={cn("w-3.5 h-3.5", headerAvatarIconClass)} />
                       </AvatarFallback>
                     </Avatar>
                   ))}
@@ -649,12 +660,12 @@ export function PlanGroupChatView({
               <div className="flex justify-center w-full mt-3">
                 <div
                   className="flex flex-col gap-1"
-                  style={{ ...pillStyle, padding: '10px 20px' }}
+                  style={{ ...headerPillStyle, padding: '10px 20px' }}
                 >
                   {otherParticipants
                     .filter(p => p.occupation || p.nationality)
                     .map((p) => (
-                      <p key={p.user_id} className="text-xs text-white/90 leading-snug text-center whitespace-nowrap">
+                      <p key={p.user_id} className={cn("text-xs leading-snug text-center whitespace-nowrap", headerTextMutedClass)}>
                         {p.name || 'Shaker'}
                         {p.nationality ? ` ${getNationalityFlag(p.nationality)}` : ''}
                         {p.occupation ? ` · ${p.occupation}` : ''}
@@ -678,11 +689,11 @@ export function PlanGroupChatView({
         >
           <MinimalBackButton
             onClick={onBack}
-            className="shrink-0 text-white/80 hover:text-white"
+            className={cn("shrink-0", headerIconClass)}
             aria-label="Back"
             iconClassName="w-5 h-5"
           />
-          <span className="flex items-center gap-1.5 text-sm font-bold text-white">
+          <span className={cn("flex items-center gap-1.5 text-sm font-bold", headerTextClass)}>
             <span className="text-base">{planEmoji}</span>
             {planTitle}
           </span>
@@ -694,6 +705,8 @@ export function PlanGroupChatView({
             onDeleted={onBack}
             onLeft={onBack}
             onBackgroundChange={setLocalBackgroundId}
+            triggerClassName={headerMenuTriggerClass}
+            iconClassName={headerMenuIconClass}
           />
         </div>
       </div>
