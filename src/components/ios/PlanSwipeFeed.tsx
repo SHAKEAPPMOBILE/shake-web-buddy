@@ -22,6 +22,7 @@ import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn, getShareLabel } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
+import { getCityBackground } from "@/data/cityBackgrounds";
 import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -434,15 +435,37 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         ── */
         <>
           {plan.is_auto_generated ? (
-            /* Auto-generated plan: activity icon on a plain white card with
-               the same soft time-of-day color wash Home uses — just anchored
-               at the bottom (where this card's own text sits) instead of the
-               top. Replaced the earlier grayscale city-illustration backdrop,
-               which read as too heavy/gray regardless of tuning. */
+            /* Auto-generated plan: carousel-style circle over the black-and-
+               white city landmark illustration (same art submitted in the
+               app-store builds — keep it as-is, don't recolor it), on top of
+               the same soft time-of-day color wash Home uses. What actually
+               made this read as "too gray" wasn't the illustration itself —
+               it was the black bottom scrim (further down) stacking on top
+               of it; that scrim is now skipped for auto-generated cards. */
             <div
               className="absolute inset-0 flex items-center justify-center"
               style={{ background: getTimeOfDayGradient("bottom") }}
             >
+              {getCityBackground(plan.city) && (
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: "calc(50% - 90px)",
+                    left: "50%",
+                    width: "100vw",
+                    maxWidth: 480,
+                    height: "100vw",
+                    maxHeight: 480,
+                    transform: "translate(-50%, -50%)",
+                    backgroundImage: `url(${getCityBackground(plan.city)})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center 40%",
+                    filter: "grayscale(1)",
+                    WebkitMaskImage: "radial-gradient(circle, black 32%, transparent 72%)",
+                    maskImage: "radial-gradient(circle, black 32%, transparent 72%)",
+                  }}
+                />
+              )}
               <div className="w-40 h-40 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl">
                 {getActivityIcon(plan.activity_type) ? (
                   <LivingActivityIcon
