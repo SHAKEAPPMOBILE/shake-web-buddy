@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { MoreVertical, Palette, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -108,7 +109,10 @@ export function PlanOptionsMenu({
         </button>
         {showMenu && (
           <>
-            <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} />
+            {createPortal(
+              <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} />,
+              document.body
+            )}
             <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
               {isCreator ? (
                 <>
@@ -138,8 +142,13 @@ export function PlanOptionsMenu({
         )}
       </div>
 
-      {/* ── Delete-plan confirmation ── */}
-      {showDeleteConfirm && (
+      {/* ── Delete-plan confirmation ──
+          Portaled to <body>: this component can be mounted inside an
+          ancestor with a CSS transform (e.g. the swipe feed's action column,
+          translateY(-50%)), which would otherwise become the containing
+          block for `fixed` descendants and squash this into that ancestor's
+          box instead of covering the viewport. */}
+      {showDeleteConfirm && createPortal(
         <div
           className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-6"
           onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }}
@@ -170,11 +179,12 @@ export function PlanOptionsMenu({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* ── Background picker ── */}
-      {showBackgroundPicker && (
+      {/* ── Background picker — portaled to <body>, same reason as above ── */}
+      {showBackgroundPicker && createPortal(
         <div
           className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 px-4"
           onClick={(e) => { e.stopPropagation(); setShowBackgroundPicker(false); }}
@@ -207,7 +217,8 @@ export function PlanOptionsMenu({
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

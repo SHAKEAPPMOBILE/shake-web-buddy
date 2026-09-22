@@ -499,17 +499,13 @@ export function PlanGroupChatView({
   // Exclude the plan creator from the avatar/occupation pills
   const otherParticipants = participants.filter(p => p.user_id !== activity.user_id);
 
-  // Header background: a chosen preset replaces the default purple gradient.
-  // When the plan also has a promo photo/video, only the right half of the
-  // header carries the preset — the left half stays the app's pale default.
-  const hasPromoMedia = Boolean(activity.promo_video_url || activity.promo_image_url);
+  // Header background: a chosen preset replaces the default purple gradient,
+  // full width, regardless of promo media — the header only ever shows a
+  // small 64px avatar/video circle on top of it either way, so there's no
+  // full-bleed photo for a split to protect.
   const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
   const DEFAULT_HEADER_GRADIENT = "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)";
-  const headerBackground = !selectedBackground
-    ? DEFAULT_HEADER_GRADIENT
-    : hasPromoMedia
-    ? "hsl(50,40%,92%)"
-    : selectedBackground.css;
+  const headerBackground = selectedBackground ? selectedBackground.css : DEFAULT_HEADER_GRADIENT;
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50 pt-[env(safe-area-inset-top)]">
@@ -523,12 +519,6 @@ export function PlanGroupChatView({
           background: headerBackground,
         }}
       >
-        {/* Right-half preset overlay — only when there's promo media AND a
-            chosen background, splitting the curtain into pale-left/preset-right. */}
-        {hasPromoMedia && selectedBackground && (
-          <div className="absolute top-0 right-0 bottom-0 w-1/2 pointer-events-none" style={{ background: selectedBackground.css }} />
-        )}
-
         {/* Full expanded content — fades out when collapsed */}
         <div
           style={{
