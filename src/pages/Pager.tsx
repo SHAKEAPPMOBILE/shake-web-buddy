@@ -6,6 +6,12 @@ import shakeLogo from "@/assets/shake-logo-new.png";
  * everything on the page is driven from these constants.
  */
 
+// Brand blue used for headings, table header, and callout boxes — Tailwind's
+// arbitrary-value classes need this literal inline (a JS constant can't be
+// interpolated into a class string at build time), so it's just repeated
+// below as `#2563eb`. Change it here in a find-and-replace if it ever needs
+// to move.
+
 const PROBLEM_POINTS = [
   "Loneliness & lack of friends",
   "Difficulty finding like-minded people",
@@ -64,7 +70,10 @@ function SectionFooter() {
 
 export default function Pager() {
   return (
-    <div className="min-h-[100dvh] bg-[#f5f5fa] text-neutral-900">
+    <div
+      className="min-h-[100dvh] bg-[#f5f5fa] text-neutral-900"
+      style={{ fontFamily: "Verdana, Geneva, sans-serif" }}
+    >
       <div className="max-w-5xl mx-auto px-6 py-12 md:py-16 space-y-16">
 
         {/* ── Slide 1: Intro ── */}
@@ -77,7 +86,7 @@ export default function Pager() {
 
           <div className="grid md:grid-cols-[1fr_1fr_auto] gap-10">
             <div>
-              <h2 className="text-xs font-semibold tracking-wide text-[hsl(var(--shake-purple))] mb-4">
+              <h2 className="text-xs font-semibold tracking-wide text-[#2563eb] mb-4">
                 THE PROBLEM
               </h2>
               <ul className="space-y-2 text-neutral-600 list-disc list-inside">
@@ -88,7 +97,7 @@ export default function Pager() {
             </div>
 
             <div>
-              <h2 className="text-xs font-semibold tracking-wide text-[hsl(var(--shake-purple))] mb-4">
+              <h2 className="text-xs font-semibold tracking-wide text-[#2563eb] mb-4">
                 THE SOLUTION — WHAT SHAKE DOES TODAY
               </h2>
               <ul className="space-y-2 text-neutral-600 list-disc list-inside">
@@ -100,7 +109,7 @@ export default function Pager() {
               </ul>
             </div>
 
-            <div className="bg-[hsl(var(--shake-purple))] text-white rounded-2xl p-6 md:w-64">
+            <div className="bg-[#2563eb] text-white rounded-2xl p-6 md:w-64">
               <h2 className="text-xs font-bold tracking-wide mb-4">LIVE TODAY</h2>
               <ul className="space-y-3 text-sm">
                 {LIVE_TODAY.map((item) => (
@@ -124,7 +133,7 @@ export default function Pager() {
 
           <div className="grid md:grid-cols-[1fr_1.4fr] gap-8">
             <div className="bg-white rounded-2xl p-6 border border-neutral-200">
-              <h2 className="text-xs font-semibold tracking-wide text-[hsl(var(--shake-purple))] mb-3">
+              <h2 className="text-xs font-semibold tracking-wide text-[#2563eb] mb-3">
                 BUSINESS MODEL
               </h2>
               <div className="mb-4">
@@ -141,9 +150,15 @@ export default function Pager() {
               <div className="mb-4">
                 <p className="font-semibold">Traction</p>
                 <p className="text-neutral-600 text-sm">
+                  Concept already proven: 10+ dinners & brunches hosted in Medellín and Lisbon
+                </p>
+                <p className="text-neutral-600 text-sm mt-1">
                   Soft-launched V1 Nov 2025 in Lisbon & Medellín — 1,000+ downloads, 3,000 Instagram followers
                 </p>
                 <p className="text-neutral-600 text-sm mt-1">Soft-launch V2 – Medellín 300 downloads at 07/21</p>
+                <p className="text-neutral-600 text-sm mt-1 font-semibold text-neutral-900">
+                  V3 is live now — 400 users at the moment
+                </p>
               </div>
               <div>
                 <p className="font-semibold">Community</p>
@@ -154,13 +169,13 @@ export default function Pager() {
             </div>
 
             <div>
-              <h2 className="text-xs font-semibold tracking-wide text-[hsl(var(--shake-purple))] mb-3">
+              <h2 className="text-xs font-semibold tracking-wide text-[#2563eb] mb-3">
                 FINANCIAL PROJECTIONS
               </h2>
               <div className="overflow-hidden rounded-2xl border border-neutral-200">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-[hsl(var(--shake-purple))] text-white">
+                    <tr className="bg-[#2563eb] text-white">
                       <th className="text-left font-semibold px-4 py-3">Year</th>
                       <th className="text-left font-semibold px-4 py-3">Revenue</th>
                       <th className="text-left font-semibold px-4 py-3">Expenses</th>
@@ -180,8 +195,11 @@ export default function Pager() {
                 </table>
               </div>
 
-              <div className="bg-[hsl(var(--shake-purple))] text-white rounded-2xl p-6 mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="bg-[#2563eb] text-white rounded-2xl p-6 mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
+                  <p>
+                    Raising: <span className="font-bold">$50k for marketing initiatives and worldwide launch</span>
+                  </p>
                   <p>
                     Public valuation: <span className="font-bold">$3M pre-money</span>
                   </p>
@@ -213,7 +231,7 @@ export default function Pager() {
                 className="bg-white border border-neutral-200 rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-[hsl(var(--shake-purple))] text-white flex items-center justify-center font-bold text-sm">
+                  <div className="w-14 h-14 rounded-full bg-[#2563eb] text-white flex items-center justify-center font-bold text-sm">
                     {member.pct}
                   </div>
                   <div>
@@ -225,7 +243,7 @@ export default function Pager() {
                   href={member.linkedin}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[hsl(var(--shake-purple))] text-sm underline"
+                  className="text-[#2563eb] text-sm underline"
                 >
                   {member.linkedin.replace("https://", "")}
                 </a>
@@ -240,7 +258,7 @@ export default function Pager() {
         <section className="text-center pt-8 pb-4">
           <img src={shakeLogo} alt="Shake" className="w-16 h-16 mx-auto mb-6" />
           <h1 className="text-3xl md:text-4xl font-bold mb-3">Thank you, let's shake!</h1>
-          <a href="https://shakeapp.today" className="text-[hsl(var(--shake-purple))] underline">
+          <a href="https://shakeapp.today" className="text-[#2563eb] underline">
             shakeapp.today
           </a>
         </section>
