@@ -3,7 +3,7 @@ import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import confetti from 'canvas-confetti';
 import barManAndCook from "@/assets/bar-man-and-cook.png";
-import { Calendar, Users, Plus, Plane, Send, ChevronLeft, Play, Map as MapIcon, List as ListIcon } from "lucide-react";
+import { Calendar, Users, Plus, Plane, Send, ChevronLeft, Play, Map as MapIcon, List as ListIcon, GalleryVertical as ScrollIcon } from "lucide-react";
 import { WorldMap } from "@/components/WorldMap";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCity } from "@/contexts/CityContext";
@@ -160,7 +160,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   // "My City" (false) is the default; "All Cities" (true) is opt-in
   const [showAllCities, setShowAllCities] = useState(false);
   // Fuzzed approximate-location map view of "My City" plans, alternative to the list.
-  const [tabView, setTabView] = useState<'list' | 'map'>('list');
+  // "scroll" is the full-screen swipeable feed (same one opened by tapping a card),
+  // embedded inline instead of as an overlay — it's the default landing view.
+  const [tabView, setTabView] = useState<'list' | 'map' | 'scroll'>('scroll');
   // "Friends" is a third, orthogonal filter — independent of My City/All Cities,
   // with its own fetch (friend plans aren't city-scoped).
   const [showFriendsOnly, setShowFriendsOnly] = useState(false);
@@ -1849,6 +1851,17 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5">
             <button
               type="button"
+              onClick={() => setTabView('scroll')}
+              aria-label={t('plans.scrollView', 'Scroll view')}
+              className={cn(
+                "flex items-center justify-center w-7 h-7 rounded-full transition-all",
+                tabView === 'scroll' ? "bg-white shadow-sm text-gray-900" : "text-gray-400"
+              )}
+            >
+              <ScrollIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
               onClick={() => setTabView('list')}
               aria-label={t('plans.listView', 'List view')}
               className={cn(
@@ -2023,6 +2036,39 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                 </div>
               </SwipeableCard>
             ))
+          )}
+        </div>
+      ) : tabView === 'scroll' ? (
+        <div className="flex-1 min-h-0 relative">
+          {isLoading || awaitingPendingPlan || !!pendingNewPlanId || (!hasCompletedFullFetch && swipeFeedList.length === 0) ? (
+            <div className="flex items-center justify-center h-full bg-white">
+              <LoadingSpinner size="lg" />
+            </div>
+          ) : swipeFeedList.length === 0 ? (
+            <PlansEmptyState onJoinActivity={onJoinActivity ?? (() => {})} />
+          ) : (
+            <PlanSwipeFeed
+              plans={swipeFeedList}
+              startIndex={0}
+              myCity={selectedCity}
+              inline
+              onClose={() => setTabView('list')}
+              onJoinInPlace={(plan) => handleFeedJoin(plan as PlanActivity)}
+              onPayForPlan={(plan) => setPaidActivityDetail(plan as PlanActivity)}
+              onEnterChat={(plan) => {
+                const p = plan as PlanActivity;
+                if (p.isCarouselJoin) {
+                  setSelectedCarouselActivity(p);
+                  setShowCarouselChatView(true);
+                } else {
+                  setSelectedPlan(p);
+                  setShowChatView(true);
+                }
+              }}
+              onViewProfile={(userId, userName, avatarUrl) => {
+                setSelectedUserProfile({ userId, userName, avatarUrl });
+              }}
+            />
           )}
         </div>
       ) : tabView === 'map' ? (
