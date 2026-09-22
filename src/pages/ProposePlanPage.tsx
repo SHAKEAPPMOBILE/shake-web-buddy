@@ -311,6 +311,13 @@ export default function ProposePlanPage() {
   // card (og:image can't be a playing video, and there's no server-side
   // frame-extraction step).
   const [promoVideoThumbnailUrl, setPromoVideoThumbnailUrl] = useState<string | null>(null);
+  // A local object URL for that same captured frame, available the instant
+  // it's captured — well before the upload (and thus promoVideoThumbnailUrl)
+  // resolves. Every <video poster> below prefers this over the remote URL so
+  // the poster paints immediately instead of waiting on a fresh, likely
+  // uncached fetch from storage right after upload.
+  const [localVideoThumbnailUrl, setLocalVideoThumbnailUrl] = useState<string | null>(null);
+  const posterUrl = localVideoThumbnailUrl || promoVideoThumbnailUrl || undefined;
   const [videoUploading, setVideoUploading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
   // True only for an actual OS-level permission denial — Try again just
@@ -799,9 +806,11 @@ export default function ProposePlanPage() {
     setRecordedBlob(null);
     setPromoVideoUrl(null);
     setPromoVideoThumbnailUrl(null);
+    if (localVideoThumbnailUrl) URL.revokeObjectURL(localVideoThumbnailUrl);
+    setLocalVideoThumbnailUrl(null);
     setCameraMode("idle");
     navigate(-1);
-  }, [stopAllTracks, recordedObjectUrl, navigate]);
+  }, [stopAllTracks, recordedObjectUrl, localVideoThumbnailUrl, navigate]);
 
   const handleNameSubmit = () => {
     if (!planText.trim() || hasProfanity) return;
@@ -897,6 +906,8 @@ export default function ProposePlanPage() {
       // Best-effort — a failed/slow thumbnail capture should never block
       // getting the actual video uploaded and the plan created.
       const thumbBlob = await captureVideoFrame(recordedBlob).catch(() => null);
+      // Usable immediately, unlike the upload below — no network round trip.
+      if (thumbBlob) setLocalVideoThumbnailUrl(URL.createObjectURL(thumbBlob));
 
       const uploadTasks: Promise<unknown>[] = [
         supabase.storage.from("plan-videos").upload(path, recordedBlob, { contentType: mimeType }),
@@ -947,6 +958,8 @@ export default function ProposePlanPage() {
     setRecordedBlob(null);
     setPromoVideoUrl(null);
     setPromoVideoThumbnailUrl(null);
+    if (localVideoThumbnailUrl) URL.revokeObjectURL(localVideoThumbnailUrl);
+    setLocalVideoThumbnailUrl(null);
     setPromoImageUrl(null);
     setCameraMode("idle");
     // On the preview screen's inline offer, "Skip" just dismisses it —
@@ -986,6 +999,8 @@ export default function ProposePlanPage() {
       setRecordedBlob(null);
       setPromoVideoUrl(null);
       setPromoVideoThumbnailUrl(null);
+      if (localVideoThumbnailUrl) URL.revokeObjectURL(localVideoThumbnailUrl);
+      setLocalVideoThumbnailUrl(null);
       setPromoImageUrl(publicUrl);
       advanceStep();
     } catch {
@@ -1911,7 +1926,7 @@ export default function ProposePlanPage() {
           >
             <video
               src={promoVideoUrl}
-              poster={promoVideoThumbnailUrl || undefined}
+              poster={posterUrl}
               autoPlay
               muted
               loop
@@ -1929,7 +1944,13 @@ export default function ProposePlanPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => { setPromoVideoUrl(null); setPromoVideoThumbnailUrl(null); handleRetake(); }}
+              onClick={() => {
+                setPromoVideoUrl(null);
+                setPromoVideoThumbnailUrl(null);
+                if (localVideoThumbnailUrl) URL.revokeObjectURL(localVideoThumbnailUrl);
+                setLocalVideoThumbnailUrl(null);
+                handleRetake();
+              }}
               className="flex-1 py-3 rounded-full text-sm font-semibold bg-muted text-foreground"
             >
               {t("createPlan.retake")}
@@ -2791,7 +2812,7 @@ export default function ProposePlanPage() {
                   {/* Background video */}
                   <video
                     src={promoVideoUrl}
-                    poster={promoVideoThumbnailUrl || undefined}
+                    poster={posterUrl}
                     autoPlay
                     muted
                     loop
@@ -3079,7 +3100,7 @@ export default function ProposePlanPage() {
                 >
                   <video
                     src={promoVideoUrl}
-                    poster={promoVideoThumbnailUrl || undefined}
+                    poster={posterUrl}
                     autoPlay
                     muted
                     loop
@@ -3230,7 +3251,7 @@ export default function ProposePlanPage() {
                             {promoVideoUrl ? (
                               <video
                                 src={promoVideoUrl}
-                                poster={promoVideoThumbnailUrl || undefined}
+                                poster={posterUrl}
                                 muted
                                 loop
                                 playsInline
@@ -3387,7 +3408,7 @@ export default function ProposePlanPage() {
               tapping the letterbox area (black bg) falls through to the outer div */}
           <video
             src={promoVideoUrl}
-            poster={promoVideoThumbnailUrl || undefined}
+            poster={posterUrl}
             controls
             autoPlay
             loop
