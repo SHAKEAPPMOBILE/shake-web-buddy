@@ -1,0 +1,114 @@
+name: iOS Release
+
+# Manual trigger only — click "Run workflow" in the Actions tab when you
+# actually want to build + upload a new build. Bump the marketing Version
+# in ios/App/App.xcodeproj (Xcode → App target → General → Identity) first
+# if you want this to land as a new App Store version, not just a new build
+# of the current one.
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-upload:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync Capacitor iOS
+        run: npx cap sync ios
+
+      # ── Code signing setup ───────────────────────────────────────────────
+      # Imports your distribution cert + provisioning profile into a fresh,
+      # temporary keychain that only exists for this job run.
+      - name: Import signing certificate and provisioning profile
+        env:
+          CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+          KEYCHAIN_PASSWORD: ci-temp-keychain-password
+        run: |
+          CERT_PATH=$RUNNER_TEMP/dist_cert.p12
+          PROFILE_PATH=$RUNNER_TEMP/profile.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/ci-signing.keychain-db
+
+          echo -n "$CERT_P12_BASE64" | base64 --decode -o "$CERT_PATH"
+          echo -n "$PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/"//g')
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: App Store Connect API key
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo -n "$ASC_API_KEY_P8" | base64 --decode -o ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8
+
+      # Build number must always increase for the SAME marketing version —
+      # the run number guarantees that without you touching Xcode each time.
+      - name: Bump build number
+        run: |
+          cd ios/App
+          agvtool new-version -all "${{ github.run_number }}"
+
+      - name: Write ExportOptions.plist
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+        run: |
+          cat > ios/App/ExportOptions.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>${TEAM_ID}</string>
+            <key>destination</key>
+            <string>upload</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>authenticationKeyID</key>
+            <string>${KEY_ID}</string>
+            <key>authenticationKeyIssuerID</key>
+            <string>${ISSUER_ID}</string>
+            <key>authenticationKeyPath</key>
+            <string>$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Archive
+        run: |
+          cd ios/App
+          xcodebuild -project App.xcodeproj -scheme App -sdk iphoneos \
+            -configuration Release archive -archivePath build/App.xcarchive \
+            -allowProvisioningUpdates
+
+      # With destination=upload in ExportOptions.plist, this single command
+      # both exports the IPA and uploads it to App Store Connect.
+      - name: Export and upload to App Store Connect
+        run: |
+          cd ios/App
+          xcodebuild -exportArchive -archivePath build/App.xcarchive \
+            -exportPath build/ipa -exportOptionsPlist ExportOptions.plist
