@@ -73,7 +73,7 @@ export const CITY_BACKGROUNDS: Record<string, string> = {
   "Istanbul": "/icons/cities/istanbul.jpg",
   "Tel Aviv": "/icons/cities/tel-aviv.jpg",
   "Jerusalem": "/icons/cities/jerusalem.jpg",
-  "Dubai": "/icons/cities/dubai.jpg",
+  "Dubai": "/icons/cities/dubai.png",
   "Abu Dhabi": "/icons/cities/abu-dhabi.jpg",
   "Doha": "/icons/cities/doha.jpg",
   "Muscat": "/icons/cities/muscat.jpg",
