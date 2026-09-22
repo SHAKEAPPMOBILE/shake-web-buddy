@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { MoreVertical, Palette, LogOut } from "lucide-react";
@@ -43,9 +43,20 @@ export function PlanOptionsMenu({
 }: PlanOptionsMenuProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!showMenu && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setShowMenu((v) => !v);
+  };
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -98,49 +109,56 @@ export function PlanOptionsMenu({
 
   return (
     <>
-      <div className="relative" onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setShowMenu((v) => !v); }}
-          className={triggerClassName}
-          aria-label="Plan options"
-        >
-          <MoreVertical className={iconClassName} />
-        </button>
-        {showMenu && (
-          <>
-            {createPortal(
-              <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} />,
-              document.body
-            )}
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
-              {isCreator ? (
-                <>
-                  <button
-                    onClick={handleEdit}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
-                  >
-                    <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🛸</span> Edit plan
-                  </button>
-                  <button
-                    onClick={handleOpenBackgroundPicker}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
-                  >
-                    <Palette className="w-4 h-4" /> {activity.background_id ? "Change background" : "Add background"}
-                  </button>
-                  <button onClick={handleInitiateDelete} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                    <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🫣</span> Delete plan
-                  </button>
-                </>
-              ) : (
-                <button onClick={handleLeavePlan} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                  <LogOut className="w-4 h-4" /> Leave plan
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={toggleMenu}
+        className={triggerClassName}
+        aria-label="Plan options"
+      >
+        <MoreVertical className={iconClassName} />
+      </button>
+
+      {/* Portaled to <body>, positioned from the trigger's own measured rect
+          — this component is often mounted inside a card that clips
+          overflow (the plans-list SwipeableCard) or sits under a transformed
+          ancestor (the swipe feed's action column), either of which would
+          otherwise squash or clip an `absolute`/`fixed`-anchored dropdown. */}
+      {showMenu && menuPosition && createPortal(
+        <>
+          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} />
+          <div
+            className="fixed w-48 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden"
+            style={{ top: menuPosition.top, right: menuPosition.right }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isCreator ? (
+              <>
+                <button
+                  onClick={handleEdit}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
+                >
+                  <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🛸</span> Edit plan
                 </button>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+                <button
+                  onClick={handleOpenBackgroundPicker}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
+                >
+                  <Palette className="w-4 h-4" /> {activity.background_id ? "Change background" : "Add background"}
+                </button>
+                <button onClick={handleInitiateDelete} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                  <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🫣</span> Delete plan
+                </button>
+              </>
+            ) : (
+              <button onClick={handleLeavePlan} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                <LogOut className="w-4 h-4" /> Leave plan
+              </button>
+            )}
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* ── Delete-plan confirmation ──
           Portaled to <body>: this component can be mounted inside an
