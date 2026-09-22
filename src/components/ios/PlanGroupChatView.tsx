@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Trash2, Images, MoreVertical, LogOut, Camera, ChevronLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Send, User, Trash2, Images, Camera, ChevronLeft } from "lucide-react";
+import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
+import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -57,6 +58,7 @@ interface Activity {
   promo_image_url?: string | null;
   price_amount?: string | null;
   is_quick_post?: boolean | null;
+  background_id?: string | null;
 }
 
 interface PlanGroupChatViewProps {
@@ -85,7 +87,6 @@ export function PlanGroupChatView({
   attendeeCount = 0,
 }: PlanGroupChatViewProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<PlanMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -104,9 +105,11 @@ export function PlanGroupChatView({
   } | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [giphyPickerOpen, setGiphyPickerOpen] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [videoFullscreen, setVideoFullscreen] = useState(false);
+  // Local override so picking a new background reflects immediately without
+  // waiting on a refetch of the `activity` prop passed down from PlansTab.
+  const [localBackgroundId, setLocalBackgroundId] = useState<string | null>(activity.background_id ?? null);
+  useEffect(() => { setLocalBackgroundId(activity.background_id ?? null); }, [activity.id, activity.background_id]);
 
   // Curtain drag state
   const [snapState, setSnapState] = useState<SnapState>('partial');
@@ -466,27 +469,6 @@ export function PlanGroupChatView({
 
   const isCreator = user?.id === activity.user_id;
 
-  const handleLeavePlan = async () => {
-    setShowMenu(false);
-    const { error } = await supabase.from("activity_joins").delete()
-      .eq("user_id", user!.id).eq("activity_id", activity.id);
-    if (error) { toast.error("Failed to leave plan"); }
-    else { toast.success("Left the plan"); onBack(); }
-  };
-
-  const handleInitiateDelete = () => {
-    setShowMenu(false);
-    setShowDeleteConfirm(true);
-  };
-
-  const handleDeletePlan = async () => {
-    setShowDeleteConfirm(false);
-    const { error } = await supabase.from("user_activities").delete()
-      .eq("id", activity.id).eq("user_id", user!.id);
-    if (error) { toast.error("Failed to delete plan"); }
-    else { toast.success("Plan deleted"); onBack(); }
-  };
-
   const creatorProfile = profiles[activity.user_id];
 
   const planDateLabel = (() => {
@@ -517,6 +499,18 @@ export function PlanGroupChatView({
   // Exclude the plan creator from the avatar/occupation pills
   const otherParticipants = participants.filter(p => p.user_id !== activity.user_id);
 
+  // Header background: a chosen preset replaces the default purple gradient.
+  // When the plan also has a promo photo/video, only the right half of the
+  // header carries the preset — the left half stays the app's pale default.
+  const hasPromoMedia = Boolean(activity.promo_video_url || activity.promo_image_url);
+  const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
+  const DEFAULT_HEADER_GRADIENT = "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)";
+  const headerBackground = !selectedBackground
+    ? DEFAULT_HEADER_GRADIENT
+    : hasPromoMedia
+    ? "hsl(50,40%,92%)"
+    : selectedBackground.css;
+
   return (
     <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50 pt-[env(safe-area-inset-top)]">
 
@@ -526,9 +520,15 @@ export function PlanGroupChatView({
         style={{
           height: liveHeaderHeight,
           transition: isDragging ? 'none' : 'height 0.3s ease',
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)",
+          background: headerBackground,
         }}
       >
+        {/* Right-half preset overlay — only when there's promo media AND a
+            chosen background, splitting the curtain into pale-left/preset-right. */}
+        {hasPromoMedia && selectedBackground && (
+          <div className="absolute top-0 right-0 bottom-0 w-1/2 pointer-events-none" style={{ background: selectedBackground.css }} />
+        )}
+
         {/* Full expanded content — fades out when collapsed */}
         <div
           style={{
@@ -545,38 +545,15 @@ export function PlanGroupChatView({
               aria-label={t('common.back', 'Back')}
               iconClassName="w-6 h-6"
             />
-            <div className="relative">
-              <button
-                onClick={() => setShowMenu((v) => !v)}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors"
-              >
-                <MoreVertical className="w-5 h-5 text-white/80" />
-              </button>
-              {showMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-black/10 z-50 overflow-hidden">
-                    {isCreator ? (
-                      <>
-                        <button
-                          onClick={() => { setShowMenu(false); navigate('/propose-plan', { state: { editActivityId: activity.id } }); }}
-                          className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
-                        >
-                          <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🛸</span> {t('plans.editPlanItem', 'Edit plan')}
-                        </button>
-                        <button onClick={handleInitiateDelete} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                          <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🫣</span> {t('plans.deletePlanItem', 'Delete plan')}
-                        </button>
-                      </>
-                    ) : (
-                      <button onClick={handleLeavePlan} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                        <LogOut className="w-4 h-4" /> {t('plans.leavePlanItem', 'Leave plan')}
-                      </button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
+            <PlanOptionsMenu
+              activity={activity}
+              isCreator={isCreator}
+              otherParticipantsCount={otherParticipants.length}
+              isPaidPlan={getPriceValue(activity.price_amount) > 0}
+              onDeleted={onBack}
+              onLeft={onBack}
+              onBackgroundChange={setLocalBackgroundId}
+            />
           </div>
 
           {/* Content column — normal flow, top to bottom, no overlap */}
@@ -717,12 +694,15 @@ export function PlanGroupChatView({
             <span className="text-base">{planEmoji}</span>
             {planTitle}
           </span>
-          <button
-            onClick={() => setShowMenu((v) => !v)}
-            className="p-2 rounded-full hover:bg-white/20 transition-colors"
-          >
-            <MoreVertical className="w-5 h-5 text-white/80" />
-          </button>
+          <PlanOptionsMenu
+            activity={activity}
+            isCreator={isCreator}
+            otherParticipantsCount={otherParticipants.length}
+            isPaidPlan={getPriceValue(activity.price_amount) > 0}
+            onDeleted={onBack}
+            onLeft={onBack}
+            onBackgroundChange={setLocalBackgroundId}
+          />
         </div>
       </div>
 
@@ -997,38 +977,6 @@ export function PlanGroupChatView({
       />
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
-
-      {/* ── Delete-plan confirmation dialog ── */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-6">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h3 className="font-semibold text-gray-900 text-base mb-2">Delete plan?</h3>
-            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-              {otherParticipants.length === 0
-                ? "Delete this plan? This can't be undone."
-                : getPriceValue(activity.price_amount) > 0
-                ? `${otherParticipants.length} ${otherParticipants.length === 1 ? "person has" : "people have"} paid to join. Deleting removes the plan for everyone — you'll need to refund them. Continue?`
-                : `This will delete the plan and remove it for ${otherParticipants.length} ${otherParticipants.length === 1 ? "person" : "people"} who joined. This can't be undone.`}
-            </p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 py-2.5 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeletePlan}
-                className="flex-1 py-2.5 rounded-full bg-red-500 text-sm font-medium text-white hover:bg-red-600 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Fullscreen video overlay */}
       {videoFullscreen && activity.promo_video_url && (
