@@ -663,8 +663,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             isPaidPlan={isPaid}
             onDeleted={onClose}
             onBackgroundChange={setLocalBackgroundId}
-            triggerClassName="w-11 h-11 rounded-full flex items-center justify-center shadow-xl bg-white/90 transition-all hover:opacity-90"
-            iconClassName="w-5 h-5 text-foreground"
+            triggerClassName="flex items-center justify-center p-1 transition-opacity hover:opacity-80"
+            iconClassName="w-6 h-6 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
           />
         )}
       </div>
