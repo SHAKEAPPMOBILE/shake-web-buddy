@@ -22,8 +22,8 @@ import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn, getShareLabel } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
-import { getCityBackground } from "@/data/cityBackgrounds";
 import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
+import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
@@ -434,40 +434,15 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         ── */
         <>
           {plan.is_auto_generated ? (
-            /* Auto-generated plan: carousel-style circle over a city
-               landmark illustration instead of plain white — falls back to
-               white automatically when the city has no illustration yet. */
-            <div className="absolute inset-0 flex items-center justify-center">
-              {getCityBackground(plan.city) && (
-                /* Dissolves into the white background at its own edges
-                   (radial mask fading to transparent) instead of a
-                   hard-edged photo — reads as a faint atmospheric backdrop
-                   rather than a discrete image. Mostly desaturated but not
-                   fully — partial grayscale lets whatever that image's own
-                   strongest hue is (orange for Marrakech, green for Kyoto,
-                   blue for a coastal skyline...) show through faintly
-                   without needing per-image tuning. Centered directly on
-                   the icon circle (not bottom-anchored) so it reads as one
-                   contained backdrop instead of spilling toward one edge. */
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: "calc(50% - 90px)",
-                    left: "50%",
-                    width: "100vw",
-                    maxWidth: 480,
-                    height: "100vw",
-                    maxHeight: 480,
-                    transform: "translate(-50%, -50%)",
-                    backgroundImage: `url(${getCityBackground(plan.city)})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center 40%",
-                    filter: "grayscale(0.65) saturate(1.15) contrast(0.96) brightness(1.06)",
-                    WebkitMaskImage: "radial-gradient(circle, black 32%, transparent 72%)",
-                    maskImage: "radial-gradient(circle, black 32%, transparent 72%)",
-                  }}
-                />
-              )}
+            /* Auto-generated plan: activity icon on a plain white card with
+               the same soft time-of-day color wash Home uses — just anchored
+               at the bottom (where this card's own text sits) instead of the
+               top. Replaced the earlier grayscale city-illustration backdrop,
+               which read as too heavy/gray regardless of tuning. */
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ background: getTimeOfDayGradient("bottom") }}
+            >
               <div className="w-40 h-40 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl">
                 {getActivityIcon(plan.activity_type) ? (
                   <LivingActivityIcon
