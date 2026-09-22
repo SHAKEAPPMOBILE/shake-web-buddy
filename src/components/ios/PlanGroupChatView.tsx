@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, User, Trash2, Images, Camera, ChevronLeft } from "lucide-react";
 import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
-import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
+import { PLAN_BACKGROUNDS, getAnimatedBackgroundStyle } from "@/data/planBackgrounds";
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -505,7 +505,9 @@ export function PlanGroupChatView({
   // full-bleed photo for a split to protect.
   const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
   const DEFAULT_HEADER_GRADIENT = "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)";
-  const headerBackground = selectedBackground ? selectedBackground.css : DEFAULT_HEADER_GRADIENT;
+  const headerBackgroundStyle = selectedBackground
+    ? getAnimatedBackgroundStyle(selectedBackground.css)
+    : { background: DEFAULT_HEADER_GRADIENT };
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[hsl(50,40%,92%)] z-50 pt-[env(safe-area-inset-top)]">
@@ -516,7 +518,7 @@ export function PlanGroupChatView({
         style={{
           height: liveHeaderHeight,
           transition: isDragging ? 'none' : 'height 0.3s ease',
-          background: headerBackground,
+          ...headerBackgroundStyle,
         }}
       >
         {/* Full expanded content — fades out when collapsed */}

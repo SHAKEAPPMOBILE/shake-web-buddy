@@ -23,7 +23,7 @@ import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn, getShareLabel } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { getCityBackground } from "@/data/cityBackgrounds";
-import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
+import { PLAN_BACKGROUNDS, getAnimatedBackgroundStyle } from "@/data/planBackgrounds";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
@@ -529,11 +529,11 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             <>
               <div
                 className="absolute inset-0"
-                style={{
-                  background: selectedBackground
-                    ? selectedBackground.css
-                    : "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)",
-                }}
+                style={
+                  selectedBackground
+                    ? getAnimatedBackgroundStyle(selectedBackground.css)
+                    : { background: "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)" }
+                }
               />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/30 shadow-xl flex items-center justify-center bg-white/10">

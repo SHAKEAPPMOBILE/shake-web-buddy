@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 /**
  * Preset plan-cover backgrounds — simple, original CSS gradients (no photos
  * or illustrations, since no image-generation tooling is available). Styled
@@ -9,6 +11,17 @@ export interface PlanBackground {
   label: string;
   /** A valid CSS `background` value (gradient). */
   css: string;
+}
+
+/** Renders a preset with a slow, ambient drift instead of sitting flat —
+ *  reuses the app's existing `gradientShift` keyframe (see index.css), just
+ *  at a much gentler pace than its usual CTA-button use. */
+export function getAnimatedBackgroundStyle(css: string): CSSProperties {
+  return {
+    background: css,
+    backgroundSize: "200% 200%",
+    animation: "gradientShift 14s ease infinite",
+  };
 }
 
 export const PLAN_BACKGROUNDS: PlanBackground[] = [
