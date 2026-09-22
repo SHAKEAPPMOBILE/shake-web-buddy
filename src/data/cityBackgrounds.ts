@@ -29,7 +29,7 @@ export const CITY_BACKGROUNDS: Record<string, string> = {
   "Mexico City": "/icons/cities/mexico-city.jpg",
   "Miami": "/icons/cities/miami.webp",
   "Bogotá": "/icons/cities/bogota.jpg",
-  "Cartagena": "/icons/cities/cartagena.jpg",
+  "Cartagena": "/icons/cities/cartagena.webp",
   "Quito": "/icons/cities/quito.jpg",
   "Lima": "/icons/cities/lima.jpg",
   "Santiago": "/icons/cities/santiago.jpg",
