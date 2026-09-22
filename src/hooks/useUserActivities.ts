@@ -225,26 +225,33 @@ export function useUserActivities(city: string) {
     // slot (see findOrCreateOpenGroup in activityGroups.ts), not a plan the user
     // actually created. Without this filter, joining Brunch or Dinner would silently
     // block creating any other plan that same day.
+    // Quick posts ("Post like this") are exempt on both sides of this check: they're
+    // meant to be posted as often as the user likes, so creating one never counts
+    // against this limit, and an earlier quick post never blocks a later one (or any
+    // other plan) from being created the same day.
     // Use local date components to avoid UTC timezone issues (e.g. UTC-6 users)
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     const startOfDay = new Date(scheduledFor.getFullYear(), scheduledFor.getMonth(), scheduledFor.getDate(), 0, 0, 0);
     const endOfDay = new Date(scheduledFor.getFullYear(), scheduledFor.getMonth(), scheduledFor.getDate(), 23, 59, 59);
 
-    const { data: existingActivity } = await supabase
-      .from("user_activities")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .not("is_auto_generated", "is", true)
-      .gte("scheduled_for", startOfToday.toISOString())
-      .gte("scheduled_for", startOfDay.toISOString())
-      .lte("scheduled_for", endOfDay.toISOString())
-      .maybeSingle();
+    if (!isQuickPost) {
+      const { data: existingActivity } = await supabase
+        .from("user_activities")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .not("is_auto_generated", "is", true)
+        .not("is_quick_post", "is", true)
+        .gte("scheduled_for", startOfToday.toISOString())
+        .gte("scheduled_for", startOfDay.toISOString())
+        .lte("scheduled_for", endOfDay.toISOString())
+        .maybeSingle();
 
-    if (existingActivity) {
-      setIsLoading(false);
-      return false;
+      if (existingActivity) {
+        setIsLoading(false);
+        return false;
+      }
     }
 
     const { data: newActivity, error } = await supabase.from("user_activities").insert({
