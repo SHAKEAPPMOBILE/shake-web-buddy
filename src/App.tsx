@@ -33,6 +33,7 @@ import ProposePlanPage from "./pages/ProposePlanPage";
 import EventChatPage from "./pages/EventChatPage";
 import ShareLanding from "./pages/ShareLanding";
 import GuestPlanPage from "./pages/GuestPlanPage";
+import Pager from "./pages/Pager";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +44,7 @@ const KNOWN_ROUTES = new Set([
   "auth", "profile", "admin", "welcome",
   "privacy-policy", "terms-of-service", "community-guidelines",
   "subscription-success", "propose-plan", "plans",
-  "chat", "events", "home", "invite", "guest", "",
+  "chat", "events", "home", "invite", "guest", "pager", "",
 ]);
 
 // Component to track referral codes from URLs.
@@ -150,6 +151,7 @@ const App = () => {
                     <Route path="/chat/event/:eventId" element={<EventChatPage />} />
                     <Route path="/invite/:activityId" element={<ShareLanding />} />
                     <Route path="/guest/:token" element={<GuestPlanPage />} />
+                    <Route path="/pager" element={<Pager />} />
                     <Route path="/*" element={<IOSAppLayout />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
