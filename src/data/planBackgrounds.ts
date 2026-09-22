@@ -1,27 +1,45 @@
 import type { CSSProperties } from "react";
 
 /**
- * Preset plan-cover backgrounds — simple, original CSS gradients (no photos
- * or illustrations, since no image-generation tooling is available). Styled
- * after Luma-style event covers: each one is a distinct 2–3 stop gradient
- * named for a plan-type mood, not a literal color name.
+ * Preset plan-cover backgrounds — a distinct mood per plan type, Luma-style.
+ * Most are still CSS gradients (there's no image-generation tooling in this
+ * environment), but a growing number now carry a hand-drawn illustration
+ * instead — `image`, when set, always wins over `css`. Drop new illustration
+ * files in public/plan-backgrounds/ and point `image` at them; `css` stays
+ * around as the pre-illustration look for everything not yet replaced.
  */
 export interface PlanBackground {
   id: string;
   label: string;
-  /** A valid CSS `background` value (gradient). */
+  /** A valid CSS `background` value (gradient) — the look before/without an illustration. */
   css: string;
+  /** Path (under /plan-backgrounds/) to a hand-drawn illustration for this mood. Takes priority over `css` when set. */
+  image?: string;
 }
 
-/** Renders a preset with a slow, ambient drift instead of sitting flat —
- *  reuses the app's existing `gradientShift` keyframe (see index.css), just
- *  at a much gentler pace than its usual CTA-button use. */
-export function getAnimatedBackgroundStyle(css: string): CSSProperties {
+/** Renders a gradient preset with a slow, ambient drift instead of sitting
+ *  flat — reuses the app's existing `gradientShift` keyframe (see
+ *  index.css), just at a much gentler pace than its usual CTA-button use. */
+function getAnimatedGradientStyle(css: string): CSSProperties {
   return {
     background: css,
     backgroundSize: "200% 200%",
     animation: "gradientShift 14s ease infinite",
   };
+}
+
+/** The style to render for a given preset — an illustration (static, plain
+ *  cover image) when one exists, otherwise the animated gradient. */
+export function getBackgroundStyle(bg: PlanBackground): CSSProperties {
+  if (bg.image) {
+    return {
+      backgroundImage: `url(${bg.image})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundColor: "#fff",
+    };
+  }
+  return getAnimatedGradientStyle(bg.css);
 }
 
 export const PLAN_BACKGROUNDS: PlanBackground[] = [
@@ -70,11 +88,11 @@ export const PLAN_BACKGROUNDS: PlanBackground[] = [
   { id: "cherry-blossom", label: "Cherry Blossom", css: "linear-gradient(135deg, #ffe4e9 0%, #ffb7c5 55%, #ff8fab 100%)" },
   { id: "rainy-day-cozy", label: "Rainy Day Cozy", css: "linear-gradient(135deg, #3a3d40 0%, #5c6570 50%, #8b98a5 100%)" },
   { id: "street-food-night", label: "Street Food Night", css: "linear-gradient(135deg, #d7263d 0%, #f46036 55%, #f9c80e 100%)" },
-  { id: "rooftop-cinema", label: "Rooftop Cinema", css: "linear-gradient(135deg, #14142b 0%, #4b3f72 55%, #e07a5f 100%)" },
-  { id: "trivia-night", label: "Trivia Night", css: "linear-gradient(135deg, #0b1d3a 0%, #b3202f 55%, #f4c430 100%)" },
+  { id: "rooftop-cinema", label: "Rooftop Cinema", css: "linear-gradient(135deg, #14142b 0%, #4b3f72 55%, #e07a5f 100%)", image: "/plan-backgrounds/rooftop-cinema.webp" },
+  { id: "trivia-night", label: "Trivia Night", css: "linear-gradient(135deg, #0b1d3a 0%, #b3202f 55%, #f4c430 100%)", image: "/plan-backgrounds/trivia-night.png" },
   { id: "paint-night", label: "Paint Night", css: "linear-gradient(135deg, #ff3cac 0%, #784ba0 50%, #2b86c5 100%)" },
-  { id: "ramen-night", label: "Ramen Night", css: "linear-gradient(135deg, #6e0d0d 0%, #c1272d 55%, #ff8c42 100%)" },
+  { id: "ramen-night", label: "Ramen Night", css: "linear-gradient(135deg, #6e0d0d 0%, #c1272d 55%, #ff8c42 100%)", image: "/plan-backgrounds/ramen-night.png" },
   { id: "taco-tuesday", label: "Taco Tuesday", css: "linear-gradient(135deg, #d7263d 0%, #f46036 50%, #a4d65e 100%)" },
-  { id: "speakeasy-lounge", label: "Speakeasy Lounge", css: "linear-gradient(135deg, #1a0000 0%, #4b0f1a 55%, #b8860b 100%)" },
+  { id: "speakeasy-lounge", label: "Speakeasy Lounge", css: "linear-gradient(135deg, #1a0000 0%, #4b0f1a 55%, #b8860b 100%)", image: "/plan-backgrounds/speakeasy-lounge.webp" },
   { id: "retro-arcade", label: "Retro Arcade", css: "linear-gradient(135deg, #ff00cc 0%, #7b2ff7 50%, #00c3ff 100%)" },
 ];

@@ -23,7 +23,7 @@ import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn, getShareLabel } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { getCityBackground } from "@/data/cityBackgrounds";
-import { PLAN_BACKGROUNDS, getAnimatedBackgroundStyle } from "@/data/planBackgrounds";
+import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
@@ -531,7 +531,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 className="absolute inset-0"
                 style={
                   selectedBackground
-                    ? getAnimatedBackgroundStyle(selectedBackground.css)
+                    ? getBackgroundStyle(selectedBackground)
                     : { background: "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)" }
                 }
               />

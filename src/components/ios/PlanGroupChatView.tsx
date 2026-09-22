@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, User, Trash2, Images, Camera, ChevronLeft } from "lucide-react";
 import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
-import { PLAN_BACKGROUNDS, getAnimatedBackgroundStyle } from "@/data/planBackgrounds";
+import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -506,7 +506,7 @@ export function PlanGroupChatView({
   const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
   const DEFAULT_HEADER_GRADIENT = "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)";
   const headerBackgroundStyle = selectedBackground
-    ? getAnimatedBackgroundStyle(selectedBackground.css)
+    ? getBackgroundStyle(selectedBackground)
     : { background: DEFAULT_HEADER_GRADIENT };
 
   return (

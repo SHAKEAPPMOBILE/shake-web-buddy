@@ -5,7 +5,7 @@ import { MoreVertical, Palette, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
-import { PLAN_BACKGROUNDS, getAnimatedBackgroundStyle } from "@/data/planBackgrounds";
+import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
 
 export interface PlanOptionsMenuActivity {
   id: string;
@@ -228,7 +228,7 @@ export function PlanOptionsMenu({
                     className={`w-full aspect-square rounded-xl border-2 ${
                       activity.background_id === bg.id ? "border-blue-500" : "border-transparent"
                     }`}
-                    style={getAnimatedBackgroundStyle(bg.css)}
+                    style={getBackgroundStyle(bg)}
                   />
                   <span className="text-[10px] text-gray-500 leading-tight text-center">{bg.label}</span>
                 </button>
