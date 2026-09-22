@@ -26,7 +26,7 @@ export const CITY_BACKGROUNDS: Record<string, string> = {
   "Toronto": "/icons/cities/toronto.webp",
   "Vancouver": "/icons/cities/vancouver.webp",
   "Montreal": "/icons/cities/montreal.jpg",
-  "Mexico City": "/icons/cities/mexico-city.jpg",
+  "Mexico City": "/icons/cities/mexico-city.webp",
   "Miami": "/icons/cities/miami.webp",
   "Bogotá": "/icons/cities/bogota.webp",
   "Cartagena": "/icons/cities/cartagena.webp",
