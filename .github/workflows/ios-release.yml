@@ -1,11 +1,13 @@
 name: iOS Release
 
-# Manual trigger only — click "Run workflow" in the Actions tab when you
-# actually want to build + upload a new build. Bump the marketing Version
-# in ios/App/App.xcodeproj (Xcode → App target → General → Identity) first
-# if you want this to land as a new App Store version, not just a new build
-# of the current one.
+# Fires automatically on every push to main — no clicking required. Bump
+# the marketing Version in ios/App/App.xcodeproj (Xcode → App target →
+# General → Identity) first if you want this to land as a new App Store
+# version, not just a new build of the current one. workflow_dispatch is
+# kept as a manual fallback in case you ever need to re-run one by hand.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 jobs:

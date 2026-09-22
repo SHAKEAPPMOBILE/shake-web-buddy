@@ -1,10 +1,14 @@
 name: Android Release
 
-# Manual trigger only — click "Run workflow" in the Actions tab. Bump
-# versionCode/versionName in android/app/build.gradle first if you want
-# this to land as a distinct version on Play, not just a re-run of the
-# current one.
+# Fires automatically on every push to main — no clicking required, always
+# publishes to the "internal" track. Bump versionCode/versionName in
+# android/app/build.gradle first if you want this to land as a distinct
+# version on Play, not just a re-run of the current one. workflow_dispatch
+# is kept as a manual fallback for publishing to alpha/beta/production by
+# hand when you're ready to promote a build.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       track:
@@ -64,5 +68,5 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.shakebyleo.app
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
-          track: ${{ github.event.inputs.track }}
+          track: ${{ github.event.inputs.track || 'internal' }}
           status: completed
