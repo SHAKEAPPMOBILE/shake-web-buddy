@@ -355,7 +355,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
   return (
     <div
       ref={cardRef}
-      className={cn("relative w-full flex-shrink-0", plan.is_auto_generated ? "bg-white" : "bg-black")}
+      className={cn("relative w-full flex-shrink-0 overflow-hidden", plan.is_auto_generated ? "bg-white" : "bg-black")}
       style={{ height: inline ? "calc(100dvh - 208px - env(safe-area-inset-bottom, 0px))" : "100dvh", scrollSnapAlign: "start", scrollSnapStop: "always" }}
     >
       {plan.promo_video_url ? (
@@ -442,28 +442,23 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 /* Dissolves into the white background at its own edges
                    (radial mask fading to transparent) instead of a
                    hard-edged photo — reads as a faint atmospheric backdrop
-                   rather than a discrete image, which also hides the
-                   softness of these small source crops far better than a
-                   sharp-edged card ever could. Mostly desaturated but not
+                   rather than a discrete image. Mostly desaturated but not
                    fully — partial grayscale lets whatever that image's own
                    strongest hue is (orange for Marrakech, green for Kyoto,
                    blue for a coastal skyline...) show through faintly
-                   without needing per-image tuning. Bottom edge pinned to
-                   line up with the circle's own bottom edge (bottom:
-                   calc(50% - half the circle's height)) rather than
-                   centered on it, so making this bigger shows more of the
-                   illustration above/around the circle without the two
-                   drifting apart vertically. */
+                   without needing per-image tuning. Centered directly on
+                   the icon circle (not bottom-anchored) so it reads as one
+                   contained backdrop instead of spilling toward one edge. */
                 <div
                   className="absolute pointer-events-none"
                   style={{
-                    bottom: "calc(50% - 80px)",
+                    top: "50%",
                     left: "50%",
-                    width: "130vw",
-                    maxWidth: 600,
-                    height: "130vw",
-                    maxHeight: 600,
-                    transform: "translateX(-50%)",
+                    width: "100vw",
+                    maxWidth: 480,
+                    height: "100vw",
+                    maxHeight: 480,
+                    transform: "translate(-50%, -50%)",
                     backgroundImage: `url(${getCityBackground(plan.city)})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center 40%",
