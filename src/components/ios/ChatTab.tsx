@@ -520,7 +520,7 @@ export function ChatTab({
             ]);
 
             const lastMsgPreview = lastMsg
-              ? (lastMsg.message_type === "image" ? "📷 Photo" : lastMsg.message_type === "video" ? "🎥 Video" : lastMsg.message_type === "gif" ? "🎞 GIF" : lastMsg.message.slice(0, 60))
+              ? (lastMsg.message_type === "image" ? "📷 Photo" : lastMsg.message_type === "video" ? "🎥 Video" : lastMsg.message_type === "gif" ? "🎞 GIF" : lastMsg.message_type === "location" ? "📍 Location" : lastMsg.message.slice(0, 60))
               : null;
 
             return {

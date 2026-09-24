@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, Palette, LogOut } from "lucide-react";
+import { MoreVertical, Palette, LogOut, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
@@ -23,6 +23,8 @@ interface PlanOptionsMenuProps {
   onDeleted?: () => void;
   onLeft?: () => void;
   onBackgroundChange?: (backgroundId: string | null) => void;
+  /** Chat header only: adds a "Share location" item that drops the caller's pin into the chat. */
+  onShareLocation?: () => void;
   triggerClassName?: string;
   iconClassName?: string;
 }
@@ -38,6 +40,7 @@ export function PlanOptionsMenu({
   onDeleted,
   onLeft,
   onBackgroundChange,
+  onShareLocation,
   triggerClassName = "p-2 rounded-full hover:bg-white/20 transition-colors",
   iconClassName = "w-5 h-5 text-white/80",
 }: PlanOptionsMenuProps) {
@@ -132,6 +135,14 @@ export function PlanOptionsMenu({
             style={{ top: menuPosition.top, right: menuPosition.right }}
             onClick={(e) => e.stopPropagation()}
           >
+            {onShareLocation && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowMenu(false); onShareLocation(); }}
+                className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
+              >
+                <MapPin className="w-4 h-4" /> Share location
+              </button>
+            )}
             {isCreator ? (
               <>
                 <button

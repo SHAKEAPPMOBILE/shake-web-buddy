@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, User, Trash2, Images, Camera, ChevronLeft } from "lucide-react";
 import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
+import { LocationBubble } from "@/components/LocationBubble";
+import { getCurrentLatLng, encodeLocation } from "@/lib/location";
 import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
@@ -468,6 +470,20 @@ export function PlanGroupChatView({
 
   const isCreator = user?.id === activity.user_id;
 
+  const handleShareLocation = useCallback(async () => {
+    if (!user) return;
+    try {
+      const pos = await getCurrentLatLng();
+      const { error } = await supabase.from("plan_messages").insert({
+        activity_id: activity.id, user_id: user.id, message: encodeLocation(pos), message_type: "location",
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error("Share location failed:", err);
+      toast.error("Couldn't get your location. Check location permission and try again.");
+    }
+  }, [user, activity.id]);
+
   const creatorProfile = profiles[activity.user_id];
 
   const planDateLabel = (() => {
@@ -562,6 +578,7 @@ export function PlanGroupChatView({
               onDeleted={onBack}
               onLeft={onBack}
               onBackgroundChange={setLocalBackgroundId}
+              onShareLocation={handleShareLocation}
               triggerClassName={headerMenuTriggerClass}
               iconClassName={headerMenuIconClass}
             />
@@ -713,6 +730,7 @@ export function PlanGroupChatView({
             onDeleted={onBack}
             onLeft={onBack}
             onBackgroundChange={setLocalBackgroundId}
+            onShareLocation={handleShareLocation}
             triggerClassName={headerMenuTriggerClass}
             iconClassName={headerMenuIconClass}
           />
@@ -755,6 +773,7 @@ export function PlanGroupChatView({
             const avatarUrl = profile?.avatar_url;
             const msgReactions = reactionsByMessage[msg.id];
             const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
+            const isLocation = msg.message_type === "location";
             const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
             const isImage = msg.message_type === "image" && /^https?:\/\//i.test(msg.message);
             const isVideo = msg.message_type === "video" && /^https?:\/\//i.test(msg.message);
@@ -785,7 +804,7 @@ export function PlanGroupChatView({
                     </AvatarFallback>
                   </Avatar>
                 </button>
-                <div className={`w-fit min-w-0 max-w-[min(70vw,300px)] ${isGif || isImage || isVideo ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}>
+                <div className={`w-fit min-w-0 max-w-[min(70vw,300px)] ${isGif || isImage || isVideo || isLocation ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}>
                   <MessageBubbleReactions
                     variant="light"
                     isOwn={isOwnMessage}
@@ -832,7 +851,9 @@ export function PlanGroupChatView({
                     }
                   >
                     <div className={`flex items-center gap-1 ${isOwnMessage ? "flex-row-reverse" : ""}`}>
-                      {isGif ? (
+                      {isLocation ? (
+                        <LocationBubble message={msg.message} />
+                      ) : isGif ? (
                         <InlineChatGif
                           src={msg.message}
                           variant="light"

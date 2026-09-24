@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, BellOff, Bell, LogOut, Trash2, Plane, Images } from "lucide-react";
+import { Send, BellOff, Bell, LogOut, Trash2, Plane, Images, MapPin } from "lucide-react";
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -30,6 +30,9 @@ import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphy
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { getNationalityFlag } from "@/data/countryCodes";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
+import { LocationBubble } from "@/components/LocationBubble";
+import { ChatMoreMenu } from "@/components/ChatMoreMenu";
+import { getCurrentLatLng, encodeLocation } from "@/lib/location";
 import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
 
 interface GroupChatViewProps {
@@ -234,7 +237,7 @@ export function GroupChatView({
   // rationale/behavior. floatItems must stay chronologically ordered
   // (oldest first), matching `messages`.
   const floatItems = useMemo(() => messages.map((msg) => {
-    const isMedia = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+    const isMedia = msg.message_type === "location" || ((msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message));
     const dense = !isMedia && isDenseText(msg.message);
     return {
       id: msg.id,
@@ -736,6 +739,24 @@ export function GroupChatView({
   );
 
 
+  const handleShareLocation = useCallback(async () => {
+    if (!user) return;
+    try {
+      const pos = await getCurrentLatLng();
+      const { error } = await supabase.from("activity_messages").insert({
+        user_id: user.id,
+        activity_type: activityType,
+        city: city,
+        message: encodeLocation(pos),
+        message_type: "location",
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error("Share location failed:", err);
+      toast.error("Couldn't get your location. Check location permission and try again.");
+    }
+  }, [user, activityType, city]);
+
   const activityTime = activityType === "lunch" ? "12:30 PM" : activityType === "dinner" ? "7:00 PM" : activityType === "drinks" ? "8:00 PM" : activityType === "brunch" ? "11:00 AM" : activityType === "hike" ? "9:00 AM" : null;
   // Compute split header date parts (day / date / time on separate lines)
   const { headerDay, headerDateOnly } = (() => {
@@ -823,6 +844,7 @@ export function GroupChatView({
                   <Button variant="ghost" size="icon" onClick={handleLeaveActivity} className="shrink-0 text-gray-900 hover:text-red-500 hover:bg-black/5 h-8 w-8" title="Leave">
                     <LogOut className="w-4 h-4" />
                   </Button>
+                  <ChatMoreMenu items={[{ key: "loc", label: "Share location", icon: <MapPin className="w-4 h-4" />, onSelect: () => void handleShareLocation() }]} triggerClassName="shrink-0 h-8 w-8 flex items-center justify-center rounded-md hover:bg-black/5" iconClassName="w-4 h-4 text-gray-900" />
                 </div>
               </div>
 
@@ -971,6 +993,7 @@ export function GroupChatView({
               <Button variant="ghost" size="icon" onClick={handleLeaveActivity} className="shrink-0 text-gray-900 hover:text-red-500 hover:bg-black/5 h-8 w-8" title="Leave">
                 <LogOut className="w-4 h-4" />
               </Button>
+                  <ChatMoreMenu items={[{ key: "loc", label: "Share location", icon: <MapPin className="w-4 h-4" />, onSelect: () => void handleShareLocation() }]} triggerClassName="shrink-0 h-8 w-8 flex items-center justify-center rounded-md hover:bg-black/5" iconClassName="w-4 h-4 text-gray-900" />
             </div>
           </div>
         </div>
@@ -1011,6 +1034,7 @@ export function GroupChatView({
               const avatarUrl = isOwnMessage ? (ownProfile?.avatar_url ?? profile?.avatar_url) : profile?.avatar_url;
               const msgReactions = reactionsByMessage[msg.id];
               const reactionChips = msgReactions ? sortedReactionEntries(msgReactions) : [];
+              const isLocation = msg.message_type === "location";
               const isGif =
                 (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
               const pinned = isPinned(msg.id);
@@ -1028,7 +1052,7 @@ export function GroupChatView({
                     className="w-8 h-8"
                   />
                   <div
-                    className={`w-fit min-w-0 max-w-[min(70vw,300px)] ${isGif ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
+                    className={`w-fit min-w-0 max-w-[min(70vw,300px)] ${isGif || isLocation ? "shrink-0 overflow-visible" : ""} ${isOwnMessage ? "text-right" : "text-left"}`}
                   >
                     <MessageBubbleReactions
                       variant="dark"
@@ -1078,7 +1102,9 @@ export function GroupChatView({
                       }
                     >
                       <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                        {isGif ? (
+                        {isLocation ? (
+                          <LocationBubble message={msg.message} />
+                        ) : isGif ? (
                           <InlineChatGif
                             src={msg.message}
                             variant="dark"

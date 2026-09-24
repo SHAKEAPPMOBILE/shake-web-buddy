@@ -48,7 +48,7 @@ export function usePrivateMessages(otherUserId: string | null) {
   }, [user, otherUserId]);
 
   // Send a message
-  const sendMessage = async (message: string, messageType: "text" | "gif" | "image" | "video" = "text") => {
+  const sendMessage = async (message: string, messageType: "text" | "gif" | "image" | "video" | "location" = "text") => {
     if (!user || !isValidUuid(otherUserId)) return { error: new Error("Not authenticated") };
     // Ref guard: bail if a send is already in flight
     if (isSendingRef.current) return { error: null };

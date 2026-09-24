@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2, ChevronDown } from "lucide-react";
+import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2, ChevronDown, MapPin } from "lucide-react";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ChatInviteDialog } from "@/components/ChatInviteDialog";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
@@ -19,6 +19,8 @@ import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/
 import { supabase } from "@/integrations/supabase/client";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
+import { LocationBubble } from "@/components/LocationBubble";
+import { getCurrentLatLng, encodeLocation } from "@/lib/location";
 import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢"];
@@ -441,6 +443,17 @@ export function PrivateChatDialog({
     }
   }, [user, sendMessage]);
 
+  const handleShareLocation = useCallback(async () => {
+    try {
+      const pos = await getCurrentLatLng();
+      const { error } = await sendMessage(encodeLocation(pos), "location");
+      if (error) throw error;
+    } catch (err) {
+      console.error("Share location failed:", err);
+      toast.error("Couldn't get your location. Check location permission and try again.");
+    }
+  }, [sendMessage]);
+
   const handleLeaveConversation = useCallback(async () => {
     if (!user) return;
     setShowMenu(false);
@@ -558,6 +571,14 @@ export function PrivateChatDialog({
               <div className="absolute right-0 top-full mt-1 w-52 rounded-xl shadow-xl z-50 overflow-hidden border" style={{ background: "white", borderColor: "rgba(0,0,0,0.10)" }}>
                 <button
                   type="button"
+                  onClick={() => { setShowMenu(false); void handleShareLocation(); }}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-b"
+                  style={{ borderColor: "rgba(0,0,0,0.08)" }}
+                >
+                  <MapPin className="w-4 h-4 text-gray-400" /> Share location
+                </button>
+                <button
+                  type="button"
                   onClick={handleLeaveConversation}
                   className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-b"
                   style={{ borderColor: "rgba(0,0,0,0.08)" }}
@@ -602,7 +623,8 @@ export function PrivateChatDialog({
             const isGif = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
             const isImage = msg.message_type === "image" && /^https?:\/\//i.test(msg.message);
             const isVideo = msg.message_type === "video" && /^https?:\/\//i.test(msg.message);
-            const isMedia = isGif || isImage || isVideo;
+            const isLocation = msg.message_type === "location";
+            const isMedia = isGif || isImage || isVideo || isLocation;
 
             const msgReactions = reactions[msg.id] || [];
             const pinned = isPinned(msg.id);
@@ -650,7 +672,12 @@ export function PrivateChatDialog({
                   onContextMenu={(e) => { e.preventDefault(); setActiveMsg({ id: msg.id, isMe, pickerY: e.clientY }); }}
                   onClick={getClickHandler(msg.id)}
                 >
-                  {isGif ? (
+                  {isLocation ? (
+                    <>
+                      <LocationBubble message={msg.message} />
+                      {pinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
+                    </>
+                  ) : isGif ? (
                     <>
                       <InlineChatGif src={msg.message} variant="dark" onLoad={scrollMessagesToBottom} />
                       {pinned && <p className="text-[10px] mt-1 text-gray-400">{format(new Date(msg.created_at), "HH:mm")}</p>}
