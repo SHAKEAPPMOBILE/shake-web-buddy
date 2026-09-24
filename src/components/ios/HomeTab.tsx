@@ -1069,9 +1069,24 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
       {/* Match result for the shake path — same MatchMeUpCard as the carousel's, in its own overlay */}
       {matchFromShake && !showShakeConfirm && !showAlreadyJoinedDialog && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center pointer-events-auto">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMatchFromShake(false)} />
-          <div className="relative z-10 w-full max-w-sm mx-4 min-h-[420px] rounded-3xl bg-white shadow-2xl">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 pointer-events-auto">
+          <div
+            className="absolute inset-0"
+            style={{ background: "rgba(0, 0, 0, 0.3)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            onClick={() => setMatchFromShake(false)}
+          />
+          <div
+            className="relative z-10 w-full max-w-sm min-h-[420px]"
+            style={{
+              background: "rgba(255, 255, 255, 0.55)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(255, 255, 255, 0.4)",
+              borderRadius: "24px",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+              overflow: "hidden",
+            }}
+          >
             <MatchMeUpCard
               show
               status={matchStatus}
@@ -1153,8 +1168,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       {showShakePermissionPrompt && !showShakeChooser && !showShakeConfirm && !showAlreadyJoinedDialog && !matchFromShake && (
         <ShakeGlassDialog onClose={handleDismissShakePermission} icon="📳">
             <h2 className="text-xl font-bold text-gray-900">Enable Shake to Join</h2>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Shake your phone to instantly join the activity of the moment — dinner, brunch, and more. You can always turn this off in Profile settings.
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Shake to join dinner, brunch and more, or get matched with someone who shares your interests.
+            </p>
+            <p className="text-[11px] text-gray-500 -mt-1">
+              You can turn this off anytime in Profile settings.
             </p>
             <button
               type="button"

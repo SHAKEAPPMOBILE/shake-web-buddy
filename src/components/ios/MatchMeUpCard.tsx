@@ -1,11 +1,14 @@
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export interface MatchedProfile {
   user_id: string;
   name: string;
   avatar_url: string | null;
   sharedInterests: string[];
+  /** False when the match isn't recently active in the user's city. */
+  sameCity?: boolean;
 }
 
 export interface MatchMeUpCardProps {
@@ -41,7 +44,7 @@ export function MatchMeUpCard({ show, status, profile, myAvatarUrl, joinCity, on
     >
       {status === "loading" && (
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <LoadingSpinner size="lg" />
           <p className="text-base text-muted-foreground">
             {t("home.findingMatch", "Finding your match...")}
           </p>
@@ -50,6 +53,7 @@ export function MatchMeUpCard({ show, status, profile, myAvatarUrl, joinCity, on
 
       {status === "none" && (
         <div className="w-full p-5 text-center space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="text-6xl">😱</div>
           <p className="text-lg font-semibold text-foreground">
             {t("home.noMatchFound", "No matched users at this time, try going to a plan")}
           </p>
@@ -92,9 +96,11 @@ export function MatchMeUpCard({ show, status, profile, myAvatarUrl, joinCity, on
           {profile.sharedInterests.length > 0 && (
             <p className="text-base font-semibold text-foreground">{profile.sharedInterests.join(", ")}</p>
           )}
-          <p className="text-base text-muted-foreground">
-            {t("activityDialog.inCity", "in {{city}}", { city: joinCity })}
-          </p>
+          {profile.sameCity !== false && (
+            <p className="text-base text-muted-foreground">
+              {t("activityDialog.inCity", "in {{city}}", { city: joinCity })}
+            </p>
+          )}
 
           <div className="space-y-2 pt-1" onClick={(e) => e.stopPropagation()}>
             <button

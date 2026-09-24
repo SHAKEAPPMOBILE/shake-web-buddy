@@ -89,8 +89,23 @@ serve(async (req) => {
     if (joinErr) console.error("[find-interest-match] activity_joins query error:", joinErr);
     if (hostErr) console.error("[find-interest-match] user_activities query error:", hostErr);
 
+    const sameCityIds = new Set(
+      [...(joinRows ?? []), ...(hostRows ?? [])].map((r) => r.user_id as string),
+    );
+
+    // Everyone else who has set interests counts too — only a minority of
+    // users are recently active in any one city, so restricting to that pool
+    // starved the match. Same-city candidates still rank first on ties.
+    const { data: interestRows, error: interestErr } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .neq("user_id", userId)
+      .not("interests", "is", null)
+      .limit(2000);
+    if (interestErr) console.error("[find-interest-match] interests pool query error:", interestErr);
+
     const allCandidateIds = [
-      ...new Set([...(joinRows ?? []), ...(hostRows ?? [])].map((r) => r.user_id as string)),
+      ...new Set([...sameCityIds, ...(interestRows ?? []).map((r) => r.user_id as string)]),
     ];
 
     if (allCandidateIds.length === 0) {
@@ -131,18 +146,20 @@ serve(async (req) => {
     }
 
     const myInterestSet = new Set(myInterests);
-    let best: { user_id: string; name: string; avatar_url: string | null; shared: string[] } | null = null;
+    let best: { user_id: string; name: string; avatar_url: string | null; shared: string[]; sameCity: boolean } | null = null;
 
     for (const candidate of candidateProfiles ?? []) {
       const candidateInterests = (candidate.interests as string[] | null) ?? [];
       const shared = candidateInterests.filter((i) => myInterestSet.has(i));
       if (shared.length === 0) continue;
-      if (!best || shared.length > best.shared.length) {
+      const sameCity = sameCityIds.has(candidate.user_id as string);
+      if (!best || shared.length > best.shared.length || (shared.length === best.shared.length && sameCity && !best.sameCity)) {
         best = {
           user_id: candidate.user_id,
           name: candidate.name || "Someone",
           avatar_url: candidate.avatar_url ?? null,
           shared,
+          sameCity,
         };
       }
     }
@@ -166,6 +183,7 @@ serve(async (req) => {
           name: best.name,
           avatar_url: best.avatar_url,
           sharedInterests: best.shared,
+          sameCity: best.sameCity,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
