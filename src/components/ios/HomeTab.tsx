@@ -193,7 +193,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     const THRESHOLD = 15;   // m/s² — clear shake, not walking vibration
     const DEBOUNCE_MS = 3000;
 
+    let motionSeen = false;
     const handleMotion = (e: DeviceMotionEvent) => {
+      motionSeen = true;
       // Check permission here (not at registration time) so granting it mid-session
       // takes effect immediately without re-registering the listener.
       if (localStorage.getItem("shake_motion_permission") !== "granted") return;
@@ -212,7 +214,25 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     };
 
     window.addEventListener("devicemotion", handleMotion);
-    return () => window.removeEventListener("devicemotion", handleMotion);
+
+    // iOS can drop the OS-level motion permission (app update, reinstall) while
+    // our localStorage flag still says "granted" — the listener then never
+    // fires and shaking silently does nothing. If no motion event arrives, clear
+    // the stale flag and re-show the Enable Shake prompt (its button is the user
+    // gesture requestPermission needs).
+    const staleCheck = window.setTimeout(() => {
+      if (motionSeen) return;
+      if (typeof (DeviceMotionEvent as any)?.requestPermission !== "function") return;
+      if (localStorage.getItem("shake_motion_permission") !== "granted") return;
+      localStorage.removeItem("shake_motion_permission");
+      sessionStorage.removeItem("shake_permission_prompted");
+      setShowShakePermissionPrompt(true);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(staleCheck);
+      window.removeEventListener("devicemotion", handleMotion);
+    };
   }, []); // stable — handler is always current via ref
 
   // FIXED ORDER - Dinner → Brunch → Propose a plan
