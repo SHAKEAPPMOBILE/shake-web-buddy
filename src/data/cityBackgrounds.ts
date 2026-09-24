@@ -5,6 +5,7 @@
  *  Cities with no illustration yet just keep the plain white background. */
 export const CITY_BACKGROUNDS: Record<string, string> = {
   "Medellín": "/icons/cities/medellin.webp",
+  "Washington D.C.": "/icons/cities/washington-dc.png",
   "New York City": "/icons/cities/new-york-city.webp",
   "Lisbon": "/icons/cities/lisbon.webp",
   "San Francisco": "/icons/cities/san-francisco.webp",
