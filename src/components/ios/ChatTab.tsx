@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { MessageSquare, Users, Ticket, MessageCircle, LogOut } from "lucide-react";
+import { MessageSquare, Users, Ticket, MessageCircle, LogOut, MoreVertical, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { useNavigate } from "react-router-dom";
@@ -104,6 +104,8 @@ export function ChatTab({
   } | null>(null);
   // Swipe-to-leave state for DM rows
   const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
+  // Which DM row's ⋮ menu is open (row id), if any.
+  const [dmMenuFor, setDmMenuFor] = useState<string | null>(null);
   const swipeTouchRef = useRef<{ id: string; startX: number; startY: number; isHorizontal: boolean | null } | null>(null);
   const { getActivityJoinCount } = useActivityJoins(selectedCity);
 
@@ -991,6 +993,31 @@ export function ChatTab({
                     {(activity.unread_count ?? 0) > 0 && (
                       <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full z-[1]" />
                     )}
+                    {/* ⋮ — one-tap delete for this conversation */}
+                    <div className="absolute top-1/2 -translate-y-1/2 right-2 z-[2]" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => setDmMenuFor(dmMenuFor === activity.id ? null : activity.id)}
+                        className="p-2 rounded-full hover:bg-black/10 transition-colors"
+                        aria-label="More options"
+                      >
+                        <MoreVertical className="w-5 h-5 text-gray-400" />
+                      </button>
+                      {dmMenuFor === activity.id && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setDmMenuFor(null)} />
+                          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-1 w-52 rounded-xl shadow-xl z-50 overflow-hidden border border-gray-200 bg-white">
+                            <button
+                              type="button"
+                              onClick={() => { setDmMenuFor(null); if (activity.other_user_id) void handleLeavePrivateChat(activity.other_user_id); }}
+                              className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" /> Delete conversation
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                     <div className="flex items-center gap-3.5">
                       <div
                         className="w-12 h-12 rounded-full overflow-hidden border border-neutral-200 shadow-sm shrink-0 flex items-center justify-center"
@@ -1020,7 +1047,7 @@ export function ChatTab({
                           </span>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 pr-8">
                         <div className="flex items-center gap-2">
                           <h3 className="font-bold text-gray-900 text-[15px] leading-snug truncate">
                             {activity.other_user_name || "Shaker"}
