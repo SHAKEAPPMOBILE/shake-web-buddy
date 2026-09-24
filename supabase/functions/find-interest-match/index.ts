@@ -114,20 +114,50 @@ serve(async (req) => {
       });
     }
 
-    // Exclude anyone already shown to this user — tapping "Match me up"
-    // again should advance through the ranked list, not repeat the same
-    // top match every time.
-    const { data: alreadyShownRows, error: shownErr } = await supabase
+    // ── Rotation ────────────────────────────────────────────────────────
+    // Per calendar month, per user: shakes 1–2 walk through people already
+    // shown who they've never messaged ("old"); the 3rd tries a fresh batch
+    // ("new"); if there is nothing new we answer "none", and the shake after
+    // a "none" goes back to "old". Anyone the user has messaged is out of the
+    // pool for good — that's a real interaction.
+    const { data: shownRows, error: shownErr } = await supabase
       .from("match_me_up_shown")
       .select("shown_user_id")
       .eq("user_id", userId);
-
     if (shownErr) console.error("[find-interest-match] match_me_up_shown query error:", shownErr);
-    const alreadyShownSet = new Set((alreadyShownRows ?? []).map((r) => r.shown_user_id as string));
-    const candidateIds = allCandidateIds.filter((id) => !alreadyShownSet.has(id));
+    const shownSet = new Set((shownRows ?? []).map((r) => r.shown_user_id as string));
 
+    const { data: dmRows, error: dmErr } = await supabase
+      .from("private_messages")
+      .select("sender_id, receiver_id")
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .limit(5000);
+    if (dmErr) console.error("[find-interest-match] private_messages query error:", dmErr);
+    const interactedSet = new Set(
+      (dmRows ?? []).map((r) => (r.sender_id === userId ? r.receiver_id : r.sender_id) as string),
+    );
+
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const { data: attemptRows, error: attErr } = await supabase
+      .from("match_me_up_attempts")
+      .select("kind, shown_user_id, created_at")
+      .eq("user_id", userId)
+      .gte("created_at", monthStart.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (attErr) console.error("[find-interest-match] attempts query error:", attErr);
+    const recent = (attemptRows ?? []).map((r) => r.kind as string);
+    const recentlyShownIds = new Set((attemptRows ?? []).map((r) => r.shown_user_id as string | null).filter(Boolean) as string[]);
+    let oldStreak = 0;
+    for (const k of recent) { if (k === "old") oldStreak++; else break; }
+    const wantNew = recent[0] !== "none" && oldStreak >= 2;
+
+    const candidateIds = allCandidateIds.filter((id) => !interactedSet.has(id));
     if (candidateIds.length === 0) {
-      return new Response(JSON.stringify({ matched: false, reason: "exhausted" }), {
+      await supabase.from("match_me_up_attempts").insert({ user_id: userId, kind: "none" });
+      return new Response(JSON.stringify({ matched: false, reason: "no_candidates" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -145,34 +175,47 @@ serve(async (req) => {
       });
     }
 
+    type Best = { user_id: string; name: string; avatar_url: string | null; shared: string[]; sameCity: boolean };
     const myInterestSet = new Set(myInterests);
-    let best: { user_id: string; name: string; avatar_url: string | null; shared: string[]; sameCity: boolean } | null = null;
-
-    for (const candidate of candidateProfiles ?? []) {
-      const candidateInterests = (candidate.interests as string[] | null) ?? [];
-      const shared = candidateInterests.filter((i) => myInterestSet.has(i));
-      if (shared.length === 0) continue;
-      const sameCity = sameCityIds.has(candidate.user_id as string);
-      if (!best || shared.length > best.shared.length || (shared.length === best.shared.length && sameCity && !best.sameCity)) {
-        best = {
-          user_id: candidate.user_id,
-          name: candidate.name || "Someone",
-          avatar_url: candidate.avatar_url ?? null,
-          shared,
-          sameCity,
-        };
+    const pickBest = (wantShown: boolean, skip?: Set<string>): Best | null => {
+      let best: Best | null = null;
+      for (const candidate of candidateProfiles ?? []) {
+        if (shownSet.has(candidate.user_id as string) !== wantShown) continue;
+        if (skip?.has(candidate.user_id as string)) continue;
+        const candidateInterests = (candidate.interests as string[] | null) ?? [];
+        const shared = candidateInterests.filter((i) => myInterestSet.has(i));
+        if (shared.length === 0) continue;
+        const sameCity = sameCityIds.has(candidate.user_id as string);
+        if (!best || shared.length > best.shared.length || (shared.length === best.shared.length && sameCity && !best.sameCity)) {
+          best = { user_id: candidate.user_id, name: candidate.name || "Someone", avatar_url: candidate.avatar_url ?? null, shared, sameCity };
+        }
       }
+      return best;
+    };
+
+    let best: Best | null = null;
+    let kind: "old" | "new" | "none" = "none";
+    if (wantNew) {
+      best = pickBest(false);
+      if (best) kind = "new";
+    } else {
+      // Prefer someone not already surfaced this month; recycle if that empties the pool.
+      best = pickBest(true, recentlyShownIds) ?? pickBest(true);
+      if (best) kind = "old";
+      else { best = pickBest(false); if (best) kind = "new"; }
     }
 
+    await supabase.from("match_me_up_attempts").insert({ user_id: userId, kind, shown_user_id: best?.user_id ?? null });
+
     if (!best) {
-      return new Response(JSON.stringify({ matched: false, reason: "no_overlap" }), {
+      return new Response(JSON.stringify({ matched: false, reason: "none" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { error: logErr } = await supabase
-      .from("match_me_up_shown")
-      .insert({ user_id: userId, shown_user_id: best.user_id });
+    const { error: logErr } = kind === "new"
+      ? await supabase.from("match_me_up_shown").insert({ user_id: userId, shown_user_id: best.user_id })
+      : { error: null };
     if (logErr) console.error("[find-interest-match] match_me_up_shown insert error:", logErr);
 
     return new Response(
