@@ -6,15 +6,18 @@ import type { ReactNode } from "react";
 export function ShakeGlassDialog({
   onClose,
   icon,
+  zIndex = 300,
   children,
 }: {
   onClose: () => void;
   /** Content of the round badge at the top (activity icon or emoji). */
   icon?: ReactNode;
+  /** Raise above full-screen chat views (z 9999). */
+  zIndex?: number;
   children: ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 pointer-events-auto">
+    <div className="fixed inset-0 flex items-center justify-center p-6 pointer-events-auto" style={{ zIndex }}>
       <div
         className="absolute inset-0 pointer-events-auto"
         style={{ background: "rgba(0, 0, 0, 0.3)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}

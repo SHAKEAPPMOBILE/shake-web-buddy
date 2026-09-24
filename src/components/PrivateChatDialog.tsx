@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2, ChevronDown, MapPin } from "lucide-react";
+import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2, ChevronDown, MapPin, UserPlus } from "lucide-react";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ChatInviteDialog } from "@/components/ChatInviteDialog";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 import { LocationBubble } from "@/components/LocationBubble";
+import { AddPersonDialog } from "@/components/AddPersonDialog";
 import { getCurrentLatLng, encodeLocation } from "@/lib/location";
 import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
 
@@ -33,6 +34,8 @@ interface PrivateChatDialogProps {
   otherUserName: string | null;
   otherUserAvatar: string | null;
   isActiveTab?: boolean;
+  /** Called with the new group's id after "Add someone" turns this DM into a group chat. */
+  onGroupCreated?: (chatId: string) => void;
 }
 
 export function PrivateChatDialog({
@@ -41,6 +44,7 @@ export function PrivateChatDialog({
   otherUserName,
   otherUserAvatar,
   isActiveTab = true,
+  onGroupCreated,
 }: PrivateChatDialogProps) {
   // Safety guard: never render if we're not on the chat tab
   if (!isActiveTab) return null;
@@ -443,6 +447,16 @@ export function PrivateChatDialog({
     }
   }, [user, sendMessage]);
 
+  const [showAddPerson, setShowAddPerson] = useState(false);
+  const handleAddPerson = useCallback(async (person: { user_id: string; name: string | null }) => {
+    setShowAddPerson(false);
+    // A new group with the two of us plus them; whoever taps "Add someone" becomes its admin.
+    const { data, error } = await (supabase as any).rpc("create_group_chat", { p_member_ids: [otherUserId, person.user_id] });
+    if (error || !data) { toast.error("Couldn't create the group"); return; }
+    toast.success(`Group created with ${person.name || "your new person"}`);
+    onGroupCreated?.(data as string);
+  }, [otherUserId, onGroupCreated]);
+
   const handleShareLocation = useCallback(async () => {
     try {
       const pos = await getCurrentLatLng();
@@ -577,6 +591,16 @@ export function PrivateChatDialog({
                 >
                   <MapPin className="w-4 h-4 text-gray-400" /> Share location
                 </button>
+                {onGroupCreated && (
+                  <button
+                    type="button"
+                    onClick={() => { setShowMenu(false); setShowAddPerson(true); }}
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-b"
+                    style={{ borderColor: "rgba(0,0,0,0.08)" }}
+                  >
+                    <UserPlus className="w-4 h-4 text-gray-400" /> Add someone
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleLeaveConversation}
@@ -856,6 +880,7 @@ export function PrivateChatDialog({
         onGifSelect={handleGifSelect}
       />
     ) : null}
+    {showAddPerson && <AddPersonDialog excludeIds={[otherUserId, ...(user ? [user.id] : [])]} onPick={handleAddPerson} onClose={() => setShowAddPerson(false)} />}
     <UserProfileDialog
       open={showProfile}
       onOpenChange={setShowProfile}

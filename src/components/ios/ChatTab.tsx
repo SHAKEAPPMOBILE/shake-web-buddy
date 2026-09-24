@@ -24,6 +24,7 @@ import {
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 import { PrivateChatDialog } from "@/components/PrivateChatDialog";
+import { CustomGroupChatView } from "@/components/CustomGroupChatView";
 import { LivingActivityIcon } from "@/components/LivingActivityIcon";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { toast } from "@/lib/app-toast";
@@ -60,6 +61,11 @@ interface ChatActivity {
   other_user_name?: string | null;
   other_user_avatar?: string | null;
   last_message_preview?: string | null;
+  // Custom group chats (started from a DM)
+  is_group_chat?: boolean;
+  group_chat_id?: string;
+  group_title?: string;
+  group_avatars?: (string | null)[];
 }
 
 interface ChatTabProps {
@@ -102,6 +108,7 @@ export function ChatTab({
     name: string | null;
     avatar: string | null;
   } | null>(null);
+  const [selectedGroupChatId, setSelectedGroupChatId] = useState<string | null>(null);
   // Swipe-to-leave state for DM rows
   const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
   // Which DM row's ⋮ menu is open (row id), if any.
@@ -113,7 +120,7 @@ export function ChatTab({
   useEffect(() => {
     const isInChat = isActiveTab && (showChatDialog || showPlanChatDialog || !!selectedPrivateChat);
     onChatViewChange?.(isInChat);
-  }, [showChatDialog, showPlanChatDialog, selectedPrivateChat, onChatViewChange, isActiveTab]);
+  }, [showChatDialog, showPlanChatDialog, selectedPrivateChat, selectedGroupChatId, onChatViewChange, isActiveTab]);
 
   // Handle deep-link from push notification tap
   useEffect(() => {
@@ -347,6 +354,46 @@ export function ChatTab({
       });
 
       // Process all groups in parallel (carousel, plans, events, private chats)
+      // ── Custom group chats I'm in ───────────────────────────────────────────
+      const groupResults: ChatActivity[] = await (async () => {
+        try {
+          const dbAny = supabase as any;
+          const { data: mine } = await dbAny.from("group_chat_members").select("chat_id").eq("user_id", user.id);
+          const chatIds: string[] = (mine ?? []).map((r: { chat_id: string }) => r.chat_id);
+          if (chatIds.length === 0) return [];
+          const [{ data: memberRows }, { data: lastMsgs }] = await Promise.all([
+            dbAny.from("group_chat_members").select("chat_id, user_id").in("chat_id", chatIds),
+            dbAny.from("group_chat_messages").select("chat_id, message, message_type, created_at").in("chat_id", chatIds).order("created_at", { ascending: false }).limit(chatIds.length * 5),
+          ]);
+          const userIds = Array.from(new Set((memberRows ?? []).map((r: { user_id: string }) => r.user_id))) as string[];
+          const { data: profs } = await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", userIds);
+          const pmap = new Map((profs ?? []).map((p) => [p.user_id, p]));
+          return chatIds.map((chatId) => {
+            const others = (memberRows ?? []).filter((r: { chat_id: string; user_id: string }) => r.chat_id === chatId && r.user_id !== user.id).map((r: { user_id: string }) => pmap.get(r.user_id));
+            const last = (lastMsgs ?? []).find((m: { chat_id: string }) => m.chat_id === chatId);
+            const preview = last
+              ? (last.message_type === "image" ? "📷 Photo" : last.message_type === "video" ? "🎥 Video" : last.message_type === "gif" ? "🎞 GIF" : last.message_type === "location" ? "📍 Location" : String(last.message).slice(0, 60))
+              : null;
+            return {
+              id: `group-${chatId}`,
+              activity_type: "group",
+              city: "",
+              scheduled_for: last?.created_at || new Date().toISOString(),
+              participant_count: others.length + 1,
+              is_plan: false,
+              is_group_chat: true,
+              group_chat_id: chatId,
+              group_title: others.map((o) => (o?.name || "Shaker").split(" ")[0]).join(", ") || "Group",
+              group_avatars: others.slice(0, 3).map((o) => o?.avatar_url ?? null),
+              last_message_preview: preview,
+            } as ChatActivity;
+          });
+        } catch (err) {
+          console.warn("[ChatTab] group chats fetch failed:", err);
+          return [];
+        }
+      })();
+
       const [carouselResults, planResults, eventResults, privateResults] = await Promise.all([
         // ── Carousel joins ──────────────────────────────────────────────────
         Promise.all(
@@ -541,7 +588,7 @@ export function ChatTab({
         ),
       ]);
 
-      const chatActivities: ChatActivity[] = [...carouselResults, ...planResults, ...eventResults, ...privateResults];
+      const chatActivities: ChatActivity[] = [...carouselResults, ...planResults, ...eventResults, ...privateResults, ...groupResults];
 
       const serverEventIds = new Set(
         chatActivities.filter((a) => a.is_event && a.event_id).map((a) => a.event_id as string),
@@ -697,6 +744,11 @@ export function ChatTab({
         { event: "*", schema: "public", table: "user_blocks", filter: `blocker_id=eq.${user.id}` },
         () => fetchActivities()
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "group_chat_members", filter: `user_id=eq.${user.id}` },
+        () => fetchActivities()
+      )
       .subscribe();
 
     return () => {
@@ -745,6 +797,10 @@ export function ChatTab({
   };
 
   const handleActivityClick = async (activity: ChatActivity) => {
+    if (activity.is_group_chat && activity.group_chat_id) {
+      setSelectedGroupChatId(activity.group_chat_id);
+      return;
+    }
     if (activity.is_private && activity.other_user_id) {
       setSelectedPrivateChat({
         userId: activity.other_user_id,
@@ -899,6 +955,15 @@ export function ChatTab({
     );
   }
 
+  if (selectedGroupChatId && isActiveTab) {
+    return (
+      <CustomGroupChatView
+        chatId={selectedGroupChatId}
+        onClose={() => { setSelectedGroupChatId(null); fetchActivities(); }}
+      />
+    );
+  }
+
   // Show full-page PrivateChatDialog only when this tab is active and a private chat is selected
   if (selectedPrivateChat && isActiveTab) {
     return (
@@ -908,6 +973,7 @@ export function ChatTab({
         otherUserName={selectedPrivateChat.name}
         otherUserAvatar={selectedPrivateChat.avatar}
         isActiveTab={isActiveTab}
+        onGroupCreated={(chatId) => { setSelectedPrivateChat(null); setSelectedGroupChatId(chatId); }}
       />
     );
   }
@@ -954,6 +1020,36 @@ export function ChatTab({
         ) : (
           <>
           {filteredActivities.map((activity) => {
+            // ── Custom group chat row ──────────────────────────────────────
+            if (activity.is_group_chat) {
+              return (
+                <div
+                  key={activity.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleActivityClick(activity)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleActivityClick(activity); } }}
+                  className="w-full text-left rounded-xl p-4 transition-colors cursor-pointer relative border border-gray-200 bg-gray-50 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex -space-x-3 shrink-0">
+                      {(activity.group_avatars ?? []).map((a, i) => (
+                        <span key={i} className="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-gradient-to-br from-[#00C6B6] to-[#7c3aed] flex items-center justify-center text-white text-sm font-bold">
+                          {a ? <img src={getDisplayAvatarUrl(a) ?? a} alt="" className="w-full h-full object-cover" /> : "S"}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-gray-900 text-[15px] leading-snug truncate">{activity.group_title}</h3>
+                      <p className="mt-0.5 text-[13px] text-gray-500 truncate">
+                        {activity.last_message_preview ?? `${activity.participant_count} people · Say hi to the group!`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             // ── Private (DM) chat row ──────────────────────────────────────
             if (activity.is_private) {
               const swipeOffset = swipeOffsets[activity.id] ?? 0;
