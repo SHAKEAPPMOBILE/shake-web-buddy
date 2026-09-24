@@ -1151,15 +1151,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
       {/* ── Shake permission prompt ──────────────────────────────────────────── */}
       {showShakePermissionPrompt && !showShakeChooser && !showShakeConfirm && !showAlreadyJoinedDialog && !matchFromShake && (
-        <div className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center pointer-events-auto">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={handleDismissShakePermission}
-          />
-          <div className="relative z-10 w-full max-w-sm mx-4 mb-6 sm:mb-0 px-6 py-8 flex flex-col gap-4 rounded-3xl bg-white shadow-2xl text-center pointer-events-auto">
-            <div className="text-5xl">📳</div>
+        <ShakeGlassDialog onClose={handleDismissShakePermission} icon="📳">
             <h2 className="text-xl font-bold text-gray-900">Enable Shake to Join</h2>
-            <p className="text-sm text-gray-500 leading-relaxed">
+            <p className="text-sm text-gray-600 leading-relaxed">
               Shake your phone to instantly join the activity of the moment — dinner, brunch, and more. You can always turn this off in Profile settings.
             </p>
             <button
@@ -1176,8 +1170,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             >
               Not now
             </button>
-          </div>
-        </div>
+        </ShakeGlassDialog>
       )}
 
       {/* Already-joined dialog */}
