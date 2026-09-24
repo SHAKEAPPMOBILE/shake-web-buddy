@@ -769,7 +769,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
           </div>
 
           {/* Report button — never shown on your own plan */}
-          {!isOwn && (
+          {!isOwn && !plan.is_auto_generated && (
             <div style={{ pointerEvents: "auto" }}>
               <ReportContentButton contentId={plan.id} contentType="post" iconOnly />
             </div>

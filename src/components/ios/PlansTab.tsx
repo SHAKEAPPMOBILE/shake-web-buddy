@@ -1120,6 +1120,14 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       .sort((a, b) => parseDbDate(a.scheduled_for!).getTime() - parseDbDate(b.scheduled_for!).getTime());
   }, [selectedCity, activities, combinedPlansList]);
 
+  // What the plain list shows for discovery: real city plans, plus — on My
+  // City only — the standing dinner/brunch groups nobody's joined yet, so
+  // they stay joinable as cards. All Cities keeps just what's happening.
+  const listCityPlans = useMemo(
+    () => showAllCities ? cityPlans : [...cityPlans, ...standingOpenGroupCards],
+    [showAllCities, cityPlans, standingOpenGroupCards]
+  );
+
   const swipeFeedList = useMemo(
     () => [...combinedPlansList, ...standingOpenGroupCards],
     [combinedPlansList, standingOpenGroupCards]
@@ -1190,7 +1198,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     // discovery) — matching the video-detail experience everywhere else in the
     // app instead of a small popup modal, and letting the user swipe past their
     // own joined plans into the rest of the feed instead of getting stuck.
-    const idx = combinedPlansList.findIndex((p) => p.id === plan.id);
+    const idx = swipeFeedList.findIndex((p) => p.id === plan.id);
     setFeedSourceList(swipeFeedList);
     setFeedStartIndex(idx >= 0 ? idx : 0);
     setFeedOpen(true);
@@ -2096,7 +2104,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           <div className="flex items-center justify-center h-40">
             <LoadingSpinner size="lg" />
           </div>
-        ) : activities.length === 0 && cityPlans.length === 0 ? (
+        ) : activities.length === 0 && listCityPlans.length === 0 ? (
           <PlansEmptyState onJoinActivity={onJoinActivity ?? (() => {})} />
         ) : (
           <>
@@ -2258,9 +2266,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
             {/* City discovery plans — other users' plans in selectedCity.
                 No section header here anymore: it used to repeat "Todas las
                 ciudades", which the toggle above already says. */}
-            {cityPlans.length > 0 && (
+            {listCityPlans.length > 0 && (
               <>
-                {cityPlans.filter(p => !activities.some(a => a.id === p.id)).map((plan) => (
+                {listCityPlans.filter(p => !activities.some(a => a.id === p.id)).map((plan) => (
                   <SwipeableCard
                     key={plan.id}
                     canDelete={false}
