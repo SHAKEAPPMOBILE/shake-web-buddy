@@ -21,6 +21,7 @@ import { ActivityDetailsCard } from "./ActivityDetailsCard";
 import { MatchMeUpCard, MatchedProfile } from "./MatchMeUpCard";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { LivingActivityIcon } from "@/components/LivingActivityIcon";
+import { ShakeGlassDialog } from "@/components/ShakeGlassDialog";
 import { EmojiShine } from "@/components/EmojiShine";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
@@ -294,13 +295,13 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
     // Already joined → show the existing already-joined dialog
     if (isActivityJoined?.(activity.id)) {
-      setShowAlreadyJoinedDialog(true);
+      setShowShakeChooser(false); setShowAlreadyJoinedDialog(true);
       return;
     }
 
     // Happy path: show quick-confirm sheet
     setShakeConfirmActivity(activity);
-    setShowShakeConfirm(true);
+    setShowShakeChooser(false); setShowShakeConfirm(true);
   }, [CAROUSEL_ITEMS, isActivityJoined, onOpenActivities]);
 
   // Keep the ref current so the stable devicemotion listener always calls the latest version.
@@ -510,7 +511,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     }
     // Check if user already joined this activity
     if (!currentActivity.isProposePlan && isActivityJoined?.(currentActivity.id)) {
-      setShowAlreadyJoinedDialog(true);
+      setShowShakeChooser(false); setShowAlreadyJoinedDialog(true);
       return;
     }
     if (currentActivity.isProposePlan) {
@@ -1012,16 +1013,13 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       </CityPickerModal>
 
       {/* ── Shake chooser: join the activity of the moment, or match ───────── */}
-      {showShakeChooser && (() => {
+      {showShakeChooser && !showShakeConfirm && !showAlreadyJoinedDialog && !matchFromShake && (() => {
         const smart = CAROUSEL_ITEMS[getSmartCarouselIndex()];
         const joinable = !!smart && !smart.isProposePlan && !smart.isMatchMeUp;
         return (
-          <div className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center pointer-events-auto">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowShakeChooser(false)} />
-            <div className="relative z-10 w-full max-w-sm mx-4 mb-6 sm:mb-0 px-6 py-8 flex flex-col gap-3 rounded-3xl bg-white shadow-2xl text-center pointer-events-auto">
-              <div className="text-4xl">📳</div>
+          <ShakeGlassDialog onClose={() => setShowShakeChooser(false)} icon="📳">
               <h2 className="text-xl font-bold text-gray-900">{t("home.shakeChooserTitle", "You shook it!")}</h2>
-              <p className="text-sm text-gray-500 mb-1">{t("home.shakeChooserSubtitle", "What do you feel like?")}</p>
+              <p className="text-sm text-gray-600 mb-1">{t("home.shakeChooserSubtitle", "What do you feel like?")}</p>
               <button
                 type="button"
                 onClick={runShakeJoin}
@@ -1045,13 +1043,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
               >
                 {t("home.notNow", "Not now")}
               </button>
-            </div>
-          </div>
+          </ShakeGlassDialog>
         );
       })()}
 
       {/* Match result for the shake path — same MatchMeUpCard as the carousel's, in its own overlay */}
-      {matchFromShake && (
+      {matchFromShake && !showShakeConfirm && !showAlreadyJoinedDialog && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center pointer-events-auto">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMatchFromShake(false)} />
           <div className="relative z-10 w-full max-w-sm mx-4 min-h-[420px] rounded-3xl bg-white shadow-2xl">
@@ -1069,15 +1066,10 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       )}
 
       {/* ── Shake quick-confirm sheet ──────────────────────────────────────── */}
-      {showShakeConfirm && shakeConfirmActivity && (
-        <div className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center pointer-events-auto">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowShakeConfirm(false)}
-          />
-          <div className="relative z-10 w-full max-w-sm mx-4 mb-6 sm:mb-0 px-6 py-8 flex flex-col gap-4 rounded-3xl bg-white shadow-2xl text-center pointer-events-auto">
-            {/* Activity avatar */}
-            <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center border-2 border-blue-400 shadow-lg">
+      {showShakeConfirm && shakeConfirmActivity && !showAlreadyJoinedDialog && (
+          <ShakeGlassDialog
+            onClose={() => setShowShakeConfirm(false)}
+            icon={<>
               {shakeConfirmActivity.icon ? (
                 <LivingActivityIcon
                   activityType={shakeConfirmActivity.id}
@@ -1093,14 +1085,14 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   enabled={shakeConfirmActivity.id === "propose-plan"}
                 />
               )}
-            </div>
-
+            </>}
+          >
             {/* Title + meta */}
             <div>
               <h2 className="text-xl font-bold text-gray-900">
                 Join {shakeConfirmActivity.label}?
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
                 {shakeConfirmActivity.nextDate
                   ? format(shakeConfirmActivity.nextDate, 'EEE d MMM')
                   : ''}
@@ -1134,12 +1126,11 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             >
               Not now
             </button>
-          </div>
-        </div>
+          </ShakeGlassDialog>
       )}
 
       {/* ── Shake permission prompt ──────────────────────────────────────────── */}
-      {showShakePermissionPrompt && (
+      {showShakePermissionPrompt && !showShakeChooser && !showShakeConfirm && !showAlreadyJoinedDialog && !matchFromShake && (
         <div className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center pointer-events-auto">
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -1171,15 +1162,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
       {/* Already-joined dialog */}
       {showAlreadyJoinedDialog && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 pointer-events-auto">
-          <div
-            className="absolute inset-0 pointer-events-auto bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowAlreadyJoinedDialog(false)}
-          />
-          <div
-            className="relative z-10 w-full max-w-sm pointer-events-auto px-6 py-8 flex flex-col gap-4 rounded-3xl bg-white shadow-2xl text-center"
-          >
-            <div className="text-6xl">🐯</div>
+        <ShakeGlassDialog onClose={() => setShowAlreadyJoinedDialog(false)} icon="🐯">
             <h2 className="text-xl font-bold text-gray-900">You're already in!</h2>
             <p className="text-sm text-gray-600 leading-relaxed">
               You already joined this activity. Go to Plans to see it, Tiger.
@@ -1198,8 +1181,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
             >
               Close
             </button>
-          </div>
-        </div>
+        </ShakeGlassDialog>
       )}
     </>
   );
