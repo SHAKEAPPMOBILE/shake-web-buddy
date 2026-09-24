@@ -229,7 +229,13 @@ export function UserProfileDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
-          className="sm:max-w-sm bg-white border border-purple-200/60"
+          className={
+            isMobile
+              // Bottom sheet: pinned to the bottom edge, rises from below, no gap under it.
+              ? "!left-0 !right-0 !top-auto !bottom-0 !translate-x-0 !translate-y-0 !max-w-none !w-full max-h-[90vh] overflow-y-auto bg-white border border-purple-200/60 pb-[calc(env(safe-area-inset-bottom)+1rem)] data-[state=open]:!slide-in-from-bottom data-[state=closed]:!slide-out-to-bottom data-[state=open]:!zoom-in-100 data-[state=closed]:!zoom-out-100 data-[state=open]:!slide-in-from-left-0 data-[state=closed]:!slide-out-to-left-0"
+              : "sm:max-w-sm bg-white border border-purple-200/60"
+          }
+          style={isMobile ? { borderRadius: "24px 24px 0 0" } : undefined}
           {...(isMobile ? swipeHandlers : {})}
         >
           {isMobile && (
