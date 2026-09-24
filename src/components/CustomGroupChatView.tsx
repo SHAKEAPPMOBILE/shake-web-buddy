@@ -82,6 +82,12 @@ export function CustomGroupChatView({ chatId, onClose }: { chatId: string; onClo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId]);
 
+  // Opening the group (and receiving messages while it's open) counts as reading it.
+  useEffect(() => {
+    if (!user) return;
+    void db.rpc("mark_group_chat_read", { p_chat: chatId });
+  }, [chatId, user, messages.length]);
+
   const memberById = useMemo(() => new Map(members.map((m) => [m.user_id, m])), [members]);
   const title = useMemo(() => {
     const others = members.filter((m) => m.user_id !== user?.id).map((m) => (m.name || "Shaker").split(" ")[0]);

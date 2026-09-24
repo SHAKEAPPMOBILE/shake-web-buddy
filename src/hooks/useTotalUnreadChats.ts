@@ -179,6 +179,25 @@ export function useTotalUnreadChats() {
         for (const n of eventUnread) total += n;
       }
 
+      // Custom group chats: a group I was just added to (never opened) counts as
+      // one unread, plus any messages from others since I last opened it.
+      try {
+        const dbAny = supabase as any;
+        const { data: groupRows } = await dbAny.from("group_chat_members").select("chat_id, last_read_at").eq("user_id", user.id);
+        for (const g of (groupRows ?? []) as { chat_id: string; last_read_at: string | null }[]) {
+          if (!g.last_read_at) { total += 1; continue; }
+          const { count } = await dbAny
+            .from("group_chat_messages")
+            .select("*", { count: "exact", head: true })
+            .eq("chat_id", g.chat_id)
+            .gt("created_at", g.last_read_at)
+            .neq("user_id", user.id);
+          total += count || 0;
+        }
+      } catch (err) {
+        console.warn("[useTotalUnreadChats] group chat unread failed", err);
+      }
+
       setTotalUnread(total);
     } catch (error) {
       console.error("Error checking unread messages:", error);
@@ -232,6 +251,19 @@ export function useTotalUnreadChats() {
           const row = payload.new as { user_id?: string };
           if (row.user_id !== user.id) checkUnreadMessages();
         }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "group_chat_messages" },
+        (payload) => {
+          const row = payload.new as { user_id?: string };
+          if (row.user_id !== user.id) checkUnreadMessages();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "group_chat_members", filter: `user_id=eq.${user.id}` },
+        () => { checkUnreadMessages(); }
       )
       .subscribe();
 
@@ -312,6 +344,17 @@ export function useTotalUnreadChats() {
         city: "plan",
         last_read_at: now,
       }, { onConflict: "user_id,activity_type,city" });
+    }
+
+    // Custom group chats
+    try {
+      const dbAny = supabase as any;
+      const { data: groupRows } = await dbAny.from("group_chat_members").select("chat_id").eq("user_id", user.id);
+      for (const g of (groupRows ?? []) as { chat_id: string }[]) {
+        await dbAny.rpc("mark_group_chat_read", { p_chat: g.chat_id });
+      }
+    } catch (err) {
+      console.warn("[useTotalUnreadChats] mark group chats read failed", err);
     }
 
     setTotalUnread(0);

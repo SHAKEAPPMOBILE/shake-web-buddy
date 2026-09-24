@@ -358,12 +358,13 @@ export function ChatTab({
       const groupResults: ChatActivity[] = await (async () => {
         try {
           const dbAny = supabase as any;
-          const { data: mine } = await dbAny.from("group_chat_members").select("chat_id").eq("user_id", user.id);
+          const { data: mine } = await dbAny.from("group_chat_members").select("chat_id, last_read_at").eq("user_id", user.id);
           const chatIds: string[] = (mine ?? []).map((r: { chat_id: string }) => r.chat_id);
+          const readAt = new Map<string, string | null>((mine ?? []).map((r: { chat_id: string; last_read_at: string | null }) => [r.chat_id, r.last_read_at]));
           if (chatIds.length === 0) return [];
           const [{ data: memberRows }, { data: lastMsgs }] = await Promise.all([
             dbAny.from("group_chat_members").select("chat_id, user_id").in("chat_id", chatIds),
-            dbAny.from("group_chat_messages").select("chat_id, message, message_type, created_at").in("chat_id", chatIds).order("created_at", { ascending: false }).limit(chatIds.length * 5),
+            dbAny.from("group_chat_messages").select("chat_id, user_id, message, message_type, created_at").in("chat_id", chatIds).order("created_at", { ascending: false }).limit(chatIds.length * 5),
           ]);
           const userIds = Array.from(new Set((memberRows ?? []).map((r: { user_id: string }) => r.user_id))) as string[];
           const { data: profs } = await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", userIds);
@@ -382,6 +383,7 @@ export function ChatTab({
               participant_count: others.length + 1,
               is_plan: false,
               is_group_chat: true,
+              unread_count: !readAt.get(chatId) ? 1 : (last && last.user_id !== user.id && new Date(last.created_at) > new Date(readAt.get(chatId) as string) ? 1 : 0),
               group_chat_id: chatId,
               group_title: others.map((o) => (o?.name || "Shaker").split(" ")[0]).join(", ") || "Group",
               group_avatars: others.slice(0, 3).map((o) => o?.avatar_url ?? null),
@@ -1031,6 +1033,9 @@ export function ChatTab({
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleActivityClick(activity); } }}
                   className="w-full text-left rounded-xl p-4 transition-colors cursor-pointer relative border border-gray-200 bg-gray-50 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
+                  {(activity.unread_count ?? 0) > 0 && (
+                    <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full z-[1]" />
+                  )}
                   <div className="flex items-center gap-3.5">
                     <div className="flex -space-x-3 shrink-0">
                       {(activity.group_avatars ?? []).map((a, i) => (
