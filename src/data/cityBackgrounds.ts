@@ -4,6 +4,7 @@
  *  the exact `city` string used elsewhere (must match SHAKE_CITIES' name).
  *  Cities with no illustration yet just keep the plain white background. */
 export const CITY_BACKGROUNDS: Record<string, string> = {
+  "Medellín": "/icons/cities/medellin.webp",
   "New York City": "/icons/cities/new-york-city.webp",
   "Lisbon": "/icons/cities/lisbon.webp",
   "San Francisco": "/icons/cities/san-francisco.webp",
