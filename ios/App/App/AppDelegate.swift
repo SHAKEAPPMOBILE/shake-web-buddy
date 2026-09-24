@@ -7,7 +7,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Shaking the phone triggers iOS's "Undo" alert whenever a text field has
+        // content; we use shake for our own gesture, so turn the system one off.
+        application.applicationSupportsShakeToEdit = false
         return true
     }
 
