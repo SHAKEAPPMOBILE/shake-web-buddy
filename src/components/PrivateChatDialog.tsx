@@ -457,7 +457,10 @@ export function PrivateChatDialog({
     onGroupCreated?.(data as string);
   }, [otherUserId, onGroupCreated]);
 
+  const sharingLocationRef = useRef(false);
   const handleShareLocation = useCallback(async () => {
+    if (sharingLocationRef.current) return; // ignore double taps
+    sharingLocationRef.current = true;
     try {
       const pos = await getCurrentLatLng();
       const { error } = await sendMessage(encodeLocation(pos), "location");
@@ -465,6 +468,8 @@ export function PrivateChatDialog({
     } catch (err) {
       console.error("Share location failed:", err);
       toast.error("Couldn't get your location. Check location permission and try again.");
+    } finally {
+      sharingLocationRef.current = false;
     }
   }, [sendMessage]);
 

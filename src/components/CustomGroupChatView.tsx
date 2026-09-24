@@ -115,7 +115,10 @@ export function CustomGroupChatView({ chatId, onClose }: { chatId: string; onClo
     if (error) toast.error("Failed to send"); else setText("");
   };
 
+  const sharingLocationRef = useRef(false);
   const handleShareLocation = async () => {
+    if (sharingLocationRef.current) return; // ignore double taps
+    sharingLocationRef.current = true;
     try {
       const pos = await getCurrentLatLng();
       const { error } = await send(encodeLocation(pos), "location");
@@ -123,6 +126,8 @@ export function CustomGroupChatView({ chatId, onClose }: { chatId: string; onClo
     } catch (err) {
       console.error("Share location failed:", err);
       toast.error("Couldn't get your location. Check location permission and try again.");
+    } finally {
+      sharingLocationRef.current = false;
     }
   };
 

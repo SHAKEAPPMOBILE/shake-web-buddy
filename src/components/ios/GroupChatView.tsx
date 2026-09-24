@@ -739,8 +739,11 @@ export function GroupChatView({
   );
 
 
+  const sharingLocationRef = useRef(false);
   const handleShareLocation = useCallback(async () => {
     if (!user) return;
+    if (sharingLocationRef.current) return; // ignore double taps
+    sharingLocationRef.current = true;
     try {
       const pos = await getCurrentLatLng();
       const { error } = await supabase.from("activity_messages").insert({
@@ -754,6 +757,8 @@ export function GroupChatView({
     } catch (err) {
       console.error("Share location failed:", err);
       toast.error("Couldn't get your location. Check location permission and try again.");
+    } finally {
+      sharingLocationRef.current = false;
     }
   }, [user, activityType, city]);
 

@@ -5,7 +5,7 @@ const ZOOM = 15;
 const W = 240;
 const H = 150;
 
-/** A little map card for a shared location: a 3×3 mosaic of free CARTO tiles
+/** A little map card for a shared location: a 3×3 mosaic of free Esri street-map tiles (CARTO's anonymous tiles now need an API key)
  *  centred on the point, with a pin. Tap to open directions. No API key, no
  *  map library instance per message. */
 export function LocationBubble({ message, className }: { message: string; className?: string }) {
@@ -28,7 +28,7 @@ export function LocationBubble({ message, className }: { message: string; classN
         key: `${col}-${row}`,
         col,
         row,
-        src: `https://a.basemaps.cartocdn.com/rastertiles/voyager/${ZOOM}/${tx - 1 + col}/${ty - 1 + row}.png`,
+        src: `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${ZOOM}/${ty - 1 + row}/${tx - 1 + col}`,
       });
     }
   }
@@ -62,7 +62,7 @@ export function LocationBubble({ message, className }: { message: string; classN
           stroke="white"
           strokeWidth={1.5}
         />
-        <span className="absolute bottom-0.5 right-1 text-[8px] text-gray-600/80">© OpenStreetMap © CARTO</span>
+        <span className="absolute bottom-0.5 right-1 text-[8px] text-gray-600/80">© Esri © OpenStreetMap</span>
       </div>
       <div className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white/90">📍 Shared location · Tap for directions</div>
     </a>

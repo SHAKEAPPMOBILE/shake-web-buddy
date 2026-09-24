@@ -213,7 +213,7 @@ export function useFloatingBubbles(
           };
       physicsRef.current.set(id, physics);
     }
-    el.style.transform = `translate3d(${physics.x}px, ${physics.y}px, 0)`;
+    el.style.transform = physics.isStatic ? `translate3d(0, ${physics.y}px, 0)` : `translate3d(${physics.x}px, ${physics.y}px, 0)`;
   }, [containerRef, randomVelocity]);
 
   const togglePin = useCallback((id: string) => {
@@ -420,9 +420,18 @@ export function useFloatingBubbles(
         }
       }
 
+      // Separation can shove a drifting pill past a wall; keep it inside.
+      entries.forEach(([, b]) => {
+        if (b.isStatic || b.escaped) return;
+        b.x = Math.min(Math.max(b.x, FLOAT_PAD), Math.max(FLOAT_PAD, tw - FLOAT_PAD - b.w));
+      });
+
       entries.forEach(([id, b]) => {
         const el = elsRef.current.get(id);
-        if (el) el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
+        if (!el) return;
+        // Static bubbles are anchored to the left/right edge by CSS (see
+        // getBubbleProps), so only their vertical position is driven here.
+        el.style.transform = b.isStatic ? `translate3d(0, ${b.y}px, 0)` : `translate3d(${b.x}px, ${b.y}px, 0)`;
       });
 
       raf = requestAnimationFrame(tick);
@@ -452,15 +461,26 @@ export function useFloatingBubbles(
 
   // Positioning + drag-to-throw props — spread onto the element that should
   // float (the outer wrapper, typically).
-  const getBubbleProps = useCallback((id: string) => ({
+  const getBubbleProps = useCallback((id: string) => {
+    const item = itemsRef.current.find((i) => i.id === id);
+    const style = item?.isStatic
+      ? {
+          position: "absolute" as const,
+          top: 0,
+          ...(item.alignRight ? { right: STATIC_SIDE_PAD } : { left: STATIC_SIDE_PAD }),
+          maxWidth: `calc(100% - ${STATIC_SIDE_PAD * 2}px)`,
+        }
+      : { position: "absolute" as const, top: 0, left: 0, touchAction: "none" as const };
+    return {
     ref: getRefCallback(id),
     "data-bubble-id": id,
-    style: { position: "absolute" as const, top: 0, left: 0, touchAction: "none" as const },
+    style,
     onPointerDown: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerDown(id, e),
     onPointerMove: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerMove(id, e),
     onPointerUp: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerUp(id, e),
     onPointerCancel: (e: ReactPointerEvent<HTMLDivElement>) => handlePointerCancel(id, e),
-  }), [getRefCallback, handlePointerDown, handlePointerMove, handlePointerUp, handlePointerCancel]);
+    };
+  }, [getRefCallback, handlePointerDown, handlePointerMove, handlePointerUp, handlePointerCancel]);
 
   // Tap-to-pin handler — wire onto whatever element should be the tap
   // target (may be a nested element, not the floating wrapper itself).
