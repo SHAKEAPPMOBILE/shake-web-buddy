@@ -199,8 +199,9 @@ serve(async (req) => {
       best = pickBest(false);
       if (best) kind = "new";
     } else {
-      // Prefer someone not already surfaced this month; recycle if that empties the pool.
-      best = pickBest(true, recentlyShownIds) ?? pickBest(true);
+      // Never repeat someone already surfaced this month (tapping "Hum!" means
+      // "not now"). Only after a "none" answer do we recycle earlier matches.
+      best = pickBest(true, recentlyShownIds) ?? (recent[0] === "none" ? pickBest(true) : null);
       if (best) kind = "old";
       else { best = pickBest(false); if (best) kind = "new"; }
     }
