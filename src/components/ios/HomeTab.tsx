@@ -138,6 +138,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
   // Shake quick-confirm state
   const [showShakeConfirm, setShowShakeConfirm] = useState(false);
+  // Shake opens this chooser first: join the dinner/brunch of the moment, or
+  // run a Match me up. matchFromShake renders the match result in its own
+  // fixed overlay, since the inline MatchMeUpCard only exists inside the
+  // carousel overlay (which isn't necessarily open when someone shakes).
+  const [showShakeChooser, setShowShakeChooser] = useState(false);
+  const [matchFromShake, setMatchFromShake] = useState(false);
   const [shakeConfirmActivity, setShakeConfirmActivity] = useState<CarouselItem | null>(null);
   // Ref so the devicemotion listener always calls the latest handler without re-registration.
   const handleShakeGestureRef = useRef<(() => void) | null>(null);
@@ -270,6 +276,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       document.body.classList.remove("animate-ui-shake-feedback");
     }, 4000);
 
+    setShowShakeChooser(true);
+  }, []);
+
+  // The original shake-to-join behavior, now run from the chooser's "Join" button.
+  const runShakeJoin = useCallback(() => {
+    setShowShakeChooser(false);
     const smartIndex = getSmartCarouselIndex();
     const activity = CAROUSEL_ITEMS[smartIndex];
 
@@ -417,8 +429,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   // circle. Queries find-interest-match live — no persistence, no history,
   // no push notification (that's the original weekly-push idea; this is the
   // simpler pull version actually shipped).
-  const handleFindMatch = async () => {
-    setShowMatchDetails(true);
+  const handleFindMatch = async (opts?: { standalone?: boolean }) => {
+    if (opts?.standalone) setMatchFromShake(true);
+    else setShowMatchDetails(true);
     setMatchStatus("loading");
     setMatchedProfile(null);
 
@@ -447,6 +460,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const handleSayHi = () => {
     if (!matchedProfile) return;
     setShowMatchDetails(false);
+    setMatchFromShake(false);
     onCloseActivities?.();
     navigate("/", { state: { activeTab: "chat", other_user_id: matchedProfile.user_id } });
   };
@@ -996,6 +1010,63 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           onPickerClose={() => setIsCitySelectorOpen(false)}
         />
       </CityPickerModal>
+
+      {/* ── Shake chooser: join the activity of the moment, or match ───────── */}
+      {showShakeChooser && (() => {
+        const smart = CAROUSEL_ITEMS[getSmartCarouselIndex()];
+        const joinable = !!smart && !smart.isProposePlan && !smart.isMatchMeUp;
+        return (
+          <div className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center pointer-events-auto">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowShakeChooser(false)} />
+            <div className="relative z-10 w-full max-w-sm mx-4 mb-6 sm:mb-0 px-6 py-8 flex flex-col gap-3 rounded-3xl bg-white shadow-2xl text-center pointer-events-auto">
+              <div className="text-4xl">📳</div>
+              <h2 className="text-xl font-bold text-gray-900">{t("home.shakeChooserTitle", "You shook it!")}</h2>
+              <p className="text-sm text-gray-500 mb-1">{t("home.shakeChooserSubtitle", "What do you feel like?")}</p>
+              <button
+                type="button"
+                onClick={runShakeJoin}
+                className="w-full h-12 rounded-full font-semibold text-base text-white bg-[hsl(210,100%,50%)] hover:bg-[hsl(210,100%,45%)] transition-colors"
+              >
+                {joinable
+                  ? t("home.shakeJoinActivity", "Join {{activity}}", { activity: smart.label })
+                  : t("home.shakeSeeActivities", "See what's on")}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowShakeChooser(false); void handleFindMatch({ standalone: true }); }}
+                className="w-full h-12 rounded-full font-semibold text-base text-gray-900 border border-gray-300 bg-white hover:bg-gray-50 transition-colors"
+              >
+                🤝 {t("home.matchMeUp", "Match me up")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowShakeChooser(false)}
+                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+              >
+                {t("home.notNow", "Not now")}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Match result for the shake path — same MatchMeUpCard as the carousel's, in its own overlay */}
+      {matchFromShake && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center pointer-events-auto">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMatchFromShake(false)} />
+          <div className="relative z-10 w-full max-w-sm mx-4 min-h-[420px] rounded-3xl bg-white shadow-2xl">
+            <MatchMeUpCard
+              show
+              status={matchStatus}
+              profile={matchedProfile}
+              myAvatarUrl={myAvatarUrl}
+              joinCity={joinCity}
+              onSayHi={handleSayHi}
+              onClose={() => setMatchFromShake(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── Shake quick-confirm sheet ──────────────────────────────────────── */}
       {showShakeConfirm && shakeConfirmActivity && (
