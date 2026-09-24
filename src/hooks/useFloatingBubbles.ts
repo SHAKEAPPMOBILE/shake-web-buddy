@@ -6,6 +6,25 @@ export interface FloatingBubbleItem {
   /** Only used to keep bands in the same order as `items` — items should
    *  already be chronologically sorted (oldest first). */
   isMedia?: boolean;
+  /** Dense content (long text, media) doesn't float: it sits in an ordered,
+   *  non-overlapping column at its natural height. Only short text pills
+   *  float loose. */
+  isStatic?: boolean;
+  /** Static items hug the right edge (own messages) instead of the left. */
+  alignRight?: boolean;
+  /** Height guess used until the real one is measured. */
+  estHeight?: number;
+}
+
+/** Text longer than this (or with line breaks) is "dense" — see isStatic. */
+export const DENSE_TEXT_CHARS = 70;
+export function isDenseText(text: string | null | undefined): boolean {
+  if (!text) return false;
+  return text.length > DENSE_TEXT_CHARS || text.includes("\n");
+}
+export function estimateTextHeight(text: string): number {
+  const lines = text.split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / 30)), 0);
+  return lines * 21 + 22;
 }
 
 interface Physics {
@@ -20,6 +39,9 @@ interface Physics {
    *  confining it on release would snap it right back where it came from,
    *  which defeats the point of throwing it. */
   escaped?: boolean;
+  /** Dense bubbles: pinned to the column layout, no drifting or dragging. */
+  isStatic?: boolean;
+  alignRight?: boolean;
 }
 
 interface DragState {
@@ -34,6 +56,8 @@ interface DragState {
 
 const FLOAT_SPEED = 42; // px/sec, ambient drift
 const FLOAT_PAD = 6;
+const STATIC_GAP = 12; // vertical breathing room around a static bubble
+const STATIC_SIDE_PAD = 12;
 const BAND_HEIGHT_TEXT = 72;
 const BAND_HEIGHT_MEDIA = 220;
 const CULL_BUFFER = 400; // px above/below the viewport that still animate
@@ -66,16 +90,22 @@ export function useFloatingBubbles(
   items: FloatingBubbleItem[],
   containerRef: RefObject<HTMLElement>
 ) {
+  // Measured natural heights of static bubbles (ResizeObserver, below).
+  const [staticHeights, setStaticHeights] = useState<Record<string, number>>({});
   const bandLayout = useMemo(() => {
     const bands = new Map<string, { top: number; height: number }>();
     let cursor = 0;
     items.forEach((item) => {
-      const height = item.isMedia ? BAND_HEIGHT_MEDIA : BAND_HEIGHT_TEXT;
+      const height = item.isStatic
+        ? (staticHeights[item.id] ?? item.estHeight ?? BAND_HEIGHT_TEXT) + STATIC_GAP
+        : item.isMedia ? BAND_HEIGHT_MEDIA : BAND_HEIGHT_TEXT;
       bands.set(item.id, { top: cursor, height });
       cursor += height;
     });
     return { bands, totalHeight: cursor };
-  }, [items]);
+  }, [items, staticHeights]);
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
   const bandLayoutRef = useRef(bandLayout);
   bandLayoutRef.current = bandLayout;
 
@@ -168,11 +198,19 @@ export function useFloatingBubbles(
       const w = el.offsetWidth || 90;
       const h = el.offsetHeight || 44;
       const v = randomVelocity();
-      physics = {
-        x: Math.random() * Math.max(1, tw - w - FLOAT_PAD * 2) + FLOAT_PAD,
-        y: band.top + Math.random() * Math.max(1, band.height - h - FLOAT_PAD * 2) + FLOAT_PAD,
-        vx: v.vx, vy: v.vy, w, h,
-      };
+      const item = itemsRef.current.find((i) => i.id === id);
+      physics = item?.isStatic
+        ? {
+            x: item.alignRight ? tw - w - STATIC_SIDE_PAD : STATIC_SIDE_PAD,
+            y: band.top + STATIC_GAP / 2,
+            vx: 0, vy: 0, w, h,
+            isStatic: true, alignRight: !!item.alignRight,
+          }
+        : {
+            x: Math.random() * Math.max(1, tw - w - FLOAT_PAD * 2) + FLOAT_PAD,
+            y: band.top + Math.random() * Math.max(1, band.height - h - FLOAT_PAD * 2) + FLOAT_PAD,
+            vx: v.vx, vy: v.vy, w, h,
+          };
       physicsRef.current.set(id, physics);
     }
     el.style.transform = `translate3d(${physics.x}px, ${physics.y}px, 0)`;
@@ -198,7 +236,7 @@ export function useFloatingBubbles(
   // ── Press-and-drag to throw ────────────────────────────────────────────
   const handlePointerDown = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
     const physics = physicsRef.current.get(id);
-    if (!physics) return;
+    if (!physics || physics.isStatic) return;
     dragRef.current.set(id, {
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -280,6 +318,10 @@ export function useFloatingBubbles(
         if (!physics) continue;
         physics.w = entry.borderBoxSize?.[0]?.inlineSize ?? entry.contentRect.width;
         physics.h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
+        if (physics.isStatic) {
+          const h = Math.ceil(physics.h);
+          setStaticHeights((prev) => (Math.abs((prev[id] ?? 0) - h) > 1 ? { ...prev, [id]: h } : prev));
+        }
       }
     });
     resizeObserverRef.current = observer;
@@ -333,6 +375,7 @@ export function useFloatingBubbles(
 
       if (!reducedMotion) {
         entries.forEach(([id, b]) => {
+          if (b.isStatic) return;
           if (id === pinnedIdRef.current) return;
           if (dragRef.current.has(id)) return; // being manually dragged this frame
           const band = bandLayoutRef.current.bands.get(id);
@@ -351,18 +394,28 @@ export function useFloatingBubbles(
         });
       }
 
+      // Static bubbles sit at their column position, wherever bands shift.
+      entries.forEach(([id, b]) => {
+        if (!b.isStatic) return;
+        const band = bandLayoutRef.current.bands.get(id);
+        if (!band) return;
+        b.y = band.top + STATIC_GAP / 2;
+        b.x = b.alignRight ? tw - b.w - STATIC_SIDE_PAD : STATIC_SIDE_PAD;
+      });
+
       for (let i = 0; i < entries.length; i++) {
         for (let j = i + 1; j < entries.length; j++) {
           const [idA, a] = entries[i];
           const [idB, b] = entries[j];
+          if (a.isStatic && b.isStatic) continue;
           const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
           const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
           if (overlapX > 0 && overlapY > 0) {
             const pushX = overlapX / 2, pushY = overlapY / 2;
             const dirX = (a.x + a.w / 2) < (b.x + b.w / 2) ? -1 : 1;
             const dirY = (a.y + a.h / 2) < (b.y + b.h / 2) ? -1 : 1;
-            if (idA !== pinnedIdRef.current && !dragRef.current.has(idA)) { a.x += dirX * pushX * 0.5; a.y += dirY * pushY * 0.5; }
-            if (idB !== pinnedIdRef.current && !dragRef.current.has(idB)) { b.x -= dirX * pushX * 0.5; b.y -= dirY * pushY * 0.5; }
+            if (!a.isStatic && idA !== pinnedIdRef.current && !dragRef.current.has(idA)) { a.x += dirX * pushX * 0.5; a.y += dirY * pushY * 0.5; }
+            if (!b.isStatic && idB !== pinnedIdRef.current && !dragRef.current.has(idB)) { b.x -= dirX * pushX * 0.5; b.y -= dirY * pushY * 0.5; }
           }
         }
       }

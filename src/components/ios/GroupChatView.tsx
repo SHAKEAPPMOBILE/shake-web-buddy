@@ -30,7 +30,7 @@ import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphy
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { getNationalityFlag } from "@/data/countryCodes";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
-import { useFloatingBubbles } from "@/hooks/useFloatingBubbles";
+import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
 
 interface GroupChatViewProps {
   activityType: string;
@@ -219,14 +219,6 @@ export function GroupChatView({
   const chatTankRef = useRef<HTMLDivElement>(null);
   const prevParticipantsRef = useRef<typeof participants>([]);
 
-  // Floating "aquarium" bubbles — see useFloatingBubbles for the full
-  // rationale/behavior. floatItems must stay chronologically ordered
-  // (oldest first), matching `messages`.
-  const floatItems = useMemo(() => messages.map((msg) => ({
-    id: msg.id,
-    isMedia: (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message),
-  })), [messages]);
-  const { canvasHeight, isPinned, getBubbleProps, getClickHandler, calmDown } = useFloatingBubbles(floatItems, chatTankRef);
 
   // Curtain drag state
   const [snapState, setSnapState] = useState<SnapState>('partial');
@@ -237,6 +229,23 @@ export function GroupChatView({
   const dragDeltaRef = useRef(0);
 
   const { user, isPremium } = useAuth();
+
+  // Floating "aquarium" bubbles — see useFloatingBubbles for the full
+  // rationale/behavior. floatItems must stay chronologically ordered
+  // (oldest first), matching `messages`.
+  const floatItems = useMemo(() => messages.map((msg) => {
+    const isMedia = (msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message);
+    const dense = !isMedia && isDenseText(msg.message);
+    return {
+      id: msg.id,
+      isMedia,
+      // Long text and media sit in an ordered column; only short pills float loose.
+      isStatic: dense || isMedia,
+      alignRight: msg.user_id === user?.id,
+      estHeight: isMedia ? 200 : dense ? estimateTextHeight(msg.message) : undefined,
+    };
+  }), [messages, user?.id]);
+  const { canvasHeight, isPinned, getBubbleProps, getClickHandler, calmDown } = useFloatingBubbles(floatItems, chatTankRef);
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
   const { leaveActivity } = useActivityJoins(city);
   const { venue: assignedVenue, location, mapsUrl } = useActivityVenue(city, activityType);

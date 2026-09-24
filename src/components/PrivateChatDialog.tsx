@@ -19,7 +19,7 @@ import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/
 import { supabase } from "@/integrations/supabase/client";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
-import { useFloatingBubbles } from "@/hooks/useFloatingBubbles";
+import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢"];
 
@@ -80,10 +80,18 @@ export function PrivateChatDialog({
   const { canSendText, addCharacters } = useTextMessageLimit();
 
   // ── Floating "aquarium" bubbles ──────────────────────────────────────────
-  const floatItems = useMemo(() => messages.map((msg) => ({
-    id: msg.id,
-    isMedia: (msg.message_type ?? "text") !== "text" && /^https?:\/\//i.test(msg.message),
-  })), [messages]);
+  const floatItems = useMemo(() => messages.map((msg) => {
+    const isMedia = (msg.message_type ?? "text") !== "text" && /^https?:\/\//i.test(msg.message);
+    const dense = !isMedia && isDenseText(msg.message);
+    return {
+      id: msg.id,
+      isMedia,
+      // Long text and media sit in an ordered column; only short pills float loose.
+      isStatic: dense || isMedia,
+      alignRight: msg.sender_id === user?.id,
+      estHeight: isMedia ? 200 : dense ? estimateTextHeight(msg.message) : undefined,
+    };
+  }), [messages, user?.id]);
   const { canvasHeight, isPinned, getBubbleProps, getClickHandler, suppressNextClick, calmDown } = useFloatingBubbles(floatItems, scrollRef);
 
   const chatSuggestions = useMemo(() => [
