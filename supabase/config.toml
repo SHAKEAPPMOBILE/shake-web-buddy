@@ -81,3 +81,6 @@ verify_jwt = false
 # Must match Dashboard: fetch-events → Settings → Enforce JWT Verification = OFF
 [functions.fetch-events]
 verify_jwt = false
+
+[functions.shaker-stats]
+verify_jwt = false
