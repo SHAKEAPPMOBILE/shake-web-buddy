@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { messagePreview } from "../_shared/message-preview.ts";
 
 interface WebhookPayload {
   type: "INSERT" | "UPDATE" | "DELETE";
@@ -9,7 +10,8 @@ interface WebhookPayload {
     id: string;
     sender_id: string;
     receiver_id: string;
-    content: string;
+    message: string | null;
+    message_type: string | null;
     created_at: string;
   } | null;
   old_record: null | Record<string, unknown>;
@@ -40,7 +42,7 @@ serve(async (req) => {
       });
     }
 
-    const { sender_id, receiver_id, content } = payload.record;
+    const { sender_id, receiver_id, message, message_type } = payload.record;
 
     if (!sender_id || !receiver_id) {
       console.error("[on-private-message] Missing user IDs in record");
@@ -63,11 +65,7 @@ serve(async (req) => {
 
     const senderName = senderProfile?.name?.trim() || "Someone";
 
-    // Truncate message preview to 50 characters
-    const messageText = (content ?? "").trim();
-    const preview = messageText.length > 50
-      ? messageText.slice(0, 50) + "…"
-      : messageText;
+    const preview = messagePreview(message, message_type);
 
     const sendPushUrl = `${supabaseUrl}/functions/v1/send-push-notification`;
 

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { messagePreview } from "../_shared/message-preview.ts";
 
 serve(async (req) => {
   try {
@@ -12,12 +13,12 @@ serve(async (req) => {
       return new Response(JSON.stringify({ skipped: true }));
     }
 
-    const { user_id: sender_id, activity_type, city, message } = payload.record;
+    const { user_id: sender_id, activity_type, city, message, message_type } = payload.record;
 
     const { data: senderProfile } = await supabase
       .from("profiles").select("name").eq("user_id", sender_id).maybeSingle();
     const senderName = senderProfile?.name?.trim() || "Someone";
-    const preview = (message ?? "").trim().slice(0, 50) + ((message ?? "").length > 50 ? "..." : "");
+    const preview = messagePreview(message, message_type);
 
     const { data: joins } = await supabase
       .from("activity_joins")

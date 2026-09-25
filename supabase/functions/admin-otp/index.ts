@@ -170,8 +170,10 @@ serve(async (req) => {
       }
 
       if (storedOtp.code !== otp.trim()) {
+        // One guess per code: otherwise the 6-digit code can be brute-forced.
+        await supabaseAdmin.from("admin_otp_codes").delete().eq("email", normalizedEmail);
         return new Response(
-          JSON.stringify({ error: "Invalid verification code" }),
+          JSON.stringify({ error: "Invalid verification code. Please request a new one." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

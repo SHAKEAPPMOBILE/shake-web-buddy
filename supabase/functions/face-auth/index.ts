@@ -62,6 +62,13 @@ serve(async (req) => {
     return json(405, { error: "Method not allowed" }, origin);
   }
 
+  // Disabled: this minted a session for any userId sent to it, and the face
+  // match only ran on the client, so anyone could sign in as any face-auth
+  // user. Re-enable only with server-side face verification.
+  if (Deno.env.get("FACE_AUTH_ENABLED") !== "true") {
+    return json(410, { error: "Face login is unavailable" }, origin);
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
