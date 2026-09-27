@@ -166,6 +166,34 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   // "Friends" is a third, orthogonal filter — independent of My City/All Cities,
   // with its own fetch (friend plans aren't city-scoped).
   const [showFriendsOnly, setShowFriendsOnly] = useState(false);
+
+  // Swipe sideways in the scroll feed to move between My City → All cities →
+  // Friends → (back to My City). Swipe left = next, swipe right = previous.
+  const tabSwipeStart = useRef<{ x: number; y: number } | null>(null);
+  const cycleFeedTab = useCallback((dir: 1 | -1) => {
+    const current = showFriendsOnly ? 2 : showAllCities ? 1 : 0;
+    const next = (current + dir + 3) % 3;
+    setShowAllCities(next === 1);
+    setShowFriendsOnly(next === 2);
+  }, [showFriendsOnly, showAllCities]);
+  const tabSwipeHandlers = tabView === 'scroll'
+    ? {
+        onTouchStart: (e: React.TouchEvent) => {
+          tabSwipeStart.current = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+        },
+        onTouchEnd: (e: React.TouchEvent) => {
+          const start = tabSwipeStart.current;
+          tabSwipeStart.current = null;
+          if (!start || e.changedTouches.length !== 1) return;
+          const dx = e.changedTouches[0].clientX - start.x;
+          const dy = e.changedTouches[0].clientY - start.y;
+          // A deliberate sideways flick — not a vertical scroll or a tap.
+          if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
+          cycleFeedTab(dx < 0 ? 1 : -1);
+        },
+      }
+    : {};
+
   const { friends } = useFriends();
   const [friendPlans, setFriendPlans] = useState<PlanActivity[]>([]);
   const [isFriendPlansLoading, setIsFriendPlansLoading] = useState(false);
@@ -1968,6 +1996,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         />
       </CityPickerModal>
 
+      <div className="flex-1 flex flex-col min-h-0" {...tabSwipeHandlers}>
       {showFriendsOnly ? (
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 space-y-3 bg-white dark:bg-white min-h-0">
           {isFriendPlansLoading ? (
@@ -2429,6 +2458,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         )}
       </div>
       )}
+      </div>
       {/* Leave Confirmation Dialog */}
       <AlertDialog open={!!planToLeave} onOpenChange={(open) => !open && setPlanToLeave(null)}>
         <AlertDialogContent className="border-2 border-destructive/40">
