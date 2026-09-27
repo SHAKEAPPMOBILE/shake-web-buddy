@@ -337,7 +337,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     const [publicProfile, privateProfile] = await Promise.all([
       supabase
         .from("profiles")
-        .select("avatar_url, name, face_auth_enabled, payout_paypal, payout_venmo, payout_cashapp, gender")
+        .select("avatar_url, name, face_auth_enabled, gender")
         .eq("user_id", user.id)
         .maybeSingle(),
       supabase
@@ -351,12 +351,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setUserName(publicProfile.data.name);
       setFaceAuthEnabled(Boolean(publicProfile.data.face_auth_enabled));
       setGender((publicProfile.data as any).gender ?? null);
-      const pp = publicProfile.data.payout_paypal ?? "";
-      setSavedPaypal(pp); setEditingPaypal(!pp);
-      const vm = publicProfile.data.payout_venmo ?? "";
-      setSavedVenmo(vm); setEditingVenmo(!vm);
-      const ca = publicProfile.data.payout_cashapp ?? "";
-      setSavedCashApp(ca); setEditingCashApp(!ca);
     }
     if (privateProfile.error) {
       logPostgrestError("ProfileTab profiles_private select", privateProfile.error);
@@ -364,6 +358,14 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     if (privateProfile.data) {
       setPreferredMethod(privateProfile.data.preferred_payout_method ?? null);
     }
+    // Payout handles live in profiles_private (owner-only), not the public profile.
+    const payout = (privateProfile.data ?? {}) as { payout_paypal?: string | null; payout_venmo?: string | null; payout_cashapp?: string | null };
+    const pp = payout.payout_paypal ?? "";
+    setSavedPaypal(pp); setEditingPaypal(!pp);
+    const vm = payout.payout_venmo ?? "";
+    setSavedVenmo(vm); setEditingVenmo(!vm);
+    const ca = payout.payout_cashapp ?? "";
+    setSavedCashApp(ca); setEditingCashApp(!ca);
     setProfileLoaded(true);
   }, [user]);
 
@@ -372,9 +374,8 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     setPayoutSaving(field);
     try {
       const { error } = await supabase
-        .from("profiles")
-        .update({ [field]: value.trim() || null })
-        .eq("user_id", user.id);
+        .from("profiles_private")
+        .upsert({ user_id: user.id, [field]: value.trim() || null }, { onConflict: "user_id" });
       if (error) throw error;
       toast({ title: t('profile.payoutSaved', 'Payout method saved') });
     } catch (err) {
@@ -904,7 +905,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                           if (!user) return;
                           setPayoutSaving("payout_paypal");
                           try {
-                            const { error } = await supabase.from("profiles").update({ payout_paypal: paypalInput.trim() || null }).eq("user_id", user.id);
+                            const { error } = await supabase.from("profiles_private").upsert({ user_id: user.id, payout_paypal: paypalInput.trim() || null }, { onConflict: "user_id" });
                             if (error) throw error;
                             setSavedPaypal(paypalInput.trim());
                             setPaypalInput("");
@@ -964,7 +965,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                           if (!user) return;
                           setPayoutSaving("payout_venmo");
                           try {
-                            const { error } = await supabase.from("profiles").update({ payout_venmo: venmoInput.trim() || null }).eq("user_id", user.id);
+                            const { error } = await supabase.from("profiles_private").upsert({ user_id: user.id, payout_venmo: venmoInput.trim() || null }, { onConflict: "user_id" });
                             if (error) throw error;
                             setSavedVenmo(venmoInput.trim());
                             setVenmoInput("");

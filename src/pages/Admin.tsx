@@ -328,7 +328,7 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="venues" className="mt-6">
-            <VenuesTab />
+            <VenuesTab adminPassword={password} />
           </TabsContent>
 
           <TabsContent value="events" className="mt-6">

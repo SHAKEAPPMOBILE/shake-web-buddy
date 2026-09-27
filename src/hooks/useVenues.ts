@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { adminVenueWrite } from "@/lib/adminVenues";
 
 export interface DbVenue {
   id: string;
@@ -67,18 +68,12 @@ export function useVenuesByCity(city: string) {
   });
 }
 
-export function useAddVenue() {
+export function useAddVenue(adminPassword: string) {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (venue: VenueInsert) => {
-      const { data, error } = await supabase
-        .from('venues')
-        .insert(venue)
-        .select()
-        .single();
-      
-      if (error) throw error;
+      const { venue: data } = await adminVenueWrite<{ venue: DbVenue }>(adminPassword, { op: "insert", row: { ...venue } });
       return data;
     },
     onSuccess: () => {
@@ -87,19 +82,12 @@ export function useAddVenue() {
   });
 }
 
-export function useUpdateVenue() {
+export function useUpdateVenue(adminPassword: string) {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<DbVenue> & { id: string }) => {
-      const { data, error } = await supabase
-        .from('venues')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
+      const { venue: data } = await adminVenueWrite<{ venue: DbVenue }>(adminPassword, { op: "update", id, values: updates });
       return data;
     },
     onSuccess: () => {
@@ -108,17 +96,12 @@ export function useUpdateVenue() {
   });
 }
 
-export function useDeleteVenue() {
+export function useDeleteVenue(adminPassword: string) {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('venues')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await adminVenueWrite(adminPassword, { op: "delete", id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] });

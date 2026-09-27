@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Utensils, Coffee, Wine, Building2, Plus, Pencil, Trash2, Globe, Loader2, AlertTriangle, Upload, Star } from "lucide-react";
+import { adminVenueWrite } from "@/lib/adminVenues";
 import { useVenues, useDeleteVenue, getWeeklyVenueFromList, getDailyVenueFromList, DbVenue } from "@/hooks/useVenues";
 import { VenueForm } from "./VenueForm";
 import { toast } from "@/hooks/use-toast";
@@ -23,7 +24,7 @@ interface VenueSummary {
   total: number;
 }
 
-export function VenuesTab() {
+export function VenuesTab({ adminPassword }: { adminPassword: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -34,7 +35,7 @@ export function VenuesTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: dbVenues = [], isLoading } = useVenues();
-  const deleteVenue = useDeleteVenue();
+  const deleteVenue = useDeleteVenue(adminPassword);
   const queryClient = useQueryClient();
 
   // Count venues missing coordinates
@@ -68,8 +69,7 @@ export function VenuesTab() {
           sort_order: r.sort_order,
           is_active: r.is_active,
         }));
-        const { error } = await supabase.from('venues').upsert(batch, { onConflict: 'id' });
-        if (error) throw error;
+        await adminVenueWrite(adminPassword, { op: 'upsert', rows: batch });
         inserted += batch.length;
       }
       queryClient.invalidateQueries({ queryKey: ['venues'] });
@@ -211,19 +211,14 @@ export function VenuesTab() {
   const handleStarVenue = async (venue: DbVenue) => {
     try {
       // Unstar all venues of same city + type first (only one starred per city/type)
-      await supabase
-        .from('venues')
-        .update({ is_starred: false })
-        .eq('city', venue.city)
-        .eq('venue_type', venue.venue_type);
-
       // Toggle: if already starred, leave it unstarred; otherwise star it
-      if (!venue.is_starred) {
-        await supabase
-          .from('venues')
-          .update({ is_starred: true })
-          .eq('id', venue.id);
-      }
+      await adminVenueWrite(adminPassword, {
+        op: 'pin',
+        field: 'is_starred',
+        city: venue.city,
+        venue_type: venue.venue_type,
+        id: venue.is_starred ? undefined : venue.id,
+      });
 
       queryClient.invalidateQueries({ queryKey: ['venues'] });
       queryClient.invalidateQueries({ queryKey: ['db-venues'] });
@@ -240,6 +235,7 @@ export function VenuesTab() {
         <DialogContent className="max-w-2xl p-0 overflow-y-auto max-h-[90vh]">
           {showForm && (
             <VenueForm
+              adminPassword={adminPassword}
               key={editingVenue?.id ?? 'new'}
               venue={editingVenue || undefined}
               onClose={() => {

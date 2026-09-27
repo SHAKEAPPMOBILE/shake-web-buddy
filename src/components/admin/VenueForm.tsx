@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAddVenue, useUpdateVenue, DbVenue, VenueInsert } from "@/hooks/useVenues";
+import { adminVenueWrite } from "@/lib/adminVenues";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Save, X, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,11 +13,12 @@ import { supabase } from "@/integrations/supabase/client";
 interface VenueFormProps {
   venue?: DbVenue;
   onClose: () => void;
+  adminPassword: string;
   defaultCity?: string;
   defaultType?: 'lunch_dinner' | 'brunch' | 'drinks';
 }
 
-export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFormProps) {
+export function VenueForm({ venue, onClose, adminPassword, defaultCity, defaultType }: VenueFormProps) {
   const [city, setCity] = useState(venue?.city || defaultCity || "");
   const [name, setName] = useState(venue?.name || "");
   const [address, setAddress] = useState(venue?.address || "");
@@ -32,8 +34,8 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
   const [geocodeSuccess, setGeocodeSuccess] = useState(false);
   const lastGeocodedAddress = useRef<string>("");
 
-  const addVenue = useAddVenue();
-  const updateVenue = useUpdateVenue();
+  const addVenue = useAddVenue(adminPassword);
+  const updateVenue = useUpdateVenue(adminPassword);
 
   const geocodeAddress = useCallback(async (addressToGeocode: string): Promise<boolean> => {
     if (!addressToGeocode.trim() || addressToGeocode === lastGeocodedAddress.current) {
@@ -109,16 +111,13 @@ export function VenueForm({ venue, onClose, defaultCity, defaultType }: VenueFor
       // If pinning this venue as current, clear is_current on all other venues
       // of the same city+type first so only one is current at a time.
       if (isCurrent) {
-        const clearQuery = supabase
-          .from('venues')
-          .update({ is_current: false })
-          .eq('city', city.trim())
-          .eq('venue_type', venueType);
-        if (venue) {
-          await clearQuery.neq('id', venue.id);
-        } else {
-          await clearQuery;
-        }
+        await adminVenueWrite(adminPassword, {
+          op: 'pin',
+          field: 'is_current',
+          city: city.trim(),
+          venue_type: venueType,
+          id: venue?.id,
+        });
       }
 
       if (venue) {

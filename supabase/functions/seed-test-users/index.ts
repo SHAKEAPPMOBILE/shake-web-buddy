@@ -68,6 +68,78 @@ function getRandomAvatar(): string {
   return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
 }
 
+
+const VENUE_COLUMNS = [
+  "id", "city", "name", "address", "venue_type", "latitude", "longitude",
+  "sort_order", "is_active", "is_current", "is_starred", "instagram_url",
+] as const;
+
+function pickVenueColumns(row: unknown): Record<string, unknown> {
+  if (!row || typeof row !== "object") throw new Error("venue row required");
+  const out: Record<string, unknown> = {};
+  for (const key of VENUE_COLUMNS) {
+    if (key in (row as Record<string, unknown>)) out[key] = (row as Record<string, unknown>)[key];
+  }
+  return out;
+}
+
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+async function handleVenueWrite(db: any, body: any): Promise<Record<string, unknown>> {
+  const op = body?.op;
+  if (op === "insert") {
+    const { data, error } = await db.from("venues").insert(pickVenueColumns(body.row)).select().single();
+    if (error) throw error;
+    return { venue: data };
+  }
+  if (op === "update") {
+    if (!body.id) throw new Error("id required");
+    const values = pickVenueColumns(body.values);
+    delete values.id;
+    const { data, error } = await db.from("venues").update(values).eq("id", body.id).select().single();
+    if (error) throw error;
+    return { venue: data };
+  }
+  if (op === "delete") {
+    if (!body.id) throw new Error("id required");
+    const { error } = await db.from("venues").delete().eq("id", body.id);
+    if (error) throw error;
+    return {};
+  }
+  if (op === "upsert") {
+    if (!Array.isArray(body.rows) || body.rows.length === 0) throw new Error("rows required");
+    const { error } = await db.from("venues").upsert(body.rows.map(pickVenueColumns), { onConflict: "id" });
+    if (error) throw error;
+    return { count: body.rows.length };
+  }
+  // Only one pinned (is_current) / starred (is_starred) venue per city + type.
+  // Clears the flag on the others, then sets it on `id` (omit id to just clear).
+  if (op === "pin") {
+    const field = body.field;
+    if (field !== "is_current" && field !== "is_starred") throw new Error("field must be is_current or is_starred");
+    if (!body.city || !body.venue_type) throw new Error("city and venue_type required");
+    let clear = db.from("venues").update({ [field]: false }).eq("city", body.city).eq("venue_type", body.venue_type);
+    if (body.id) clear = clear.neq("id", body.id);
+    const { error: clearError } = await clear;
+    if (clearError) throw clearError;
+    if (body.id) {
+      const { error } = await db.from("venues").update({ [field]: true }).eq("id", body.id);
+      if (error) throw error;
+    }
+    return {};
+  }
+  throw new Error(`unknown op: ${op}`);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function countPayoutMethods(db: any): Promise<{ paypal: number; venmo: number; cashapp: number }> {
+  const count = async (column: string) => {
+    const { count } = await db.from("profiles_private").select("user_id", { count: "exact", head: true }).not(column, "is", null);
+    return count ?? 0;
+  };
+  const [paypal, venmo, cashapp] = await Promise.all([count("payout_paypal"), count("payout_venmo"), count("payout_cashapp")]);
+  return { paypal, venmo, cashapp };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -530,7 +602,7 @@ Deno.serve(async (req) => {
 
       if (!activities || activities.length === 0) {
         return new Response(
-          JSON.stringify({ success: true, payouts: [], payout_history: [] }),
+          JSON.stringify({ success: true, payouts: [], payout_history: [], method_counts: await countPayoutMethods(supabaseAdmin) }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -571,7 +643,7 @@ Deno.serve(async (req) => {
       // Get private profiles for payout info
       const { data: privateProfiles } = await supabaseAdmin
         .from("profiles_private")
-        .select("user_id, phone_number, preferred_payout_method, stripe_account_id, stripe_account_status, billing_email, paypal_connected, paypal_email")
+        .select("user_id, phone_number, preferred_payout_method, stripe_account_id, stripe_account_status, billing_email, paypal_connected, paypal_email, payout_paypal, payout_venmo, payout_cashapp")
         .in("user_id", creatorIds);
       const privateProfileMap = new Map(privateProfiles?.map(p => [p.user_id, p]) || []);
 
@@ -685,6 +757,9 @@ Deno.serve(async (req) => {
           stripe_email: privateProfile?.billing_email || null,
           paypal_connected: privateProfile?.paypal_connected || false,
           paypal_email: privateProfile?.paypal_email || null,
+          payout_paypal: privateProfile?.payout_paypal || null,
+          payout_venmo: privateProfile?.payout_venmo || null,
+          payout_cashapp: privateProfile?.payout_cashapp || null,
           total_gross: earnings.total_gross,
           total_net: earnings.total_net,
           already_paid: alreadyPaid,
@@ -701,8 +776,10 @@ Deno.serve(async (req) => {
 
       console.log(`[ADMIN] list-payouts: returning ${payouts.length} creators`);
 
+      const method_counts = await countPayoutMethods(supabaseAdmin);
+
       return new Response(
-        JSON.stringify({ success: true, payouts, payout_history: payoutHistory || [] }),
+        JSON.stringify({ success: true, payouts, payout_history: payoutHistory || [], method_counts }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } catch (err) {
@@ -710,6 +787,24 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  // Venue writes from the admin Venues tab (the venues table is read-only for app users).
+  if (action === "venues" && req.method === "POST") {
+    try {
+      const body = await req.json();
+      const result = await handleVenueWrite(supabaseAdmin, body);
+      return new Response(
+        JSON.stringify({ success: true, ...result }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (err) {
+      console.error("[ADMIN] venues error:", err);
+      return new Response(
+        JSON.stringify({ error: err instanceof Error ? err.message : (err as { message?: string })?.message ?? "Unknown error" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
   }

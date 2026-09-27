@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Search, Loader2, DollarSign, CreditCard, Wallet, AlertCircle, CheckCircle2, Clock, ChevronDown, ChevronRight } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/app-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface CreatorActivity {
   id: string;
@@ -36,6 +35,9 @@ interface CreatorPayout {
   stripe_email: string | null;
   paypal_connected: boolean;
   paypal_email: string | null;
+  payout_paypal: string | null;
+  payout_venmo: string | null;
+  payout_cashapp: string | null;
   total_gross: number;
   total_net: number;
   already_paid: number;
@@ -85,50 +87,31 @@ export function PayoutsTab({ adminPassword }: { adminPassword: string }) {
       const result = await response.json();
       if (!result.success) {
         console.error("Failed to fetch payouts:", result.error);
-        return { payouts: [], payout_history: [] };
+        return { payouts: [], payout_history: [], method_counts: null };
       }
       return {
         payouts: result.payouts as CreatorPayout[],
         payout_history: result.payout_history as PayoutHistory[],
+        method_counts: (result.method_counts ?? null) as { paypal: number; venmo: number; cashapp: number } | null,
       };
     },
   });
 
-  const payouts = data?.payouts || [];
+  const payouts = useMemo(() => data?.payouts || [], [data]);
   const payoutHistory = data?.payout_history || [];
 
-  // Fetch payout method handles from profiles for all creators
-  const { data: profileMethods } = useQuery({
-    queryKey: ['admin-payout-profiles', payouts.map(p => p.user_id).join(',')],
-    queryFn: async () => {
-      if (!payouts.length) return {} as Record<string, ProfilePayoutMethods>;
-      const { data: rows } = await supabase
-        .from("profiles")
-        .select("user_id, name, payout_paypal, payout_venmo, payout_cashapp")
-        .in("user_id", payouts.map(p => p.user_id));
-      return Object.fromEntries(
-        (rows || []).map(r => [r.user_id, r as ProfilePayoutMethods])
-      ) as Record<string, ProfilePayoutMethods>;
-    },
-    enabled: payouts.length > 0,
-  });
-
-  // Fetch Venmo / CashApp counts from profiles (independent of payout list)
-  const { data: methodCounts } = useQuery({
-    queryKey: ['admin-payout-method-counts'],
-    queryFn: async () => {
-      const [venmoRes, cashappRes, paypalRes] = await Promise.all([
-        supabase.from("profiles").select("user_id", { count: "exact", head: true }).not("payout_venmo", "is", null),
-        supabase.from("profiles").select("user_id", { count: "exact", head: true }).not("payout_cashapp", "is", null),
-        supabase.from("profiles").select("user_id", { count: "exact", head: true }).not("payout_paypal", "is", null),
-      ]);
-      return {
-        venmo: venmoRes.count ?? 0,
-        cashapp: cashappRes.count ?? 0,
-        paypal: paypalRes.count ?? 0,
-      };
-    },
-  });
+  // Payout handles are private (profiles_private), so they come from the admin function.
+  const profileMethods = useMemo(
+    () =>
+      Object.fromEntries(
+        payouts.map((p) => [
+          p.user_id,
+          { user_id: p.user_id, name: p.name, payout_paypal: p.payout_paypal, payout_venmo: p.payout_venmo, payout_cashapp: p.payout_cashapp },
+        ]),
+      ) as Record<string, ProfilePayoutMethods>,
+    [payouts],
+  );
+  const methodCounts = data?.method_counts;
 
   // Mark as paid mutation
   const markPaidMutation = useMutation({

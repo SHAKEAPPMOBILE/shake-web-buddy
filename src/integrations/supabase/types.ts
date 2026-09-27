@@ -646,6 +646,10 @@ export type Database = {
           onboarding_completed: boolean
           paypal_connected: boolean | null
           paypal_email: string | null
+          payout_bank: string | null
+          payout_cashapp: string | null
+          payout_paypal: string | null
+          payout_venmo: string | null
           phone_number: string | null
           preferred_language: string | null
           preferred_payout_method: string | null
@@ -666,6 +670,10 @@ export type Database = {
           onboarding_completed?: boolean
           paypal_connected?: boolean | null
           paypal_email?: string | null
+          payout_bank?: string | null
+          payout_cashapp?: string | null
+          payout_paypal?: string | null
+          payout_venmo?: string | null
           phone_number?: string | null
           preferred_language?: string | null
           preferred_payout_method?: string | null
@@ -686,6 +694,10 @@ export type Database = {
           onboarding_completed?: boolean
           paypal_connected?: boolean | null
           paypal_email?: string | null
+          payout_bank?: string | null
+          payout_cashapp?: string | null
+          payout_paypal?: string | null
+          payout_venmo?: string | null
           phone_number?: string | null
           preferred_language?: string | null
           preferred_payout_method?: string | null
