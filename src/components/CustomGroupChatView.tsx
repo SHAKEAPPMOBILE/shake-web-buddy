@@ -14,7 +14,7 @@ import { ShakeGlassDialog } from "@/components/ShakeGlassDialog";
 import { ChatMoreMenu } from "@/components/ChatMoreMenu";
 import { getCurrentLatLng, encodeLocation } from "@/lib/location";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
-import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
+import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB, ContentBlockedError } from "@/lib/chatMediaUpload";
 import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 
@@ -147,7 +147,7 @@ export function CustomGroupChatView({ chatId, onClose }: { chatId: string; onClo
       const url = await uploadChatMedia(file, user.id);
       const { error } = await send(url, getMediaMessageType(file));
       if (error) throw error;
-    } catch { toast.error("Failed to send media"); } finally { setIsUploading(false); }
+    } catch (err) { toast.error(err instanceof ContentBlockedError ? err.reason : "Failed to send media"); } finally { setIsUploading(false); }
   };
 
   const handleAdd = async (p: { user_id: string; name: string | null }) => {

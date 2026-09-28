@@ -32,7 +32,7 @@ import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphy
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
 import { getNationalityFlag } from "@/data/countryCodes";
-import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
+import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB, ContentBlockedError } from "@/lib/chatMediaUpload";
 import { cn, getPriceValue } from "@/lib/utils";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
@@ -462,7 +462,7 @@ export function PlanGroupChatView({
       if (error) throw error;
     } catch (err) {
       console.error("Error uploading media:", err);
-      toast.error("Failed to send media");
+      toast.error(err instanceof ContentBlockedError ? err.reason : "Failed to send media");
     } finally {
       setIsUploadingMedia(false);
     }

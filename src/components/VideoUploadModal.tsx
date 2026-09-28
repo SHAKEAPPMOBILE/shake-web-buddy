@@ -6,6 +6,7 @@ import { toast } from "@/lib/app-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { PremiumDialog } from "./PremiumDialog";
 import { checkMonthlyVideoLimit } from "@/lib/videoLimit";
+import { moderateVideo } from "@/lib/contentModeration";
 
 export interface VideoUploadModalProps {
   open: boolean;
@@ -155,6 +156,17 @@ export function VideoUploadModal({
   const handleUpload = useCallback(async () => {
     if (!selectedFile || uploadInFlightRef.current) return;
     uploadInFlightRef.current = true;
+
+    // Checked here (before onUploadFile) so this one gate covers every
+    // caller of this shared modal — status videos, event chat videos, etc.
+    setValidating(true);
+    const moderation = await moderateVideo(selectedFile);
+    setValidating(false);
+    if (!moderation.allowed) {
+      uploadInFlightRef.current = false;
+      toast.error(moderation.reason || "This video isn't allowed.");
+      return;
+    }
 
     setUploading(true);
     setUploadRatio(0);
@@ -388,10 +400,10 @@ export function VideoUploadModal({
                 </Button>
                 <Button
                   onClick={() => void handleUpload()}
-                  disabled={uploading}
+                  disabled={uploading || validating}
                   className="bg-shake-green hover:bg-shake-green/90"
                 >
-                  {uploading ? "Uploading..." : primaryButtonLabel}
+                  {uploading ? "Uploading..." : validating ? "Checking..." : primaryButtonLabel}
                 </Button>
               </>
             ) : !validating ? (

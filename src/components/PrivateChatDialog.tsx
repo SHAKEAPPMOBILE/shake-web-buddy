@@ -15,7 +15,7 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { useTranslation } from "react-i18next";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
 import { InlineChatGif } from "@/components/chat/InlineChatGif";
-import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB } from "@/lib/chatMediaUpload";
+import { uploadChatMedia, getMediaMessageType, CHAT_MEDIA_MAX_SIZE_MB, ContentBlockedError } from "@/lib/chatMediaUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
@@ -441,7 +441,7 @@ export function PrivateChatDialog({
       if (error) throw error;
     } catch (err) {
       console.error("Error uploading media:", err);
-      toast.error(t('chat.failedToSendMedia'));
+      toast.error(err instanceof ContentBlockedError ? err.reason : t('chat.failedToSendMedia'));
     } finally {
       setIsUploadingMedia(false);
     }

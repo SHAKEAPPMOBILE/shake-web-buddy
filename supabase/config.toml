@@ -84,3 +84,6 @@ verify_jwt = false
 
 [functions.shaker-stats]
 verify_jwt = false
+
+[functions.moderate-media]
+verify_jwt = true

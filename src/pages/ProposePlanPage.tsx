@@ -34,6 +34,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 import { captureVideoFrame } from "@/lib/captureVideoFrame";
+import { moderateVideo, moderateImage } from "@/lib/contentModeration";
 
 // Set to true to re-enable ID verification gate on the paid-plan create path.
 const ID_VERIFICATION_ENABLED = false;
@@ -898,6 +899,14 @@ export default function ProposePlanPage() {
     setVideoUploading(true);
     setVideoError(null);
     try {
+      // Plan videos are public and shared widely (feed, share links) —
+      // checked before upload so a blocked clip never touches storage.
+      const moderation = await moderateVideo(recordedBlob);
+      if (!moderation.allowed) {
+        setVideoError(moderation.reason || "This video isn't allowed.");
+        return;
+      }
+
       const mimeType = recordedBlob.type;
       const ext = mimeType.includes("mp4") ? "mp4" : "webm";
       const timestamp = Date.now();
@@ -984,6 +993,12 @@ export default function ProposePlanPage() {
     setVideoError(null);
     setImageUploading(true);
     try {
+      const moderation = await moderateImage(file);
+      if (!moderation.allowed) {
+        setVideoError(moderation.reason || "This photo isn't allowed.");
+        return;
+      }
+
       stopAllTracks();
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${user!.id}/${Date.now()}.${ext}`;
