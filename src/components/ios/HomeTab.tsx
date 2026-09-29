@@ -99,12 +99,11 @@ interface HomeTabProps {
   /** Swiping past the carousel's last card (forward) or first card
    *  (backward) hands off to the app's Home ↔ Plans ↔ Chat ↔ Profile swipe
    *  ring instead of wrapping within the carousel forever. */
-  onSwipeBeyondEdge?: (direction: 1 | -1) => void;
 }
 
 // Separate dialog state for "Propose a plan" flow
 
-export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, onOpenEvents, onUpgradeClick, isActivityJoined, onSwipeBeyondEdge }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, onOpenEvents, onUpgradeClick, isActivityJoined }: HomeTabProps) {
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const navigate = useNavigate();
@@ -582,28 +581,20 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     onCloseActivities?.();
   };
 
+  // This carousel is self-contained: it only ever cycles between its own
+  // cards (Dinner, Brunch, Propose a Plan, …) and wraps at the ends. It does
+  // NOT hand off to Chat/Profile/anything else — that ring idea is on hold.
   const goToPrevious = useCallback(() => {
-    setCurrentActivityIndex(prev => {
-      if (prev === 0) {
-        // Past the first card, backward — hand off to the swipe ring
-        // (→ Profile) instead of wrapping to the last card forever.
-        onSwipeBeyondEdge?.(-1);
-        return prev;
-      }
-      return prev - 1;
-    });
-  }, [onSwipeBeyondEdge]);
+    setCurrentActivityIndex(prev =>
+      prev === 0 ? CAROUSEL_ITEMS.length - 1 : prev - 1
+    );
+  }, [CAROUSEL_ITEMS.length]);
 
   const goToNext = useCallback(() => {
-    setCurrentActivityIndex(prev => {
-      if (prev === CAROUSEL_ITEMS.length - 1) {
-        // Past the last card, forward — hand off to the swipe ring (→ Plans).
-        onSwipeBeyondEdge?.(1);
-        return prev;
-      }
-      return prev + 1;
-    });
-  }, [CAROUSEL_ITEMS.length, onSwipeBeyondEdge]);
+    setCurrentActivityIndex(prev =>
+      prev === CAROUSEL_ITEMS.length - 1 ? 0 : prev + 1
+    );
+  }, [CAROUSEL_ITEMS.length]);
 
   const currentActivity = CAROUSEL_ITEMS[currentActivityIndex];
   const currentDayName = currentActivity?.nextDate
@@ -650,7 +641,10 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     touchEndX.current = e.clientX; // Reset so taps don't use stale value
     didSwipe.current = false;
     isPointerDragging.current = true;
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    // No setPointerCapture here: it also redirects the resulting native
+    // `click` event to the capturing element, which broke the arrow
+    // buttons and the activity circle's own onClick — this overlay is a
+    // fullscreen fixed layer anyway, so the pointer can't leave its bounds.
   }, []);
 
   const handlePointerMove = useCallback((e: ReactPointerEvent) => {

@@ -492,7 +492,9 @@ export function IOSAppLayout() {
           if (e.pointerType === "mouse" && e.button !== 0) return;
           if ((e.target as HTMLElement).closest("[data-noswipe]")) { mainSwipeStart.current = null; return; }
           mainSwipeStart.current = { x: e.clientX, y: e.clientY };
-          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+          // No setPointerCapture: it also redirects the resulting native
+          // `click` to the capturing element, breaking real clicks (Chat
+          // rows, Profile buttons) underneath this listener.
         },
         onPointerUp: (e: React.PointerEvent) => {
           const start = mainSwipeStart.current;
@@ -677,7 +679,6 @@ export function IOSAppLayout() {
             onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
             isActivityJoined={hasUserJoined}
-            onSwipeBeyondEdge={goToAdjacentTab}
           />
         );
       case "plans":

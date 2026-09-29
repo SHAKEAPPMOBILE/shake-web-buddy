@@ -199,7 +199,9 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         onPointerDown: (e: React.PointerEvent) => {
           if (e.pointerType === 'mouse' && e.button !== 0) return;
           tabSwipeStart.current = { x: e.clientX, y: e.clientY };
-          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+          // No setPointerCapture: it also redirects the resulting native
+          // `click` to the capturing element, which broke real clicks
+          // (cards, buttons) inside this scroll feed.
         },
         onPointerUp: (e: React.PointerEvent) => {
           const start = tabSwipeStart.current;
