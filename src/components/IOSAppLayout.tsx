@@ -449,6 +449,32 @@ export function IOSAppLayout() {
     if (activeTab !== "chat") setPendingPrivateChatUserId(null);
   }, [activeTab]);
 
+  // Which end of Plans' own 3-filter ring to land on when arriving there via
+  // a swipe rather than a tap — 'friends' when swiping backward in from Chat
+  // (the ring's "far" end), 'city' otherwise. Read once by PlansTab on mount.
+  const [plansEntryFilter, setPlansEntryFilter] = useState<'city' | 'friends'>('city');
+
+  // Home → Plans(My City) → …[Plans' own 3 filters]… → Plans(Friends) → Chat
+  // → Profile → Home — one continuous swipe ring across the bottom tabs.
+  // Plans' own filters are handled inside PlansTab; this only fires at the
+  // two ends of that: leaving Plans forward from Friends, or backward from
+  // My City. 1 = forward/swipe right (go to the next stop), -1 =
+  // backward/swipe left (go to the previous stop) — matches the direction
+  // convention PlansTab already uses for its own internal cycling.
+  const goToAdjacentTab = useCallback((direction: 1 | -1) => {
+    const ring = ["home", "plans", "chat", "profile"];
+    const idx = ring.indexOf(activeTab);
+    if (idx === -1) return;
+    const nextTab = ring[(idx + direction + ring.length) % ring.length];
+    if (nextTab === "plans") {
+      // Entering Plans forward (from Profile, wrapping) lands on My City;
+      // entering it backward (from Chat) lands on Friends, its far end.
+      setPlansEntryFilter(direction === 1 ? "city" : "friends");
+    }
+    handleTabChange(nextTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleTabChange is stable enough in practice; re-deriving it would pull in a much larger dependency set for no behavior change
+  }, [activeTab]);
+
   const handleTabChange = (tab: string) => {
     if (tab === "shake") {
       handleShakeClick();
@@ -606,6 +632,8 @@ export function IOSAppLayout() {
             onOpenEvents={() => openNearYou("plans")}
             onJoinActivity={handleOpenActivities}
             onConfirmActivity={handleHomeActivitySelect}
+            initialFilter={plansEntryFilter}
+            onSwipeBeyondEdge={goToAdjacentTab}
           />
         );
       case "profile":

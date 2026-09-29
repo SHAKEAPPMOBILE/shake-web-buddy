@@ -97,6 +97,14 @@ interface PlansTabProps {
    *  types from the Plans swipe feed gives the identical confirm + join +
    *  celebration flow, instead of a separate bespoke one. */
   onConfirmActivity?: (activity: { id: string; label: string; emoji: string }, cityOverride?: string) => void | Promise<void>;
+  /** Which of the three filters to land on when this tab mounts — 'friends'
+   *  when arriving via a backward swipe from Chat (so the swipe ring enters
+   *  from its "far" end), 'city' (the default) otherwise. */
+  initialFilter?: 'city' | 'all' | 'friends';
+  /** A swipe past the first filter (My City, swiping left/back) or past the
+   *  last (Friends, swiping right/forward) hands off to the app's own
+   *  Home↔Plans↔Chat↔Profile swipe ring instead of wrapping internally. */
+  onSwipeBeyondEdge?: (direction: 1 | -1) => void;
 }
 
 /** Shape returned by the get_my_active_plans RPC. */
@@ -128,7 +136,7 @@ interface MyActivePlan {
  *  from hiding a card the user is actually in. */
 const normalizeCity = (city: string): string => city.trim().toLowerCase();
 
-export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, pendingNewPlanId, onPendingNewPlanHandled, onOpenEvents, onJoinActivity, onConfirmActivity }: PlansTabProps = {}) {
+export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPaidActivityHandled, pendingNewPlanId, onPendingNewPlanHandled, onOpenEvents, onJoinActivity, onConfirmActivity, initialFilter = 'city', onSwipeBeyondEdge }: PlansTabProps = {}) {
   const { t, i18n } = useTranslation();
   const { style: plansSettlingGradientStyle } = useSettlingGradient("plans");
   const { selectedLanguage } = useLanguage();
@@ -158,24 +166,30 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   // picture is in.
   const [hasCompletedFullFetch, setHasCompletedFullFetch] = useState(false);
   // "My City" (false) is the default; "All Cities" (true) is opt-in
-  const [showAllCities, setShowAllCities] = useState(false);
+  const [showAllCities, setShowAllCities] = useState(initialFilter === 'all');
   // Fuzzed approximate-location map view of "My City" plans, alternative to the list.
   // "scroll" is the full-screen swipeable feed (same one opened by tapping a card),
   // embedded inline instead of as an overlay — it's the default landing view.
   const [tabView, setTabView] = useState<'list' | 'map' | 'scroll'>('scroll');
   // "Friends" is a third, orthogonal filter — independent of My City/All Cities,
   // with its own fetch (friend plans aren't city-scoped).
-  const [showFriendsOnly, setShowFriendsOnly] = useState(false);
+  const [showFriendsOnly, setShowFriendsOnly] = useState(initialFilter === 'friends');
 
   // Swipe sideways in the scroll feed to move between My City → All cities →
   // Friends → (back to My City). Swipe left = next, swipe right = previous.
   const tabSwipeStart = useRef<{ x: number; y: number } | null>(null);
   const cycleFeedTab = useCallback((dir: 1 | -1) => {
     const current = showFriendsOnly ? 2 : showAllCities ? 1 : 0;
-    const next = (current + dir + 3) % 3;
+    const next = current + dir;
+    // Past either end of the three filters — hand off to the app-wide
+    // Home ↔ Plans ↔ Chat ↔ Profile swipe ring instead of wrapping here.
+    if (next < 0 || next > 2) {
+      onSwipeBeyondEdge?.(dir);
+      return;
+    }
     setShowAllCities(next === 1);
     setShowFriendsOnly(next === 2);
-  }, [showFriendsOnly, showAllCities]);
+  }, [showFriendsOnly, showAllCities, onSwipeBeyondEdge]);
   const tabSwipeHandlers = tabView === 'scroll'
     ? {
         onTouchStart: (e: React.TouchEvent) => {
@@ -189,7 +203,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           const dy = e.changedTouches[0].clientY - start.y;
           // A deliberate sideways flick — not a vertical scroll or a tap.
           if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
-          cycleFeedTab(dx < 0 ? 1 : -1);
+          // Swiping right (dx > 0) moves forward through the ring (My City
+          // → All cities → Friends → …continues on to Chat, Profile, Home);
+          // swiping left runs it in reverse.
+          cycleFeedTab(dx > 0 ? 1 : -1);
         },
       }
     : {};
