@@ -180,7 +180,15 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   // fingers moving right = backward/previous.
   const tabSwipeStart = useRef<{ x: number; y: number } | null>(null);
   const tabWheelGesture = useRef({ accumX: 0, accumY: 0, lastTime: 0, firedThisGesture: false });
+  // One physical swipe can trigger both the pointer-drag handler and the
+  // trackpad-wheel handler (a firm two-finger swipe can nudge both), which
+  // was calling this twice per gesture and jumping two steps instead of
+  // one. A short shared cooldown collapses that back to a single step.
+  const lastCycleAt = useRef(0);
   const cycleFeedTab = useCallback((dir: 1 | -1) => {
+    const now = Date.now();
+    if (now - lastCycleAt.current < 400) return;
+    lastCycleAt.current = now;
     const current = showFriendsOnly ? 2 : showAllCities ? 1 : 0;
     const next = current + dir;
     // Past either end of the three filters — hand off to the app-wide

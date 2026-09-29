@@ -453,6 +453,7 @@ export function IOSAppLayout() {
   // a swipe rather than a tap — 'friends' when swiping backward in from Chat
   // (the ring's "far" end), 'city' otherwise. Read once by PlansTab on mount.
   const [plansEntryFilter, setPlansEntryFilter] = useState<'city' | 'friends'>('city');
+  const lastAdjacentTabAt = useRef(0);
 
   // Home → Plans(My City) → …[Plans' own 3 filters]… → Plans(Friends) → Chat
   // → Profile → Home — one continuous swipe ring across the bottom tabs.
@@ -462,6 +463,12 @@ export function IOSAppLayout() {
   // backward/swipe left (go to the previous stop) — matches the direction
   // convention PlansTab already uses for its own internal cycling.
   const goToAdjacentTab = useCallback((direction: 1 | -1) => {
+    // One physical swipe can trigger both the pointer-drag handler and the
+    // trackpad-wheel handler, which was calling this twice per gesture and
+    // jumping two ring stops instead of one. Collapse to a single step.
+    const now = Date.now();
+    if (now - lastAdjacentTabAt.current < 400) return;
+    lastAdjacentTabAt.current = now;
     const ring = ["home", "plans", "chat", "profile"];
     const idx = ring.indexOf(activeTab);
     if (idx === -1) return;
