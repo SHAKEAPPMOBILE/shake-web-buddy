@@ -664,15 +664,50 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     // Only process if user actually swiped (moved finger/mouse), not just tapped
     if (!didSwipe.current) return;
 
-    const diff = touchStartX.current - touchEndX.current;
+    // dx > 0 = physical rightward drag. Same "right = forward" convention as
+    // Plans and the main tab ring (this used to be the reverse — start minus
+    // end — which meant a real rightward swipe here ran goToPrevious()
+    // instead of goToNext(), backwards from every other swipe in the app).
+    const dx = touchEndX.current - touchStartX.current;
     const threshold = 50; // minimum swipe distance
 
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0) {
-        goToNext(); // Swiped left
+    if (Math.abs(dx) > threshold) {
+      if (dx > 0) {
+        goToNext(); // Swiped right — forward
       } else {
-        goToPrevious(); // Swiped right
+        goToPrevious(); // Swiped left — backward
       }
+    }
+  }, [goToNext, goToPrevious]);
+
+  // Trackpad two-finger swipes arrive as `wheel` events with a horizontal
+  // deltaX, not pointer events — a click-and-drag and a trackpad swipe are
+  // different input mechanisms. Accumulate deltaX across one continuous
+  // gesture (a pause resets it) and fire once per gesture past threshold.
+  const wheelGesture = useRef({ accumX: 0, accumY: 0, lastTime: 0, firedThisGesture: false });
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (e.ctrlKey) return; // pinch-zoom, not a swipe
+    const state = wheelGesture.current;
+    const now = Date.now();
+    if (now - state.lastTime > 150) {
+      state.accumX = 0;
+      state.accumY = 0;
+      state.firedThisGesture = false;
+    }
+    state.lastTime = now;
+    state.accumX += e.deltaX;
+    state.accumY += e.deltaY;
+    if (state.firedThisGesture) return;
+    if (Math.abs(state.accumX) < 60 || Math.abs(state.accumX) < Math.abs(state.accumY) * 1.5) return;
+    state.firedThisGesture = true;
+    // With natural scrolling (the macOS default), a physical rightward
+    // trackpad swipe reports a negative deltaX — so negate it to get back
+    // to the same "positive = physical right = forward" convention as dx.
+    const dx = -state.accumX;
+    if (dx > 0) {
+      goToNext();
+    } else {
+      goToPrevious();
     }
   }, [goToNext, goToPrevious]);
 
@@ -788,6 +823,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
+          onWheel={handleWheel}
           style={{ touchAction: 'pan-y', background: timeOfDayGradient }}
         >
           {/* Top bar — SHAKE-SOCIAL wordmark on the left, city pill on the

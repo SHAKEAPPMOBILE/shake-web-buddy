@@ -5,6 +5,17 @@
   scrollbar-width: none;
 }
 
+/* Desktop Chrome maps a two-finger trackpad swipe to its native
+   back/forward browser-history gesture. Nothing about touch-action stops
+   that (it only governs touch/pen), so an in-app horizontal swipe was
+   silently doing real history.back()/forward() navigation to whatever
+   page happened to be next in that tab's history — never our own swipe
+   handlers. This opts every element out of that native gesture so our
+   own pointer/wheel-based swipe handling is what actually runs. */
+html, body {
+  overscroll-behavior-x: none;
+}
+
 *::-webkit-scrollbar {
   display: none;
 }

@@ -485,6 +485,7 @@ export function IOSAppLayout() {
   // mouse drag, which is why swiping did nothing when tested on desktop
   // Chrome (shakeapp.today) rather than an actual touchscreen.
   const mainSwipeStart = useRef<{ x: number; y: number } | null>(null);
+  const mainWheelGesture = useRef({ accumX: 0, accumY: 0, lastTime: 0, firedThisGesture: false });
   const mainSwipeHandlers = activeTab === "chat" || activeTab === "profile"
     ? {
         onPointerDown: (e: React.PointerEvent) => {
@@ -503,6 +504,32 @@ export function IOSAppLayout() {
           goToAdjacentTab(dx > 0 ? 1 : -1);
         },
         onPointerCancel: () => { mainSwipeStart.current = null; },
+        // Trackpad two-finger swipes are `wheel` events, not pointer events
+        // — Chrome's native swipe-to-go-back/forward otherwise eats them
+        // (blocked via overscroll-behavior-x in index.css) instead of this
+        // running at all, which is why swiping used to land on unrelated
+        // pages from browser history.
+        onWheel: (e: React.WheelEvent) => {
+          if (e.ctrlKey) return; // pinch-zoom
+          if ((e.target as HTMLElement).closest("[data-noswipe]")) return;
+          const state = mainWheelGesture.current;
+          const now = Date.now();
+          if (now - state.lastTime > 150) {
+            state.accumX = 0;
+            state.accumY = 0;
+            state.firedThisGesture = false;
+          }
+          state.lastTime = now;
+          state.accumX += e.deltaX;
+          state.accumY += e.deltaY;
+          if (state.firedThisGesture) return;
+          if (Math.abs(state.accumX) < 60 || Math.abs(state.accumX) < Math.abs(state.accumY) * 1.5) return;
+          state.firedThisGesture = true;
+          // Natural scrolling (macOS default): physical rightward swipe
+          // reports negative deltaX — negate to match the dx>0=forward
+          // convention above.
+          goToAdjacentTab(-state.accumX > 0 ? 1 : -1);
+        },
       }
     : {};
 

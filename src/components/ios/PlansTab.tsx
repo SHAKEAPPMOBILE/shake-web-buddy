@@ -178,6 +178,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   // Swipe sideways in the scroll feed to move between My City → All cities →
   // Friends → (back to My City). Swipe left = next, swipe right = previous.
   const tabSwipeStart = useRef<{ x: number; y: number } | null>(null);
+  const tabWheelGesture = useRef({ accumX: 0, accumY: 0, lastTime: 0, firedThisGesture: false });
   const cycleFeedTab = useCallback((dir: 1 | -1) => {
     const current = showFriendsOnly ? 2 : showAllCities ? 1 : 0;
     const next = current + dir;
@@ -214,6 +215,32 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           cycleFeedTab(dx > 0 ? 1 : -1);
         },
         onPointerCancel: () => { tabSwipeStart.current = null; },
+        // Trackpad two-finger swipes arrive as `wheel` events (deltaX), not
+        // pointer events — separate from a real click-and-drag. Without
+        // this, Chrome's own native swipe-to-go-back/forward gesture eats
+        // the swipe instead (see overscroll-behavior-x in index.css), which
+        // is why swiping used to land on unrelated pages from browser
+        // history rather than doing anything in-app.
+        onWheel: (e: React.WheelEvent) => {
+          if (e.ctrlKey) return; // pinch-zoom
+          const state = tabWheelGesture.current;
+          const now = Date.now();
+          if (now - state.lastTime > 150) {
+            state.accumX = 0;
+            state.accumY = 0;
+            state.firedThisGesture = false;
+          }
+          state.lastTime = now;
+          state.accumX += e.deltaX;
+          state.accumY += e.deltaY;
+          if (state.firedThisGesture) return;
+          if (Math.abs(state.accumX) < 60 || Math.abs(state.accumX) < Math.abs(state.accumY) * 1.5) return;
+          state.firedThisGesture = true;
+          // Natural scrolling (macOS default): physical rightward swipe
+          // reports negative deltaX — negate to match the dx>0=forward
+          // convention above.
+          cycleFeedTab(-state.accumX > 0 ? 1 : -1);
+        },
       }
     : {};
 
