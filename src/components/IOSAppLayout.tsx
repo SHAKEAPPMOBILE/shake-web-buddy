@@ -475,18 +475,20 @@ export function IOSAppLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- handleTabChange is stable enough in practice; re-deriving it would pull in a much larger dependency set for no behavior change
   }, [activeTab]);
 
-  // Chat and Profile have no competing horizontal gesture of their own
+  // Chat, Profile, and Home's idle screen (handshake circle — NOT the
+  // Dinner/Brunch/Propose-a-Plan carousel, which stays self-contained per
+  // explicit instruction) have no competing horizontal gesture of their own
   // (Chat's own swipe is per-row, to reveal Leave — marked [data-noswipe] so
-  // this sits it out; Profile is a plain vertical list) — Home and Plans
-  // handle the ring via their own onSwipeBeyondEdge instead, since their
-  // horizontal swipes are already spoken for.
+  // this sits it out; Profile is a plain vertical list) — Plans handles the
+  // ring via its own onSwipeBeyondEdge instead, since its horizontal swipe
+  // is already spoken for by its My City/All cities/Friends cycling.
   // Pointer Events cover mouse (desktop web), touch (mobile web/native) and
   // pen with one set of handlers — touch-only handlers never fire for a
   // mouse drag, which is why swiping did nothing when tested on desktop
   // Chrome (shakeapp.today) rather than an actual touchscreen.
   const mainSwipeStart = useRef<{ x: number; y: number } | null>(null);
   const mainWheelGesture = useRef({ accumX: 0, accumY: 0, lastTime: 0, firedThisGesture: false });
-  const mainSwipeHandlers = activeTab === "chat" || activeTab === "profile"
+  const mainSwipeHandlers = activeTab === "chat" || activeTab === "profile" || (activeTab === "home" && !showHomeActivities)
     ? {
         onPointerDown: (e: React.PointerEvent) => {
           if (e.pointerType === "mouse" && e.button !== 0) return;
