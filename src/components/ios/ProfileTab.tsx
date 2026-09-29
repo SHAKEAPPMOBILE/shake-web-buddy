@@ -15,6 +15,7 @@ import { StatusVideoRecorder } from "../StatusVideoRecorder";
 import { cn, getPriceValue } from "@/lib/utils";
 import { PointsDashboard } from "../PointsDashboard";
 import { useUserPoints } from "@/hooks/useUserPoints";
+import { PointsDisplay } from "@/components/PointsDisplay";
 import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { toast } from "@/hooks/use-toast";
@@ -141,8 +142,20 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     const checkPosition = () => {
       ticking = false;
       const containerTop = container.getBoundingClientRect().top;
-      const buttonBottom = button.getBoundingClientRect().bottom;
-      if (buttonBottom < containerTop - 40) {
+      const buttonRect = button.getBoundingClientRect();
+      // The expanded content div is the button's next sibling in every
+      // section (same divide-y wrapper) — used, not a per-section ref, so
+      // this one effect covers friends/points/payouts/referral/paranormal
+      // alike without five near-duplicate copies of it.
+      const content = button.nextElementSibling as HTMLElement | null;
+      const blockBottom = content ? content.getBoundingClientRect().bottom : buttonRect.bottom;
+      const totalHeight = blockBottom - buttonRect.top;
+      const hiddenAmount = containerTop - buttonRect.top;
+      // Collapse once roughly HALF the expanded block (header + its list)
+      // has scrolled above the fold — not the instant the header row alone
+      // clears it, which used to close the section almost as soon as you
+      // started scrolling its own (much taller) content.
+      if (totalHeight > 0 && hiddenAmount > totalHeight / 2) {
         setExpandedSection(null);
       }
     };
@@ -488,6 +501,9 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
         </div>
 
         <h2 className="mt-4 text-xl font-display font-bold text-gray-900">{userName || t('profile.userFallback', 'User')}</h2>
+        <div className="mt-2">
+          <PointsDisplay userId={user?.id} size="sm" />
+        </div>
       </button>
 
       {/* ── Payout warning banner ──────────────────────────────────────────

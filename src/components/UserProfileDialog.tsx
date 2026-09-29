@@ -23,6 +23,7 @@ import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/lib/app-toast";
 import { useNavigate } from "react-router-dom";
+import { PointsDisplay } from "@/components/PointsDisplay";
 
 interface UserProfileDialogProps {
   open: boolean;
@@ -288,7 +289,10 @@ export function UserProfileDialog({
             <h3 className="mt-4 text-xl font-semibold text-gray-900">
               {userName || "Shaker"}{userAge ? `, ${userAge}` : ''}
             </h3>
-            
+            <div className="mt-2">
+              <PointsDisplay userId={userId} size="sm" />
+            </div>
+
             {/* Nationality and Occupation — held back until the fetch resolves
                 (see isLoading) so this doesn't pop in and grow the card
                 after the rest of the profile is already visible. */}

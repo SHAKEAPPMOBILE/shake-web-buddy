@@ -40,19 +40,19 @@ export function PointsDisplay({
   }
 
   return (
-    <div 
-      className={`flex items-center gap-1.5 bg-shake-yellow/10 rounded-full ${classes.container}`}
+    <div
+      className={`flex items-center gap-1.5 bg-white border border-gray-200 rounded-full ${classes.container}`}
     >
-      <img 
-        src={shakeCoin} 
-        alt="Points" 
+      <img
+        src={shakeCoin}
+        alt="Points"
         className={`${classes.coin} object-contain`}
       />
-      <span className={`font-semibold text-shake-yellow ${classes.text}`}>
+      <span className={`font-semibold text-gray-900 ${classes.text}`}>
         {points.toLocaleString()}
       </span>
       {showLabel && (
-        <span className={`text-muted-foreground ${classes.text}`}>
+        <span className={`text-gray-500 ${classes.text}`}>
           pts
         </span>
       )}
