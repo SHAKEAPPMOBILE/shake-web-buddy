@@ -176,7 +176,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const [showFriendsOnly, setShowFriendsOnly] = useState(initialFilter === 'friends');
 
   // Swipe sideways in the scroll feed to move between My City → All cities →
-  // Friends → (back to My City). Swipe left = next, swipe right = previous.
+  // Friends → (back to My City). Fingers moving left = forward/next,
+  // fingers moving right = backward/previous.
   const tabSwipeStart = useRef<{ x: number; y: number } | null>(null);
   const tabWheelGesture = useRef({ accumX: 0, accumY: 0, lastTime: 0, firedThisGesture: false });
   const cycleFeedTab = useCallback((dir: 1 | -1) => {
@@ -211,10 +212,11 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           const dy = e.clientY - start.y;
           // A deliberate sideways flick — not a vertical scroll or a tap.
           if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
-          // Swiping right (dx > 0) moves forward through the ring (My City
+          // Swiping left (dx < 0) moves forward through the ring (My City
           // → All cities → Friends → …continues on to Chat, Profile, Home);
-          // swiping left runs it in reverse.
-          cycleFeedTab(dx > 0 ? 1 : -1);
+          // swiping right runs it in reverse. (Per explicit instruction:
+          // fingers moving left = forward.)
+          cycleFeedTab(dx < 0 ? 1 : -1);
         },
         onPointerCancel: () => { tabSwipeStart.current = null; },
         // Trackpad two-finger swipes arrive as `wheel` events (deltaX), not
@@ -238,10 +240,10 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           if (state.firedThisGesture) return;
           if (Math.abs(state.accumX) < 60 || Math.abs(state.accumX) < Math.abs(state.accumY) * 1.5) return;
           state.firedThisGesture = true;
-          // Natural scrolling (macOS default): physical rightward swipe
-          // reports negative deltaX — negate to match the dx>0=forward
-          // convention above.
-          cycleFeedTab(-state.accumX > 0 ? 1 : -1);
+          // Natural scrolling (macOS default): physical leftward swipe
+          // reports positive deltaX — matches the dx<0=forward convention
+          // above (physical left = forward).
+          cycleFeedTab(state.accumX > 0 ? 1 : -1);
         },
       }
     : {};

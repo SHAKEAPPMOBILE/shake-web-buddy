@@ -503,7 +503,8 @@ export function IOSAppLayout() {
           const dx = e.clientX - start.x;
           const dy = e.clientY - start.y;
           if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
-          goToAdjacentTab(dx > 0 ? 1 : -1);
+          // Fingers moving left = forward, matching Plans' own swipe.
+          goToAdjacentTab(dx < 0 ? 1 : -1);
         },
         onPointerCancel: () => { mainSwipeStart.current = null; },
         // Trackpad two-finger swipes are `wheel` events, not pointer events
@@ -527,10 +528,10 @@ export function IOSAppLayout() {
           if (state.firedThisGesture) return;
           if (Math.abs(state.accumX) < 60 || Math.abs(state.accumX) < Math.abs(state.accumY) * 1.5) return;
           state.firedThisGesture = true;
-          // Natural scrolling (macOS default): physical rightward swipe
-          // reports negative deltaX — negate to match the dx>0=forward
-          // convention above.
-          goToAdjacentTab(-state.accumX > 0 ? 1 : -1);
+          // Natural scrolling (macOS default): physical leftward swipe
+          // reports positive deltaX — matches the dx<0=forward convention
+          // above (physical left = forward).
+          goToAdjacentTab(state.accumX > 0 ? 1 : -1);
         },
       }
     : {};
