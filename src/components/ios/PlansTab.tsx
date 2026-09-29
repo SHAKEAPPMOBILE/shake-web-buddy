@@ -1961,16 +1961,6 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           >
             🤝 {t('plans.friends', 'Friends')}
           </button>
-          {showFriendsOnly && friends.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowFriendsImportDialog(true)}
-              className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-primary border border-primary/30 bg-primary/5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              {t('plans.addFriends', 'Add friends')}
-            </button>
-          )}
         </div>
       </div>
 
@@ -1997,7 +1987,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       </CityPickerModal>
 
       <div className="flex-1 flex flex-col min-h-0" {...tabSwipeHandlers}>
-      {showFriendsOnly ? (
+      {showFriendsOnly && tabView !== 'scroll' ? (
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 space-y-3 bg-white dark:bg-white min-h-0">
           {isFriendPlansLoading ? (
             <div className="flex items-center justify-center h-40">
@@ -2018,13 +2008,24 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               </button>
             </div>
           ) : friendPlans.length === 0 ? (
-            <div className="flex items-center justify-center h-40 text-center px-6">
-              <p className="text-sm text-gray-500">
-                {t('plans.noFriendPlans', "None of your friends have an upcoming plan right now.")}
-              </p>
-            </div>
+            <>
+              <div className="flex items-center justify-center h-40 text-center px-6">
+                <p className="text-sm text-gray-500">
+                  {t('plans.noFriendPlans', "None of your friends have an upcoming plan right now.")}
+                </p>
+              </div>
+            <button
+              type="button"
+              onClick={() => setShowFriendsImportDialog(true)}
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-900 text-sm font-semibold transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {t('plans.addFriends', 'Add friends')}
+            </button>
+            </>
           ) : (
-            friendPlans.map((plan) => (
+            <>
+            {friendPlans.map((plan) => (
               <SwipeableCard
                 key={plan.id}
                 canDelete={false}
@@ -2072,7 +2073,63 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   </div>
                 </div>
               </SwipeableCard>
-            ))
+            ))}
+            <button
+              type="button"
+              onClick={() => setShowFriendsImportDialog(true)}
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-900 text-sm font-semibold transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {t('plans.addFriends', 'Add friends')}
+            </button>
+            </>
+          )}
+        </div>
+      ) : tabView === 'scroll' && showFriendsOnly ? (
+        <div className="flex-1 min-h-0 relative">
+          {isFriendPlansLoading ? (
+            <div className="flex items-center justify-center h-full bg-white">
+              <LoadingSpinner size="lg" />
+            </div>
+          ) : friendPlans.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center gap-3 px-6 bg-white">
+              <p className="text-sm text-gray-500">
+                {friends.length === 0
+                  ? t('plans.noFriendsYet', "You haven't added any friends yet.")
+                  : t('plans.noFriendPlans', "None of your friends have an upcoming plan right now.")}
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowFriendsImportDialog(true)}
+                className="px-4 py-2 rounded-full text-sm font-semibold text-white"
+                style={plansSettlingGradientStyle}
+              >
+                {t('plans.addFriends', 'Add friends')}
+              </button>
+            </div>
+          ) : (
+            <PlanSwipeFeed
+              plans={friendPlans}
+              startIndex={0}
+              myCity={selectedCity}
+              inline
+              onClose={() => setTabView('list')}
+              onJoinInPlace={(plan) => handleFeedJoin(plan as PlanActivity)}
+              onPayForPlan={(plan) => setPaidActivityDetail(plan as PlanActivity)}
+              onEnterChat={(plan) => {
+                const p = plan as PlanActivity;
+                if (p.isCarouselJoin) {
+                  setSelectedCarouselActivity(p);
+                  setShowCarouselChatView(true);
+                } else {
+                  setSelectedPlan(p);
+                  setShowChatView(true);
+                }
+              }}
+              onViewProfile={(userId, userName, avatarUrl) => {
+                setSelectedUserProfile({ userId, userName, avatarUrl });
+              }}
+            />
           )}
         </div>
       ) : tabView === 'scroll' ? (

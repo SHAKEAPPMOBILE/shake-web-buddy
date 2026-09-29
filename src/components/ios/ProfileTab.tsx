@@ -5,7 +5,7 @@ import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, 
 import { ManageFriendsDialog } from "@/components/ManageFriendsDialog";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PremiumDialog } from "../PremiumDialog";
 import { ManagePlanDialog } from "../ManagePlanDialog";
@@ -81,6 +81,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     background: "linear-gradient(135deg, #f97316, #ec4899)",
   };
   const navigate = useNavigate();
+  const location = useLocation();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
@@ -1193,7 +1194,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </div>
             {/* Community Guidelines */}
             <button
-              onClick={() => navigate('/community-guidelines')}
+              onClick={() => { navigate(location.pathname, { replace: true, state: { activeTab: 'profile' } }); navigate('/community-guidelines'); }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
@@ -1204,7 +1205,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </button>
             {/* Privacy Policy */}
             <button
-              onClick={() => navigate('/privacy-policy')}
+              onClick={() => { navigate(location.pathname, { replace: true, state: { activeTab: 'profile' } }); navigate('/privacy-policy'); }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
@@ -1215,7 +1216,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </button>
             {/* Terms of Service */}
             <button
-              onClick={() => navigate('/terms-of-service')}
+              onClick={() => { navigate(location.pathname, { replace: true, state: { activeTab: 'profile' } }); navigate('/terms-of-service'); }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">

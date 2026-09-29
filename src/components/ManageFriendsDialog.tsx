@@ -77,7 +77,7 @@ export function ManageFriendsDialog({ open, onOpenChange, inline = false, friend
     <button
       type="button"
       onClick={() => setShowImportDialog(true)}
-      className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-primary border border-primary/30 bg-primary/5"
+      className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-gray-900 border border-gray-300 bg-gray-50"
     >
       <Plus className="w-3.5 h-3.5" />
       {t("plans.addFriends", "Add friends")}

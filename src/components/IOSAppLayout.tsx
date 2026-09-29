@@ -218,6 +218,10 @@ export function IOSAppLayout() {
       setActiveTab("home");
       shouldClear = true;
     }
+    if (state.activeTab === "profile") {
+      setActiveTab("profile");
+      shouldClear = true;
+    }
     if (state.activeTab === "chat") {
       setActiveTab("chat");
       if (state.activityId) {

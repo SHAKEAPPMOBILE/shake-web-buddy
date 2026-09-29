@@ -1,12 +1,16 @@
 import { useNavigate } from "react-router-dom";
+import { useRef } from "react";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
+import { useScrollNudge } from "@/hooks/useScrollNudge";
 
 export default function CommunityGuidelines() {
   const navigate = useNavigate();
+  const scrollRef = useRef<HTMLElement>(null);
+  useScrollNudge(scrollRef);
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="pt-8 pb-16">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden safe-area-top safe-area-bottom">
+      <main ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto pt-16 pb-[calc(env(safe-area-inset-bottom,0px)+4rem)]">
         <div className="container mx-auto px-4 max-w-3xl">
           <MinimalBackButton
             onClick={() => navigate(-1)}
@@ -15,7 +19,7 @@ export default function CommunityGuidelines() {
           />
 
           <h1 className="font-display text-4xl font-bold text-foreground mb-8">Community Guidelines</h1>
-          
+
           <div className="prose prose-invert max-w-none space-y-8">
             <p className="text-muted-foreground">
               SHAKE-SOCIAL is built on trust, respect, and real human connection. By using SHAKE, you agree to follow these guidelines.
