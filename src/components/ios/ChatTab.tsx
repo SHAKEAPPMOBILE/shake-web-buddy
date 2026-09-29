@@ -1091,35 +1091,7 @@ export function ChatTab({
                     className="w-full text-left p-4 transition-colors cursor-pointer relative border border-gray-200 bg-gray-50 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     style={{ transform: `translateX(${swipeOffset}px)`, transition: swipeTouchRef.current ? "none" : "transform 0.2s ease" }}
                   >
-                    {(activity.unread_count ?? 0) > 0 && (
-                      <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full z-[1]" />
-                    )}
-                    {/* ⋮ — one-tap delete for this conversation */}
-                    <div className="absolute top-1/2 -translate-y-1/2 right-2 z-[2]" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        onClick={() => setDmMenuFor(dmMenuFor === activity.id ? null : activity.id)}
-                        className="p-2 rounded-full hover:bg-black/10 transition-colors"
-                        aria-label="More options"
-                      >
-                        <MoreVertical className="w-5 h-5 text-gray-400" />
-                      </button>
-                      {dmMenuFor === activity.id && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={() => setDmMenuFor(null)} />
-                          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-1 w-52 rounded-xl shadow-xl z-50 overflow-hidden border border-gray-200 bg-white">
-                            <button
-                              type="button"
-                              onClick={() => { setDmMenuFor(null); if (activity.other_user_id) void handleLeavePrivateChat(activity.other_user_id); }}
-                              className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" /> Delete conversation
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3.5">
+                    <div className="flex items-center gap-3">
                       <div
                         className="w-12 h-12 rounded-full overflow-hidden border border-neutral-200 shadow-sm shrink-0 flex items-center justify-center"
                         style={{ background: activity.other_user_avatar ? undefined : "linear-gradient(135deg, #00C6B6, #7c3aed)" }}
@@ -1148,16 +1120,51 @@ export function ChatTab({
                           </span>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0 pr-8">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h3 className="font-bold text-gray-900 text-[15px] leading-snug truncate">
                             {activity.other_user_name || "Shaker"}
                           </h3>
                         </div>
+                        {/* truncate here (not just on the parent) so the preview always
+                            elides with "…" well before reaching the unread badge, never
+                            runs under it */}
                         {activity.last_message_preview ? (
                           <p className="mt-0.5 text-[13px] text-gray-500 truncate">{activity.last_message_preview}</p>
                         ) : (
                           <p className="mt-0.5 text-[13px] text-gray-400 italic">Start a conversation!</p>
+                        )}
+                      </div>
+                      {/* Unread count badge — sits between the preview text and the ⋮ menu,
+                          vertically centered in the row, showing the actual unread count. */}
+                      {(activity.unread_count ?? 0) > 0 && (
+                        <span className="shrink-0 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-500 text-white text-[12px] font-bold flex items-center justify-center leading-none">
+                          {(activity.unread_count ?? 0) > 99 ? "99+" : activity.unread_count}
+                        </span>
+                      )}
+                      {/* ⋮ — one-tap delete for this conversation */}
+                      <div className="relative shrink-0" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => setDmMenuFor(dmMenuFor === activity.id ? null : activity.id)}
+                          className="p-2 rounded-full hover:bg-black/10 transition-colors"
+                          aria-label="More options"
+                        >
+                          <MoreVertical className="w-5 h-5 text-gray-400" />
+                        </button>
+                        {dmMenuFor === activity.id && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setDmMenuFor(null)} />
+                            <div className="absolute right-full top-1/2 -translate-y-1/2 mr-1 w-52 rounded-xl shadow-xl z-50 overflow-hidden border border-gray-200 bg-white">
+                              <button
+                                type="button"
+                                onClick={() => { setDmMenuFor(null); if (activity.other_user_id) void handleLeavePrivateChat(activity.other_user_id); }}
+                                className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" /> Delete conversation
+                              </button>
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>

@@ -179,6 +179,19 @@ export function useTotalUnreadChats() {
         for (const n of eventUnread) total += n;
       }
 
+      // Private DMs (were never counted here at all — the Chat tab's own
+      // red dot never lit up for a new DM, only for activity/plan/event chats).
+      try {
+        const { count: dmUnread } = await supabase
+          .from("private_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("receiver_id", user.id)
+          .is("read_at", null);
+        total += dmUnread || 0;
+      } catch (err) {
+        console.warn("[useTotalUnreadChats] DM unread count failed", err);
+      }
+
       // Custom group chats: a group I was just added to (never opened) counts as
       // one unread, plus any messages from others since I last opened it.
       try {
@@ -250,6 +263,15 @@ export function useTotalUnreadChats() {
         (payload) => {
           const row = payload.new as { user_id?: string };
           if (row.user_id !== user.id) checkUnreadMessages();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "private_messages" },
+        (payload) => {
+          const r = payload.new as { receiver_id?: string } | null;
+          const o = payload.old as { receiver_id?: string } | null;
+          if (r?.receiver_id === user.id || o?.receiver_id === user.id) checkUnreadMessages();
         }
       )
       .on(
