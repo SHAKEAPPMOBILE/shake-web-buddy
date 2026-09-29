@@ -584,17 +584,19 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   // This carousel is self-contained: it only ever cycles between its own
   // cards (Dinner, Brunch, Propose a Plan, …) and wraps at the ends. It does
   // NOT hand off to Chat/Profile/anything else — that ring idea is on hold.
-  // Bodies swapped (not just callers) so every caller — swipe, trackpad
-  // wheel, and both arrow buttons — flips consistently from one place.
+  // These match their arrow icons literally (‹ always goes back, › always
+  // goes forward) — that has to stay true regardless of swipe direction, so
+  // the swipe-direction flip below is applied only in the gesture handlers,
+  // not here.
   const goToPrevious = useCallback(() => {
     setCurrentActivityIndex(prev =>
-      prev === CAROUSEL_ITEMS.length - 1 ? 0 : prev + 1
+      prev === 0 ? CAROUSEL_ITEMS.length - 1 : prev - 1
     );
   }, [CAROUSEL_ITEMS.length]);
 
   const goToNext = useCallback(() => {
     setCurrentActivityIndex(prev =>
-      prev === 0 ? CAROUSEL_ITEMS.length - 1 : prev - 1
+      prev === CAROUSEL_ITEMS.length - 1 ? 0 : prev + 1
     );
   }, [CAROUSEL_ITEMS.length]);
 
@@ -660,18 +662,18 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     // Only process if user actually swiped (moved finger/mouse), not just tapped
     if (!didSwipe.current) return;
 
-    // dx > 0 = physical rightward drag. Same "right = forward" convention as
-    // Plans and the main tab ring (this used to be the reverse — start minus
-    // end — which meant a real rightward swipe here ran goToPrevious()
-    // instead of goToNext(), backwards from every other swipe in the app).
+    // dx > 0 = physical rightward drag. Per explicit request: a rightward
+    // swipe here runs goToPrevious() (what the ‹ button does) and a
+    // leftward swipe runs goToNext() (what the › button does) — the
+    // opposite of the arrow buttons' own left/right, deliberately.
     const dx = touchEndX.current - touchStartX.current;
     const threshold = 50; // minimum swipe distance
 
     if (Math.abs(dx) > threshold) {
       if (dx > 0) {
-        goToNext(); // Swiped right — forward
+        goToPrevious(); // Swiped right
       } else {
-        goToPrevious(); // Swiped left — backward
+        goToNext(); // Swiped left
       }
     }
   }, [goToNext, goToPrevious]);
@@ -698,12 +700,13 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     state.firedThisGesture = true;
     // With natural scrolling (the macOS default), a physical rightward
     // trackpad swipe reports a negative deltaX — so negate it to get back
-    // to the same "positive = physical right = forward" convention as dx.
+    // to "positive = physical right". Same deliberate right→Previous,
+    // left→Next mapping as the pointer/touch handler above.
     const dx = -state.accumX;
     if (dx > 0) {
-      goToNext();
-    } else {
       goToPrevious();
+    } else {
+      goToNext();
     }
   }, [goToNext, goToPrevious]);
 
