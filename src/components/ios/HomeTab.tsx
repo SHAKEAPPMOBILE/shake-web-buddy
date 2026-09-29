@@ -584,15 +584,17 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   // This carousel is self-contained: it only ever cycles between its own
   // cards (Dinner, Brunch, Propose a Plan, …) and wraps at the ends. It does
   // NOT hand off to Chat/Profile/anything else — that ring idea is on hold.
+  // Bodies swapped (not just callers) so every caller — swipe, trackpad
+  // wheel, and both arrow buttons — flips consistently from one place.
   const goToPrevious = useCallback(() => {
     setCurrentActivityIndex(prev =>
-      prev === 0 ? CAROUSEL_ITEMS.length - 1 : prev - 1
+      prev === CAROUSEL_ITEMS.length - 1 ? 0 : prev + 1
     );
   }, [CAROUSEL_ITEMS.length]);
 
   const goToNext = useCallback(() => {
     setCurrentActivityIndex(prev =>
-      prev === CAROUSEL_ITEMS.length - 1 ? 0 : prev + 1
+      prev === 0 ? CAROUSEL_ITEMS.length - 1 : prev - 1
     );
   }, [CAROUSEL_ITEMS.length]);
 
