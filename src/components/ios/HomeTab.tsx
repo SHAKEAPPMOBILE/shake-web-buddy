@@ -96,11 +96,15 @@ interface HomeTabProps {
   onOpenEvents?: () => void;
   onUpgradeClick?: () => void;
   isActivityJoined?: (activityType: string) => boolean;
+  /** Swiping past the carousel's last card (forward) or first card
+   *  (backward) hands off to the app's Home ↔ Plans ↔ Chat ↔ Profile swipe
+   *  ring instead of wrapping within the carousel forever. */
+  onSwipeBeyondEdge?: (direction: 1 | -1) => void;
 }
 
 // Separate dialog state for "Propose a plan" flow
 
-export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, onOpenEvents, onUpgradeClick, isActivityJoined }: HomeTabProps) {
+export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, onOpenEvents, onUpgradeClick, isActivityJoined, onSwipeBeyondEdge }: HomeTabProps) {
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
   const navigate = useNavigate();
@@ -487,6 +491,19 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   };
 
   const handleActivitySelect = () => {
+    // A swipe that just paged the carousel can still fire a trailing "click"
+    // on whatever card ended up under the finger (WebKit's post-drag ghost
+    // click) — without this guard that click fell through to the
+    // tappedActivityRef-less branch below, which read the ALREADY-ADVANCED
+    // currentActivityIndex and opened/confirmed whatever the swipe had just
+    // landed on (e.g. immediately jumping into Propose a Plan instead of
+    // just paging to it). A swipe should only ever page the carousel.
+    if (didSwipe.current) {
+      didSwipe.current = false;
+      tappedActivityRef.current = null;
+      return;
+    }
+
     // On iOS Safari, `onClick` can fire after touch handlers and state updates.
     // So we lock the chosen activity on pointer/touch start and use it here.
     const activityToSelect = tappedActivityRef.current ?? CAROUSEL_ITEMS[currentActivityIndex];
@@ -566,16 +583,27 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   };
 
   const goToPrevious = useCallback(() => {
-    setCurrentActivityIndex(prev => 
-      prev === 0 ? CAROUSEL_ITEMS.length - 1 : prev - 1
-    );
-  }, [CAROUSEL_ITEMS.length]);
+    setCurrentActivityIndex(prev => {
+      if (prev === 0) {
+        // Past the first card, backward — hand off to the swipe ring
+        // (→ Profile) instead of wrapping to the last card forever.
+        onSwipeBeyondEdge?.(-1);
+        return prev;
+      }
+      return prev - 1;
+    });
+  }, [onSwipeBeyondEdge]);
 
   const goToNext = useCallback(() => {
-    setCurrentActivityIndex(prev => 
-      prev === CAROUSEL_ITEMS.length - 1 ? 0 : prev + 1
-    );
-  }, [CAROUSEL_ITEMS.length]);
+    setCurrentActivityIndex(prev => {
+      if (prev === CAROUSEL_ITEMS.length - 1) {
+        // Past the last card, forward — hand off to the swipe ring (→ Plans).
+        onSwipeBeyondEdge?.(1);
+        return prev;
+      }
+      return prev + 1;
+    });
+  }, [CAROUSEL_ITEMS.length, onSwipeBeyondEdge]);
 
   const currentActivity = CAROUSEL_ITEMS[currentActivityIndex];
   const currentDayName = currentActivity?.nextDate

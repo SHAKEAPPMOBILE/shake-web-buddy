@@ -1088,6 +1088,9 @@ export function ChatTab({
                     onTouchStart={(e) => handleSwipeTouchStart(e, activity.id)}
                     onTouchMove={(e) => handleSwipeTouchMove(e, activity.id)}
                     onTouchEnd={() => handleSwipeTouchEnd(activity.id)}
+                    // Own left-swipe-to-leave gesture — tells the app-wide
+                    // swipe ring (Home/Plans/Chat/Profile) to sit this one out.
+                    data-noswipe="true"
                     className="w-full text-left p-4 transition-colors cursor-pointer relative border border-gray-200 bg-gray-50 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     style={{ transform: `translateX(${swipeOffset}px)`, transition: swipeTouchRef.current ? "none" : "transform 0.2s ease" }}
                   >

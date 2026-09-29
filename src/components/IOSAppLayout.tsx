@@ -475,6 +475,30 @@ export function IOSAppLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- handleTabChange is stable enough in practice; re-deriving it would pull in a much larger dependency set for no behavior change
   }, [activeTab]);
 
+  // Chat and Profile have no competing horizontal gesture of their own
+  // (Chat's own swipe is per-row, to reveal Leave — marked [data-noswipe] so
+  // this sits it out; Profile is a plain vertical list) — Home and Plans
+  // handle the ring via their own onSwipeBeyondEdge instead, since their
+  // horizontal swipes are already spoken for.
+  const mainSwipeStart = useRef<{ x: number; y: number } | null>(null);
+  const mainSwipeHandlers = activeTab === "chat" || activeTab === "profile"
+    ? {
+        onTouchStart: (e: React.TouchEvent) => {
+          if ((e.target as HTMLElement).closest("[data-noswipe]")) { mainSwipeStart.current = null; return; }
+          mainSwipeStart.current = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+        },
+        onTouchEnd: (e: React.TouchEvent) => {
+          const start = mainSwipeStart.current;
+          mainSwipeStart.current = null;
+          if (!start || e.changedTouches.length !== 1) return;
+          const dx = e.changedTouches[0].clientX - start.x;
+          const dy = e.changedTouches[0].clientY - start.y;
+          if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
+          goToAdjacentTab(dx > 0 ? 1 : -1);
+        },
+      }
+    : {};
+
   const handleTabChange = (tab: string) => {
     if (tab === "shake") {
       handleShakeClick();
@@ -619,6 +643,7 @@ export function IOSAppLayout() {
             onOpenEvents={() => openNearYou("home")}
             onUpgradeClick={() => setShowPremiumDialog(true)}
             isActivityJoined={hasUserJoined}
+            onSwipeBeyondEdge={goToAdjacentTab}
           />
         );
       case "plans":
@@ -735,6 +760,7 @@ export function IOSAppLayout() {
           showEvents && "bg-white dark:bg-white",
           !isInFullPageChat && "pb-20"
         )}
+        {...mainSwipeHandlers}
       >
         <div className="h-full overflow-hidden" style={showEvents ? { background: 'white', backgroundColor: 'white' } : undefined}>
           {showEvents ? (
