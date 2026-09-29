@@ -480,22 +480,29 @@ export function IOSAppLayout() {
   // this sits it out; Profile is a plain vertical list) — Home and Plans
   // handle the ring via their own onSwipeBeyondEdge instead, since their
   // horizontal swipes are already spoken for.
+  // Pointer Events cover mouse (desktop web), touch (mobile web/native) and
+  // pen with one set of handlers — touch-only handlers never fire for a
+  // mouse drag, which is why swiping did nothing when tested on desktop
+  // Chrome (shakeapp.today) rather than an actual touchscreen.
   const mainSwipeStart = useRef<{ x: number; y: number } | null>(null);
   const mainSwipeHandlers = activeTab === "chat" || activeTab === "profile"
     ? {
-        onTouchStart: (e: React.TouchEvent) => {
+        onPointerDown: (e: React.PointerEvent) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
           if ((e.target as HTMLElement).closest("[data-noswipe]")) { mainSwipeStart.current = null; return; }
-          mainSwipeStart.current = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+          mainSwipeStart.current = { x: e.clientX, y: e.clientY };
+          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
         },
-        onTouchEnd: (e: React.TouchEvent) => {
+        onPointerUp: (e: React.PointerEvent) => {
           const start = mainSwipeStart.current;
           mainSwipeStart.current = null;
-          if (!start || e.changedTouches.length !== 1) return;
-          const dx = e.changedTouches[0].clientX - start.x;
-          const dy = e.changedTouches[0].clientY - start.y;
+          if (!start) return;
+          const dx = e.clientX - start.x;
+          const dy = e.clientY - start.y;
           if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
           goToAdjacentTab(dx > 0 ? 1 : -1);
         },
+        onPointerCancel: () => { mainSwipeStart.current = null; },
       }
     : {};
 

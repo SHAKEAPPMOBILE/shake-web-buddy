@@ -190,17 +190,22 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     setShowAllCities(next === 1);
     setShowFriendsOnly(next === 2);
   }, [showFriendsOnly, showAllCities, onSwipeBeyondEdge]);
+  // Pointer Events cover mouse (desktop web), touch (mobile web/native) and
+  // pen with one set of handlers — the old touch-only handlers never fired
+  // for a mouse drag, which is why swiping did nothing on desktop Chrome.
   const tabSwipeHandlers = tabView === 'scroll'
     ? {
-        onTouchStart: (e: React.TouchEvent) => {
-          tabSwipeStart.current = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+        onPointerDown: (e: React.PointerEvent) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          tabSwipeStart.current = { x: e.clientX, y: e.clientY };
+          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
         },
-        onTouchEnd: (e: React.TouchEvent) => {
+        onPointerUp: (e: React.PointerEvent) => {
           const start = tabSwipeStart.current;
           tabSwipeStart.current = null;
-          if (!start || e.changedTouches.length !== 1) return;
-          const dx = e.changedTouches[0].clientX - start.x;
-          const dy = e.changedTouches[0].clientY - start.y;
+          if (!start) return;
+          const dx = e.clientX - start.x;
+          const dy = e.clientY - start.y;
           // A deliberate sideways flick — not a vertical scroll or a tap.
           if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
           // Swiping right (dx > 0) moves forward through the ring (My City
@@ -208,6 +213,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           // swiping left runs it in reverse.
           cycleFeedTab(dx > 0 ? 1 : -1);
         },
+        onPointerCancel: () => { tabSwipeStart.current = null; },
       }
     : {};
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback, TouchEvent, MouseEvent } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
@@ -639,24 +639,34 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   // Swipe handlers — track whether a real move occurred to prevent tap-induced skips
   const didSwipe = useRef(false);
 
-  const handleTouchStart = useCallback((e: TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchEndX.current = e.touches[0].clientX; // Reset so taps don't use stale value
+  // Pointer Events cover mouse (desktop web), touch (mobile web/native) and
+  // pen with one set of handlers — touch-only handlers never fire for a
+  // mouse drag, which is how this was broken on desktop Chrome.
+  const isPointerDragging = useRef(false);
+
+  const handlePointerDown = useCallback((e: ReactPointerEvent) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    touchStartX.current = e.clientX;
+    touchEndX.current = e.clientX; // Reset so taps don't use stale value
     didSwipe.current = false;
+    isPointerDragging.current = true;
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
   }, []);
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
+  const handlePointerMove = useCallback((e: ReactPointerEvent) => {
+    if (!isPointerDragging.current) return;
+    touchEndX.current = e.clientX;
     didSwipe.current = true;
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
-    // Only process if user actually swiped (moved finger), not just tapped
+  const handlePointerUp = useCallback(() => {
+    isPointerDragging.current = false;
+    // Only process if user actually swiped (moved finger/mouse), not just tapped
     if (!didSwipe.current) return;
 
     const diff = touchStartX.current - touchEndX.current;
     const threshold = 50; // minimum swipe distance
-    
+
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {
         goToNext(); // Swiped left
@@ -774,9 +784,10 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
         <div
           className="fixed inset-x-0 top-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-40 flex items-center justify-center backdrop-blur-md"
           onClick={handleBackdropClick}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           style={{ touchAction: 'pan-y', background: timeOfDayGradient }}
         >
           {/* Top bar — SHAKE-SOCIAL wordmark on the left, city pill on the
