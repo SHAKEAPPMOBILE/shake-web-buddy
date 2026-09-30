@@ -41,7 +41,6 @@ import { compareFaces, storeFaceDescriptor } from "@/services/faceAuthService";
 import { OnboardingInterestsStep } from "@/components/auth/OnboardingInterestsStep";
 import { OnboardingSocialStep } from "@/components/auth/OnboardingSocialStep";
 import { attachActionHaptics } from "@/lib/haptics";
-import { playHypeYeah } from "@/lib/notification-sound";
 
 // Temporary rollout flag: keep implementation in codebase but hide from users.
 const FACE_ID_FEATURE_ENABLED = false;
@@ -314,21 +313,6 @@ export default function Auth() {
   // typing — delegated to a single document-level listener since this screen
   // has many buttons across many conditional steps/early-returns.
   useEffect(() => attachActionHaptics(), []);
-
-  useEffect(() => {
-    if (step !== "method") return;
-    if (user) return;
-    try {
-      if (sessionStorage.getItem("shake_auth_chime_played") === "1") return;
-      sessionStorage.setItem("shake_auth_chime_played", "1");
-    } catch {
-      /* sessionStorage unavailable — fall through and play anyway */
-    }
-    const timer = setTimeout(() => {
-      playHypeYeah();
-    }, 300); // slight delay so the screen has rendered
-    return () => clearTimeout(timer);
-  }, []); // run once on mount — step starts as "method"
 
   useEffect(() => {
     if (step !== "method" || !showEmailLogin) return;
