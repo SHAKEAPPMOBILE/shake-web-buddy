@@ -890,13 +890,26 @@ export function PlanSwipeFeed({
   const realOffset = isLooping ? 1 : 0;
 
   /* Re-anchor on the same plan when the underlying list refreshes (e.g. right
-     after joining — the parent re-fetches, which gives `looped` a new array
-     identity with updated participant counts). Without this, scroll position
-     is a raw pixel offset with nothing tying it back to a specific plan, so
-     a refetch mid-view silently lands the viewer on whatever plan now
-     happens to sit at that same pixel range — which reads as "joining
-     scrolled me to the next plan" even though no scroll gesture happened. */
+     after joining, or after changing a plan's background — either writes to
+     the DB, which the realtime subscription picks up and re-fetches, giving
+     `looped` a new array identity with fresh data). Without this, scroll
+     position is a raw pixel offset with nothing tying it back to a specific
+     plan, so a refetch mid-view silently lands the viewer on whatever plan
+     now happens to sit at that same pixel range — which reads as "that
+     action scrolled me to the next plan" even though no scroll gesture
+     happened.
+     The tracking listener is registered ONCE (mount) and reads `looped` via
+     a ref, not a dependency — it used to re-subscribe whenever `looped`
+     changed, and that re-subscribe's own immediate read ran BEFORE the
+     re-anchor effect below on every such change, overwriting
+     visiblePlanIdRef with "whatever plan the stale scroll position now
+     points at in the NEW array" right before the re-anchor effect needed
+     the OLD, correct value to find where that plan went. Keeping the
+     listener stable means visiblePlanIdRef only ever updates from a real
+     scroll event, never from a data refresh. */
   const visiblePlanIdRef = useRef<string | null>(null);
+  const loopedForTrackingRef = useRef(looped);
+  loopedForTrackingRef.current = looped;
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -904,12 +917,12 @@ export function PlanSwipeFeed({
       const clientHeight = el.clientHeight;
       if (!clientHeight) return;
       const idx = Math.round(el.scrollTop / clientHeight);
-      visiblePlanIdRef.current = looped[idx]?.plan.id ?? null;
+      visiblePlanIdRef.current = loopedForTrackingRef.current[idx]?.plan.id ?? null;
     };
     track();
     el.addEventListener("scroll", track, { passive: true });
     return () => el.removeEventListener("scroll", track);
-  }, [looped]);
+  }, []);
 
   const loopedRef = useRef(looped);
   useEffect(() => {

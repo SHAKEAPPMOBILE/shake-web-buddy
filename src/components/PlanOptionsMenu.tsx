@@ -7,6 +7,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
 import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
 
+// Split once at module scope — PLAN_BACKGROUNDS is a static constant, no
+// need to re-derive this on every render of every menu instance.
+const illustratedBackgrounds = PLAN_BACKGROUNDS.filter((bg) => bg.image);
+const colorBackgrounds = PLAN_BACKGROUNDS.filter((bg) => !bg.image);
+
 export interface PlanOptionsMenuActivity {
   id: string;
   user_id: string;
@@ -233,7 +238,30 @@ export function PlanOptionsMenu({
                   <span className="text-[10px] text-gray-400">None</span>
                 </div>
               </button>
-              {PLAN_BACKGROUNDS.map((bg) => (
+            </div>
+
+            {/* Illustrations first, plain color gradients after — grouped
+                under their own headings so it's clear which is which
+                instead of one undifferentiated grid. `image` is what
+                planBackgrounds.ts itself uses to tell the two apart. */}
+            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-5 mb-2">Illustrations</h4>
+            <div className="grid grid-cols-3 gap-3">
+              {illustratedBackgrounds.map((bg) => (
+                <button key={bg.id} type="button" onClick={(e) => handleSelectBackground(e, bg.id)} className="flex flex-col items-center gap-1.5">
+                  <div
+                    className={`w-full aspect-square rounded-xl border-2 ${
+                      activity.background_id === bg.id ? "border-blue-500" : "border-transparent"
+                    }`}
+                    style={getBackgroundStyle(bg)}
+                  />
+                  <span className="text-[10px] text-gray-500 leading-tight text-center">{bg.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-5 mb-2">Colors</h4>
+            <div className="grid grid-cols-3 gap-3">
+              {colorBackgrounds.map((bg) => (
                 <button key={bg.id} type="button" onClick={(e) => handleSelectBackground(e, bg.id)} className="flex flex-col items-center gap-1.5">
                   <div
                     className={`w-full aspect-square rounded-xl border-2 ${
