@@ -428,10 +428,18 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
       ) : (
         /* ── No promo media card ──
              Fallback chain:
-             1. is_auto_generated → activity-type image (never a face)
-             2. creator_avatar    → full-bleed creator photo
-             3. getActivityIcon   → activity-type image
-             4. last resort       → purple gradient + name initial
+             1. is_auto_generated        → activity-type image (never a face)
+             2. creator's chosen background (if they picked one) → that, full-bleed
+             3. creator_avatar           → full-bleed creator photo
+             4. getActivityIcon          → activity-type image
+             5. last resort              → purple gradient + name initial
+             A deliberately-picked background used to sit at the very bottom of
+             this chain — behind creator_avatar AND the activity's own stock
+             image — so picking one could never actually show for any activity
+             type that has a stock image (Dinner, Drinks, …). It's now tier 2:
+             below only the fixed auto-generated treatment, above everything
+             else, since picking a background is an explicit, deliberate
+             choice that should win over any default.
         ── */
         <>
           {plan.is_auto_generated ? (
@@ -482,6 +490,12 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 )}
               </div>
             </div>
+          ) : selectedBackground ? (
+            /* Creator deliberately picked a background — it wins over the
+               activity's own stock image and even over their avatar photo,
+               full-bleed, same as the "last resort" render below used to
+               look when nothing else was available. */
+            <div className="absolute inset-0" style={getBackgroundStyle(selectedBackground)} />
           ) : plan.creator_avatar ? (
             /* User-created with avatar: full-bleed, or framed on the same
                purple/pink/blue gradient used behind the chat header if
@@ -517,16 +531,13 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               />
             </div>
           ) : (
-            /* Last resort: chosen background preset, or the default purple
-               gradient + name initial when none was picked */
+            /* Last resort: no background was picked (that's tier 2, above) and
+               there's no avatar or stock image either — default purple
+               gradient + name initial. */
             <>
               <div
                 className="absolute inset-0"
-                style={
-                  selectedBackground
-                    ? getBackgroundStyle(selectedBackground)
-                    : { background: "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)" }
-                }
+                style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)" }}
               />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/30 shadow-xl flex items-center justify-center bg-white/10">
