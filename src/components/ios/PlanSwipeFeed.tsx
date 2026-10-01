@@ -79,6 +79,15 @@ interface PlanSwipeFeedProps {
   onViewProfile: (userId: string, name: string | null, avatar: string | null) => void;
   /** When true the feed renders inline (no fixed overlay); back button hidden */
   inline?: boolean;
+  /** Called after the viewer deletes one of their OWN plans from within the
+   *  feed, so the parent can patch its own plan lists in place — without
+   *  this, a deleted plan could keep showing as a ghost row elsewhere once
+   *  the parent stops refetching on its own realtime changes (see
+   *  PlansTab's handlePlanDeleted). */
+  onPlanDeleted?: (planId: string) => void;
+  /** Called after the viewer changes the background on one of their OWN
+   *  plans — same reasoning as onPlanDeleted, for background_id. */
+  onPlanBackgroundChanged?: (planId: string, backgroundId: string | null) => void;
 }
 
 /* ── Sort helper: my-city first, soonest-scheduled first within each group ── */
@@ -129,9 +138,12 @@ interface FeedCardProps {
   onViewParticipantProfile: (userId: string, userName: string | null, avatarUrl: string | null) => void;
   /** Closes the whole feed — used after the owner deletes this plan mid-swipe. */
   onClose: () => void;
+  /** Bubbles up to the parent's own plan-list state — see PlanSwipeFeedProps. */
+  onPlanDeleted?: (planId: string) => void;
+  onPlanBackgroundChanged?: (planId: string, backgroundId: string | null) => void;
 }
 
-function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile, onViewParticipantProfile, onClose }: FeedCardProps) {
+function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile, onViewParticipantProfile, onClose, onPlanDeleted, onPlanBackgroundChanged }: FeedCardProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -670,8 +682,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             isCreator
             otherParticipantsCount={joinCount ?? plan.participant_count ?? 0}
             isPaidPlan={isPaid}
-            onDeleted={onClose}
-            onBackgroundChange={setLocalBackgroundId}
+            onDeleted={() => { onClose(); onPlanDeleted?.(plan.id); }}
+            onBackgroundChange={(bg) => { setLocalBackgroundId(bg); onPlanBackgroundChanged?.(plan.id, bg); }}
             triggerClassName="flex items-center justify-center p-1 transition-opacity hover:opacity-80"
             iconClassName="w-6 h-6 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
           />
@@ -859,6 +871,8 @@ export function PlanSwipeFeed({
   onEnterChat,
   onViewProfile,
   inline = false,
+  onPlanDeleted,
+  onPlanBackgroundChanged,
 }: PlanSwipeFeedProps) {
   const { user } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1069,6 +1083,8 @@ export function PlanSwipeFeed({
               onViewProfile={() => handleViewProfile(plan)}
               onViewParticipantProfile={onViewProfile}
               onClose={onClose}
+              onPlanDeleted={onPlanDeleted}
+              onPlanBackgroundChanged={onPlanBackgroundChanged}
             />
           ))}
         </div>

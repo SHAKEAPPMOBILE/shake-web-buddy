@@ -3039,7 +3039,7 @@ export default function ProposePlanPage() {
       `}</style>
       {/* Header — back arrow only on native (phone); hidden on web */}
       {Capacitor.isNativePlatform() && !isEditingAnswers && (
-        <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center justify-between">
+        <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] relative flex items-center">
           <MinimalBackButton
             onClick={() => currentStep > 0 ? handleBack() : navigate(-1)}
             className="text-foreground/80 hover:text-foreground"
@@ -3047,9 +3047,12 @@ export default function ProposePlanPage() {
           />
           {/* Lives in the sticky header, not the scrollable preview content,
               so it's never cut off or scrolled out of view — it used to sit
-              centered above the preview card and only showed for a moment. */}
+              centered above the preview card and only showed for a moment.
+              True center of the header (absolute + translate), not flex
+              space-between — that put it flush right instead, since the
+              back button is the only other thing in the row. */}
           {currentStepName === "preview" && (
-            <div className="hula-sway w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0 shadow-md">
+            <div className="hula-sway absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0 shadow-md">
               {userAvatarUrl ? (
                 <img
                   src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
@@ -3214,14 +3217,14 @@ export default function ProposePlanPage() {
               to render its own indented copy inside the centered content
               column instead of sitting flush with the page edge. */}
           {!Capacitor.isNativePlatform() && (
-            <div className="px-6 pt-4 pb-2 flex items-center justify-between">
+            <div className="px-6 pt-4 pb-2 relative flex items-center">
               <MinimalBackButton
                 onClick={() => currentStep > 0 ? handleBack() : handleExitFlow()}
                 className="text-foreground/80 hover:text-foreground"
                 aria-label="Back"
               />
               {currentStepName === "preview" && (
-                <div className="hula-sway w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0 shadow-md">
+                <div className="hula-sway absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0 shadow-md">
                   {userAvatarUrl ? (
                     <img
                       src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}

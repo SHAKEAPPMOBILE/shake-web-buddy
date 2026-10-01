@@ -907,8 +907,16 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "user_activities" },
-        () => {
-          console.log("[PlansTab] realtime user_activities fired → fetchPlans");
+        (payload: { new?: { user_id?: string } }) => {
+          // Skip refetch for changes to the current user's own plan — Edit/
+          // Delete/background-change callers already apply their own local
+          // setActivities/setCityPlans patch (handleBackgroundChanged, etc.),
+          // same reasoning as the activity_joins guard just below: a
+          // redundant fetchPlans() here would clear+refill both lists and
+          // jump the swipe feed to a different card. Other users' plans
+          // (different user_id) still trigger a refetch as before.
+          if (payload.new?.user_id === allPlansRef.current.userId) return;
+          console.log("[PlansTab] realtime user_activities fired (other user) → fetchPlans");
           fetchPlansRef.current();
         }
       )
@@ -1343,6 +1351,33 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       toast.error(t('plans.failedToLeave'));
     }
   };
+
+  /** Local patch for a background change on one of MY OWN plans — mirrors
+   *  handleLeavePlan/handleDirectCityJoin's pattern. PlanOptionsMenu already
+   *  writes background_id to the DB itself; this just keeps `activities`/
+   *  `cityPlans` in sync without a realtime-triggered fetchPlans(), which
+   *  would clear+refill both lists and jump the swipe feed to whatever plan
+   *  ends up at the old scroll offset — the same class of bug the
+   *  activity_joins "skip my own join" guard below exists to avoid. */
+  const handleBackgroundChanged = useCallback((planId: string, backgroundId: string | null) => {
+    setActivities(prev => prev.map(a => a.id === planId ? { ...a, background_id: backgroundId } : a));
+    setCityPlans(prev => prev.map(p => p.id === planId ? { ...p, background_id: backgroundId } : p));
+    // feedSourceList is a separate snapshot taken when the full-screen feed
+    // opens (see setFeedSourceList call sites) — not re-derived from
+    // activities/cityPlans on every render, so it needs its own patch too.
+    setFeedSourceList(prev => prev.map(p => p.id === planId ? { ...p, background_id: backgroundId } : p));
+  }, []);
+
+  /** Local patch for deleting one of MY OWN plans — same reasoning as
+   *  handleBackgroundChanged above. Without this, deleting a plan from the
+   *  list view (which never wired an onDeleted at all) or the swipe feed
+   *  left a ghost row on screen until something else happened to refetch,
+   *  now that the realtime subscription skips refetching my own changes. */
+  const handlePlanDeleted = useCallback((planId: string) => {
+    setActivities(prev => prev.filter(a => a.id !== planId));
+    setCityPlans(prev => prev.filter(p => p.id !== planId));
+    setFeedSourceList(prev => prev.filter(p => p.id !== planId));
+  }, []);
 
   /** Single-source-of-truth guard check.
    *  Calls the same RPC as the feed so the two can never disagree.
@@ -2191,6 +2226,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               onViewProfile={(userId, userName, avatarUrl) => {
                 setSelectedUserProfile({ userId, userName, avatarUrl });
               }}
+              onPlanDeleted={handlePlanDeleted}
+              onPlanBackgroundChanged={handleBackgroundChanged}
             />
           )}
         </div>
@@ -2224,6 +2261,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               onViewProfile={(userId, userName, avatarUrl) => {
                 setSelectedUserProfile({ userId, userName, avatarUrl });
               }}
+              onPlanDeleted={handlePlanDeleted}
+              onPlanBackgroundChanged={handleBackgroundChanged}
             />
           )}
         </div>
@@ -2380,6 +2419,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         isCreator
                         otherParticipantsCount={plan.participant_count ?? 0}
                         isPaidPlan={getPriceValue(plan.price_amount) > 0}
+                        onDeleted={() => handlePlanDeleted(plan.id)}
+                        onBackgroundChange={(bg) => handleBackgroundChanged(plan.id, bg)}
                         triggerClassName="p-2 rounded-full hover:bg-gray-100 transition-colors"
                         iconClassName="w-4 h-4 text-gray-500"
                       />
@@ -2549,6 +2590,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                             isCreator
                             otherParticipantsCount={plan.participant_count ?? 0}
                             isPaidPlan={getPriceValue(plan.price_amount) > 0}
+                            onDeleted={() => handlePlanDeleted(plan.id)}
+                            onBackgroundChange={(bg) => handleBackgroundChanged(plan.id, bg)}
                             triggerClassName="p-2 rounded-full hover:bg-gray-100 transition-colors"
                             iconClassName="w-4 h-4 text-gray-500"
                           />
@@ -2986,6 +3029,8 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           onViewProfile={(userId, userName, avatarUrl) => {
             setSelectedUserProfile({ userId, userName, avatarUrl });
           }}
+          onPlanDeleted={handlePlanDeleted}
+          onPlanBackgroundChanged={handleBackgroundChanged}
         />
       )}
 
