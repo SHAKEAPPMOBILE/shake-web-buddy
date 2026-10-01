@@ -878,6 +878,46 @@ export function PlanSwipeFeed({
   const isLooping = looped.length > sorted.length;
   const realOffset = isLooping ? 1 : 0;
 
+  /* Re-anchor on the same plan when the underlying list refreshes (e.g. right
+     after joining — the parent re-fetches, which gives `looped` a new array
+     identity with updated participant counts). Without this, scroll position
+     is a raw pixel offset with nothing tying it back to a specific plan, so
+     a refetch mid-view silently lands the viewer on whatever plan now
+     happens to sit at that same pixel range — which reads as "joining
+     scrolled me to the next plan" even though no scroll gesture happened. */
+  const visiblePlanIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const track = () => {
+      const clientHeight = el.clientHeight;
+      if (!clientHeight) return;
+      const idx = Math.round(el.scrollTop / clientHeight);
+      visiblePlanIdRef.current = looped[idx]?.plan.id ?? null;
+    };
+    track();
+    el.addEventListener("scroll", track, { passive: true });
+    return () => el.removeEventListener("scroll", track);
+  }, [looped]);
+
+  const loopedRef = useRef(looped);
+  useEffect(() => {
+    if (loopedRef.current === looped) return;
+    const prevLooped = loopedRef.current;
+    loopedRef.current = looped;
+    const el = scrollRef.current;
+    const clientHeight = el?.clientHeight;
+    if (!el || !clientHeight || !visiblePlanIdRef.current) return;
+    const newIdx = looped.findIndex((item) => item.plan.id === visiblePlanIdRef.current);
+    if (newIdx === -1) return;
+    const oldIdx = Math.round(el.scrollTop / clientHeight);
+    // Only the real card that occupied `oldIdx` in the previous array moved —
+    // re-anchor only if its position actually changed, so this never fights
+    // an in-progress swipe gesture for a case where nothing shifted.
+    if (prevLooped[oldIdx]?.plan.id === visiblePlanIdRef.current && oldIdx === newIdx) return;
+    el.scrollTop = newIdx * clientHeight;
+  }, [looped]);
+
   /* Find where the tapped plan lands in the sorted array */
   const resolvedStart = (() => {
     const tappedId = plans[startIndex]?.id;
@@ -996,7 +1036,7 @@ export function PlanSwipeFeed({
             <FeedCard
               key={key}
               plan={plan}
-              isOwn={plan.user_id === user?.id}
+              isOwn={plan.user_id === user?.id && !plan.is_auto_generated}
               inline={inline}
               scrollContainerRef={scrollRef}
               onJoinInPlace={() => onJoinInPlace(plan)}

@@ -61,6 +61,7 @@ interface Activity {
   price_amount?: string | null;
   is_quick_post?: boolean | null;
   background_id?: string | null;
+  is_auto_generated?: boolean | null;
 }
 
 interface PlanGroupChatViewProps {
@@ -468,7 +469,10 @@ export function PlanGroupChatView({
     }
   }, [user, activity.id]);
 
-  const isCreator = user?.id === activity.user_id;
+  // Standing Dinner/Brunch slots have a user_id too (whoever's join happened
+  // to spin that slot up), but that's not a real creator — Edit/Background/
+  // Delete should only ever show for a plan the user actually made.
+  const isCreator = user?.id === activity.user_id && !activity.is_auto_generated;
 
   const sharingLocationRef = useRef(false);
   const handleShareLocation = useCallback(async () => {
