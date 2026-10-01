@@ -36,6 +36,10 @@ const CAROUSEL_FIXED_ORDER = ['dinner', 'brunch'];
 // ready to ship.
 const MATCH_ME_UP_ENABLED = false;
 
+// How long to wait before re-showing the "Enable Shake to Join" prompt to
+// someone who already dismissed or denied it — roughly 3 months.
+const SHAKE_PERMISSION_RECHECK_MS = 90 * 24 * 60 * 60 * 1000;
+
 // Hoisted so it can be referenced in state declarations inside the component.
 type CarouselItem = {
   id: string;
@@ -167,11 +171,16 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     };
   }, [meetPhrases.length]);
 
-  // Show shake permission prompt once per session when permission has never been granted.
+  // Show the shake permission prompt once at signup, then at most once every
+  // ~3 months after that while still not granted — it used to re-check a
+  // sessionStorage flag, which clears every time the tab/app session ends,
+  // so on native (where closing and reopening the app is a new session) it
+  // was effectively showing on almost every launch instead of rarely.
   useEffect(() => {
     if (!user) return;
     if (localStorage.getItem("shake_motion_permission") === "granted") return;
-    if (sessionStorage.getItem("shake_permission_prompted") === "true") return;
+    const lastPrompted = Number(localStorage.getItem("shake_permission_last_prompted") ?? 0);
+    if (Date.now() - lastPrompted < SHAKE_PERMISSION_RECHECK_MS) return;
     const timer = setTimeout(() => setShowShakePermissionPrompt(true), 800);
     return () => clearTimeout(timer);
   }, [user]);
@@ -228,7 +237,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
       if (typeof (DeviceMotionEvent as any)?.requestPermission !== "function") return;
       if (localStorage.getItem("shake_motion_permission") !== "granted") return;
       localStorage.removeItem("shake_motion_permission");
-      sessionStorage.removeItem("shake_permission_prompted");
+      localStorage.removeItem("shake_permission_last_prompted");
       setShowShakePermissionPrompt(true);
     }, 4000);
 
@@ -418,12 +427,12 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     } catch (err) {
       console.warn("[Shake] permission request failed:", err);
     }
-    sessionStorage.setItem("shake_permission_prompted", "true");
+    localStorage.setItem("shake_permission_last_prompted", String(Date.now()));
     setShowShakePermissionPrompt(false);
   };
 
   const handleDismissShakePermission = () => {
-    sessionStorage.setItem("shake_permission_prompted", "true");
+    localStorage.setItem("shake_permission_last_prompted", String(Date.now()));
     setShowShakePermissionPrompt(false);
   };
 
