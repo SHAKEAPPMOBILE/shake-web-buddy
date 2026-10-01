@@ -881,7 +881,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   ) : (
                     <div className="text-5xl md:text-6xl font-handwritten text-foreground">
                       {currentActivity?.nextDate && isToday(currentActivity.nextDate)
-                        ? t('home.itsToday', "It's Today!!")
+                        ? t('home.itsToday', "Today!")
                         : <>{currentActivity?.dayNumber}{currentActivity?.nextDate ? ` ${format(currentActivity.nextDate, 'MMM')}` : ''}, {currentDayName}</>
                       }
                     </div>
