@@ -123,6 +123,62 @@ const ACTIVITY_TRANSLATION_KEYS: Record<string, string> = {
   arts: "arts",
 };
 
+/* ── Scattered emoji pattern — decorates a plain gradient background with
+   lots of faint copies of the activity's own emoji (coffee, cocktail,
+   yoga, …), like a wallpaper print. Seeded by the plan id (a simple
+   string hash, not Math.random) so the layout is stable across
+   re-renders instead of reshuffling every time React repaints. ── */
+function hashSeed(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function mulberry32(seed: number) {
+  let a = seed;
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function EmojiScatterPattern({ emoji, seed }: { emoji: string; seed: string }) {
+  const items = useMemo(() => {
+    const rand = mulberry32(hashSeed(seed));
+    const COUNT = 28;
+    return Array.from({ length: COUNT }, () => ({
+      top: `${rand() * 100}%`,
+      left: `${rand() * 100}%`,
+      size: 20 + rand() * 32, // px
+      rotate: rand() * 360,
+      opacity: 0.12 + rand() * 0.16,
+    }));
+  }, [emoji, seed]);
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+      {items.map((it, i) => (
+        <span
+          key={i}
+          className="absolute"
+          style={{
+            top: it.top,
+            left: it.left,
+            fontSize: it.size,
+            opacity: it.opacity,
+            transform: `translate(-50%, -50%) rotate(${it.rotate}deg)`,
+            lineHeight: 1,
+          }}
+        >
+          {emoji}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /* ── Single card ──────────────────────────────────────────────────────────── */
 interface FeedCardProps {
   plan: FeedPlan;
@@ -506,8 +562,16 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             /* Creator deliberately picked a background — it wins over the
                activity's own stock image and even over their avatar photo,
                full-bleed, same as the "last resort" render below used to
-               look when nothing else was available. */
-            <div className="absolute inset-0" style={getBackgroundStyle(selectedBackground)} />
+               look when nothing else was available. A scattered print of
+               the activity's own emoji on top (coffee cups, cocktails, …)
+               when there's a real match — skipped for "general"/unmatched
+               plans, which would otherwise just scatter the generic 📍. */
+            <>
+              <div className="absolute inset-0" style={getBackgroundStyle(selectedBackground)} />
+              {getActivityEmoji(plan.activity_type) !== "📍" && (
+                <EmojiScatterPattern emoji={getActivityEmoji(plan.activity_type)} seed={plan.id} />
+              )}
+            </>
           ) : plan.creator_avatar ? (
             /* User-created with avatar: full-bleed, or framed on the same
                purple/pink/blue gradient used behind the chat header if
@@ -551,6 +615,9 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 className="absolute inset-0"
                 style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)" }}
               />
+              {getActivityEmoji(plan.activity_type) !== "📍" && (
+                <EmojiScatterPattern emoji={getActivityEmoji(plan.activity_type)} seed={plan.id} />
+              )}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/30 shadow-xl flex items-center justify-center bg-white/10">
                   <span className="text-5xl font-bold text-white">
