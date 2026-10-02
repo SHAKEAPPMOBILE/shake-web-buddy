@@ -149,30 +149,53 @@ function EmojiScatterPattern({ emoji, seed }: { emoji: string; seed: string }) {
   const items = useMemo(() => {
     const rand = mulberry32(hashSeed(seed));
     const COUNT = 28;
-    return Array.from({ length: COUNT }, () => ({
-      top: `${rand() * 100}%`,
-      left: `${rand() * 100}%`,
-      size: 20 + rand() * 32, // px
-      rotate: rand() * 360,
-      opacity: 0.3 + rand() * 0.3,
-    }));
+    return Array.from({ length: COUNT }, () => {
+      const duration = 16 + rand() * 18; // 16-34s — slow, and each emoji its own speed
+      return {
+        top: `${rand() * 100}%`,
+        left: `${rand() * 100}%`,
+        size: 20 + rand() * 32, // px
+        rotate: rand() * 360,
+        opacity: 0.3 + rand() * 0.3,
+        duration,
+        // Negative delay starts the animation already mid-cycle, at a
+        // different point for each emoji — without this every emoji
+        // would begin its drift from the same pose and briefly move in
+        // unison before desyncing, which reads as a stutter on load.
+        delay: -rand() * duration,
+        fx: 24 + rand() * 48, // drift amplitude, px
+        fy: 24 + rand() * 48,
+        frot: (rand() - 0.5) * 50, // degrees of extra spin while drifting
+      };
+    });
   }, [emoji, seed]);
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
       {items.map((it, i) => (
         <span
           key={i}
-          className="absolute"
+          className="absolute emoji-float"
           style={{
             top: it.top,
             left: it.left,
-            fontSize: it.size,
-            opacity: it.opacity,
-            transform: `translate(-50%, -50%) rotate(${it.rotate}deg)`,
-            lineHeight: 1,
+            animationDuration: `${it.duration}s`,
+            animationDelay: `${it.delay}s`,
+            ["--fx" as string]: `${it.fx}px`,
+            ["--fy" as string]: `${it.fy}px`,
+            ["--frot" as string]: `${it.frot}deg`,
           }}
         >
-          {emoji}
+          <span
+            style={{
+              display: "block",
+              fontSize: it.size,
+              opacity: it.opacity,
+              transform: `translate(-50%, -50%) rotate(${it.rotate}deg)`,
+              lineHeight: 1,
+            }}
+          >
+            {emoji}
+          </span>
         </span>
       ))}
     </div>

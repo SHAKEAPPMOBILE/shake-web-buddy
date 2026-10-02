@@ -470,6 +470,31 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   75%      { transform: rotate(0deg) translateY(-3px); }
 }
 
+/* Scattered plan-background emoji (PlanSwipeFeed's EmojiScatterPattern) —
+   a slow, meandering drift through a loose set of waypoints rather than a
+   straight back-and-forth, so a card full of them doesn't read as everyone
+   ticking in unison. Each emoji sets its own --fx/--fy (drift amplitude in
+   px) and --frot (a little spin) via inline style; animation-duration and
+   a negative animation-delay (desyncs the starting phase) make the actual
+   speed and position differ per emoji even though they all share this one
+   keyframe set. */
+@keyframes emoji-float {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  20%  { transform: translate(calc(var(--fx) * 0.6), calc(var(--fy) * -0.8)) rotate(calc(var(--frot) * 0.3)); }
+  45%  { transform: translate(calc(var(--fx) * -0.5), calc(var(--fy) * 0.4)) rotate(calc(var(--frot) * -0.4)); }
+  70%  { transform: translate(var(--fx), calc(var(--fy) * 0.9)) rotate(calc(var(--frot) * 0.8)); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+.emoji-float {
+  animation-name: emoji-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  /* animation-duration and animation-delay are set per-emoji inline */
+}
+@media (prefers-reduced-motion: reduce) {
+  .emoji-float { animation: none !important; }
+}
+
 /* iOS Safe Areas */
 .safe-area-top {
   padding-top: constant(safe-area-inset-top);
