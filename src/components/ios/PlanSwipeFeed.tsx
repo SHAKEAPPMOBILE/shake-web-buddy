@@ -154,7 +154,7 @@ function EmojiScatterPattern({ emoji, seed }: { emoji: string; seed: string }) {
       left: `${rand() * 100}%`,
       size: 20 + rand() * 32, // px
       rotate: rand() * 360,
-      opacity: 0.12 + rand() * 0.16,
+      opacity: 0.3 + rand() * 0.3,
     }));
   }, [emoji, seed]);
   return (
