@@ -582,6 +582,9 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               className="absolute inset-0 flex items-center justify-center overflow-hidden"
               style={smallImage ? { background: "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)" } : undefined}
             >
+              {smallImage && getActivityEmoji(plan.activity_type) !== "📍" && (
+                <EmojiScatterPattern emoji={getActivityEmoji(plan.activity_type)} seed={plan.id} />
+              )}
               <img
                 src={plan.creator_avatar}
                 alt={plan.creator_name || ""}
