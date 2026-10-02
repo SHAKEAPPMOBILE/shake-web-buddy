@@ -3063,12 +3063,23 @@ export default function ProposePlanPage() {
       `}</style>
       {/* Header — back arrow only on native (phone); hidden on web */}
       {Capacitor.isNativePlatform() && !isEditingAnswers && (
-        <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center">
+        <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] relative flex items-center">
           <MinimalBackButton
             onClick={() => currentStep > 0 ? handleBack() : navigate(-1)}
             className="text-foreground/80 hover:text-foreground"
             aria-label="Back"
           />
+          {/* Three copies of the detected activity's own emoji (🏖️ for
+              "Beach time", ☕ for "Coffee on Sunday", …) — skipped for
+              "general"/unmatched text, same as the swipe-feed scatter
+              pattern, since the default 📍 pin isn't tied to anything. */}
+          {currentStepName === "preview" && detectedActivity && detectedActivity.type !== "general" && (
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 text-xl" aria-hidden="true">
+              <span>{detectedActivity.emoji}</span>
+              <span>{detectedActivity.emoji}</span>
+              <span>{detectedActivity.emoji}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -3221,12 +3232,19 @@ export default function ProposePlanPage() {
               to render its own indented copy inside the centered content
               column instead of sitting flush with the page edge. */}
           {!Capacitor.isNativePlatform() && (
-            <div className="px-6 pt-4 pb-2 flex items-center">
+            <div className="px-6 pt-4 pb-2 relative flex items-center">
               <MinimalBackButton
                 onClick={() => currentStep > 0 ? handleBack() : handleExitFlow()}
                 className="text-foreground/80 hover:text-foreground"
                 aria-label="Back"
               />
+              {currentStepName === "preview" && detectedActivity && detectedActivity.type !== "general" && (
+                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 text-xl" aria-hidden="true">
+                  <span>{detectedActivity.emoji}</span>
+                  <span>{detectedActivity.emoji}</span>
+                  <span>{detectedActivity.emoji}</span>
+                </div>
+              )}
             </div>
           )}
 
