@@ -2844,12 +2844,20 @@ export default function ProposePlanPage() {
                 {/* Text card below video — same style as no-video branch */}
                 <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
                   <div className="flex items-center gap-3">
-                    {/* No second avatar here — the user's real avatar already
-                        does its hula-sway dance in the page header above. A
-                        plain dancing emoji next to the title instead, so it's
-                        not the same photo shown twice. */}
-                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center shrink-0 text-3xl" aria-hidden="true">
-                      🕺
+                    {/* The one avatar on this screen — it does its hula-sway
+                        dance right here next to the title instead of a
+                        separate static copy in the header (which doubled
+                        it up and put the real one somewhere unrelated). */}
+                    <div className="hula-sway w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                      {userAvatarUrl ? (
+                        <img
+                          src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
+                          alt="Your avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-3xl" aria-hidden="true">🕺</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
@@ -2879,12 +2887,20 @@ export default function ProposePlanPage() {
                 {/* Text card below photo — same style as no-media branch */}
                 <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
                   <div className="flex items-center gap-3">
-                    {/* No second avatar here — the user's real avatar already
-                        does its hula-sway dance in the page header above. A
-                        plain dancing emoji next to the title instead, so it's
-                        not the same photo shown twice. */}
-                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center shrink-0 text-3xl" aria-hidden="true">
-                      🕺
+                    {/* The one avatar on this screen — it does its hula-sway
+                        dance right here next to the title instead of a
+                        separate static copy in the header (which doubled
+                        it up and put the real one somewhere unrelated). */}
+                    <div className="hula-sway w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                      {userAvatarUrl ? (
+                        <img
+                          src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
+                          alt="Your avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-3xl" aria-hidden="true">🕺</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
@@ -2912,12 +2928,20 @@ export default function ProposePlanPage() {
                 )}
                 <div className="rounded-2xl px-5 py-4 bg-muted/70 border border-border/30">
                   <div className="flex items-center gap-3">
-                    {/* No second avatar here — the user's real avatar already
-                        does its hula-sway dance in the page header above. A
-                        plain dancing emoji next to the title instead, so it's
-                        not the same photo shown twice. */}
-                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center shrink-0 text-3xl" aria-hidden="true">
-                      🕺
+                    {/* The one avatar on this screen — it does its hula-sway
+                        dance right here next to the title instead of a
+                        separate static copy in the header (which doubled
+                        it up and put the real one somewhere unrelated). */}
+                    <div className="hula-sway w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                      {userAvatarUrl ? (
+                        <img
+                          src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
+                          alt="Your avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-3xl" aria-hidden="true">🕺</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground truncate">"{planText.trim()}"</p>
@@ -3039,32 +3063,12 @@ export default function ProposePlanPage() {
       `}</style>
       {/* Header — back arrow only on native (phone); hidden on web */}
       {Capacitor.isNativePlatform() && !isEditingAnswers && (
-        <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] relative flex items-center">
+        <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] flex items-center">
           <MinimalBackButton
             onClick={() => currentStep > 0 ? handleBack() : navigate(-1)}
             className="text-foreground/80 hover:text-foreground"
             aria-label="Back"
           />
-          {/* Lives in the sticky header, not the scrollable preview content,
-              so it's never cut off or scrolled out of view — it used to sit
-              centered above the preview card and only showed for a moment.
-              True center of the header (absolute + translate), not flex
-              space-between — that put it flush right instead, since the
-              back button is the only other thing in the row. */}
-          {currentStepName === "preview" && (
-            <div className="hula-sway absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0 shadow-md">
-              {userAvatarUrl ? (
-                <img
-                  src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
-                  alt=""
-                  aria-hidden="true"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-xl">🕺</span>
-              )}
-            </div>
-          )}
         </div>
       )}
 
@@ -3217,26 +3221,12 @@ export default function ProposePlanPage() {
               to render its own indented copy inside the centered content
               column instead of sitting flush with the page edge. */}
           {!Capacitor.isNativePlatform() && (
-            <div className="px-6 pt-4 pb-2 relative flex items-center">
+            <div className="px-6 pt-4 pb-2 flex items-center">
               <MinimalBackButton
                 onClick={() => currentStep > 0 ? handleBack() : handleExitFlow()}
                 className="text-foreground/80 hover:text-foreground"
                 aria-label="Back"
               />
-              {currentStepName === "preview" && (
-                <div className="hula-sway absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0 shadow-md">
-                  {userAvatarUrl ? (
-                    <img
-                      src={getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl}
-                      alt=""
-                      aria-hidden="true"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xl">🕺</span>
-                  )}
-                </div>
-              )}
             </div>
           )}
 
