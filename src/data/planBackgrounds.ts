@@ -13,8 +13,14 @@ export interface PlanBackground {
   label: string;
   /** A valid CSS `background` value (gradient) — the look before/without an illustration. */
   css: string;
-  /** Path (under /plan-backgrounds/) to a hand-drawn illustration for this mood. Takes priority over `css` when set. */
+  /** Path (under /plan-backgrounds/) to a photo or illustration for this mood. Takes priority over `css` when set. */
   image?: string;
+  /** CSS background-position for `image` — where the subject sits (a skyline's tallest tower, a dome), so a
+   *  tall portrait crop keeps it in frame instead of cutting through the middle. Defaults to centre. */
+  focus?: string;
+  /** Hidden from the picker but still renders for plans that already picked it — set on the
+   *  hand-drawn illustrations that real city photos replaced, so those plans don't lose their background. */
+  retired?: boolean;
 }
 
 /** Renders a gradient preset with a slow, ambient drift instead of sitting
@@ -35,7 +41,7 @@ export function getBackgroundStyle(bg: PlanBackground): CSSProperties {
     return {
       backgroundImage: `url(${bg.image})`,
       backgroundSize: "cover",
-      backgroundPosition: "center",
+      backgroundPosition: bg.focus ?? "center",
       backgroundColor: "#fff",
     };
   }
@@ -62,19 +68,24 @@ export const PLAN_BACKGROUNDS: PlanBackground[] = [
   { id: "study-session", label: "Study Session", css: "linear-gradient(135deg, #e8d5b7 0%, #c9a66b 55%, #8d6748 100%)" },
   { id: "creative-studio", label: "Creative Studio", css: "linear-gradient(135deg, #f857a6 0%, #ff5858 45%, #ffcd38 100%)" },
   { id: "velvet-lounge", label: "Velvet Lounge", css: "linear-gradient(135deg, #2b0a3d 0%, #5e1a3d 50%, #8e2a4d 100%)" },
-  // ── Illustrated presets — Paint Night/Spa Day retired ──
-  { id: "farmers-market", label: "Farmers Market", css: "linear-gradient(135deg, #a8e063 0%, #f9d423 55%, #ff8008 100%)", image: "/plan-backgrounds/farmers-market.webp" },
-  { id: "sunrise-yoga", label: "Sunrise Yoga", css: "linear-gradient(135deg, #fddb92 0%, #f7a1a1 50%, #c3a6e0 100%)", image: "/plan-backgrounds/sunrise-yoga.png" },
-  { id: "beach-bonfire", label: "Beach Bonfire", css: "linear-gradient(135deg, #1e3c72 0%, #ff7e5f 60%, #feb47b 100%)", image: "/plan-backgrounds/beach-bonfire.webp" },
-  { id: "snow-day", label: "Snow Day", css: "linear-gradient(135deg, #e0eafc 0%, #cfdef3 50%, #a1c4fd 100%)", image: "/plan-backgrounds/snow-day.webp" },
-  { id: "autumn-harvest", label: "Autumn Harvest", css: "linear-gradient(135deg, #7b3f00 0%, #c1440e 55%, #e3a018 100%)", image: "/plan-backgrounds/autumn-harvest.webp" },
-  { id: "cherry-blossom", label: "Cherry Blossom", css: "linear-gradient(135deg, #ffe4e9 0%, #ffb7c5 55%, #ff8fab 100%)", image: "/plan-backgrounds/cherry-blossom.webp" },
-  { id: "rainy-day-cozy", label: "Rainy Day Cozy", css: "linear-gradient(135deg, #3a3d40 0%, #5c6570 50%, #8b98a5 100%)", image: "/plan-backgrounds/rainy-day-cozy.png" },
-  { id: "street-food-night", label: "Street Food Night", css: "linear-gradient(135deg, #d7263d 0%, #f46036 55%, #f9c80e 100%)", image: "/plan-backgrounds/street-food-night.webp" },
-  { id: "rooftop-cinema", label: "Rooftop Cinema", css: "linear-gradient(135deg, #14142b 0%, #4b3f72 55%, #e07a5f 100%)", image: "/plan-backgrounds/rooftop-cinema.webp" },
-  { id: "trivia-night", label: "Trivia Night", css: "linear-gradient(135deg, #0b1d3a 0%, #b3202f 55%, #f4c430 100%)", image: "/plan-backgrounds/trivia-night.png" },
-  { id: "ramen-night", label: "Ramen Night", css: "linear-gradient(135deg, #6e0d0d 0%, #c1272d 55%, #ff8c42 100%)", image: "/plan-backgrounds/ramen-night.png" },
-  { id: "taco-tuesday", label: "Taco Tuesday", css: "linear-gradient(135deg, #d7263d 0%, #f46036 50%, #a4d65e 100%)", image: "/plan-backgrounds/taco-tuesday.png" },
-  { id: "speakeasy-lounge", label: "Speakeasy Lounge", css: "linear-gradient(135deg, #1a0000 0%, #4b0f1a 55%, #b8860b 100%)", image: "/plan-backgrounds/speakeasy-lounge.webp" },
-  { id: "retro-arcade", label: "Retro Arcade", css: "linear-gradient(135deg, #ff00cc 0%, #7b2ff7 50%, #00c3ff 100%)", image: "/plan-backgrounds/retro-arcade.png" },
+  // ── Real city photos — these replaced the hand-drawn illustrations below ──
+  { id: "city-san-francisco", label: "San Francisco", css: "linear-gradient(135deg, #3a3d52 0%, #7a5a3a 55%, #d99a3a 100%)", image: "/plan-backgrounds/city-san-francisco.webp", focus: "28% 50%" },
+  { id: "city-dallas", label: "Dallas", css: "linear-gradient(135deg, #1e5fa8 0%, #6aa8e0 55%, #e8f1fa 100%)", image: "/plan-backgrounds/city-dallas.webp", focus: "50% 50%" },
+  { id: "city-atlanta", label: "Atlanta", css: "linear-gradient(135deg, #1b2a4a 0%, #6b5b7b 50%, #f0a050 100%)", image: "/plan-backgrounds/city-atlanta.webp", focus: "50% 50%" },
+  { id: "city-washington-dc", label: "Washington, DC", css: "linear-gradient(135deg, #b8bcc4 0%, #d9dce0 55%, #8a8f98 100%)", image: "/plan-backgrounds/city-washington-dc.webp", focus: "58% 50%" },
+  // ── Retired illustrated presets — hidden from the picker, kept so existing plans still render ──
+  { id: "farmers-market", label: "Farmers Market", css: "linear-gradient(135deg, #a8e063 0%, #f9d423 55%, #ff8008 100%)", image: "/plan-backgrounds/farmers-market.webp", retired: true },
+  { id: "sunrise-yoga", label: "Sunrise Yoga", css: "linear-gradient(135deg, #fddb92 0%, #f7a1a1 50%, #c3a6e0 100%)", image: "/plan-backgrounds/sunrise-yoga.png", retired: true },
+  { id: "beach-bonfire", label: "Beach Bonfire", css: "linear-gradient(135deg, #1e3c72 0%, #ff7e5f 60%, #feb47b 100%)", image: "/plan-backgrounds/beach-bonfire.webp", retired: true },
+  { id: "snow-day", label: "Snow Day", css: "linear-gradient(135deg, #e0eafc 0%, #cfdef3 50%, #a1c4fd 100%)", image: "/plan-backgrounds/snow-day.webp", retired: true },
+  { id: "autumn-harvest", label: "Autumn Harvest", css: "linear-gradient(135deg, #7b3f00 0%, #c1440e 55%, #e3a018 100%)", image: "/plan-backgrounds/autumn-harvest.webp", retired: true },
+  { id: "cherry-blossom", label: "Cherry Blossom", css: "linear-gradient(135deg, #ffe4e9 0%, #ffb7c5 55%, #ff8fab 100%)", image: "/plan-backgrounds/cherry-blossom.webp", retired: true },
+  { id: "rainy-day-cozy", label: "Rainy Day Cozy", css: "linear-gradient(135deg, #3a3d40 0%, #5c6570 50%, #8b98a5 100%)", image: "/plan-backgrounds/rainy-day-cozy.png", retired: true },
+  { id: "street-food-night", label: "Street Food Night", css: "linear-gradient(135deg, #d7263d 0%, #f46036 55%, #f9c80e 100%)", image: "/plan-backgrounds/street-food-night.webp", retired: true },
+  { id: "rooftop-cinema", label: "Rooftop Cinema", css: "linear-gradient(135deg, #14142b 0%, #4b3f72 55%, #e07a5f 100%)", image: "/plan-backgrounds/rooftop-cinema.webp", retired: true },
+  { id: "trivia-night", label: "Trivia Night", css: "linear-gradient(135deg, #0b1d3a 0%, #b3202f 55%, #f4c430 100%)", image: "/plan-backgrounds/trivia-night.png", retired: true },
+  { id: "ramen-night", label: "Ramen Night", css: "linear-gradient(135deg, #6e0d0d 0%, #c1272d 55%, #ff8c42 100%)", image: "/plan-backgrounds/ramen-night.png", retired: true },
+  { id: "taco-tuesday", label: "Taco Tuesday", css: "linear-gradient(135deg, #d7263d 0%, #f46036 50%, #a4d65e 100%)", image: "/plan-backgrounds/taco-tuesday.png", retired: true },
+  { id: "speakeasy-lounge", label: "Speakeasy Lounge", css: "linear-gradient(135deg, #1a0000 0%, #4b0f1a 55%, #b8860b 100%)", image: "/plan-backgrounds/speakeasy-lounge.webp", retired: true },
+  { id: "retro-arcade", label: "Retro Arcade", css: "linear-gradient(135deg, #ff00cc 0%, #7b2ff7 50%, #00c3ff 100%)", image: "/plan-backgrounds/retro-arcade.png", retired: true },
 ];

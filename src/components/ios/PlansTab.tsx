@@ -17,7 +17,7 @@ import { GroupChatView } from "./GroupChatView";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ALL_ACTIVITY_TYPES, ACTIVITY_TYPES, STANDING_CAROUSEL_TYPES, getActivityDay, getNextOccurrenceDate, getActivityTimeString } from "@/data/activityTypes";
 import { formatDateWithTranslation, parseDbDate } from "@/lib/date-utils";
-import { cn, getPriceValue, getShareLabel } from "@/lib/utils";
+import { cn, getPriceValue } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
@@ -30,6 +30,7 @@ import { useReferralCode, getReferralLink } from "@/hooks/useReferralCode";
 import { SwipeableCard } from "../SwipeableCard";
 import { useTranslation } from "react-i18next";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
+import { ShareEventSheet } from "@/components/ShareEventSheet";
 import { PlanSwipeFeed } from "./PlanSwipeFeed";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
 import { ActivityDetailDialog } from "@/components/ActivityDetailDialog";
@@ -149,6 +150,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
   const isMobile = useIsMobile();
   const [activities, setActivities] = useState<PlanActivity[]>([]);
   const [cityPlans, setCityPlans] = useState<PlanActivity[]>([]);
+  const [sharePlan, setSharePlan] = useState<PlanActivity | null>(null);
   // Guards fetchPlans against out-of-order resolution — see fetchPlans's isStale().
   // fetchCounterRef generates strictly-increasing ids (Date.now() can collide
   // when two fetches start within the same millisecond, which defeats the guard).
@@ -1397,34 +1399,12 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
     ) ?? null;
   };
 
-  const handleSharePlan = async (plan: PlanActivity, e: React.MouseEvent) => {
+  const handleSharePlan = (plan: PlanActivity, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-
-    const activityLabel = getShareLabel(plan.note, getActivityLabel(plan.activity_type));
-    const activityEmoji = getActivityEmoji(plan.activity_type);
-    const dateStr = plan.scheduled_for
-      ? format(parseDbDate(plan.scheduled_for), "EEE, d MMM")
-      : format(new Date(), "EEE, d MMM");
-
-    // For carousel plans, encode type+city directly. For real plans, use the plan id.
-    const shareId = plan.id.startsWith('carousel-')
-      ? `${plan.activity_type}-${plan.city}-${user?.id ?? ''}`
-      : plan.id;
-    const shareUrl = `https://www.shakeapp.today/invite/${encodeURIComponent(shareId)}`;
-    const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
-    const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
-
-    if (Capacitor.isNativePlatform()) {
-      try { await Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: shareTitle }); }
-      catch (err) { if ((err as any).errorMessage !== 'Share canceled') toast.error(t('plans.failedToShare')); }
-    } else if (navigator.share) {
-      try { await navigator.share({ title: shareTitle, text: shareText, url: shareUrl }); }
-      catch (err) { if ((err as Error).name !== "AbortError") toast.error(t('plans.failedToShare')); }
-    } else {
-      try { await navigator.clipboard.writeText(shareUrl); toast.success(t('plans.linkCopied'), { description: t('plans.shareFriends') }); }
-      catch { toast.error(t('plans.failedToCopyLink')); }
-    }
+    // In-app share sheet (card preview, recent contacts, Instagram / Messages / Mail)
+    // rather than the bare OS share sheet — see ShareEventSheet.
+    setSharePlan(plan);
   };
 
   // findOrCreateOpenGroup and MAX_GROUP_CAPACITY are imported from @/lib/activityGroups.
@@ -2621,6 +2601,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       </div>
       )}
       </div>
+      {sharePlan && <ShareEventSheet plan={sharePlan} onClose={() => setSharePlan(null)} />}
       {/* Leave Confirmation Dialog */}
       <AlertDialog open={!!planToLeave} onOpenChange={(open) => !open && setPlanToLeave(null)}>
         <AlertDialogContent className="border-2 border-destructive/40">

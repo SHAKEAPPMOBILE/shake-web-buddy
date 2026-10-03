@@ -17,13 +17,13 @@ import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ChevronLeft, DollarSign, Volume2, VolumeX, User, Send } from "lucide-react";
-import { Share } from "@capacitor/share";
-import { Capacitor } from "@capacitor/core";
 import { parseDbDate } from "@/lib/date-utils";
-import { getPriceValue, cn, getShareLabel } from "@/lib/utils";
+import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { getCityBackground } from "@/data/cityBackgrounds";
-import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
+import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
+import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
+import { ShareEventSheet } from "@/components/ShareEventSheet";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReportContentButton } from "@/components/ReportContentButton";
@@ -232,6 +232,7 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   const [joining, setJoining] = useState(false);
   const [lowRes, setLowRes] = useState(false);
   const [smallImage, setSmallImage] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [previewAvatars, setPreviewAvatars] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [joinCount, setJoinCount] = useState<number | null>(null);
@@ -400,30 +401,9 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
     return time ? `${day} · ${time}` : day;
   })();
 
-  const handleShare = async () => {
-    const activityLabel = getShareLabel(plan.note, getActivityLabel(plan.activity_type));
-    const activityEmoji = getActivityEmoji(plan.activity_type);
-    const dateStr = plan.scheduled_for
-      ? format(parseDbDate(plan.scheduled_for), "EEE, d MMM")
-      : format(new Date(), "EEE, d MMM");
-    const shareId = plan.id.startsWith("carousel-")
-      ? `${plan.activity_type}-${plan.city}-${user?.id ?? ""}`
-      : plan.id;
-    const shareUrl = `https://www.shakeapp.today/invite/${encodeURIComponent(shareId)}`;
-    const shareText = `${activityEmoji} Join me for ${activityLabel} in ${plan.city} on ${dateStr}! Let's SHAKE up our social life together.`;
-    const shareTitle = `SHAKE - ${activityLabel} in ${plan.city}`;
-
-    if (Capacitor.isNativePlatform()) {
-      try { await Share.share({ title: shareTitle, text: shareText, url: shareUrl, dialogTitle: shareTitle }); }
-      catch (err) { if ((err as any).errorMessage !== "Share canceled") toast.error(t('plans.failedToShare')); }
-    } else if (navigator.share) {
-      try { await navigator.share({ title: shareTitle, text: shareText, url: shareUrl }); }
-      catch (err) { if ((err as Error).name !== "AbortError") toast.error(t('plans.failedToShare')); }
-    } else {
-      try { await navigator.clipboard.writeText(shareUrl); toast.success(t('plans.linkCopied'), { description: t('plans.shareFriends') }); }
-      catch { toast.error(t('plans.failedToCopyLink')); }
-    }
-  };
+  // Opens the in-app share sheet (card preview, recent contacts, Instagram / Messages / Mail)
+  // instead of going straight to the OS share sheet — see ShareEventSheet.
+  const handleShare = () => setShareOpen(true);
 
   /* ── Derive action button props ── */
   const actionButton = (() => {
@@ -588,10 +568,12 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                look when nothing else was available. A scattered print of
                the activity's own emoji on top (coffee cups, cocktails, …)
                when there's a real match — skipped for "general"/unmatched
-               plans, which would otherwise just scatter the generic 📍. */
+               plans, which would otherwise just scatter the generic 📍, and
+               skipped on photo backgrounds (the city shots), where floating
+               emoji just sit on top of a picture that already says enough. */
             <>
-              <div className="absolute inset-0" style={getBackgroundStyle(selectedBackground)} />
-              {getActivityEmoji(plan.activity_type) !== "📍" && (
+              <PlanBackgroundFill bg={selectedBackground} />
+              {!selectedBackground.image && getActivityEmoji(plan.activity_type) !== "📍" && (
                 <EmojiScatterPattern emoji={getActivityEmoji(plan.activity_type)} seed={plan.id} />
               )}
             </>
@@ -893,6 +875,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         </div>
 
       </div>
+
+      {shareOpen && <ShareEventSheet plan={plan} onClose={() => setShareOpen(false)} />}
 
       {/* Description dialog — same header treatment as the paid-plan
           ActivityDetailDialog (avatar + emoji + title + tappable "by
