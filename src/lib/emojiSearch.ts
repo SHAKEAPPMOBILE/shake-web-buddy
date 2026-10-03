@@ -1,14 +1,17 @@
 import { EMOJI_INDEX } from "@/data/emojiIndex";
+import { EMOJI_LANG_LOADERS } from "@/data/emojiLangLoaders";
 
 /**
  * "Whatever people say" → the closest emoji, for plans whose title isn't one of the activity types
  * that have their own illustrated icon (yoga, picnic, coffee, …). English and Spanish.
  *
- * Languages: English and Spanish are in the main bundle. The same emoji's names in 38 more are
- * lazy chunks — Latin-script ones (pt, fr, de, it, nl, tr, id, …) load in the background shortly
- * after the app starts; the rest (Arabic, Hebrew, Cyrillic, Greek, Indic, Thai, CJK) load only the
- * first time someone types in one of those scripts. Until a chunk arrives its words simply aren't
- * known; components subscribe via useEmojiSearchVersion() so they re-evaluate when one lands.
+ * Languages: English and Spanish are always loaded (they're in the main bundle). The same emoji's
+ * names in 39 more languages are one small lazy chunk each (8–21 KB), and only the languages a
+ * person actually uses are fetched: their app language, their device languages, and — the moment they
+ * type in a script that identifies a language (Greek letters, Hangul, Arabic…) — that language.
+ * Each language is searched on its own words; they are not pooled, because words collide across
+ * languages ("vivo" is Spanish "live" and Hungarian "fencer"). Components subscribe through
+ * useEmojiSearchVersion() so they re-evaluate when a language lands.
  *
  * Order: a short curated list for things Unicode has no good word for (padel, parrillada, salsa…),
  * then a search over every activity/food/place/object emoji's name and tags. The search weighs a
@@ -116,6 +119,10 @@ interface Index {
   subTag: Map<string, number[]>;
   subTagMore: Map<string, number[]>;
   subMaxLen: number;
+  /** Words of the compounding languages that are loaded (German, Dutch, Nordic…) — the only ones allowed to
+   *  match inside a longer word, otherwise "dégustation" finds "station" in English. */
+  cLabel: Map<string, number[]>;
+  cTag: Map<string, number[]>;
   /** Every token-script word, sorted — for prefix matching ("klettern" → "kletternder"). */
   sorted: string[];
   /** How many emoji each word appears on — the denominator for "how rare is this word". */
@@ -123,7 +130,9 @@ interface Index {
 }
 
 type ExtraRows = [string, string][];
-const extras: ExtraRows[] = [];
+const loadedLangs = new Map<string, ExtraRows>();
+// Languages that glue words together, so a long unknown word may contain known ones.
+const COMPOUNDING = new Set(["de", "nl", "sv", "da", "nb", "fi", "hu", "et"]);
 let index: Index | null = null;
 
 function push(map: Map<string, number[]>, word: string, i: number) {
@@ -133,13 +142,14 @@ function push(map: Map<string, number[]>, word: string, i: number) {
 }
 
 function build(): Index {
-  const idx: Index = { emoji: [], label: new Map(), tag: new Map(), tagMore: new Map(), subLabel: new Map(), subTag: new Map(), subTagMore: new Map(), subMaxLen: 2, sorted: [], df: new Map() };
+  const idx: Index = { emoji: [], label: new Map(), tag: new Map(), tagMore: new Map(), subLabel: new Map(), subTag: new Map(), subTagMore: new Map(), subMaxLen: 2, cLabel: new Map(), cTag: new Map(), sorted: [], df: new Map() };
   EMOJI_INDEX.forEach(([emoji, labels, tags], i) => {
     idx.emoji.push(emoji);
     const seen = new Set<string>();
-    const add = (word: string, isLabel: boolean, more = false) => {
+    const add = (word: string, isLabel: boolean, more = false, compound = false) => {
       if (!word) return;
       if (more && !isLabel && word.length < 5 && !SUBSCRIPT_RE.test(word)) return;
+      if (compound && word.length >= 4 && !SUBSCRIPT_RE.test(word)) push(isLabel ? idx.cLabel : idx.cTag, word, i);
       if (SUBSCRIPT_RE.test(word)) {
         push(isLabel ? idx.subLabel : more ? idx.subTagMore : idx.subTag, word, i);
         if (word.length > idx.subMaxLen) idx.subMaxLen = Math.min(word.length, 10);
@@ -150,11 +160,12 @@ function build(): Index {
     };
     labels.split(" ").forEach((w) => add(w, true));
     if (tags) tags.split(" ").forEach((w) => add(w, false));
-    for (const rows of extras) {
+    for (const [code, rows] of loadedLangs) {
       const row = rows[i];
       if (!row) continue;
-      if (row[0]) row[0].split(" ").forEach((w) => add(w, true));
-      if (row[1]) row[1].split(" ").forEach((w) => add(w, false, true));
+      const compound = COMPOUNDING.has(code);
+      if (row[0]) row[0].split(" ").forEach((w) => add(w, true, false, compound));
+      if (row[1]) row[1].split(" ").forEach((w) => add(w, false, true, compound));
     }
     seen.forEach((w) => idx.df.set(w, (idx.df.get(w) ?? 0) + 1));
   });
@@ -171,30 +182,73 @@ export const subscribeEmojiSearch = (cb: () => void) => {
 };
 export const getEmojiSearchVersion = () => version;
 
-const requested = new Set<string>();
-function loadChunk(name: "latin" | "other"): Promise<void> {
-  if (requested.has(name)) return Promise.resolve();
-  requested.add(name);
-  const load =
-    name === "latin"
-      ? import("@/data/emojiIndexLatin").then((m) => m.EMOJI_INDEX_LATIN)
-      : import("@/data/emojiIndexOther").then((m) => m.EMOJI_INDEX_OTHER);
-  return load
-    .then((rows) => {
-      extras.push(rows);
-      index = null; // rebuilt with the new words on the next search
-      version++;
-      listeners.forEach((cb) => cb());
-    })
-    .catch(() => {
-      requested.delete(name); // offline / chunk failed: allow a retry on the next trigger
-    });
+const requestedLangs = new Set<string>();
+
+/** Maps a locale tag ("pt-BR", "zh-TW", "iw") to one of our language chunks, or null when it's English,
+ *  Spanish (always loaded) or something we have no data for. */
+export function normalizeEmojiLang(tag: string | null | undefined): string | null {
+  if (!tag) return null;
+  const t = tag.toLowerCase().replace("_", "-");
+  let code: string;
+  if (t.startsWith("zh")) code = /^zh-(tw|hk|mo|hant)/.test(t) ? "zh-hant" : "zh";
+  else if (t === "no" || t.startsWith("nb") || t.startsWith("nn")) code = "nb";
+  else if (t === "iw") code = "he";
+  else if (t === "in") code = "id";
+  else code = t.split("-")[0];
+  return code in EMOJI_LANG_LOADERS ? code : null;
 }
 
-/** Fetches the Latin-script languages (Portuguese, French, German, Italian, Turkish, …). Safe to call repeatedly. */
-export const preloadEmojiLatinLanguages = () => loadChunk("latin");
-/** Fetches both language chunks — for tests and anyone who wants everything ready. */
-export const preloadAllEmojiLanguages = () => Promise.all([loadChunk("latin"), loadChunk("other")]).then(() => undefined);
+/** Fetches the word lists for these languages (once each). Resolves when they're searchable. */
+export function ensureEmojiLanguages(tags: (string | null | undefined)[]): Promise<void> {
+  const loads: Promise<void>[] = [];
+  for (const tag of tags) {
+    const code = normalizeEmojiLang(tag);
+    if (!code || requestedLangs.has(code)) continue;
+    requestedLangs.add(code);
+    loads.push(
+      EMOJI_LANG_LOADERS[code]()
+        .then((m) => {
+          loadedLangs.set(code, m.default);
+          index = null; // rebuilt with the new words on the next search
+          version++;
+          listeners.forEach((cb) => cb());
+        })
+        .catch(() => {
+          requestedLangs.delete(code); // offline / chunk failed: allow a retry on the next trigger
+        }),
+    );
+  }
+  return Promise.all(loads).then(() => undefined);
+}
+
+/**
+ * Loads the languages this person is likely to type in: the first few of their app language and device
+ * languages. Three at most — each one added is more words that can collide with the others.
+ */
+export function initEmojiLanguages(preferred: (string | null | undefined)[]): Promise<void> {
+  const picked: string[] = [];
+  for (const tag of preferred) {
+    const code = normalizeEmojiLang(tag);
+    if (code && !picked.includes(code)) picked.push(code);
+    if (picked.length >= 3) break;
+  }
+  return ensureEmojiLanguages(picked);
+}
+
+// Scripts that identify a language (or a short list of them) on their own.
+const SCRIPT_LANGS: [RegExp, string[]][] = [
+  [/\p{Script=Greek}/u, ["el"]],
+  [/\p{Script=Hebrew}/u, ["he"]],
+  [/\p{Script=Arabic}/u, ["ar", "fa"]],
+  [/\p{Script=Cyrillic}/u, ["ru", "uk", "bg", "sr"]],
+  [/\p{Script=Devanagari}/u, ["hi"]],
+  [/\p{Script=Bengali}/u, ["bn"]],
+  [/\p{Script=Thai}/u, ["th"]],
+  [/\p{Script=Hangul}/u, ["ko"]],
+  [/[\p{Script=Hiragana}\p{Script=Katakana}]/u, ["ja"]],
+  [/\p{Script=Han}/u, ["zh", "zh-hant", "ja"]],
+];
+const languagesForText = (t: string) => SCRIPT_LANGS.filter(([re]) => re.test(t)).flatMap(([, langs]) => langs);
 
 // "running" → running, runn, run; "tacos" → tacos, taco.
 function variants(w: string): string[] {
@@ -211,14 +265,14 @@ function variants(w: string): string[] {
 const MIN_SCORE = 0.9;
 
 /** The best emoji for what someone typed, or null when nothing in it is specific enough. */
-export function findEmojiForText(text: string | null | undefined): string | null {
+export function findEmojiForText(text: string | null | undefined, opts?: { skipCurated?: boolean }): string | null {
   const t = norm(text ?? "");
   if (!t) return null;
 
-  // Typing in a script we haven't loaded yet: fetch it; the version bump re-runs whoever asked.
-  if (NON_LATIN_RE.test(t)) void loadChunk("other");
+  // Typing in a script that tells us the language: fetch it; the version bump re-runs whoever asked.
+  if (NON_LATIN_RE.test(t)) void ensureEmojiLanguages(languagesForText(t));
 
-  for (const [re, emoji] of CURATED) if (re.test(t)) return emoji;
+  if (!opts?.skipCurated) for (const [re, emoji] of CURATED) if (re.test(t)) return emoji;
 
   const idx = (index ??= build());
   const scores = new Map<number, number>();
@@ -258,18 +312,16 @@ export function findEmojiForText(text: string | null | undefined): string | null
         found = true;
       }
     }
-    if (!found && tok.length >= 8 && !SUBSCRIPT_RE.test(tok)) {
+    if (!found && tok.length >= 8 && !SUBSCRIPT_RE.test(tok) && (idx.cLabel.size || idx.cTag.size)) {
       for (let i = 0; i + 4 <= tok.length; i++) {
         for (let len = Math.min(10, tok.length - i); len >= 4; len--) {
           const w = tok.substr(i, len);
-          const inLabel = idx.label.get(w);
-          const inTag = idx.tag.get(w);
-          const inMore = idx.tagMore.get(w);
-          if (!inLabel && !inTag && !inMore) continue;
+          const inLabel = idx.cLabel.get(w);
+          const inTag = idx.cTag.get(w);
+          if (!inLabel && !inTag) continue;
           const rarity = rarityOf(w);
           inLabel?.forEach((e) => credit(e, 2.4 * rarity));
           inTag?.forEach((e) => credit(e, 0.8 * rarity));
-          inMore?.forEach((e) => credit(e, 0.8 * rarity));
           i += len - 1;
           break;
         }

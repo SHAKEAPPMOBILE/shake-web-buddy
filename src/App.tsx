@@ -1,6 +1,7 @@
 // Force sync - Jan 17, 2026
 import * as React from "react";
-import { preloadEmojiLatinLanguages } from "@/lib/emojiSearch";
+import { initEmojiLanguages } from "@/lib/emojiSearch";
+import i18n from "@/i18n";
 import { useEffect } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
@@ -75,11 +76,13 @@ function ReferralTracker() {
 }
 
 const App = () => {
-  // The emoji search for plan titles knows English and Spanish out of the box; fetch the other
-  // Latin-script languages quietly once the app has settled (non-Latin ones load only when typed).
+  // The emoji search for plan titles knows English and Spanish out of the box. Fetch the person's own
+  // language(s) — app language first, then device languages — and again if they change the app language.
   useEffect(() => {
-    const t = setTimeout(() => void preloadEmojiLatinLanguages(), 4000);
-    return () => clearTimeout(t);
+    const load = () => void initEmojiLanguages([i18n.language, ...(navigator.languages ?? [navigator.language])]);
+    load();
+    i18n.on("languageChanged", load);
+    return () => i18n.off("languageChanged", load);
   }, []);
   // Initialize RevenueCat on app load
   useEffect(() => {
