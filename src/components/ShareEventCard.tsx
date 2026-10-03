@@ -3,7 +3,7 @@ import { Share as ShareIcon } from "lucide-react";
 import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
 import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
 import { getActivityIcon } from "@/data/activityTypes";
-import { getPlanEmoji } from "@/lib/activityDetection";
+import { getPlanEmojis } from "@/lib/activityDetection";
 import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import type { SharePlan } from "@/lib/planShare";
@@ -34,13 +34,22 @@ export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onSha
   const transparentIcon = !!icon && icon.endsWith(".png");
   const avatar = getDisplayAvatarUrl(plan.creator_avatar);
   useEmojiSearchVersion();
-  const emoji = getPlanEmoji(plan.activity_type, plan.note);
+  const emojis = getPlanEmojis(plan.activity_type, plan.note);
 
   // What sits above the title. A recognised activity gets its icon; an unrecognised one has only the
   // generic 📍 fallback, which says nothing — so on a photo background it gets no hero at all, and on a
   // plain gradient the host's own avatar stands in.
   let hero: React.ReactNode = null;
-  if (icon && transparentIcon) {
+  if (emojis.length >= 2) {
+    // A plan that names several activities ("surf, tennis, dinner") shows all of them, in order.
+    hero = (
+      <div className={`flex flex-wrap items-center justify-center gap-x-2 leading-tight drop-shadow-2xl ${emojis.length > 3 ? "text-[44px]" : "text-[56px]"}`}>
+        {emojis.map((e, i) => (
+          <span key={i}>{e}</span>
+        ))}
+      </div>
+    );
+  } else if (icon && transparentIcon) {
     hero = <img src={icon} alt="" className="h-full w-auto max-w-[72%] object-contain drop-shadow-2xl" />;
   } else if (icon) {
     hero = (
@@ -48,8 +57,8 @@ export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onSha
         <img src={icon} alt="" className="w-full h-full object-cover" />
       </div>
     );
-  } else if (emoji !== "📍") {
-    hero = <span className="text-[72px] leading-none drop-shadow-2xl">{emoji}</span>;
+  } else if (emojis.length === 1) {
+    hero = <span className="text-[72px] leading-none drop-shadow-2xl">{emojis[0]}</span>;
   } else if (!bg && avatar) {
     hero = (
       <div className="h-full aspect-square max-w-[72%] rounded-full overflow-hidden ring-4 ring-white/60 shadow-2xl">

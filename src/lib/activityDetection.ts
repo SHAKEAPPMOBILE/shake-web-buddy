@@ -1,7 +1,7 @@
 // Activity detection from user text input
 // Maps keywords to activity types for automatic categorization
 
-import { findEmojiForText } from "@/lib/emojiSearch";
+import { findEmojiForText, findEmojiHits, normalizeEmojiText, type EmojiHit } from "@/lib/emojiSearch";
 import { getActivityById } from "@/data/activityTypes";
 
 interface ActivityMatch {
@@ -29,14 +29,16 @@ const ACTIVITY_KEYWORDS: Record<string, string[]> = {
   surf: ['surf', 'surfing'],
 };
 
-const normalizeText = (s: string) =>
-  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+// Same normalization as the emoji search, so match offsets from both line up in detectActivityEmojis.
+const normalizeText = normalizeEmojiText;
 
 // Built once: one whole-word regex per type (optional plural), over accent-free text.
 const KEYWORD_MATCHERS: [string, RegExp][] = Object.entries(ACTIVITY_KEYWORDS).map(([type, kws]) => [
   type,
   new RegExp(`\\b(?:${kws.map((k) => normalizeText(k).replace(/ /g, ' ')).join('|')})(?:s|es)?\\b`),
 ]);
+
+const KEYWORD_MATCHERS_GLOBAL: [string, RegExp][] = KEYWORD_MATCHERS.map(([type, re]) => [type, new RegExp(re.source, "g")]);
 
 // Core activity types configuration
 const ACTIVITY_CONFIG: Record<string, { emoji: string; color: string }> = {
@@ -80,11 +82,55 @@ export function detectActivityFromText(text: string): ActivityMatch {
   };
 }
 
-/** The emoji for a saved plan: its activity type's, or — for "general" plans — whatever its title says. */
-export function getPlanEmoji(activityType: string | null | undefined, note: string | null | undefined): string {
+const MAX_PLAN_EMOJIS = 5;
+
+/**
+ * Every activity named in a plan title, as emojis, in the order they were said and without repeats:
+ * "Surf, tennis and dinner" → 🏄 🎾 🍝. Covers the illustrated types (dinner, yoga, …) and anything the
+ * emoji search recognises.
+ */
+export function detectActivityEmojis(text: string | null | undefined, max = MAX_PLAN_EMOJIS): string[] {
+  const { text: t, hits } = findEmojiHits(text);
+  if (!t) return [];
+  const all: EmojiHit[] = [...hits];
+  for (const [type, re] of KEYWORD_MATCHERS_GLOBAL) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(t))) {
+      if (m[0].length === 0) { re.lastIndex++; continue; }
+      all.push({ emoji: ACTIVITY_CONFIG[type].emoji, start: m.index, end: m.index + m[0].length });
+    }
+  }
+  // In order; where two matches overlap, the earlier (then longer) one wins.
+  all.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start));
+  const out: string[] = [];
+  const seen = new Set<string>();
+  let lastEnd = -1;
+  for (const h of all) {
+    if (h.start < lastEnd) continue;
+    lastEnd = h.end;
+    const key = h.emoji.replace(/\uFE0F/g, '');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(h.emoji);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/** The emojis for a saved plan: what its title names, plus its saved activity type's if the title doesn't already say so. */
+export function getPlanEmojis(activityType: string | null | undefined, note: string | null | undefined): string[] {
+  const fromTitle = detectActivityEmojis(note);
   const known = activityType ? getActivityById(activityType) : undefined;
-  if (known) return known.emoji;
-  return detectActivityFromText(note ?? '').emoji;
+  if (known && !fromTitle.some((e) => e.replace(/\uFE0F/g, '') === known.emoji.replace(/\uFE0F/g, ''))) {
+    return [known.emoji, ...fromTitle].slice(0, MAX_PLAN_EMOJIS);
+  }
+  return fromTitle;
+}
+
+/** The single main emoji for a saved plan (📍 when there isn't one). */
+export function getPlanEmoji(activityType: string | null | undefined, note: string | null | undefined): string {
+  return getPlanEmojis(activityType, note)[0] ?? ACTIVITY_CONFIG.default.emoji;
 }
 
 /**

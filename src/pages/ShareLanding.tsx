@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_ACTIVITY_TYPES, getNextOccurrenceDate } from "@/data/activityTypes";
-import { detectActivityFromText, getPlanEmoji } from "@/lib/activityDetection";
+import { detectActivityFromText, getPlanEmojis } from "@/lib/activityDetection";
 import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { format } from "date-fns";
@@ -226,7 +226,9 @@ export default function ShareLanding() {
       ? ALL_ACTIVITY_TYPES.find((a) => a.id === detectActivityFromText(activity.note!).type)
       : undefined);
   const planIcon = planTypeInfo?.icon ?? null;
-  const planEmoji = !planIcon && activity?.note ? getPlanEmoji(activity.activity_type, activity.note) : "📍";
+  const planEmojis = activity?.note ? getPlanEmojis(activity.activity_type, activity.note) : [];
+  // Several activities named: show them all as emojis. One illustrated activity keeps its icon.
+  const showEmojiRow = planEmojis.length >= 2 || (!planIcon && planEmojis.length === 1);
 
   const activityIcon = activityInfo?.icon ?? null;
   const activityEmoji = activityInfo?.emoji ?? "🎉";
@@ -278,18 +280,20 @@ export default function ShareLanding() {
             <>
               <div className="flex flex-col items-center gap-3 text-center">
                 <span className="text-5xl">😎</span>
-                {planIcon || planEmoji !== "📍" ? (
+                {planIcon || showEmojiRow ? (
                   <div className="flex items-center justify-center gap-3">
-                    {planIcon ? (
-                      planIcon.endsWith(".png") ? (
-                        <img src={planIcon} alt="" className="h-12 w-12 shrink-0 object-contain drop-shadow-lg" />
-                      ) : (
-                        <span className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white shadow-lg">
-                          <img src={planIcon} alt="" className="h-full w-full object-cover" />
-                        </span>
-                      )
+                    {showEmojiRow ? (
+                      <span className="flex shrink-0 gap-1 text-4xl leading-none">
+                        {planEmojis.map((e, i) => (
+                          <span key={i}>{e}</span>
+                        ))}
+                      </span>
+                    ) : planIcon!.endsWith(".png") ? (
+                      <img src={planIcon!} alt="" className="h-12 w-12 shrink-0 object-contain drop-shadow-lg" />
                     ) : (
-                      <span className="shrink-0 text-5xl leading-none">{planEmoji}</span>
+                      <span className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white shadow-lg">
+                        <img src={planIcon!} alt="" className="h-full w-full object-cover" />
+                      </span>
                     )}
                     <h1 className="text-white text-2xl font-bold text-left">"{activity.note}"</h1>
                   </div>

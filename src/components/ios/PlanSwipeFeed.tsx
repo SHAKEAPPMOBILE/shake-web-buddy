@@ -21,7 +21,7 @@ import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { getCityPhoto } from "@/data/cityBackgrounds";
-import { getPlanEmoji } from "@/lib/activityDetection";
+import { getPlanEmojis } from "@/lib/activityDetection";
 import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
 import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
 import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
@@ -147,13 +147,15 @@ function mulberry32(seed: number) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-function EmojiScatterPattern({ emoji, seed }: { emoji: string; seed: string }) {
+function EmojiScatterPattern({ emojis, seed }: { emojis: string[]; seed: string }) {
   const items = useMemo(() => {
     const rand = mulberry32(hashSeed(seed));
     const COUNT = 28;
-    return Array.from({ length: COUNT }, () => {
+    return Array.from({ length: COUNT }, (_, n) => {
       const duration = 16 + rand() * 18; // 16-34s — slow, and each emoji its own speed
       return {
+        // Several activities share the card evenly, in turn (positions are random, so they still mix).
+        emoji: emojis[n % emojis.length],
         top: `${rand() * 100}%`,
         left: `${rand() * 100}%`,
         size: 20 + rand() * 32, // px
@@ -170,7 +172,7 @@ function EmojiScatterPattern({ emoji, seed }: { emoji: string; seed: string }) {
         frot: (rand() - 0.5) * 50, // degrees of extra spin while drifting
       };
     });
-  }, [emoji, seed]);
+  }, [emojis.join(""), seed]);
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
       {items.map((it, i) => (
@@ -196,7 +198,7 @@ function EmojiScatterPattern({ emoji, seed }: { emoji: string; seed: string }) {
               lineHeight: 1,
             }}
           >
-            {emoji}
+            {it.emoji}
           </span>
         </span>
       ))}
@@ -244,9 +246,9 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   const [localBackgroundId, setLocalBackgroundId] = useState<string | null | undefined>(plan.background_id);
   const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
   const cityPhoto = plan.is_auto_generated ? getCityPhoto(plan.city) : undefined;
-  // The activity's emoji: its type's, or for a free-text plan whatever its title says ("Ping pong" → 🏓).
+  // Every activity the plan names, as emojis: its type's, plus whatever its title says ("Ping pong" → 🏓; "surf, tennis, dinner" → 🏄 🎾 🍝).
   useEmojiSearchVersion(); // recompute when another language chunk lands
-  const planEmoji = getPlanEmoji(plan.activity_type, plan.note);
+  const planEmojis = getPlanEmojis(plan.activity_type, plan.note);
   // Text over the card's bottom edge is light on anything dark: every user plan, and a standing
   // plan once it sits on a city photo. Only a standing plan on the pale time-of-day wash gets dark text.
   const lightText = !plan.is_auto_generated || !!cityPhoto;
@@ -560,8 +562,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                emoji just sit on top of a picture that already says enough. */
             <>
               <PlanBackgroundFill bg={selectedBackground} />
-              {!selectedBackground.image && planEmoji !== "📍" && (
-                <EmojiScatterPattern emoji={planEmoji} seed={plan.id} />
+              {!selectedBackground.image && planEmojis.length > 0 && (
+                <EmojiScatterPattern emojis={planEmojis} seed={plan.id} />
               )}
             </>
           ) : plan.creator_avatar ? (
@@ -574,8 +576,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               className="absolute inset-0 flex items-center justify-center overflow-hidden"
               style={smallImage ? { background: "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)" } : undefined}
             >
-              {smallImage && planEmoji !== "📍" && (
-                <EmojiScatterPattern emoji={planEmoji} seed={plan.id} />
+              {smallImage && planEmojis.length > 0 && (
+                <EmojiScatterPattern emojis={planEmojis} seed={plan.id} />
               )}
               <img
                 src={plan.creator_avatar}
@@ -610,8 +612,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 className="absolute inset-0"
                 style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)" }}
               />
-              {planEmoji !== "📍" && (
-                <EmojiScatterPattern emoji={planEmoji} seed={plan.id} />
+              {planEmojis.length > 0 && (
+                <EmojiScatterPattern emojis={planEmojis} seed={plan.id} />
               )}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/30 shadow-xl flex items-center justify-center bg-white/10">

@@ -265,90 +265,83 @@ function variants(w: string): string[] {
 const MIN_SCORE = 0.9;
 
 /** The best emoji for what someone typed, or null when nothing in it is specific enough. */
-export function findEmojiForText(text: string | null | undefined, opts?: { skipCurated?: boolean }): string | null {
-  const t = norm(text ?? "");
-  if (!t) return null;
+type Credit = (i: number, w: number) => void;
 
-  // Typing in a script that tells us the language: fetch it; the version bump re-runs whoever asked.
-  if (NON_LATIN_RE.test(t)) void ensureEmojiLanguages(languagesForText(t));
-
-  if (!opts?.skipCurated) for (const [re, emoji] of CURATED) if (re.test(t)) return emoji;
-
-  const idx = (index ??= build());
-  const scores = new Map<number, number>();
-  const credit = (i: number, w: number) => scores.set(i, (scores.get(i) ?? 0) + w);
-
-  const tokens = t.split(" ").filter((w) => w.length >= 3 && !STOP.has(w));
+/** Scores one typed word against the loaded languages (exact, inflected-stem and compound matches). */
+function creditToken(idx: Index, tok: string, credit: Credit) {
   const rarityOf = (w: string) => 1 / Math.pow(idx.df.get(w) ?? 1, 0.75);
-  for (const tok of tokens) {
-    let found = false;
-    for (const v of variants(tok)) {
-      const inLabel = idx.label.get(v);
-      const inTag = idx.tag.get(v);
-      const inMore = idx.tagMore.get(v);
-      if (!inLabel && !inTag && !inMore) continue;
-      const rarity = rarityOf(v);
-      inLabel?.forEach((i) => credit(i, 3 * rarity));
-      inTag?.forEach((i) => credit(i, 1 * rarity));
-      inMore?.forEach((i) => credit(i, 1 * rarity));
+  let found = false;
+  for (const v of variants(tok)) {
+    const inLabel = idx.label.get(v);
+    const inTag = idx.tag.get(v);
+    const inMore = idx.tagMore.get(v);
+    if (!inLabel && !inTag && !inMore) continue;
+    const rarity = rarityOf(v);
+    inLabel?.forEach((i) => credit(i, 3 * rarity));
+    inTag?.forEach((i) => credit(i, 1 * rarity));
+    inMore?.forEach((i) => credit(i, 1 * rarity));
+    found = true;
+    break; // the first form of this word that exists is the one we mean
+  }
+  // Inflected languages (Russian, Polish, Finnish, German endings…): the typed form is a different
+  // ending of a word we know. Match on a shared stem of at least 5 letters, at reduced weight.
+  if (!found && tok.length >= 6 && !SUBSCRIPT_RE.test(tok)) {
+    const stem = tok.slice(0, Math.max(5, tok.length - 2));
+    let lo = 0, hi = idx.sorted.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (idx.sorted[mid] < stem) lo = mid + 1; else hi = mid; }
+    let taken = 0;
+    for (let k = lo; k < idx.sorted.length && taken < 6 && idx.sorted[k].startsWith(stem); k++, taken++) {
+      const w = idx.sorted[k];
+      const rarity = rarityOf(w);
+      idx.label.get(w)?.forEach((e) => credit(e, 2.1 * rarity));
+      idx.tag.get(w)?.forEach((e) => credit(e, 0.7 * rarity));
+      idx.tagMore.get(w)?.forEach((e) => credit(e, 0.7 * rarity));
       found = true;
-      break; // the first form of this word that exists is the one we mean
-    }
-    // Compounding languages (German "Weinprobe", Dutch "Boekenclub", Swedish, Finnish…) glue words
-    // together, so a long unknown word may contain known ones: find them, longest first.
-    // Inflected languages (Russian, Polish, Finnish, German endings…): the typed form is a different
-    // ending of a word we know. Match on a shared stem of at least 5 letters, at reduced weight.
-    if (!found && tok.length >= 6 && !SUBSCRIPT_RE.test(tok)) {
-      const stem = tok.slice(0, Math.max(5, tok.length - 2));
-      let lo = 0, hi = idx.sorted.length;
-      while (lo < hi) { const mid = (lo + hi) >> 1; if (idx.sorted[mid] < stem) lo = mid + 1; else hi = mid; }
-      let taken = 0;
-      for (let k = lo; k < idx.sorted.length && taken < 6 && idx.sorted[k].startsWith(stem); k++, taken++) {
-        const w = idx.sorted[k];
-        const rarity = rarityOf(w);
-        idx.label.get(w)?.forEach((e) => credit(e, 2.1 * rarity));
-        idx.tag.get(w)?.forEach((e) => credit(e, 0.7 * rarity));
-        idx.tagMore.get(w)?.forEach((e) => credit(e, 0.7 * rarity));
-        found = true;
-      }
-    }
-    if (!found && tok.length >= 8 && !SUBSCRIPT_RE.test(tok) && (idx.cLabel.size || idx.cTag.size)) {
-      for (let i = 0; i + 4 <= tok.length; i++) {
-        for (let len = Math.min(10, tok.length - i); len >= 4; len--) {
-          const w = tok.substr(i, len);
-          const inLabel = idx.cLabel.get(w);
-          const inTag = idx.cTag.get(w);
-          if (!inLabel && !inTag) continue;
-          const rarity = rarityOf(w);
-          inLabel?.forEach((e) => credit(e, 2.4 * rarity));
-          inTag?.forEach((e) => credit(e, 0.8 * rarity));
-          i += len - 1;
-          break;
-        }
-      }
     }
   }
-
-  // CJK / Thai / Hangul: no spaces to split on, so look for known words anywhere in the text,
-  // longest first, and skip past each one we find.
-  if (SUBSCRIPT_RE.test(t) && (idx.subLabel.size || idx.subTag.size || idx.subTagMore.size)) {
-    for (let i = 0; i < t.length; i++) {
-      for (let len = Math.min(idx.subMaxLen, t.length - i); len >= 2; len--) {
-        const w = t.substr(i, len);
-        const inLabel = idx.subLabel.get(w);
-        const inTag = idx.subTag.get(w);
-        const inMore = idx.subTagMore.get(w);
-        if (!inLabel && !inTag && !inMore) continue;
+  // Compounding languages (German "Weinprobe", Dutch "Boekenclub", Swedish, Finnish…) glue words
+  // together, so a long unknown word may contain known ones: find them, longest first.
+  if (!found && tok.length >= 8 && !SUBSCRIPT_RE.test(tok) && (idx.cLabel.size || idx.cTag.size)) {
+    for (let i = 0; i + 4 <= tok.length; i++) {
+      for (let len = Math.min(10, tok.length - i); len >= 4; len--) {
+        const w = tok.substr(i, len);
+        const inLabel = idx.cLabel.get(w);
+        const inTag = idx.cTag.get(w);
+        if (!inLabel && !inTag) continue;
         const rarity = rarityOf(w);
-        inLabel?.forEach((e) => credit(e, 3 * rarity));
-        inTag?.forEach((e) => credit(e, 1 * rarity));
-        inMore?.forEach((e) => credit(e, 1 * rarity));
+        inLabel?.forEach((e) => credit(e, 2.4 * rarity));
+        inTag?.forEach((e) => credit(e, 0.8 * rarity));
         i += len - 1;
         break;
       }
     }
   }
+}
 
+/** CJK / Thai / Hangul: no spaces to split on, so look for known words anywhere in the text, longest
+ *  first, and skip past each one we find. `onWord` gets each found word's position and credits. */
+function scanSubscriptWords(idx: Index, t: string, onWord: (start: number, end: number, credit: (cr: Credit) => void) => void) {
+  if (!SUBSCRIPT_RE.test(t) || !(idx.subLabel.size || idx.subTag.size || idx.subTagMore.size)) return;
+  for (let i = 0; i < t.length; i++) {
+    for (let len = Math.min(idx.subMaxLen, t.length - i); len >= 2; len--) {
+      const w = t.substr(i, len);
+      const inLabel = idx.subLabel.get(w);
+      const inTag = idx.subTag.get(w);
+      const inMore = idx.subTagMore.get(w);
+      if (!inLabel && !inTag && !inMore) continue;
+      const rarity = 1 / Math.pow(idx.df.get(w) ?? 1, 0.75);
+      onWord(i, i + len, (cr) => {
+        inLabel?.forEach((e) => cr(e, 3 * rarity));
+        inTag?.forEach((e) => cr(e, 1 * rarity));
+        inMore?.forEach((e) => cr(e, 1 * rarity));
+      });
+      i += len - 1;
+      break;
+    }
+  }
+}
+
+function pickBest(idx: Index, scores: Map<number, number>): string | null {
   let best = -1;
   let bestScore = 0;
   scores.forEach((sc, i) => {
@@ -360,3 +353,82 @@ export function findEmojiForText(text: string | null | undefined, opts?: { skipC
   });
   return best >= 0 && bestScore >= MIN_SCORE ? idx.emoji[best] : null;
 }
+
+/** The best single emoji for what someone typed, or null when nothing in it is specific enough. */
+export function findEmojiForText(text: string | null | undefined, opts?: { skipCurated?: boolean }): string | null {
+  const t = norm(text ?? "");
+  if (!t) return null;
+
+  // Typing in a script that tells us the language: fetch it; the version bump re-runs whoever asked.
+  if (NON_LATIN_RE.test(t)) void ensureEmojiLanguages(languagesForText(t));
+
+  if (!opts?.skipCurated) for (const [re, emoji] of CURATED) if (re.test(t)) return emoji;
+
+  const idx = (index ??= build());
+  const scores = new Map<number, number>();
+  const credit: Credit = (i, w) => scores.set(i, (scores.get(i) ?? 0) + w);
+  for (const tok of t.split(" ").filter((w) => w.length >= 3 && !STOP.has(w))) creditToken(idx, tok, credit);
+  scanSubscriptWords(idx, t, (_s, _e, cr) => cr(credit));
+  return pickBest(idx, scores);
+}
+
+export interface EmojiHit {
+  emoji: string;
+  /** Offsets into the normalized text returned alongside the hits. */
+  start: number;
+  end: number;
+}
+
+const CURATED_GLOBAL: [RegExp, string][] = CURATED.map(([re, emoji]) => [new RegExp(re.source, "g"), emoji]);
+
+/**
+ * EVERY activity named in the text, with where in the sentence it was found — "surf, tennis and
+ * dinner" has three. Phrases (curated) claim their words first so "ping pong" is one hit, not "ping"
+ * and "pong"; each remaining word is then looked up on its own. Returned in the order said.
+ */
+export function findEmojiHits(text: string | null | undefined): { text: string; hits: EmojiHit[] } {
+  const t = norm(text ?? "");
+  const hits: EmojiHit[] = [];
+  if (!t) return { text: t, hits };
+  if (NON_LATIN_RE.test(t)) void ensureEmojiLanguages(languagesForText(t));
+
+  const covered: [number, number][] = [];
+  const isCovered = (s: number, e: number) => covered.some(([a, b]) => s < b && e > a);
+
+  for (const [re, emoji] of CURATED_GLOBAL) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(t))) {
+      if (m[0].length === 0) { re.lastIndex++; continue; }
+      hits.push({ emoji, start: m.index, end: m.index + m[0].length });
+      covered.push([m.index, m.index + m[0].length]);
+    }
+  }
+
+  const idx = (index ??= build());
+  const wordRe = /\S+/g;
+  let m: RegExpExecArray | null;
+  while ((m = wordRe.exec(t))) {
+    const tok = m[0];
+    const start = m.index;
+    const end = start + tok.length;
+    if (tok.length < 3 || STOP.has(tok) || isCovered(start, end)) continue;
+    const scores = new Map<number, number>();
+    creditToken(idx, tok, (i, w) => scores.set(i, (scores.get(i) ?? 0) + w));
+    const emoji = pickBest(idx, scores);
+    if (emoji) hits.push({ emoji, start, end });
+  }
+  scanSubscriptWords(idx, t, (start, end, cr) => {
+    if (isCovered(start, end)) return;
+    const scores = new Map<number, number>();
+    cr((i, w) => scores.set(i, (scores.get(i) ?? 0) + w));
+    const emoji = pickBest(idx, scores);
+    if (emoji) hits.push({ emoji, start, end });
+  });
+
+  hits.sort((a, b) => a.start - b.start);
+  return { text: t, hits };
+}
+
+/** The same normalization the search uses, for callers that need offsets that line up with findEmojiHits. */
+export const normalizeEmojiText = norm;

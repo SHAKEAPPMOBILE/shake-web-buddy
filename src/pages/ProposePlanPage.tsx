@@ -10,7 +10,7 @@ import { PremiumDialog } from "@/components/PremiumDialog";
 import { SuperHumanIcon } from "@/components/SuperHumanIcon";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { triggerConfettiWaterfall } from "@/lib/confetti";
-import { detectActivityFromText } from "@/lib/activityDetection";
+import { detectActivityFromText, detectActivityEmojis } from "@/lib/activityDetection";
 import { checkProfanity } from "@/lib/profanity-filter";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
 import { useCreatorVerification } from "@/hooks/useCreatorVerification";
@@ -406,6 +406,8 @@ export default function ProposePlanPage() {
 
   // emojiVersion: re-run when another language chunk finishes loading mid-typing.
   const emojiVersion = useEmojiSearchVersion();
+  // Every activity named in the title, in order ("surf, tennis, dinner" → 🏄 🎾 🍝).
+  const detectedEmojis = useMemo(() => detectActivityEmojis(planText), [planText, emojiVersion]);
   const detectedActivity = useMemo(() => {
     if (!planText.trim()) return null;
     return detectActivityFromText(planText);
@@ -3072,11 +3074,11 @@ export default function ProposePlanPage() {
               "Beach time", ☕ for "Coffee on Sunday", …) — skipped for
               "general"/unmatched text, same as the swipe-feed scatter
               pattern, since the default 📍 pin isn't tied to anything. */}
-          {currentStepName === "preview" && detectedActivity && detectedActivity.emoji !== "📍" && (
+          {currentStepName === "preview" && detectedEmojis.length > 0 && (
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 text-xl" aria-hidden="true">
-              <span>{detectedActivity.emoji}</span>
-              <span>{detectedActivity.emoji}</span>
-              <span>{detectedActivity.emoji}</span>
+              {(detectedEmojis.length === 1 ? [detectedEmojis[0], detectedEmojis[0], detectedEmojis[0]] : detectedEmojis).map((e, i) => (
+                <span key={i}>{e}</span>
+              ))}
             </div>
           )}
         </div>
@@ -3238,11 +3240,11 @@ export default function ProposePlanPage() {
                 className="text-foreground/80 hover:text-foreground"
                 aria-label="Back"
               />
-              {currentStepName === "preview" && detectedActivity && detectedActivity.emoji !== "📍" && (
+              {currentStepName === "preview" && detectedEmojis.length > 0 && (
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 text-xl" aria-hidden="true">
-                  <span>{detectedActivity.emoji}</span>
-                  <span>{detectedActivity.emoji}</span>
-                  <span>{detectedActivity.emoji}</span>
+                  {(detectedEmojis.length === 1 ? [detectedEmojis[0], detectedEmojis[0], detectedEmojis[0]] : detectedEmojis).map((e, i) => (
+                    <span key={i}>{e}</span>
+                  ))}
                 </div>
               )}
             </div>
