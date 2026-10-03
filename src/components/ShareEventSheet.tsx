@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Capacitor } from "@capacitor/core";
 import { Share } from "@capacitor/share";
-import { Check, Link2, X } from "lucide-react";
+import { Check, Link2, MessageCircle, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPlanShare, formatPlanWhen, type SharePlan } from "@/lib/planShare";
 import { getActivityLabel } from "@/data/activityTypes";
@@ -99,6 +99,11 @@ export function ShareEventSheet({ plan, onClose }: ShareEventSheetProps) {
 
   const handleWhatsApp = () => window.open(`https://wa.me/?text=${encodeURIComponent(share.message)}`, "_blank");
 
+  // Opens the Messages / SMS composer with the plan text and link filled in. iOS wants "&body=",
+  // Android "?body=".
+  const handleSms = () =>
+    window.open(`sms:${Capacitor.getPlatform() === "ios" ? "&" : "?"}body=${encodeURIComponent(share.message)}`, "_blank");
+
   const handleCopy = async () => {
     if (await copyText(share.url)) {
       setCopied(true);
@@ -138,12 +143,18 @@ export function ShareEventSheet({ plan, onClose }: ShareEventSheetProps) {
           <ShareEventCard plan={plan} title={title} when={when} hostedBy={hostedBy} joinedLabel={joined} onShare={handleShare} shareLabel={t("share.share", "Share")} />
         </div>
 
-        <div className="mt-5 flex justify-center gap-10">
+        <div className="mt-5 flex justify-center gap-7">
           <button type="button" onClick={handleWhatsApp} className="flex flex-col items-center gap-1.5">
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-md active:scale-95 transition-transform">
               <WhatsAppGlyph className="h-7 w-7" />
             </span>
             <span className="text-[12px] font-medium text-gray-700">WhatsApp</span>
+          </button>
+          <button type="button" onClick={handleSms} className="flex flex-col items-center gap-1.5">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0a84ff] text-white shadow-md active:scale-95 transition-transform">
+              <MessageCircle className="h-6 w-6" />
+            </span>
+            <span className="text-[12px] font-medium text-gray-700">SMS</span>
           </button>
           <button type="button" onClick={handleCopy} className="flex flex-col items-center gap-1.5">
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-900 text-white shadow-md active:scale-95 transition-transform">

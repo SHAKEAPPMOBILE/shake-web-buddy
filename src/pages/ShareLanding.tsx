@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_ACTIVITY_TYPES, getNextOccurrenceDate } from "@/data/activityTypes";
+import { detectActivityFromText } from "@/lib/activityDetection";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { format } from "date-fns";
 import { parseDbDate } from "@/lib/date-utils";
@@ -215,6 +216,15 @@ export default function ShareLanding() {
     ? ALL_ACTIVITY_TYPES.find((a) => a.id === activity.activity_type)
     : null;
 
+  // A user-created plan's own icon: its saved activity type, or — for plans saved before the newer
+  // types existed (stored as "general") — whatever its title says ("Yoga", "Picnic in the park").
+  const planTypeInfo =
+    activityInfo ??
+    (activity?.note
+      ? ALL_ACTIVITY_TYPES.find((a) => a.id === detectActivityFromText(activity.note!).type)
+      : undefined);
+  const planIcon = planTypeInfo?.icon ?? null;
+
   const activityIcon = activityInfo?.icon ?? null;
   const activityEmoji = activityInfo?.emoji ?? "🎉";
   const activityLabel =
@@ -265,7 +275,20 @@ export default function ShareLanding() {
             <>
               <div className="flex flex-col items-center gap-3 text-center">
                 <span className="text-5xl">😎</span>
-                <h1 className="text-white text-2xl font-bold">"{activity.note}"</h1>
+                {planIcon ? (
+                  <div className="flex items-center justify-center gap-3">
+                    {planIcon.endsWith(".png") ? (
+                      <img src={planIcon} alt="" className="h-12 w-12 shrink-0 object-contain drop-shadow-lg" />
+                    ) : (
+                      <span className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white shadow-lg">
+                        <img src={planIcon} alt="" className="h-full w-full object-cover" />
+                      </span>
+                    )}
+                    <h1 className="text-white text-2xl font-bold text-left">"{activity.note}"</h1>
+                  </div>
+                ) : (
+                  <h1 className="text-white text-2xl font-bold">"{activity.note}"</h1>
+                )}
                 <p className="text-white/60 text-sm">
                   {[planDateStr, activity.city, activity.price_amount ?? "Free 🎉"]
                     .filter(Boolean)
