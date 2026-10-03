@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_ACTIVITY_TYPES, getNextOccurrenceDate } from "@/data/activityTypes";
 import { detectActivityFromText, getPlanEmoji } from "@/lib/activityDetection";
+import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { format } from "date-fns";
 import { parseDbDate } from "@/lib/date-utils";
@@ -22,6 +23,7 @@ interface ActivityInfo {
 }
 
 export default function ShareLanding() {
+  useEmojiSearchVersion(); // recompute the title emoji when another language chunk lands
   const { activityId } = useParams<{ activityId: string }>();
   const navigate = useNavigate();
   const [activity, setActivity] = useState<ActivityInfo | null>(null);

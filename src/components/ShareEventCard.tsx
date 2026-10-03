@@ -4,6 +4,7 @@ import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
 import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
 import { getActivityIcon } from "@/data/activityTypes";
 import { getPlanEmoji } from "@/lib/activityDetection";
+import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import type { SharePlan } from "@/lib/planShare";
 
@@ -32,6 +33,7 @@ export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onSha
   // the original dinner/drinks/brunch icons are JPEGs on white, so they get a round frame.
   const transparentIcon = !!icon && icon.endsWith(".png");
   const avatar = getDisplayAvatarUrl(plan.creator_avatar);
+  useEmojiSearchVersion();
   const emoji = getPlanEmoji(plan.activity_type, plan.note);
 
   // What sits above the title. A recognised activity gets its icon; an unrecognised one has only the

@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { FlipAvatar } from "@/components/FlipAvatar";
+import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
@@ -403,10 +404,13 @@ export default function ProposePlanPage() {
   const canCreate = remainingActivities > 0;
   const today = startOfDay(new Date());
 
+  // emojiVersion: re-run when another language chunk finishes loading mid-typing.
+  const emojiVersion = useEmojiSearchVersion();
   const detectedActivity = useMemo(() => {
     if (!planText.trim()) return null;
     return detectActivityFromText(planText);
-  }, [planText]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planText, emojiVersion]);
 
   const hasProfanity = useMemo(() => {
     if (!planText.trim()) return false;

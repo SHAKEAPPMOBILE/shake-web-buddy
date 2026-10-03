@@ -22,6 +22,7 @@ import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { getCityPhoto } from "@/data/cityBackgrounds";
 import { getPlanEmoji } from "@/lib/activityDetection";
+import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
 import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
 import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
 import { ShareEventSheet } from "@/components/ShareEventSheet";
@@ -244,6 +245,7 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
   const cityPhoto = plan.is_auto_generated ? getCityPhoto(plan.city) : undefined;
   // The activity's emoji: its type's, or for a free-text plan whatever its title says ("Ping pong" → 🏓).
+  useEmojiSearchVersion(); // recompute when another language chunk lands
   const planEmoji = getPlanEmoji(plan.activity_type, plan.note);
   // Text over the card's bottom edge is light on anything dark: every user plan, and a standing
   // plan once it sits on a city photo. Only a standing plan on the pale time-of-day wash gets dark text.
