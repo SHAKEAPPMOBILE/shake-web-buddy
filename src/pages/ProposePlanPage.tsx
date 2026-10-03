@@ -17,6 +17,7 @@ import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
+import { FlipAvatar } from "@/components/FlipAvatar";
 import { StripeCountrySelectorDialog } from "@/components/StripeCountrySelectorDialog";
 import { IDVerificationDialog } from "@/components/IDVerificationDialog";
 import { MinimalBackButton } from "@/components/MinimalBackButton";
@@ -159,18 +160,11 @@ function extractBareNumber(transcript: string | null | undefined): number | null
 // Luma-style card: a soft, neutral page background (see the page wrapper's
 // #F3F2F8) with content sitting in crisp white cards with a light shadow,
 // instead of a flat colored box blending into the page.
-function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subtext, handwritten = false, wrapperClassName }: { message: string; showAvatar?: boolean; avatarColor?: string; subtext?: string; handwritten?: boolean; wrapperClassName?: string }) {
+function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subtext, handwritten = false, wrapperClassName, profileAvatarUrl }: { message: string; showAvatar?: boolean; avatarColor?: string; subtext?: string; handwritten?: boolean; wrapperClassName?: string; profileAvatarUrl?: string }) {
   if (!message) return null;
   return (
     <div className={cn("flex flex-row items-end gap-3 mb-8", wrapperClassName)}>
-      {showAvatar && (
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0"
-          style={{ background: avatarColor }}
-        >
-          😎
-        </div>
-      )}
+      {showAvatar && <FlipAvatar color={avatarColor} profileUrl={profileAvatarUrl} />}
       <div
         className="bg-white rounded-2xl px-5 py-4 flex-1"
         style={{ boxShadow: "0 1px 3px rgba(16,15,40,0.06), 0 4px 16px rgba(16,15,40,0.05)" }}
@@ -3360,6 +3354,7 @@ export default function ProposePlanPage() {
                     subtext={currentStepName === "name" ? t("createPlan.soOthersCanJoin") : undefined}
                     handwritten={currentStepName === "video" && stepReturnTo === null}
                     wrapperClassName={currentStepName === "video" ? "mb-3" : undefined}
+                    profileAvatarUrl={userAvatarUrl ? (getDisplayAvatarUrl(userAvatarUrl) ?? userAvatarUrl) : undefined}
                   />
                 </div>
               )}
