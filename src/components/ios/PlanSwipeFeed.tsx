@@ -249,6 +249,9 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   // Every activity the plan names, as emojis: its type's, plus whatever its title says ("Ping pong" → 🏓; "surf, tennis, dinner" → 🏄 🎾 🍝).
   useEmojiSearchVersion(); // recompute when another language chunk lands
   const planEmojis = getPlanEmojis(plan.activity_type, plan.note);
+  // The Plans tab paints a quick first pass (host name "...", no photo, no background) before the real
+  // data arrives. Without this, that pass fell through to the activity icon stretched across a black card.
+  const stillLoading = !plan.is_auto_generated && plan.creator_name === "...";
   // Text over the card's bottom edge is light on anything dark: every user plan, and a standing
   // plan once it sits on a city photo. Only a standing plan on the pale time-of-day wash gets dark text.
   const lightText = !plan.is_auto_generated || !!cityPhoto;
@@ -566,6 +569,14 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 <EmojiScatterPattern emojis={planEmojis} seed={plan.id} />
               )}
             </>
+          ) : stillLoading ? (
+            /* First paint, host's photo and chosen background not here yet: show the same gradient the
+               framed-avatar card sits on (and the activity's floating emoji), so the real card just
+               fills in instead of flashing something else. */
+            <>
+              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)" }} />
+              {planEmojis.length > 0 && <EmojiScatterPattern emojis={planEmojis} seed={plan.id} />}
+            </>
           ) : plan.creator_avatar ? (
             /* User-created with avatar: full-bleed, or framed on the same
                purple/pink/blue gradient used behind the chat header if
@@ -769,7 +780,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               (see the "!plan.is_auto_generated" check there) instead of misleadingly
               crediting/linking to that person. */}
           {!plan.is_auto_generated && (
-            <div className="flex items-center shrink-0" style={{ pointerEvents: "auto" }}>
+            <div className="flex items-center shrink-0" style={{ pointerEvents: "auto", visibility: stillLoading ? "hidden" : undefined }}>
               <button
                 type="button"
                 onClick={onViewProfile}
@@ -845,7 +856,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 type="button"
                 onClick={onViewProfile}
                 className="block w-full text-white/80 text-sm mt-0.5 truncate text-left"
-                style={{ pointerEvents: "auto" }}
+                style={{ pointerEvents: "auto", visibility: stillLoading ? "hidden" : undefined }}
               >
                 {plan.creator_name}
               </button>
