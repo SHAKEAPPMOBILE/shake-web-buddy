@@ -643,8 +643,13 @@ export function ChatTab({
         })),
       });
 
-      // Sort with Today first, Tomorrow second, then chronologically
+      // Chats with unread messages first — whatever kind they are (DM, group, plan, event) —
+      // then Today, Tomorrow, and the rest chronologically within each of those two groups.
       chatActivities.sort((a, b) => {
+        const unreadA = (a.unread_count ?? 0) > 0;
+        const unreadB = (b.unread_count ?? 0) > 0;
+        if (unreadA !== unreadB) return unreadA ? -1 : 1;
+
         const dateA = safeActivityDate(a.scheduled_for);
         const dateB = safeActivityDate(b.scheduled_for);
         const isTodayA = isToday(dateA);
