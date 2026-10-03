@@ -2,7 +2,8 @@ import type React from "react";
 import { Share as ShareIcon } from "lucide-react";
 import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
 import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
-import { getActivityEmoji, getActivityIcon } from "@/data/activityTypes";
+import { getActivityIcon } from "@/data/activityTypes";
+import { getPlanEmoji } from "@/lib/activityDetection";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import type { SharePlan } from "@/lib/planShare";
 
@@ -31,7 +32,7 @@ export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onSha
   // the original dinner/drinks/brunch icons are JPEGs on white, so they get a round frame.
   const transparentIcon = !!icon && icon.endsWith(".png");
   const avatar = getDisplayAvatarUrl(plan.creator_avatar);
-  const emoji = getActivityEmoji(plan.activity_type);
+  const emoji = getPlanEmoji(plan.activity_type, plan.note);
 
   // What sits above the title. A recognised activity gets its icon; an unrecognised one has only the
   // generic 📍 fallback, which says nothing — so on a photo background it gets no hero at all, and on a

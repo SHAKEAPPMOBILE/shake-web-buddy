@@ -21,6 +21,7 @@ import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
 import { getCityPhoto } from "@/data/cityBackgrounds";
+import { getPlanEmoji } from "@/lib/activityDetection";
 import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
 import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
 import { ShareEventSheet } from "@/components/ShareEventSheet";
@@ -242,6 +243,8 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   const [localBackgroundId, setLocalBackgroundId] = useState<string | null | undefined>(plan.background_id);
   const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
   const cityPhoto = plan.is_auto_generated ? getCityPhoto(plan.city) : undefined;
+  // The activity's emoji: its type's, or for a free-text plan whatever its title says ("Ping pong" → 🏓).
+  const planEmoji = getPlanEmoji(plan.activity_type, plan.note);
   // Text over the card's bottom edge is light on anything dark: every user plan, and a standing
   // plan once it sits on a city photo. Only a standing plan on the pale time-of-day wash gets dark text.
   const lightText = !plan.is_auto_generated || !!cityPhoto;
@@ -555,8 +558,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                emoji just sit on top of a picture that already says enough. */
             <>
               <PlanBackgroundFill bg={selectedBackground} />
-              {!selectedBackground.image && getActivityEmoji(plan.activity_type) !== "📍" && (
-                <EmojiScatterPattern emoji={getActivityEmoji(plan.activity_type)} seed={plan.id} />
+              {!selectedBackground.image && planEmoji !== "📍" && (
+                <EmojiScatterPattern emoji={planEmoji} seed={plan.id} />
               )}
             </>
           ) : plan.creator_avatar ? (
@@ -569,8 +572,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               className="absolute inset-0 flex items-center justify-center overflow-hidden"
               style={smallImage ? { background: "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)" } : undefined}
             >
-              {smallImage && getActivityEmoji(plan.activity_type) !== "📍" && (
-                <EmojiScatterPattern emoji={getActivityEmoji(plan.activity_type)} seed={plan.id} />
+              {smallImage && planEmoji !== "📍" && (
+                <EmojiScatterPattern emoji={planEmoji} seed={plan.id} />
               )}
               <img
                 src={plan.creator_avatar}
@@ -605,8 +608,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 className="absolute inset-0"
                 style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)" }}
               />
-              {getActivityEmoji(plan.activity_type) !== "📍" && (
-                <EmojiScatterPattern emoji={getActivityEmoji(plan.activity_type)} seed={plan.id} />
+              {planEmoji !== "📍" && (
+                <EmojiScatterPattern emoji={planEmoji} seed={plan.id} />
               )}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/30 shadow-xl flex items-center justify-center bg-white/10">

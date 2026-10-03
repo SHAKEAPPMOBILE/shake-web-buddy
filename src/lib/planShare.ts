@@ -1,5 +1,6 @@
 import { format, isToday, isTomorrow } from "date-fns";
-import { ACTIVITY_START_TIMES, getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
+import { ACTIVITY_START_TIMES, getActivityLabel } from "@/data/activityTypes";
+import { getPlanEmoji } from "@/lib/activityDetection";
 import { getShareLabel } from "@/lib/utils";
 import { parseDbDate } from "@/lib/date-utils";
 
@@ -25,7 +26,7 @@ export interface SharePlan {
  */
 export function buildPlanShare(plan: SharePlan, userId?: string | null) {
   const label = getShareLabel(plan.note, getActivityLabel(plan.activity_type));
-  const emoji = getActivityEmoji(plan.activity_type);
+  const emoji = getPlanEmoji(plan.activity_type, plan.note);
   const dateStr = plan.scheduled_for
     ? format(parseDbDate(plan.scheduled_for), "EEE, d MMM")
     : format(new Date(), "EEE, d MMM");

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_ACTIVITY_TYPES, getNextOccurrenceDate } from "@/data/activityTypes";
-import { detectActivityFromText } from "@/lib/activityDetection";
+import { detectActivityFromText, getPlanEmoji } from "@/lib/activityDetection";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { format } from "date-fns";
 import { parseDbDate } from "@/lib/date-utils";
@@ -224,6 +224,7 @@ export default function ShareLanding() {
       ? ALL_ACTIVITY_TYPES.find((a) => a.id === detectActivityFromText(activity.note!).type)
       : undefined);
   const planIcon = planTypeInfo?.icon ?? null;
+  const planEmoji = !planIcon && activity?.note ? getPlanEmoji(activity.activity_type, activity.note) : "📍";
 
   const activityIcon = activityInfo?.icon ?? null;
   const activityEmoji = activityInfo?.emoji ?? "🎉";
@@ -275,14 +276,18 @@ export default function ShareLanding() {
             <>
               <div className="flex flex-col items-center gap-3 text-center">
                 <span className="text-5xl">😎</span>
-                {planIcon ? (
+                {planIcon || planEmoji !== "📍" ? (
                   <div className="flex items-center justify-center gap-3">
-                    {planIcon.endsWith(".png") ? (
-                      <img src={planIcon} alt="" className="h-12 w-12 shrink-0 object-contain drop-shadow-lg" />
+                    {planIcon ? (
+                      planIcon.endsWith(".png") ? (
+                        <img src={planIcon} alt="" className="h-12 w-12 shrink-0 object-contain drop-shadow-lg" />
+                      ) : (
+                        <span className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white shadow-lg">
+                          <img src={planIcon} alt="" className="h-full w-full object-cover" />
+                        </span>
+                      )
                     ) : (
-                      <span className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white shadow-lg">
-                        <img src={planIcon} alt="" className="h-full w-full object-cover" />
-                      </span>
+                      <span className="shrink-0 text-5xl leading-none">{planEmoji}</span>
                     )}
                     <h1 className="text-white text-2xl font-bold text-left">"{activity.note}"</h1>
                   </div>

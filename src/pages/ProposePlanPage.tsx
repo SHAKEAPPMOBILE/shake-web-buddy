@@ -3074,7 +3074,7 @@ export default function ProposePlanPage() {
               "Beach time", ☕ for "Coffee on Sunday", …) — skipped for
               "general"/unmatched text, same as the swipe-feed scatter
               pattern, since the default 📍 pin isn't tied to anything. */}
-          {currentStepName === "preview" && detectedActivity && detectedActivity.type !== "general" && (
+          {currentStepName === "preview" && detectedActivity && detectedActivity.emoji !== "📍" && (
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 text-xl" aria-hidden="true">
               <span>{detectedActivity.emoji}</span>
               <span>{detectedActivity.emoji}</span>
@@ -3240,7 +3240,7 @@ export default function ProposePlanPage() {
                 className="text-foreground/80 hover:text-foreground"
                 aria-label="Back"
               />
-              {currentStepName === "preview" && detectedActivity && detectedActivity.type !== "general" && (
+              {currentStepName === "preview" && detectedActivity && detectedActivity.emoji !== "📍" && (
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 text-xl" aria-hidden="true">
                   <span>{detectedActivity.emoji}</span>
                   <span>{detectedActivity.emoji}</span>
