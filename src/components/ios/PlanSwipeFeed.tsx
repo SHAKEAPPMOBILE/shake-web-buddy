@@ -527,7 +527,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               style={{ background: getTimeOfDayGradient("bottom") }}
             >
               {cityPhoto && <PlanBackgroundFill bg={cityPhoto} />}
-              <div className="w-40 h-40 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl">
+              <div className="w-40 h-40 rounded-full bg-card flex items-center justify-center shadow-2xl">
                 {getActivityIcon(plan.activity_type) ? (
                   <LivingActivityIcon
                     activityType={plan.activity_type}
