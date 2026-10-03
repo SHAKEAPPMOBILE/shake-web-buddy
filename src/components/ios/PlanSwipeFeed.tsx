@@ -20,7 +20,7 @@ import { ChevronLeft, DollarSign, Volume2, VolumeX, User, Send } from "lucide-re
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
-import { getCityBackground } from "@/data/cityBackgrounds";
+import { getCityPhoto } from "@/data/cityBackgrounds";
 import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
 import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
 import { ShareEventSheet } from "@/components/ShareEventSheet";
@@ -241,6 +241,10 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   // immediately without waiting on a refetch of the `plan` prop.
   const [localBackgroundId, setLocalBackgroundId] = useState<string | null | undefined>(plan.background_id);
   const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
+  const cityPhoto = plan.is_auto_generated ? getCityPhoto(plan.city) : undefined;
+  // Text over the card's bottom edge is light on anything dark: every user plan, and a standing
+  // plan once it sits on a city photo. Only a standing plan on the pale time-of-day wash gets dark text.
+  const lightText = !plan.is_auto_generated || !!cityPhoto;
 
   const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const { videoWidth, videoHeight } = e.currentTarget;
@@ -514,37 +518,15 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
         ── */
         <>
           {plan.is_auto_generated ? (
-            /* Auto-generated plan: carousel-style circle over the black-and-
-               white city landmark illustration (same art submitted in the
-               app-store builds — keep it as-is, don't recolor it), on top of
-               the same soft time-of-day color wash Home uses. What actually
-               made this read as "too gray" wasn't the illustration itself —
-               it was the black bottom scrim (further down) stacking on top
-               of it; that scrim is now skipped for auto-generated cards. */
+            /* Auto-generated plan: carousel-style circle over a photo of the
+               city (these used to sit on black-and-white landmark
+               illustrations), on top of the soft time-of-day wash Home uses
+               for any city without a photo yet. */
             <div
               className="absolute inset-0 flex items-center justify-center"
               style={{ background: getTimeOfDayGradient("bottom") }}
             >
-              {getCityBackground(plan.city) && (
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: "calc(50% - 90px)",
-                    left: "50%",
-                    width: "100vw",
-                    maxWidth: 480,
-                    height: "100vw",
-                    maxHeight: 480,
-                    transform: "translate(-50%, -50%)",
-                    backgroundImage: `url(${getCityBackground(plan.city)})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center 40%",
-                    filter: "grayscale(1)",
-                    WebkitMaskImage: "radial-gradient(circle, black 32%, transparent 72%)",
-                    maskImage: "radial-gradient(circle, black 32%, transparent 72%)",
-                  }}
-                />
-              )}
+              {cityPhoto && <PlanBackgroundFill bg={cityPhoto} />}
               <div className="w-40 h-40 rounded-full bg-card flex items-center justify-center border-2 border-blue-400 shadow-2xl">
                 {getActivityIcon(plan.activity_type) ? (
                   <LivingActivityIcon
@@ -635,11 +617,11 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               </div>
             </>
           )}
-          {/* Gradient scrim for bottom overlay — skipped for the auto-generated
-              card: its background is already the light time-of-day wash (not
-              an unpredictable photo), and a black scrim on top of that just
-              muddies the color into gray instead of legibly framing it. */}
-          {!plan.is_auto_generated && (
+          {/* Gradient scrim for bottom overlay — skipped for an auto-generated
+              card on the plain light time-of-day wash (a black scrim there just
+              muddies the color into gray), but needed once that card has a
+              city photo behind its text. */}
+          {(!plan.is_auto_generated || cityPhoto) && (
             <div
               className="absolute inset-0 pointer-events-none"
               style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%)" }}
@@ -824,7 +806,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               backgrounds of unpredictable brightness). */}
           <div
             className="flex-1 min-w-0"
-            style={plan.is_auto_generated ? undefined : { textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}
+            style={lightText ? { textShadow: "0 1px 4px rgba(0,0,0,0.7)" } : undefined}
           >
             {/* "Post like this" quick posts have no title at all — just the
                 media plus the creator's name and city/date below. */}
@@ -834,7 +816,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 onClick={() => setShowDescription(true)}
                 className={cn(
                   "block w-full font-bold text-base leading-tight truncate text-left underline underline-offset-2",
-                  plan.is_auto_generated ? "text-gray-900 decoration-gray-400" : "text-white decoration-white/40"
+                  lightText ? "text-white decoration-white/40" : "text-gray-900 decoration-gray-400"
                 )}
                 style={{ pointerEvents: "auto" }}
               >
@@ -847,7 +829,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 {planTitle}
               </button>
             ) : (
-              <p className={cn("font-bold text-base leading-tight truncate", plan.is_auto_generated ? "text-gray-900" : "text-white")}>
+              <p className={cn("font-bold text-base leading-tight truncate", lightText ? "text-white" : "text-gray-900")}>
                 {planTitle}
               </p>
             )}
@@ -861,7 +843,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 {plan.creator_name}
               </button>
             )}
-            <p className={cn("text-sm mt-0.5 truncate", plan.is_auto_generated ? "text-gray-500" : "text-white/80")}>
+            <p className={cn("text-sm mt-0.5 truncate", lightText ? "text-white/80" : "text-gray-500")}>
               {plan.city}{dateLabel ? ` · ${dateLabel}` : ""}
             </p>
           </div>

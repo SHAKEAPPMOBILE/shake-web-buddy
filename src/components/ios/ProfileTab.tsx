@@ -1241,6 +1241,17 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <span className="flex-1 text-sm font-medium text-gray-900">{t('common.termsOfService', 'Terms of Service')}</span>
               <ChevronRight className="w-4 h-4 text-gray-300" />
             </button>
+            {/* Photo credits — Creative Commons city photos need an attribution page */}
+            <button
+              onClick={() => { navigate(location.pathname, { replace: true, state: { activeTab: 'profile' } }); navigate('/photo-credits'); }}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
+                <Globe className="w-5 h-5 text-white" />
+              </div>
+              <span className="flex-1 text-sm font-medium text-gray-900">{t('common.photoCredits', 'Photo credits')}</span>
+              <ChevronRight className="w-4 h-4 text-gray-300" />
+            </button>
           </div>
         </div>
 

@@ -1,36 +1,39 @@
-/** Illustrated landmark backgrounds for the standing Dinner/Brunch cards in
- *  the swipe feed — replaces the plain white behind the activity-type
- *  circle with something that reads as "this city" at a glance. Keyed by
- *  the exact `city` string used elsewhere (must match SHAKE_CITIES' name).
- *  Cities with no illustration yet just keep the plain white background. */
-export const CITY_BACKGROUNDS: Record<string, string> = {
-  "Medellín": "/icons/cities/medellin.webp",
-  "Washington D.C.": "/icons/cities/washington-dc.png",
-  "New York City": "/icons/cities/new-york-city.webp",
-  "Lisbon": "/icons/cities/lisbon.webp",
-  "San Francisco": "/icons/cities/san-francisco.webp",
-  "Los Angeles": "/icons/cities/los-angeles.webp",
-  "Dallas": "/icons/cities/dallas.webp",
-  "Austin": "/icons/cities/austin.webp",
-  "London": "/icons/cities/london.webp",
-  "Guadalajara": "/icons/cities/guadalajara.webp",
-  "Chicago": "/icons/cities/chicago.webp",
-  "Toronto": "/icons/cities/toronto.webp",
-  "Vancouver": "/icons/cities/vancouver.webp",
-  "Mexico City": "/icons/cities/mexico-city.webp",
-  "Miami": "/icons/cities/miami.webp",
-  "Bogotá": "/icons/cities/bogota.webp",
-  "Cartagena": "/icons/cities/cartagena.webp",
-  "Buenos Aires": "/icons/cities/buenos-aires.webp",
-  "Paris": "/icons/cities/paris.webp",
-  "Berlin": "/icons/cities/berlin.webp",
-  "Madrid": "/icons/cities/madrid.webp",
-  "Barcelona": "/icons/cities/barcelona.webp",
-  "Porto": "/icons/cities/porto.webp",
-  "Dubai": "/icons/cities/dubai.png",
+import { PLAN_BACKGROUNDS, type PlanBackground } from "@/data/planBackgrounds";
+
+/** City photos behind the standing Dinner/Brunch cards in the swipe feed — they replaced the
+ *  black-and-white landmark illustrations that used to sit here. Keyed by the exact `city`
+ *  string used elsewhere (must match SHAKE_CITIES' name); values are ids in PLAN_BACKGROUNDS,
+ *  so each photo, its focal point and its credit live in one place. A city with no photo just
+ *  keeps the plain time-of-day wash. */
+const CITY_PHOTO_IDS: Record<string, string> = {
+  "Medellín": "city-medellin",
+  "Washington D.C.": "city-washington-dc",
+  "New York City": "city-new-york-city",
+  "Lisbon": "city-lisbon",
+  "San Francisco": "city-san-francisco",
+  "Los Angeles": "city-los-angeles",
+  "Dallas": "city-dallas",
+  "Austin": "city-austin",
+  "London": "city-london",
+  "Guadalajara": "city-guadalajara",
+  "Chicago": "city-chicago",
+  "Toronto": "city-toronto",
+  "Vancouver": "city-vancouver",
+  "Mexico City": "city-mexico-city",
+  "Miami": "city-miami",
+  "Bogotá": "city-bogota",
+  "Cartagena": "city-cartagena",
+  "Buenos Aires": "city-buenos-aires",
+  "Paris": "city-paris",
+  "Berlin": "city-berlin",
+  "Madrid": "city-madrid",
+  "Barcelona": "city-barcelona",
+  "Porto": "city-porto",
+  "Dubai": "city-dubai",
 };
 
-export function getCityBackground(city: string | null | undefined): string | undefined {
+export function getCityPhoto(city: string | null | undefined): PlanBackground | undefined {
   if (!city) return undefined;
-  return CITY_BACKGROUNDS[city];
+  const id = CITY_PHOTO_IDS[city];
+  return id ? PLAN_BACKGROUNDS.find((b) => b.id === id) : undefined;
 }

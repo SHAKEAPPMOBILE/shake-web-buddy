@@ -22,6 +22,7 @@ import OAuthCallback from "./pages/OAuthCallback";
 import Profile from "./pages/Profile";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import PhotoCredits from "./pages/PhotoCredits";
 import TermsOfService from "./pages/TermsOfService";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import NotFound from "./pages/NotFound";
@@ -144,6 +145,7 @@ const App = () => {
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/photo-credits" element={<PhotoCredits />} />
                     <Route path="/terms-of-service" element={<TermsOfService />} />
                     <Route path="/subscription-success" element={<SubscriptionSuccess />} />
                     <Route path="/admin" element={<Admin />} />
