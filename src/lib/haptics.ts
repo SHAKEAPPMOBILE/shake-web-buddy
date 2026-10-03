@@ -62,3 +62,8 @@ export function attachTypingHaptics(): () => void {
   document.addEventListener("keydown", handler, true);
   return () => document.removeEventListener("keydown", handler, true);
 }
+
+/** A firmer tap for a long-press registering — distinct from the light tap of a normal press. */
+export function longPressHaptic() {
+  Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
+}

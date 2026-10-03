@@ -3066,6 +3066,7 @@ export default function ProposePlanPage() {
         <div className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] relative flex items-center">
           <MinimalBackButton
             onClick={() => currentStep > 0 ? handleBack() : navigate(-1)}
+            onLongPress={handleExitFlow}
             className="text-foreground/80 hover:text-foreground"
             aria-label="Back"
           />
@@ -3235,6 +3236,7 @@ export default function ProposePlanPage() {
             <div className="px-6 pt-4 pb-2 relative flex items-center">
               <MinimalBackButton
                 onClick={() => currentStep > 0 ? handleBack() : handleExitFlow()}
+                onLongPress={handleExitFlow}
                 className="text-foreground/80 hover:text-foreground"
                 aria-label="Back"
               />
