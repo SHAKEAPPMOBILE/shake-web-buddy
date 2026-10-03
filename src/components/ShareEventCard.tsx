@@ -1,4 +1,5 @@
 import type React from "react";
+import { Share as ShareIcon } from "lucide-react";
 import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
 import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
 import { getActivityEmoji, getActivityIcon } from "@/data/activityTypes";
@@ -13,6 +14,9 @@ interface ShareEventCardProps {
   when: string | null;
   hostedBy: string;
   joinedLabel?: string | null;
+  /** When set, a share icon sits in the card's top-right corner and calls this (opens the system share sheet). */
+  onShare?: () => void;
+  shareLabel?: string;
 }
 
 /**
@@ -20,7 +24,7 @@ interface ShareEventCardProps {
  * goes out. Uses the plan's own background (a city photo or a color) and its
  * activity icon, so a picnic reads as a picnic before anyone taps send.
  */
-export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel }: ShareEventCardProps) {
+export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onShare, shareLabel = "Share" }: ShareEventCardProps) {
   const bg = plan.background_id ? PLAN_BACKGROUNDS.find((b) => b.id === plan.background_id) : undefined;
   const icon = getActivityIcon(plan.activity_type);
   // The newer activity icons are transparent PNGs and sit straight on the background;
@@ -63,6 +67,17 @@ export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel }: Sha
       <div className="absolute left-4 top-4 z-10 rounded-full bg-black/25 backdrop-blur-sm px-3 py-1 text-[11px] font-bold tracking-[0.2em]">
         SHAKE
       </div>
+
+      {onShare && (
+        <button
+          type="button"
+          onClick={onShare}
+          aria-label={shareLabel}
+          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-transform active:scale-90"
+        >
+          <ShareIcon className="h-[18px] w-[18px]" />
+        </button>
+      )}
 
       {/* The icon takes whatever room the text block below leaves, so a long title can never run over it. */}
       <div className="relative min-h-0 flex-1">
