@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
+import { quietPointsWatcher, syncSeenPoints } from "@/lib/pointsEvents";
 
 interface WelcomeBonusState {
   isComplete: boolean;
@@ -92,6 +93,8 @@ export function useWelcomeBonus(userId: string | undefined, options: UseWelcomeB
   const claimBonus = useCallback(async (): Promise<boolean> => {
     if (!userId) return false;
 
+    // This hook celebrates the +10 itself; keep the generic points popup from announcing it again.
+    quietPointsWatcher(15_000);
     try {
       const { data, error } = await supabase.rpc("claim_welcome_bonus", {
         target_user_id: userId,
@@ -104,6 +107,7 @@ export function useWelcomeBonus(userId: string | undefined, options: UseWelcomeB
 
       if (data) {
         setState((prev) => ({ ...prev, isClaimed: true }));
+        void syncSeenPoints(userId);
         // Fire-and-forget — a missed push shouldn't block the in-app
         // celebration, which is the primary way the user learns about this.
         supabase.functions

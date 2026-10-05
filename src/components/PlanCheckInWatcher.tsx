@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/lib/app-toast";
-import { triggerConfettiWaterfall } from "@/lib/confetti";
+import { emitPointsEvent, quietPointsWatcher, syncSeenPoints } from "@/lib/pointsEvents";
 import { getDistanceFromLatLng } from "@/data/cities";
 
 const CHECK_EVERY_MS = 60_000;
@@ -60,12 +59,26 @@ export function PlanCheckInWatcher() {
         for (const c of candidates) {
           const meters = getDistanceFromLatLng(latitude, longitude, c.venue_lat, c.venue_lng) * 1000;
           if (meters > NEAR_METERS) continue;
+          // We celebrate this ourselves; keep the generic points popup from announcing it too.
+          quietPointsWatcher(15_000);
           const res = await rpc("check_in_to_plan", { p_activity_id: c.activity_id, p_lat: latitude, p_lng: longitude });
           const out = res.data as { ok?: boolean; points?: number; reason?: string } | null;
           if (out?.ok) {
             awarded.current.add(c.activity_id);
-            toast.success(`+${out.points ?? 5} points! 🎉`, { description: `You made it to ${c.venue_name}` });
-            triggerConfettiWaterfall();
+            const points = out.points ?? 5;
+            const message = `You made it to ${c.venue_name}`;
+            const total = await syncSeenPoints(user.id);
+            emitPointsEvent({ points, message, total: total ?? undefined });
+            // Same fire-and-forget self-push the welcome bonus uses, so it also shows if the app is in the background.
+            supabase.functions
+              .invoke("send-push-notification", {
+                body: {
+                  to_user_id: user.id,
+                  title: `🎉 +${points} points`,
+                  body: total !== null ? `${message}. You now have ${total} points.` : `${message}.`,
+                },
+              })
+              .catch((err) => console.error("Error sending check-in push:", err));
           } else if (out?.reason === "already_checked_in") {
             awarded.current.add(c.activity_id);
           }

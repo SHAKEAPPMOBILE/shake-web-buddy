@@ -7,6 +7,10 @@ import shakeCoin from "@/assets/shake-coin-transparent.png";
 interface PointsCelebrationProps {
   points: number;
   userName?: string;
+  /** Where the points came from ("You made it to Sunrise Yoga"). With this or `total`, the card uses the "+N points" layout. */
+  message?: string;
+  /** The person's new total, shown under the message. */
+  total?: number;
 }
 
 /**
@@ -14,7 +18,7 @@ interface PointsCelebrationProps {
  * mount and auto-dismisses on its own (the parent clears `points` after
  * CELEBRATION_MS in useWelcomeBonus). No buttons, nothing to dismiss.
  */
-export function PointsCelebration({ points, userName }: PointsCelebrationProps) {
+export function PointsCelebration({ points, userName, message, total }: PointsCelebrationProps) {
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -35,15 +39,32 @@ export function PointsCelebration({ points, userName }: PointsCelebrationProps) 
           boxShadow: "0 8px 32px rgba(0, 0, 0, 0.18)",
         }}
       >
-        <img src={shakeCoin} alt="" className="w-16 h-16 mb-3 animate-bounce-subtle" />
-        <h2 className="text-lg font-display font-bold text-gray-900">
-          {userName
-            ? t("points.congratsNamed", "Congratulations {{name}}!", { name: userName })
-            : t("points.congrats", "Congratulations!")}
-        </h2>
-        <p className="text-sm text-gray-600 mt-1">
-          {t("points.youGotPoints", "You got +{{points}} points", { points })}
-        </p>
+        {message !== undefined || total !== undefined ? (
+          <>
+            <img src={shakeCoin} alt="" className="w-36 h-36 -mt-8 -mb-6 animate-bounce-subtle" />
+            <h2 className="text-3xl font-display font-bold text-gray-900">
+              {t("points.plusPoints", "+{{points}} points", { points })}
+            </h2>
+            {message && <p className="text-sm text-gray-600 mt-1">{message}</p>}
+            {total !== undefined && (
+              <span className="mt-3 px-4 py-1.5 rounded-full text-xs font-semibold" style={{ background: "#FFF3E5", color: "#D66216" }}>
+                {t("points.nowHave", "You now have {{total}} points", { total })}
+              </span>
+            )}
+          </>
+        ) : (
+          <>
+            <img src={shakeCoin} alt="" className="w-16 h-16 mb-3 animate-bounce-subtle" />
+            <h2 className="text-lg font-display font-bold text-gray-900">
+              {userName
+                ? t("points.congratsNamed", "Congratulations {{name}}!", { name: userName })
+                : t("points.congrats", "Congratulations!")}
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {t("points.youGotPoints", "You got +{{points}} points", { points })}
+            </p>
+          </>
+        )}
       </div>
     </div>,
     document.body,
