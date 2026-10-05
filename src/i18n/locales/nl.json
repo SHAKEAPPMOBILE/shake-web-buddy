@@ -474,7 +474,21 @@
     "claimingAutomatically": "Automatisch claimen…",
     "congrats": "Gefeliciteerd!",
     "congratsNamed": "Gefeliciteerd {{name}}!",
-    "youGotPoints": "Je hebt +{{points}} punten verdiend"
+    "youGotPoints": "Je hebt +{{points}} punten verdiend",
+    "plusPoints": "+{{points}} punten",
+    "nowHave": "Je hebt nu {{total}} punten",
+    "madeItTo": "Je bent aangekomen bij {{venue}}",
+    "arriveAtPlans": "Kom opdagen bij plannen",
+    "arriveAtPlansPoints": "Verdien +5 punten wanneer je aankomt bij een plan waaraan je meedoet of dat je organiseert (met een vastgepinde plek en minstens één ander persoon)",
+    "pushCheckInTitle": "🎉 +{{points}} punten",
+    "pushCheckInBody": "Je bent aangekomen bij {{venue}}. Je hebt nu {{total}} punten.",
+    "pushCheckInBodyShort": "Je bent aangekomen bij {{venue}}.",
+    "pushWelcomeTitle": "🎉 Welkomstbonus ontgrendeld!",
+    "pushWelcomeBody": "Je hebt zojuist +10 punten verdiend door je profiel af te maken.",
+    "pushReferralTitle": "🎉 Je hebt punten verdiend!",
+    "pushReferralBody": "Een vriend heeft zich via jouw uitnodiging aangemeld bij SHAKE – je krijgt +5 punten.",
+    "pushPopularTitle": "🎉 Je plan is populair!",
+    "pushPopularBody": "+5 punten – er doen al {{count}} mensen mee aan je plan."
   },
   "auth": {
     "enterPhone": "Voer je telefoonnummer in",

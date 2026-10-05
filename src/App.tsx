@@ -34,6 +34,7 @@ import { NotificationProvider } from "@/components/notifications/NotificationPro
 import { WelcomeBonusWatcher } from "@/components/WelcomeBonusWatcher";
 import { PlanCheckInWatcher } from "@/components/PlanCheckInWatcher";
 import { PointsPopupHost } from "@/components/PointsPopupHost";
+import { LanguageSync } from "@/components/LanguageSync";
 import ProposePlanPage from "./pages/ProposePlanPage";
 import EventChatPage from "./pages/EventChatPage";
 import ShareLanding from "./pages/ShareLanding";
@@ -149,6 +150,7 @@ const App = () => {
                   <WelcomeBonusWatcher />
                   <PlanCheckInWatcher />
                   <PointsPopupHost />
+                  <LanguageSync />
                   <Toaster />
                 <BrowserRouter>
                   <ReferralTracker />

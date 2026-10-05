@@ -474,7 +474,21 @@
     "claimingAutomatically": "Riscatto automatico in corso…",
     "congrats": "Congratulazioni!",
     "congratsNamed": "Congratulazioni {{name}}!",
-    "youGotPoints": "Hai ottenuto +{{points}} punti"
+    "youGotPoints": "Hai ottenuto +{{points}} punti",
+    "plusPoints": "+{{points}} punti",
+    "nowHave": "Ora hai {{total}} punti",
+    "madeItTo": "Check-in fatto a {{venue}}",
+    "arriveAtPlans": "Presentati ai tuoi piani",
+    "arriveAtPlansPoints": "Guadagna +5 punti quando arrivi a un piano a cui partecipi o che organizzi (serve un luogo indicato e almeno un'altra persona)",
+    "pushCheckInTitle": "🎉 +{{points}} punti",
+    "pushCheckInBody": "Check-in fatto a {{venue}}. Ora hai {{total}} punti.",
+    "pushCheckInBodyShort": "Check-in fatto a {{venue}}.",
+    "pushWelcomeTitle": "🎉 Bonus di benvenuto sbloccato!",
+    "pushWelcomeBody": "Hai appena guadagnato +10 punti completando il profilo.",
+    "pushReferralTitle": "🎉 Hai guadagnato punti!",
+    "pushReferralBody": "Un amico è entrato in SHAKE con il tuo invito: hai ottenuto +5 punti.",
+    "pushPopularTitle": "🎉 Il tuo piano è popolare!",
+    "pushPopularBody": "+5 punti: al tuo piano partecipano già {{count}} persone."
   },
   "auth": {
     "enterPhone": "Inserisci il tuo numero di telefono",

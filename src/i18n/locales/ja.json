@@ -474,7 +474,21 @@
     "claimingAutomatically": "自動的に受け取り中…",
     "congrats": "おめでとう！",
     "congratsNamed": "おめでとう、{{name}}さん！",
-    "youGotPoints": "{{points}}ポイント獲得しました"
+    "youGotPoints": "{{points}}ポイント獲得しました",
+    "plusPoints": "+{{points}}ポイント",
+    "nowHave": "合計 {{total}} ポイントになりました",
+    "madeItTo": "{{venue}} に到着しました",
+    "arriveAtPlans": "プランに参加しよう",
+    "arriveAtPlansPoints": "参加中または主催しているプランの場所に着くと+5ポイント獲得（場所の指定と、自分以外に1人以上の参加者が必要です）",
+    "pushCheckInTitle": "🎉 +{{points}}ポイント",
+    "pushCheckInBody": "{{venue}} に到着しました。合計 {{total}} ポイントです。",
+    "pushCheckInBodyShort": "{{venue}} に到着しました。",
+    "pushWelcomeTitle": "🎉 ウェルカムボーナスを獲得！",
+    "pushWelcomeBody": "プロフィールを完成させて +10 ポイント獲得しました。",
+    "pushReferralTitle": "🎉 ポイントを獲得しました！",
+    "pushReferralBody": "友だちがあなたの招待でSHAKEに参加しました。+5ポイント獲得！",
+    "pushPopularTitle": "🎉 あなたのプランが人気です！",
+    "pushPopularBody": "+5ポイント — プランの参加者が{{count}}人になりました。"
   },
   "auth": {
     "enterPhone": "電話番号を入力",

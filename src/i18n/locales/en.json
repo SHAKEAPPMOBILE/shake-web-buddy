@@ -471,7 +471,21 @@
     "noReferrals": "No referrals yet",
     "shareToEarn": "Share your link to earn +5 points per signup!",
     "bonusClaimedTitle": "🎉 Welcome Bonus Claimed!",
-    "bonusClaimedDesc": "You earned +10 points for completing your profile!"
+    "bonusClaimedDesc": "You earned +10 points for completing your profile!",
+    "plusPoints": "+{{points}} points",
+    "nowHave": "You now have {{total}} points",
+    "madeItTo": "You made it to {{venue}}",
+    "arriveAtPlans": "Show up to plans",
+    "arriveAtPlansPoints": "Earn +5 points when you arrive at a plan you joined or host (it needs a pinned place and at least one other person)",
+    "pushCheckInTitle": "🎉 +{{points}} points",
+    "pushCheckInBody": "You made it to {{venue}}. You now have {{total}} points.",
+    "pushCheckInBodyShort": "You made it to {{venue}}.",
+    "pushWelcomeTitle": "🎉 Welcome Bonus unlocked!",
+    "pushWelcomeBody": "You just earned +10 points for completing your profile.",
+    "pushReferralTitle": "🎉 You earned points!",
+    "pushReferralBody": "A friend joined SHAKE using your invite — you got +5 points.",
+    "pushPopularTitle": "🎉 Your plan is popular!",
+    "pushPopularBody": "+5 points — your plan now has {{count}} people joining."
   },
   "auth": {
     "enterPhone": "Enter your phone number",

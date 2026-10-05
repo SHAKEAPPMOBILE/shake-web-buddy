@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { quietPointsWatcher, syncSeenPoints } from "@/lib/pointsEvents";
+import i18n from "@/i18n";
 
 interface WelcomeBonusState {
   isComplete: boolean;
@@ -114,8 +115,8 @@ export function useWelcomeBonus(userId: string | undefined, options: UseWelcomeB
           .invoke("send-push-notification", {
             body: {
               to_user_id: userId,
-              title: "🎉 Welcome Bonus unlocked!",
-              body: "You just earned +10 points for completing your profile.",
+              title: i18n.t("points.pushWelcomeTitle", "🎉 Welcome Bonus unlocked!"),
+              body: i18n.t("points.pushWelcomeBody", "You just earned +10 points for completing your profile."),
             },
           })
           .catch((err) => console.error("Error sending welcome bonus push:", err));

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import i18n from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { emitPointsEvent, quietPointsWatcher, syncSeenPoints } from "@/lib/pointsEvents";
@@ -66,7 +67,7 @@ export function PlanCheckInWatcher() {
           if (out?.ok) {
             awarded.current.add(c.activity_id);
             const points = out.points ?? 5;
-            const message = `You made it to ${c.venue_name}`;
+            const message = i18n.t("points.madeItTo", "You made it to {{venue}}", { venue: c.venue_name });
             const total = await syncSeenPoints(user.id);
             emitPointsEvent({ points, message, total: total ?? undefined });
             // Same fire-and-forget self-push the welcome bonus uses, so it also shows if the app is in the background.
@@ -74,8 +75,10 @@ export function PlanCheckInWatcher() {
               .invoke("send-push-notification", {
                 body: {
                   to_user_id: user.id,
-                  title: `🎉 +${points} points`,
-                  body: total !== null ? `${message}. You now have ${total} points.` : `${message}.`,
+                  title: i18n.t("points.pushCheckInTitle", "🎉 +{{points}} points", { points }),
+                  body: total !== null
+                    ? i18n.t("points.pushCheckInBody", "You made it to {{venue}}. You now have {{total}} points.", { venue: c.venue_name, total })
+                    : i18n.t("points.pushCheckInBodyShort", "You made it to {{venue}}.", { venue: c.venue_name }),
                 },
               })
               .catch((err) => console.error("Error sending check-in push:", err));

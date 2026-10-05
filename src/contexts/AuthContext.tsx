@@ -5,6 +5,7 @@ import { getStoredReferralCode, clearStoredReferralCode } from "@/hooks/useRefer
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
 import { isNativePlatform } from "@/lib/platform-utils";
 import { getNextOccurrenceDate } from "@/data/activityTypes";
+import i18n from "@/i18n";
 
 export type OtpResult = {
   success: boolean;
@@ -215,15 +216,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Referral created successfully! Referrer gets +5 points");
         // Fire-and-forget — lets the referrer know right away, from the
         // referred user's own session (the referrer isn't online here).
-        supabase.functions
-          .invoke("send-push-notification", {
-            body: {
-              to_user_id: referrer.user_id,
-              title: "🎉 You earned points!",
-              body: "A friend joined SHAKE using your invite — you got +5 points.",
-            },
-          })
-          .catch((err) => console.error("Error sending referral push:", err));
+        // Written in the referrer's language (looked up server-side — we can't read their profile),
+        // falling back to English when they haven't set one.
+        void (async () => {
+          try {
+            const { data: lang } = await supabase.rpc("get_push_language" as never, { target_user_id: referrer.user_id } as never);
+            const code = typeof lang === "string" ? lang.split("-")[0].toLowerCase() : "en";
+            const tr = i18n.getFixedT(i18n.hasResourceBundle(code, "translation") ? code : "en");
+            await supabase.functions.invoke("send-push-notification", {
+              body: {
+                to_user_id: referrer.user_id,
+                title: tr("points.pushReferralTitle", "🎉 You earned points!"),
+                body: tr("points.pushReferralBody", "A friend joined SHAKE using your invite — you got +5 points."),
+              },
+            });
+          } catch (err) {
+            console.error("Error sending referral push:", err);
+          }
+        })();
       }
 
       clearStoredReferralCode();

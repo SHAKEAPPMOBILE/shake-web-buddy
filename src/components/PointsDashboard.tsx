@@ -3,7 +3,7 @@ import { useWelcomeBonus } from "@/hooks/useWelcomeBonus";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, TrendingUp, UserPlus, Users, Gift, CheckCircle2, AlertCircle } from "lucide-react";
+import { Sparkles, TrendingUp, UserPlus, Users, Gift, CheckCircle2, AlertCircle, MapPin } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { formatDistanceToNow } from "date-fns";
@@ -140,6 +140,12 @@ export function PointsDashboard({ userId }: PointsDashboardProps) {
               <Gift className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
               <span>
                 <strong className="text-gray-900">{t('points.completeProfileDesc', 'Complete your profile')}</strong> — {t('points.completeProfilePoints', 'Earn +10 points when you fill out all profile fields')}
+              </span>
+            </div>
+            <div className="flex items-start gap-2">
+              <MapPin className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
+              <span>
+                <strong className="text-gray-900">{t('points.arriveAtPlans', 'Show up to plans')}</strong> — {t('points.arriveAtPlansPoints', 'Earn +5 points when you arrive at a plan you joined or host (it needs a pinned place and at least one other person)')}
               </span>
             </div>
             <div className="flex items-start gap-2">

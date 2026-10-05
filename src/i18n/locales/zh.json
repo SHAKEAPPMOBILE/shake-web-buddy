@@ -474,7 +474,21 @@
     "claimingAutomatically": "正在自动领取…",
     "congrats": "恭喜！",
     "congratsNamed": "恭喜你，{{name}}！",
-    "youGotPoints": "你获得了 +{{points}} 积分"
+    "youGotPoints": "你获得了 +{{points}} 积分",
+    "plusPoints": "+{{points}} 积分",
+    "nowHave": "你现在共有 {{total}} 积分",
+    "madeItTo": "你已到达 {{venue}}",
+    "arriveAtPlans": "到场参加活动",
+    "arriveAtPlansPoints": "到达你已加入或你发起的活动现场即可获得+5积分（需要活动设置了地点，且至少还有一位其他参与者）",
+    "pushCheckInTitle": "🎉 +{{points}} 积分",
+    "pushCheckInBody": "你已到达 {{venue}}。你现在共有 {{total}} 积分。",
+    "pushCheckInBodyShort": "你已到达 {{venue}}。",
+    "pushWelcomeTitle": "🎉 新人奖励已解锁！",
+    "pushWelcomeBody": "完善资料，你刚刚获得了 +10 积分。",
+    "pushReferralTitle": "🎉 你获得了积分！",
+    "pushReferralBody": "有朋友通过你的邀请加入了 SHAKE——你获得了 +5 积分。",
+    "pushPopularTitle": "🎉 你的活动很受欢迎！",
+    "pushPopularBody": "+5 积分——你的活动已有 {{count}} 人参加。"
   },
   "auth": {
     "enterPhone": "输入你的电话号码",

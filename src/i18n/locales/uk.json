@@ -474,7 +474,21 @@
     "claimingAutomatically": "Автоматичне отримання…",
     "congrats": "Вітаємо!",
     "congratsNamed": "Вітаємо, {{name}}!",
-    "youGotPoints": "Ви отримали +{{points}} балів"
+    "youGotPoints": "Ви отримали +{{points}} балів",
+    "plusPoints": "+{{points}} балів",
+    "nowHave": "Усього балів: {{total}}",
+    "madeItTo": "Ви на місці: {{venue}}",
+    "arriveAtPlans": "Приходьте на плани",
+    "arriveAtPlansPoints": "Отримуйте +5 балів, коли приходите на план, до якого приєдналися або який організовуєте (потрібне позначене місце та ще хоча б одна людина)",
+    "pushCheckInTitle": "🎉 +{{points}} балів",
+    "pushCheckInBody": "Ви на місці: {{venue}}. Усього балів: {{total}}.",
+    "pushCheckInBodyShort": "Ви на місці: {{venue}}.",
+    "pushWelcomeTitle": "🎉 Вітальний бонус розблоковано!",
+    "pushWelcomeBody": "Ви щойно отримали +10 балів за заповнений профіль.",
+    "pushReferralTitle": "🎉 Ви отримали бали!",
+    "pushReferralBody": "Друг приєднався до SHAKE за вашим запрошенням — ви отримали +5 балів.",
+    "pushPopularTitle": "🎉 Ваш план популярний!",
+    "pushPopularBody": "+5 балів — у вашому плані вже бере участь {{count}} осіб."
   },
   "auth": {
     "enterPhone": "Введіть номер телефону",

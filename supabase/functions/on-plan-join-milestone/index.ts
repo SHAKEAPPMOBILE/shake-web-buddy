@@ -13,6 +13,21 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // just joined" into "did the creator's count just cross a multiple of 5?"
 // so they can get a push notification the moment it actually happens.
 
+// Translations of this push (kept in step with points.pushPopularTitle / pushPopularBody in the app's locale files).
+const POPULAR_PUSH: Record<string, { title: string; body: string }> = {
+  en: { title: "🎉 Your plan is popular!", body: "+5 points — your plan now has {{count}} people joining." },
+  es: { title: "🎉 ¡Tu plan es popular!", body: "+5 puntos: tu plan ya tiene {{count}} personas apuntadas." },
+  pt: { title: "🎉 Seu plano está bombando!", body: "+5 pontos: seu plano já tem {{count}} pessoas participando." },
+  fr: { title: "🎉 Votre plan fait un carton !", body: "+5 points : votre plan compte déjà {{count}} participants." },
+  de: { title: "🎉 Dein Plan ist beliebt!", body: "+5 Punkte – bei deinem Plan machen schon {{count}} Leute mit." },
+  it: { title: "🎉 Il tuo piano è popolare!", body: "+5 punti: al tuo piano partecipano già {{count}} persone." },
+  nl: { title: "🎉 Je plan is populair!", body: "+5 punten – er doen al {{count}} mensen mee aan je plan." },
+  pl: { title: "🎉 Twój plan jest popularny!", body: "+5 punktów – w twoim planie bierze już udział {{count}} osób." },
+  uk: { title: "🎉 Ваш план популярний!", body: "+5 балів — у вашому плані вже бере участь {{count}} осіб." },
+  zh: { title: "🎉 你的活动很受欢迎！", body: "+5 积分——你的活动已有 {{count}} 人参加。" },
+  ja: { title: "🎉 あなたのプランが人気です！", body: "+5ポイント — プランの参加者が{{count}}人になりました。" },
+};
+
 interface WebhookPayload {
   type: "INSERT" | "UPDATE" | "DELETE";
   table: string;
@@ -125,11 +140,20 @@ serve(async (req) => {
       });
     }
 
+    // Write the push in the creator's own language (English if they haven't set one).
+    const { data: langRow } = await supabase
+      .from("profiles_private")
+      .select("preferred_language")
+      .eq("user_id", creatorUserId)
+      .maybeSingle();
+    const langCode = (langRow?.preferred_language ?? "en").split("-")[0].toLowerCase();
+    const copy = POPULAR_PUSH[langCode] ?? POPULAR_PUSH.en;
+
     const { error: pushError } = await supabase.functions.invoke("send-push-notification", {
       body: {
         to_user_id: creatorUserId,
-        title: "🎉 Your plan is popular!",
-        body: `+5 points — your plan now has ${count} people joining.`,
+        title: copy.title,
+        body: copy.body.replace("{{count}}", String(count)),
       },
     });
 
