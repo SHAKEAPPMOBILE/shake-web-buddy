@@ -32,6 +32,7 @@ import Welcome from "./pages/Welcome";
 import Admin from "./pages/Admin";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 import { WelcomeBonusWatcher } from "@/components/WelcomeBonusWatcher";
+import { PlanCheckInWatcher } from "@/components/PlanCheckInWatcher";
 import ProposePlanPage from "./pages/ProposePlanPage";
 import EventChatPage from "./pages/EventChatPage";
 import ShareLanding from "./pages/ShareLanding";
@@ -145,6 +146,7 @@ const App = () => {
                 <TooltipProvider>
                   <NotificationProvider>
                   <WelcomeBonusWatcher />
+                  <PlanCheckInWatcher />
                   <Toaster />
                 <BrowserRouter>
                   <ReferralTracker />
