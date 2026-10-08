@@ -48,7 +48,8 @@ const CAP_TABLE = [
 ];
 
 const TEAM = [
-  { name: "Leonel Meneses", role: "Founder & CEO", pct: "100%", linkedin: "https://linkedin.com/in/leonel-meneses-4700152b" },
+  { name: "Leonel Meneses", role: "Founder & CEO", initials: "LM", linkedin: "https://linkedin.com/in/leonel-meneses-4700152b" },
+  { name: "Ryan Elliott Pikofsky", role: "Marketing Associate", initials: "RP", linkedin: "https://www.linkedin.com/in/ryan-elliott-pikofsky-158a86b2/" },
 ];
 
 function SectionFooter() {
@@ -148,7 +149,7 @@ export default function Pager() {
               <div className="mb-4">
                 <p className="font-semibold">Fees on activities</p>
                 <p className="text-neutral-600 text-sm">
-                  10% platform fee on paid activities & ticketed events booked through Shake
+                  15% platform fee on paid activities & ticketed events booked through Shake
                 </p>
               </div>
               <div className="mb-4">
@@ -199,15 +200,17 @@ export default function Pager() {
                         <td className="px-4 py-3">{row.year}</td>
                         <td className="px-4 py-3">{row.revenue}</td>
                         <td className="px-4 py-3">{row.expenses}</td>
-                        <td className="px-4 py-3 text-emerald-600 font-medium">{row.profit}</td>
+                        <td className={`px-4 py-3 font-medium ${row.profit.startsWith("–") ? "text-red-600" : "text-emerald-600"}`}>
+                          {row.profit}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              <div className="bg-[#2563eb] text-white rounded-2xl p-6 mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
+              <div className="bg-[#2563eb] text-white rounded-2xl p-6 mt-4 space-y-5">
+                <div className="space-y-1">
                   <p>
                     Raising: <span className="font-bold">$50k for marketing initiatives and worldwide launch</span>
                   </p>
@@ -218,12 +221,18 @@ export default function Pager() {
                     Discounted offer: <span className="font-bold">$1M cap for the first $100k invested</span>
                   </p>
                 </div>
-                <div className="text-sm grid grid-cols-2 gap-x-6 gap-y-1 whitespace-nowrap">
-                  {CAP_TABLE.map((row) => (
-                    <span key={row.amount}>
-                      {row.amount} = {row.pct}
-                    </span>
-                  ))}
+                <div>
+                  <p className="text-xs font-semibold tracking-wide text-white/70 mb-2">
+                    AT THE $1M CAP
+                  </p>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {CAP_TABLE.map((row) => (
+                      <div key={row.amount} className="bg-white/15 rounded-xl px-3 py-2 text-center">
+                        <p className="font-bold">{row.amount}</p>
+                        <p className="text-xs text-white/80">{row.pct}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -243,7 +252,7 @@ export default function Pager() {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-full bg-[#2563eb] text-white flex items-center justify-center font-bold text-sm">
-                    {member.pct}
+                    {member.initials}
                   </div>
                   <div>
                     <p className="font-semibold">{member.name}</p>
