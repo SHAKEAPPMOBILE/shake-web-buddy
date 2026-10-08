@@ -32,10 +32,10 @@ const SOLUTION_POINTS = [
 ];
 
 const PROJECTIONS = [
-  { year: "Year 1 · 2026", revenue: "$60,000", expenses: "$10,000", profit: "$50,000" },
-  { year: "Year 2 · 2027", revenue: "$240,000", expenses: "$20,000", profit: "$220,000" },
-  { year: "Year 3 · 2028", revenue: "$300,000", expenses: "$30,000", profit: "$270,000" },
-  { year: "Year 4 · 2029", revenue: "$600,000", expenses: "$90,000", profit: "$510,000" },
+  { year: "Year 1 · 2026", revenue: "$2,000", expenses: "$10,000", profit: "–$8,000" },
+  { year: "Year 2 · 2027", revenue: "$100,000", expenses: "$20,000", profit: "$80,000" },
+  { year: "Year 3 · 2028", revenue: "$200,000", expenses: "$30,000", profit: "$170,000" },
+  { year: "Year 4 · 2029", revenue: "$500,000", expenses: "$90,000", profit: "$410,000" },
   { year: "Year 5 · 2030", revenue: "$900,000", expenses: "$240,000", profit: "$660,000" },
 ];
 
@@ -168,7 +168,7 @@ export default function Pager() {
                 </p>
                 <p className="text-neutral-600 text-sm mt-1">Soft-launch V2 – Medellín 300 downloads at 07/21</p>
                 <p className="text-neutral-600 text-sm mt-1 font-semibold text-neutral-900">
-                  V3 is live now — 400 users at the moment
+                  V3 is live now — 400+ downloads
                 </p>
               </div>
               <div>
