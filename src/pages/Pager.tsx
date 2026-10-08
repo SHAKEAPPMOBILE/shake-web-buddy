@@ -175,7 +175,7 @@ export default function Pager() {
               <div>
                 <p className="font-semibold">Community</p>
                 <p className="text-neutral-600 text-sm">
-                  Growing network of yoga teachers & community builders ready to host worldwide
+                  Activities are already being scheduled on Shake — yoga teachers, language teachers and tour guides are promoting their services with us
                 </p>
               </div>
             </div>
