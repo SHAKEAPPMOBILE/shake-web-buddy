@@ -32,7 +32,7 @@ const SOLUTION_POINTS = [
 ];
 
 const PROJECTIONS = [
-  { year: "Year 1 · 2026", revenue: "$2,000", expenses: "$10,000", profit: "–$8,000" },
+  { year: "Year 1 · 2026", revenue: "$2,000", expenses: "$5,000", profit: "–$3,000" },
   { year: "Year 2 · 2027", revenue: "$100,000", expenses: "$20,000", profit: "$80,000" },
   { year: "Year 3 · 2028", revenue: "$200,000", expenses: "$30,000", profit: "$170,000" },
   { year: "Year 4 · 2029", revenue: "$500,000", expenses: "$90,000", profit: "$410,000" },
