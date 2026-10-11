@@ -2444,10 +2444,10 @@ export default function ProposePlanPage() {
                       onClick={() => handleDateSelect(date)}
                       className={cn(
                         "px-4 py-2 rounded-full text-sm font-medium shrink-0 transition-all",
-                        isSelected
-                          ? "bg-black text-white"
-                          : "text-foreground hover:bg-muted"
+                        isSelected ? "text-black" : "bg-black text-white hover:bg-black/80"
                       )}
+                      // The picked day takes the colour around the avatar emoji for this step.
+                      style={isSelected ? { background: STEP_AVATAR_COLORS[currentStepName] ?? "#93c5fd" } : undefined}
                     >
                       {label}
                     </button>
@@ -2514,7 +2514,7 @@ export default function ProposePlanPage() {
                         className={cn(
                           "aspect-square rounded-full text-xs flex items-center justify-center mx-auto w-7 h-7 transition-colors",
                           isPast ? "text-muted-foreground/30 cursor-not-allowed" : "hover:bg-muted cursor-pointer",
-                          isDaySelected ? "bg-primary text-primary-foreground hover:bg-primary" : ""
+                          isDaySelected ? "bg-yellow-400 text-black font-semibold hover:bg-yellow-400" : ""
                         )}
                       >
                         {dayNum}
@@ -3066,6 +3066,11 @@ export default function ProposePlanPage() {
   // already show the media.
   const hasMedia = Boolean(promoVideoUrl || promoImageUrl);
   const showMediaBackground = hasMedia && !isEditingAnswers && currentStepName !== "video" && currentStepName !== "preview";
+  // Light text over the video for the history and back button only. The bottom bar stays light with
+  // dark text (its chips, calendar and inputs read the same colors), so it must not get this.
+  const lightTextOverMedia = showMediaBackground
+    ? ({ ["--foreground" as string]: "0 0% 100%", ["--muted-foreground" as string]: "0 0% 88%", ["--border" as string]: "0 0% 100%" } as React.CSSProperties)
+    : undefined;
 
   return (
     <div className="relative isolate h-screen flex flex-col overflow-hidden" style={{ background: timeOfDayGradient }}>
@@ -3259,16 +3264,13 @@ export default function ProposePlanPage() {
           </div>
         </div>
       ) : (
-        <div
-          className="flex-1 flex flex-col overflow-hidden"
-          style={showMediaBackground ? ({ ["--foreground" as string]: "0 0% 100%", ["--muted-foreground" as string]: "0 0% 88%", ["--border" as string]: "0 0% 100%" } as React.CSSProperties) : undefined}
-        >
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Back button — web only (native has sticky header); same flush
               top-left position for every step, preview included — it used
               to render its own indented copy inside the centered content
               column instead of sitting flush with the page edge. */}
           {!Capacitor.isNativePlatform() && (
-            <div className="px-6 pt-4 pb-2 relative flex items-center">
+            <div className="px-6 pt-4 pb-2 relative flex items-center" style={lightTextOverMedia}>
               <MinimalBackButton
                 onClick={() => currentStep > 0 ? handleBack() : handleExitFlow()}
                 onLongPress={handleExitFlow}
@@ -3286,7 +3288,7 @@ export default function ProposePlanPage() {
           )}
 
           {/* Scrollable chat history + inline current question */}
-          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
+          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto" style={lightTextOverMedia}>
             {/* spacer: 8vh on step 0 for centering; video step skips it (camera fills the space) */}
             <div className={currentStep === 0 && currentStepName !== "video" ? "min-h-[8vh]" : "min-h-1"} />
             <div
