@@ -751,7 +751,9 @@
     "voiceStop": "Arrêter l'écoute",
     "voiceThinking": "Réflexion…",
     "recordBtn": "Enregistrer",
-    "openSettings": "Ouvrir les réglages"
+    "openSettings": "Ouvrir les réglages",
+    "whatsUpName": "Quoi de neuf, {{name}} ?",
+    "whatsUp": "Quoi de neuf ?"
   },
   "userProfile": {
     "title": "Profil Utilisateur",

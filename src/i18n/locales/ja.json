@@ -751,7 +751,9 @@
     "voiceStop": "聞き取りを停止",
     "voiceThinking": "考え中…",
     "recordBtn": "録画",
-    "openSettings": "設定を開く"
+    "openSettings": "設定を開く",
+    "whatsUpName": "{{name}}さん、調子はどう？",
+    "whatsUp": "調子はどう？"
   },
   "userProfile": {
     "title": "ユーザープロフィール",

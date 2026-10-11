@@ -748,7 +748,9 @@
     "voiceStop": "Stop listening",
     "voiceThinking": "Thinking…",
     "recordBtn": "Record",
-    "openSettings": "Open Settings"
+    "openSettings": "Open Settings",
+    "whatsUpName": "What's up {{name}}?",
+    "whatsUp": "What's up?"
   },
   "editPlan": {
     "title": "Edit plan",

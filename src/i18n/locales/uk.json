@@ -751,7 +751,9 @@
     "voiceStop": "Зупинити прослуховування",
     "voiceThinking": "Обмірковую…",
     "recordBtn": "Записати",
-    "openSettings": "Відкрити налаштування"
+    "openSettings": "Відкрити налаштування",
+    "whatsUpName": "Як справи, {{name}}?",
+    "whatsUp": "Як справи?"
   },
   "userProfile": {
     "title": "Профіль користувача",

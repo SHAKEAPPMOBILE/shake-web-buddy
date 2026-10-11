@@ -751,7 +751,9 @@
     "voiceStop": "Stop met luisteren",
     "voiceThinking": "Aan het nadenken…",
     "recordBtn": "Opnemen",
-    "openSettings": "Instellingen openen"
+    "openSettings": "Instellingen openen",
+    "whatsUpName": "Hoe gaat het, {{name}}?",
+    "whatsUp": "Hoe gaat het?"
   },
   "userProfile": {
     "title": "Gebruikersprofiel",

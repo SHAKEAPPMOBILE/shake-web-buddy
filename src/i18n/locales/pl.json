@@ -751,7 +751,9 @@
     "voiceStop": "Zatrzymaj słuchanie",
     "voiceThinking": "Myślę…",
     "recordBtn": "Nagraj",
-    "openSettings": "Otwórz ustawienia"
+    "openSettings": "Otwórz ustawienia",
+    "whatsUpName": "Co słychać, {{name}}?",
+    "whatsUp": "Co słychać?"
   },
   "userProfile": {
     "title": "Profil Użytkownika",

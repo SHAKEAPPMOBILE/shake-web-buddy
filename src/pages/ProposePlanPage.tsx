@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow, addDays } from "date-fns";
 import { Plus, User, Calendar, ChevronLeft, ChevronUp, Play, Mic } from "lucide-react";
@@ -284,6 +284,7 @@ export default function ProposePlanPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()));
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [userFirstName, setUserFirstName] = useState<string>("");
   const [audience, setAudience] = useState<"everyone" | "women_only" | "friends_only">("everyone");
   const [showStripeCountrySelector, setShowStripeCountrySelector] = useState(false);
   const [showIDVerification, setShowIDVerification] = useState(false);
@@ -396,11 +397,12 @@ export default function ProposePlanPage() {
       if (!user) return;
       const { data } = await supabase
         .from("profiles")
-        .select("avatar_url")
+        .select("avatar_url, name")
         .eq("user_id", user.id as any)
         .maybeSingle();
       if (data) {
         setUserAvatarUrl((data as any).avatar_url);
+        setUserFirstName((((data as any).name as string | null) ?? "").trim().split(/\s+/)[0] ?? "");
       }
     };
     fetchUserProfile();
@@ -1930,6 +1932,29 @@ export default function ProposePlanPage() {
   const firstDayOffset = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
+  // The recorded video / chosen photo fills the page down to the Retake / Keep this buttons instead
+  // of a fixed 3:4 box that left a gap at the bottom. Measured from where the box starts.
+  const reviewBoxRef = useRef<HTMLDivElement | null>(null);
+  const [reviewBoxHeight, setReviewBoxHeight] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (currentStepName !== "video" || !(promoVideoUrl || promoImageUrl)) return;
+    const measure = () => {
+      const el = reviewBoxRef.current;
+      if (!el) return;
+      const area = scrollAreaRef.current;
+      const content = el.closest(".max-w-sm") as HTMLElement | null;
+      const top = el.getBoundingClientRect().top;
+      const bottom = area ? area.getBoundingClientRect().bottom : window.innerHeight;
+      const padBottom = content ? parseFloat(getComputedStyle(content).paddingBottom) || 0 : 0;
+      const buttonsRow = 16 + 48; // gap + Retake / Keep this
+      setReviewBoxHeight(Math.max(240, Math.round(bottom - top - buttonsRow - padBottom - 2)));
+    };
+    measure();
+    const id = requestAnimationFrame(measure); // once more after the bubble above has settled
+    window.addEventListener("resize", measure);
+    return () => { cancelAnimationFrame(id); window.removeEventListener("resize", measure); };
+  }, [currentStepName, promoVideoUrl, promoImageUrl]);
+
   const renderCameraCapture = () => {
     const circumference = 2 * Math.PI * 28;
 
@@ -1938,10 +1963,11 @@ export default function ProposePlanPage() {
       return (
         <div className="space-y-4">
           {/* Inline thumbnail — tap opens the existing fullscreen modal */}
+          <div ref={reviewBoxRef} className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block" style={reviewBoxHeight ? { height: reviewBoxHeight } : undefined}>
           <button
             type="button"
             onClick={() => setVideoFullscreen(true)}
-            className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block"
+            className="absolute inset-0 w-full h-full block"
             aria-label="Preview promo video fullscreen"
           >
             <video
@@ -1959,6 +1985,7 @@ export default function ProposePlanPage() {
             </div>
 
           </button>
+          </div>
 
           {/* Retake / Keep this */}
           <div className="flex gap-3">
@@ -1991,7 +2018,7 @@ export default function ProposePlanPage() {
     if (promoImageUrl) {
       return (
         <div className="space-y-4">
-          <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block">
+          <div ref={reviewBoxRef} className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden block" style={reviewBoxHeight ? { height: reviewBoxHeight } : undefined}>
             <img
               src={promoImageUrl}
               alt="Plan photo"
@@ -3293,7 +3320,11 @@ export default function ProposePlanPage() {
             <div className={currentStep === 0 && currentStepName !== "video" ? "min-h-[8vh]" : "min-h-1"} />
             <div
               className="w-full max-w-sm mx-auto px-6 pt-4"
-              style={{ paddingBottom: composerHeight + keyboardOffset + 64 }}
+              style={{
+                paddingBottom: currentStepName === "video"
+                  ? "calc(env(safe-area-inset-bottom, 0px) + 16px)"
+                  : composerHeight + keyboardOffset + 64,
+              }}
             >
               {/* Past Q&A — oldest (top) faintest/smallest, most-recent (bottom) clearer */}
               {currentStep > 0 && currentStepName !== "preview" && (
@@ -3377,7 +3408,9 @@ export default function ProposePlanPage() {
                       // — "Propose a Plan" reads as starting over, when really
                       // they're just attaching media to what's already made.
                       currentStepName === "video" && stepReturnTo !== null
-                        ? t("createPlan.addVideoPicQuestion", "Add a video or photo?")
+                        ? (userFirstName
+                            ? t("createPlan.whatsUpName", "What's up {{name}}?", { name: userFirstName })
+                            : t("createPlan.whatsUp", "What's up?"))
                         : BOT_QUESTIONS[currentStepName]
                     }
                     showAvatar={true}
@@ -3415,10 +3448,14 @@ export default function ProposePlanPage() {
 
           {/* Composer — fixed above the keyboard. Hidden on the preview step, since
               its content now renders in-flow via renderPreviewCard() above instead. */}
-          {currentStepName !== "preview" && (
+          {currentStepName !== "preview" && currentStepName !== "video" && (
             <div
               ref={composerRef}
-              className="fixed left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border/40 px-4 pt-3"
+              className={cn(
+                "fixed left-0 right-0 z-20 px-4 pt-3",
+                // Over the looping video the bar has no background of its own: the box and buttons sit on the video.
+                showMediaBackground ? "" : "bg-background/95 backdrop-blur border-t border-border/40"
+              )}
               style={{
                 bottom: keyboardOffset,
                 paddingBottom: `max(env(safe-area-inset-bottom, 0px), 0.75rem)`,

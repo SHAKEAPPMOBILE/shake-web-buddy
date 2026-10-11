@@ -751,7 +751,9 @@
     "voiceStop": "Interrompi ascolto",
     "voiceThinking": "Sto pensando…",
     "recordBtn": "Registra",
-    "openSettings": "Apri impostazioni"
+    "openSettings": "Apri impostazioni",
+    "whatsUpName": "Come va, {{name}}?",
+    "whatsUp": "Come va?"
   },
   "userProfile": {
     "title": "Profilo Utente",

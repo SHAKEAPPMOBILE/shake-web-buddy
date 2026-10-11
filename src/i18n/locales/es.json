@@ -750,7 +750,9 @@
     "voiceStop": "Dejar de escuchar",
     "voiceThinking": "Pensando…",
     "recordBtn": "Grabar",
-    "openSettings": "Abrir ajustes"
+    "openSettings": "Abrir ajustes",
+    "whatsUpName": "¿Qué tal, {{name}}?",
+    "whatsUp": "¿Qué tal?"
   },
   "userProfile": {
     "title": "Perfil de Usuario",

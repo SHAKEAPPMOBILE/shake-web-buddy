@@ -751,7 +751,9 @@
     "voiceStop": "停止聆听",
     "voiceThinking": "思考中…",
     "recordBtn": "录制",
-    "openSettings": "打开设置"
+    "openSettings": "打开设置",
+    "whatsUpName": "{{name}}，最近怎么样？",
+    "whatsUp": "最近怎么样？"
   },
   "userProfile": {
     "title": "用户资料",
