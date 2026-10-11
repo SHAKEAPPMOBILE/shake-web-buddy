@@ -211,7 +211,9 @@
     "failedToSendMedia": "Failed to send media",
     "failedToLeaveConversation": "Failed to leave conversation",
     "conversationHidden": "Conversation hidden",
-    "userBlocked": "User blocked"
+    "userBlocked": "User blocked",
+    "floatingTextOff": "Turn off floating text",
+    "floatingTextOn": "Turn on floating text"
   },
   "plans": {
     "title": "Plans",

@@ -26,6 +26,7 @@ import { PremiumDialog } from "@/components/PremiumDialog";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { useTranslation } from "react-i18next";
+import { useChatFloating } from "@/hooks/useChatFloating";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
@@ -122,6 +123,7 @@ export function PlanGroupChatView({
   // Floating "aquarium" bubbles — see useFloatingBubbles for the full
   // rationale/behavior. floatItems must stay chronologically ordered
   // (oldest first), matching `messages`.
+  const [floatingText, setFloatingText] = useChatFloating();
   const floatItems = useMemo(() => messages.map((msg) => {
     const isMedia = (msg.message_type === "gif" || msg.message_type === "image" || msg.message_type === "video") && /^https?:\/\//i.test(msg.message);
     const dense = !isMedia && isDenseText(msg.message);
@@ -129,11 +131,11 @@ export function PlanGroupChatView({
       id: msg.id,
       isMedia,
       // Long text and media sit in an ordered column; only short pills float loose.
-      isStatic: dense || isMedia,
+      isStatic: !floatingText || dense || isMedia,
       alignRight: msg.user_id === user?.id,
       estHeight: isMedia ? 200 : dense ? estimateTextHeight(msg.message) : undefined,
     };
-  }), [messages, user?.id]);
+  }), [messages, user?.id, floatingText]);
   const { canvasHeight, isPinned, getBubbleProps, getClickHandler, calmDown } = useFloatingBubbles(floatItems, chatTankRef);
 
   const messageIds = useMemo(() => messages.map((m) => m.id), [messages]);
@@ -588,6 +590,8 @@ export function PlanGroupChatView({
               onLeft={onBack}
               onBackgroundChange={setLocalBackgroundId}
               onShareLocation={handleShareLocation}
+              floatingText={floatingText}
+              onToggleFloatingText={() => setFloatingText(!floatingText)}
               triggerClassName={headerMenuTriggerClass}
               iconClassName={headerMenuIconClass}
             />
@@ -740,6 +744,8 @@ export function PlanGroupChatView({
             onLeft={onBack}
             onBackgroundChange={setLocalBackgroundId}
             onShareLocation={handleShareLocation}
+            floatingText={floatingText}
+            onToggleFloatingText={() => setFloatingText(!floatingText)}
             triggerClassName={headerMenuTriggerClass}
             iconClassName={headerMenuIconClass}
           />

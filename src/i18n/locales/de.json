@@ -211,7 +211,9 @@
     "failedToSendMedia": "Medien konnten nicht gesendet werden",
     "failedToLeaveConversation": "Unterhaltung konnte nicht verlassen werden",
     "conversationHidden": "Unterhaltung ausgeblendet",
-    "userBlocked": "Nutzer blockiert"
+    "userBlocked": "Nutzer blockiert",
+    "floatingTextOff": "Schwebenden Text ausschalten",
+    "floatingTextOn": "Schwebenden Text einschalten"
   },
   "plans": {
     "title": "Pläne",

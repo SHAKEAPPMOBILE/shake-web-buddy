@@ -211,7 +211,9 @@
     "failedToSendMedia": "Media verzenden mislukt",
     "failedToLeaveConversation": "Gesprek verlaten mislukt",
     "conversationHidden": "Gesprek verborgen",
-    "userBlocked": "Gebruiker geblokkeerd"
+    "userBlocked": "Gebruiker geblokkeerd",
+    "floatingTextOff": "Zwevende tekst uitzetten",
+    "floatingTextOn": "Zwevende tekst aanzetten"
   },
   "plans": {
     "title": "Plannen",

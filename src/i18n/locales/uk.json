@@ -211,7 +211,9 @@
     "failedToSendMedia": "Не вдалося надіслати медіафайл",
     "failedToLeaveConversation": "Не вдалося покинути розмову",
     "conversationHidden": "Розмову приховано",
-    "userBlocked": "Користувача заблоковано"
+    "userBlocked": "Користувача заблоковано",
+    "floatingTextOff": "Вимкнути плаваючий текст",
+    "floatingTextOn": "Увімкнути плаваючий текст"
   },
   "plans": {
     "title": "Плани",

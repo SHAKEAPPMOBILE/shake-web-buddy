@@ -211,7 +211,9 @@
     "failedToSendMedia": "Falha ao enviar o ficheiro",
     "failedToLeaveConversation": "Falha ao sair da conversa",
     "conversationHidden": "Conversa ocultada",
-    "userBlocked": "Utilizador bloqueado"
+    "userBlocked": "Utilizador bloqueado",
+    "floatingTextOff": "Desativar texto flutuante",
+    "floatingTextOn": "Ativar texto flutuante"
   },
   "plans": {
     "title": "Planos",

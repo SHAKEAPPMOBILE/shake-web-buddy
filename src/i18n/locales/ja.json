@@ -211,7 +211,9 @@
     "failedToSendMedia": "メディアの送信に失敗しました",
     "failedToLeaveConversation": "会話から退出できませんでした",
     "conversationHidden": "会話を非表示にしました",
-    "userBlocked": "ユーザーをブロックしました"
+    "userBlocked": "ユーザーをブロックしました",
+    "floatingTextOff": "浮かぶテキストをオフにする",
+    "floatingTextOn": "浮かぶテキストをオンにする"
   },
   "plans": {
     "title": "プラン",

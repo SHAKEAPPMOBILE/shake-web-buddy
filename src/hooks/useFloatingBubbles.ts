@@ -329,7 +329,9 @@ export function useFloatingBubbles(
     return () => observer.disconnect();
   }, []);
 
-  // Drop physics state (and cached ref callbacks) for items that no longer exist.
+  // Drop physics state (and cached ref callbacks) for items that no longer exist, and follow
+  // items whose static/floating mode changes after they first appeared (the "floating text"
+  // chat setting flips every message at once).
   useEffect(() => {
     const liveIds = new Set(items.map((i) => i.id));
     Array.from(physicsRef.current.keys()).forEach((id) => {
@@ -338,7 +340,24 @@ export function useFloatingBubbles(
     Array.from(refCallbacksRef.current.keys()).forEach((id) => {
       if (!liveIds.has(id)) refCallbacksRef.current.delete(id);
     });
-  }, [items]);
+    items.forEach((item) => {
+      const physics = physicsRef.current.get(item.id);
+      if (!physics) return;
+      const nowStatic = !!item.isStatic;
+      physics.alignRight = !!item.alignRight;
+      if (!!physics.isStatic === nowStatic) return;
+      physics.isStatic = nowStatic;
+      physics.escaped = false;
+      if (nowStatic) {
+        // Its band was sized for a floating pill; use its real height until the observer reports.
+        const h = Math.ceil(physics.h);
+        physics.vx = 0; physics.vy = 0;
+        setStaticHeights((prev) => (prev[item.id] === h ? prev : { ...prev, [item.id]: h }));
+      } else {
+        resumeFloating(item.id);
+      }
+    });
+  }, [items, resumeFloating]);
 
   // Float/bounce/separation loop. Always running (even under reduced
   // motion) so overlap separation and the transform write always happen —

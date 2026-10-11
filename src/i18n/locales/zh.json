@@ -211,7 +211,9 @@
     "failedToSendMedia": "媒体发送失败",
     "failedToLeaveConversation": "退出对话失败",
     "conversationHidden": "对话已隐藏",
-    "userBlocked": "已屏蔽用户"
+    "userBlocked": "已屏蔽用户",
+    "floatingTextOff": "关闭浮动文字",
+    "floatingTextOn": "开启浮动文字"
   },
   "plans": {
     "title": "计划",

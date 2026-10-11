@@ -211,7 +211,9 @@
     "failedToSendMedia": "Échec de l'envoi du média",
     "failedToLeaveConversation": "Échec de la sortie de la conversation",
     "conversationHidden": "Conversation masquée",
-    "userBlocked": "Utilisateur bloqué"
+    "userBlocked": "Utilisateur bloqué",
+    "floatingTextOff": "Désactiver le texte flottant",
+    "floatingTextOn": "Activer le texte flottant"
   },
   "plans": {
     "title": "Plans",

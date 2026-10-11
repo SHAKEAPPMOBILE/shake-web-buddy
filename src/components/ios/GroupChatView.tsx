@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, BellOff, Bell, LogOut, Trash2, Plane, Images, MapPin } from "lucide-react";
+import { Send, BellOff, Bell, LogOut, Trash2, Plane, Images, MapPin, Wind } from "lucide-react";
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -32,6 +32,7 @@ import { getNationalityFlag } from "@/data/countryCodes";
 import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 import { LocationBubble } from "@/components/LocationBubble";
 import { ChatMoreMenu } from "@/components/ChatMoreMenu";
+import { useChatFloating } from "@/hooks/useChatFloating";
 import { getCurrentLatLng, encodeLocation } from "@/lib/location";
 import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
 
@@ -236,6 +237,7 @@ export function GroupChatView({
   // Floating "aquarium" bubbles — see useFloatingBubbles for the full
   // rationale/behavior. floatItems must stay chronologically ordered
   // (oldest first), matching `messages`.
+  const [floatingText, setFloatingText] = useChatFloating();
   const floatItems = useMemo(() => messages.map((msg) => {
     const isMedia = msg.message_type === "location" || ((msg.message_type ?? "text") === "gif" && /^https?:\/\//i.test(msg.message));
     const dense = !isMedia && isDenseText(msg.message);
@@ -243,16 +245,17 @@ export function GroupChatView({
       id: msg.id,
       isMedia,
       // Long text and media sit in an ordered column; only short pills float loose.
-      isStatic: dense || isMedia,
+      isStatic: !floatingText || dense || isMedia,
       alignRight: msg.user_id === user?.id,
       estHeight: isMedia ? 200 : dense ? estimateTextHeight(msg.message) : undefined,
     };
-  }), [messages, user?.id]);
+  }), [messages, user?.id, floatingText]);
   const { canvasHeight, isPinned, getBubbleProps, getClickHandler, calmDown } = useFloatingBubbles(floatItems, chatTankRef);
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
   const { leaveActivity } = useActivityJoins(city);
   const { venue: assignedVenue, location, mapsUrl } = useActivityVenue(city, activityType);
   const { t } = useTranslation();
+  const floatingMenuItem = { key: "float", label: floatingText ? t('chat.floatingTextOff', 'Turn off floating text') : t('chat.floatingTextOn', 'Turn on floating text'), icon: <Wind className="w-4 h-4" />, onSelect: () => setFloatingText(!floatingText) };
 
   // Declared early so hooks below can reference them in dep arrays without TDZ
   const title = getActivityLabel(activityType);
@@ -849,7 +852,7 @@ export function GroupChatView({
                   <Button variant="ghost" size="icon" onClick={handleLeaveActivity} className="shrink-0 text-gray-900 hover:text-red-500 hover:bg-black/5 h-8 w-8" title="Leave">
                     <LogOut className="w-4 h-4" />
                   </Button>
-                  <ChatMoreMenu items={[{ key: "loc", label: "Share location", icon: <MapPin className="w-4 h-4" />, onSelect: () => void handleShareLocation() }]} triggerClassName="shrink-0 h-8 w-8 flex items-center justify-center rounded-md hover:bg-black/5" iconClassName="w-4 h-4 text-gray-900" />
+                  <ChatMoreMenu items={[{ key: "loc", label: "Share location", icon: <MapPin className="w-4 h-4" />, onSelect: () => void handleShareLocation() }, floatingMenuItem]} triggerClassName="shrink-0 h-8 w-8 flex items-center justify-center rounded-md hover:bg-black/5" iconClassName="w-4 h-4 text-gray-900" />
                 </div>
               </div>
 
@@ -998,7 +1001,7 @@ export function GroupChatView({
               <Button variant="ghost" size="icon" onClick={handleLeaveActivity} className="shrink-0 text-gray-900 hover:text-red-500 hover:bg-black/5 h-8 w-8" title="Leave">
                 <LogOut className="w-4 h-4" />
               </Button>
-                  <ChatMoreMenu items={[{ key: "loc", label: "Share location", icon: <MapPin className="w-4 h-4" />, onSelect: () => void handleShareLocation() }]} triggerClassName="shrink-0 h-8 w-8 flex items-center justify-center rounded-md hover:bg-black/5" iconClassName="w-4 h-4 text-gray-900" />
+                  <ChatMoreMenu items={[{ key: "loc", label: "Share location", icon: <MapPin className="w-4 h-4" />, onSelect: () => void handleShareLocation() }, floatingMenuItem]} triggerClassName="shrink-0 h-8 w-8 flex items-center justify-center rounded-md hover:bg-black/5" iconClassName="w-4 h-4 text-gray-900" />
             </div>
           </div>
         </div>

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Send, Camera, MoreVertical, MapPin, UserPlus, Users, Trash2, LogOut, X } from "lucide-react";
+import { Send, Camera, MoreVertical, MapPin, UserPlus, Users, Trash2, LogOut, X, Wind } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useChatFloating } from "@/hooks/useChatFloating";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,12 +96,16 @@ export function CustomGroupChatView({ chatId, onClose }: { chatId: string; onClo
     return others.length ? others.join(", ") : "Group";
   }, [members, user?.id]);
 
+  const { t } = useTranslation();
+
+  const [floatingText, setFloatingText] = useChatFloating();
+
   const floatItems = useMemo(() => messages.map((msg) => {
     const isLocation = msg.message_type === "location";
     const isMedia = isLocation || (["gif", "image", "video"].includes(msg.message_type ?? "") && /^https?:\/\//i.test(msg.message));
     const dense = !isMedia && isDenseText(msg.message);
-    return { id: msg.id, isMedia, isStatic: dense || isMedia, alignRight: msg.user_id === user?.id, estHeight: isMedia ? 200 : dense ? estimateTextHeight(msg.message) : undefined };
-  }), [messages, user?.id]);
+    return { id: msg.id, isMedia, isStatic: !floatingText || dense || isMedia, alignRight: msg.user_id === user?.id, estHeight: isMedia ? 200 : dense ? estimateTextHeight(msg.message) : undefined };
+  }), [messages, user?.id, floatingText]);
   const { canvasHeight, isPinned, getBubbleProps, getClickHandler, calmDown } = useFloatingBubbles(floatItems, scrollRef);
 
   const scrollToBottom = useCallback(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, []);
@@ -177,6 +183,7 @@ export function CustomGroupChatView({ chatId, onClose }: { chatId: string; onClo
 
   const menuItems = [
     { key: "loc", label: "Share location", icon: <MapPin className="w-4 h-4" />, onSelect: () => void handleShareLocation() },
+    { key: "float", label: floatingText ? t("chat.floatingTextOff", "Turn off floating text") : t("chat.floatingTextOn", "Turn on floating text"), icon: <Wind className="w-4 h-4" />, onSelect: () => setFloatingText(!floatingText) },
     { key: "add", label: "Add someone", icon: <UserPlus className="w-4 h-4" />, onSelect: () => setShowAdd(true) },
     { key: "members", label: "Members", icon: <Users className="w-4 h-4" />, onSelect: () => setShowMembers(true) },
     isCreator

@@ -211,7 +211,9 @@
     "failedToSendMedia": "Impossibile inviare il file multimediale",
     "failedToLeaveConversation": "Impossibile uscire dalla conversazione",
     "conversationHidden": "Conversazione nascosta",
-    "userBlocked": "Utente bloccato"
+    "userBlocked": "Utente bloccato",
+    "floatingTextOff": "Disattiva il testo fluttuante",
+    "floatingTextOn": "Attiva il testo fluttuante"
   },
   "plans": {
     "title": "Piani",

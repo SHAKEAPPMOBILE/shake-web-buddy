@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2, ChevronDown, MapPin, UserPlus } from "lucide-react";
+import { Send, User, Images, Camera, MoreVertical, LogOut, Ban, Trash2, ChevronDown, MapPin, UserPlus, Wind } from "lucide-react";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { ChatInviteDialog } from "@/components/ChatInviteDialog";
 import { usePrivateMessages } from "@/hooks/usePrivateMessages";
@@ -23,6 +23,7 @@ import { LocationBubble } from "@/components/LocationBubble";
 import { AddPersonDialog } from "@/components/AddPersonDialog";
 import { getCurrentLatLng, encodeLocation } from "@/lib/location";
 import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
+import { useChatFloating } from "@/hooks/useChatFloating";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢"];
 
@@ -86,6 +87,7 @@ export function PrivateChatDialog({
   const { canSendText, addCharacters } = useTextMessageLimit();
 
   // ── Floating "aquarium" bubbles ──────────────────────────────────────────
+  const [floatingText, setFloatingText] = useChatFloating();
   const floatItems = useMemo(() => messages.map((msg) => {
     const isMedia = (msg.message_type ?? "text") !== "text" && /^https?:\/\//i.test(msg.message);
     const dense = !isMedia && isDenseText(msg.message);
@@ -93,11 +95,11 @@ export function PrivateChatDialog({
       id: msg.id,
       isMedia,
       // Long text and media sit in an ordered column; only short pills float loose.
-      isStatic: dense || isMedia,
+      isStatic: !floatingText || dense || isMedia,
       alignRight: msg.sender_id === user?.id,
       estHeight: isMedia ? 200 : dense ? estimateTextHeight(msg.message) : undefined,
     };
-  }), [messages, user?.id]);
+  }), [messages, user?.id, floatingText]);
   const { canvasHeight, isPinned, getBubbleProps, getClickHandler, suppressNextClick, calmDown } = useFloatingBubbles(floatItems, scrollRef);
 
   const chatSuggestions = useMemo(() => [
@@ -595,6 +597,14 @@ export function PrivateChatDialog({
                   style={{ borderColor: "rgba(0,0,0,0.08)" }}
                 >
                   <MapPin className="w-4 h-4 text-gray-400" /> Share location
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowMenu(false); setFloatingText(!floatingText); }}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-b"
+                  style={{ borderColor: "rgba(0,0,0,0.08)" }}
+                >
+                  <Wind className="w-4 h-4 text-gray-400" /> {floatingText ? t('chat.floatingTextOff', 'Turn off floating text') : t('chat.floatingTextOn', 'Turn on floating text')}
                 </button>
                 {onGroupCreated && (
                   <button

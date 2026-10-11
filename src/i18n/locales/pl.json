@@ -211,7 +211,9 @@
     "failedToSendMedia": "Nie udało się wysłać pliku",
     "failedToLeaveConversation": "Nie udało się opuścić rozmowy",
     "conversationHidden": "Rozmowa ukryta",
-    "userBlocked": "Użytkownik zablokowany"
+    "userBlocked": "Użytkownik zablokowany",
+    "floatingTextOff": "Wyłącz pływający tekst",
+    "floatingTextOn": "Włącz pływający tekst"
   },
   "plans": {
     "title": "Plany",

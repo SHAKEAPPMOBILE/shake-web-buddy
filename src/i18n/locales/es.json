@@ -211,7 +211,9 @@
     "failedToSendMedia": "Error al enviar el archivo",
     "failedToLeaveConversation": "Error al salir de la conversación",
     "conversationHidden": "Conversación oculta",
-    "userBlocked": "Usuario bloqueado"
+    "userBlocked": "Usuario bloqueado",
+    "floatingTextOff": "Desactivar texto flotante",
+    "floatingTextOn": "Activar texto flotante"
   },
   "plans": {
     "title": "Planes",
