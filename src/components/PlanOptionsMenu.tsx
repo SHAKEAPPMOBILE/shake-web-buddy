@@ -6,16 +6,19 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
-import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
+import { PLAN_BACKGROUNDS, getBackgroundStyle, getBackgroundThumbStyle } from "@/data/planBackgrounds";
+import { getCityPhoto } from "@/data/cityBackgrounds";
 
 // Split once at module scope — PLAN_BACKGROUNDS is a static constant, no
 // need to re-derive this on every render of every menu instance.
-const cityBackgrounds = PLAN_BACKGROUNDS.filter((bg) => bg.image && !bg.retired);
+const cityBackgrounds = PLAN_BACKGROUNDS.filter((bg) => bg.image && !bg.retired).sort((a, b) => a.label.localeCompare(b.label));
 const colorBackgrounds = PLAN_BACKGROUNDS.filter((bg) => !bg.image && !bg.retired);
 
 export interface PlanOptionsMenuActivity {
   id: string;
   user_id: string;
+  /** The plan's city — its own photo is listed first in the background picker. */
+  city?: string | null;
   background_id?: string | null;
 }
 
@@ -60,6 +63,11 @@ export function PlanOptionsMenu({
   const { user } = useAuth();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [showMenu, setShowMenu] = useState(false);
+  // The plan's own city leads the list; the rest follow A–Z.
+  const ownCityPhotoId = getCityPhoto(activity.city)?.id;
+  const orderedCityBackgrounds = ownCityPhotoId
+    ? [...cityBackgrounds.filter((b) => b.id === ownCityPhotoId), ...cityBackgrounds.filter((b) => b.id !== ownCityPhotoId)]
+    : cityBackgrounds;
   const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
@@ -261,13 +269,13 @@ export function PlanOptionsMenu({
                 planBackgrounds.ts itself uses to tell the two apart. */}
             <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-5 mb-2">Cities</h4>
             <div className="grid grid-cols-3 gap-3">
-              {cityBackgrounds.map((bg) => (
+              {orderedCityBackgrounds.map((bg) => (
                 <button key={bg.id} type="button" onClick={(e) => handleSelectBackground(e, bg.id)} className="flex flex-col items-center gap-1.5">
                   <div
                     className={`w-full aspect-square rounded-xl border-2 ${
                       activity.background_id === bg.id ? "border-blue-500" : "border-transparent"
                     }`}
-                    style={getBackgroundStyle(bg)}
+                    style={getBackgroundThumbStyle(bg)}
                   />
                   <span className="text-[10px] text-gray-500 leading-tight text-center">{bg.label}</span>
                 </button>
