@@ -24,6 +24,7 @@ import { AddPersonDialog } from "@/components/AddPersonDialog";
 import { getCurrentLatLng, encodeLocation } from "@/lib/location";
 import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
 import { useChatFloating } from "@/hooks/useChatFloating";
+import { useStickToBottom } from "@/hooks/useStickToBottom";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "😮", "😢"];
 
@@ -101,6 +102,7 @@ export function PrivateChatDialog({
     };
   }), [messages, user?.id, floatingText]);
   const { canvasHeight, isPinned, getBubbleProps, getClickHandler, suppressNextClick, calmDown } = useFloatingBubbles(floatItems, scrollRef);
+  useStickToBottom(scrollRef, canvasHeight);
 
   const chatSuggestions = useMemo(() => [
     t('chat.suggestions.hey', 'Hey! 👋'),

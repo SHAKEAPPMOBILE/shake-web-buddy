@@ -27,6 +27,8 @@ import { LoadingSpinner } from "../LoadingSpinner";
 import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { useTranslation } from "react-i18next";
 import { useChatFloating } from "@/hooks/useChatFloating";
+import { useStickToBottom } from "@/hooks/useStickToBottom";
+import { useCollapseHeaderWhileTyping } from "@/hooks/useCollapseHeaderWhileTyping";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { EventChatGiphyPickerModal } from "@/components/eventChat/EventChatGiphyPickerModal";
@@ -137,6 +139,8 @@ export function PlanGroupChatView({
     };
   }), [messages, user?.id, floatingText]);
   const { canvasHeight, isPinned, getBubbleProps, getClickHandler, calmDown } = useFloatingBubbles(floatItems, chatTankRef);
+  useStickToBottom(chatTankRef, canvasHeight);
+  const headerTyping = useCollapseHeaderWhileTyping(snapState, setSnapState, 'collapsed');
 
   const messageIds = useMemo(() => messages.map((m) => m.id), [messages]);
   const reactionsEnabled = Boolean(user && activity.id);
@@ -988,6 +992,8 @@ export function PlanGroupChatView({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
+            onFocus={headerTyping.onFocus}
+            onBlur={headerTyping.onBlur}
             disabled={!user || (!isPremium && !canSendText) || giphyPickerOpen || isUploadingMedia}
             className="flex-1 bg-blue-500/10 border-blue-500/30 focus-visible:ring-blue-500/50 text-black placeholder:text-black/50"
           />

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Send, Camera, MoreVertical, MapPin, UserPlus, Users, Trash2, LogOut, X, Wind } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useChatFloating } from "@/hooks/useChatFloating";
+import { useStickToBottom } from "@/hooks/useStickToBottom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -107,6 +108,7 @@ export function CustomGroupChatView({ chatId, onClose }: { chatId: string; onClo
     return { id: msg.id, isMedia, isStatic: !floatingText || dense || isMedia, alignRight: msg.user_id === user?.id, estHeight: isMedia ? 200 : dense ? estimateTextHeight(msg.message) : undefined };
   }), [messages, user?.id, floatingText]);
   const { canvasHeight, isPinned, getBubbleProps, getClickHandler, calmDown } = useFloatingBubbles(floatItems, scrollRef);
+  useStickToBottom(scrollRef, canvasHeight);
 
   const scrollToBottom = useCallback(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, []);
   useEffect(() => { const id = requestAnimationFrame(scrollToBottom); return () => cancelAnimationFrame(id); }, [messages, scrollToBottom]);

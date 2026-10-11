@@ -33,6 +33,8 @@ import { useChatKeyboardScroll } from "@/hooks/useChatKeyboardScroll";
 import { LocationBubble } from "@/components/LocationBubble";
 import { ChatMoreMenu } from "@/components/ChatMoreMenu";
 import { useChatFloating } from "@/hooks/useChatFloating";
+import { useStickToBottom } from "@/hooks/useStickToBottom";
+import { useCollapseHeaderWhileTyping } from "@/hooks/useCollapseHeaderWhileTyping";
 import { getCurrentLatLng, encodeLocation } from "@/lib/location";
 import { useFloatingBubbles, isDenseText, estimateTextHeight } from "@/hooks/useFloatingBubbles";
 
@@ -251,6 +253,8 @@ export function GroupChatView({
     };
   }), [messages, user?.id, floatingText]);
   const { canvasHeight, isPinned, getBubbleProps, getClickHandler, calmDown } = useFloatingBubbles(floatItems, chatTankRef);
+  useStickToBottom(chatTankRef, canvasHeight);
+  const headerTyping = useCollapseHeaderWhileTyping(snapState, setSnapState, 'collapsed');
   const { isMuted, toggleMute } = useActivityMute(city, activityType);
   const { leaveActivity } = useActivityJoins(city);
   const { venue: assignedVenue, location, mapsUrl } = useActivityVenue(city, activityType);
@@ -1193,6 +1197,8 @@ export function GroupChatView({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
+              onFocus={headerTyping.onFocus}
+              onBlur={headerTyping.onBlur}
               className="flex-1 bg-gray-50 border-gray-200 focus-visible:ring-primary/50 text-gray-900 placeholder:text-gray-400 min-h-9"
               disabled={isSending || (!isPremium && !canSendText) || giphyPickerOpen}
             />
