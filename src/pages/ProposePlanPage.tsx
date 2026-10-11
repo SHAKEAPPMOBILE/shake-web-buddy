@@ -168,7 +168,12 @@ function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subte
       {showAvatar && <FlipAvatar color={avatarColor} profileUrl={profileAvatarUrl} />}
       <div
         className="bg-white rounded-2xl px-5 py-4 flex-1"
-        style={{ boxShadow: "0 1px 3px rgba(16,15,40,0.06), 0 4px 16px rgba(16,15,40,0.05)" }}
+        style={{
+          boxShadow: "0 1px 3px rgba(16,15,40,0.06), 0 4px 16px rgba(16,15,40,0.05)",
+          // Always dark on the white card, even when the page's own text goes light over a video background.
+          ["--foreground" as string]: "270 50% 10%",
+          ["--muted-foreground" as string]: "270 20% 40%",
+        }}
       >
         <p className={cn("text-xl leading-snug text-foreground", handwritten ? "font-handwritten text-2xl" : "font-semibold")}>
           {message}
@@ -2386,11 +2391,14 @@ export default function ProposePlanPage() {
               <div className="flex flex-col items-center gap-1.5 shrink-0">
                 {renderStepMicButton()}
                 <button
-                  onClick={handleNameSubmit}
-                  disabled={!planText.trim() || hasProfanity}
+                  onClick={() => (planText.trim() ? handleNameSubmit() : void handleQuickPost())}
+                  // With a video/photo already added, an empty box still lets the person send: that posts
+                  // the media on its own ("Post like this"). Typing anything carries on with the questions.
+                  disabled={(!planText.trim() && !(hasMedia && !isEditMode)) || hasProfanity || isLoading}
+                  aria-label={planText.trim() ? undefined : t("createPlan.postLikeThis")}
                   className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                 >
-                  <ChevronUp className="w-5 h-5" />
+                  {isLoading && !planText.trim() ? <LoadingSpinner size="sm" /> : <ChevronUp className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -3053,8 +3061,32 @@ export default function ProposePlanPage() {
     );
   }
 
+  // A video (or photo) added in the first step plays behind the rest of the questions; with none,
+  // the page keeps its plain background. Not on the camera step itself or the preview card, which
+  // already show the media.
+  const hasMedia = Boolean(promoVideoUrl || promoImageUrl);
+  const showMediaBackground = hasMedia && !isEditingAnswers && currentStepName !== "video" && currentStepName !== "preview";
+
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: timeOfDayGradient }}>
+    <div className="relative isolate h-screen flex flex-col overflow-hidden" style={{ background: timeOfDayGradient }}>
+      {showMediaBackground && (
+        <div className="fixed inset-0 -z-10 bg-black" aria-hidden="true">
+          {promoVideoUrl ? (
+            <video
+              src={promoVideoUrl}
+              poster={posterUrl}
+              muted
+              loop
+              playsInline
+              autoPlay
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <img src={promoImageUrl ?? undefined} alt="" className="w-full h-full object-cover" />
+          )}
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+      )}
       <style>{`
         @keyframes voiceWave {
           0%, 100% { height: 4px; }
@@ -3227,7 +3259,10 @@ export default function ProposePlanPage() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div
+          className="flex-1 flex flex-col overflow-hidden"
+          style={showMediaBackground ? ({ ["--foreground" as string]: "0 0% 100%", ["--muted-foreground" as string]: "0 0% 88%", ["--border" as string]: "0 0% 100%" } as React.CSSProperties) : undefined}
+        >
           {/* Back button — web only (native has sticky header); same flush
               top-left position for every step, preview included — it used
               to render its own indented copy inside the centered content
@@ -3311,18 +3346,6 @@ export default function ProposePlanPage() {
                                 alt="Plan photo"
                                 className="w-16 h-20 rounded-xl object-cover shrink-0"
                               />
-                            )}
-                            {stepsBack === 1 && currentStepName === "name" && (
-                              <span
-                                role="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleQuickPost();
-                                }}
-                                className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold whitespace-nowrap shadow-sm active:scale-95 transition-transform"
-                              >
-                                {t("createPlan.postLikeThis")}
-                              </span>
                             )}
                           </div>
                         ) : (
