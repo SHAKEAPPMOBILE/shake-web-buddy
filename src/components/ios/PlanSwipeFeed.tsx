@@ -16,7 +16,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, DollarSign, Volume2, VolumeX, User, Send } from "lucide-react";
+import { ChevronLeft, DollarSign, Volume2, VolumeX, User, Send, Pause } from "lucide-react";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
@@ -226,12 +226,25 @@ interface FeedCardProps {
   onPlanBackgroundChanged?: (planId: string, backgroundId: string | null) => void;
 }
 
+// Hold a finger on a plan's video this long and it pauses; let go and it plays on.
+const HOLD_TO_PAUSE_MS = 2000;
+// Moving further than this while holding means they're scrolling, not holding.
+const HOLD_MOVE_TOLERANCE_PX = 12;
+
 function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPayForPlan, onEnterChat, onViewProfile, onViewParticipantProfile, onClose, onPlanDeleted, onPlanBackgroundChanged }: FeedCardProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
+  // Hold-to-pause: the timer that fires after HOLD_TO_PAUSE_MS, where the finger went down, whether
+  // we paused the video, and a flag so the lift-off that follows a hold doesn't also count as a tap
+  // (which would toggle the sound).
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdStart = useRef<{ x: number; y: number } | null>(null);
+  const heldPaused = useRef(false);
+  const ignoreNextTap = useRef(false);
+  const [holdPaused, setHoldPaused] = useState(false);
   const [joinedLocally, setJoinedLocally] = useState(false);
   const [joining, setJoining] = useState(false);
   const [lowRes, setLowRes] = useState(false);
@@ -336,6 +349,58 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
   useEffect(() => {
     if (videoRef.current) videoRef.current.muted = muted;
   }, [muted]);
+
+  /* Hold a finger on the video to pause it; lift to carry on */
+  // Measured directly rather than trusting the visibility observer: at least 60% of the card inside
+  // its scroll container (or the screen), the same bar the observer uses to start playback.
+  const cardMostlyOnScreen = useCallback(() => {
+    const el = cardRef.current;
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    const box = scrollContainerRef?.current?.getBoundingClientRect();
+    const top = Math.max(r.top, box ? box.top : 0);
+    const bottom = Math.min(r.bottom, box ? box.bottom : window.innerHeight);
+    return r.height > 0 && (bottom - top) / r.height >= 0.6;
+  }, [scrollContainerRef]);
+
+  const endHold = useCallback(() => {
+    if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+    holdStart.current = null;
+    if (heldPaused.current) {
+      heldPaused.current = false;
+      setHoldPaused(false);
+      // The tap event that follows the lift-off arrives straight away; if none does (scrolling took
+      // over), don't let the leftover flag swallow the next real tap.
+      setTimeout(() => { ignoreNextTap.current = false; }, 400);
+      // Only carry on if the card is still the one on screen (they may have scrolled away mid-hold).
+      if (cardMostlyOnScreen()) videoRef.current?.play().catch(() => {});
+    }
+  }, [cardMostlyOnScreen]);
+
+  const handleHoldStart = useCallback((e: React.PointerEvent) => {
+    endHold();
+    holdStart.current = { x: e.clientX, y: e.clientY };
+    holdTimer.current = setTimeout(() => {
+      holdTimer.current = null;
+      const vid = videoRef.current;
+      if (!vid || vid.paused) return;
+      vid.pause();
+      heldPaused.current = true;
+      ignoreNextTap.current = true;
+      setHoldPaused(true);
+    }, HOLD_TO_PAUSE_MS);
+  }, [endHold]);
+
+  const handleHoldMove = useCallback((e: React.PointerEvent) => {
+    const start = holdStart.current;
+    if (!start || heldPaused.current) return;
+    if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > HOLD_MOVE_TOLERANCE_PX) {
+      if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+      holdStart.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => { if (holdTimer.current) clearTimeout(holdTimer.current); }, []);
 
   /* Fetch up to 3 participant avatars for the stack preview */
   useEffect(() => {
@@ -450,9 +515,19 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
           {/* Tap to toggle mute — onClick only fires on taps, not swipes */}
           <button
             type="button"
-            onClick={() => setMuted((m) => !m)}
-            className="absolute inset-0 w-full h-full cursor-pointer bg-transparent border-0 p-0"
-            style={{ zIndex: 1 }}
+            onClick={() => {
+              // The lift-off after a hold-to-pause isn't a tap.
+              if (ignoreNextTap.current) { ignoreNextTap.current = false; return; }
+              setMuted((m) => !m);
+            }}
+            onPointerDown={handleHoldStart}
+            onPointerMove={handleHoldMove}
+            onPointerUp={endHold}
+            onPointerCancel={endHold}
+            onPointerLeave={endHold}
+            onContextMenu={(e) => e.preventDefault()}
+            className="absolute inset-0 w-full h-full cursor-pointer bg-transparent border-0 p-0 select-none"
+            style={{ zIndex: 1, WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
             aria-label={muted ? "Unmute video" : "Mute video"}
           >
             <video
@@ -475,6 +550,19 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               zIndex: 2,
             }}
           />
+
+          {/* Shown while a finger is holding the video paused */}
+          {holdPaused && (
+            <div
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              style={{ zIndex: 3 }}
+              aria-hidden="true"
+            >
+              <div className="w-16 h-16 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <Pause className="w-7 h-7 text-white" fill="white" />
+              </div>
+            </div>
+          )}
 
           {/* Speaker indicator — subtle, top-right */}
           <div
