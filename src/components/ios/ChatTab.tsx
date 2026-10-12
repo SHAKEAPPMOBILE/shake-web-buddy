@@ -28,6 +28,7 @@ import { CustomGroupChatView } from "@/components/CustomGroupChatView";
 import { LivingActivityIcon } from "@/components/LivingActivityIcon";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { toast } from "@/lib/app-toast";
+import { compareChats } from "@/lib/chatOrder";
 
 function safeActivityDate(iso: string | undefined): Date {
   if (!iso) return new Date();
@@ -61,6 +62,8 @@ interface ChatActivity {
   other_user_name?: string | null;
   other_user_avatar?: string | null;
   last_message_preview?: string | null;
+  /** When the most recent message in this chat was sent or received (any kind of chat). The list is ordered by it. */
+  last_message_at?: string | null;
   // Custom group chats (started from a DM)
   is_group_chat?: boolean;
   group_chat_id?: string;
@@ -388,6 +391,7 @@ export function ChatTab({
               group_title: others.map((o) => (o?.name || "Shaker").split(" ")[0]).join(", ") || "Group",
               group_avatars: others.slice(0, 3).map((o) => o?.avatar_url ?? null),
               last_message_preview: preview,
+              last_message_at: last?.created_at ?? null,
             } as ChatActivity;
           });
         } catch (err) {
@@ -416,13 +420,23 @@ export function ChatTab({
                 .maybeSingle(),
             ]);
             const lastReadAt = readStatus?.last_read_at || todayIso;
-            const { count: unreadCount } = await supabase
-              .from("activity_messages")
-              .select("*", { count: "exact", head: true })
-              .eq("activity_type", join.activity_type)
-              .eq("city", join.city)
-              .gt("created_at", lastReadAt)
-              .neq("user_id", user.id);
+            const [{ count: unreadCount }, { data: lastCarouselMsg }] = await Promise.all([
+              supabase
+                .from("activity_messages")
+                .select("*", { count: "exact", head: true })
+                .eq("activity_type", join.activity_type)
+                .eq("city", join.city)
+                .gt("created_at", lastReadAt)
+                .neq("user_id", user.id),
+              supabase
+                .from("activity_messages")
+                .select("created_at")
+                .eq("activity_type", join.activity_type)
+                .eq("city", join.city)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+            ]);
 
             const nextOccurrence = getNextOccurrenceDate(join.activity_type);
             return {
@@ -432,6 +446,7 @@ export function ChatTab({
               scheduled_for: nextOccurrence.toISOString(),
               participant_count: count || 1,
               unread_count: unreadCount || 0,
+              last_message_at: lastCarouselMsg?.created_at ?? null,
               is_plan: false,
               note: getActivityDay(join.activity_type) ? `This ${getActivityDay(join.activity_type)}` : null,
             } as ChatActivity;
@@ -447,12 +462,21 @@ export function ChatTab({
               supabase.from("activity_read_status").select("last_read_at").eq("user_id", user.id).eq("activity_type", plan.id).maybeSingle(),
             ]);
             const lastPlanRead = planReadStatus?.last_read_at || plan.created_at;
-            const { count: unreadPlanCount } = await supabase
-              .from("plan_messages")
-              .select("*", { count: "exact", head: true })
-              .eq("activity_id", plan.id)
-              .gt("created_at", lastPlanRead)
-              .neq("user_id", user.id);
+            const [{ count: unreadPlanCount }, { data: lastPlanMsg }] = await Promise.all([
+              supabase
+                .from("plan_messages")
+                .select("*", { count: "exact", head: true })
+                .eq("activity_id", plan.id)
+                .gt("created_at", lastPlanRead)
+                .neq("user_id", user.id),
+              supabase
+                .from("plan_messages")
+                .select("created_at")
+                .eq("activity_id", plan.id)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+            ]);
 
             return {
               id: plan.id,
@@ -461,6 +485,7 @@ export function ChatTab({
               scheduled_for: plan.scheduled_for,
               participant_count: count || 0,
               unread_count: unreadPlanCount || 0,
+              last_message_at: lastPlanMsg?.created_at ?? null,
               is_plan: true,
               plan_id: plan.id,
               is_auto_generated: plan.is_auto_generated ?? false,
@@ -543,6 +568,7 @@ export function ChatTab({
                 event_name: parsedName,
                 event_venue: parsedVenue,
                 expires_at: expiresAt ? expiresAt.toISOString() : undefined,
+                last_message_at: lastMsg?.created_at ?? null,
               } as ChatActivity;
             })
         ),
@@ -585,6 +611,7 @@ export function ChatTab({
               other_user_name: profile?.name || null,
               other_user_avatar: profile?.avatar_url || null,
               last_message_preview: lastMsgPreview,
+              last_message_at: lastMsg?.created_at ?? null,
             } as ChatActivity;
           })
         ),
@@ -643,31 +670,10 @@ export function ChatTab({
         })),
       });
 
-      // Chats with unread messages first — whatever kind they are (DM, group, plan, event) —
-      // then Today, Tomorrow, and the rest chronologically within each of those two groups.
-      chatActivities.sort((a, b) => {
-        const unreadA = (a.unread_count ?? 0) > 0;
-        const unreadB = (b.unread_count ?? 0) > 0;
-        if (unreadA !== unreadB) return unreadA ? -1 : 1;
-
-        const dateA = safeActivityDate(a.scheduled_for);
-        const dateB = safeActivityDate(b.scheduled_for);
-        const isTodayA = isToday(dateA);
-        const isTodayB = isToday(dateB);
-        const isTomorrowA = isTomorrow(dateA);
-        const isTomorrowB = isTomorrow(dateB);
-        
-        // Today first
-        if (isTodayA && !isTodayB) return -1;
-        if (!isTodayA && isTodayB) return 1;
-        
-        // Tomorrow second
-        if (isTomorrowA && !isTomorrowB) return -1;
-        if (!isTomorrowA && isTomorrowB) return 1;
-        
-        // Then chronologically
-        return dateA.getTime() - dateB.getTime();
-      });
+      // Most recent conversation first: the chat whose last message — sent by me or received — is the
+      // newest sits on top, then the next, and so on, for every kind of chat (DM, group, plan, event).
+      // Chats with no messages yet go below those, ordered by their date (Today, Tomorrow, then the rest).
+      chatActivities.sort(compareChats);
 
       console.log("[DEBUG] chatActivities assembled", chatActivities?.length, chatActivities);
       console.log("[ChatTab:SET-ACTIVITIES]", { fetchNonce, count: chatActivities.length, wasLoadingAlreadyCleared: !isLoading });
@@ -754,6 +760,11 @@ export function ChatTab({
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "group_chat_members", filter: `user_id=eq.${user.id}` },
+        () => fetchActivities()
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "group_chat_messages" },
         () => fetchActivities()
       )
       .subscribe();
