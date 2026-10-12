@@ -2418,14 +2418,11 @@ export default function ProposePlanPage() {
               <div className="flex flex-col items-center gap-1.5 shrink-0">
                 {renderStepMicButton()}
                 <button
-                  onClick={() => (planText.trim() ? handleNameSubmit() : void handleQuickPost())}
-                  // With a video/photo already added, an empty box still lets the person send: that posts
-                  // the media on its own ("Post like this"). Typing anything carries on with the questions.
-                  disabled={(!planText.trim() && !(hasMedia && !isEditMode)) || hasProfanity || isLoading}
-                  aria-label={planText.trim() ? undefined : t("createPlan.postLikeThis")}
+                  onClick={handleNameSubmit}
+                  disabled={!planText.trim() || hasProfanity}
                   className="w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-40 text-white shrink-0 transition-opacity hover:opacity-90 bg-black"
                 >
-                  {isLoading && !planText.trim() ? <LoadingSpinner size="sm" /> : <ChevronUp className="w-5 h-5" />}
+                  <ChevronUp className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -3379,6 +3376,21 @@ export default function ProposePlanPage() {
                                 alt="Plan photo"
                                 className="w-16 h-20 rounded-xl object-cover shrink-0"
                               />
+                            )}
+                            {/* Post this video/photo on its own — only while nothing has been typed; once they
+                                start writing, the bottom send button carries on with the questions instead. */}
+                            {stepsBack === 1 && currentStepName === "name" && !isEditMode && !planText.trim() && (
+                              <span
+                                role="button"
+                                aria-label={t("createPlan.postLikeThis")}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!isLoading) void handleQuickPost();
+                                }}
+                                className="w-11 h-11 rounded-full bg-black text-white ring-2 ring-white/80 flex items-center justify-center shrink-0 shadow-md active:scale-95 transition-transform"
+                              >
+                                {isLoading ? <LoadingSpinner size="sm" /> : <ChevronUp className="w-5 h-5" />}
+                              </span>
                             )}
                           </div>
                         ) : (
