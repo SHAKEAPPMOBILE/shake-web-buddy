@@ -107,7 +107,9 @@ interface HomeTabProps {
 
 // Separate dialog state for "Propose a plan" flow
 
-const SWIPE_HINT_KEY = "shake_home_swipe_hint_seen";
+// "_v2": TestFlight build 86 wrote the old flag the moment the carousel rendered, which hid the pill for testers who
+// never saw it. A new key lets everyone see it once, as intended.
+const SWIPE_HINT_KEY = "shake_home_swipe_hint_seen_v2";
 // How long the pill stays on screen before it counts as seen even if they haven't swiped yet.
 const SWIPE_HINT_SEEN_AFTER_MS = 8000;
 
