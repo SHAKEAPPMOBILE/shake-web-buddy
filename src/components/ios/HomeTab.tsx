@@ -1016,7 +1016,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   style={{ bottom: "6.5rem" }}
                   aria-hidden="true"
                 >
-                  <div className="flex items-center gap-1.5 pl-3 pr-4 py-2 rounded-full bg-foreground text-background shadow-lg animate-bounce-subtle">
+                  <div className="flex items-center gap-1.5 pl-3 pr-4 py-2 rounded-full bg-card border border-border text-foreground shadow-md animate-bounce-subtle">
                     <ChevronsUpDown className="w-4 h-4" />
                     <span className="text-sm font-semibold whitespace-nowrap">{t('home.swipeUpDown', 'Swipe up/down')}</span>
                   </div>
