@@ -108,6 +108,8 @@ interface HomeTabProps {
 // Separate dialog state for "Propose a plan" flow
 
 const SWIPE_HINT_KEY = "shake_home_swipe_hint_seen";
+// How long the pill stays on screen before it counts as seen even if they haven't swiped yet.
+const SWIPE_HINT_SEEN_AFTER_MS = 8000;
 
 export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, onOpenEvents, onUpgradeClick, isActivityJoined }: HomeTabProps) {
   const { t } = useTranslation();
@@ -145,11 +147,21 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const [showSwipeHint, setShowSwipeHint] = useState(() => {
     try { return localStorage.getItem(SWIPE_HINT_KEY) !== "1"; } catch { return true; }
   });
-  // Counts as "seen" once the carousel is actually on screen (it's an overlay that can be closed), not when the tab mounts.
+  // The hint counts as "seen" when they swipe, or once it has been on screen for a while. Not the moment the
+  // carousel first renders: the Home tab can be built more than once while the app starts up, and a
+  // flag written on the first build hid the pill before anyone saw it.
+  const rememberSwipeHintSeen = useCallback(() => {
+    try { localStorage.setItem(SWIPE_HINT_KEY, "1"); } catch { /* storage unavailable */ }
+  }, []);
+  const dismissSwipeHint = useCallback(() => {
+    setShowSwipeHint(false);
+    rememberSwipeHintSeen();
+  }, [rememberSwipeHintSeen]);
   useEffect(() => {
-    if (showActivities && showSwipeHint) { try { localStorage.setItem(SWIPE_HINT_KEY, "1"); } catch { /* storage unavailable */ } }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showActivities]);
+    if (!showActivities || !showSwipeHint) return;
+    const id = setTimeout(rememberSwipeHintSeen, SWIPE_HINT_SEEN_AFTER_MS);
+    return () => clearTimeout(id);
+  }, [showActivities, showSwipeHint, rememberSwipeHintSeen]);
   const tappedActivityRef = useRef<CarouselItem | null>(null);
   const [carouselJoinCount, setCarouselJoinCount] = useState(0);
   const [carouselJoinAvatars, setCarouselJoinAvatars] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
@@ -679,8 +691,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     if (!isPointerDragging.current) return;
     touchEndY.current = e.clientY;
     didSwipe.current = true;
-    if (Math.abs(e.clientY - touchStartY.current) > 8) setShowSwipeHint(false); // they've started to swipe
-  }, []);
+    if (Math.abs(e.clientY - touchStartY.current) > 8) dismissSwipeHint(); // they've started to swipe
+  }, [dismissSwipeHint]);
 
   const handlePointerUp = useCallback(() => {
     isPointerDragging.current = false;
@@ -692,14 +704,14 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     const threshold = 50; // minimum swipe distance
 
     if (Math.abs(dy) > threshold) {
-      setShowSwipeHint(false);
+      dismissSwipeHint();
       if (dy < 0) {
         goToNext(); // Swiped up
       } else {
         goToPrevious(); // Swiped down
       }
     }
-  }, [goToNext, goToPrevious]);
+  }, [goToNext, goToPrevious, dismissSwipeHint]);
 
   // Trackpad two-finger swipes and mouse wheels arrive as `wheel` events with a vertical
   // deltaY, not pointer events — a click-and-drag and a trackpad swipe are
@@ -721,7 +733,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     if (state.firedThisGesture) return;
     if (Math.abs(state.accumY) < 60 || Math.abs(state.accumY) < Math.abs(state.accumX) * 1.5) return;
     state.firedThisGesture = true;
-    setShowSwipeHint(false);
+    dismissSwipeHint();
     // Scrolling down (positive deltaY) moves to the next card, scrolling up to the previous one — the
     // same up = next, down = previous feel as the touch swipe above.
     if (state.accumY > 0) {
@@ -729,7 +741,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     } else {
       goToPrevious();
     }
-  }, [goToNext, goToPrevious]);
+  }, [goToNext, goToPrevious, dismissSwipeHint]);
 
   // Handle backdrop click to close activities
   // IMPORTANT: must be declared before any conditional returns to keep hook order stable.
