@@ -1013,7 +1013,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                 <div
                   className="fixed right-4 z-10 pointer-events-none animate-fade-in"
                   // The carousel overlay's blur makes this "fixed" box position against the overlay (which stops above the tab bar).
-                  style={{ bottom: "6.5rem" }}
+                  style={{ bottom: "4rem" }}
                   aria-hidden="true"
                 >
                   <div className="flex items-center gap-1.5 pl-3 pr-4 py-2 rounded-full bg-card border border-border text-foreground shadow-md animate-bounce-subtle">
