@@ -16,7 +16,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, DollarSign, Volume2, VolumeX, User, Send, Pause } from "lucide-react";
+import { ChevronLeft, Volume2, VolumeX, User, Send, Pause } from "lucide-react";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
@@ -493,8 +493,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
       return { label: t('plans.enterChat', 'Enter chat'), handler: onEnterChat, disabled: false };
     }
     if (isPaid) {
-      const hasTiers = Boolean(plan.price_tiers && plan.price_tiers.length > 0);
-      return { label: hasTiers ? "Pay to Join" : `Pay $${priceValue.toFixed(0)}`, handler: onPayForPlan, disabled: false };
+      // Looks and reads like a free plan's JOIN; tapping it opens the price + payment screen instead of joining directly.
+      return { label: t('plans.joinBtn', 'JOIN'), handler: onPayForPlan, disabled: false };
     }
     return {
       label: joining ? t('plans.joiningBtn', 'Joining…') : t('plans.joinBtn', 'JOIN'),
@@ -798,35 +798,20 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
           <div
             className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
             style={{
-              background:
-                (isOwn || isJoined)
-                  ? "#ffffff"
-                  : isPaid
-                    ? "linear-gradient(to bottom, #f59e0b, #d97706)"
-                    : "#ffffff",
+              background: "#ffffff",
               backdropFilter: "blur(4px)",
               WebkitBackdropFilter: "blur(4px)",
             }}
           >
             {(isOwn || isJoined) ? (
               <span className="text-sm font-bold tracking-wide animate-gradient-shift" style={{ backgroundClip: "text", WebkitTextFillColor: "transparent" }}>CHAT</span>
-            ) : isPaid ? (
-              <DollarSign className="w-6 h-6 text-white" />
             ) : joining ? (
               <div className="w-5 h-5 border-2 border-black/40 border-t-transparent rounded-full animate-spin" />
             ) : (
               <span className="text-sm font-bold tracking-wide animate-gradient-shift" style={{ backgroundClip: "text", WebkitTextFillColor: "transparent" }}>JOIN</span>
             )}
           </div>
-          {/* Label beneath circle — shown for paid and joining states */}
-          {isPaid && !(isOwn || isJoined) && (
-            <span
-              className="text-white text-[11px] font-semibold leading-none"
-              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
-            >
-              ${priceValue.toFixed(0)}
-            </span>
-          )}
+          {/* Label beneath circle — shown while joining */}
           {joining && (
             <span
               className="text-white text-[11px] font-semibold leading-none"
