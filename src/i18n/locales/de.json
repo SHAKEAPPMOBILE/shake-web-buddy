@@ -101,7 +101,8 @@
     "findingMatch": "Match wird gesucht...",
     "noMatchFound": "Momentan keine passenden Nutzer, versuch's mit einem Plan",
     "sharedInterestsCount": "{{count}} gemeinsame Interessen",
-    "sayHiBtn": "Hallo sagen!"
+    "sayHiBtn": "Hallo sagen!",
+    "swipeUpDown": "Nach oben/unten wischen"
   },
   "activities": {
     "brunch": "Brunch",

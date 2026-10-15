@@ -101,7 +101,8 @@
     "findingMatch": "マッチを探しています...",
     "noMatchFound": "現在マッチするユーザーがいません。プランに参加してみましょう",
     "sharedInterestsCount": "共通の興味 {{count}} 件",
-    "sayHiBtn": "挨拶する！"
+    "sayHiBtn": "挨拶する！",
+    "swipeUpDown": "上下にスワイプ"
   },
   "activities": {
     "brunch": "ブランチ",

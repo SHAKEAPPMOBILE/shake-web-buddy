@@ -101,7 +101,8 @@
     "findingMatch": "Je match wordt gezocht...",
     "noMatchFound": "Op dit moment geen match gevonden, probeer een plan te joinen",
     "sharedInterestsCount": "{{count}} gedeelde interesses",
-    "sayHiBtn": "Zeg hoi!"
+    "sayHiBtn": "Zeg hoi!",
+    "swipeUpDown": "Veeg omhoog/omlaag"
   },
   "activities": {
     "brunch": "Brunch",

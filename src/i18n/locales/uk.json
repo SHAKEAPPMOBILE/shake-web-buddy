@@ -101,7 +101,8 @@
     "findingMatch": "Шукаємо твій метч...",
     "noMatchFound": "Наразі немає відповідних користувачів, спробуй приєднатися до плану",
     "sharedInterestsCount": "{{count}} спільних інтересів",
-    "sayHiBtn": "Привітатися!"
+    "sayHiBtn": "Привітатися!",
+    "swipeUpDown": "Проведіть вгору/вниз"
   },
   "activities": {
     "brunch": "Бранч",

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, MouseEvent, PointerE
 import { format, isToday } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { GlobalParticipantsSection } from "../GlobalParticipantsSection";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import { getActivitiesWithDates } from "@/data/activityTypes";
 import { getTranslatedActivityLabel, getTranslatedDayName } from "@/lib/activity-translations";
 import { useNavigate, Link } from "react-router-dom";
@@ -107,6 +107,8 @@ interface HomeTabProps {
 
 // Separate dialog state for "Propose a plan" flow
 
+const SWIPE_HINT_KEY = "shake_home_swipe_hint_seen";
+
 export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = false, onCloseActivities, onOpenActivities, onOpenEvents, onUpgradeClick, isActivityJoined }: HomeTabProps) {
   const { t } = useTranslation();
   const { user, isPremium } = useAuth();
@@ -134,9 +136,20 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [showTapInstruction, setShowTapInstruction] = useState(false);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(() => getSmartCarouselIndex());
+  // Which way the card slides in: swiping up brings the next one up from below, swiping down brings the previous one in from above.
+  const [slideFrom, setSlideFrom] = useState<"bottom" | "top">("bottom");
   const phraseIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const touchStartX = useRef<number>(0);
-  const touchEndX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
+  const touchEndY = useRef<number>(0);
+  // "Swipe up/down" pill: shown the first time someone lands on Home, gone as soon as they swipe.
+  const [showSwipeHint, setShowSwipeHint] = useState(() => {
+    try { return localStorage.getItem(SWIPE_HINT_KEY) !== "1"; } catch { return true; }
+  });
+  // Counts as "seen" once the carousel is actually on screen (it's an overlay that can be closed), not when the tab mounts.
+  useEffect(() => {
+    if (showActivities && showSwipeHint) { try { localStorage.setItem(SWIPE_HINT_KEY, "1"); } catch { /* storage unavailable */ } }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showActivities]);
   const tappedActivityRef = useRef<CarouselItem | null>(null);
   const [carouselJoinCount, setCarouselJoinCount] = useState(0);
   const [carouselJoinAvatars, setCarouselJoinAvatars] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
@@ -598,12 +611,14 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
   // the swipe-direction flip below is applied only in the gesture handlers,
   // not here.
   const goToPrevious = useCallback(() => {
+    setSlideFrom("top");
     setCurrentActivityIndex(prev =>
       prev === 0 ? CAROUSEL_ITEMS.length - 1 : prev - 1
     );
   }, [CAROUSEL_ITEMS.length]);
 
   const goToNext = useCallback(() => {
+    setSlideFrom("bottom");
     setCurrentActivityIndex(prev =>
       prev === CAROUSEL_ITEMS.length - 1 ? 0 : prev + 1
     );
@@ -650,8 +665,8 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
   const handlePointerDown = useCallback((e: ReactPointerEvent) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    touchStartX.current = e.clientX;
-    touchEndX.current = e.clientX; // Reset so taps don't use stale value
+    touchStartY.current = e.clientY;
+    touchEndY.current = e.clientY; // Reset so taps don't use stale value
     didSwipe.current = false;
     isPointerDragging.current = true;
     // No setPointerCapture here: it also redirects the resulting native
@@ -662,8 +677,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
 
   const handlePointerMove = useCallback((e: ReactPointerEvent) => {
     if (!isPointerDragging.current) return;
-    touchEndX.current = e.clientX;
+    touchEndY.current = e.clientY;
     didSwipe.current = true;
+    if (Math.abs(e.clientY - touchStartY.current) > 8) setShowSwipeHint(false); // they've started to swipe
   }, []);
 
   const handlePointerUp = useCallback(() => {
@@ -671,25 +687,23 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     // Only process if user actually swiped (moved finger/mouse), not just tapped
     if (!didSwipe.current) return;
 
-    // dx > 0 = physical rightward drag. Per explicit request: a rightward
-    // swipe here runs goToPrevious() (what the ‹ button does) and a
-    // leftward swipe runs goToNext() (what the › button does) — the
-    // opposite of the arrow buttons' own left/right, deliberately.
-    const dx = touchEndX.current - touchStartX.current;
+    // Vertical paging: swipe up (finger moves up) goes to the next card, swipe down to the previous one.
+    const dy = touchEndY.current - touchStartY.current;
     const threshold = 50; // minimum swipe distance
 
-    if (Math.abs(dx) > threshold) {
-      if (dx > 0) {
-        goToPrevious(); // Swiped right
+    if (Math.abs(dy) > threshold) {
+      setShowSwipeHint(false);
+      if (dy < 0) {
+        goToNext(); // Swiped up
       } else {
-        goToNext(); // Swiped left
+        goToPrevious(); // Swiped down
       }
     }
   }, [goToNext, goToPrevious]);
 
-  // Trackpad two-finger swipes arrive as `wheel` events with a horizontal
-  // deltaX, not pointer events — a click-and-drag and a trackpad swipe are
-  // different input mechanisms. Accumulate deltaX across one continuous
+  // Trackpad two-finger swipes and mouse wheels arrive as `wheel` events with a vertical
+  // deltaY, not pointer events — a click-and-drag and a trackpad swipe are
+  // different input mechanisms. Accumulate deltaY across one continuous
   // gesture (a pause resets it) and fire once per gesture past threshold.
   const wheelGesture = useRef({ accumX: 0, accumY: 0, lastTime: 0, firedThisGesture: false });
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -705,17 +719,15 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
     state.accumX += e.deltaX;
     state.accumY += e.deltaY;
     if (state.firedThisGesture) return;
-    if (Math.abs(state.accumX) < 60 || Math.abs(state.accumX) < Math.abs(state.accumY) * 1.5) return;
+    if (Math.abs(state.accumY) < 60 || Math.abs(state.accumY) < Math.abs(state.accumX) * 1.5) return;
     state.firedThisGesture = true;
-    // With natural scrolling (the macOS default), a physical rightward
-    // trackpad swipe reports a negative deltaX — so negate it to get back
-    // to "positive = physical right". Same deliberate right→Previous,
-    // left→Next mapping as the pointer/touch handler above.
-    const dx = -state.accumX;
-    if (dx > 0) {
-      goToPrevious();
-    } else {
+    setShowSwipeHint(false);
+    // Scrolling down (positive deltaY) moves to the next card, scrolling up to the previous one — the
+    // same up = next, down = previous feel as the touch swipe above.
+    if (state.accumY > 0) {
       goToNext();
+    } else {
+      goToPrevious();
     }
   }, [goToNext, goToPrevious]);
 
@@ -832,7 +844,7 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           onWheel={handleWheel}
-          style={{ touchAction: 'pan-y', background: timeOfDayGradient }}
+          style={{ touchAction: 'none', background: timeOfDayGradient }}
         >
           {/* Top bar — SHAKE-SOCIAL wordmark on the left, city pill on the
               right, same pieces as the logged-out splash and the logged-in
@@ -868,8 +880,17 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   both were semi-visible together, showing this date headline
                   bleeding through the card. */}
               <div className={cn((showActivityDetails || showMatchDetails) ? "opacity-0 pointer-events-none" : "opacity-100")}>
+                {/* Only this block changes when paging (the date headline, the circle and its title): it slides in
+                    vertically. The page header, the city, the dots and the tab bar stay put. */}
+                <div
+                  key={currentActivityIndex}
+                  className={cn(
+                    "animate-in fade-in duration-300",
+                    slideFrom === "bottom" ? "slide-in-from-bottom-10" : "slide-in-from-top-10"
+                  )}
+                >
                 {/* Date display - Above the circle (or "Propose a plan" / "Match me up" text) */}
-                <div className="mb-8 animate-fade-in text-center">
+                <div className="mb-8 text-center">
                   {currentActivity?.isProposePlan ? (
                     <div className="text-5xl md:text-6xl font-handwritten text-foreground">
                       {t('home.proposePlan', 'Propose a plan')}
@@ -888,16 +909,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   )}
                 </div>
 
-                {/* Activity circle with arrows on sides */}
+                {/* Activity circle — paged by swiping up/down (no arrows) */}
                 <div className="flex items-center justify-center w-full max-w-sm mx-auto">
-                  <button
-                    onClick={goToPrevious}
-                    className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors shrink-0"
-                  >
-                    <ChevronLeft className="w-6 h-6 text-foreground" />
-                  </button>
-
-                  <div className="relative mx-6 shrink-0">
+                  <div className="relative shrink-0">
                     <div
                       className="w-32 h-32 rounded-full bg-card flex items-center justify-center shadow-2xl cursor-pointer transition-transform hover:scale-105 animate-float"
                       onPointerDown={() => {
@@ -923,15 +937,9 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     </div>
                   </div>
 
-                  <button
-                    onClick={goToNext}
-                    className="flex w-12 h-12 rounded-full bg-card border border-border items-center justify-center shadow-lg hover:bg-muted transition-colors shrink-0"
-                  >
-                    <ChevronRight className="w-6 h-6 text-foreground" />
-                  </button>
                 </div>
 
-                <div className="mt-8 animate-fade-in text-center">
+                <div className="mt-8 text-center">
                   <div className="text-xl font-semibold text-foreground">
                     {currentActivity?.isProposePlan
                       ? t('home.anytimeAnywhere', 'Anytime, Anywhere.')
@@ -968,12 +976,13 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                     </div>
                   )}
                 </div>
+                </div>
 
                 <div className="flex justify-center gap-2 mt-6">
                   {CAROUSEL_ITEMS.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentActivityIndex(index)}
+                      onClick={() => { setSlideFrom(index > currentActivityIndex ? "bottom" : "top"); setCurrentActivityIndex(index); }}
                       className={cn(
                         "h-2.5 rounded-full transition-all",
                         index === currentActivityIndex 
@@ -984,6 +993,21 @@ export function HomeTab({ onSelectActivity, onConfirmActivity, showActivities = 
                   ))}
                 </div>
               </div>
+
+              {/* First-visit hint: gone as soon as they swipe, and never shown again after that. */}
+              {showSwipeHint && !showActivityDetails && !showMatchDetails && (
+                <div
+                  className="fixed right-4 z-10 pointer-events-none animate-fade-in"
+                  // The carousel overlay's blur makes this "fixed" box position against the overlay (which stops above the tab bar).
+                  style={{ bottom: "6.5rem" }}
+                  aria-hidden="true"
+                >
+                  <div className="flex items-center gap-1.5 pl-3 pr-4 py-2 rounded-full bg-foreground text-background shadow-lg animate-bounce-subtle">
+                    <ChevronsUpDown className="w-4 h-4" />
+                    <span className="text-sm font-semibold whitespace-nowrap">{t('home.swipeUpDown', 'Swipe up/down')}</span>
+                  </div>
+                </div>
+              )}
 
               <ActivityDetailsCard
                 show={showActivityDetails}

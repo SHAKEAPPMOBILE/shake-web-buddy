@@ -101,7 +101,8 @@
     "findingMatch": "正在寻找你的配对...",
     "noMatchFound": "目前没有匹配的用户，试试加入一个活动吧",
     "sharedInterestsCount": "{{count}} 个共同兴趣",
-    "sayHiBtn": "打个招呼！"
+    "sayHiBtn": "打个招呼！",
+    "swipeUpDown": "上下滑动"
   },
   "activities": {
     "brunch": "早午餐",

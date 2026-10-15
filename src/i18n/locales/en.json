@@ -101,7 +101,8 @@
     "findingMatch": "Finding your match...",
     "noMatchFound": "No matched users at this time, try going to a plan",
     "sharedInterestsCount": "{{count}} shared interests",
-    "sayHiBtn": "Say hi!"
+    "sayHiBtn": "Say hi!",
+    "swipeUpDown": "Swipe up/down"
   },
   "activities": {
     "brunch": "Brunch",

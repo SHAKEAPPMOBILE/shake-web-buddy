@@ -101,7 +101,8 @@
     "findingMatch": "Procurando seu match...",
     "noMatchFound": "Nenhum usuário compatível no momento, tente entrar em um plano",
     "sharedInterestsCount": "{{count}} interesses em comum",
-    "sayHiBtn": "Dizer oi!"
+    "sayHiBtn": "Dizer oi!",
+    "swipeUpDown": "Deslize para cima/baixo"
   },
   "activities": {
     "brunch": "Brunch",
