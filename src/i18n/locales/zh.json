@@ -962,5 +962,10 @@
     "selectCountryDescription": "请选择你用于接收付款的银行账户所在国家/地区。",
     "selectCountryPlaceholder": "选择你的国家/地区",
     "selectCountryTitle": "选择你的国家/地区"
+  },
+  "webApp": {
+    "getTheApp": "下载应用",
+    "cardTitle": "在手机上使用 SHAKE",
+    "close": "关闭"
   }
 }

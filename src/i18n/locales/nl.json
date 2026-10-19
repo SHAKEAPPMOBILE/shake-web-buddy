@@ -962,5 +962,10 @@
     "selectCountryDescription": "Kies het land waar je een bankrekening hebt om uitbetalingen te ontvangen.",
     "selectCountryPlaceholder": "Selecteer je land",
     "selectCountryTitle": "Selecteer je land"
+  },
+  "webApp": {
+    "getTheApp": "Download de app",
+    "cardTitle": "SHAKE op je telefoon",
+    "close": "Sluiten"
   }
 }

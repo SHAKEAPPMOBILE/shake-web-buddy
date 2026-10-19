@@ -962,5 +962,10 @@
     "selectCountryDescription": "支払いを受け取る銀行口座がある国を選んでください。",
     "selectCountryPlaceholder": "国を選択",
     "selectCountryTitle": "国を選択してください"
+  },
+  "webApp": {
+    "getTheApp": "アプリを入手",
+    "cardTitle": "スマホでSHAKEを使おう",
+    "close": "閉じる"
   }
 }

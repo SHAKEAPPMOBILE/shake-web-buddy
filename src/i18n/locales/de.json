@@ -962,5 +962,10 @@
     "selectCountryDescription": "Wähle das Land, in dem du ein Bankkonto hast, um Auszahlungen zu erhalten.",
     "selectCountryPlaceholder": "Wähle dein Land",
     "selectCountryTitle": "Wähle dein Land"
+  },
+  "webApp": {
+    "getTheApp": "App laden",
+    "cardTitle": "SHAKE auf deinem Handy",
+    "close": "Schließen"
   }
 }

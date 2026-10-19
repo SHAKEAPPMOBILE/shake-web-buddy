@@ -959,5 +959,10 @@
     "selectCountryDescription": "Choose the country where you have a bank account to receive payouts.",
     "selectCountryPlaceholder": "Select your country",
     "selectCountryTitle": "Select Your Country"
+  },
+  "webApp": {
+    "getTheApp": "Get the app",
+    "cardTitle": "Get SHAKE on your phone",
+    "close": "Close"
   }
 }

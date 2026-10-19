@@ -35,6 +35,7 @@ import { WelcomeBonusWatcher } from "@/components/WelcomeBonusWatcher";
 import { PlanCheckInWatcher } from "@/components/PlanCheckInWatcher";
 import { PointsPopupHost } from "@/components/PointsPopupHost";
 import { LanguageSync } from "@/components/LanguageSync";
+import { GetTheAppPill } from "@/components/GetTheAppPill";
 import ProposePlanPage from "./pages/ProposePlanPage";
 import EventChatPage from "./pages/EventChatPage";
 import ShareLanding from "./pages/ShareLanding";
@@ -154,6 +155,7 @@ const App = () => {
                   <Toaster />
                 <BrowserRouter>
                   <ReferralTracker />
+                  <GetTheAppPill />
                   <Routes>
                     <Route path="/auth/callback" element={<OAuthCallback />} />
                     <Route path="/auth" element={<Auth />} />

@@ -962,5 +962,10 @@
     "selectCountryDescription": "Виберіть країну, де у вас є банківський рахунок для отримання виплат.",
     "selectCountryPlaceholder": "Виберіть свою країну",
     "selectCountryTitle": "Виберіть свою країну"
+  },
+  "webApp": {
+    "getTheApp": "Завантажити застосунок",
+    "cardTitle": "SHAKE у вашому телефоні",
+    "close": "Закрити"
   }
 }

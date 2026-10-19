@@ -962,5 +962,10 @@
     "selectCountryDescription": "Scegli il paese in cui hai un conto bancario per ricevere i pagamenti.",
     "selectCountryPlaceholder": "Seleziona il tuo paese",
     "selectCountryTitle": "Seleziona il tuo paese"
+  },
+  "webApp": {
+    "getTheApp": "Scarica l'app",
+    "cardTitle": "SHAKE sul tuo telefono",
+    "close": "Chiudi"
   }
 }
