@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import './i18n'; // Initialize i18n before app renders
 import App from "./App";
 import "./index.css";
+// The two display fonts are served from this site, not from Google's servers (a visitor's IP would go to Google).
+import "@fontsource/sue-ellen-francisco/400.css";
+import "@fontsource/space-grotesk/700.css";
 import { Capacitor } from "@capacitor/core";
 
 if (Capacitor.isNativePlatform()) {
