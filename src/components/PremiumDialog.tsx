@@ -514,10 +514,10 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
             </div>
           )}
           {subscriptionPeriod && (
-            <p className="text-xs text-gray-500 mt-0.5">Billed every {subscriptionPeriod} • Cancel anytime</p>
+            <p className="text-xs text-gray-500 mt-0.5">Renews automatically every {subscriptionPeriod} until you cancel. Cancel anytime in your App Store or Google Play subscriptions.</p>
           )}
           {!subscriptionPeriod && (
-            <p className="text-xs text-gray-500 mt-0.5">Cancel anytime • Best value!</p>
+            <p className="text-xs text-gray-500 mt-0.5">Renews automatically until you cancel. Cancel anytime in your App Store or Google Play subscriptions.</p>
           )}
         </div>
 

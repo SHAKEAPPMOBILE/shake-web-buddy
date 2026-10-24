@@ -73,35 +73,42 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-foreground mb-4">7. Termination</h2>
+              <h2 className="text-2xl font-semibold text-foreground mb-4">7. Copyright Complaints</h2>
+              <p className="text-muted-foreground">
+                If you believe content on SHAKE infringes your copyright, email <a href="mailto:contact@shakeapp.today" className="text-shake-yellow hover:underline">contact@shakeapp.today</a> with: a description of the work, where on SHAKE the content appears, your name and contact details, a statement that you believe in good faith the use is not authorized, a statement that your notice is accurate and that you are the owner or authorized to act for the owner, and your signature. We remove infringing content promptly and may close the accounts of people who repeatedly infringe.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-foreground mb-4">8. Termination</h2>
               <p className="text-muted-foreground">
                 We may suspend or terminate your access to the Service at any time, with or without cause. You may also delete your account at any time.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-foreground mb-4">8. Disclaimers</h2>
+              <h2 className="text-2xl font-semibold text-foreground mb-4">9. Disclaimers</h2>
               <p className="text-muted-foreground">
                 THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT GUARANTEE THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY INFORMATION ON THE SERVICE.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-foreground mb-4">9. Limitation of Liability</h2>
+              <h2 className="text-2xl font-semibold text-foreground mb-4">10. Limitation of Liability</h2>
               <p className="text-muted-foreground">
                 TO THE MAXIMUM EXTENT PERMITTED BY LAW, SHAKE SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-foreground mb-4">10. Indemnification</h2>
+              <h2 className="text-2xl font-semibold text-foreground mb-4">11. Indemnification</h2>
               <p className="text-muted-foreground">
                 You agree to indemnify and hold harmless SHAKE from any claims arising from your use of the Service or violation of these Terms.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-foreground mb-4">11. Changes to Terms</h2>
+              <h2 className="text-2xl font-semibold text-foreground mb-4">12. Changes to Terms</h2>
               <p className="text-muted-foreground">
                 We reserve the right to modify these Terms at any time. Continued use of the Service after changes constitutes acceptance of the new Terms.
               </p>
