@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle, Users } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle, Users, CalendarCheck } from "lucide-react";
 import { ManageFriendsDialog } from "@/components/ManageFriendsDialog";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
@@ -183,6 +183,10 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [venmoInput, setVenmoInput] = useState("");
   const [editingVenmo, setEditingVenmo] = useState(true);
   const [savedCashApp, setSavedCashApp] = useState("");
+  const [bookingUrl, setBookingUrl] = useState("");
+  const [bookingInput, setBookingInput] = useState("");
+  const [editingBooking, setEditingBooking] = useState(false);
+  const [bookingSaving, setBookingSaving] = useState(false);
   const [cashAppInput, setCashAppInput] = useState("");
   const [editingCashApp, setEditingCashApp] = useState(true);
   const [payoutSaving, setPayoutSaving] = useState<string | null>(null);
@@ -351,7 +355,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     const [publicProfile, privateProfile] = await Promise.all([
       supabase
         .from("profiles")
-        .select("avatar_url, name, face_auth_enabled, payout_paypal, payout_venmo, payout_cashapp, gender")
+        .select("avatar_url, name, face_auth_enabled, payout_paypal, payout_venmo, payout_cashapp, gender, booking_url")
         .eq("user_id", user.id)
         .maybeSingle(),
       supabase
@@ -371,6 +375,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
       setSavedVenmo(vm); setEditingVenmo(!vm);
       const ca = publicProfile.data.payout_cashapp ?? "";
       setSavedCashApp(ca); setEditingCashApp(!ca);
+      setBookingUrl((publicProfile.data as any).booking_url ?? "");
     }
     if (privateProfile.error) {
       logPostgrestError("ProfileTab profiles_private select", privateProfile.error);
@@ -380,6 +385,29 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     }
     setProfileLoaded(true);
   }, [user]);
+
+  // A booking link is one https address the creator already sells through (FareHarbor or any other booking page).
+  const saveBookingUrl = async () => {
+    if (!user) return;
+    const raw = bookingInput.trim();
+    const value = raw && !/^https?:\/\//i.test(raw) ? `https://${raw}` : raw;
+    if (value && !/^https:\/\/[^\s]+\.[^\s]+$/i.test(value)) {
+      toast({ title: t('profile.bookingLinkInvalid', 'Enter a valid https link'), variant: "destructive" });
+      return;
+    }
+    setBookingSaving(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ booking_url: value || null } as any).eq("user_id", user.id);
+      if (error) throw error;
+      setBookingUrl(value);
+      setEditingBooking(false);
+      toast({ title: t('profile.bookingLinkSaved', 'Booking link saved') });
+    } catch (err) {
+      toast({ title: t('profile.errorTitle', 'Error'), description: String(err), variant: "destructive" });
+    } finally {
+      setBookingSaving(false);
+    }
+  };
 
   const savePayoutField = async (field: string, value: string) => {
     if (!user) return;
@@ -1173,6 +1201,48 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 className="data-[state=checked]:bg-black data-[state=unchecked]:bg-gray-200"
                 thumbClassName="bg-white"
               />
+            </div>
+            {/* Booking link — creators who sell on FareHarbor (or any booking page) */}
+            <div className="px-4 py-3 space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                  <CalendarCheck className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-gray-900">{t('profile.bookingLink', 'Booking link')}</span>
+                  <p className="text-xs text-gray-400">{t('profile.bookingLinkDesc', 'FareHarbor or any booking page. Your plans get a Book button.')}</p>
+                </div>
+                {bookingUrl && !editingBooking && (
+                  <button
+                    onClick={() => { setBookingInput(bookingUrl); setEditingBooking(true); }}
+                    className="text-xs text-gray-500 underline"
+                  >{t('profile.edit', 'Edit')}</button>
+                )}
+              </div>
+              {bookingUrl && !editingBooking ? (
+                <p className="text-xs text-gray-600 px-1 truncate">{bookingUrl}</p>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    inputMode="url"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    value={bookingInput}
+                    onChange={e => setBookingInput(e.target.value)}
+                    placeholder="https://fareharbor.com/embeds/book/..."
+                    className="flex-1 min-w-0 px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white outline-none focus:border-gray-400"
+                  />
+                  <button
+                    onClick={saveBookingUrl}
+                    disabled={bookingSaving}
+                    className="px-4 py-2 text-xs font-medium text-gray-900 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                  >
+                    {bookingSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                    {t('profile.save', 'Save')}
+                  </button>
+                </div>
+              )}
             </div>
             {/* Notifications — native only */}
             {isNative && (

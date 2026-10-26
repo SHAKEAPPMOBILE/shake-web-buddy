@@ -284,7 +284,8 @@
     "noFriendsYet": "Non hai ancora aggiunto amici.",
     "noFriendPlans": "Nessuno dei tuoi amici ha un piano imminente al momento.",
     "editPlanItem": "Modifica piano",
-    "sharePlan": "Condividi questo piano"
+    "sharePlan": "Condividi questo piano",
+    "bookBtn": "Prenota"
   },
   "profile": {
     "title": "Profilo",
@@ -449,7 +450,11 @@
     "save": "Salva",
     "stripeUnderReview": "Tutto pronto — Stripe sta esaminando il tuo account. Può richiedere 1-3 giorni lavorativi.",
     "verified": "Verificato",
-    "yourEarnings": "I tuoi guadagni"
+    "yourEarnings": "I tuoi guadagni",
+    "bookingLink": "Link di prenotazione",
+    "bookingLinkDesc": "FareHarbor o qualsiasi pagina di prenotazione. I tuoi piani avranno un pulsante Prenota.",
+    "bookingLinkSaved": "Link di prenotazione salvato",
+    "bookingLinkInvalid": "Inserisci un link https valido"
   },
   "points": {
     "title": "I Miei Punti",
