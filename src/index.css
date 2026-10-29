@@ -125,38 +125,38 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   }
   
   .light {
-    --background: 270 30% 98%;
-    --foreground: 270 50% 10%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
     
     --card: 0 0% 100%;
-    --card-foreground: 270 50% 10%;
+    --card-foreground: 0 0% 9%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 270 50% 10%;
+    --popover-foreground: 0 0% 9%;
     
-    --primary: 270 70% 55%;
+    --primary: 0 0% 9%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 270 20% 92%;
-    --secondary-foreground: 270 50% 15%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 12%;
     
-    --muted: 270 15% 92%;
-    --muted-foreground: 270 20% 40%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 42%;
     
-    --accent: 270 30% 92%;
-    --accent-foreground: 270 50% 15%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 12%;
     
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 270 20% 88%;
-    --input: 270 20% 90%;
-    --ring: 270 70% 55%;
+    --border: 0 0% 89%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 9%;
     
     /* Shake brand colors */
     --shake-coral: 12 85% 62%;
     --shake-teal: 174 60% 50%;
-    --shake-purple: 270 70% 55%;
+    --shake-purple: 217 91% 55%;
     --shake-yellow: 45 95% 55%;
     --shake-green: 145 65% 42%;
     
@@ -328,7 +328,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .animate-gradient-shift {
-  background: linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316);
+  background: linear-gradient(270deg, #f97316, #3b82f6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316);
   background-size: 400% 400%;
   animation: gradientShift 4s ease infinite;
 }

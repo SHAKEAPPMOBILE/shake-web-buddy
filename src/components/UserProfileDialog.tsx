@@ -233,8 +233,8 @@ export function UserProfileDialog({
           className={
             isMobile
               // Bottom sheet: pinned to the bottom edge, rises from below, no gap under it.
-              ? "!left-0 !right-0 !top-auto !bottom-0 !translate-x-0 !translate-y-0 !max-w-none !w-full max-h-[90vh] overflow-y-auto bg-white border border-purple-200/60 pb-[calc(env(safe-area-inset-bottom)+1rem)] data-[state=open]:!slide-in-from-bottom data-[state=closed]:!slide-out-to-bottom data-[state=open]:!zoom-in-100 data-[state=closed]:!zoom-out-100 data-[state=open]:!slide-in-from-left-0 data-[state=closed]:!slide-out-to-left-0"
-              : "sm:max-w-sm bg-white border border-purple-200/60"
+              ? "!left-0 !right-0 !top-auto !bottom-0 !translate-x-0 !translate-y-0 !max-w-none !w-full max-h-[90vh] overflow-y-auto bg-white border border-blue-200/60 pb-[calc(env(safe-area-inset-bottom)+1rem)] data-[state=open]:!slide-in-from-bottom data-[state=closed]:!slide-out-to-bottom data-[state=open]:!zoom-in-100 data-[state=closed]:!zoom-out-100 data-[state=open]:!slide-in-from-left-0 data-[state=closed]:!slide-out-to-left-0"
+              : "sm:max-w-sm bg-white border border-blue-200/60"
           }
           style={isMobile ? { borderRadius: "24px 24px 0 0" } : undefined}
           {...(isMobile ? swipeHandlers : {})}
@@ -442,7 +442,7 @@ export function UserProfileDialog({
                 {activityHistory.map((activity) => (
                   <div 
                     key={activity.id}
-                    className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 border border-purple-200/60"
+                    className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 border border-blue-200/60"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">

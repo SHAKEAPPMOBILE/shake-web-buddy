@@ -1,9 +1,9 @@
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 
-const ANIMATED_RAINBOW_GRADIENT = "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)";
+const ANIMATED_RAINBOW_GRADIENT = "linear-gradient(270deg, #f97316, #3b82f6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)";
 
 const SETTLED_GRADIENT_OPTIONS = [
-  "#8b5cf6",
+  "#3b82f6",
   "linear-gradient(135deg, #3b82f6, #06b6d4)",
   "linear-gradient(135deg, #f97316, #ec4899)",
   "linear-gradient(135deg, #22c55e, #3b82f6)",

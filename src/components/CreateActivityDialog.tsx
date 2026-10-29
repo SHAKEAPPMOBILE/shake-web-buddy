@@ -469,7 +469,7 @@ export function CreateActivityDialog({ open, onOpenChange, city }: CreateActivit
                   <button
                     type="button"
                     onClick={() => setExtraPriceTiers([...extraPriceTiers, { label: "", amount: "" }])}
-                    className="flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 transition-colors"
+                    className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     {t("createPlan.addPriceOption", "Add another price option")}

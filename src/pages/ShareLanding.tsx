@@ -406,7 +406,7 @@ export default function ShareLanding() {
             href="https://www.shakeapp.today"
             className="w-full py-4 rounded-full font-semibold text-white text-base text-center"
             style={{
-              background: "linear-gradient(to right, #2563EB, #7c3aed)",
+              background: "linear-gradient(to right, #2563EB, #2563eb)",
             }}
           >
             Join on SHAKE 🤝

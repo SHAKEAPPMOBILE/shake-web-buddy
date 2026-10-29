@@ -932,7 +932,7 @@ export function ChatTab({
           onClick={() => navigate("/auth")}
           className="px-6 py-3 rounded-full font-medium text-white hover:opacity-90 transition-all"
           style={{
-            background: "linear-gradient(270deg, #f97316, #8b5cf6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
+            background: "linear-gradient(270deg, #f97316, #3b82f6, #eab308, #ec4899, #22c55e, #3b82f6, #f97316)",
             backgroundSize: "400% 400%",
             animation: "gradientShift 4s ease infinite",
           }}
@@ -1055,7 +1055,7 @@ export function ChatTab({
                   <div className="flex items-center gap-3.5">
                     <div className="flex -space-x-3 shrink-0">
                       {(activity.group_avatars ?? []).map((a, i) => (
-                        <span key={i} className="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-gradient-to-br from-[#00C6B6] to-[#7c3aed] flex items-center justify-center text-white text-sm font-bold">
+                        <span key={i} className="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-gradient-to-br from-[#00C6B6] to-[#2563eb] flex items-center justify-center text-white text-sm font-bold">
                           {a ? <img src={getDisplayAvatarUrl(a) ?? a} alt="" className="w-full h-full object-cover" /> : "S"}
                         </span>
                       ))}
@@ -1113,7 +1113,7 @@ export function ChatTab({
                     <div className="flex items-center gap-3">
                       <div
                         className="w-12 h-12 rounded-full overflow-hidden border border-neutral-200 shadow-sm shrink-0 flex items-center justify-center"
-                        style={{ background: activity.other_user_avatar ? undefined : "linear-gradient(135deg, #00C6B6, #7c3aed)" }}
+                        style={{ background: activity.other_user_avatar ? undefined : "linear-gradient(135deg, #00C6B6, #2563eb)" }}
                       >
                         {activity.other_user_avatar ? (
                           <img
@@ -1125,7 +1125,7 @@ export function ChatTab({
                               target.style.display = "none";
                               const parent = target.parentElement;
                               if (parent) {
-                                parent.style.background = "linear-gradient(135deg, #00C6B6, #7c3aed)";
+                                parent.style.background = "linear-gradient(135deg, #00C6B6, #2563eb)";
                                 const span = document.createElement("span");
                                 span.className = "text-white font-bold text-lg";
                                 span.textContent = (activity.other_user_name || "S").charAt(0).toUpperCase();

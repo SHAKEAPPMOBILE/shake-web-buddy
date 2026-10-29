@@ -307,7 +307,7 @@ export function GlobalParticipantsSection() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-md bg-white border border-purple-200/60">
+        <DialogContent className="sm:max-w-md bg-white border border-blue-200/60">
           <DialogHeader>
             <div className="flex items-center gap-2">
               {/* DialogTitle stays in the DOM (visually hidden while searching) so
@@ -381,7 +381,7 @@ export function GlobalParticipantsSection() {
                   return (
                     <div
                       key={participant.user_id}
-                      className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-purple-200/60 transition-colors hover:bg-gray-50 hover:border-purple-300"
+                      className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-blue-200/60 transition-colors hover:bg-gray-50 hover:border-blue-300"
                     >
                       <button
                         onClick={() => handleParticipantClick(participant)}
@@ -421,7 +421,7 @@ export function GlobalParticipantsSection() {
                         className="relative"
                       >
                         <div
-                          className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-purple-200/60 blur-sm pointer-events-none select-none"
+                          className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-blue-200/60 blur-sm pointer-events-none select-none"
                         >
                           <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
                             {participant.avatar_url ? (
@@ -467,7 +467,7 @@ export function GlobalParticipantsSection() {
                       return (
                         <div
                           key={participant.user_id}
-                          className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-purple-200/60 transition-colors hover:bg-gray-50 hover:border-purple-300"
+                          className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-blue-200/60 transition-colors hover:bg-gray-50 hover:border-blue-300"
                         >
                           <button
                             onClick={() => handleParticipantClick(participant)}

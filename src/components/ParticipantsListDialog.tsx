@@ -167,7 +167,7 @@ export function ParticipantsListDialog({
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
-                              e.currentTarget.parentElement!.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1rem;background:#e8e0f0;color:#7c3aed;font-weight:600">' + (participant.name?.charAt(0)?.toUpperCase() || '?') + '</div>';
+                              e.currentTarget.parentElement!.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1rem;background:#e8e0f0;color:#2563eb;font-weight:600">' + (participant.name?.charAt(0)?.toUpperCase() || '?') + '</div>';
                             }}
                           />
                         ) : (
@@ -235,10 +235,10 @@ export function ParticipantsListDialog({
                           key={participant.user_id}
                           onClick={() => handleParticipantClick(participant)}
                           disabled={isCurrentUser}
-                          className={`w-full flex items-center gap-3 p-3 rounded-2xl bg-white border border-purple-200/60 transition-colors ${
+                          className={`w-full flex items-center gap-3 p-3 rounded-2xl bg-white border border-blue-200/60 transition-colors ${
                             isCurrentUser
                               ? 'cursor-default'
-                              : 'hover:bg-gray-50 hover:border-purple-300 cursor-pointer'
+                              : 'hover:bg-gray-50 hover:border-blue-300 cursor-pointer'
                           }`}
                         >
                           <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
@@ -249,7 +249,7 @@ export function ParticipantsListDialog({
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
-                                  e.currentTarget.parentElement!.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1rem;background:#e8e0f0;color:#7c3aed;font-weight:600">' + (participant.name?.charAt(0)?.toUpperCase() || '?') + '</div>';
+                                  e.currentTarget.parentElement!.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1rem;background:#e8e0f0;color:#2563eb;font-weight:600">' + (participant.name?.charAt(0)?.toUpperCase() || '?') + '</div>';
                                 }}
                               />
                             ) : (

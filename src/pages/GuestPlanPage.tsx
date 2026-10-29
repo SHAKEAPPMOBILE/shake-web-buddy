@@ -147,7 +147,7 @@ export default function GuestPlanPage() {
             <a
               href="https://www.shakeapp.today"
               className="w-full py-3 rounded-full font-semibold text-white text-sm text-center mt-1"
-              style={{ background: "linear-gradient(to right, #2563EB, #7c3aed)" }}
+              style={{ background: "linear-gradient(to right, #2563EB, #2563eb)" }}
             >
               Create your free profile
             </a>

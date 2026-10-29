@@ -132,7 +132,7 @@ export function OnboardingScreens({ onComplete, userName }: OnboardingScreensPro
         <button
           onClick={handleNext}
           className="w-full h-14 rounded-full text-base font-semibold text-white transition-opacity hover:opacity-90 active:opacity-80"
-          style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
+          style={{ background: "linear-gradient(to right, #1d4ed8, #4F46E5)" }}
         >
           {isLast ? t("onboarding.getStarted") : t("onboarding.tourContinue")}
         </button>

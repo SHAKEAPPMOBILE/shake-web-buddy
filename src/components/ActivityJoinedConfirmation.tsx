@@ -164,7 +164,7 @@ export function ActivityJoinedConfirmation({
                     <span className="text-primary">📍</span>
                   </div>
                   <div className="flex-1 min-w-0 overflow-hidden">
-                    <p className="text-sm font-medium text-purple-600 break-words">{eventConfirmation.venue}</p>
+                    <p className="text-sm font-medium text-blue-600 break-words">{eventConfirmation.venue}</p>
                     <p className="text-xs text-muted-foreground mt-1">{eventConfirmation.city}</p>
                   </div>
                 </div>
@@ -175,7 +175,7 @@ export function ActivityJoinedConfirmation({
               <Button
                 onClick={handleJoinChat}
                 className="group w-full h-12 rounded-full font-semibold text-base gap-2 overflow-hidden"
-                style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                style={{ background: "linear-gradient(to right, rgba(30,64,175,0.9), rgba(37,99,235,0.8))" }}
               >
                 <MessageSquare className="w-5 h-5 shrink-0" />
                 <span className="max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:max-w-xs group-focus-within:max-w-xs">

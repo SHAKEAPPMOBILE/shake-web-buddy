@@ -43,7 +43,7 @@ export function UpdatePrompt({ visible }: UpdatePromptProps) {
         <button
           onClick={handleUpdate}
           className="w-full py-4 rounded-full font-semibold text-white text-base"
-          style={{ background: "linear-gradient(to right, #2563EB, #7c3aed)" }}
+          style={{ background: "linear-gradient(to right, #2563EB, #2563eb)" }}
         >
           Update Now
         </button>

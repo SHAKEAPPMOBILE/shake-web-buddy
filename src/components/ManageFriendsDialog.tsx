@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/app-toast";
 import { FriendsImportDialog } from "@/components/FriendsImportDialog";
+import { UserProfileDialog } from "@/components/UserProfileDialog";
 
 interface ManageFriendsDialogProps {
   open: boolean;
@@ -49,6 +50,8 @@ export function ManageFriendsDialog({ open, onOpenChange, inline = false, friend
   } = friendsData;
   const [blockingId, setBlockingId] = useState<string | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  // Tapping a person opens their profile pop-up.
+  const [profileFor, setProfileFor] = useState<{ userId: string; name: string | null; avatarUrl: string | null } | null>(null);
 
   // Blocking a friend also ends the friendship — keeping someone as a
   // "friend" while blocked doesn't make sense, and blocks already show up
@@ -105,6 +108,16 @@ export function ManageFriendsDialog({ open, onOpenChange, inline = false, friend
         }}
       />
 
+      {profileFor && (
+        <UserProfileDialog
+          open
+          onOpenChange={(next) => { if (!next) setProfileFor(null); }}
+          userId={profileFor.userId}
+          userName={profileFor.name}
+          avatarUrl={profileFor.avatarUrl}
+        />
+      )}
+
       <div className={inline ? "space-y-5" : "flex-1 overflow-y-auto space-y-5"}>
           {isLoadingFriends ? (
             <div className="flex justify-center py-8">
@@ -120,13 +133,31 @@ export function ManageFriendsDialog({ open, onOpenChange, inline = false, friend
                   <div className="space-y-2">
                     {pendingReceived.map((f) => (
                       <div key={f.friendship_id} className="flex items-center gap-3">
-                        <Avatar className="w-9 h-9">
-                          <AvatarImage src={f.avatar_url || undefined} />
-                          <AvatarFallback>{f.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                        </Avatar>
-                        <span className="flex-1 text-sm font-medium truncate">
-                          {f.name || t("friends.someone", "Someone")}
-                        </span>
+                        <button
+
+                          type="button"
+
+                          onClick={() => setProfileFor({ userId: f.user_id, name: f.name, avatarUrl: f.avatar_url })}
+
+                          className="flex flex-1 min-w-0 items-center gap-3 text-left"
+
+                        >
+
+                          <Avatar className="w-9 h-9">
+
+                            <AvatarImage src={f.avatar_url || undefined} />
+
+                            <AvatarFallback>{f.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+
+                          </Avatar>
+
+                          <span className="flex-1 text-sm font-medium truncate">
+
+                            {f.name || t("friends.someone", "Someone")}
+
+                          </span>
+
+                        </button>
                         <button
                           type="button"
                           onClick={() => acceptFriendRequest(f.friendship_id)}
@@ -157,13 +188,31 @@ export function ManageFriendsDialog({ open, onOpenChange, inline = false, friend
                   <div className="space-y-2">
                     {pendingSent.map((f) => (
                       <div key={f.friendship_id} className="flex items-center gap-3">
-                        <Avatar className="w-9 h-9">
-                          <AvatarImage src={f.avatar_url || undefined} />
-                          <AvatarFallback>{f.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                        </Avatar>
-                        <span className="flex-1 text-sm font-medium truncate">
-                          {f.name || t("friends.someone", "Someone")}
-                        </span>
+                        <button
+
+                          type="button"
+
+                          onClick={() => setProfileFor({ userId: f.user_id, name: f.name, avatarUrl: f.avatar_url })}
+
+                          className="flex flex-1 min-w-0 items-center gap-3 text-left"
+
+                        >
+
+                          <Avatar className="w-9 h-9">
+
+                            <AvatarImage src={f.avatar_url || undefined} />
+
+                            <AvatarFallback>{f.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+
+                          </Avatar>
+
+                          <span className="flex-1 text-sm font-medium truncate">
+
+                            {f.name || t("friends.someone", "Someone")}
+
+                          </span>
+
+                        </button>
                         <button
                           type="button"
                           onClick={() => cancelFriendRequest(f.friendship_id)}
@@ -189,13 +238,31 @@ export function ManageFriendsDialog({ open, onOpenChange, inline = false, friend
                   <div className="space-y-2">
                     {friends.map((f) => (
                       <div key={f.friendship_id} className="flex items-center gap-3">
-                        <Avatar className="w-9 h-9">
-                          <AvatarImage src={f.avatar_url || undefined} />
-                          <AvatarFallback>{f.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                        </Avatar>
-                        <span className="flex-1 text-sm font-medium truncate">
-                          {f.name || t("friends.someone", "Someone")}
-                        </span>
+                        <button
+
+                          type="button"
+
+                          onClick={() => setProfileFor({ userId: f.user_id, name: f.name, avatarUrl: f.avatar_url })}
+
+                          className="flex flex-1 min-w-0 items-center gap-3 text-left"
+
+                        >
+
+                          <Avatar className="w-9 h-9">
+
+                            <AvatarImage src={f.avatar_url || undefined} />
+
+                            <AvatarFallback>{f.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+
+                          </Avatar>
+
+                          <span className="flex-1 text-sm font-medium truncate">
+
+                            {f.name || t("friends.someone", "Someone")}
+
+                          </span>
+
+                        </button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button

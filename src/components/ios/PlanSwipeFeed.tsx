@@ -668,7 +668,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                framed-avatar card sits on (and the activity's floating emoji), so the real card just
                fills in instead of flashing something else. */
             <>
-              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 35%, #14b8a6 70%, #22c55e 100%)" }} />
               {planEmojis.length > 0 && <EmojiScatterPattern emojis={planEmojis} seed={plan.id} />}
             </>
           ) : plan.creator_avatar ? (
@@ -679,7 +679,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                box or a muddy blob instead of blending in. */
             <div
               className="absolute inset-0 flex items-center justify-center overflow-hidden"
-              style={smallImage ? { background: "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)" } : undefined}
+              style={smallImage ? { background: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 35%, #14b8a6 70%, #22c55e 100%)" } : undefined}
             >
               {smallImage && planEmojis.length > 0 && (
                 <EmojiScatterPattern emojis={planEmojis} seed={plan.id} />
@@ -715,7 +715,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             <>
               <div
                 className="absolute inset-0"
-                style={{ background: "linear-gradient(135deg, rgba(88,28,135,0.9) 0%, rgba(67,56,202,0.85) 50%, rgba(88,28,135,0.8) 100%)" }}
+                style={{ background: "linear-gradient(135deg, rgba(30,64,175,0.9) 0%, rgba(37,99,235,0.85) 50%, rgba(30,64,175,0.8) 100%)" }}
               />
               {planEmojis.length > 0 && (
                 <EmojiScatterPattern emojis={planEmojis} seed={plan.id} />

@@ -1087,7 +1087,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => window.open('https://www.instagram.com/shakeapp.inc/', '_blank')}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 via-pink-500 to-orange-400 flex items-center justify-center">
                 <Instagram className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">

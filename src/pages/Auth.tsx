@@ -71,7 +71,7 @@ const AUTH_WIZARD_STEPS = new Set([
 
 // ── Conversational profile-setup helpers ────────────────────────────────────
 
-function BotBubble({ message, subtext, avatarColor = "#e9d5ff" }: { message: string; subtext?: string; avatarColor?: string }) {
+function BotBubble({ message, subtext, avatarColor = "#bfdbfe" }: { message: string; subtext?: string; avatarColor?: string }) {
   if (!message) return null;
   return (
     <div className="flex flex-row items-end gap-3 mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -128,7 +128,7 @@ const STEP_AVATAR_COLORS: Partial<Record<ProfileStepName, string>> = {
   phone: "#fed7aa",      // orange-200
   gender: "#fbcfe8",     // pink-200
   nationality: "#93c5fd", // blue-300
-  occupation: "#e9d5ff", // purple-200
+  occupation: "#bfdbfe", // blue-200
   interests: "#fef08a",  // yellow-200
   social: "#a5f3fc",     // cyan-200
 };
@@ -1259,7 +1259,7 @@ export default function Auth() {
                   key={i}
                   className={cn(
                     "h-1.5 rounded-full transition-all duration-300",
-                    i < profileStepIndex ? "w-4 bg-violet-500" : i === profileStepIndex ? "w-5 bg-violet-700" : "w-1.5 bg-gray-200"
+                    i < profileStepIndex ? "w-4 bg-blue-500" : i === profileStepIndex ? "w-5 bg-blue-700" : "w-1.5 bg-gray-200"
                   )}
                 />
               ))}
@@ -1324,9 +1324,9 @@ export default function Auth() {
                 className={cn(
                   "h-1.5 rounded-full transition-all duration-300",
                   i < profileStepIndex
-                    ? "w-4 bg-violet-500"
+                    ? "w-4 bg-blue-500"
                     : i === profileStepIndex
-                    ? "w-5 bg-violet-700"
+                    ? "w-5 bg-blue-700"
                     : "w-1.5 bg-gray-200"
                 )}
               />
@@ -1424,7 +1424,7 @@ export default function Auth() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") handleNameContinue(); }}
-                    className="w-full h-14 pl-10 pr-4 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+                    className="w-full h-14 pl-10 pr-4 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/40"
                     autoFocus
                   />
                 </div>
@@ -1466,7 +1466,7 @@ export default function Auth() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") advanceProfileStep(); }}
-                    className="flex-1 h-14 px-5 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+                    className="flex-1 h-14 px-5 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/40"
                     autoFocus
                   />
                   <button
@@ -1575,7 +1575,7 @@ export default function Auth() {
                         setOccupationError(validateOccupation(occupation));
                       }}
                       onKeyDown={(e) => { if (e.key === "Enter") handleOccupationContinue(); }}
-                      className="w-full h-14 pl-10 pr-4 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+                      className="w-full h-14 pl-10 pr-4 rounded-2xl border border-border bg-muted/60 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/40"
                       autoFocus
                     />
                   </div>
@@ -1610,11 +1610,11 @@ export default function Auth() {
       {step === 'confirmation' && (
         <>
           <div className="pointer-events-none absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-gradient-to-b from-violet-100/45 via-purple-50/35 to-white" />
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-100/45 via-blue-50/35 to-white" />
             {fallingStars.map((star) => (
               <span
                 key={star.id}
-                className="absolute text-violet-500"
+                className="absolute text-blue-500"
                 style={{
                   left: `${star.left}%`,
                   top: "-10%",
@@ -2023,7 +2023,7 @@ export default function Auth() {
               <Button
                 type="submit"
                 className="w-full text-white"
-                style={{ background: "linear-gradient(to right, #6D28D9, #4F46E5)" }}
+                style={{ background: "linear-gradient(to right, #1d4ed8, #4F46E5)" }}
                 size="lg"
                 disabled={isLoading}
               >

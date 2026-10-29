@@ -568,7 +568,7 @@ export function PlanGroupChatView({
   // full-bleed photo for a split to protect.
   const selectedBackground = resolvePlanBackground(localBackgroundId, Boolean(activity.promo_video_url || activity.promo_image_url));
   const whiteHeader = localBackgroundId === NO_BACKGROUND_ID;
-  const DEFAULT_HEADER_GRADIENT = "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)";
+  const DEFAULT_HEADER_GRADIENT = "linear-gradient(135deg, #0ea5e9 0%, #2563eb 35%, #14b8a6 70%, #22c55e 100%)";
   const headerBackgroundStyle = selectedBackground
     ? getBackgroundStyle(selectedBackground)
     : whiteHeader

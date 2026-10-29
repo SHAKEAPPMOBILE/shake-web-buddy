@@ -257,10 +257,10 @@ export function PlanParticipantsDialog({
                           key={participant.user_id}
                           onClick={() => handleParticipantClick(participant)}
                           disabled={isCurrentUser}
-                          className={`w-full flex items-center gap-3 p-3 rounded-2xl bg-white border border-purple-200/60 transition-colors ${
+                          className={`w-full flex items-center gap-3 p-3 rounded-2xl bg-white border border-blue-200/60 transition-colors ${
                             isCurrentUser
                               ? 'cursor-default'
-                              : 'hover:bg-gray-50 hover:border-purple-300 cursor-pointer'
+                              : 'hover:bg-gray-50 hover:border-blue-300 cursor-pointer'
                           }`}
                         >
                           <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">

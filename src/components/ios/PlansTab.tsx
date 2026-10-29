@@ -1048,7 +1048,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+          colors: ['#3b82f6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
         });
         setSelectedPlan(paidActivity);
         setShowChatView(true);
@@ -1087,7 +1087,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               particleCount: 100,
               spread: 70,
               origin: { y: 0.6 },
-              colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+              colors: ['#3b82f6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
             });
             setSelectedPlan(activityWithDetails);
             setShowChatView(true);
@@ -1560,7 +1560,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+      colors: ['#3b82f6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
     });
 
     setSelectedPlan(joinedPlan);
@@ -1678,7 +1678,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+        colors: ['#3b82f6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
       });
 
       return { success: true };
@@ -1764,7 +1764,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+      colors: ['#3b82f6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
     });
 
     return { success: true };
@@ -1898,7 +1898,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
+      colors: ['#3b82f6', '#A78BFA', '#C4B5FD', '#FFD700', '#FF69B4'],
     });
 
     setSelectedPlan(joinedPlan);
@@ -2805,7 +2805,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     }
                   }}
                   className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
-                  style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                  style={{ background: "linear-gradient(to right, rgba(30,64,175,0.9), rgba(37,99,235,0.8))" }}
                 >
                   {t('plans.enterChat')}
                 </button>
@@ -2814,7 +2814,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                   type="button"
                   onClick={handleConfirmJoinPreview}
                   className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
-                  style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                  style={{ background: "linear-gradient(to right, rgba(30,64,175,0.9), rgba(37,99,235,0.8))" }}
                 >
                   {t('plans.joinBtn')}
                 </button>
@@ -2826,7 +2826,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
               <div className="px-6 pt-6 pb-4 space-y-4">
                 {/* Organizer avatar */}
                 <div className="text-center">
-                  <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3 border-2 border-white shadow-md flex items-center justify-center bg-purple-100 flex-shrink-0">
+                  <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3 border-2 border-white shadow-md flex items-center justify-center bg-blue-100 flex-shrink-0">
                     {planPreview.creator_avatar ? (
                       <img
                         src={planPreview.creator_avatar}
@@ -2834,7 +2834,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-2xl font-bold text-purple-700">
+                      <span className="text-2xl font-bold text-blue-700">
                         {planPreview.creator_name?.charAt(0)?.toUpperCase() || "?"}
                       </span>
                     )}
@@ -2862,13 +2862,13 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       {planPreviewAttendees.slice(0, 4).map((attendee, i) => (
                         <div
                           key={i}
-                          className="w-8 h-8 rounded-full border-2 border-white overflow-hidden flex items-center justify-center bg-purple-100 flex-shrink-0"
+                          className="w-8 h-8 rounded-full border-2 border-white overflow-hidden flex items-center justify-center bg-blue-100 flex-shrink-0"
                           style={{ marginLeft: i === 0 ? 0 : -10, zIndex: planPreviewAttendees.length - i }}
                         >
                           {attendee.avatar_url ? (
                             <img src={attendee.avatar_url} alt={attendee.name || ""} className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-xs font-semibold text-purple-700">
+                            <span className="text-xs font-semibold text-blue-700">
                               {attendee.name?.charAt(0)?.toUpperCase() || "?"}
                             </span>
                           )}
@@ -2910,7 +2910,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                       }
                     }}
                     className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
-                    style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                    style={{ background: "linear-gradient(to right, rgba(30,64,175,0.9), rgba(37,99,235,0.8))" }}
                   >
                     {t('plans.enterChat')}
                   </button>
@@ -2919,7 +2919,7 @@ export function PlansTab({ onChatViewChange, pendingPaidActivityId, onPendingPai
                     type="button"
                     onClick={handleConfirmJoinPreview}
                     className="w-full h-12 rounded-full font-semibold text-base text-white transition-all hover:opacity-90"
-                    style={{ background: "linear-gradient(to right, rgba(88,28,135,0.9), rgba(67,56,202,0.8))" }}
+                    style={{ background: "linear-gradient(to right, rgba(30,64,175,0.9), rgba(37,99,235,0.8))" }}
                   >
                     {t('plans.yesImIn')}
                   </button>

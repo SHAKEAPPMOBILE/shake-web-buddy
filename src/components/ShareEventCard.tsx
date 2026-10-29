@@ -8,7 +8,7 @@ import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import type { SharePlan } from "@/lib/planShare";
 
-const DEFAULT_BG = "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)";
+const DEFAULT_BG = "linear-gradient(135deg, #0ea5e9 0%, #2563eb 35%, #14b8a6 70%, #22c55e 100%)";
 
 interface ShareEventCardProps {
   plan: SharePlan;

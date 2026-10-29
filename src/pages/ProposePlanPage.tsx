@@ -3240,7 +3240,7 @@ export default function ProposePlanPage() {
           <div className="text-center space-y-4">
             <div
               className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
-              style={{ background: "linear-gradient(to right, rgba(88,28,135,0.6), rgba(67,56,202,0.5))" }}
+              style={{ background: "linear-gradient(to right, rgba(30,64,175,0.6), rgba(37,99,235,0.5))" }}
             >
               <SuperHumanIcon size={32} className="text-white" />
             </div>
@@ -3251,7 +3251,7 @@ export default function ProposePlanPage() {
             <button
               onClick={() => setShowPremiumDialog(true)}
               className="px-4 py-2 rounded-full font-medium text-white hover:opacity-90 transition-all flex items-center gap-2 mx-auto"
-              style={{ background: "linear-gradient(to right, rgba(88,28,135,0.8), rgba(67,56,202,0.7))" }}
+              style={{ background: "linear-gradient(to right, rgba(30,64,175,0.8), rgba(37,99,235,0.7))" }}
             >
               <SuperHumanIcon size={16} />
               {t("premium.becomeSuperHuman")}

@@ -51,7 +51,7 @@ export function ChatInviteDialog({
       }}
     >
       <DialogContent
-        className="sm:max-w-sm bg-white border border-purple-200/60"
+        className="sm:max-w-sm bg-white border border-blue-200/60"
         {...(isMobile ? swipeHandlers : {})}
       >
         {isMobile && (

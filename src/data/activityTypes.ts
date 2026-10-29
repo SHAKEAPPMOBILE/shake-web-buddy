@@ -199,13 +199,13 @@ export const STANDING_CAROUSEL_TYPES: string[] = ['dinner', 'brunch'];
 // icons are transparent PNGs (background-removed from the approved concept
 // set) so they blend with whatever background sits behind them.
 export const PLAN_ONLY_ACTIVITY_TYPES: ActivityType[] = [
-  { id: "yoga", label: "Yoga", emoji: "🧘", icon: "/icons/activities/yoga-icon.png", color: "bg-violet-200/20 hover:bg-violet-200/30" },
+  { id: "yoga", label: "Yoga", emoji: "🧘", icon: "/icons/activities/yoga-icon.png", color: "bg-blue-200/20 hover:bg-blue-200/30" },
   { id: "picnic", label: "Picnic", emoji: "🧺", icon: "/icons/activities/picnic-icon.png", color: "bg-amber-200/20 hover:bg-amber-200/30" },
   { id: "coffee", label: "Coffee", emoji: "☕", icon: "/icons/activities/coffee-icon.png", color: "bg-emerald-200/20 hover:bg-emerald-200/30" },
   { id: "beach", label: "Beach Day", emoji: "🏖️", icon: "/icons/activities/beach-icon.png", color: "bg-cyan-200/20 hover:bg-cyan-200/30" },
   { id: "movie", label: "Movie Night", emoji: "🎬", icon: "/icons/activities/movie-icon.png", color: "bg-rose-200/20 hover:bg-rose-200/30" },
   { id: "karaoke", label: "Karaoke", emoji: "🎤", icon: "/icons/activities/karaoke-icon.png", color: "bg-orange-200/20 hover:bg-orange-200/30" },
-  { id: "gaming", label: "Gaming", emoji: "🎮", icon: "/icons/activities/gaming-icon.png", color: "bg-indigo-200/20 hover:bg-indigo-200/30" },
+  { id: "gaming", label: "Gaming", emoji: "🎮", icon: "/icons/activities/gaming-icon.png", color: "bg-blue-200/20 hover:bg-blue-200/30" },
   { id: "museum", label: "Museum / Art", emoji: "🖼️", icon: "/icons/activities/museum-icon.png", color: "bg-pink-200/20 hover:bg-pink-200/30" },
   { id: "bike", label: "Bike Ride", emoji: "🚲", icon: "/icons/activities/bike-icon.png", color: "bg-yellow-200/20 hover:bg-yellow-200/30" },
   { id: "surf", label: "Surf", emoji: "🏄", icon: "/icons/activities/surf-icon.png", color: "bg-blue-200/20 hover:bg-blue-200/30" },

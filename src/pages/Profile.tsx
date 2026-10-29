@@ -512,7 +512,7 @@ export default function Profile() {
       <main
         ref={mainScrollRef}
         onBlur={handleFormBlur}
-        className="flex-1 min-h-0 px-4 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]"
+        className="flex-1 min-h-0 px-4 overflow-y-auto overflow-x-hidden overscroll-y-contain pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]"
       >
         <div className="max-w-md mx-auto space-y-6">
           {/* Profile Header */}
