@@ -1,6 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, DollarSign, AlertCircle, Calendar, MapPin } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { FutureIcon } from "@/components/FutureIcon";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -32,12 +33,11 @@ interface ActivityDetailDialogProps {
 }
 
 /** A detail row: a white tile that floats above the sheet with the same soft shadow as the Shakers pill on Home, its icon in colour. */
-function DetailRow({ color, icon, label, children }: { color: string; icon: React.ReactNode; label: string; children: React.ReactNode }) {
+function DetailRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
       <div
         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white border border-black/5 shadow-[0_8px_20px_-4px_rgba(0,0,0,0.18),0_2px_4px_rgba(0,0,0,0.06)]"
-        style={{ color }}
       >
         {icon}
       </div>
@@ -120,7 +120,7 @@ export function ActivityDetailDialog({
             <div className="flex-1">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 {activity.note || t("plans.untitledPlan", "Untitled Plan")}
-                {planEmojis.length > 0 && <span className="text-lg">{planEmojis.join(" ")}</span>}
+                {planEmojis.length > 0 && <span className="text-lg shrink-0 whitespace-nowrap">{planEmojis.join(" ")}</span>}
               </h2>
               <button
                 type="button"
@@ -138,24 +138,24 @@ export function ActivityDetailDialog({
 
         {/* Details Section */}
         <div className="p-6 space-y-4">
-          <DetailRow color="#F43F5E" icon={<MapPin className="w-5 h-5" />} label={t("common.location")}>
+          <DetailRow icon={<FutureIcon name="location" className="w-7 h-7" />} label={t("common.location")}>
             <p className="font-medium">{activity.city}</p>
           </DetailRow>
 
           {activity.scheduled_for && (
-            <DetailRow color="#0EA5E9" icon={<Calendar className="w-5 h-5" />} label={t("common.date", "Date")}>
+            <DetailRow icon={<FutureIcon name="calendar" className="w-7 h-7" />} label={t("common.date", "Date")}>
               <p className="font-medium">{format(new Date(activity.scheduled_for), "EEEE, MMMM d, yyyy")}</p>
             </DetailRow>
           )}
 
-          <DetailRow color="#F97316" icon={<Users className="w-5 h-5" />} label={t("common.participants")}>
+          <DetailRow icon={<FutureIcon name="people" className="w-7 h-7" />} label={t("common.participants")}>
             <p className="font-medium">
               {(activity.participant_count || 0) + 1} {t("common.going")}
             </p>
           </DetailRow>
 
           {activity.price_amount && !hasTiers && (
-            <DetailRow color="#22C55E" icon={<DollarSign className="w-5 h-5" />} label={t("common.entryFee")}>
+            <DetailRow icon={<FutureIcon name="money" className="w-7 h-7" />} label={t("common.entryFee")}>
               <p className="font-medium text-green-600">{activity.price_amount}</p>
             </DetailRow>
           )}
