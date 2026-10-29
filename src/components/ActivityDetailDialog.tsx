@@ -30,16 +30,13 @@ interface ActivityDetailDialogProps {
   onCreatorClick?: () => void;
 }
 
-/** A detail row: a raised colour tile (soft shadow and a lit top edge, like a button) beside a label and value. */
+/** A detail row: a white tile that floats above the sheet with the same soft shadow as the Shakers pill on Home, its icon in colour. */
 function DetailRow({ color, icon, label, children }: { color: string; icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
       <div
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white"
-        style={{
-          background: `linear-gradient(180deg, ${color}F2 0%, ${color} 100%)`,
-          boxShadow: "0 3px 8px -2px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(0,0,0,0.12)",
-        }}
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white border border-black/5 shadow-[0_8px_20px_-4px_rgba(0,0,0,0.18),0_2px_4px_rgba(0,0,0,0.06)]"
+        style={{ color }}
       >
         {icon}
       </div>
@@ -105,7 +102,7 @@ export function ActivityDetailDialog({
         )}
 
         {/* Hero Section - Background with Rainbow */}
-        <div className="relative z-10 p-6 text-foreground bg-card shadow-[0_8px_16px_-10px_rgba(0,0,0,0.35)]">
+        <div className="relative z-10 p-6 text-foreground bg-card shadow-[0_10px_24px_-12px_rgba(0,0,0,0.3)]">
           <div className="flex items-start gap-4">
             {/* Creator Avatar or Activity Emoji */}
             <div className="relative">
