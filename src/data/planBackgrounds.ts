@@ -204,3 +204,19 @@ export const PLAN_BACKGROUNDS: PlanBackground[] = [
   { id: "speakeasy-lounge", label: "Speakeasy Lounge", css: "linear-gradient(135deg, #1a0000 0%, #4b0f1a 55%, #b8860b 100%)", image: "/plan-backgrounds/speakeasy-lounge.webp", retired: true },
   { id: "retro-arcade", label: "Retro Arcade", css: "linear-gradient(135deg, #ff00cc 0%, #7b2ff7 50%, #00c3ff 100%)", image: "/plan-backgrounds/retro-arcade.png", retired: true },
 ];
+
+/** Stored as a plan's background_id when its host deliberately picked "None": the plan stays plain white. */
+export const NO_BACKGROUND_ID = "none";
+/** What a plan with no photo or video and no chosen background gets. */
+export const DEFAULT_BACKGROUND_ID = "coastal-breeze";
+
+/**
+ * The background a plan should actually show. A chosen colour wins; "None" means white (undefined here —
+ * check `id === NO_BACKGROUND_ID` for that); otherwise a plan without a photo or video gets the default
+ * colours, and one with media is left alone (the media is its picture).
+ */
+export function resolvePlanBackground(id: string | null | undefined, hasMedia: boolean): PlanBackground | undefined {
+  if (id === NO_BACKGROUND_ID) return undefined;
+  if (id) return PLAN_BACKGROUNDS.find((b) => b.id === id);
+  return hasMedia ? undefined : PLAN_BACKGROUNDS.find((b) => b.id === DEFAULT_BACKGROUND_ID);
+}

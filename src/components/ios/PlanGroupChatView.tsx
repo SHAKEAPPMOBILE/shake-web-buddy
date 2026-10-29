@@ -7,7 +7,7 @@ import { TicketScannerSheet } from "@/components/TicketScannerSheet";
 import type { SharePlan } from "@/lib/planShare";
 import { LocationBubble } from "@/components/LocationBubble";
 import { getCurrentLatLng, encodeLocation } from "@/lib/location";
-import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
+import { NO_BACKGROUND_ID, getBackgroundStyle, resolvePlanBackground } from "@/data/planBackgrounds";
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useMessageReactionsForTable } from "@/hooks/useMessageReactionsForTable";
 import { useMessageReactionBarState } from "@/hooks/useMessageReactionBarState";
@@ -566,16 +566,19 @@ export function PlanGroupChatView({
   // full width, regardless of promo media — the header only ever shows a
   // small 64px avatar/video circle on top of it either way, so there's no
   // full-bleed photo for a split to protect.
-  const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
+  const selectedBackground = resolvePlanBackground(localBackgroundId, Boolean(activity.promo_video_url || activity.promo_image_url));
+  const whiteHeader = localBackgroundId === NO_BACKGROUND_ID;
   const DEFAULT_HEADER_GRADIENT = "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 70%, #f5576c 100%)";
   const headerBackgroundStyle = selectedBackground
     ? getBackgroundStyle(selectedBackground)
+    : whiteHeader
+    ? { background: "#FFFFFF" }
     : { background: DEFAULT_HEADER_GRADIENT };
 
   // Illustration presets are white-background line art — the white/frosted
   // text and pills below were designed against a colorful gradient and go
   // near-invisible on white, so flip everything to dark when one's active.
-  const isLightHeaderBackground = Boolean(selectedBackground?.image);
+  const isLightHeaderBackground = Boolean(selectedBackground?.image) || whiteHeader;
   const headerTextClass = isLightHeaderBackground ? "text-black" : "text-white";
   const headerTextMutedClass = isLightHeaderBackground ? "text-black/70" : "text-white/90";
   const headerTextFaintClass = isLightHeaderBackground ? "text-black/60" : "text-white/70";

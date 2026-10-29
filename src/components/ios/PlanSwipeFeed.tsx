@@ -23,7 +23,7 @@ import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIM
 import { getCityPhoto } from "@/data/cityBackgrounds";
 import { getPlanEmojis } from "@/lib/activityDetection";
 import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
-import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
+import { NO_BACKGROUND_ID, resolvePlanBackground } from "@/data/planBackgrounds";
 import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
 import { ShareEventSheet } from "@/components/ShareEventSheet";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
@@ -257,7 +257,11 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   // Local override so picking a new background from the options menu reflects
   // immediately without waiting on a refetch of the `plan` prop.
   const [localBackgroundId, setLocalBackgroundId] = useState<string | null | undefined>(plan.background_id);
-  const selectedBackground = localBackgroundId ? PLAN_BACKGROUNDS.find((b) => b.id === localBackgroundId) : undefined;
+  const hasPromoMedia = Boolean(plan.promo_video_url || plan.promo_image_url);
+  // Not while the first-pass placeholder is up: it doesn't know yet whether the plan has media or a chosen colour.
+  const selectedBackground = plan.creator_name === "..." ? undefined : resolvePlanBackground(localBackgroundId, hasPromoMedia);
+  // The host picked "None": a plain white card with dark text.
+  const whiteCard = localBackgroundId === NO_BACKGROUND_ID && !plan.is_auto_generated && !hasPromoMedia;
   const cityPhoto = plan.is_auto_generated ? getCityPhoto(plan.city) : undefined;
   // Every activity the plan names, as emojis: its type's, plus whatever its title says ("Ping pong" → 🏓; "surf, tennis, dinner" → 🏄 🎾 🍝).
   useEmojiSearchVersion(); // recompute when another language chunk lands
@@ -267,7 +271,7 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   const stillLoading = !plan.is_auto_generated && plan.creator_name === "...";
   // Text over the card's bottom edge is light on anything dark: every user plan, and a standing
   // plan once it sits on a city photo. Only a standing plan on the pale time-of-day wash gets dark text.
-  const lightText = !plan.is_auto_generated || !!cityPhoto;
+  const lightText = (!plan.is_auto_generated || !!cityPhoto) && !whiteCard;
 
   const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const { videoWidth, videoHeight } = e.currentTarget;
@@ -641,6 +645,8 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
                 )}
               </div>
             </div>
+          ) : whiteCard ? (
+            <div className="absolute inset-0 bg-white" />
           ) : selectedBackground ? (
             /* Creator deliberately picked a background — it wins over the
                activity's own stock image and even over their avatar photo,
@@ -727,7 +733,7 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
               card on the plain light time-of-day wash (a black scrim there just
               muddies the color into gray), but needed once that card has a
               city photo behind its text. */}
-          {(!plan.is_auto_generated || cityPhoto) && (
+          {(!plan.is_auto_generated || cityPhoto) && !whiteCard && (
             <div
               className="absolute inset-0 pointer-events-none"
               style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%)" }}

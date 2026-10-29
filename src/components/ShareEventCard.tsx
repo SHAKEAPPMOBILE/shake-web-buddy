@@ -1,6 +1,6 @@
 import type React from "react";
 import { Share as ShareIcon } from "lucide-react";
-import { PLAN_BACKGROUNDS } from "@/data/planBackgrounds";
+import { resolvePlanBackground } from "@/data/planBackgrounds";
 import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
 import { getActivityIcon } from "@/data/activityTypes";
 import { getPlanEmojis } from "@/lib/activityDetection";
@@ -31,7 +31,7 @@ interface ShareEventCardProps {
  * activity icon, so a picnic reads as a picnic before anyone taps send.
  */
 export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onShare, shareLabel = "Share", heroOverride, footer }: ShareEventCardProps) {
-  const bg = plan.background_id ? PLAN_BACKGROUNDS.find((b) => b.id === plan.background_id) : undefined;
+  const bg = resolvePlanBackground(plan.background_id, false);
   const icon = getActivityIcon(plan.activity_type);
   // The newer activity icons are transparent PNGs and sit straight on the background;
   // the original dinner/drinks/brunch icons are JPEGs on white, so they get a round frame.
@@ -63,7 +63,7 @@ export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onSha
     );
   } else if (emojis.length === 1) {
     hero = <span className="text-[72px] leading-none drop-shadow-2xl">{emojis[0]}</span>;
-  } else if (!bg && avatar) {
+  } else if (!bg?.image && avatar) {
     hero = (
       <div className="h-full aspect-square max-w-[72%] rounded-full overflow-hidden ring-4 ring-white/60 shadow-2xl">
         <img src={avatar} alt="" className="w-full h-full object-cover" />

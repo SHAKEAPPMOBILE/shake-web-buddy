@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
-import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
+import { PLAN_BACKGROUNDS, getBackgroundStyle, NO_BACKGROUND_ID, DEFAULT_BACKGROUND_ID } from "@/data/planBackgrounds";
+import { CatWithPalette } from "@/components/CatWithPalette";
 import { canAddToCalendar } from "@/lib/addToCalendar";
 import { AddToCalendarSheet } from "@/components/AddToCalendarSheet";
 
@@ -247,40 +248,46 @@ export function PlanOptionsMenu({
       {/* ── Background picker — portaled to <body>, same reason as above ── */}
       {showBackgroundPicker && createPortal(
         <div
-          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 px-4"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-6"
           onClick={(e) => { e.stopPropagation(); setShowBackgroundPicker(false); }}
         >
           <div
-            className="bg-white rounded-2xl p-5 w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl"
+            className="bg-white rounded-2xl w-full max-w-[320px] max-h-[62vh] flex flex-col shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-semibold text-gray-900 text-base mb-4">Plan background</h3>
-            <div className="grid grid-cols-3 gap-3">
-              <button type="button" onClick={(e) => handleSelectBackground(e, null)} className="flex flex-col items-center gap-1.5">
-                <div
-                  className={`w-full aspect-square rounded-xl border-2 flex items-center justify-center bg-gray-100 ${
-                    !activity.background_id ? "border-blue-500" : "border-gray-200"
-                  }`}
-                >
-                  <span className="text-[10px] text-gray-400">None</span>
-                </div>
-              </button>
-            </div>
-
-            {/* Colors only: city photos are not offered as a plan background (they still sit behind the
-                standing Dinner/Brunch cards, and plans that already picked one keep it). */}
-            <div className="grid grid-cols-3 gap-3 mt-4">
-              {colorBackgrounds.map((bg) => (
-                <button key={bg.id} type="button" onClick={(e) => handleSelectBackground(e, bg.id)} className="flex flex-col items-center gap-1.5">
+            <h3 className="shrink-0 px-5 pt-4 pb-3 font-semibold text-gray-900 text-base">Plan background</h3>
+            <div className="overflow-y-auto px-5 pb-5">
+              {/* "None" keeps the plan plain white; the cat is just company. */}
+              <div className="flex items-end gap-3 mb-4">
+                <button type="button" onClick={(e) => handleSelectBackground(e, NO_BACKGROUND_ID)} className="w-[62px] shrink-0">
                   <div
-                    className={`w-full aspect-square rounded-xl border-2 ${
-                      activity.background_id === bg.id ? "border-blue-500" : "border-transparent"
+                    className={`w-full aspect-square rounded-xl border-2 flex items-center justify-center bg-gray-100 ${
+                      activity.background_id === NO_BACKGROUND_ID ? "border-blue-500" : "border-gray-200"
                     }`}
-                    style={getBackgroundStyle(bg)}
-                  />
-                  <span className="text-[10px] text-gray-500 leading-tight text-center">{bg.label}</span>
+                  >
+                    <span className="text-[10px] text-gray-400">None</span>
+                  </div>
                 </button>
-              ))}
+                <CatWithPalette className="h-[96px] w-auto" />
+              </div>
+
+              {/* Colors only: city photos are not offered as a plan background (they still sit behind the
+                  standing Dinner/Brunch cards, and plans that already picked one keep it). A plan that never
+                  picked one shows the default, so that tile reads as selected. */}
+              <div className="grid grid-cols-4 gap-2.5">
+                {colorBackgrounds.map((bg) => {
+                  const selected = activity.background_id === bg.id || (!activity.background_id && bg.id === DEFAULT_BACKGROUND_ID);
+                  return (
+                    <button key={bg.id} type="button" onClick={(e) => handleSelectBackground(e, bg.id)} className="flex flex-col items-center gap-1">
+                      <div
+                        className={`w-full aspect-square rounded-xl border-2 ${selected ? "border-blue-500" : "border-transparent"}`}
+                        style={getBackgroundStyle(bg)}
+                      />
+                      <span className="text-[9px] text-gray-500 leading-tight text-center">{bg.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>,
