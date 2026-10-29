@@ -284,8 +284,7 @@
     "noFriendsYet": "まだ友達を追加していません。",
     "noFriendPlans": "友達に今後の予定はありません。",
     "editPlanItem": "プランを編集",
-    "sharePlan": "このプランを共有",
-    "bookBtn": "予約"
+    "sharePlan": "このプランを共有"
   },
   "profile": {
     "title": "プロフィール",
@@ -450,11 +449,7 @@
     "save": "保存",
     "stripeUnderReview": "設定完了です — Stripeがアカウントを審査しています。1〜3営業日ほどかかる場合があります。",
     "verified": "確認済み",
-    "yourEarnings": "あなたの収益",
-    "bookingLink": "予約リンク",
-    "bookingLinkDesc": "FareHarbor などの予約ページ。あなたのプランに「予約」ボタンが表示されます。",
-    "bookingLinkSaved": "予約リンクを保存しました",
-    "bookingLinkInvalid": "有効な https リンクを入力してください"
+    "yourEarnings": "あなたの収益"
   },
   "points": {
     "title": "マイポイント",

@@ -16,7 +16,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, Volume2, VolumeX, User, Send, Pause, CalendarCheck } from "lucide-react";
+import { ChevronLeft, Volume2, VolumeX, User, Send, Pause } from "lucide-react";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
@@ -28,9 +28,6 @@ import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
 import { ShareEventSheet } from "@/components/ShareEventSheet";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
-import { Browser } from "@capacitor/browser";
-import { Capacitor } from "@capacitor/core";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
 import { supabase } from "@/integrations/supabase/client";
@@ -254,17 +251,6 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   const [smallImage, setSmallImage] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [previewAvatars, setPreviewAvatars] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
-  // The host's own booking link (FareHarbor or any booking page), set once in their profile settings.
-  // Cached per host, so scrolling through several of their plans is one lookup.
-  const { data: bookingUrl } = useQuery({
-    queryKey: ["booking-url", plan.user_id],
-    enabled: !plan.is_auto_generated && !!plan.user_id,
-    staleTime: 10 * 60 * 1000,
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("booking_url").eq("user_id", plan.user_id).maybeSingle();
-      return ((data as { booking_url?: string | null } | null)?.booking_url) ?? null;
-    },
-  });
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [joinCount, setJoinCount] = useState<number | null>(null);
   const [showDescription, setShowDescription] = useState(false);
@@ -951,17 +937,6 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
             <p className={cn("text-sm mt-0.5 truncate", lightText ? "text-white/80" : "text-gray-500")}>
               {plan.city}{dateLabel ? ` · ${dateLabel}` : ""}
             </p>
-            {bookingUrl && (
-              <button
-                type="button"
-                onClick={() => { if (Capacitor.isNativePlatform()) void Browser.open({ url: bookingUrl }); else window.open(bookingUrl, "_blank", "noopener,noreferrer"); }}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white text-black text-xs font-semibold px-3 py-1.5"
-                style={{ pointerEvents: "auto" }}
-              >
-                <CalendarCheck className="w-3.5 h-3.5" />
-                {t('plans.bookBtn', 'Book')}
-              </button>
-            )}
           </div>
 
           {/* Report button — never shown on your own plan */}
