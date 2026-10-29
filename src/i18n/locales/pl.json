@@ -1002,7 +1002,12 @@
     }
   },
   "calendar": {
-    "add": "Dodaj do kalendarza"
+    "add": "Dodaj do kalendarza",
+    "device": "Kalendarz telefonu",
+    "deviceDesc": "Apple, Samsung i inne",
+    "google": "Kalendarz Google",
+    "outlook": "Outlook",
+    "failed": "Nie udało się otworzyć kalendarza. Spróbuj ponownie."
   },
   "hosting": {
     "title": "Gospodarz",

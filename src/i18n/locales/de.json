@@ -1002,7 +1002,12 @@
     }
   },
   "calendar": {
-    "add": "Zum Kalender hinzufügen"
+    "add": "Zum Kalender hinzufügen",
+    "device": "Kalender des Telefons",
+    "deviceDesc": "Apple, Samsung und andere",
+    "google": "Google Kalender",
+    "outlook": "Outlook",
+    "failed": "Der Kalender konnte nicht geöffnet werden. Versuche es erneut."
   },
   "hosting": {
     "title": "Gastgeber",

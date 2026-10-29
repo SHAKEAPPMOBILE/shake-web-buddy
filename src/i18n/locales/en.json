@@ -999,7 +999,12 @@
     }
   },
   "calendar": {
-    "add": "Add to calendar"
+    "add": "Add to calendar",
+    "device": "Phone calendar",
+    "deviceDesc": "Apple, Samsung and others",
+    "google": "Google Calendar",
+    "outlook": "Outlook",
+    "failed": "Couldn't open the calendar. Try again."
   },
   "hosting": {
     "title": "Hosting",

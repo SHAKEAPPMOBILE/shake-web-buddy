@@ -1002,7 +1002,12 @@
     }
   },
   "calendar": {
-    "add": "カレンダーに追加"
+    "add": "カレンダーに追加",
+    "device": "スマートフォンのカレンダー",
+    "deviceDesc": "Apple、Samsungなど",
+    "google": "Google カレンダー",
+    "outlook": "Outlook",
+    "failed": "カレンダーを開けませんでした。もう一度お試しください。"
   },
   "hosting": {
     "title": "主催",

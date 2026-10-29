@@ -1002,7 +1002,12 @@
     }
   },
   "calendar": {
-    "add": "Toevoegen aan agenda"
+    "add": "Toevoegen aan agenda",
+    "device": "Agenda van de telefoon",
+    "deviceDesc": "Apple, Samsung en andere",
+    "google": "Google Agenda",
+    "outlook": "Outlook",
+    "failed": "De agenda kon niet worden geopend. Probeer het opnieuw."
   },
   "hosting": {
     "title": "Hosten",

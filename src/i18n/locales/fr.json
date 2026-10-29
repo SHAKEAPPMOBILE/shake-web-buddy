@@ -1002,7 +1002,12 @@
     }
   },
   "calendar": {
-    "add": "Ajouter au calendrier"
+    "add": "Ajouter au calendrier",
+    "device": "Calendrier du téléphone",
+    "deviceDesc": "Apple, Samsung et autres",
+    "google": "Google Agenda",
+    "outlook": "Outlook",
+    "failed": "Impossible d'ouvrir le calendrier. Réessayez."
   },
   "hosting": {
     "title": "Organisation",

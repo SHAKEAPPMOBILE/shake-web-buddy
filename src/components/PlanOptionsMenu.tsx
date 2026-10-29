@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
 import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
-import { canAddToCalendar, openAddToCalendar } from "@/lib/addToCalendar";
+import { canAddToCalendar } from "@/lib/addToCalendar";
+import { AddToCalendarSheet } from "@/components/AddToCalendarSheet";
 
 // Split once at module scope — PLAN_BACKGROUNDS is a static constant, no
 // need to re-derive this on every render of every menu instance.
@@ -63,6 +64,7 @@ export function PlanOptionsMenu({
   const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
+  const [showCalendarPicker, setShowCalendarPicker] = useState(false);
 
   const toggleMenu = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -149,7 +151,7 @@ export function PlanOptionsMenu({
           >
             {canAddToCalendar(activity.id) && (
               <button
-                onClick={(e) => { e.stopPropagation(); setShowMenu(false); void openAddToCalendar(activity.id); }}
+                onClick={(e) => { e.stopPropagation(); setShowMenu(false); setShowCalendarPicker(true); }}
                 className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
               >
                 <CalendarPlus className="w-4 h-4" /> {t('calendar.add', 'Add to calendar')}
@@ -198,6 +200,8 @@ export function PlanOptionsMenu({
         </>,
         document.body
       )}
+
+      {showCalendarPicker && <AddToCalendarSheet activityId={activity.id} onClose={() => setShowCalendarPicker(false)} />}
 
       {/* ── Delete-plan confirmation ──
           Portaled to <body>: this component can be mounted inside an

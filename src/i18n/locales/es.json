@@ -1001,7 +1001,12 @@
     }
   },
   "calendar": {
-    "add": "Añadir al calendario"
+    "add": "Añadir al calendario",
+    "device": "Calendario del teléfono",
+    "deviceDesc": "Apple, Samsung y otros",
+    "google": "Google Calendar",
+    "outlook": "Outlook",
+    "failed": "No se pudo abrir el calendario. Inténtalo de nuevo."
   },
   "hosting": {
     "title": "Anfitrión",

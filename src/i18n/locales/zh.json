@@ -1002,7 +1002,12 @@
     }
   },
   "calendar": {
-    "add": "添加到日历"
+    "add": "添加到日历",
+    "device": "手机日历",
+    "deviceDesc": "Apple、三星及其他",
+    "google": "Google 日历",
+    "outlook": "Outlook",
+    "failed": "无法打开日历，请重试。"
   },
   "hosting": {
     "title": "主办",
