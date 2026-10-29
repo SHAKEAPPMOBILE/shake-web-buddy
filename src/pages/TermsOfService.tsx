@@ -10,7 +10,7 @@ export default function TermsOfService() {
 
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden safe-area-top safe-area-bottom">
-      <main ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto pt-16 pb-[calc(env(safe-area-inset-bottom,0px)+4rem)]">
+      <main ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto pt-5 pb-[calc(env(safe-area-inset-bottom,0px)+4rem)]">
         <div className="container mx-auto px-4 max-w-3xl">
           <MinimalBackButton
             onClick={() => navigate(-1)}
