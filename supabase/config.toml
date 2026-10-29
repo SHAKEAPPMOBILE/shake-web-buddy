@@ -87,3 +87,6 @@ verify_jwt = false
 
 [functions.moderate-media]
 verify_jwt = true
+
+[functions.plan-ics]
+verify_jwt = false

@@ -753,7 +753,15 @@
     "recordBtn": "Grabar",
     "openSettings": "Abrir ajustes",
     "whatsUpName": "¿Qué tal, {{name}}?",
-    "whatsUp": "¿Qué tal?"
+    "whatsUp": "¿Qué tal?",
+    "botTicket": "¿Los asistentes necesitan un ticket? 🎟️",
+    "botRecurrence": "¿Se repite? 🔁",
+    "ticketYes": "Ticket obligatorio",
+    "ticketNo": "Sin ticket",
+    "recurrenceOnce": "Solo una vez",
+    "recurrenceWeekly": "Cada semana",
+    "recurrenceBiweekly": "Cada 2 semanas",
+    "recurrenceMonthly": "Una vez al mes"
   },
   "userProfile": {
     "title": "Perfil de Usuario",
@@ -966,5 +974,42 @@
     "getTheApp": "Descarga la app",
     "cardTitle": "Lleva SHAKE en tu teléfono",
     "close": "Cerrar"
+  },
+  "ticket": {
+    "title": "Tu ticket",
+    "loading": "Preparando tu ticket…",
+    "showAtEntrance": "Muestra este código en la entrada",
+    "checkedIn": "Registrado",
+    "error": {
+      "not_signed_in": "Inicia sesión para ver tu ticket.",
+      "not_found": "Este plan ya no está disponible.",
+      "no_ticket_needed": "Este plan no necesita ticket.",
+      "is_host": "Eres el anfitrión. Usa el escáner para registrar a la gente.",
+      "not_joined": "Únete al plan para recibir tu ticket.",
+      "error": "No pudimos cargar tu ticket. Inténtalo de nuevo en un momento."
+    },
+    "scan": {
+      "title": "Escanear tickets",
+      "ok": "{{name}} entró",
+      "already": "{{name}} ya estaba registrado",
+      "wrongEvent": "Este ticket es de otro evento",
+      "notHost": "Solo el anfitrión puede escanear tickets",
+      "invalid": "Ticket no válido",
+      "error": "No se pudo comprobar este ticket. Inténtalo de nuevo.",
+      "cameraDenied": "Permite el acceso a la cámara para escanear tickets.",
+      "counter": "{{done}} de {{total}} registrados"
+    }
+  },
+  "calendar": {
+    "add": "Añadir al calendario"
+  },
+  "hosting": {
+    "title": "Anfitrión",
+    "subtitle": "Asistentes y eventos pasados",
+    "eventsHosted": "Eventos organizados",
+    "totalAttendees": "Asistentes en total",
+    "ranking": "Tus mejores eventos",
+    "pastEvents": "Eventos pasados",
+    "scanned": "{{count}} escaneados"
   }
 }

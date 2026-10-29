@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { startOfDay, format, isToday, isTomorrow, addDays } from "date-fns";
 import { Plus, User, Calendar, ChevronLeft, ChevronUp, Play, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useUserActivities } from "@/hooks/useUserActivities";
+import { useUserActivities, type PlanRecurrence } from "@/hooks/useUserActivities";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCity } from "@/contexts/CityContext";
 import { PremiumDialog } from "@/components/PremiumDialog";
@@ -58,7 +58,7 @@ const CURRENCIES = [
 
 const MAX_CHARACTERS = 50;
 
-type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "video" | "audience" | "description" | "cohost" | "preview";
+type StepName = "name" | "city" | "date" | "time" | "venue" | "price" | "capacity" | "ticket" | "recurrence" | "video" | "audience" | "description" | "cohost" | "preview";
 type CameraMode = "prompt" | "idle" | "live" | "recording" | "playback" | "error";
 
 const MAX_CLIP_SECONDS = 10;
@@ -197,6 +197,8 @@ export default function ProposePlanPage() {
     venue: t("createPlan.botVenue", "Where's it happening? 📍"),
     price: t("createPlan.botPrice"),
     capacity: t("createPlan.botCapacity", "How many can join? (optional)"),
+    ticket: t("createPlan.botTicket", "Do attendees need a ticket? 🎟️"),
+    recurrence: t("createPlan.botRecurrence", "Does it repeat? 🔁"),
     video: t("createPlan.botVideo"),
     audience: t("createPlan.botAudience"),
     description: t("createPlan.botDescription", "Add a description"),
@@ -212,6 +214,8 @@ export default function ProposePlanPage() {
     venue: "#a5f3fc", // cyan-200
     price: "#e9d5ff", // purple-200
     capacity: "#fef08a", // yellow-200
+    ticket: "#fde68a", // amber-200
+    recurrence: "#99f6e4", // teal-200
     video: "#93c5fd", // blue-300
     audience: "#fbcfe8", // pink-200
     description: "#ddd6fe", // violet-200
@@ -269,6 +273,9 @@ export default function ProposePlanPage() {
   // "Girls $10 / Boys $15" — base price acts as the first/default tier.
   const [extraPriceTiers, setExtraPriceTiers] = useState<{ label: string; amount: string }[]>([]);
   const [capacityInput, setCapacityInput] = useState("");
+  // Attendees get a QR ticket (shown in the plan's chat) that the host scans at the door.
+  const [requiresTicket, setRequiresTicket] = useState(false);
+  const [recurrence, setRecurrence] = useState<PlanRecurrence | null>(null);
   const [venueName, setVenueName] = useState("");
   const [venuePlace, setVenuePlace] = useState<VenuePlace | null>(null);
   // True when venueName/venuePlace came from an AI suggestion (voice asked
@@ -455,7 +462,7 @@ export default function ProposePlanPage() {
   const steps: StepName[] = useMemo(() => {
     const s: StepName[] = ["video", "name"];
     if (!city) s.push("city");
-    s.push("date", "time", "venue", "price", "capacity", "audience", "description", "cohost", "preview");
+    s.push("date", "time", "venue", "price", "capacity", "ticket", "recurrence", "audience", "description", "cohost", "preview");
     return s;
   }, [city]);
 
@@ -471,7 +478,7 @@ export default function ProposePlanPage() {
     (async () => {
       const { data, error } = await supabase
         .from("user_activities")
-        .select("activity_type, city, note, description, scheduled_for, price_amount, price_tiers, capacity, venue_name, venue_address, venue_lat, venue_lng, audience, promo_image_url, promo_video_url, promo_video_thumbnail_url")
+        .select("activity_type, city, note, description, scheduled_for, price_amount, price_tiers, capacity, venue_name, venue_address, venue_lat, venue_lng, audience, promo_image_url, promo_video_url, promo_video_thumbnail_url, requires_ticket, recurrence")
         .eq("id", editActivityId)
         .maybeSingle();
       if (cancelled) return;
@@ -487,6 +494,7 @@ export default function ProposePlanPage() {
         venue_name: string | null; venue_address: string | null; venue_lat: number | null; venue_lng: number | null;
         audience: "everyone" | "women_only" | "friends_only" | null;
         promo_image_url: string | null; promo_video_url: string | null; promo_video_thumbnail_url: string | null;
+        requires_ticket: boolean | null; recurrence: PlanRecurrence | null;
       };
       const d = new Date(row.scheduled_for);
       setEditOriginalActivityType(row.activity_type);
@@ -509,6 +517,8 @@ export default function ProposePlanPage() {
           : null
       );
       setAudience(row.audience ?? "everyone");
+      setRequiresTicket(Boolean(row.requires_ticket));
+      setRecurrence(row.recurrence ?? null);
       setPromoImageUrl(row.promo_image_url);
       setPromoVideoUrl(row.promo_video_url);
       setPromoVideoThumbnailUrl(row.promo_video_thumbnail_url);
@@ -744,6 +754,15 @@ export default function ProposePlanPage() {
         return extras.length > 0 ? `${extras.length + 1} price options` : base;
       }
       case "capacity": return capacityInput.trim() ? `${capacityInput} max` : t("createPlan.skipped");
+      case "ticket": return requiresTicket ? t("createPlan.ticketYes", "Ticket required") : t("createPlan.ticketNo", "No ticket");
+      case "recurrence":
+        return recurrence === "weekly"
+          ? t("createPlan.recurrenceWeekly", "Every week")
+          : recurrence === "biweekly"
+          ? t("createPlan.recurrenceBiweekly", "Every 2 weeks")
+          : recurrence === "monthly"
+          ? t("createPlan.recurrenceMonthly", "Once a month")
+          : t("createPlan.recurrenceOnce", "Just once");
       case "video": return promoVideoUrl ? t("createPlan.videoAdded") : promoImageUrl ? t("createPlan.photoAdded", "Photo added") : t("createPlan.skipped");
       case "audience":
         return audience === "women_only"
@@ -1625,6 +1644,8 @@ export default function ProposePlanPage() {
         price_tiers: priceTiersPayload ?? null,
         capacity: capacityInput.trim() ? parseInt(capacityInput.trim(), 10) : null,
         audience,
+        requires_ticket: requiresTicket,
+        recurrence,
         venue: venuePayload ?? null,
         media,
       });
@@ -1654,7 +1675,9 @@ export default function ProposePlanPage() {
       venuePayload,
       promoImageUrl || undefined,
       planDescription.trim() || undefined,
-      promoVideoThumbnailUrl || undefined
+      promoVideoThumbnailUrl || undefined,
+      undefined,
+      { requiresTicket, recurrence }
     );
 
     if (!success) {
@@ -2759,6 +2782,47 @@ export default function ProposePlanPage() {
                 <ChevronUp className="w-5 h-5" />
               </button>
             </div>
+          </div>
+        );
+
+      case "ticket":
+        return (
+          <div className="flex flex-wrap gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => { setRequiresTicket(false); advanceStep(); }}
+              className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
+            >
+              {t("createPlan.ticketNo", "No ticket")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setRequiresTicket(true); advanceStep(); }}
+              className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
+            >
+              🎟️ {t("createPlan.ticketYes", "Ticket required")}
+            </button>
+          </div>
+        );
+
+      case "recurrence":
+        return (
+          <div className="flex flex-wrap gap-3 justify-center">
+            {([
+              [null, t("createPlan.recurrenceOnce", "Just once")],
+              ["weekly", t("createPlan.recurrenceWeekly", "Every week")],
+              ["biweekly", t("createPlan.recurrenceBiweekly", "Every 2 weeks")],
+              ["monthly", t("createPlan.recurrenceMonthly", "Once a month")],
+            ] as [PlanRecurrence | null, string][]).map(([value, label]) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => { setRecurrence(value); advanceStep(); }}
+                className="px-6 py-3.5 rounded-full text-base font-medium border transition-all bg-muted/60 text-foreground border-border hover:border-primary/50"
+              >
+                {label}
+              </button>
+            ))}
           </div>
         );
 

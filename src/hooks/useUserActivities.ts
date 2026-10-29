@@ -31,6 +31,15 @@ export interface UserActivity {
   audience?: string;
 }
 
+export type PlanRecurrence = "weekly" | "biweekly" | "monthly";
+export interface PlanTicketRecurrence {
+  requiresTicket?: boolean;
+  recurrence?: PlanRecurrence | null;
+}
+
+// The creator's own time zone, so a recurring 7pm plan stays at 7pm across daylight saving.
+const localTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
 // Dynamic limits - set by database function based on signup date
 const DEFAULT_FIRST_MONTH_LIMIT = 10; // First 30 days after signup
 const DEFAULT_REGULAR_LIMIT = 10; // After first month
@@ -193,7 +202,8 @@ export function useUserActivities(city: string) {
     promoImageUrl?: string,
     description?: string,
     promoVideoThumbnailUrl?: string,
-    isQuickPost?: boolean
+    isQuickPost?: boolean,
+    extras?: PlanTicketRecurrence
   ): Promise<boolean> => {
     const targetCity = cityOverride || city;
     if (!user) {
@@ -273,6 +283,9 @@ export function useUserActivities(city: string) {
       venue_lat: venue?.lat ?? null,
       venue_lng: venue?.lng ?? null,
       is_quick_post: isQuickPost ?? false,
+      requires_ticket: extras?.requiresTicket ?? false,
+      recurrence: extras?.recurrence ?? null,
+      recurrence_tz: extras?.recurrence ? localTimeZone() : null,
     }).select().maybeSingle();
     if (error || !newActivity) {
       console.error("Error creating activity:", error);
@@ -329,6 +342,8 @@ export function useUserActivities(city: string) {
       price_tiers?: { label: string; amount: number }[] | null;
       capacity?: number | null;
       audience?: "everyone" | "women_only" | "friends_only";
+      requires_ticket?: boolean;
+      recurrence?: PlanRecurrence | null;
       venue?: { name?: string; address?: string; lat?: number; lng?: number } | null;
       // A plan has one hero media item — omit to leave it untouched,
       // "none" clears it, otherwise it's replaced outright.
@@ -351,6 +366,11 @@ export function useUserActivities(city: string) {
     if (updates.price_tiers !== undefined) updateData.price_tiers = updates.price_tiers && updates.price_tiers.length > 0 ? updates.price_tiers : null;
     if (updates.capacity !== undefined) updateData.capacity = updates.capacity && updates.capacity > 0 ? updates.capacity : null;
     if (updates.audience) updateData.audience = updates.audience;
+    if (updates.requires_ticket !== undefined) updateData.requires_ticket = updates.requires_ticket;
+    if (updates.recurrence !== undefined) {
+      updateData.recurrence = updates.recurrence;
+      updateData.recurrence_tz = updates.recurrence ? localTimeZone() : null;
+    }
     if (updates.venue !== undefined) {
       updateData.venue_name = updates.venue?.name?.trim() || null;
       updateData.venue_address = updates.venue?.address?.trim() || null;

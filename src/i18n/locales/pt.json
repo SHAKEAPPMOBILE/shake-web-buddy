@@ -754,7 +754,15 @@
     "recordBtn": "Gravar",
     "openSettings": "Abrir configurações",
     "whatsUpName": "E aí, {{name}}?",
-    "whatsUp": "E aí?"
+    "whatsUp": "E aí?",
+    "botTicket": "Os participantes precisam de bilhete? 🎟️",
+    "botRecurrence": "Repete? 🔁",
+    "ticketYes": "Bilhete obrigatório",
+    "ticketNo": "Sem bilhete",
+    "recurrenceOnce": "Só uma vez",
+    "recurrenceWeekly": "Todas as semanas",
+    "recurrenceBiweekly": "A cada 2 semanas",
+    "recurrenceMonthly": "Uma vez por mês"
   },
   "userProfile": {
     "title": "Perfil do Usuário",
@@ -967,5 +975,42 @@
     "getTheApp": "Baixe o app",
     "cardTitle": "Leve o SHAKE no seu celular",
     "close": "Fechar"
+  },
+  "ticket": {
+    "title": "O teu bilhete",
+    "loading": "A preparar o teu bilhete…",
+    "showAtEntrance": "Mostra este código na entrada",
+    "checkedIn": "Registado",
+    "error": {
+      "not_signed_in": "Inicia sessão para veres o teu bilhete.",
+      "not_found": "Este plano já não está disponível.",
+      "no_ticket_needed": "Este plano não precisa de bilhete.",
+      "is_host": "És o anfitrião. Usa o leitor para registar as pessoas.",
+      "not_joined": "Junta-te ao plano para receberes o teu bilhete.",
+      "error": "Não foi possível carregar o teu bilhete. Tenta novamente daqui a pouco."
+    },
+    "scan": {
+      "title": "Ler bilhetes",
+      "ok": "{{name}} entrou",
+      "already": "{{name}} já estava registado",
+      "wrongEvent": "Este bilhete é de outro evento",
+      "notHost": "Só o anfitrião pode ler bilhetes",
+      "invalid": "Bilhete inválido",
+      "error": "Não foi possível verificar este bilhete. Tenta novamente.",
+      "cameraDenied": "Permite o acesso à câmara para ler bilhetes.",
+      "counter": "{{done}} de {{total}} registados"
+    }
+  },
+  "calendar": {
+    "add": "Adicionar ao calendário"
+  },
+  "hosting": {
+    "title": "Anfitrião",
+    "subtitle": "Participantes e eventos passados",
+    "eventsHosted": "Eventos organizados",
+    "totalAttendees": "Total de participantes",
+    "ranking": "Os teus melhores eventos",
+    "pastEvents": "Eventos passados",
+    "scanned": "{{count}} lidos"
   }
 }

@@ -751,7 +751,15 @@
     "recordBtn": "Record",
     "openSettings": "Open Settings",
     "whatsUpName": "What's up {{name}}?",
-    "whatsUp": "What's up?"
+    "whatsUp": "What's up?",
+    "botTicket": "Do attendees need a ticket? 🎟️",
+    "botRecurrence": "Does it repeat? 🔁",
+    "ticketYes": "Ticket required",
+    "ticketNo": "No ticket",
+    "recurrenceOnce": "Just once",
+    "recurrenceWeekly": "Every week",
+    "recurrenceBiweekly": "Every 2 weeks",
+    "recurrenceMonthly": "Once a month"
   },
   "editPlan": {
     "title": "Edit plan",
@@ -964,5 +972,42 @@
     "getTheApp": "Get the app",
     "cardTitle": "Get SHAKE on your phone",
     "close": "Close"
+  },
+  "ticket": {
+    "title": "Your ticket",
+    "loading": "Getting your ticket…",
+    "showAtEntrance": "Show this code at the entrance",
+    "checkedIn": "Checked in",
+    "error": {
+      "not_signed_in": "Sign in to see your ticket.",
+      "not_found": "This plan isn't available anymore.",
+      "no_ticket_needed": "This plan doesn't need a ticket.",
+      "is_host": "You're the host. Use the scanner to check people in.",
+      "not_joined": "Join the plan to get your ticket.",
+      "error": "Couldn't load your ticket. Try again in a moment."
+    },
+    "scan": {
+      "title": "Scan tickets",
+      "ok": "{{name}} is in",
+      "already": "{{name}} already checked in",
+      "wrongEvent": "This ticket is for another event",
+      "notHost": "Only the host can scan tickets",
+      "invalid": "Not a valid ticket",
+      "error": "Couldn't check this ticket. Try again.",
+      "cameraDenied": "Allow camera access to scan tickets.",
+      "counter": "{{done}} of {{total}} checked in"
+    }
+  },
+  "calendar": {
+    "add": "Add to calendar"
+  },
+  "hosting": {
+    "title": "Hosting",
+    "subtitle": "Attendees and past events",
+    "eventsHosted": "Events hosted",
+    "totalAttendees": "Total attendees",
+    "ranking": "Your top events",
+    "pastEvents": "Past events",
+    "scanned": "{{count}} scanned"
   }
 }

@@ -754,7 +754,15 @@
     "recordBtn": "Aufnehmen",
     "openSettings": "Einstellungen öffnen",
     "whatsUpName": "Was gibt's, {{name}}?",
-    "whatsUp": "Was gibt's?"
+    "whatsUp": "Was gibt's?",
+    "botTicket": "Brauchen Teilnehmende ein Ticket? 🎟️",
+    "botRecurrence": "Wiederholt es sich? 🔁",
+    "ticketYes": "Ticket erforderlich",
+    "ticketNo": "Kein Ticket",
+    "recurrenceOnce": "Nur einmal",
+    "recurrenceWeekly": "Jede Woche",
+    "recurrenceBiweekly": "Alle 2 Wochen",
+    "recurrenceMonthly": "Einmal im Monat"
   },
   "userProfile": {
     "title": "Benutzerprofil",
@@ -967,5 +975,42 @@
     "getTheApp": "App laden",
     "cardTitle": "SHAKE auf deinem Handy",
     "close": "Schließen"
+  },
+  "ticket": {
+    "title": "Dein Ticket",
+    "loading": "Dein Ticket wird geladen…",
+    "showAtEntrance": "Zeige diesen Code am Eingang",
+    "checkedIn": "Eingecheckt",
+    "error": {
+      "not_signed_in": "Melde dich an, um dein Ticket zu sehen.",
+      "not_found": "Dieser Plan ist nicht mehr verfügbar.",
+      "no_ticket_needed": "Dieser Plan braucht kein Ticket.",
+      "is_host": "Du bist der Gastgeber. Nutze den Scanner zum Einchecken.",
+      "not_joined": "Tritt dem Plan bei, um dein Ticket zu bekommen.",
+      "error": "Dein Ticket konnte nicht geladen werden. Versuche es gleich noch einmal."
+    },
+    "scan": {
+      "title": "Tickets scannen",
+      "ok": "{{name}} ist drin",
+      "already": "{{name}} ist schon eingecheckt",
+      "wrongEvent": "Dieses Ticket gilt für eine andere Veranstaltung",
+      "notHost": "Nur der Gastgeber kann Tickets scannen",
+      "invalid": "Kein gültiges Ticket",
+      "error": "Das Ticket konnte nicht geprüft werden. Versuche es erneut.",
+      "cameraDenied": "Erlaube den Kamerazugriff, um Tickets zu scannen.",
+      "counter": "{{done}} von {{total}} eingecheckt"
+    }
+  },
+  "calendar": {
+    "add": "Zum Kalender hinzufügen"
+  },
+  "hosting": {
+    "title": "Gastgeber",
+    "subtitle": "Teilnehmende und vergangene Events",
+    "eventsHosted": "Veranstaltete Events",
+    "totalAttendees": "Teilnehmende insgesamt",
+    "ranking": "Deine besten Events",
+    "pastEvents": "Vergangene Events",
+    "scanned": "{{count}} gescannt"
   }
 }

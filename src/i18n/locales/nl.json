@@ -754,7 +754,15 @@
     "recordBtn": "Opnemen",
     "openSettings": "Instellingen openen",
     "whatsUpName": "Hoe gaat het, {{name}}?",
-    "whatsUp": "Hoe gaat het?"
+    "whatsUp": "Hoe gaat het?",
+    "botTicket": "Hebben deelnemers een ticket nodig? 🎟️",
+    "botRecurrence": "Herhaalt het zich? 🔁",
+    "ticketYes": "Ticket verplicht",
+    "ticketNo": "Geen ticket",
+    "recurrenceOnce": "Eenmalig",
+    "recurrenceWeekly": "Elke week",
+    "recurrenceBiweekly": "Om de 2 weken",
+    "recurrenceMonthly": "Eén keer per maand"
   },
   "userProfile": {
     "title": "Gebruikersprofiel",
@@ -967,5 +975,42 @@
     "getTheApp": "Download de app",
     "cardTitle": "SHAKE op je telefoon",
     "close": "Sluiten"
+  },
+  "ticket": {
+    "title": "Jouw ticket",
+    "loading": "Je ticket wordt opgehaald…",
+    "showAtEntrance": "Toon deze code bij de ingang",
+    "checkedIn": "Ingecheckt",
+    "error": {
+      "not_signed_in": "Log in om je ticket te zien.",
+      "not_found": "Dit plan is niet meer beschikbaar.",
+      "no_ticket_needed": "Dit plan heeft geen ticket nodig.",
+      "is_host": "Jij bent de host. Gebruik de scanner om mensen in te checken.",
+      "not_joined": "Doe mee met het plan om je ticket te krijgen.",
+      "error": "Je ticket kon niet worden geladen. Probeer het zo opnieuw."
+    },
+    "scan": {
+      "title": "Tickets scannen",
+      "ok": "{{name}} is binnen",
+      "already": "{{name}} is al ingecheckt",
+      "wrongEvent": "Dit ticket is voor een ander evenement",
+      "notHost": "Alleen de host kan tickets scannen",
+      "invalid": "Geen geldig ticket",
+      "error": "Dit ticket kon niet worden gecontroleerd. Probeer het opnieuw.",
+      "cameraDenied": "Geef toegang tot de camera om tickets te scannen.",
+      "counter": "{{done}} van {{total}} ingecheckt"
+    }
+  },
+  "calendar": {
+    "add": "Toevoegen aan agenda"
+  },
+  "hosting": {
+    "title": "Hosten",
+    "subtitle": "Deelnemers en eerdere evenementen",
+    "eventsHosted": "Georganiseerde evenementen",
+    "totalAttendees": "Totaal aantal deelnemers",
+    "ranking": "Je beste evenementen",
+    "pastEvents": "Eerdere evenementen",
+    "scanned": "{{count}} gescand"
   }
 }

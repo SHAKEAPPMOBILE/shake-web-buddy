@@ -754,7 +754,15 @@
     "recordBtn": "录制",
     "openSettings": "打开设置",
     "whatsUpName": "{{name}}，最近怎么样？",
-    "whatsUp": "最近怎么样？"
+    "whatsUp": "最近怎么样？",
+    "botTicket": "参加者需要门票吗？🎟️",
+    "botRecurrence": "会重复吗？🔁",
+    "ticketYes": "需要门票",
+    "ticketNo": "无需门票",
+    "recurrenceOnce": "仅一次",
+    "recurrenceWeekly": "每周",
+    "recurrenceBiweekly": "每两周",
+    "recurrenceMonthly": "每月一次"
   },
   "userProfile": {
     "title": "用户资料",
@@ -967,5 +975,42 @@
     "getTheApp": "下载应用",
     "cardTitle": "在手机上使用 SHAKE",
     "close": "关闭"
+  },
+  "ticket": {
+    "title": "你的门票",
+    "loading": "正在获取你的门票…",
+    "showAtEntrance": "请在入口出示此二维码",
+    "checkedIn": "已签到",
+    "error": {
+      "not_signed_in": "请登录后查看你的门票。",
+      "not_found": "此活动已不可用。",
+      "no_ticket_needed": "此活动无需门票。",
+      "is_host": "你是主办方，请使用扫码器为大家签到。",
+      "not_joined": "加入活动即可获得门票。",
+      "error": "无法加载你的门票，请稍后再试。"
+    },
+    "scan": {
+      "title": "扫描门票",
+      "ok": "{{name}} 已入场",
+      "already": "{{name}} 已签到过",
+      "wrongEvent": "此门票属于其他活动",
+      "notHost": "只有主办方可以扫描门票",
+      "invalid": "无效的门票",
+      "error": "无法验证此门票，请重试。",
+      "cameraDenied": "请允许使用相机以扫描门票。",
+      "counter": "已签到 {{done}}/{{total}}"
+    }
+  },
+  "calendar": {
+    "add": "添加到日历"
+  },
+  "hosting": {
+    "title": "主办",
+    "subtitle": "参加者与往期活动",
+    "eventsHosted": "已举办的活动",
+    "totalAttendees": "参加者总数",
+    "ranking": "你的热门活动",
+    "pastEvents": "往期活动",
+    "scanned": "已扫描 {{count}}"
   }
 }

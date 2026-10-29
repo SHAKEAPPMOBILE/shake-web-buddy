@@ -19,6 +19,10 @@ interface ShareEventCardProps {
   /** When set, a share icon sits in the card's top-right corner and calls this (opens the system share sheet). */
   onShare?: () => void;
   shareLabel?: string;
+  /** Replaces the activity icon (the ticket sheet puts the QR code here, the scanner its camera). */
+  heroOverride?: React.ReactNode;
+  /** Replaces the "join on SHAKE" line at the bottom. */
+  footer?: React.ReactNode;
 }
 
 /**
@@ -26,7 +30,7 @@ interface ShareEventCardProps {
  * goes out. Uses the plan's own background (a city photo or a color) and its
  * activity icon, so a picnic reads as a picnic before anyone taps send.
  */
-export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onShare, shareLabel = "Share" }: ShareEventCardProps) {
+export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onShare, shareLabel = "Share", heroOverride, footer }: ShareEventCardProps) {
   const bg = plan.background_id ? PLAN_BACKGROUNDS.find((b) => b.id === plan.background_id) : undefined;
   const icon = getActivityIcon(plan.activity_type);
   // The newer activity icons are transparent PNGs and sit straight on the background;
@@ -93,7 +97,11 @@ export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onSha
 
       {/* The icon takes whatever room the text block below leaves, so a long title can never run over it. */}
       <div className="relative min-h-0 flex-1">
-        {hero && <div className="absolute inset-0 flex items-center justify-center px-6 pb-2 pt-10">{hero}</div>}
+        {heroOverride ? (
+          <div className="absolute inset-0 flex items-center justify-center px-6 pb-2 pt-12">{heroOverride}</div>
+        ) : (
+          hero && <div className="absolute inset-0 flex items-center justify-center px-6 pb-2 pt-10">{hero}</div>
+        )}
       </div>
 
       <div className="relative px-5 pb-4">
@@ -113,9 +121,13 @@ export function ShareEventCard({ plan, title, when, hostedBy, joinedLabel, onSha
           {joinedLabel && <span className="shrink-0 text-white/75">· {joinedLabel}</span>}
         </div>
 
-        <div className="mt-3 flex items-baseline justify-between border-t border-white/25 pt-2.5">
-          <span className="text-[13px] font-bold">join on SHAKE</span>
-          <span className="text-[11px] text-white/75">shakeapp.today</span>
+        <div className="mt-3 border-t border-white/25 pt-2.5">
+          {footer ?? (
+            <div className="flex items-baseline justify-between">
+              <span className="text-[13px] font-bold">join on SHAKE</span>
+              <span className="text-[11px] text-white/75">shakeapp.today</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

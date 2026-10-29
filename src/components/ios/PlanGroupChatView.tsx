@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Trash2, Images, Camera, ChevronLeft } from "lucide-react";
+import { Send, User, Trash2, Images, Camera, ChevronLeft, Ticket, ScanLine } from "lucide-react";
 import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
+import { TicketSheet } from "@/components/TicketSheet";
+import { TicketScannerSheet } from "@/components/TicketScannerSheet";
+import type { SharePlan } from "@/lib/planShare";
 import { LocationBubble } from "@/components/LocationBubble";
 import { getCurrentLatLng, encodeLocation } from "@/lib/location";
 import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
@@ -181,6 +184,24 @@ export function PlanGroupChatView({
       .then(({ data }) => {
         if (cancelled) return;
         setCohostUserIds((data ?? []).map((r: any) => r.user_id).filter(Boolean));
+      });
+    return () => { cancelled = true; };
+  }, [activity.id]);
+
+  // Tickets: when the host asked for them, attendees get a QR ticket here and the host a scanner.
+  const [requiresTicket, setRequiresTicket] = useState(false);
+  const [showTicket, setShowTicket] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  useEffect(() => {
+    if (!activity.id) return;
+    let cancelled = false;
+    supabase
+      .from("user_activities")
+      .select("requires_ticket")
+      .eq("id", activity.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setRequiresTicket(Boolean((data as { requires_ticket?: boolean } | null)?.requires_ticket));
       });
     return () => { cancelled = true; };
   }, [activity.id]);
@@ -500,6 +521,18 @@ export function PlanGroupChatView({
   }, [user, activity.id]);
 
   const creatorProfile = profiles[activity.user_id];
+  // The host and any active co-host can scan tickets at the door (the server checks the same thing).
+  const canScanTickets = isCreator || (!!user && cohostUserIds.includes(user.id));
+  const sharePlan: SharePlan = {
+    id: activity.id,
+    activity_type: activity.activity_type,
+    city: activity.city,
+    scheduled_for: activity.scheduled_for,
+    note: activity.note,
+    creator_name: creatorProfile?.name || undefined,
+    creator_avatar: creatorProfile?.avatar_url || undefined,
+    background_id: localBackgroundId,
+  };
 
   const planDateLabel = (() => {
     const d = activity.scheduled_for ? parseDbDate(activity.scheduled_for) : null;
@@ -585,20 +618,42 @@ export function PlanGroupChatView({
               aria-label={t('common.back', 'Back')}
               iconClassName="w-6 h-6"
             />
-            <PlanOptionsMenu
-              activity={activity}
-              isCreator={isCreator}
-              otherParticipantsCount={otherParticipants.length}
-              isPaidPlan={getPriceValue(activity.price_amount) > 0}
-              onDeleted={onBack}
-              onLeft={onBack}
-              onBackgroundChange={setLocalBackgroundId}
-              onShareLocation={handleShareLocation}
-              floatingText={floatingText}
-              onToggleFloatingText={() => setFloatingText(!floatingText)}
-              triggerClassName={headerMenuTriggerClass}
-              iconClassName={headerMenuIconClass}
-            />
+            <div className="flex items-center gap-1">
+              {requiresTicket && canScanTickets && (
+                <button
+                  type="button"
+                  onClick={() => setShowScanner(true)}
+                  aria-label={t('ticket.scan.title', 'Scan tickets')}
+                  className={headerMenuTriggerClass}
+                >
+                  <ScanLine className={headerMenuIconClass} />
+                </button>
+              )}
+              {requiresTicket && !isCreator && (
+                <button
+                  type="button"
+                  onClick={() => setShowTicket(true)}
+                  aria-label={t('ticket.title', 'Your ticket')}
+                  className={headerMenuTriggerClass}
+                >
+                  <Ticket className={headerMenuIconClass} />
+                </button>
+              )}
+              <PlanOptionsMenu
+                activity={activity}
+                isCreator={isCreator}
+                otherParticipantsCount={otherParticipants.length}
+                isPaidPlan={getPriceValue(activity.price_amount) > 0}
+                onDeleted={onBack}
+                onLeft={onBack}
+                onBackgroundChange={setLocalBackgroundId}
+                onShareLocation={handleShareLocation}
+                floatingText={floatingText}
+                onToggleFloatingText={() => setFloatingText(!floatingText)}
+                triggerClassName={headerMenuTriggerClass}
+                iconClassName={headerMenuIconClass}
+              />
+            </div>
           </div>
 
           {/* Content column — normal flow, top to bottom, no overlap */}
@@ -1032,6 +1087,8 @@ export function PlanGroupChatView({
       />
 
       <PremiumDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog} />
+      {showTicket && <TicketSheet plan={sharePlan} onClose={() => setShowTicket(false)} />}
+      {showScanner && <TicketScannerSheet plan={sharePlan} onClose={() => setShowScanner(false)} />}
 
       {/* Fullscreen video overlay */}
       {videoFullscreen && activity.promo_video_url && (

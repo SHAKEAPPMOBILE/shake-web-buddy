@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle, Users } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle, Users, Trophy } from "lucide-react";
 import { ManageFriendsDialog } from "@/components/ManageFriendsDialog";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,7 @@ import { UserProfileDialog } from "../UserProfileDialog";
 import { useStatusVideo } from "@/hooks/useStatusVideo";
 import { StatusVideoRecorder } from "../StatusVideoRecorder";
 import { cn, getPriceValue } from "@/lib/utils";
+import { HostingStats, useHostedCount } from "@/components/HostingStats";
 import { PointsDashboard } from "../PointsDashboard";
 import { useUserPoints } from "@/hooks/useUserPoints";
 import { PointsDisplay } from "@/components/PointsDisplay";
@@ -94,6 +95,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const [showSubscriptionDropdown, setShowSubscriptionDropdown] = useState(false);
   const { statusVideo, hasActiveStatus, refetch: refetchStatus, deleteVideo: deleteStatusVideo } = useStatusVideo(user?.id);
   const { points } = useUserPoints(user?.id);
+  const hostedCount = useHostedCount(user?.id);
   const { referralCode } = useReferralCode(user?.id);
   const [copiedLink, setCopiedLink] = useState(false);
   // One expandable row open at a time (My Points, Creator Payouts, My
@@ -102,7 +104,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   // auto-collapses whichever was open; the scroll-into-view in
   // toggleSection compensates for the layout shift that causes, so the row
   // just opened doesn't end up pushed almost out of view.
-  type ProfileSection = "points" | "payouts" | "friends" | "paranormal" | "referral";
+  type ProfileSection = "points" | "payouts" | "friends" | "paranormal" | "referral" | "hosting";
   const [expandedSection, setExpandedSection] = useState<ProfileSection | null>(null);
   const sectionRefs = {
     points: useRef<HTMLButtonElement>(null),
@@ -110,6 +112,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     friends: useRef<HTMLButtonElement>(null),
     paranormal: useRef<HTMLButtonElement>(null),
     referral: useRef<HTMLButtonElement>(null),
+    hosting: useRef<HTMLButtonElement>(null),
   };
   const toggleSection = (section: ProfileSection) => {
     setExpandedSection((prev) => {
@@ -518,7 +521,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
        !stripeConnected && (
         <button
           type="button"
-          onClick={() => setShowPayoutOptions(true)}
+          onClick={() => { if (expandedSection !== "payouts") toggleSection("payouts"); }}
           className="w-full flex items-start gap-3 px-4 py-3 bg-amber-50 border-b border-amber-200 text-left"
         >
           <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
@@ -756,6 +759,31 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               <div className="px-4 py-4 bg-gray-50 animate-fade-in">
                 <PointsDashboard userId={user?.id} />
               </div>
+            )}
+
+            {/* Hosting — appears with the person's first plan */}
+            {hostedCount !== null && hostedCount > 0 && (
+              <>
+                <button
+                  ref={sectionRefs.hosting}
+                  onClick={() => toggleSection("hosting")}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                    <Trophy className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-gray-900">{t('hosting.title', 'Hosting')}</span>
+                    <p className="text-xs text-gray-400">{t('hosting.subtitle', 'Attendees and past events')}</p>
+                  </div>
+                  <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", expandedSection === "hosting" && "rotate-90")} />
+                </button>
+                {expandedSection === "hosting" && (
+                  <div className="px-4 py-4 bg-gray-50 animate-fade-in">
+                    <HostingStats userId={user?.id} />
+                  </div>
+                )}
+              </>
             )}
 
             {/* Creator Payouts */}

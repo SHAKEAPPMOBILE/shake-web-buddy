@@ -754,7 +754,15 @@
     "recordBtn": "Nagraj",
     "openSettings": "Otwórz ustawienia",
     "whatsUpName": "Co słychać, {{name}}?",
-    "whatsUp": "Co słychać?"
+    "whatsUp": "Co słychać?",
+    "botTicket": "Czy uczestnicy potrzebują biletu? 🎟️",
+    "botRecurrence": "Czy się powtarza? 🔁",
+    "ticketYes": "Bilet wymagany",
+    "ticketNo": "Bez biletu",
+    "recurrenceOnce": "Tylko raz",
+    "recurrenceWeekly": "Co tydzień",
+    "recurrenceBiweekly": "Co 2 tygodnie",
+    "recurrenceMonthly": "Raz w miesiącu"
   },
   "userProfile": {
     "title": "Profil Użytkownika",
@@ -967,5 +975,42 @@
     "getTheApp": "Pobierz aplikację",
     "cardTitle": "SHAKE na Twoim telefonie",
     "close": "Zamknij"
+  },
+  "ticket": {
+    "title": "Twój bilet",
+    "loading": "Przygotowuję Twój bilet…",
+    "showAtEntrance": "Pokaż ten kod przy wejściu",
+    "checkedIn": "Zameldowano",
+    "error": {
+      "not_signed_in": "Zaloguj się, aby zobaczyć swój bilet.",
+      "not_found": "Ten plan nie jest już dostępny.",
+      "no_ticket_needed": "Ten plan nie wymaga biletu.",
+      "is_host": "Jesteś gospodarzem. Użyj skanera, aby meldować osoby.",
+      "not_joined": "Dołącz do planu, aby dostać bilet.",
+      "error": "Nie udało się wczytać biletu. Spróbuj za chwilę."
+    },
+    "scan": {
+      "title": "Skanuj bilety",
+      "ok": "{{name}} jest w środku",
+      "already": "{{name}} jest już zameldowany(-a)",
+      "wrongEvent": "Ten bilet jest na inne wydarzenie",
+      "notHost": "Tylko gospodarz może skanować bilety",
+      "invalid": "Nieprawidłowy bilet",
+      "error": "Nie udało się sprawdzić biletu. Spróbuj ponownie.",
+      "cameraDenied": "Zezwól na dostęp do aparatu, aby skanować bilety.",
+      "counter": "Zameldowano {{done}} z {{total}}"
+    }
+  },
+  "calendar": {
+    "add": "Dodaj do kalendarza"
+  },
+  "hosting": {
+    "title": "Gospodarz",
+    "subtitle": "Uczestnicy i minione wydarzenia",
+    "eventsHosted": "Zorganizowane wydarzenia",
+    "totalAttendees": "Łączna liczba uczestników",
+    "ranking": "Twoje najlepsze wydarzenia",
+    "pastEvents": "Minione wydarzenia",
+    "scanned": "{{count}} zeskanowano"
   }
 }

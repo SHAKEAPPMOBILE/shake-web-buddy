@@ -754,7 +754,15 @@
     "recordBtn": "録画",
     "openSettings": "設定を開く",
     "whatsUpName": "{{name}}さん、調子はどう？",
-    "whatsUp": "調子はどう？"
+    "whatsUp": "調子はどう？",
+    "botTicket": "参加者にチケットは必要ですか？🎟️",
+    "botRecurrence": "繰り返しますか？🔁",
+    "ticketYes": "チケット必須",
+    "ticketNo": "チケット不要",
+    "recurrenceOnce": "1回のみ",
+    "recurrenceWeekly": "毎週",
+    "recurrenceBiweekly": "2週間ごと",
+    "recurrenceMonthly": "月に1回"
   },
   "userProfile": {
     "title": "ユーザープロフィール",
@@ -967,5 +975,42 @@
     "getTheApp": "アプリを入手",
     "cardTitle": "スマホでSHAKEを使おう",
     "close": "閉じる"
+  },
+  "ticket": {
+    "title": "あなたのチケット",
+    "loading": "チケットを準備中…",
+    "showAtEntrance": "入口でこのコードを見せてください",
+    "checkedIn": "チェックイン済み",
+    "error": {
+      "not_signed_in": "チケットを見るにはログインしてください。",
+      "not_found": "このプランは利用できなくなりました。",
+      "no_ticket_needed": "このプランにチケットは不要です。",
+      "is_host": "あなたは主催者です。スキャナーで参加者をチェックインしてください。",
+      "not_joined": "プランに参加するとチケットが届きます。",
+      "error": "チケットを読み込めませんでした。少し待ってからもう一度お試しください。"
+    },
+    "scan": {
+      "title": "チケットをスキャン",
+      "ok": "{{name}}さんが入場しました",
+      "already": "{{name}}さんはチェックイン済みです",
+      "wrongEvent": "このチケットは別のイベントのものです",
+      "notHost": "チケットをスキャンできるのは主催者のみです",
+      "invalid": "無効なチケットです",
+      "error": "チケットを確認できませんでした。もう一度お試しください。",
+      "cameraDenied": "チケットをスキャンするにはカメラへのアクセスを許可してください。",
+      "counter": "{{done}} / {{total}} 人チェックイン済み"
+    }
+  },
+  "calendar": {
+    "add": "カレンダーに追加"
+  },
+  "hosting": {
+    "title": "主催",
+    "subtitle": "参加者と過去のイベント",
+    "eventsHosted": "主催したイベント",
+    "totalAttendees": "参加者の合計",
+    "ranking": "人気のイベント",
+    "pastEvents": "過去のイベント",
+    "scanned": "{{count}}件スキャン済み"
   }
 }

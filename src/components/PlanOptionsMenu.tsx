@@ -1,12 +1,13 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, Palette, LogOut, MapPin, Wind } from "lucide-react";
+import { MoreVertical, Palette, LogOut, MapPin, Wind, CalendarPlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
 import { PLAN_BACKGROUNDS, getBackgroundStyle } from "@/data/planBackgrounds";
+import { canAddToCalendar, openAddToCalendar } from "@/lib/addToCalendar";
 
 // Split once at module scope — PLAN_BACKGROUNDS is a static constant, no
 // need to re-derive this on every render of every menu instance.
@@ -146,6 +147,14 @@ export function PlanOptionsMenu({
             style={{ top: menuPosition.top, right: menuPosition.right }}
             onClick={(e) => e.stopPropagation()}
           >
+            {canAddToCalendar(activity.id) && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowMenu(false); void openAddToCalendar(activity.id); }}
+                className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
+              >
+                <CalendarPlus className="w-4 h-4" /> {t('calendar.add', 'Add to calendar')}
+              </button>
+            )}
             {onShareLocation && (
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMenu(false); onShareLocation(); }}
