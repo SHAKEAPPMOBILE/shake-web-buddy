@@ -20,7 +20,15 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   const { user } = useAuth();
   const { totalUnread } = useTotalUnreadChats();
   const { pendingReceived } = useFriends();
-  const shakeButtonStyle = { background: "#000000" };
+  // A frosted-glass bubble: the page behind it shows through, blurred, with a bright rim and a soft shadow.
+  const shakeButtonStyle: React.CSSProperties = {
+    background: "radial-gradient(circle at 32% 24%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.62) 42%, rgba(240,242,247,0.5) 100%)",
+    backdropFilter: "blur(14px) saturate(1.5)",
+    WebkitBackdropFilter: "blur(14px) saturate(1.5)",
+    border: "1px solid rgba(255,255,255,0.85)",
+    boxShadow:
+      "0 14px 30px -8px rgba(0,0,0,0.32), 0 3px 8px rgba(0,0,0,0.10), inset 0 2px 3px rgba(255,255,255,0.95), inset 0 -8px 14px rgba(0,0,0,0.05)",
+  };
 
   // Current user's avatar for the Profile tab
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
@@ -67,7 +75,7 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/70 backdrop-blur-2xl backdrop-saturate-150 border-t border-border/70 safe-area-bottom">
       <div className="flex items-end justify-around px-2 pt-2 pb-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -80,13 +88,14 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                 type="button"
                 onClick={() => handleTabClick(tab.id)}
                 aria-disabled={!user}
-                className="relative -mt-6 flex flex-col items-center"
+                className="relative -translate-y-9 flex flex-col items-center"
               >
+                {/* Sits across the bar's top edge, lifted above the other tabs. */}
                 <div className={cn(
-                  "w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all",
+                  "w-[62px] h-[62px] rounded-full flex items-center justify-center transition-transform active:scale-95",
                   isActive && "scale-110"
                 )} style={shakeButtonStyle}>
-                  <Plus className="w-8 h-8 text-white" />
+                  <Plus className="w-8 h-8 text-gray-900" strokeWidth={2.2} />
                 </div>
               </button>
             );
