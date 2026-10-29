@@ -1027,5 +1027,11 @@
       "allFriends": "You're connected with everyone",
       "noAttendees": "No one has joined yet"
     }
+  },
+  "attending": {
+    "title": "Attending",
+    "subtitle": "Events you've joined and who was there",
+    "hostedBy": "Hosted by {{name}}",
+    "host": "Host"
   }
 }

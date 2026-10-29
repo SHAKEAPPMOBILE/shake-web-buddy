@@ -1030,5 +1030,11 @@
       "allFriends": "全員とつながっています",
       "noAttendees": "まだ誰も参加していません"
     }
+  },
+  "attending": {
+    "title": "参加イベント",
+    "subtitle": "参加したイベントと、そこにいた人たち",
+    "hostedBy": "主催：{{name}}",
+    "host": "主催者"
   }
 }

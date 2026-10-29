@@ -1030,5 +1030,11 @@
       "allFriends": "Jesteś połączony(-a) ze wszystkimi",
       "noAttendees": "Nikt jeszcze nie dołączył"
     }
+  },
+  "attending": {
+    "title": "Uczestnictwo",
+    "subtitle": "Wydarzenia, w których brałeś(-aś) udział, i kto tam był",
+    "hostedBy": "Gospodarz: {{name}}",
+    "host": "Gospodarz"
   }
 }

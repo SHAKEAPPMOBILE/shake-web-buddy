@@ -9,6 +9,7 @@ import { useFriends } from "@/hooks/useFriends";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDisplayAvatarUrl } from "@/lib/avatar";
 import { toast } from "@/lib/app-toast";
+import { UserProfileDialog } from "@/components/UserProfileDialog";
 
 export interface HostedEvent {
   id: string;
@@ -41,6 +42,8 @@ export function HostedEventSheet({ event, onClose }: { event: HostedEvent; onClo
   const [addingAll, setAddingAll] = useState(false);
   const [added, setAdded] = useState(false);
   const [inviting, setInviting] = useState(false);
+  // Tapping a person's name or photo opens their profile; the sheet hides behind it and comes back on close.
+  const [profileFor, setProfileFor] = useState<Attendee | null>(null);
   const upcoming = event.date.getTime() > Date.now();
 
   useEffect(() => {
@@ -93,8 +96,10 @@ export function HostedEventSheet({ event, onClose }: { event: HostedEvent; onClo
 
   const actionClass = "flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold transition-opacity disabled:opacity-50";
 
-  return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 animate-in fade-in duration-200" onClick={(e) => { e.stopPropagation(); onClose(); }}>
+  return (
+    <>
+    {createPortal(
+    <div className={`fixed inset-0 z-[80] flex items-end justify-center bg-black/50 animate-in fade-in duration-200 ${profileFor ? "invisible" : ""}`} onClick={(e) => { e.stopPropagation(); onClose(); }}>
       <div
         role="dialog"
         aria-label={event.title}
@@ -154,13 +159,18 @@ export function HostedEventSheet({ event, onClose }: { event: HostedEvent; onClo
             <div className="divide-y divide-gray-100">
               {attendees.map((a) => (
                 <div key={a.user_id} className="flex items-center gap-3 py-2.5">
-                  <Avatar className="h-10 w-10 shrink-0">
-                    {a.avatar_url ? <AvatarImage src={getDisplayAvatarUrl(a.avatar_url)} alt={a.name ?? ""} className="object-cover" /> : null}
-                    <AvatarFallback className="bg-gray-100 text-sm text-gray-500">{(a.name ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                  <button type="button" onClick={() => setProfileFor(a)} className="shrink-0" aria-label={a.name ?? t("chat.shaker", "Shaker")}>
+                    <Avatar className="h-10 w-10">
+                      {a.avatar_url ? <AvatarImage src={getDisplayAvatarUrl(a.avatar_url)} alt={a.name ?? ""} className="object-cover" /> : null}
+                      <AvatarFallback className="bg-gray-100 text-sm text-gray-500">{(a.name ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </button>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-900">{a.name || t("chat.shaker", "Shaker")}</p>
-                    {a.email && <a href={`mailto:${a.email}`} className="block truncate text-xs text-gray-400">{a.email}</a>}
+                    <button type="button" onClick={() => setProfileFor(a)} className="block max-w-full truncate text-left text-sm font-medium text-gray-900">
+                      {a.name || t("chat.shaker", "Shaker")}
+                    </button>
+                    {/* Plain text, not a link: press and hold to copy it. */}
+                    {a.email && <p className="select-text truncate text-xs text-gray-400" style={{ WebkitUserSelect: "text", userSelect: "text" }}>{a.email}</p>}
                   </div>
                   {a.checked_in_at && <Check className="h-4 w-4 shrink-0 text-emerald-500" aria-label={t("hosting.event.checkedIn", "Checked in")} />}
                 </div>
@@ -171,5 +181,16 @@ export function HostedEventSheet({ event, onClose }: { event: HostedEvent; onClo
       </div>
     </div>,
     document.body,
+  )}
+    {profileFor && (
+      <UserProfileDialog
+        open
+        onOpenChange={(next) => { if (!next) setProfileFor(null); }}
+        userId={profileFor.user_id}
+        userName={profileFor.name}
+        avatarUrl={profileFor.avatar_url}
+      />
+    )}
+    </>
   );
 }

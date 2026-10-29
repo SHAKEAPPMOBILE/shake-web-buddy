@@ -1030,5 +1030,11 @@
       "allFriends": "Já estás ligado a todos",
       "noAttendees": "Ainda ninguém se juntou"
     }
+  },
+  "attending": {
+    "title": "Participando",
+    "subtitle": "Eventos em que participaste e quem esteve lá",
+    "hostedBy": "Organizado por {{name}}",
+    "host": "Anfitrião"
   }
 }

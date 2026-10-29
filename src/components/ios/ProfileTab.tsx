@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle, Users, Trophy } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle, Users, Trophy, Ticket } from "lucide-react";
 import { ManageFriendsDialog } from "@/components/ManageFriendsDialog";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +14,7 @@ import { useStatusVideo } from "@/hooks/useStatusVideo";
 import { StatusVideoRecorder } from "../StatusVideoRecorder";
 import { cn, getPriceValue } from "@/lib/utils";
 import { HostingStats, useHostedCount } from "@/components/HostingStats";
+import { AttendingStats, useAttendedCount } from "@/components/AttendingStats";
 import { PointsDashboard } from "../PointsDashboard";
 import { useUserPoints } from "@/hooks/useUserPoints";
 import { PointsDisplay } from "@/components/PointsDisplay";
@@ -89,6 +90,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const { statusVideo, hasActiveStatus, refetch: refetchStatus, deleteVideo: deleteStatusVideo } = useStatusVideo(user?.id);
   const { points } = useUserPoints(user?.id);
   const hostedCount = useHostedCount(user?.id);
+  const attendedCount = useAttendedCount(user?.id);
   const { referralCode } = useReferralCode(user?.id);
   const [copiedLink, setCopiedLink] = useState(false);
   // One expandable row open at a time (My Points, Creator Payouts, My
@@ -97,7 +99,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   // auto-collapses whichever was open; the scroll-into-view in
   // toggleSection compensates for the layout shift that causes, so the row
   // just opened doesn't end up pushed almost out of view.
-  type ProfileSection = "points" | "payouts" | "friends" | "paranormal" | "referral" | "hosting";
+  type ProfileSection = "points" | "payouts" | "friends" | "paranormal" | "referral" | "hosting" | "attending";
   const [expandedSection, setExpandedSection] = useState<ProfileSection | null>(null);
   const sectionRefs = {
     points: useRef<HTMLButtonElement>(null),
@@ -106,6 +108,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     paranormal: useRef<HTMLButtonElement>(null),
     referral: useRef<HTMLButtonElement>(null),
     hosting: useRef<HTMLButtonElement>(null),
+    attending: useRef<HTMLButtonElement>(null),
   };
   const toggleSection = (section: ProfileSection) => {
     setExpandedSection((prev) => {
@@ -774,6 +777,31 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 {expandedSection === "hosting" && (
                   <div className="px-4 py-4 bg-gray-50 animate-fade-in">
                     <HostingStats userId={user?.id} />
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Attending — appears once the person has joined an event */}
+            {attendedCount !== null && attendedCount > 0 && (
+              <>
+                <button
+                  ref={sectionRefs.attending}
+                  onClick={() => toggleSection("attending")}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#0EA5E9" }}>
+                    <Ticket className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-gray-900">{t('attending.title', 'Attending')}</span>
+                    <p className="text-xs text-gray-400">{t('attending.subtitle', "Events you've joined and who was there")}</p>
+                  </div>
+                  <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", expandedSection === "attending" && "rotate-90")} />
+                </button>
+                {expandedSection === "attending" && (
+                  <div className="px-4 py-4 bg-gray-50 animate-fade-in">
+                    <AttendingStats userId={user?.id} />
                   </div>
                 )}
               </>

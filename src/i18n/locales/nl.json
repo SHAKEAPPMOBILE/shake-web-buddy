@@ -1030,5 +1030,11 @@
       "allFriends": "Je bent met iedereen verbonden",
       "noAttendees": "Nog niemand heeft zich aangesloten"
     }
+  },
+  "attending": {
+    "title": "Deelnames",
+    "subtitle": "Evenementen waaraan je hebt deelgenomen en wie er was",
+    "hostedBy": "Gehost door {{name}}",
+    "host": "Host"
   }
 }

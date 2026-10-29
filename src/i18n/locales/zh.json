@@ -1030,5 +1030,11 @@
       "allFriends": "你已与所有人建立联系",
       "noAttendees": "还没有人加入"
     }
+  },
+  "attending": {
+    "title": "参加的活动",
+    "subtitle": "你参加过的活动以及当时在场的人",
+    "hostedBy": "主办：{{name}}",
+    "host": "主办方"
   }
 }
