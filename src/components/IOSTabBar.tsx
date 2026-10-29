@@ -88,14 +88,14 @@ export function IOSTabBar({ activeTab, onTabChange, onShakeStart }: IOSTabBarPro
                 type="button"
                 onClick={() => handleTabClick(tab.id)}
                 aria-disabled={!user}
-                className="relative -translate-y-[30px] flex flex-col items-center"
+                className="relative -translate-y-[24px] flex flex-col items-center"
               >
                 {/* Sits across the bar's top edge, lifted above the other tabs. */}
                 <div className={cn(
-                  "w-[70px] h-[70px] rounded-full flex items-center justify-center transition-transform active:scale-95",
+                  "w-[76px] h-[76px] rounded-full flex items-center justify-center transition-transform active:scale-95",
                   isActive && "scale-110"
                 )} style={shakeButtonStyle}>
-                  <Plus className="w-9 h-9 text-gray-900" strokeWidth={2.2} />
+                  <Plus className="w-10 h-10 text-gray-900" strokeWidth={2.2} />
                 </div>
               </button>
             );
