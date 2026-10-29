@@ -49,7 +49,7 @@ export function useReferralTracking() {
     // pass, but it's still worth keeping these in sync).
     const knownRoutes = [
       "auth", "profile", "admin", "welcome",
-      "privacy-policy", "terms-of-service", "community-guidelines",
+      "privacy-policy", "terms-of-service", "community-guidelines", "photo-credits",
       "subscription-success", "propose-plan", "plans",
       "chat", "events", "home", "invite", "guest", ""
     ];

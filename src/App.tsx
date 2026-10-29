@@ -49,7 +49,7 @@ const REFERRAL_CODE_RE = /^[a-z0-9]+-[a-z0-9]+$/i;
 
 const KNOWN_ROUTES = new Set([
   "auth", "profile", "admin", "welcome",
-  "privacy-policy", "terms-of-service", "community-guidelines",
+  "privacy-policy", "terms-of-service", "community-guidelines", "photo-credits",
   "subscription-success", "propose-plan", "plans",
   "chat", "events", "home", "invite", "guest", "pager", "",
 ]);
