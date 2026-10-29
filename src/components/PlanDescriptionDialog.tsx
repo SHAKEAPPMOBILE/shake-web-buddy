@@ -4,6 +4,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { ALL_ACTIVITY_TYPES } from "@/data/activityTypes";
 import { useTranslation } from "react-i18next";
+import { LinkifiedText } from "@/components/LinkifiedText";
 
 interface PlanDescriptionDialogProps {
   open: boolean;
@@ -100,7 +101,8 @@ export function PlanDescriptionDialog({ open, onOpenChange, activity, onCreatorC
 
         <div className="p-6 pt-0 max-h-[50vh] overflow-y-auto">
           <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-            {activity.description}
+            <span aria-hidden="true">👉 </span>
+            <LinkifiedText text={activity.description} />
           </p>
         </div>
       </DialogContent>

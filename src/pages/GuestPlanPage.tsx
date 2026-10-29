@@ -1,3 +1,4 @@
+import { LinkifiedText } from "@/components/LinkifiedText";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,7 +119,7 @@ export default function GuestPlanPage() {
           </div>
 
           {plan.description?.trim() && (
-            <p className="text-white/70 text-sm text-center whitespace-pre-wrap">{plan.description}</p>
+            <p className="text-white/70 text-sm text-center whitespace-pre-wrap"><span aria-hidden="true">👉 </span><LinkifiedText text={plan.description} linkClassName="underline underline-offset-2 text-white break-all" /></p>
           )}
 
           {plan.creator_name && (
