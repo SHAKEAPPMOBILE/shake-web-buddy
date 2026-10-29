@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, DollarSign, AlertCircle, Calendar } from "lucide-react";
+import { Users, DollarSign, AlertCircle, Calendar, MapPin } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -28,6 +28,27 @@ interface ActivityDetailDialogProps {
     participant_count?: number;
   };
   onCreatorClick?: () => void;
+}
+
+/** A detail row: a raised colour tile (soft shadow and a lit top edge, like a button) beside a label and value. */
+function DetailRow({ color, icon, label, children }: { color: string; icon: React.ReactNode; label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white"
+        style={{
+          background: `linear-gradient(180deg, ${color}F2 0%, ${color} 100%)`,
+          boxShadow: "0 3px 8px -2px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(0,0,0,0.12)",
+        }}
+      >
+        {icon}
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">{label}</p>
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export function ActivityDetailDialog({
@@ -79,12 +100,12 @@ export function ActivityDetailDialog({
       >
         {isMobile && (
           <div className="flex justify-center py-2 shrink-0">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            <div className="w-10 h-1.5 rounded-full bg-white/80 shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.9)]" />
           </div>
         )}
 
         {/* Hero Section - Background with Rainbow */}
-        <div className="p-6 text-foreground bg-card">
+        <div className="relative z-10 p-6 text-foreground bg-card shadow-[0_8px_16px_-10px_rgba(0,0,0,0.35)]">
           <div className="flex items-start gap-4">
             {/* Creator Avatar or Activity Emoji */}
             <div className="relative">
@@ -123,54 +144,26 @@ export function ActivityDetailDialog({
 
         {/* Details Section */}
         <div className="p-6 space-y-4">
-          {/* Location */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-              <span className="inline-flex items-center justify-center w-5 h-5 text-muted-foreground">📍</span>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t("common.location")}</p>
-              <p className="font-medium">{activity.city}</p>
-            </div>
-          </div>
+          <DetailRow color="#F43F5E" icon={<MapPin className="w-5 h-5" />} label={t("common.location")}>
+            <p className="font-medium">{activity.city}</p>
+          </DetailRow>
 
-          {/* Date */}
           {activity.scheduled_for && (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t("common.date", "Date")}</p>
-                <p className="font-medium">{format(new Date(activity.scheduled_for), "EEEE, MMMM d, yyyy")}</p>
-              </div>
-            </div>
+            <DetailRow color="#0EA5E9" icon={<Calendar className="w-5 h-5" />} label={t("common.date", "Date")}>
+              <p className="font-medium">{format(new Date(activity.scheduled_for), "EEEE, MMMM d, yyyy")}</p>
+            </DetailRow>
           )}
 
-          {/* Participants */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-              <Users className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t("common.participants")}</p>
-              <p className="font-medium">
-                {(activity.participant_count || 0) + 1} {t("common.going")}
-              </p>
-            </div>
-          </div>
+          <DetailRow color="#F97316" icon={<Users className="w-5 h-5" />} label={t("common.participants")}>
+            <p className="font-medium">
+              {(activity.participant_count || 0) + 1} {t("common.going")}
+            </p>
+          </DetailRow>
 
-          {/* Price */}
           {activity.price_amount && !hasTiers && (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t("common.entryFee")}</p>
-                <p className="font-medium text-green-600">{activity.price_amount}</p>
-              </div>
-            </div>
+            <DetailRow color="#22C55E" icon={<DollarSign className="w-5 h-5" />} label={t("common.entryFee")}>
+              <p className="font-medium text-green-600">{activity.price_amount}</p>
+            </DetailRow>
           )}
 
           {/* Price tiers */}
@@ -201,7 +194,7 @@ export function ActivityDetailDialog({
             <button
               onClick={handlePayToJoin}
               disabled={isProcessing || paymentLoading || (hasTiers && !selectedTier)}
-              className="w-full py-3 rounded-xl text-white font-medium transition-all hover:opacity-90 disabled:opacity-50 mt-4 bg-blue-500 hover:bg-blue-600"
+              className="w-full py-3.5 rounded-2xl text-white font-semibold transition-all active:scale-[0.99] hover:opacity-95 disabled:opacity-50 mt-4 bg-gradient-to-b from-blue-400 to-blue-600 shadow-[0_8px_16px_-6px_rgba(37,99,235,0.6),inset_0_1px_0_rgba(255,255,255,0.4)]"
             >
               {isProcessing || paymentLoading ? (
                 <span className="flex items-center justify-center gap-2">
