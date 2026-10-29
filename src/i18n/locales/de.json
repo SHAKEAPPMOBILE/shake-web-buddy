@@ -221,7 +221,13 @@
     "conversationHidden": "Unterhaltung ausgeblendet",
     "userBlocked": "Nutzer blockiert",
     "floatingTextOff": "Schwebenden Text ausschalten",
-    "floatingTextOn": "Schwebenden Text einschalten"
+    "floatingTextOn": "Schwebenden Text einschalten",
+    "group": "Gruppe",
+    "moreOptions": "Weitere Optionen",
+    "deleteGroup": "Gruppe löschen",
+    "leaveGroup": "Gruppe verlassen",
+    "groupDeleteFailed": "Gruppe konnte nicht gelöscht werden",
+    "groupLeaveFailed": "Gruppe konnte nicht verlassen werden"
   },
   "plans": {
     "title": "Pläne",

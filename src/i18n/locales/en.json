@@ -221,7 +221,13 @@
     "conversationHidden": "Conversation hidden",
     "userBlocked": "User blocked",
     "floatingTextOff": "Turn off floating text",
-    "floatingTextOn": "Turn on floating text"
+    "floatingTextOn": "Turn on floating text",
+    "group": "Group",
+    "moreOptions": "More options",
+    "deleteGroup": "Delete group",
+    "leaveGroup": "Leave group",
+    "groupDeleteFailed": "Couldn't delete the group",
+    "groupLeaveFailed": "Couldn't leave the group"
   },
   "plans": {
     "title": "Plans",

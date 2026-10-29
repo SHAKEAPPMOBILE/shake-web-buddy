@@ -221,7 +221,13 @@
     "conversationHidden": "Conversa ocultada",
     "userBlocked": "Utilizador bloqueado",
     "floatingTextOff": "Desativar texto flutuante",
-    "floatingTextOn": "Ativar texto flutuante"
+    "floatingTextOn": "Ativar texto flutuante",
+    "group": "Grupo",
+    "moreOptions": "Mais opções",
+    "deleteGroup": "Eliminar grupo",
+    "leaveGroup": "Sair do grupo",
+    "groupDeleteFailed": "Não foi possível eliminar o grupo",
+    "groupLeaveFailed": "Não foi possível sair do grupo"
   },
   "plans": {
     "title": "Planos",

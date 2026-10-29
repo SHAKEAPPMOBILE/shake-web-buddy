@@ -221,7 +221,13 @@
     "conversationHidden": "会話を非表示にしました",
     "userBlocked": "ユーザーをブロックしました",
     "floatingTextOff": "浮かぶテキストをオフにする",
-    "floatingTextOn": "浮かぶテキストをオンにする"
+    "floatingTextOn": "浮かぶテキストをオンにする",
+    "group": "グループ",
+    "moreOptions": "その他のオプション",
+    "deleteGroup": "グループを削除",
+    "leaveGroup": "グループから退出",
+    "groupDeleteFailed": "グループを削除できませんでした",
+    "groupLeaveFailed": "グループから退出できませんでした"
   },
   "plans": {
     "title": "プラン",

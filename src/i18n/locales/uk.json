@@ -221,7 +221,13 @@
     "conversationHidden": "Розмову приховано",
     "userBlocked": "Користувача заблоковано",
     "floatingTextOff": "Вимкнути плаваючий текст",
-    "floatingTextOn": "Увімкнути плаваючий текст"
+    "floatingTextOn": "Увімкнути плаваючий текст",
+    "group": "Група",
+    "moreOptions": "Більше опцій",
+    "deleteGroup": "Видалити групу",
+    "leaveGroup": "Залишити групу",
+    "groupDeleteFailed": "Не вдалося видалити групу",
+    "groupLeaveFailed": "Не вдалося залишити групу"
   },
   "plans": {
     "title": "Плани",

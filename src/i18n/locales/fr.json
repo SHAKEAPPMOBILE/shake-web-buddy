@@ -221,7 +221,13 @@
     "conversationHidden": "Conversation masquée",
     "userBlocked": "Utilisateur bloqué",
     "floatingTextOff": "Désactiver le texte flottant",
-    "floatingTextOn": "Activer le texte flottant"
+    "floatingTextOn": "Activer le texte flottant",
+    "group": "Groupe",
+    "moreOptions": "Plus d'options",
+    "deleteGroup": "Supprimer le groupe",
+    "leaveGroup": "Quitter le groupe",
+    "groupDeleteFailed": "Impossible de supprimer le groupe",
+    "groupLeaveFailed": "Impossible de quitter le groupe"
   },
   "plans": {
     "title": "Plans",

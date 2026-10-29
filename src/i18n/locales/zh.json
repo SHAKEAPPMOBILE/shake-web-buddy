@@ -221,7 +221,13 @@
     "conversationHidden": "对话已隐藏",
     "userBlocked": "已屏蔽用户",
     "floatingTextOff": "关闭浮动文字",
-    "floatingTextOn": "开启浮动文字"
+    "floatingTextOn": "开启浮动文字",
+    "group": "群组",
+    "moreOptions": "更多选项",
+    "deleteGroup": "删除群组",
+    "leaveGroup": "退出群组",
+    "groupDeleteFailed": "删除群组失败",
+    "groupLeaveFailed": "退出群组失败"
   },
   "plans": {
     "title": "计划",

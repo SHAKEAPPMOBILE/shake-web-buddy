@@ -69,6 +69,7 @@ interface ChatActivity {
   group_chat_id?: string;
   group_title?: string;
   group_avatars?: (string | null)[];
+  group_creator_id?: string;
 }
 
 interface ChatTabProps {
@@ -365,10 +366,12 @@ export function ChatTab({
           const chatIds: string[] = (mine ?? []).map((r: { chat_id: string }) => r.chat_id);
           const readAt = new Map<string, string | null>((mine ?? []).map((r: { chat_id: string; last_read_at: string | null }) => [r.chat_id, r.last_read_at]));
           if (chatIds.length === 0) return [];
-          const [{ data: memberRows }, { data: lastMsgs }] = await Promise.all([
+          const [{ data: memberRows }, { data: lastMsgs }, { data: chatRows }] = await Promise.all([
             dbAny.from("group_chat_members").select("chat_id, user_id").in("chat_id", chatIds),
             dbAny.from("group_chat_messages").select("chat_id, user_id, message, message_type, created_at").in("chat_id", chatIds).order("created_at", { ascending: false }).limit(chatIds.length * 5),
+            dbAny.from("group_chats").select("id, creator_id").in("id", chatIds),
           ]);
+          const creatorOf = new Map<string, string>((chatRows ?? []).map((c: { id: string; creator_id: string }) => [c.id, c.creator_id]));
           const userIds = Array.from(new Set((memberRows ?? []).map((r: { user_id: string }) => r.user_id))) as string[];
           const { data: profs } = await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", userIds);
           const pmap = new Map((profs ?? []).map((p) => [p.user_id, p]));
@@ -388,7 +391,8 @@ export function ChatTab({
               is_group_chat: true,
               unread_count: !readAt.get(chatId) ? 1 : (last && last.user_id !== user.id && new Date(last.created_at) > new Date(readAt.get(chatId) as string) ? 1 : 0),
               group_chat_id: chatId,
-              group_title: others.map((o) => (o?.name || "Shaker").split(" ")[0]).join(", ") || "Group",
+              group_creator_id: creatorOf.get(chatId),
+              group_title: others.map((o) => (o?.name || "Shaker").split(" ")[0]).join(", ") || t("chat.group", "Group"),
               group_avatars: others.slice(0, 3).map((o) => o?.avatar_url ?? null),
               last_message_preview: preview,
               last_message_at: last?.created_at ?? null,
@@ -880,6 +884,22 @@ export function ChatTab({
     }
   }, [user, fetchActivities]);
 
+  // Group chats: the creator deletes the whole group, anyone else leaves it.
+  const handleRemoveGroupChat = useCallback(async (activity: ChatActivity) => {
+    if (!user || !activity.group_chat_id) return;
+    const chatId = activity.group_chat_id;
+    const isCreator = activity.group_creator_id === user.id;
+    setActivities(prev => prev.filter(a => a.group_chat_id !== chatId));
+    const dbAny = supabase as any;
+    const { error } = isCreator
+      ? await dbAny.from("group_chats").delete().eq("id", chatId)
+      : await dbAny.rpc("leave_group_chat", { p_chat: chatId });
+    if (error) {
+      toast.error(isCreator ? t("chat.groupDeleteFailed", "Couldn't delete the group") : t("chat.groupLeaveFailed", "Couldn't leave the group"));
+      fetchActivities();
+    }
+  }, [user, fetchActivities, t]);
+
   const handleSwipeTouchStart = (e: React.TouchEvent, activityId: string) => {
     const touch = e.touches[0];
     swipeTouchRef.current = { id: activityId, startX: touch.clientX, startY: touch.clientY, isHorizontal: null };
@@ -1065,6 +1085,33 @@ export function ChatTab({
                       <p className="mt-0.5 text-[13px] text-gray-500 truncate">
                         {activity.last_message_preview ?? `${activity.participant_count} people · Say hi to the group!`}
                       </p>
+                    </div>
+                    {/* ⋮ — delete the group (creator) or leave it (everyone else) */}
+                    <div className="relative shrink-0" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => setDmMenuFor(dmMenuFor === activity.id ? null : activity.id)}
+                        className="p-2 rounded-full hover:bg-black/10 transition-colors"
+                        aria-label={t("chat.moreOptions", "More options")}
+                      >
+                        <MoreVertical className="w-5 h-5 text-gray-400" />
+                      </button>
+                      {dmMenuFor === activity.id && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setDmMenuFor(null)} />
+                          <div className="absolute right-full top-1/2 -translate-y-1/2 mr-1 w-52 rounded-xl shadow-xl z-50 overflow-hidden border border-gray-200 bg-white">
+                            <button
+                              type="button"
+                              onClick={() => { setDmMenuFor(null); void handleRemoveGroupChat(activity); }}
+                              className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              {activity.group_creator_id === user?.id
+                                ? <><Trash2 className="w-4 h-4" /> {t("chat.deleteGroup", "Delete group")}</>
+                                : <><LogOut className="w-4 h-4" /> {t("chat.leaveGroup", "Leave group")}</>}
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

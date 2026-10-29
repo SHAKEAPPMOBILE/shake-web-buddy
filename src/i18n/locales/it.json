@@ -221,7 +221,13 @@
     "conversationHidden": "Conversazione nascosta",
     "userBlocked": "Utente bloccato",
     "floatingTextOff": "Disattiva il testo fluttuante",
-    "floatingTextOn": "Attiva il testo fluttuante"
+    "floatingTextOn": "Attiva il testo fluttuante",
+    "group": "Gruppo",
+    "moreOptions": "Altre opzioni",
+    "deleteGroup": "Elimina gruppo",
+    "leaveGroup": "Esci dal gruppo",
+    "groupDeleteFailed": "Impossibile eliminare il gruppo",
+    "groupLeaveFailed": "Impossibile uscire dal gruppo"
   },
   "plans": {
     "title": "Piani",
