@@ -5,7 +5,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useActivityPayment } from "@/hooks/useActivityPayment";
-import { ALL_ACTIVITY_TYPES } from "@/data/activityTypes";
+import { getPlanEmojis } from "@/lib/activityDetection";
+import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -56,6 +57,9 @@ export function ActivityDetailDialog({
 }: ActivityDetailDialogProps) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  // Only emojis that belong to this event (its activity, or what its title says); nothing generic.
+  useEmojiSearchVersion();
+  const planEmojis = getPlanEmojis(activity.activity_type, activity.note);
   const { redirectToPayment, isLoading: paymentLoading } = useActivityPayment();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -69,10 +73,6 @@ export function ActivityDetailDialog({
     enabled: isMobile,
   });
 
-  const getActivityEmoji = (type: string) => {
-    const activityType = ALL_ACTIVITY_TYPES.find((a) => a.id === type);
-    return activityType?.emoji || "📍";
-  };
 
   const handlePayToJoin = async () => {
     if (hasTiers && !selectedTier) {
@@ -115,15 +115,12 @@ export function ActivityDetailDialog({
                   {activity.creator_name?.charAt(0)?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
-              <span className="absolute -bottom-1 -right-1 text-2xl">
-                {getActivityEmoji(activity.activity_type)}
-              </span>
             </div>
 
             <div className="flex-1">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 {activity.note || t("plans.untitledPlan", "Untitled Plan")}
-                <span className="text-lg">🌈</span>
+                {planEmojis.length > 0 && <span className="text-lg">{planEmojis.join(" ")}</span>}
               </h2>
               <button
                 type="button"
