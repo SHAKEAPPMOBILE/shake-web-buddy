@@ -97,6 +97,9 @@ export function useCapacitorPushNotifications() {
               })
               .catch((err) => console.warn("[Push] In-app review failed:", err));
           }
+        } else if (data.invite_activity_id) {
+          // A friend invited you to their plan — open its invite page.
+          navigate(`/invite/${encodeURIComponent(data.invite_activity_id)}`);
         } else if (data.tab === "chat" && data.other_user_id) {
           navigate("/", { state: { activeTab: "chat", other_user_id: data.other_user_id } });
         } else if (data.tab === "chat" && data.activity_id) {

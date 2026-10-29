@@ -1013,6 +1013,19 @@
     "totalAttendees": "Total attendees",
     "ranking": "Your top events",
     "pastEvents": "Past events",
-    "scanned": "{{count}} scanned"
+    "scanned": "{{count}} scanned",
+    "upcomingEvents": "Upcoming events",
+    "event": {
+      "requestsSent": "Friend requests sent to {{count}} people",
+      "invited": "Invited {{count}} friends",
+      "noOneToInvite": "No new friends to invite",
+      "inviteFailed": "Couldn't send the invitations. Try again.",
+      "attendees": "Attendees",
+      "checkedIn": "Checked in",
+      "inviteFriends": "Invite all my friends",
+      "addAll": "Send friend request to everyone",
+      "allFriends": "You're connected with everyone",
+      "noAttendees": "No one has joined yet"
+    }
   }
 }

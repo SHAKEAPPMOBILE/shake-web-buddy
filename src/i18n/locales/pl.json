@@ -1016,6 +1016,19 @@
     "totalAttendees": "Łączna liczba uczestników",
     "ranking": "Twoje najlepsze wydarzenia",
     "pastEvents": "Minione wydarzenia",
-    "scanned": "{{count}} zeskanowano"
+    "scanned": "{{count}} zeskanowano",
+    "upcomingEvents": "Nadchodzące wydarzenia",
+    "event": {
+      "requestsSent": "Wysłano zaproszenia do grona znajomych do {{count}} osób",
+      "invited": "Zaproszono znajomych: {{count}}",
+      "noOneToInvite": "Brak nowych znajomych do zaproszenia",
+      "inviteFailed": "Nie udało się wysłać zaproszeń. Spróbuj ponownie.",
+      "attendees": "Uczestnicy",
+      "checkedIn": "Zameldowani",
+      "inviteFriends": "Zaproś wszystkich moich znajomych",
+      "addAll": "Wyślij wszystkim zaproszenie do znajomych",
+      "allFriends": "Jesteś połączony(-a) ze wszystkimi",
+      "noAttendees": "Nikt jeszcze nie dołączył"
+    }
   }
 }

@@ -1016,6 +1016,19 @@
     "totalAttendees": "参加者の合計",
     "ranking": "人気のイベント",
     "pastEvents": "過去のイベント",
-    "scanned": "{{count}}件スキャン済み"
+    "scanned": "{{count}}件スキャン済み",
+    "upcomingEvents": "今後のイベント",
+    "event": {
+      "requestsSent": "{{count}}人に友達リクエストを送信しました",
+      "invited": "{{count}}人の友達を招待しました",
+      "noOneToInvite": "招待できる新しい友達はいません",
+      "inviteFailed": "招待を送信できませんでした。もう一度お試しください。",
+      "attendees": "参加者",
+      "checkedIn": "チェックイン済み",
+      "inviteFriends": "友達全員を招待",
+      "addAll": "全員に友達リクエストを送信",
+      "allFriends": "全員とつながっています",
+      "noAttendees": "まだ誰も参加していません"
+    }
   }
 }

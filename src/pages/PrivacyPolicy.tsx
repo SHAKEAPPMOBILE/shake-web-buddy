@@ -67,6 +67,7 @@ export default function PrivacyPolicy() {
               <p className="text-muted-foreground mb-2">We may share your personal data with:</p>
               <ul className="list-disc list-inside text-muted-foreground space-y-2">
                 <li>Other users when you join activities (limited information)</li>
+                <li>The host of a plan you join, who can see your name, profile photo and email address to organize the event and follow up with attendees</li>
                 <li>Legal authorities if required by law</li>
                 <li>Successors in the event of a merger or acquisition</li>
               </ul>

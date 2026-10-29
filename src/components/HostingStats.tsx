@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseDbDate } from "@/lib/date-utils";
 import { getActivityEmoji, getActivityLabel } from "@/data/activityTypes";
 import { getPlanEmojis } from "@/lib/activityDetection";
+import { HostedEventSheet, type HostedEvent } from "@/components/HostedEventSheet";
 import { useEmojiSearchVersion } from "@/hooks/useEmojiSearchVersion";
 
 // Plans the person actually made: not the standing Dinner/Brunch slots, not 24-hour quick posts.
@@ -34,19 +35,10 @@ export function useHostedCount(userId: string | undefined): number | null {
   return count;
 }
 
-interface HostedEvent {
-  id: string;
-  title: string;
-  emoji: string;
-  date: Date;
-  attendees: number;
-  scanned: number;
-  ticketed: boolean;
-}
-
 export function HostingStats({ userId }: { userId: string | undefined }) {
   const { t } = useTranslation();
   const [events, setEvents] = useState<HostedEvent[] | null>(null);
+  const [openEvent, setOpenEvent] = useState<HostedEvent | null>(null);
   useEmojiSearchVersion();
 
   useEffect(() => {
@@ -82,12 +74,13 @@ export function HostingStats({ userId }: { userId: string | undefined }) {
     return () => { cancelled = true; };
   }, [userId]);
 
-  const { ranking, past, totalAttendees } = useMemo(() => {
+  const { ranking, past, upcoming, totalAttendees } = useMemo(() => {
     const list = events ?? [];
     const now = Date.now();
     return {
       ranking: [...list].sort((a, b) => b.attendees - a.attendees || b.date.getTime() - a.date.getTime()).slice(0, 5),
-      past: list.filter((e) => e.date.getTime() < now).slice(0, 20),
+      past: list.filter((e) => e.date.getTime() < now),
+      upcoming: list.filter((e) => e.date.getTime() >= now).reverse(),
       totalAttendees: list.reduce((sum, e) => sum + e.attendees, 0),
     };
   }, [events]);
@@ -97,7 +90,7 @@ export function HostingStats({ userId }: { userId: string | undefined }) {
   }
 
   const row = (e: HostedEvent, lead: React.ReactNode) => (
-    <div key={e.id} className="flex items-center gap-3 py-2">
+    <button key={e.id} type="button" onClick={() => setOpenEvent(e)} className="flex w-full items-center gap-3 py-2 text-left active:opacity-60">
       {lead}
       <span className="text-xl leading-none">{e.emoji}</span>
       <div className="flex-1 min-w-0">
@@ -110,7 +103,7 @@ export function HostingStats({ userId }: { userId: string | undefined }) {
           <p className="text-[10px] text-gray-400">{t("hosting.scanned", "{{count}} scanned", { count: e.scanned })}</p>
         )}
       </div>
-    </div>
+    </button>
   );
 
   return (
@@ -135,12 +128,20 @@ export function HostingStats({ userId }: { userId: string | undefined }) {
         </div>
       </div>
 
+      {upcoming.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <p className="text-sm font-semibold text-gray-900 mb-1">{t("hosting.upcomingEvents", "Upcoming events")}</p>
+          <div className="divide-y divide-gray-100">{upcoming.map((e) => row(e, null))}</div>
+        </div>
+      )}
+
       {past.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <p className="text-sm font-semibold text-gray-900 mb-1">{t("hosting.pastEvents", "Past events")}</p>
-          <div className="divide-y divide-gray-100">{past.map((e) => row(e, null))}</div>
+          <div className="max-h-72 divide-y divide-gray-100 overflow-y-auto">{past.map((e) => row(e, null))}</div>
         </div>
       )}
+      {openEvent && <HostedEventSheet event={openEvent} onClose={() => setOpenEvent(null)} />}
     </div>
   );
 }

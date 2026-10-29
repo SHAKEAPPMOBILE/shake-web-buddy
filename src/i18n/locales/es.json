@@ -1015,6 +1015,19 @@
     "totalAttendees": "Asistentes en total",
     "ranking": "Tus mejores eventos",
     "pastEvents": "Eventos pasados",
-    "scanned": "{{count}} escaneados"
+    "scanned": "{{count}} escaneados",
+    "upcomingEvents": "Próximos eventos",
+    "event": {
+      "requestsSent": "Solicitudes de amistad enviadas a {{count}} personas",
+      "invited": "{{count}} amigos invitados",
+      "noOneToInvite": "No hay amigos nuevos a quienes invitar",
+      "inviteFailed": "No se pudieron enviar las invitaciones. Inténtalo de nuevo.",
+      "attendees": "Asistentes",
+      "checkedIn": "Registrados",
+      "inviteFriends": "Invitar a todos mis amigos",
+      "addAll": "Enviar solicitud de amistad a todos",
+      "allFriends": "Ya estás conectado con todos",
+      "noAttendees": "Nadie se ha unido todavía"
+    }
   }
 }

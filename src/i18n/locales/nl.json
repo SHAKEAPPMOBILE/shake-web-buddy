@@ -1016,6 +1016,19 @@
     "totalAttendees": "Totaal aantal deelnemers",
     "ranking": "Je beste evenementen",
     "pastEvents": "Eerdere evenementen",
-    "scanned": "{{count}} gescand"
+    "scanned": "{{count}} gescand",
+    "upcomingEvents": "Aankomende evenementen",
+    "event": {
+      "requestsSent": "Vriendschapsverzoeken verstuurd naar {{count}} mensen",
+      "invited": "{{count}} vrienden uitgenodigd",
+      "noOneToInvite": "Geen nieuwe vrienden om uit te nodigen",
+      "inviteFailed": "De uitnodigingen konden niet worden verstuurd. Probeer het opnieuw.",
+      "attendees": "Deelnemers",
+      "checkedIn": "Ingecheckt",
+      "inviteFriends": "Nodig al mijn vrienden uit",
+      "addAll": "Stuur iedereen een vriendschapsverzoek",
+      "allFriends": "Je bent met iedereen verbonden",
+      "noAttendees": "Nog niemand heeft zich aangesloten"
+    }
   }
 }

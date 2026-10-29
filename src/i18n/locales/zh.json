@@ -1016,6 +1016,19 @@
     "totalAttendees": "参加者总数",
     "ranking": "你的热门活动",
     "pastEvents": "往期活动",
-    "scanned": "已扫描 {{count}}"
+    "scanned": "已扫描 {{count}}",
+    "upcomingEvents": "即将举行的活动",
+    "event": {
+      "requestsSent": "已向 {{count}} 人发送好友请求",
+      "invited": "已邀请 {{count}} 位好友",
+      "noOneToInvite": "没有可邀请的新好友",
+      "inviteFailed": "邀请发送失败，请重试。",
+      "attendees": "参加者",
+      "checkedIn": "已签到",
+      "inviteFriends": "邀请我所有的好友",
+      "addAll": "向所有人发送好友请求",
+      "allFriends": "你已与所有人建立联系",
+      "noAttendees": "还没有人加入"
+    }
   }
 }
