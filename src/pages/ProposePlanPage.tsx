@@ -34,7 +34,6 @@ import { normalizeCity } from "@/hooks/useDatabaseVenues";
 import { Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 import { captureVideoFrame } from "@/lib/captureVideoFrame";
 import { moderateVideo, moderateImage } from "@/lib/contentModeration";
 
@@ -171,8 +170,8 @@ function BotBubble({ message, showAvatar = false, avatarColor = "#facc15", subte
         style={{
           boxShadow: "0 1px 3px rgba(16,15,40,0.06), 0 4px 16px rgba(16,15,40,0.05)",
           // Always dark on the white card, even when the page's own text goes light over a video background.
-          ["--foreground" as string]: "270 50% 10%",
-          ["--muted-foreground" as string]: "270 20% 40%",
+          ["--foreground" as string]: "0 0% 9%",
+          ["--muted-foreground" as string]: "0 0% 40%",
         }}
       >
         <p className={cn("text-xl leading-snug text-foreground", handwritten ? "font-handwritten text-2xl" : "font-semibold")}>
@@ -212,19 +211,15 @@ export default function ProposePlanPage() {
     date:  "#bbf7d0", // green-200
     time:  "#fed7aa", // orange-200
     venue: "#a5f3fc", // cyan-200
-    price: "#e9d5ff", // purple-200
+    price: "#d9f99d", // lime-200
     capacity: "#fef08a", // yellow-200
     ticket: "#fde68a", // amber-200
     recurrence: "#99f6e4", // teal-200
     video: "#93c5fd", // blue-300
     audience: "#fbcfe8", // pink-200
-    description: "#ddd6fe", // violet-200
+    description: "#e7e5e4", // stone-200
     cohost: "#bae6fd", // sky-200
   };
-
-  // Computed once per visit (not a live clock) — good enough for an ambient
-  // backdrop, and avoids re-rendering the whole page on a timer.
-  const timeOfDayGradient = useMemo(() => getTimeOfDayGradient(), []);
 
   const { user, isPremium } = useAuth();
   const { selectedCity } = useCity();
@@ -299,6 +294,19 @@ export default function ProposePlanPage() {
   const [dayLimitError, setDayLimitError] = useState(false);
   const [cityInput, setCityInput] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
+  // Tapping anywhere outside the open calendar (or its toggle button) closes it.
+  const calendarPopupRef = useRef<HTMLDivElement>(null);
+  const calendarToggleRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!showCalendar) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (calendarPopupRef.current?.contains(target) || calendarToggleRef.current?.contains(target)) return;
+      setShowCalendar(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [showCalendar]);
   const [selectedTime, setSelectedTime] = useState("20:00"); // default 8:00 PM
   const [pastTimeError, setPastTimeError] = useState(false);
 
@@ -1853,7 +1861,7 @@ export default function ProposePlanPage() {
             placeholder={t("createPlan.cohostEmailPlaceholder", "friend@email.com — paste a whole list at once if you like")}
             rows={2}
             autoFocus
-            className="flex-1 min-h-20 max-h-32 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 py-4 text-base leading-snug resize-none focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+            className="flex-1 min-h-20 max-h-32 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 py-4 text-base leading-snug resize-none focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20"
           />
           <button
             type="button"
@@ -2503,6 +2511,7 @@ export default function ProposePlanPage() {
               </div>
               {/* Calendar icon — circular button, mirrors send button position on time step */}
               <button
+                ref={calendarToggleRef}
                 type="button"
                 onClick={() => setShowCalendar((v) => !v)}
                 className={cn(
@@ -2518,7 +2527,7 @@ export default function ProposePlanPage() {
             </div>
 
             {showCalendar && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 z-10 p-3 rounded-xl border border-border bg-background shadow-lg">
+              <div ref={calendarPopupRef} className="absolute bottom-full left-0 right-0 mb-2 z-10 p-3 rounded-xl border border-border bg-background shadow-lg">
                 <div className="flex items-center justify-between mb-2">
                   <button
                     type="button"
@@ -2722,7 +2731,7 @@ export default function ProposePlanPage() {
                         setExtraPriceTiers(next);
                       }}
                       placeholder={t("createPlan.tierLabelPlaceholder", "e.g. Girls, Students")}
-                      className="flex-1 h-12 rounded-xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-4 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500/40"
+                      className="flex-1 h-12 rounded-xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-4 text-sm focus:outline-none focus:ring-1 focus:ring-black/20"
                     />
                     <input
                       type="text"
@@ -2734,7 +2743,7 @@ export default function ProposePlanPage() {
                         setExtraPriceTiers(next);
                       }}
                       placeholder={selectedCurrencySymbol}
-                      className="w-24 h-12 rounded-xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-3 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500/40"
+                      className="w-24 h-12 rounded-xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-3 text-sm focus:outline-none focus:ring-1 focus:ring-black/20"
                     />
                     <button
                       type="button"
@@ -2749,7 +2758,7 @@ export default function ProposePlanPage() {
                 <button
                   type="button"
                   onClick={() => setExtraPriceTiers([...extraPriceTiers, { label: "", amount: "" }])}
-                  className="flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 transition-colors px-1"
+                  className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-foreground/70 transition-colors px-1"
                 >
                   <Plus className="w-4 h-4" />
                   {t("createPlan.addPriceOption", "Add another price option")}
@@ -2770,7 +2779,7 @@ export default function ProposePlanPage() {
               onChange={(e) => setCapacityInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") advanceStep(); }}
               placeholder={t("createPlan.capacityPlaceholder", "No limit")}
-              className="flex-1 h-14 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 text-base focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+              className="flex-1 h-14 rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 text-base focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20"
               autoFocus
             />
             <div className="flex flex-col items-center gap-1.5 shrink-0">
@@ -2867,7 +2876,7 @@ export default function ProposePlanPage() {
               placeholder={t("createPlan.descriptionPlaceholder", "Agenda, what to bring, dress code, anything worth knowing...")}
               rows={2}
               maxLength={2000}
-              className="w-full rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 py-4 text-base resize-none overflow-y-auto focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/40"
+              className="w-full rounded-2xl bg-white shadow-[0_1px_3px_rgba(16,15,40,0.06),0_4px_16px_rgba(16,15,40,0.05)] px-5 py-4 text-base resize-none overflow-y-auto focus:outline-none focus:ring-1 focus:ring-black/20 focus:border-black/20"
               style={{ maxHeight: MAX_DESCRIPTION_TEXTAREA_PX }}
               autoFocus
             />
@@ -3118,14 +3127,16 @@ export default function ProposePlanPage() {
       type="button"
       onClick={isListening ? stopVoiceRecording : () => startVoiceRecording(currentStepName)}
       disabled={voiceParsing}
-      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 disabled:opacity-60 transition-colors"
-      style={{ background: isListening ? "rgba(239,68,68,0.9)" : "rgba(0,0,0,0.08)" }}
+      // Floats just above the composer bar, at its right edge (the composer's inner column is `relative`),
+      // so the send button keeps the row to itself, level with the text box.
+      className="absolute right-0 bottom-full mb-5 z-10 w-12 h-12 rounded-full flex items-center justify-center disabled:opacity-60 transition-colors shadow-md"
+      style={{ background: isListening ? "rgba(239,68,68,0.9)" : "rgba(255,255,255,0.95)" }}
       aria-label={isListening ? t("createPlan.voiceStop", "Stop listening") : t("createPlan.voiceSpeak", "Speak your plan")}
     >
       {voiceParsing ? (
         <LoadingSpinner size="sm" />
       ) : isListening ? (
-        <div className="flex items-end gap-0.5 h-3">
+        <div className="flex items-end gap-0.5 h-4">
           {[0, 1, 2, 3].map((i) => (
             <span
               key={i}
@@ -3135,7 +3146,7 @@ export default function ProposePlanPage() {
           ))}
         </div>
       ) : (
-        <Mic className="w-4 h-4 text-foreground/70" />
+        <Mic className="w-5 h-5 text-foreground/70" />
       )}
     </button>
     );
@@ -3160,8 +3171,19 @@ export default function ProposePlanPage() {
     ? ({ ["--foreground" as string]: "0 0% 100%", ["--muted-foreground" as string]: "0 0% 88%", ["--border" as string]: "0 0% 100%" } as React.CSSProperties)
     : undefined;
 
+  // The theme's greys all lean purple (hue 270); on this page everything is plain white and neutral grey.
+  const neutralTheme = {
+    ["--background" as string]: "0 0% 100%",
+    ["--foreground" as string]: "0 0% 9%",
+    ["--card" as string]: "0 0% 100%",
+    ["--muted" as string]: "0 0% 96%",
+    ["--muted-foreground" as string]: "0 0% 45%",
+    ["--border" as string]: "0 0% 90%",
+    ["--input" as string]: "0 0% 90%",
+  } as React.CSSProperties;
+
   return (
-    <div className="relative isolate h-screen flex flex-col overflow-hidden" style={{ background: timeOfDayGradient }}>
+    <div className="relative isolate h-screen flex flex-col overflow-hidden" style={{ background: "#FFFFFF", ...neutralTheme }}>
       {showMediaBackground && (
         <div className="fixed inset-0 -z-10 bg-black" aria-hidden="true">
           {promoVideoUrl ? (
@@ -3537,7 +3559,7 @@ export default function ProposePlanPage() {
                 paddingBottom: `max(env(safe-area-inset-bottom, 0px), 0.75rem)`,
               }}
             >
-              <div className="w-full max-w-sm mx-auto">
+              <div className="relative w-full max-w-sm mx-auto">
                 {renderComposer()}
               </div>
             </div>
