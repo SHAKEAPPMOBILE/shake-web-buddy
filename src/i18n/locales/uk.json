@@ -48,7 +48,8 @@
     "selectPriceOption": "Спершу оберіть варіант ціни.",
     "choosePriceOption": "Оберіть варіант ціни",
     "date": "Дата",
-    "join": "Приєднатися"
+    "join": "Приєднатися",
+    "photoCredits": "Авторство фото"
   },
   "days": {
     "sunday": "Неділя",
@@ -102,7 +103,13 @@
     "noMatchFound": "Наразі немає відповідних користувачів, спробуй приєднатися до плану",
     "sharedInterestsCount": "{{count}} спільних інтересів",
     "sayHiBtn": "Привітатися!",
-    "swipeUpDown": "Проведіть вгору/вниз"
+    "swipeUpDown": "Проведіть вгору/вниз",
+    "itsToday": "Сьогодні!",
+    "shakeChooserTitle": "Ти потрусив(-ла)!",
+    "shakeChooserSubtitle": "На що маєш настрій?",
+    "shakeJoinActivity": "Долучитися: {{activity}}",
+    "shakeSeeActivities": "Подивитися, що є",
+    "notNow": "Не зараз"
   },
   "activities": {
     "brunch": "Бранч",
@@ -276,7 +283,7 @@
     "shareFriends": "Поділіться з вашими друзями.",
     "failedToShare": "Не вдалося поділитися",
     "failedToCopyLink": "Не вдалося скопіювати посилання",
-    "joiningBtn": "Joining…",
+    "joiningBtn": "Приєднання…",
     "listView": "Список",
     "mapView": "Карта",
     "friends": "Друзі",
@@ -284,7 +291,8 @@
     "noFriendsYet": "Ви ще не додали друзів.",
     "noFriendPlans": "Наразі у ваших друзів немає найближчих планів.",
     "editPlanItem": "Редагувати план",
-    "sharePlan": "Поділитися цим планом"
+    "sharePlan": "Поділитися цим планом",
+    "scrollView": "Режим прокручування"
   },
   "profile": {
     "title": "Профіль",
@@ -501,13 +509,13 @@
     "continueWithPhone": "Продовжити з телефоном",
     "termsAgreement": "Продовжуючи, ви погоджуєтесь з нашими Умовами використання та Політикою конфіденційності",
     "byContinuing": "Продовжуючи, ви погоджуєтесь з нашими",
-    "welcomeTitle": "Welcome to SHAKE",
+    "welcomeTitle": "Ласкаво просимо до SHAKE",
     "welcomeScriptWord": "Ласкаво просимо",
-    "loginOrCreate": "Log In or create your account",
+    "loginOrCreate": "Увійди або створи акаунт",
     "googleBtn": "Google",
     "appleBtn": "Apple",
-    "createAccount": "Create Account",
-    "loginWithEmail": "Login with email",
+    "createAccount": "Створити акаунт",
+    "loginWithEmail": "Увійти через пошту",
     "interestsQuestion": "Які твої інтереси? ✨",
     "interestsSubtext": "Торкнися теми, щоб побачити варіанти",
     "interestsPlaceholder": "Торкнися теми вище ↑",
@@ -634,7 +642,9 @@
     "manageInAppStore": "Керуй підпискою в налаштуваннях App Store",
     "restoreTimedOut": "Відновлення тривало занадто довго. Спробуй ще раз.",
     "purchasesRestored": "Покупки успішно відновлено!",
-    "restoreFailed": "Не вдалося відновити покупки"
+    "restoreFailed": "Не вдалося відновити покупки",
+    "renewsPeriod": "Автоматично поновлюється кожні {{period}}, доки ти не скасуєш. Скасувати можна будь-коли в підписках App Store або Google Play.",
+    "renews": "Автоматично поновлюється, доки ти не скасуєш. Скасувати можна будь-коли в підписках App Store або Google Play."
   },
   "welcome": {
     "settingUp": "Налаштування…",
@@ -762,7 +772,8 @@
     "recurrenceOnce": "Лише раз",
     "recurrenceWeekly": "Щотижня",
     "recurrenceBiweekly": "Кожні 2 тижні",
-    "recurrenceMonthly": "Раз на місяць"
+    "recurrenceMonthly": "Раз на місяць",
+    "cityRequired": "Спершу вкажи своє місто"
   },
   "userProfile": {
     "title": "Профіль користувача",
@@ -1036,5 +1047,36 @@
     "subtitle": "Події, до яких ти долучився(-лась), і хто там був",
     "hostedBy": "Організатор: {{name}}",
     "host": "Організатор"
+  },
+  "planMenu": {
+    "options": "Параметри плану",
+    "shareLocation": "Поділитися локацією",
+    "editPlan": "Редагувати план",
+    "addBackground": "Додати фон",
+    "changeBackground": "Змінити фон",
+    "deletePlan": "Видалити план",
+    "leavePlan": "Залишити план",
+    "deleteTitle": "Видалити план?",
+    "deleteNone": "Видалити цей план? Цю дію не можна скасувати.",
+    "deletePaidOne": "1 людина заплатила за участь. Видалення прибирає план для всіх, і тобі доведеться повернути їй кошти. Продовжити?",
+    "deletePaidMany": "Кількість людей, які заплатили за участь: {{count}}. Видалення прибирає план для всіх, і тобі доведеться повернути їм кошти. Продовжити?",
+    "deleteFreeOne": "План буде видалено, і він зникне для 1 людини, яка долучилась. Цю дію не можна скасувати.",
+    "deleteFreeMany": "План буде видалено, і він зникне для тих, хто долучився (кількість: {{count}}). Цю дію не можна скасувати.",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "background": "Фон плану",
+    "none": "Немає",
+    "deleteFailed": "Не вдалося видалити план",
+    "deleted": "План видалено",
+    "leaveFailed": "Не вдалося залишити план",
+    "left": "Ти залишив(-ла) план",
+    "backgroundFailed": "Не вдалося оновити фон"
+  },
+  "share": {
+    "title": "Поділитися планом",
+    "share": "Поділитися",
+    "copied": "Скопійовано",
+    "copyLink": "Копіювати посилання",
+    "joinedCount": "Долучилося: {{count}}"
   }
 }

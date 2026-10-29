@@ -94,8 +94,8 @@ export function PlanOptionsMenu({
     if (!user) return;
     const { error } = await supabase.from("user_activities").delete()
       .eq("id", activity.id).eq("user_id", user.id);
-    if (error) toast.error("Failed to delete plan");
-    else { toast.success("Plan deleted"); onDeleted?.(); }
+    if (error) toast.error(t("planMenu.deleteFailed", "Failed to delete plan"));
+    else { toast.success(t("planMenu.deleted", "Plan deleted")); onDeleted?.(); }
   };
 
   const handleLeavePlan = async (e: React.MouseEvent) => {
@@ -104,8 +104,8 @@ export function PlanOptionsMenu({
     if (!user) return;
     const { error } = await supabase.from("activity_joins").delete()
       .eq("user_id", user.id).eq("activity_id", activity.id);
-    if (error) toast.error("Failed to leave plan");
-    else { toast.success("Left the plan"); onLeft?.(); }
+    if (error) toast.error(t("planMenu.leaveFailed", "Failed to leave plan"));
+    else { toast.success(t("planMenu.left", "Left the plan")); onLeft?.(); }
   };
 
   const handleOpenBackgroundPicker = (e: React.MouseEvent) => {
@@ -121,7 +121,7 @@ export function PlanOptionsMenu({
     const { error } = await supabase.from("user_activities")
       .update({ background_id: backgroundId })
       .eq("id", activity.id).eq("user_id", user.id);
-    if (error) { toast.error("Failed to update background"); return; }
+    if (error) { toast.error(t("planMenu.backgroundFailed", "Failed to update background")); return; }
     onBackgroundChange?.(backgroundId);
   };
 
@@ -132,7 +132,7 @@ export function PlanOptionsMenu({
         type="button"
         onClick={toggleMenu}
         className={triggerClassName}
-        aria-label="Plan options"
+        aria-label={t("planMenu.options", "Plan options")}
       >
         <MoreVertical className={iconClassName} />
       </button>
@@ -163,7 +163,7 @@ export function PlanOptionsMenu({
                 onClick={(e) => { e.stopPropagation(); setShowMenu(false); onShareLocation(); }}
                 className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
               >
-                <MapPin className="w-4 h-4" /> Share location
+                <MapPin className="w-4 h-4" /> {t("planMenu.shareLocation", "Share location")}
               </button>
             )}
             {onToggleFloatingText && (
@@ -180,21 +180,21 @@ export function PlanOptionsMenu({
                   onClick={handleEdit}
                   className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
                 >
-                  <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🛸</span> Edit plan
+                  <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🛸</span> {t("planMenu.editPlan", "Edit plan")}
                 </button>
                 <button
                   onClick={handleOpenBackgroundPicker}
                   className="flex items-center gap-2 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/60 transition-colors"
                 >
-                  <Palette className="w-4 h-4" /> {activity.background_id ? "Change background" : "Add background"}
+                  <Palette className="w-4 h-4" /> {activity.background_id ? t("planMenu.changeBackground", "Change background") : t("planMenu.addBackground", "Add background")}
                 </button>
                 <button onClick={handleInitiateDelete} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                  <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🫣</span> Delete plan
+                  <span className="w-4 h-4 flex items-center justify-center text-base leading-none">🫣</span> {t("planMenu.deletePlan", "Delete plan")}
                 </button>
               </>
             ) : (
               <button onClick={handleLeavePlan} className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                <LogOut className="w-4 h-4" /> Leave plan
+                <LogOut className="w-4 h-4" /> {t("planMenu.leavePlan", "Leave plan")}
               </button>
             )}
           </div>
@@ -216,13 +216,17 @@ export function PlanOptionsMenu({
           onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }}
         >
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-semibold text-gray-900 text-base mb-2">Delete plan?</h3>
+            <h3 className="font-semibold text-gray-900 text-base mb-2">{t("planMenu.deleteTitle", "Delete plan?")}</h3>
             <p className="text-sm text-gray-600 mb-6 leading-relaxed">
               {otherParticipantsCount === 0
-                ? "Delete this plan? This can't be undone."
+                ? t("planMenu.deleteNone", "Delete this plan? This can't be undone.")
                 : isPaidPlan
-                ? `${otherParticipantsCount} ${otherParticipantsCount === 1 ? "person has" : "people have"} paid to join. Deleting removes the plan for everyone — you'll need to refund them. Continue?`
-                : `This will delete the plan and remove it for ${otherParticipantsCount} ${otherParticipantsCount === 1 ? "person" : "people"} who joined. This can't be undone.`}
+                ? otherParticipantsCount === 1
+                  ? t("planMenu.deletePaidOne", "1 person has paid to join. Deleting removes the plan for everyone — you'll need to refund them. Continue?")
+                  : t("planMenu.deletePaidMany", "{{count}} people have paid to join. Deleting removes the plan for everyone — you'll need to refund them. Continue?", { count: otherParticipantsCount })
+                : otherParticipantsCount === 1
+                ? t("planMenu.deleteFreeOne", "This will delete the plan and remove it for the 1 person who joined. This can't be undone.")
+                : t("planMenu.deleteFreeMany", "This will delete the plan and remove it for the {{count}} people who joined. This can't be undone.", { count: otherParticipantsCount })}
             </p>
             <div className="flex gap-3">
               <button
@@ -230,14 +234,14 @@ export function PlanOptionsMenu({
                 onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }}
                 className="flex-1 py-2.5 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                {t("planMenu.cancel", "Cancel")}
               </button>
               <button
                 type="button"
                 onClick={handleDeletePlan}
                 className="flex-1 py-2.5 rounded-full bg-red-500 text-sm font-medium text-white hover:bg-red-600 transition-colors"
               >
-                Delete
+                {t("planMenu.delete", "Delete")}
               </button>
             </div>
           </div>
@@ -255,7 +259,7 @@ export function PlanOptionsMenu({
             className="bg-white rounded-2xl w-full max-w-[320px] max-h-[62vh] flex flex-col shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="shrink-0 px-5 pt-4 pb-3 font-semibold text-gray-900 text-base">Plan background</h3>
+            <h3 className="shrink-0 px-5 pt-4 pb-3 font-semibold text-gray-900 text-base">{t("planMenu.background", "Plan background")}</h3>
             <div className="overflow-y-auto px-5 pb-5">
               {/* "None" keeps the plan plain white; the cat is just company. */}
               <div className="flex items-end gap-3 mb-4">
@@ -265,7 +269,7 @@ export function PlanOptionsMenu({
                       activity.background_id === NO_BACKGROUND_ID ? "border-blue-500" : "border-gray-200"
                     }`}
                   >
-                    <span className="text-[10px] text-gray-400">None</span>
+                    <span className="text-[10px] text-gray-400">{t("planMenu.none", "None")}</span>
                   </div>
                 </button>
                 <CatWithPalette className="h-[96px] w-auto" />

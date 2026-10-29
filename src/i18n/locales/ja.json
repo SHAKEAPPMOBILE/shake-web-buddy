@@ -48,7 +48,8 @@
     "selectPriceOption": "先に価格オプションを選択してください。",
     "choosePriceOption": "価格オプションを選択",
     "date": "日付",
-    "join": "参加"
+    "join": "参加",
+    "photoCredits": "写真クレジット"
   },
   "days": {
     "sunday": "日曜日",
@@ -102,7 +103,13 @@
     "noMatchFound": "現在マッチするユーザーがいません。プランに参加してみましょう",
     "sharedInterestsCount": "共通の興味 {{count}} 件",
     "sayHiBtn": "挨拶する！",
-    "swipeUpDown": "上下にスワイプ"
+    "swipeUpDown": "上下にスワイプ",
+    "itsToday": "今日！",
+    "shakeChooserTitle": "シェイクしました！",
+    "shakeChooserSubtitle": "何がしたい気分？",
+    "shakeJoinActivity": "{{activity}}に参加",
+    "shakeSeeActivities": "開催中のものを見る",
+    "notNow": "今はしない"
   },
   "activities": {
     "brunch": "ブランチ",
@@ -276,7 +283,7 @@
     "shareFriends": "友達にシェアしましょう。",
     "failedToShare": "シェアできませんでした",
     "failedToCopyLink": "リンクをコピーできませんでした",
-    "joiningBtn": "Joining…",
+    "joiningBtn": "参加中…",
     "listView": "リスト表示",
     "mapView": "地図表示",
     "friends": "友達",
@@ -284,7 +291,8 @@
     "noFriendsYet": "まだ友達を追加していません。",
     "noFriendPlans": "友達に今後の予定はありません。",
     "editPlanItem": "プランを編集",
-    "sharePlan": "このプランを共有"
+    "sharePlan": "このプランを共有",
+    "scrollView": "スクロール表示"
   },
   "profile": {
     "title": "プロフィール",
@@ -501,13 +509,13 @@
     "continueWithPhone": "電話番号で続ける",
     "termsAgreement": "続けることで、利用規約とプライバシーポリシーに同意したことになります",
     "byContinuing": "続けることで、以下に同意したことになります",
-    "welcomeTitle": "Welcome to SHAKE",
+    "welcomeTitle": "SHAKEへようこそ",
     "welcomeScriptWord": "ようこそ",
-    "loginOrCreate": "Log In or create your account",
+    "loginOrCreate": "ログインまたはアカウントを作成",
     "googleBtn": "Google",
     "appleBtn": "Apple",
-    "createAccount": "Create Account",
-    "loginWithEmail": "Login with email",
+    "createAccount": "アカウントを作成",
+    "loginWithEmail": "メールでログイン",
     "interestsQuestion": "あなたの興味は何ですか？ ✨",
     "interestsSubtext": "トピックをタップしてオプションを表示",
     "interestsPlaceholder": "上のトピックをタップ ↑",
@@ -634,7 +642,9 @@
     "manageInAppStore": "App Storeの設定でサブスクリプションを管理してください",
     "restoreTimedOut": "復元がタイムアウトしました。もう一度お試しください。",
     "purchasesRestored": "購入を正常に復元しました！",
-    "restoreFailed": "購入の復元に失敗しました"
+    "restoreFailed": "購入の復元に失敗しました",
+    "renewsPeriod": "解約するまで{{period}}ごとに自動更新されます。App StoreまたはGoogle Playの定期購入からいつでも解約できます。",
+    "renews": "解約するまで自動更新されます。App StoreまたはGoogle Playの定期購入からいつでも解約できます。"
   },
   "welcome": {
     "settingUp": "準備中…",
@@ -762,7 +772,8 @@
     "recurrenceOnce": "1回のみ",
     "recurrenceWeekly": "毎週",
     "recurrenceBiweekly": "2週間ごと",
-    "recurrenceMonthly": "月に1回"
+    "recurrenceMonthly": "月に1回",
+    "cityRequired": "先に都市を設定してください"
   },
   "userProfile": {
     "title": "ユーザープロフィール",
@@ -1036,5 +1047,36 @@
     "subtitle": "参加したイベントと、そこにいた人たち",
     "hostedBy": "主催：{{name}}",
     "host": "主催者"
+  },
+  "planMenu": {
+    "options": "プランのオプション",
+    "shareLocation": "位置情報を共有",
+    "editPlan": "プランを編集",
+    "addBackground": "背景を追加",
+    "changeBackground": "背景を変更",
+    "deletePlan": "プランを削除",
+    "leavePlan": "プランから退出",
+    "deleteTitle": "プランを削除しますか？",
+    "deleteNone": "このプランを削除しますか？この操作は取り消せません。",
+    "deletePaidOne": "1人が参加費を支払い済みです。削除するとプランは全員から消え、返金が必要になります。続けますか？",
+    "deletePaidMany": "{{count}}人が参加費を支払い済みです。削除するとプランは全員から消え、返金が必要になります。続けますか？",
+    "deleteFreeOne": "プランを削除し、参加した1人からも削除されます。この操作は取り消せません。",
+    "deleteFreeMany": "プランを削除し、参加した{{count}}人からも削除されます。この操作は取り消せません。",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "background": "プランの背景",
+    "none": "なし",
+    "deleteFailed": "プランを削除できませんでした",
+    "deleted": "プランを削除しました",
+    "leaveFailed": "プランから退出できませんでした",
+    "left": "プランから退出しました",
+    "backgroundFailed": "背景を更新できませんでした"
+  },
+  "share": {
+    "title": "プランを共有",
+    "share": "共有",
+    "copied": "コピーしました",
+    "copyLink": "リンクをコピー",
+    "joinedCount": "{{count}}人が参加"
   }
 }

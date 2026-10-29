@@ -48,7 +48,8 @@
     "selectPriceOption": "请先选择一个价格选项。",
     "choosePriceOption": "选择价格选项",
     "date": "日期",
-    "join": "加入"
+    "join": "加入",
+    "photoCredits": "图片来源"
   },
   "days": {
     "sunday": "星期日",
@@ -102,7 +103,13 @@
     "noMatchFound": "目前没有匹配的用户，试试加入一个活动吧",
     "sharedInterestsCount": "{{count}} 个共同兴趣",
     "sayHiBtn": "打个招呼！",
-    "swipeUpDown": "上下滑动"
+    "swipeUpDown": "上下滑动",
+    "itsToday": "就是今天！",
+    "shakeChooserTitle": "摇一摇成功！",
+    "shakeChooserSubtitle": "你想做什么？",
+    "shakeJoinActivity": "加入{{activity}}",
+    "shakeSeeActivities": "看看有什么",
+    "notNow": "暂不"
   },
   "activities": {
     "brunch": "早午餐",
@@ -276,7 +283,7 @@
     "shareFriends": "分享给您的朋友。",
     "failedToShare": "分享失败",
     "failedToCopyLink": "复制链接失败",
-    "joiningBtn": "Joining…",
+    "joiningBtn": "加入中…",
     "listView": "列表视图",
     "mapView": "地图视图",
     "friends": "好友",
@@ -284,7 +291,8 @@
     "noFriendsYet": "你还没有添加任何好友。",
     "noFriendPlans": "你的好友目前没有即将开始的计划。",
     "editPlanItem": "编辑计划",
-    "sharePlan": "分享此计划"
+    "sharePlan": "分享此计划",
+    "scrollView": "滚动视图"
   },
   "profile": {
     "title": "个人资料",
@@ -501,13 +509,13 @@
     "continueWithPhone": "使用电话继续",
     "termsAgreement": "继续即表示你同意我们的服务条款和隐私政策",
     "byContinuing": "继续即表示你同意我们的",
-    "welcomeTitle": "Welcome to SHAKE",
+    "welcomeTitle": "欢迎来到 SHAKE",
     "welcomeScriptWord": "欢迎",
-    "loginOrCreate": "Log In or create your account",
+    "loginOrCreate": "登录或创建你的账号",
     "googleBtn": "Google",
     "appleBtn": "Apple",
-    "createAccount": "Create Account",
-    "loginWithEmail": "Login with email",
+    "createAccount": "创建账号",
+    "loginWithEmail": "使用邮箱登录",
     "interestsQuestion": "你作为一个人的兴趣是什么？✨",
     "interestsSubtext": "点击话题查看选项",
     "interestsPlaceholder": "点击上方话题 ↑",
@@ -634,7 +642,9 @@
     "manageInAppStore": "请在App Store设置中管理你的订阅",
     "restoreTimedOut": "恢复购买超时，请重试。",
     "purchasesRestored": "购买已成功恢复！",
-    "restoreFailed": "购买恢复失败"
+    "restoreFailed": "购买恢复失败",
+    "renewsPeriod": "每 {{period}} 自动续订，直到你取消。可随时在 App Store 或 Google Play 订阅中取消。",
+    "renews": "自动续订，直到你取消。可随时在 App Store 或 Google Play 订阅中取消。"
   },
   "welcome": {
     "settingUp": "正在设置…",
@@ -762,7 +772,8 @@
     "recurrenceOnce": "仅一次",
     "recurrenceWeekly": "每周",
     "recurrenceBiweekly": "每两周",
-    "recurrenceMonthly": "每月一次"
+    "recurrenceMonthly": "每月一次",
+    "cityRequired": "请先设置你的城市"
   },
   "userProfile": {
     "title": "用户资料",
@@ -1036,5 +1047,36 @@
     "subtitle": "你参加过的活动以及当时在场的人",
     "hostedBy": "主办：{{name}}",
     "host": "主办方"
+  },
+  "planMenu": {
+    "options": "活动选项",
+    "shareLocation": "分享位置",
+    "editPlan": "编辑活动",
+    "addBackground": "添加背景",
+    "changeBackground": "更换背景",
+    "deletePlan": "删除活动",
+    "leavePlan": "退出活动",
+    "deleteTitle": "删除活动？",
+    "deleteNone": "删除此活动？此操作无法撤销。",
+    "deletePaidOne": "有 1 人已付费参加。删除后活动将对所有人消失，你需要为其退款。继续吗？",
+    "deletePaidMany": "有 {{count}} 人已付费参加。删除后活动将对所有人消失，你需要为他们退款。继续吗？",
+    "deleteFreeOne": "这将删除该活动，并对已加入的 1 人移除。此操作无法撤销。",
+    "deleteFreeMany": "这将删除该活动，并对已加入的 {{count}} 人移除。此操作无法撤销。",
+    "cancel": "取消",
+    "delete": "删除",
+    "background": "活动背景",
+    "none": "无",
+    "deleteFailed": "删除活动失败",
+    "deleted": "活动已删除",
+    "leaveFailed": "退出活动失败",
+    "left": "已退出活动",
+    "backgroundFailed": "更新背景失败"
+  },
+  "share": {
+    "title": "分享活动",
+    "share": "分享",
+    "copied": "已复制",
+    "copyLink": "复制链接",
+    "joinedCount": "{{count}} 人已加入"
   }
 }

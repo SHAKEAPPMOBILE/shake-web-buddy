@@ -26,35 +26,47 @@ interface PremiumDialogProps {
 }
 
 // Parse ISO 8601 duration (e.g. "P1M", "P1Y", "P7D") into a human label.
-function formatSubscriptionPeriod(iso: string | null | undefined): string | null {
+type PeriodUnit = "year" | "month" | "week" | "day";
+interface SubscriptionPeriod { count: number; unit: PeriodUnit }
+
+function formatSubscriptionPeriod(iso: string | null | undefined): SubscriptionPeriod | null {
   if (!iso) return null;
   const match = iso.match(/^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$/i);
   if (!match) return null;
   const [, years, months, weeks, days] = match;
-  if (years)  return Number(years)  === 1 ? "1 year"   : `${years} years`;
-  if (months) return Number(months) === 1 ? "1 month"  : `${months} months`;
-  if (weeks)  return Number(weeks)  === 1 ? "1 week"   : `${weeks} weeks`;
-  if (days)   return Number(days)   === 1 ? "1 day"    : `${days} days`;
+  if (years)  return { count: Number(years),  unit: "year" };
+  if (months) return { count: Number(months), unit: "month" };
+  if (weeks)  return { count: Number(weeks),  unit: "week" };
+  if (days)   return { count: Number(days),   unit: "day" };
   return null;
 }
 
 // Fallback: infer period from the package/product identifier string.
-function periodFromIdentifier(id: string | null | undefined): string | null {
+function periodFromIdentifier(id: string | null | undefined): SubscriptionPeriod | null {
   if (!id) return null;
   const lower = id.toLowerCase();
-  if (lower.includes("annual") || lower.includes("yearly") || lower.includes("year")) return "1 year";
-  if (lower.includes("month")) return "1 month";
-  if (lower.includes("week"))  return "1 week";
+  if (lower.includes("annual") || lower.includes("yearly") || lower.includes("year")) return { count: 1, unit: "year" };
+  if (lower.includes("month")) return { count: 1, unit: "month" };
+  if (lower.includes("week"))  return { count: 1, unit: "week" };
   return null;
 }
 
+// "1 month" in the app's language ("1 mes", "1か月", ...), not hardcoded English.
+function periodLabel(p: SubscriptionPeriod, language: string): string {
+  try {
+    return new Intl.NumberFormat(language, { style: "unit", unit: p.unit, unitDisplay: "long" }).format(p.count);
+  } catch {
+    return `${p.count} ${p.unit}${p.count === 1 ? "" : "s"}`;
+  }
+}
+
 export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [isManageLoading, setIsManageLoading] = useState(false);
   const [productPrice, setProductPrice] = useState<string | null>(null);
   const [productTitle, setProductTitle] = useState<string | null>(null);
-  const [subscriptionPeriod, setSubscriptionPeriod] = useState<string | null>(null);
+  const [subscriptionPeriod, setSubscriptionPeriod] = useState<SubscriptionPeriod | null>(null);
   const [subscribeError, setSubscribeError] = useState<string | null>(null);
   const { user, isPremium, isManualOverride, checkSubscription, setIsPremium } = useAuth();
   const location = useLocation();
@@ -509,15 +521,15 @@ export function PremiumDialog({ open, onOpenChange }: PremiumDialogProps) {
             <div className="text-3xl font-display font-bold text-gray-900">
               {productPrice}
               {subscriptionPeriod && (
-                <span className="text-base font-normal text-gray-500 ml-1">/ {subscriptionPeriod}</span>
+                <span className="text-base font-normal text-gray-500 ml-1">/ {periodLabel(subscriptionPeriod, i18n.language)}</span>
               )}
             </div>
           )}
           {subscriptionPeriod && (
-            <p className="text-xs text-gray-500 mt-0.5">Renews automatically every {subscriptionPeriod} until you cancel. Cancel anytime in your App Store or Google Play subscriptions.</p>
+            <p className="text-xs text-gray-500 mt-0.5">{t("premium.renewsPeriod", "Renews automatically every {{period}} until you cancel. Cancel anytime in your App Store or Google Play subscriptions.", { period: periodLabel(subscriptionPeriod, i18n.language) })}</p>
           )}
           {!subscriptionPeriod && (
-            <p className="text-xs text-gray-500 mt-0.5">Renews automatically until you cancel. Cancel anytime in your App Store or Google Play subscriptions.</p>
+            <p className="text-xs text-gray-500 mt-0.5">{t("premium.renews", "Renews automatically until you cancel. Cancel anytime in your App Store or Google Play subscriptions.")}</p>
           )}
         </div>
 

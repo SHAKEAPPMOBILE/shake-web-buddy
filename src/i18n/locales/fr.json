@@ -48,7 +48,8 @@
     "selectPriceOption": "Veuillez d'abord sélectionner une option de prix.",
     "choosePriceOption": "Choisissez une option de prix",
     "date": "Date",
-    "join": "Rejoindre"
+    "join": "Rejoindre",
+    "photoCredits": "Crédits photos"
   },
   "days": {
     "sunday": "Dimanche",
@@ -102,7 +103,13 @@
     "noMatchFound": "Aucun utilisateur correspondant pour l'instant, essaie de rejoindre un plan",
     "sharedInterestsCount": "{{count}} centres d'intérêt communs",
     "sayHiBtn": "Dire bonjour !",
-    "swipeUpDown": "Balayez vers le haut/bas"
+    "swipeUpDown": "Balayez vers le haut/bas",
+    "itsToday": "Aujourd'hui !",
+    "shakeChooserTitle": "Vous avez secoué !",
+    "shakeChooserSubtitle": "Qu'avez-vous envie de faire ?",
+    "shakeJoinActivity": "Rejoindre {{activity}}",
+    "shakeSeeActivities": "Voir ce qui se passe",
+    "notNow": "Pas maintenant"
   },
   "activities": {
     "brunch": "Brunch",
@@ -276,7 +283,7 @@
     "shareFriends": "Partagez-le avec vos amis.",
     "failedToShare": "Échec du partage",
     "failedToCopyLink": "Échec de la copie du lien",
-    "joiningBtn": "Joining…",
+    "joiningBtn": "Inscription…",
     "listView": "Vue liste",
     "mapView": "Vue carte",
     "friends": "Amis",
@@ -284,7 +291,8 @@
     "noFriendsYet": "Vous n'avez pas encore ajouté d'amis.",
     "noFriendPlans": "Aucun de vos amis n'a de plan à venir pour le moment.",
     "editPlanItem": "Modifier le plan",
-    "sharePlan": "Partager ce plan"
+    "sharePlan": "Partager ce plan",
+    "scrollView": "Vue défilement"
   },
   "profile": {
     "title": "Profil",
@@ -501,13 +509,13 @@
     "continueWithPhone": "Continuer avec le téléphone",
     "termsAgreement": "En continuant, vous acceptez nos Conditions d'Utilisation et Politique de Confidentialité",
     "byContinuing": "En continuant, vous acceptez nos",
-    "welcomeTitle": "Welcome to SHAKE",
+    "welcomeTitle": "Bienvenue sur SHAKE",
     "welcomeScriptWord": "Bienvenue",
-    "loginOrCreate": "Log In or create your account",
+    "loginOrCreate": "Connectez-vous ou créez votre compte",
     "googleBtn": "Google",
     "appleBtn": "Apple",
-    "createAccount": "Create Account",
-    "loginWithEmail": "Login with email",
+    "createAccount": "Créer un compte",
+    "loginWithEmail": "Se connecter par e-mail",
     "interestsQuestion": "Quels sont tes centres d'intérêt ? ✨",
     "interestsSubtext": "Touche un sujet pour voir les options",
     "interestsPlaceholder": "Touche un sujet ci-dessus ↑",
@@ -634,7 +642,9 @@
     "manageInAppStore": "Gère ton abonnement dans les réglages de l'App Store",
     "restoreTimedOut": "La restauration a expiré. Réessaie.",
     "purchasesRestored": "Achats restaurés avec succès !",
-    "restoreFailed": "Échec de la restauration des achats"
+    "restoreFailed": "Échec de la restauration des achats",
+    "renewsPeriod": "Se renouvelle automatiquement tous les {{period}} jusqu'à votre résiliation. Résiliez à tout moment dans vos abonnements App Store ou Google Play.",
+    "renews": "Se renouvelle automatiquement jusqu'à votre résiliation. Résiliez à tout moment dans vos abonnements App Store ou Google Play."
   },
   "welcome": {
     "settingUp": "Mise en place…",
@@ -762,7 +772,8 @@
     "recurrenceOnce": "Une seule fois",
     "recurrenceWeekly": "Chaque semaine",
     "recurrenceBiweekly": "Toutes les 2 semaines",
-    "recurrenceMonthly": "Une fois par mois"
+    "recurrenceMonthly": "Une fois par mois",
+    "cityRequired": "Indiquez d'abord votre ville"
   },
   "userProfile": {
     "title": "Profil Utilisateur",
@@ -1036,5 +1047,36 @@
     "subtitle": "Événements que vous avez rejoints et qui était là",
     "hostedBy": "Organisé par {{name}}",
     "host": "Hôte"
+  },
+  "planMenu": {
+    "options": "Options du plan",
+    "shareLocation": "Partager la position",
+    "editPlan": "Modifier le plan",
+    "addBackground": "Ajouter un fond",
+    "changeBackground": "Changer le fond",
+    "deletePlan": "Supprimer le plan",
+    "leavePlan": "Quitter le plan",
+    "deleteTitle": "Supprimer le plan ?",
+    "deleteNone": "Supprimer ce plan ? Cette action est irréversible.",
+    "deletePaidOne": "1 personne a payé pour participer. La suppression retire le plan pour tout le monde et vous devrez la rembourser. Continuer ?",
+    "deletePaidMany": "{{count}} personnes ont payé pour participer. La suppression retire le plan pour tout le monde et vous devrez les rembourser. Continuer ?",
+    "deleteFreeOne": "Cela supprimera le plan et le retirera pour la 1 personne qui l'a rejoint. Cette action est irréversible.",
+    "deleteFreeMany": "Cela supprimera le plan et le retirera pour les {{count}} personnes qui l'ont rejoint. Cette action est irréversible.",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "background": "Fond du plan",
+    "none": "Aucun",
+    "deleteFailed": "Impossible de supprimer le plan",
+    "deleted": "Plan supprimé",
+    "leaveFailed": "Impossible de quitter le plan",
+    "left": "Vous avez quitté le plan",
+    "backgroundFailed": "Impossible de mettre à jour le fond"
+  },
+  "share": {
+    "title": "Partager le plan",
+    "share": "Partager",
+    "copied": "Copié",
+    "copyLink": "Copier le lien",
+    "joinedCount": "{{count}} participants"
   }
 }

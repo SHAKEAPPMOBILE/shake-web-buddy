@@ -48,7 +48,8 @@
     "selectPriceOption": "Please select a price option first.",
     "choosePriceOption": "Choose a price option",
     "date": "Date",
-    "join": "Join"
+    "join": "Join",
+    "photoCredits": "Photo credits"
   },
   "days": {
     "sunday": "Sunday",
@@ -102,7 +103,13 @@
     "noMatchFound": "No matched users at this time, try going to a plan",
     "sharedInterestsCount": "{{count}} shared interests",
     "sayHiBtn": "Say hi!",
-    "swipeUpDown": "Swipe up/down"
+    "swipeUpDown": "Swipe up/down",
+    "itsToday": "Today!",
+    "shakeChooserTitle": "You shook it!",
+    "shakeChooserSubtitle": "What do you feel like?",
+    "shakeJoinActivity": "Join {{activity}}",
+    "shakeSeeActivities": "See what's on",
+    "notNow": "Not now"
   },
   "activities": {
     "brunch": "Brunch",
@@ -284,7 +291,8 @@
     "friends": "Friends",
     "addFriends": "Add friends",
     "noFriendsYet": "You haven't added any friends yet.",
-    "noFriendPlans": "None of your friends have an upcoming plan right now."
+    "noFriendPlans": "None of your friends have an upcoming plan right now.",
+    "scrollView": "Scroll view"
   },
   "profile": {
     "title": "Profile",
@@ -631,7 +639,9 @@
     "manageInAppStore": "Please manage your subscription in App Store settings",
     "restoreTimedOut": "Restore timed out. Please try again.",
     "purchasesRestored": "Purchases restored successfully!",
-    "restoreFailed": "Failed to restore purchases"
+    "restoreFailed": "Failed to restore purchases",
+    "renewsPeriod": "Renews automatically every {{period}} until you cancel. Cancel anytime in your App Store or Google Play subscriptions.",
+    "renews": "Renews automatically until you cancel. Cancel anytime in your App Store or Google Play subscriptions."
   },
   "welcome": {
     "settingUp": "Setting things up…",
@@ -759,7 +769,8 @@
     "recurrenceOnce": "Just once",
     "recurrenceWeekly": "Every week",
     "recurrenceBiweekly": "Every 2 weeks",
-    "recurrenceMonthly": "Once a month"
+    "recurrenceMonthly": "Once a month",
+    "cityRequired": "Set your city first"
   },
   "editPlan": {
     "title": "Edit plan",
@@ -1033,5 +1044,36 @@
     "subtitle": "Events you've joined and who was there",
     "hostedBy": "Hosted by {{name}}",
     "host": "Host"
+  },
+  "planMenu": {
+    "options": "Plan options",
+    "shareLocation": "Share location",
+    "editPlan": "Edit plan",
+    "addBackground": "Add background",
+    "changeBackground": "Change background",
+    "deletePlan": "Delete plan",
+    "leavePlan": "Leave plan",
+    "deleteTitle": "Delete plan?",
+    "deleteNone": "Delete this plan? This can't be undone.",
+    "deletePaidOne": "1 person has paid to join. Deleting removes the plan for everyone — you'll need to refund them. Continue?",
+    "deletePaidMany": "{{count}} people have paid to join. Deleting removes the plan for everyone — you'll need to refund them. Continue?",
+    "deleteFreeOne": "This will delete the plan and remove it for the 1 person who joined. This can't be undone.",
+    "deleteFreeMany": "This will delete the plan and remove it for the {{count}} people who joined. This can't be undone.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "background": "Plan background",
+    "none": "None",
+    "deleteFailed": "Failed to delete plan",
+    "deleted": "Plan deleted",
+    "leaveFailed": "Failed to leave plan",
+    "left": "Left the plan",
+    "backgroundFailed": "Failed to update background"
+  },
+  "share": {
+    "title": "Share plan",
+    "share": "Share",
+    "copied": "Copied",
+    "copyLink": "Copy link",
+    "joinedCount": "{{count}} joined"
   }
 }
