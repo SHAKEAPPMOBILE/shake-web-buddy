@@ -31,7 +31,6 @@ import { useCreatorVerification } from "@/hooks/useCreatorVerification";
 import { IDVerificationDialog } from "../IDVerificationDialog";
 import { ContactSupport } from "../ContactSupport";
 import { logPostgrestError } from "@/lib/supabaseErrorLog";
-import { useSettlingGradient } from "@/hooks/useSettlingGradient";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,12 +71,6 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   const friendsData = useFriends();
   const { pendingReceived } = friendsData;
   const isNative = Capacitor.isNativePlatform();
-  // Teal/blue gradient matching the nav + button, with a 1.5s teal sweep on open.
-  const { style: profileIconGradientStyle } = useSettlingGradient("profile", {
-    fixedSettled: "linear-gradient(135deg, #00C6B6, #7c3aed)",
-    animationGradient: "linear-gradient(270deg, #00C6B6, #7c3aed, #06b6d4, #38bdf8, #00C6B6)",
-    settleDelayMs: 1500,
-  });
   // The Premium upgrade banner keeps its own orange gradient (intentional brand colour).
   const premiumBannerStyle: CSSProperties = {
     background: "linear-gradient(135deg, #f97316, #ec4899)",
@@ -566,7 +559,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => navigate("/profile")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#8E8E93" }}>
                 <Settings className="w-5 h-5 text-white" />
               </div>
               <span className="flex-1 text-sm font-medium text-gray-900">{t('profile.editProfile')}</span>
@@ -574,7 +567,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </button>
             {/* Language */}
             <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#0EA5E9" }}>
                 <Globe className="w-5 h-5 text-white" />
               </div>
               <span className="flex-1 text-sm font-medium text-gray-900">{t('profile.language', 'Language')}</span>
@@ -593,7 +586,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => toggleSection("friends")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="relative w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="relative w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#22C55E" }}>
                 <Users className="w-5 h-5 text-white" />
                 {pendingReceived.length > 0 && (
                   <span
@@ -624,7 +617,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => toggleSection("paranormal")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#14B8A6" }}>
                 <Ghost className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
@@ -746,7 +739,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => toggleSection("points")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#FACC15" }}>
                 <span className="text-white font-bold text-lg">P</span>
               </div>
               <div className="flex-1">
@@ -769,7 +762,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   onClick={() => toggleSection("hosting")}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                 >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#F59E0B" }}>
                     <Trophy className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
@@ -792,7 +785,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => toggleSection("payouts")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#65A30D" }}>
                 <Wallet className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
@@ -1109,7 +1102,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => toggleSection("referral")}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#F97316" }}>
                 <Share2 className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
@@ -1174,7 +1167,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* Appearance */}
             <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#EC4899" }}>
                 <Sun className="w-5 h-5 text-white" />
               </div>
               <span className="flex-1 text-sm font-medium text-gray-900">{t('profile.appearance', 'Appearance')}</span>
@@ -1182,7 +1175,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
             </div>
             {/* Motion & Shake */}
             <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#FB923C" }}>
                 <Smartphone className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
@@ -1208,7 +1201,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                 onClick={() => window.open('app-settings:root=NOTIFICATIONS&path=com.shakeapp.shakeapp', '_system')}
               >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#EF4444" }}>
                   <Bell className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
@@ -1227,7 +1220,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {/* Contact Us */}
             <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={profileIconGradientStyle}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#2563EB" }}>
                 <Mail className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
@@ -1241,7 +1234,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => { navigate(location.pathname, { replace: true, state: { activeTab: 'profile' } }); navigate('/community-guidelines'); }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#06B6D4" }}>
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="flex-1 text-sm font-medium text-gray-900">{t('common.communityGuidelines', 'Community Guidelines')}</span>
@@ -1252,7 +1245,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => { navigate(location.pathname, { replace: true, state: { activeTab: 'profile' } }); navigate('/privacy-policy'); }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#64748B" }}>
                 <Lock className="w-5 h-5 text-white" />
               </div>
               <span className="flex-1 text-sm font-medium text-gray-900">{t('common.privacyPolicy', 'Privacy Policy')}</span>
@@ -1263,7 +1256,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => { navigate(location.pathname, { replace: true, state: { activeTab: 'profile' } }); navigate('/terms-of-service'); }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#A8A29E" }}>
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <span className="flex-1 text-sm font-medium text-gray-900">{t('common.termsOfService', 'Terms of Service')}</span>
@@ -1274,7 +1267,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
               onClick={() => { navigate(location.pathname, { replace: true, state: { activeTab: 'profile' } }); navigate('/photo-credits'); }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#E11D48" }}>
                 <Globe className="w-5 h-5 text-white" />
               </div>
               <span className="flex-1 text-sm font-medium text-gray-900">{t('common.photoCredits', 'Photo credits')}</span>
