@@ -465,10 +465,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   top: -15%;
   bottom: -15%;
   left: -70%;
-  width: 46%;
-  /* A bright core with faint cool and warm fringes, so it still shows on a light bubble (white-on-white would vanish). */
-  background: linear-gradient(80deg, transparent 0%, rgba(70, 165, 255, 0.34) 28%, rgba(255, 255, 255, 0.98) 50%, rgba(255, 165, 105, 0.34) 72%, transparent 100%);
+  width: 22%;
+  /* A thin, faint band: a soft white core with the barest cool and warm fringes (so it shows on a light bubble). */
+  background: linear-gradient(80deg, transparent 0%, rgba(70, 165, 255, 0.14) 30%, rgba(255, 255, 255, 0.62) 50%, rgba(255, 165, 105, 0.14) 70%, transparent 100%);
   transform: skewX(-20deg);
+  filter: blur(0.6px);
 }
 @media (prefers-reduced-motion: no-preference) {
   .glass-glint::before { animation: glass-glint-sweep 4.2s ease-in-out infinite; }

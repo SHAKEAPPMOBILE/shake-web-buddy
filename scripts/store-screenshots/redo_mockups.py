@@ -115,12 +115,20 @@ def process(folder, cfg, name, blurred_bg):
         b = Image.open(f"/private/tmp/claude-501/shots/bubble-{cfg['ppt']}.png").convert('RGBA')   # the app's own PlusBubble, rendered in Chrome
         centre_y = cfg['border'] + 4 * cfg['ppt']
         if blurred_bg:
-            # the whole screen is dimmed and blurred under the modal: dim and blur the bubble to match
+            # The screen is dimmed and blurred under the modal: render the bubble on the dimmed backdrop's own tone,
+            # blur it, and paste it as a patch, so it reads as a soft pale disc rather than a dark ring.
             bgc = np.asarray(img)[int(centre_y + diam * 0.9), int(cx) - 120:int(cx) - 60].mean(axis=(0, 1))
             f = float(bgc.mean() / 255.0)
-            arr = np.asarray(b).astype(np.float32)
-            arr[..., :3] *= f
-            b = Image.fromarray(arr.astype(np.uint8), 'RGBA').filter(ImageFilter.GaussianBlur(9))
+            patch = Image.new('RGBA', b.size, (255, 255, 255, 255))
+            patch.alpha_composite(b)
+            patch = patch.convert('RGB').filter(ImageFilter.GaussianBlur(9))
+            patch = Image.fromarray((np.asarray(patch).astype(np.float32) * f).astype(np.uint8))
+            mask = Image.new('L', b.size, 0)
+            rr = 0.60 * diam
+            ImageDraw.Draw(mask).ellipse([b.width / 2 - rr, b.height / 2 - rr * 0.92, b.width / 2 + rr, b.height / 2 + rr * 1.12], fill=255)
+            mask = mask.filter(ImageFilter.GaussianBlur(14))
+            img.paste(patch, (int(round(cx - b.width / 2)), int(round(centre_y - b.height / 2))), mask)
+            return img
         img = img.convert('RGBA')
         img.alpha_composite(b, (int(round(cx - b.width / 2)), int(round(centre_y - b.height / 2))))
         img = img.convert('RGB')
