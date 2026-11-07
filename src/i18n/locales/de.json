@@ -298,7 +298,8 @@
     "noFriendPlans": "Keiner deiner Freunde hat gerade einen anstehenden Plan.",
     "editPlanItem": "Plan bearbeiten",
     "sharePlan": "Diesen Plan teilen",
-    "scrollView": "Scrollansicht"
+    "scrollView": "Scrollansicht",
+    "registerBtn": "Anmelden"
   },
   "profile": {
     "title": "Profil",
@@ -1084,5 +1085,27 @@
     "copied": "Kopiert",
     "copyLink": "Link kopieren",
     "joinedCount": "{{count}} dabei"
+  },
+  "importEvents": {
+    "title": "Events importieren",
+    "subtitle": "Von deiner Website oder deinem Kalender",
+    "intro": "Füge den Link zu deiner Website oder deinem Kalender ein. Wir kopieren deine kommenden Events hierher, und jedes führt die Leute zur Anmeldung zurück auf deine Seite. Verbinde nur eine Seite, die du selbst betreibst.",
+    "placeholder": "deinewebsite.com/events",
+    "button": "Events importieren",
+    "connected": "Verbundene Seiten",
+    "eventsCount": "{{count}} Events",
+    "synced": "synchronisiert {{when}}",
+    "syncNow": "Jetzt synchronisieren",
+    "remove": "Entfernen",
+    "removeConfirm": "Events ebenfalls entfernen?",
+    "done": "{{count}} Events importiert. Sie sind jetzt in Pläne.",
+    "upToDate": "Auf dem neuesten Stand. {{count}} Events sind auf SHAKE.",
+    "errNoEvents": "Auf dieser Seite haben wir keine Events gefunden. Probiere stattdessen deinen Kalender-Link (eine .ics-Datei).",
+    "errUnreachable": "Wir konnten diese Adresse nicht öffnen. Prüfe sie und versuche es erneut.",
+    "errBadUrl": "Das sieht nicht nach einer Website-Adresse aus, die wir lesen können.",
+    "errTooMany": "Du hast die maximale Anzahl an Seiten verbunden. Entferne zuerst eine.",
+    "errCity": "Wähle zuerst deine Stadt und versuche es dann erneut.",
+    "errTooSoon": "Gerade eben synchronisiert. Warte eine Minute.",
+    "errGeneric": "Etwas ist schiefgelaufen. Versuche es gleich noch einmal."
   }
 }

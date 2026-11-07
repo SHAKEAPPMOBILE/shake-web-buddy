@@ -298,7 +298,8 @@
     "noFriendPlans": "Nenhum dos seus amigos tem um plano próximo agora.",
     "editPlanItem": "Editar plano",
     "sharePlan": "Compartilhar este plano",
-    "scrollView": "Vista de deslocamento"
+    "scrollView": "Vista de deslocamento",
+    "registerBtn": "Inscrever-me"
   },
   "profile": {
     "title": "Perfil",
@@ -1084,5 +1085,27 @@
     "copied": "Copiado",
     "copyLink": "Copiar link",
     "joinedCount": "{{count}} juntaram-se"
+  },
+  "importEvents": {
+    "title": "Importar eventos",
+    "subtitle": "Do teu site ou calendário",
+    "intro": "Cola o link do teu site ou calendário. Copiamos os teus próximos eventos para aqui e cada um leva as pessoas de volta ao teu site para se inscreverem. Liga apenas um site que giras tu.",
+    "placeholder": "oteusite.com/eventos",
+    "button": "Importar eventos",
+    "connected": "Sites ligados",
+    "eventsCount": "{{count}} eventos",
+    "synced": "sincronizado {{when}}",
+    "syncNow": "Sincronizar agora",
+    "remove": "Remover",
+    "removeConfirm": "Remover também os eventos?",
+    "done": "Importados {{count}} eventos. Já estão em Planos.",
+    "upToDate": "Tudo em dia. Há {{count}} eventos no SHAKE.",
+    "errNoEvents": "Não encontrámos eventos nessa página. Experimenta o link do teu calendário (um ficheiro .ics).",
+    "errUnreachable": "Não conseguimos abrir esse endereço. Verifica e tenta novamente.",
+    "errBadUrl": "Isso não parece um endereço de site que possamos ler.",
+    "errTooMany": "Já ligaste o máximo de sites permitido. Remove um primeiro.",
+    "errCity": "Escolhe primeiro a tua cidade e tenta novamente.",
+    "errTooSoon": "Sincronizado há instantes. Espera um minuto.",
+    "errGeneric": "Algo correu mal. Tenta novamente daqui a pouco."
   }
 }

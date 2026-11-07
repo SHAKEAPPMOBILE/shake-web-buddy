@@ -298,7 +298,8 @@
     "addFriends": "Add friends",
     "noFriendsYet": "You haven't added any friends yet.",
     "noFriendPlans": "None of your friends have an upcoming plan right now.",
-    "scrollView": "Scroll view"
+    "scrollView": "Scroll view",
+    "registerBtn": "Register"
   },
   "profile": {
     "title": "Profile",
@@ -1081,5 +1082,27 @@
     "copied": "Copied",
     "copyLink": "Copy link",
     "joinedCount": "{{count}} joined"
+  },
+  "importEvents": {
+    "title": "Import events",
+    "subtitle": "From your website or calendar",
+    "intro": "Paste your website or calendar link. We copy your upcoming events here, and each one sends people back to your site to register. Connect only a site you run.",
+    "placeholder": "yourwebsite.com/events",
+    "button": "Import events",
+    "connected": "Connected sites",
+    "eventsCount": "{{count}} events",
+    "synced": "synced {{when}}",
+    "syncNow": "Sync now",
+    "remove": "Remove",
+    "removeConfirm": "Remove events too?",
+    "done": "Imported {{count}} events. They're in Plans now.",
+    "upToDate": "Up to date. {{count}} events are on SHAKE.",
+    "errNoEvents": "We couldn't find events on that page. Try your calendar link (a .ics file) instead.",
+    "errUnreachable": "We couldn't open that address. Check it and try again.",
+    "errBadUrl": "That doesn't look like a website address we can read.",
+    "errTooMany": "You've connected the most sites allowed. Remove one first.",
+    "errCity": "Pick your city first, then try again.",
+    "errTooSoon": "Synced a moment ago. Give it a minute.",
+    "errGeneric": "Something went wrong. Try again in a moment."
   }
 }

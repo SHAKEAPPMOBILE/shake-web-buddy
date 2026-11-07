@@ -298,7 +298,8 @@
     "noFriendPlans": "Żaden z twoich znajomych nie ma teraz nadchodzącego planu.",
     "editPlanItem": "Edytuj plan",
     "sharePlan": "Udostępnij ten plan",
-    "scrollView": "Widok przewijania"
+    "scrollView": "Widok przewijania",
+    "registerBtn": "Zapisz się"
   },
   "profile": {
     "title": "Profil",
@@ -1084,5 +1085,27 @@
     "copied": "Skopiowano",
     "copyLink": "Kopiuj link",
     "joinedCount": "Dołączyło: {{count}}"
+  },
+  "importEvents": {
+    "title": "Importuj wydarzenia",
+    "subtitle": "Z Twojej strony lub kalendarza",
+    "intro": "Wklej link do swojej strony lub kalendarza. Skopiujemy tu Twoje nadchodzące wydarzenia, a każde odeśle ludzi na Twoją stronę, żeby się zapisali. Podłącz tylko stronę, którą prowadzisz.",
+    "placeholder": "twojastrona.pl/wydarzenia",
+    "button": "Importuj wydarzenia",
+    "connected": "Połączone strony",
+    "eventsCount": "Wydarzenia: {{count}}",
+    "synced": "zsynchronizowano {{when}}",
+    "syncNow": "Synchronizuj teraz",
+    "remove": "Usuń",
+    "removeConfirm": "Usunąć też wydarzenia?",
+    "done": "Zaimportowano wydarzeń: {{count}}. Są już w Planach.",
+    "upToDate": "Aktualne. Wydarzeń na SHAKE: {{count}}.",
+    "errNoEvents": "Nie znaleźliśmy wydarzeń na tej stronie. Spróbuj linku do kalendarza (plik .ics).",
+    "errUnreachable": "Nie udało się otworzyć tego adresu. Sprawdź go i spróbuj ponownie.",
+    "errBadUrl": "To nie wygląda na adres strony, który możemy odczytać.",
+    "errTooMany": "Połączono maksymalną liczbę stron. Najpierw usuń jedną.",
+    "errCity": "Najpierw wybierz swoje miasto, potem spróbuj ponownie.",
+    "errTooSoon": "Zsynchronizowano przed chwilą. Poczekaj minutę.",
+    "errGeneric": "Coś poszło nie tak. Spróbuj za chwilę."
   }
 }

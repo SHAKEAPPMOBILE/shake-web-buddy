@@ -298,7 +298,8 @@
     "noFriendPlans": "你的好友目前没有即将开始的计划。",
     "editPlanItem": "编辑计划",
     "sharePlan": "分享此计划",
-    "scrollView": "滚动视图"
+    "scrollView": "滚动视图",
+    "registerBtn": "报名"
   },
   "profile": {
     "title": "个人资料",
@@ -1084,5 +1085,27 @@
     "copied": "已复制",
     "copyLink": "复制链接",
     "joinedCount": "{{count}} 人已加入"
+  },
+  "importEvents": {
+    "title": "导入活动",
+    "subtitle": "来自你的网站或日历",
+    "intro": "粘贴你的网站或日历链接。我们会把你即将举行的活动复制到这里，每个活动都会把人引回你的网站报名。请只连接你自己运营的网站。",
+    "placeholder": "你的网站.com/活动",
+    "button": "导入活动",
+    "connected": "已连接的网站",
+    "eventsCount": "{{count}} 个活动",
+    "synced": "{{when}}已同步",
+    "syncNow": "立即同步",
+    "remove": "移除",
+    "removeConfirm": "同时移除这些活动？",
+    "done": "已导入 {{count}} 个活动，现在可以在“活动”中看到。",
+    "upToDate": "已是最新。SHAKE 上有 {{count}} 个活动。",
+    "errNoEvents": "在该页面上没有找到活动。请改用你的日历链接（.ics 文件）。",
+    "errUnreachable": "无法打开该地址，请检查后重试。",
+    "errBadUrl": "这看起来不是我们能读取的网站地址。",
+    "errTooMany": "你已连接了允许的最多网站数量，请先移除一个。",
+    "errCity": "请先选择你的城市，然后再试。",
+    "errTooSoon": "刚刚已同步，请稍等一分钟。",
+    "errGeneric": "出了点问题，请稍后再试。"
   }
 }

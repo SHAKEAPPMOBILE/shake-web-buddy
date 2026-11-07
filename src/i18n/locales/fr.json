@@ -298,7 +298,8 @@
     "noFriendPlans": "Aucun de vos amis n'a de plan à venir pour le moment.",
     "editPlanItem": "Modifier le plan",
     "sharePlan": "Partager ce plan",
-    "scrollView": "Vue défilement"
+    "scrollView": "Vue défilement",
+    "registerBtn": "S'inscrire"
   },
   "profile": {
     "title": "Profil",
@@ -1084,5 +1085,27 @@
     "copied": "Copié",
     "copyLink": "Copier le lien",
     "joinedCount": "{{count}} participants"
+  },
+  "importEvents": {
+    "title": "Importer des événements",
+    "subtitle": "Depuis votre site ou calendrier",
+    "intro": "Collez le lien de votre site ou calendrier. Nous copions vos prochains événements ici et chacun renvoie les gens vers votre site pour s'inscrire. Ne connectez qu'un site que vous gérez.",
+    "placeholder": "votresite.com/evenements",
+    "button": "Importer les événements",
+    "connected": "Sites connectés",
+    "eventsCount": "{{count}} événements",
+    "synced": "synchronisé {{when}}",
+    "syncNow": "Synchroniser maintenant",
+    "remove": "Retirer",
+    "removeConfirm": "Retirer aussi les événements ?",
+    "done": "{{count}} événements importés. Ils sont dans Plans.",
+    "upToDate": "À jour. {{count}} événements sont sur SHAKE.",
+    "errNoEvents": "Nous n'avons pas trouvé d'événements sur cette page. Essayez le lien de votre calendrier (un fichier .ics).",
+    "errUnreachable": "Impossible d'ouvrir cette adresse. Vérifiez-la et réessayez.",
+    "errBadUrl": "Cela ne ressemble pas à une adresse de site que nous pouvons lire.",
+    "errTooMany": "Vous avez connecté le maximum de sites. Retirez-en un d'abord.",
+    "errCity": "Choisissez d'abord votre ville, puis réessayez.",
+    "errTooSoon": "Synchronisé à l'instant. Patientez une minute.",
+    "errGeneric": "Une erreur s'est produite. Réessayez dans un instant."
   }
 }

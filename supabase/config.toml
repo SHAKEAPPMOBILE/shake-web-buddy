@@ -90,3 +90,6 @@ verify_jwt = true
 
 [functions.plan-ics]
 verify_jwt = false
+
+[functions.sync-event-source]
+verify_jwt = true

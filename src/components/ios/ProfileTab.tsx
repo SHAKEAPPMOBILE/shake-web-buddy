@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle, Users, Trophy, Ticket } from "lucide-react";
+import { User, LogOut, Settings, Video, CreditCard, Share2, Copy, Check, Globe, Wallet, ExternalLink, Loader2, Mail, Trash2, DollarSign, Shield, Clock, CheckCircle, XCircle, Ghost, ScanFace, Sun, Smartphone, Bell, ChevronRight, Instagram, Lock, FileText, AlertTriangle, Users, Trophy, Ticket, CalendarSync } from "lucide-react";
 import { ManageFriendsDialog } from "@/components/ManageFriendsDialog";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +15,7 @@ import { StatusVideoRecorder } from "../StatusVideoRecorder";
 import { cn, getPriceValue } from "@/lib/utils";
 import { HostingStats, useHostedCount } from "@/components/HostingStats";
 import { AttendingStats, useAttendedCount } from "@/components/AttendingStats";
+import { ImportEvents } from "@/components/ImportEvents";
 import { PointsDashboard } from "../PointsDashboard";
 import { useUserPoints } from "@/hooks/useUserPoints";
 import { PointsDisplay } from "@/components/PointsDisplay";
@@ -99,7 +100,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
   // auto-collapses whichever was open; the scroll-into-view in
   // toggleSection compensates for the layout shift that causes, so the row
   // just opened doesn't end up pushed almost out of view.
-  type ProfileSection = "points" | "payouts" | "friends" | "paranormal" | "referral" | "hosting" | "attending";
+  type ProfileSection = "points" | "payouts" | "friends" | "paranormal" | "referral" | "hosting" | "attending" | "importEvents";
   const [expandedSection, setExpandedSection] = useState<ProfileSection | null>(null);
   const sectionRefs = {
     points: useRef<HTMLButtonElement>(null),
@@ -109,6 +110,7 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
     referral: useRef<HTMLButtonElement>(null),
     hosting: useRef<HTMLButtonElement>(null),
     attending: useRef<HTMLButtonElement>(null),
+    importEvents: useRef<HTMLButtonElement>(null),
   };
   const toggleSection = (section: ProfileSection) => {
     setExpandedSection((prev) => {
@@ -780,6 +782,27 @@ export function ProfileTab({ onSignOut, initialOpenSubscription, onSubscriptionO
                   </div>
                 )}
               </>
+            )}
+
+            {/* Import events — paste a website or calendar and SHAKE mirrors its events */}
+            <button
+              ref={sectionRefs.importEvents}
+              onClick={() => toggleSection("importEvents")}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#10B981" }}>
+                <CalendarSync className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm font-medium text-gray-900">{t('importEvents.title', 'Import events')}</span>
+                <p className="text-xs text-gray-400">{t('importEvents.subtitle', 'From your website or calendar')}</p>
+              </div>
+              <ChevronRight className={cn("w-4 h-4 text-gray-300 transition-transform", expandedSection === "importEvents" && "rotate-90")} />
+            </button>
+            {expandedSection === "importEvents" && (
+              <div className="px-4 py-4 bg-gray-50 animate-fade-in">
+                <ImportEvents />
+              </div>
             )}
 
             {/* Attending — appears once the person has joined an event */}

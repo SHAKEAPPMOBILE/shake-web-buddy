@@ -143,6 +143,7 @@ export function useUserActivities(city: string) {
       .from("user_activities")
       .select("id, created_at, is_active")
       .eq("user_id", user.id)
+      .is("external_url", null)
       .gte("created_at", ninetyDaysAgo.toISOString());
 
     if (error) {
@@ -253,6 +254,7 @@ export function useUserActivities(city: string) {
         .eq("is_active", true)
         .not("is_auto_generated", "is", true)
         .not("is_quick_post", "is", true)
+        .is("external_url", null)
         .gte("scheduled_for", startOfToday.toISOString())
         .gte("scheduled_for", startOfDay.toISOString())
         .lte("scheduled_for", endOfDay.toISOString())

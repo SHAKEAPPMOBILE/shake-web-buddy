@@ -16,7 +16,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ChevronLeft, Volume2, VolumeX, User, Send, Pause } from "lucide-react";
+import { ChevronLeft, Volume2, VolumeX, User, Send, Pause, ArrowUpRight } from "lucide-react";
 import { parseDbDate } from "@/lib/date-utils";
 import { getPriceValue, cn } from "@/lib/utils";
 import { getActivityIcon, getActivityEmoji, getActivityLabel, ACTIVITY_START_TIMES } from "@/data/activityTypes";
@@ -28,6 +28,9 @@ import { PlanBackgroundFill } from "@/components/PlanBackgroundFill";
 import { ShareEventSheet } from "@/components/ShareEventSheet";
 import { getTimeOfDayGradient } from "@/lib/timeOfDayGradient";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { Browser } from "@capacitor/browser";
+import { Capacitor } from "@capacitor/core";
 import { ReportContentButton } from "@/components/ReportContentButton";
 import { PlanOptionsMenu } from "@/components/PlanOptionsMenu";
 import { supabase } from "@/integrations/supabase/client";
@@ -251,6 +254,20 @@ function FeedCard({ plan, isOwn, inline, scrollContainerRef, onJoinInPlace, onPa
   const [smallImage, setSmallImage] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [previewAvatars, setPreviewAvatars] = useState<{ user_id: string; name: string | null; avatar_url: string | null }[]>([]);
+  // An event imported from an organizer's own website sends people back there to register.
+  const { data: externalUrl } = useQuery({
+    queryKey: ["external-url", plan.id],
+    enabled: !plan.is_auto_generated && /^[0-9a-f-]{36}$/i.test(plan.id),
+    staleTime: 10 * 60 * 1000,
+    queryFn: async () => {
+      const { data } = await supabase.from("user_activities").select("external_url").eq("id", plan.id).maybeSingle();
+      return ((data as { external_url?: string | null } | null)?.external_url) ?? null;
+    },
+  });
+  const openExternal = (url: string) => {
+    if (Capacitor.isNativePlatform()) void Browser.open({ url });
+    else window.open(url, "_blank", "noopener,noreferrer");
+  };
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [joinCount, setJoinCount] = useState<number | null>(null);
   const [showDescription, setShowDescription] = useState(false);
@@ -495,6 +512,9 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
     }
     if (isJoined) {
       return { label: t('plans.enterChat', 'Enter chat'), handler: onEnterChat, disabled: false };
+    }
+    if (externalUrl) {
+      return { label: t('plans.registerBtn', 'Register'), handler: () => openExternal(externalUrl), disabled: false };
     }
     if (isPaid) {
       // Looks and reads like a free plan's JOIN; tapping it opens the price + payment screen instead of joining directly.
@@ -811,13 +831,20 @@ setLowRes(Math.max(videoWidth, videoHeight) < 600);
           >
             {(isOwn || isJoined) ? (
               <span className="text-sm font-bold tracking-wide animate-gradient-shift" style={{ backgroundClip: "text", WebkitTextFillColor: "transparent" }}>CHAT</span>
+            ) : externalUrl ? (
+              <ArrowUpRight className="w-7 h-7 text-gray-900" strokeWidth={2.4} />
             ) : joining ? (
               <div className="w-5 h-5 border-2 border-black/40 border-t-transparent rounded-full animate-spin" />
             ) : (
               <span className="text-sm font-bold tracking-wide animate-gradient-shift" style={{ backgroundClip: "text", WebkitTextFillColor: "transparent" }}>JOIN</span>
             )}
           </div>
-          {/* Label beneath circle — shown while joining */}
+          {/* Label beneath circle — shown while joining, and for an organizer's own sign-up link */}
+          {!isOwn && !isJoined && externalUrl && (
+            <span className="text-white text-[11px] font-semibold leading-none" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>
+              {t('plans.registerBtn', 'Register')}
+            </span>
+          )}
           {joining && (
             <span
               className="text-white text-[11px] font-semibold leading-none"

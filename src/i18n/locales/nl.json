@@ -298,7 +298,8 @@
     "noFriendPlans": "Geen van je vrienden heeft nu een aankomend plan.",
     "editPlanItem": "Plan bewerken",
     "sharePlan": "Dit plan delen",
-    "scrollView": "Scrollweergave"
+    "scrollView": "Scrollweergave",
+    "registerBtn": "Aanmelden"
   },
   "profile": {
     "title": "Profiel",
@@ -1084,5 +1085,27 @@
     "copied": "Gekopieerd",
     "copyLink": "Link kopiëren",
     "joinedCount": "{{count}} aangemeld"
+  },
+  "importEvents": {
+    "title": "Evenementen importeren",
+    "subtitle": "Van je website of agenda",
+    "intro": "Plak de link naar je website of agenda. We kopiëren je komende evenementen hierheen en elk stuurt mensen terug naar jouw site om zich aan te melden. Koppel alleen een site die je zelf beheert.",
+    "placeholder": "jouwwebsite.com/evenementen",
+    "button": "Evenementen importeren",
+    "connected": "Gekoppelde sites",
+    "eventsCount": "{{count}} evenementen",
+    "synced": "gesynchroniseerd {{when}}",
+    "syncNow": "Nu synchroniseren",
+    "remove": "Verwijderen",
+    "removeConfirm": "Ook de evenementen verwijderen?",
+    "done": "{{count}} evenementen geïmporteerd. Ze staan nu in Plannen.",
+    "upToDate": "Bijgewerkt. Er staan {{count}} evenementen op SHAKE.",
+    "errNoEvents": "We vonden geen evenementen op die pagina. Probeer je agenda-link (een .ics-bestand).",
+    "errUnreachable": "We konden dat adres niet openen. Controleer het en probeer opnieuw.",
+    "errBadUrl": "Dat lijkt geen websiteadres dat we kunnen lezen.",
+    "errTooMany": "Je hebt het maximum aantal sites gekoppeld. Verwijder er eerst een.",
+    "errCity": "Kies eerst je stad en probeer het opnieuw.",
+    "errTooSoon": "Net gesynchroniseerd. Wacht een minuut.",
+    "errGeneric": "Er ging iets mis. Probeer het zo opnieuw."
   }
 }
