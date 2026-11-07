@@ -7,8 +7,8 @@ android {
         applicationId "com.shakebyleo.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 87
-        versionName "18.86"
+        versionCode 88
+        versionName "18.87"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         aaptOptions {
@@ -19,7 +19,9 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file(System.getProperty("user.home") + "/Desktop/shake-buddy-keystore.jks")
+            // The key normally sits on the Desktop; fall back to the copy kept next to this file.
+            def desktopKey = file(System.getProperty("user.home") + "/Desktop/shake-buddy-keystore.jks")
+            storeFile desktopKey.exists() ? desktopKey : file("shake-buddy-keystore.jks")
             storePassword 'shaketheapp'
             keyAlias 'shake-buddy-key'
             keyPassword 'shaketheapp'
