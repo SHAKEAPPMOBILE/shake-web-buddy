@@ -1089,7 +1089,7 @@
   "importEvents": {
     "title": "Importuj wydarzenia",
     "subtitle": "Z Twojej strony lub kalendarza",
-    "intro": "Wklej link do swojej strony lub kalendarza. Skopiujemy tu Twoje nadchodzące wydarzenia, a każde odeśle ludzi na Twoją stronę, żeby się zapisali. Podłącz tylko stronę, którą prowadzisz.",
+    "intro": "Kopiujemy Twoje nadchodzące wydarzenia i wklejamy je na SHAKE",
     "placeholder": "twojastrona.pl/wydarzenia",
     "button": "Importuj wydarzenia",
     "connected": "Połączone strony",

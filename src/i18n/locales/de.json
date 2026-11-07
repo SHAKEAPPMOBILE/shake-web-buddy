@@ -1089,7 +1089,7 @@
   "importEvents": {
     "title": "Events importieren",
     "subtitle": "Von deiner Website oder deinem Kalender",
-    "intro": "Füge den Link zu deiner Website oder deinem Kalender ein. Wir kopieren deine kommenden Events hierher, und jedes führt die Leute zur Anmeldung zurück auf deine Seite. Verbinde nur eine Seite, die du selbst betreibst.",
+    "intro": "Wir kopieren deine kommenden Events und fügen sie auf SHAKE ein",
     "placeholder": "deinewebsite.com/events",
     "button": "Events importieren",
     "connected": "Verbundene Seiten",

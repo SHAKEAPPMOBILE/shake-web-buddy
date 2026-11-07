@@ -103,7 +103,7 @@ export function ImportEvents() {
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
         <p className="text-sm text-gray-600">
-          {t("importEvents.intro", "Paste your website or calendar link. We copy your upcoming events here, and each one sends people back to your site to register. Connect only a site you run.")}
+          {t("importEvents.intro", "We copy your upcoming events and paste them on SHAKE")}
         </p>
         <input
           id="import-events-url"

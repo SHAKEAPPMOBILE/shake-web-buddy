@@ -1089,7 +1089,7 @@
   "importEvents": {
     "title": "Evenementen importeren",
     "subtitle": "Van je website of agenda",
-    "intro": "Plak de link naar je website of agenda. We kopiëren je komende evenementen hierheen en elk stuurt mensen terug naar jouw site om zich aan te melden. Koppel alleen een site die je zelf beheert.",
+    "intro": "We kopiëren je komende evenementen en plakken ze op SHAKE",
     "placeholder": "jouwwebsite.com/evenementen",
     "button": "Evenementen importeren",
     "connected": "Gekoppelde sites",

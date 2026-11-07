@@ -1089,7 +1089,7 @@
   "importEvents": {
     "title": "Importer des événements",
     "subtitle": "Depuis votre site ou calendrier",
-    "intro": "Collez le lien de votre site ou calendrier. Nous copions vos prochains événements ici et chacun renvoie les gens vers votre site pour s'inscrire. Ne connectez qu'un site que vous gérez.",
+    "intro": "Nous copions vos prochains événements et les collons sur SHAKE",
     "placeholder": "votresite.com/evenements",
     "button": "Importer les événements",
     "connected": "Sites connectés",

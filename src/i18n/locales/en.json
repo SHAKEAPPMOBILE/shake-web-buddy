@@ -1086,7 +1086,7 @@
   "importEvents": {
     "title": "Import events",
     "subtitle": "From your website or calendar",
-    "intro": "Paste your website or calendar link. We copy your upcoming events here, and each one sends people back to your site to register. Connect only a site you run.",
+    "intro": "We copy your upcoming events and paste them on SHAKE",
     "placeholder": "yourwebsite.com/events",
     "button": "Import events",
     "connected": "Connected sites",

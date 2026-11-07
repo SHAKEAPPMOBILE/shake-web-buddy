@@ -1088,7 +1088,7 @@
   "importEvents": {
     "title": "Importar eventos",
     "subtitle": "Desde tu web o calendario",
-    "intro": "Pega el enlace de tu web o calendario. Copiamos tus próximos eventos aquí y cada uno lleva a la gente de vuelta a tu web para inscribirse. Conecta solo un sitio que gestiones tú.",
+    "intro": "Copiamos tus próximos eventos y los pegamos en SHAKE",
     "placeholder": "tuweb.com/eventos",
     "button": "Importar eventos",
     "connected": "Sitios conectados",
